@@ -113,6 +113,32 @@ export function formatMaintenanceType(raw: string | null | undefined): string {
 }
 
 /**
+ * A-7-4 — the first line of a maintenance block's notes as the desk should read it.
+ *
+ * The notes are stored as "{type}: {description}" (parsed back by the edit
+ * dialogs and the portal request, so the stored shape stays) and several lists
+ * printed that line verbatim: "breakdown: lekke band". The type word is
+ * translated; a first line that is not "{known type}: ..." is user text and is
+ * returned untouched. The legacy imported title "Vehicle maintenance block"
+ * has its own translation instead of the title-cased fallback.
+ */
+export function formatMaintenanceNotes(raw: string | null | undefined): string {
+  if (!raw) return "";
+  const firstLine = raw.split("\n")[0].trim();
+  if (!firstLine) return "";
+  const typeKey = (word: string) => word.trim().toLowerCase().replace(/\s+/g, "_");
+  const legacy = typeKey(firstLine);
+  if (i18n.exists(`maintenance:editDialog.types.${legacy}`)) return formatMaintenanceType(firstLine);
+  const match = /^([A-Za-z_]+):\s*(.*)$/.exec(firstLine);
+  if (match && i18n.exists(`maintenance:editDialog.types.${typeKey(match[1])}`)) {
+    const description = match[2].trim();
+    const type = formatMaintenanceType(match[1]);
+    return description ? `${type}: ${description}` : type;
+  }
+  return firstLine;
+}
+
+/**
  * WAVE 13 item 7 — the maintenance *category* (`scheduled_maintenance`,
  * `repair`), which the global search and the notification centre printed as the
  * stored word: *repair* where the rest of the app says *Reparatie*.

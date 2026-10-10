@@ -52,7 +52,7 @@ import {
 } from "lucide-react";
 import { Vehicle, Reservation } from "@shared/schema";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { formatLicensePlate, formatReservationStatus } from "@/lib/format-utils";
+import { formatLicensePlate, formatReservationStatus, formatMaintenanceNotes } from "@/lib/format-utils";
 import { MaintenanceEditDialog } from "@/components/maintenance/maintenance-edit-dialog";
 import { ScheduleMaintenanceDialog } from "@/components/maintenance/schedule-maintenance-dialog";
 import { VehicleViewDialog } from "@/components/vehicles/vehicle-view-dialog";
@@ -618,7 +618,7 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                               </TableCell>
                               <TableCell className="max-w-xs">
                                 <div className="truncate text-sm">
-                                  {reservation.notes?.split('\n')[0] || t('listDialog.noDescription')}
+                                  {formatMaintenanceNotes(reservation.notes) || t('listDialog.noDescription')}
                                 </div>
                               </TableCell>
                               <TableCell>

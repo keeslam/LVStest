@@ -18,7 +18,7 @@ import { ReservationAddDialog } from "@/components/reservations/reservation-add-
 import { ReservationEditDialog } from "@/components/reservations/reservation-edit-dialog";
 import { ExpenseViewDialog } from "@/components/expenses/expense-view-dialog";
 import { ExpenseAddDialog } from "@/components/expenses/expense-add-dialog";
-import { formatDate, formatCurrency, formatLicensePlate, formatFuelLevel, sumMoney, formatVehicleType, formatExpenseCategory } from "@/lib/format-utils";
+import { formatDate, formatCurrency, formatLicensePlate, formatFuelLevel, sumMoney, formatVehicleType, formatExpenseCategory, formatMaintenanceType, formatMaintenanceNotes } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
 import { Price } from "@/components/ui/price";
 import { isTrueValue } from "@/lib/utils";
@@ -3110,7 +3110,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           .sort((a: any, b: any) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
                           .slice(0, showAllScheduledMaintenance ? undefined : 5)
                           .map((maintenance: any) => {
-                            const maintenanceType = maintenance.notes?.split(':')[0] || t('details.maintenance.generalMaintenanceFallback');
+                            const maintenanceType = formatMaintenanceType(maintenance.notes?.split(':')[0]) || t('details.maintenance.generalMaintenanceFallback');
                             const maintenanceDetails = maintenance.notes?.split('\n')?.[1] || '';
                             
                             return (
@@ -3136,7 +3136,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                       <p className="text-sm mt-2 text-gray-700">{maintenanceDetails}</p>
                                     )}
                                     {maintenance.notes && !maintenanceDetails && (
-                                      <p className="text-sm mt-2 text-gray-700">{maintenance.notes}</p>
+                                      <p className="text-sm mt-2 text-gray-700">{formatMaintenanceNotes(maintenance.notes)}</p>
                                     )}
                                   </div>
                                 </div>
@@ -3187,7 +3187,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           .sort((a: any, b: any) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
                           .slice(0, showAllRepairs ? undefined : 5)
                           .map((maintenance: any) => {
-                            const maintenanceType = maintenance.notes?.split(':')[0] || t('details.maintenance.repairFallback');
+                            const maintenanceType = formatMaintenanceType(maintenance.notes?.split(':')[0]) || t('details.maintenance.repairFallback');
                             const maintenanceDetails = maintenance.notes?.split('\n')?.[1] || '';
                             
                             return (
@@ -3213,7 +3213,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                       <p className="text-sm mt-2 text-gray-700">{maintenanceDetails}</p>
                                     )}
                                     {maintenance.notes && !maintenanceDetails && (
-                                      <p className="text-sm mt-2 text-gray-700">{maintenance.notes}</p>
+                                      <p className="text-sm mt-2 text-gray-700">{formatMaintenanceNotes(maintenance.notes)}</p>
                                     )}
                                   </div>
                                 </div>

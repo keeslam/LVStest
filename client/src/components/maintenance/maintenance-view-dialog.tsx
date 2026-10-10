@@ -40,7 +40,7 @@ import { parseISO } from "date-fns";
 // BUG-223: Dutch dates on a Dutch screen — formatNl is date-fns' format
 // with the nl locale applied, so every call below writes "11 sep 2026".
 import { formatNl as format } from "@/lib/format-date-nl";
-import { formatVehicleType } from "@/lib/format-utils";
+import { formatVehicleType, formatMaintenanceType as formatMaintenanceTypeShared } from "@/lib/format-utils";
 import { useState } from "react";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
@@ -307,13 +307,8 @@ export function MaintenanceViewDialog({
   const parsed = reservation ? parseMaintenanceNotes(reservation.notes || '') : null;
 
   // Format maintenance type for display
-  const formatMaintenanceType = (type: string) => {
-    const fallback = type
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-    return t(`editDialog.types.${type}`, { defaultValue: fallback });
-  };
+  // A-7-4: the shared helper also knows the legacy imported title "Vehicle maintenance block".
+  const formatMaintenanceType = (type: string) => formatMaintenanceTypeShared(type);
 
   // Get status badge
   const getStatusBadge = (status: string) => {

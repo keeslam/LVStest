@@ -9,7 +9,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Vehicle, Reservation } from "@shared/schema";
-import { formatLicensePlate } from "@/lib/format-utils";
+import { formatLicensePlate, formatMaintenanceType } from "@/lib/format-utils";
 import { addDays, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, startOfWeek, endOfWeek } from "date-fns";
 // BUG-223: Dutch dates on a Dutch screen — formatNl is date-fns' format
 // with the nl locale applied, so every call below writes "11 sep 2026".
@@ -374,14 +374,14 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
                       <div className="space-y-2">
                         {getMaintenanceForDay(selectedDate).map(m => {
                           // Parse maintenance type from notes field (format: "maintenanceType: description\nnotes")
-                          const maintenanceType = m.notes?.split(':')[0] || 'maintenance';
+                          const maintenanceType = formatMaintenanceType(m.notes?.split(':')[0]) || 'maintenance';
                           
                           return (
                             <div key={m.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded text-sm">
                               <Wrench className="h-4 w-4 text-gray-500" />
                               <div className="flex-1">
                                 <p className="font-medium">{formatLicensePlate(m.vehicle?.licensePlate || 'N/A')}</p>
-                                <p className="text-xs text-gray-500 capitalize">{maintenanceType.replace(/_/g, ' ')}</p>
+                                <p className="text-xs text-gray-500">{maintenanceType}</p>
                               </div>
                               <Badge variant={m.maintenanceStatus === 'scheduled' ? 'outline' : 'default'}>
                                 {m.maintenanceStatus}
