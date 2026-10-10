@@ -50,8 +50,8 @@ Zie **Sleutellabel**.
 ## Beheerder
 
 De rol die alles mag. Alleen een beheerder heeft het kopje **Beheer** onder zijn eigen naam
-rechtsboven, en alleen hij kan iets uit de prullenbak terugzetten. Niet iedereen is beheerder, en
-dat hoort ook niet zo te zijn. *(Hoofdstuk 15)*
+rechtsboven. Niet iedereen is beheerder, en dat hoort ook niet zo te zijn. De prullenbak is sinds
+oktober 2026 niet meer aan de rol gebonden; die heeft zijn eigen vinkje. *(Hoofdstuk 15)*
 
 ## Bekeuring
 
@@ -120,8 +120,9 @@ het record waar het bij hoort. *(Hoofdstuk 8)*
 
 De status van een reservering die is afgeblazen. Je zet hem zo met de knop **Reservering
 annuleren**; dat venster vraagt per gekoppeld transport, vervanger, placeholder en
-chauffeurstoewijzing of het mee moet. Wat je niet aanvinkt, blijft staan. Een annulering kan
-**niet** ongedaan worden gemaakt; je maakt dan een nieuwe reservering. *(Hoofdstuk 5, 11)*
+chauffeurstoewijzing of het mee moet. Wat je niet aanvinkt, blijft staan. Een annulering kun je
+terugdraaien met **Annulering terugdraaien**, als de auto in die periode nog vrij is; anders maak
+je een nieuwe reservering. *(Hoofdstuk 5, 11)*
 
 ## Geboekt
 
@@ -143,8 +144,8 @@ Een verhuring waarvan de inleverdatum nog niet bekend is. Je zet dat aan in het 
 
 De handeling waarmee je een auto terugneemt: kilometerstand, brandstof, eventueel een schadecheck,
 en afronden met **Inleveren voltooien & schadecheck genereren**. Daarmee is de huur **direct**
-afgesloten en de auto weer vrij. Ging het mis, dan draai je de inname terug met **Terugzetten**
-in de lijst achter **Voltooid bekijken (…)**. *(Hoofdstuk 1, 5, 16)*
+afgesloten en de auto weer vrij. Ging het mis, dan draai je de inname terug met **Overdracht
+terugdraaien** in de lijst achter **Voltooid bekijken (…)**. *(Hoofdstuk 1, 5, 16)*
 
 ## Kilometerstand
 
@@ -197,11 +198,19 @@ fysieke auto, ook als de huur naar een andere auto verhuist. *(Hoofdstuk 7)*
 
 De handeling waarmee je een auto aan een klant meegeeft: contractnummer, kilometerstand, brandstof,
 eventueel een schadecheck, en afronden met **Ophalen voltooien & contract genereren**. Een
-ophaling kun je wél terugdraaien, met **Terugzetten naar geboekt**. *(Hoofdstuk 1, 16)*
+ophaling kun je wél terugdraaien, met **Overdracht terugdraaien**. *(Hoofdstuk 1, 5, 16)*
 
 ## Opgehaald
 
 De status van een verhuring waarvan de auto is meegegeven en nog niet terug is. *(Hoofdstuk 5)*
+
+## Overdracht terugdraaien
+
+Het ene venster waarmee je een ophaling, een inname of een annulering ongedaan maakt. Het laat
+eerst zien wat er gewist wordt, wat er met de kilometerstand van de auto gebeurt en welke documenten
+**Verouderd** worden, en doet pas iets nadat je bevestigt. Bij een annulering heet de knop
+**Annulering terugdraaien**. Je hebt er het vinkje **Overdracht terugdraaien** voor nodig. *(Hoofdstuk
+5, 15)*
 
 ## Placeholder
 
@@ -222,10 +231,12 @@ bedrag staan dan drie puntjes: **•••**. *(Hoofdstuk 15)*
 
 ## Prullenbak
 
-De plek waar alles heen gaat wat je verwijdert: voertuigen, klanten, reserveringen, transporten en
-bekeuringen. Niets is dus echt weg. Je komt erbij via **Voertuigen → Verwijderde voertuigen**, en
-bij de bekeuringen via de knop **Prullenbak**. Alleen een beheerder kan iets terugzetten, en de
-prullenbak kan niet geleegd worden. *(Hoofdstuk 10, 11)*
+De plek waar alles heen gaat wat je verwijdert. Er zijn er zes, één per scherm: voertuigen, klanten,
+reserveringen, onderhoud, transporten en bekeuringen, elk met een eigen knop op dat scherm (**Verwijderde
+voertuigen**, **Verwijderde klanten**, **Verwijderde reserveringen**, **Verwijderd onderhoud**,
+**Verwijderde transporten** en **Prullenbak** bij de bekeuringen). Wat erin staat, kun je terugzetten of
+definitief verwijderen, per regel, per selectie of alles van die soort. Je hebt het vinkje
+**Prullenbak beheren** nodig. *(Hoofdstuk 10, 11, 15)*
 
 ## Rechten
 
@@ -280,8 +291,8 @@ Elke beweging van een auto die jij regelt: een **Levering**, een **Voertuigwisse
 ## Verouderd
 
 Het oranje label bij een document dat is gemaakt vóór een wijziging aan de reservering en daardoor
-mogelijk niet meer klopt. Het oude document blijft bewaard; met **Opnieuw genereren** maak je een
-nieuwe versie. *(Hoofdstuk 8, 11)*
+mogelijk niet meer klopt, of dat hoort bij een overdracht die is teruggedraaid. Het oude document
+blijft bewaard; met **Opnieuw genereren** maak je een nieuwe versie. *(Hoofdstuk 8, 11)*
 
 ## Vervanger
 

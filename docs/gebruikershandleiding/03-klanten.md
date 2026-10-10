@@ -290,9 +290,12 @@ huur af of annuleer hem (5.9), en probeer het daarna opnieuw. Dat is met opzet: 
 weghalen onder een lopende huur zou het contract en de factuur losmaken van de persoon die de
 auto heeft.
 
-**Terugzetten kan.** Een verwijderde klant komt in de prullenbak terecht. Een beheerder zet hem
-terug via **Voertuigen** → **Verwijderde voertuigen**; die knop toont alle verwijderde records,
-ook klanten, reserveringen en transporten (zie 4.12).
+**Terugzetten kan.** Een verwijderde klant komt in de prullenbak van dit scherm: de knop
+**Verwijderde klanten** naast **Klant toevoegen**. Daar zet je hem terug met **Terugzetten**, of
+haal je hem — als hij er echt nooit had moeten staan — voorgoed weg met **Definitief verwijderen**.
+Dat mag iedereen met het vinkje **Prullenbak beheren** (hoofdstuk 15, paragraaf 15.16); zonder dat
+vinkje staat de knop er grijs. Let op: de tekst in het venster zegt nog *Een beheerder*, maar het
+vinkje bepaalt wie het mag. Alles over de prullenbak staat in hoofdstuk 10, paragraaf 10.6.
 
 **Een dubbele klant opruimen doe je zo:**
 
@@ -322,10 +325,10 @@ daarvan:
 > *Dit debiteurnummer hoort bij klant <naam> in de prullenbak. Zet die klant terug of verwijder
 > hem definitief uit de prullenbak.*
 
-Vandaag kun je zo'n klant alleen **terugzetten** — een beheerder doet dat via **Voertuigen** →
-**Verwijderde voertuigen** (3.8). Definitief verwijderen uit de prullenbak kan nog niet; dat komt
-met een later deelproject. Wil je het nummer echt vrijmaken zonder de klant terug te zetten,
-overleg dan met de beheerder.
+Je hebt twee mogelijkheden, allebei in **Verwijderde klanten** op het scherm **Klanten** (3.8): de
+klant **terugzetten**, of hem **definitief verwijderen**. Verwijder je hem definitief, dan komt het
+debiteurnummer meteen weer vrij en kun je het aan een andere klant geven. Beide kan iedereen met het
+vinkje **Prullenbak beheren**; heb je dat niet, overleg dan met iemand die het wel heeft.
 
 **Het veld mag gewoon leeg blijven.** Een debiteurnummer is niet verplicht. Alleen als je er wel
 een invult, moet het uniek zijn.
@@ -345,4 +348,5 @@ een invult, moet het uniek zijn.
 | Zien wat een klant online mag | **Bekijken** → **Portaal** → **Instellingen voor deze klant** |
 | Een klant verwijderen | **Verwijderen** in de lijst (lukt niet bij een lopende huur) |
 | Debiteurnummer al bezet | Veldfout onder **Debiteurnummer** (ook tegen de prullenbak), zie 3.9 |
-| Een verwijderde klant terughalen | Beheerder: **Voertuigen** → **Verwijderde voertuigen** |
+| Een verwijderde klant terughalen | **Klanten** → **Verwijderde klanten** → **Terugzetten** (vraagt het vinkje **Prullenbak beheren**) |
+| Een debiteurnummer vrijmaken van een verwijderde klant | **Klanten** → **Verwijderde klanten** → **Definitief verwijderen** |

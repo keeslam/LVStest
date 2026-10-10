@@ -164,7 +164,7 @@ doorzetten.
 > er is gebeurd — precies wat je nodig hebt als er later over nagerekend wordt.
 
 **Controleer voor je afrondt het kenteken en de klant.** Ging het mis, dan draai je de inname
-terug met **Terugzetten** achter **Voltooid bekijken (…)** (hoofdstuk 11, paragraaf 11.13) —
+terug met **Overdracht terugdraaien** achter **Voltooid bekijken (…)** (hoofdstuk 11, paragraaf 11.13) —
 maar het scheelt een hoop uitzoekwerk om het in één keer goed te doen.
 
 ### Een klant belt

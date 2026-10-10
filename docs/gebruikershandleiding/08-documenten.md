@@ -188,7 +188,7 @@ versie van hetzelfde soort document bij dezelfde reservering krijgt het volgende
 
 ### Wanneer iets "verouderd" wordt
 
-Een document krijgt de markering **Verouderd** in twee gevallen:
+Een document krijgt de markering **Verouderd** in drie gevallen:
 
 1. **De reservering is gewijzigd nadat het document gemaakt was.** Dat geldt voor de dingen die
    op het contract staan: het voertuig, de klant, de chauffeur, de datums, de prijs, het
@@ -197,6 +197,11 @@ Een document krijgt de markering **Verouderd** in twee gevallen:
    *"the reservation changed after this document was generated"*.
 2. **Er is een nieuwere versie gemaakt.** De vorige versie krijgt dan de reden
    *"superseded by a newer version"*.
+3. **Een overdracht is teruggedraaid** (hoofdstuk 5, paragraaf 5.14). Draai je een ophaling terug,
+   dan krijgt het niet-ondertekende contract van die reservering de markering; draai je een inname
+   terug, dan krijgt de schadecheck van de inname hem. De reden die erbij staat is *"handover
+   reverted"*. Het document wordt niet verwijderd, en een annulering terugdraaien laat de
+   documenten ongemoeid.
 
 Je herkent het aan een oranje label bij het document:
 

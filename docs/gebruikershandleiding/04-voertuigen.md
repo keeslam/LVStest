@@ -429,29 +429,31 @@ blijft grijs tot je die huren hebt afgerond of geannuleerd.
 
 ### De prullenbak
 
-De knop **Verwijderde voertuigen** rechtsboven op **Voertuigbeheer** is de prullenbak. **Alleen
-een beheerder ziet die knop.**
+De knop **Verwijderde voertuigen** rechtsboven op **Voertuigbeheer** is de prullenbak van dit
+scherm. Hij is er voor iedereen met het vinkje **Prullenbak beheren** (hoofdstuk 15, paragraaf
+15.16); zonder dat vinkje staat hij er wel, maar grijs, met uitleg. De teksten bij het verwijderen
+zeggen nog *Een beheerder*, maar het vinkje bepaalt wie terugzet.
 
-De naam is misleidend: het venster toont **alle** verwijderde records. Per regel zie je een label
-**Voertuig**, **Klant**, **Reservering**, **Transport** of **Boete**, de omschrijving van het
-record, de regel *Verwijderd <datum> door <naam>* en *Bevat: <wat er aan hing>* (of *geen
-gekoppelde records*).
+Sinds oktober 2026 staan hier **alleen voertuigen** (label **Voertuig**). Verwijderde klanten,
+reserveringen, transporten, onderhoud en bekeuringen staan in de prullenbak van hun eigen scherm; zie
+hoofdstuk 10, paragraaf 10.6. Per regel zie je de omschrijving, de regel *Verwijderd <datum> door
+<naam>* en *Bevat: <wat er aan hing>* (of *geen gekoppelde gegevens*).
 
-1. Zoek de regel, eventueel met het zoekveld *Zoeken op kenteken, omschrijving of naam…*
+1. Zoek de regel, eventueel met het zoekveld *Zoeken op omschrijving of naam…*
 2. Klik op **Terugzetten**.
 
-Je krijgt **Teruggezet** met een bevestiging erbij. Het record staat weer op zijn plek, met alles
-wat eraan hing. Een record dat al teruggezet is, krijgt het groene label **Teruggezet** en de
-knop wordt grijs.
+Je krijgt **Teruggezet** met een bevestiging erbij, bijvoorbeeld *12-AB-34 Kia Picanto is
+teruggezet.* Het voertuig staat weer op zijn plek, met alles wat eraan hing. Een regel die al is
+teruggezet, krijgt het groene label **Teruggezet** en de knop wordt grijs.
 
 Twee dingen om te weten:
 
-- Een verwijderde **reservering** en een verwijderd **transport** komen hier ook in te staan, en
-  zijn dus terug te halen — ook al zegt het verwijdervenster van een reservering iets anders.
-- Zit er inmiddels een andere auto op hetzelfde kenteken, dan lukt terugzetten niet: *A vehicle
-  with the same license plate already exists. Delete or rename it first.*
-
-> **Beperking:** de prullenbak kan niet geleegd worden en toont de honderd meest recente regels.
+- Zit er inmiddels een andere auto op hetzelfde kenteken, dan lukt terugzetten niet: *Er bestaat al
+  een voertuig met hetzelfde kenteken. Verwijder of hernoem dat eerst.*
+- Wil je het voertuig voorgoed kwijt, dan kan dat ook: **Definitief verwijderen** achter de regel, een
+  selectie, of **Prullenbak leegmaken**, altijd na een bevestiging. Het voertuig verdwijnt dan met
+  zijn reserveringen, documenten, kosten en de bijbehorende bestanden, en dat is niet terug te
+  draaien. Wat er precies weggaat, staat in hoofdstuk 10, paragraaf 10.6.
 
 ---
 
@@ -470,4 +472,4 @@ Twee dingen om te weten:
 | Alle labels afdrukken | **Barcodeboek** |
 | Een auto uit de verhuur halen | **Bewerken** → **Beschikbaarheidsstatus** → **Niet voor verhuur** |
 | Een auto verwijderen | Prullenbakje in de lijst; kenteken overtypen |
-| Iets terugzetten | Beheerder: **Verwijderde voertuigen** → **Terugzetten** |
+| Een verwijderd voertuig terugzetten | **Verwijderde voertuigen** → **Terugzetten** (vraagt het vinkje **Prullenbak beheren**) |

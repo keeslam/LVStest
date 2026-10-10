@@ -47,12 +47,12 @@ woord ook hier — dan weet je zeker dat je het goede knopje hebt.
 | 2 | [Navigatie](02-navigatie.md) | Het menu, het dashboard, zoeken, snelle acties, sneltoetsen |
 | 3 | [Klanten](03-klanten.md) | Klanten opzoeken, aanmaken en bijwerken, chauffeurs en portaalaccounts |
 | 4 | [Voertuigen](04-voertuigen.md) | Het wagenpark, voertuiggegevens, statussen, APK, sleutellabels |
-| 5 | [Reserveringen](05-reserveringen.md) | Boeken, ophalen, innemen, wijzigen, annuleren en achterstallige verhuringen nalopen |
+| 5 | [Reserveringen](05-reserveringen.md) | Boeken, ophalen, innemen, terugdraaien, wijzigen, annuleren en achterstallige verhuringen nalopen |
 | 6 | [Transport](06-transport.md) | Leveringen, wissels, sleepacties, terughalen en het transportrapport |
-| 7 | [Onderhoud](07-onderhoud.md) | Onderhoud plannen, de werkplaatsstatus en vervangende voertuigen |
+| 7 | [Onderhoud](07-onderhoud.md) | Onderhoud plannen en afronden, de werkplaatsstatus en vervangende voertuigen |
 | 8 | [Documenten en afdrukken](08-documenten.md) | Contracten, schadechecks, sjablonen en verouderde documenten |
 | 9 | [E-mail versturen vanuit de app](09-email.md) | Welke mail er uitgaat, naar wie, en wat je doet als het misgaat |
-| 10 | [Beheer](10-beheer.md) | Gebruikers en rechten, instellingen, back-ups, geschiedenis en de prullenbak |
+| 10 | [Beheer](10-beheer.md) | Gebruikers en rechten, instellingen, back-ups, geschiedenis en de prullenbakken |
 | 11 | [Veelgemaakte fouten en hoe je ze herstelt](11-veelgemaakte-fouten.md) | Wat er misgaat, hoe je het voorkomt en hoe je het herstelt |
 | 12 | [Problemen oplossen](12-problemen-oplossen.md) | De meest voorkomende problemen, de foutmeldingen en de bekende beperkingen |
 | 13 | [Snel naslagwerk](13-snel-naslagwerk.md) | Elke veelgebruikte taak als één regel klikpad |

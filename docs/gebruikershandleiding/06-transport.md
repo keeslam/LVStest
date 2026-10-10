@@ -276,9 +276,12 @@ transport bij een reservering, dan staat er **Levering vanuit reservering #…**
 verwijdert dit transportrecord permanent. Deze actie kan niet ongedaan worden gemaakt.*
 
 **Terugzetten kan wel.** Net als bij reserveringen klopt die tekst niet helemaal: een verwijderd
-transport komt in de prullenbak. Een beheerder haalt het terug via **Voertuigen** →
-**Verwijderde voertuigen**; de regel staat daar met het label **Transport**, bijvoorbeeld
-*Transport #47 — P36T64813O3 2027-04-10*, met de knop **Terugzetten** (zie 4.12).
+transport komt in de prullenbak. Die staat op dit scherm, rechtsboven: de knop **Verwijderde
+transporten**. De regel staat daar met het label **Transport**, bijvoorbeeld *Transport #47 —
+P36T64813O3 2027-04-10*, met de knop **Terugzetten**. Dat kan iedereen met het vinkje **Prullenbak
+beheren** (hoofdstuk 15, paragraaf 15.16); wie het mist, ziet de knop grijs. Bij het terugzetten
+wordt het bijbehorende vervangend voertuig heropend als het nog vrij is. Een transport voorgoed
+weghalen kan op dezelfde plek met **Definitief verwijderen** (hoofdstuk 10, paragraaf 10.6).
 
 ---
 
@@ -294,4 +297,4 @@ transport komt in de prullenbak. Een beheerder haalt het terug via **Voertuigen*
 | Het transport afronden | **Scannen** → **Transport afronden**, of **Markeren als voltooid** |
 | Het rapport maken | **Afdrukken / rapport genereren** achter de regel |
 | De dagroute plannen | **Route-optimalisatie** |
-| Een transport terughalen | Beheerder: **Voertuigen** → **Verwijderde voertuigen** |
+| Een transport terughalen | **Transporten** → **Verwijderde transporten** → **Terugzetten** (vraagt het vinkje **Prullenbak beheren**) |

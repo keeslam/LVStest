@@ -18,6 +18,7 @@ Rechtsboven staan:
 |---|---|
 | **Lijstweergave** | Hetzelfde als lijst, zie 7.8 |
 | **Voltooide bekijken (…)** | De afgeronde onderhoudsbeurten, zie 7.8 |
+| **Verwijderd onderhoud** | De prullenbak van dit scherm, zie 7.8 |
 | **Onderhoud plannen** | Een nieuw onderhoudsblok, zie 7.2 |
 
 Boven de kalender: **Kleuren** (de legenda), **Vandaag**, de maandnavigatie en drie filters:
@@ -267,30 +268,44 @@ vervangende reservering is beëindigd.* Je hoeft de auto daarna niet meer zelf v
 
 Onderhoud dat verderop in de kalender staat, blijft gewoon staan.
 
-> **De werkplaatsstatus verdwijnt nooit vanzelf.** Niet bij het innemen van een huur, niet bij het
-> afronden van een transport, en ook niet als je het onderhoudsblok op **Voltooien** zet. Dat is
-> met opzet: een auto die kapot naar binnen ging, mag er niet stilletjes weer uitkomen. Je moet
-> hem dus met één van deze twee knoppen zelf vrijgeven.
+> **De werkplaatsstatus verdwijnt niet vanzelf bij een huur of een transport.** Niet bij het innemen
+> van een huur en niet bij het afronden van een transport. Dat is met opzet: een auto die kapot naar
+> binnen ging, mag er niet stilletjes weer uitkomen. Je geeft hem vrij met één van deze twee knoppen
+> — of door het onderhoud zelf af te ronden met **Voltooien** (7.6): dat is een bewuste handeling van
+> de werkplaats en haalt de status er wél af.
 
 ---
 
 ## 7.6 Onderhoud afronden
 
-Als de werkplaats klaar is, rond je het blok af.
+Als de werkplaats klaar is, rond je het blok af. Sinds oktober 2026 is dat **één handeling**: de nieuwe
+APK-datum, het APK-formulier en de kilometerstand gaan in dezelfde stap mee. Vroeger waren het drie
+losse stappen met drie verschillende vinkjes, en bleef er bij een fout halverwege een half resultaat
+achter.
+
+**Wie het mag.** **Onderhoud beheren** of **Reserveringen beheren**, meer niet. Je hebt dus geen
+**Voertuigen beheren** en geen **Documenten bewerken en genereren** nodig om de APK-datum, de
+kilometerstand en het formulier mee te geven (hoofdstuk 15, paragraaf 15.11). Zonder een van de twee
+vinkjes staat **Voltooien** er grijs. Eén grens blijft: je opent het afrondvenster vanuit de
+onderhoudskalender, en die toont de blokken pas als je ook voertuigen en reserveringen mag bekijken.
 
 1. Ga naar **Onderhoud** en klik op de dag waarop het blok staat.
 2. Zoek in het venster **Onderhoudsevenementen - <datum>** de regel van jouw auto.
 3. Klik op **Voltooien**. Het venster **Onderhoud voltooien** opent — *Bekijk en werk de
    voertuiggegevens bij na het voltooien van het onderhoud.*
 4. Bovenin staat **Voertuiginformatie** met het **Kenteken**, het **Voertuig**, het
-   **Onderhoudstype** en de **Laatst bekende kilometerstand**.
+   **Onderhoudstype**, de **Laatst bekende kilometerstand** en de **Huidige APK**.
 5. Vul onder **Voltooiingsdetails** de **Voltooiingsdatum** in — *Wanneer is het onderhoud
-   voltooid?*
-6. Is de auto gekeurd, vul dan de nieuwe **APK-datum** in — *Vervaldatum APK (indien bijgewerkt)*
-   — en voeg met **APK-keuringsformulier (optioneel)** het formulier toe. Zo hoef je de APK-datum
-   niet apart op de voertuigkaart bij te werken.
+   voltooid?* Die staat vooraf op de begindatum van het blok; zet hem op de dag dat het werk
+   werkelijk klaar was.
+6. Is de auto gekeurd, vul dan de nieuwe **APK-datum** in — *Vervaldatum APK (indien bijgewerkt)* —
+   en voeg met **APK-keuringsformulier (optioneel)** het formulier toe (pdf, jpg of png). Let op: het
+   veld staat vooraf ingevuld met de huidige APK-datum van de auto, of met de datum die de app zelf
+   uitrekent. **Wat er staat, wordt bij het voltooien opgeslagen**; maak het veld leeg als de auto
+   niet gekeurd is.
 7. Vul onder **Servicedetails** de **Servicecategorie** in (**Gepland onderhoud** of
-   **Reparatie**) en de **Huidige kilometerstand (km)**.
+   **Reparatie**) en de **Huidige kilometerstand (km)**. Ook die staat vooraf ingevuld, met de stand
+   die de app van de auto kent.
 8. Beschrijf in **Onderhoudsdetails** wat er gedaan is — *Welke werkzaamheden zijn aan het
    voertuig uitgevoerd?* Bijvoorbeeld *olieverversing, luchtfilter, bougies*.
 9. Klik op **Voltooien**.
@@ -305,21 +320,62 @@ de orde is en ze zijn het enige bewijs van wat er aan de auto gedaan is.
 In het venster staat het **Onderhoudstype** in het Nederlands, bijvoorbeeld *Pech* — dezelfde
 waarde die je bij het plannen koos.
 
-**Vergeet de auto niet vrij te geven.** Het afronden van het blok zet de werkplaatsstatus van de
-auto niet om. Gebruik daarna **Terug van onderhoud** of **Terug uit onderhoud** (7.5), anders
-blijft het ophalen geweigerd worden. Zie het rijtje in 7.7.
+### Wat er in die ene handeling gebeurt
+
+Alles gebeurt in één keer, of helemaal niet:
+
+- **Het blok sluit.** De **Voltooiingsdatum** wordt de einddatum van het blok; de begindatum blijft
+  staan, want het werk is begonnen toen het begon. Een voltooiingsdatum vóór de begindatum wordt
+  geweigerd.
+- **De voertuigkaart wordt bijgewerkt:** de **APK-datum** en de **kilometerstand**, voor zover je ze
+  invulde. Is de categorie **Gepland onderhoud**, dan wordt ook de **laatste servicedatum** de
+  voltooiingsdatum en, als je een kilometerstand invulde, de laatste servicestand die kilometerstand.
+- **Het APK-formulier wordt een document**, bij de auto én bij het blok, met documenttype *APK
+  Inspection* en een notitie als *APK inspection completed on &lt;datum&gt;; APK valid until &lt;datum&gt;*.
+- **De werkplaatsstatus gaat eraf** en de beschikbaarheid van de auto wordt opnieuw berekend (zie de
+  verbetering hieronder).
+- **Een openstaand vervangend voertuig van deze auto wordt in dezelfde stap afgesloten.**
+
+**Alles of niets.** Mislukt er iets, dan blijft alles zoals het was: geen half opgeslagen formulier,
+geen gewijzigde kilometerstand, en het geüploade bestand wordt weer weggehaald. Je krijgt *Onderhoud
+voltooien mislukt. Probeer het opnieuw.* en het venster blijft open.
+
+**Een te lage kilometerstand wordt geweigerd.** Vul je een stand in die lager is dan de stand die de
+app van de auto kent, dan staat er: *De kilometerstand (… km) is lager dan de huidige stand van het
+voertuig (… km). Controleer de stand; er is niets opgeslagen.* Er wordt dan niets gewijzigd en het
+blok blijft open. Dit venster kent geen wachtwoordstap zoals het ophalen en innemen (hoofdstuk 15,
+paragraaf 15.6): lees de teller opnieuw af en corrigeer de stand. Een stand die gelijk is aan de
+huidige, mag wel.
+
+**De verbetering: het afronden geeft de auto vrij.** In eerdere versies van deze handleiding stond
+dat het afronden van een blok de werkplaatsstatus niet omzet en dat je daarna altijd nog **Terug van
+onderhoud** of **Terug uit onderhoud** moest gebruiken. Dat klopte niet: **Voltooien** haalt de
+werkplaatsstatus er wél af en maakt de auto weer verhuurbaar. Twee uitzonderingen: loopt er vandaag
+nog een ánder openstaand onderhoudsblok op dezelfde auto, dan blijft hij op **Reparatie nodig**, en
+**Niet voor verhuur** laat de app staan (7.7). De twee knoppen uit 7.5 blijven nodig voor een auto
+die in de werkplaats staat zonder dat je een blok afrondt.
+
+**Het bewerkvenster.** Met **Bewerken** in het dagvenster kun je de **Status** van een blok ook op
+**Uit (onderhoud voltooid)** zetten. Sinds oktober 2026 geeft dat de auto óók vrij (voorheen bleef
+hij op **Reparatie nodig** staan), en het venster toont nu de opgeslagen status van het blok: een
+blok dat nog niet is begonnen staat op **Gepland (voertuig nog niet gearriveerd)** en niet meer
+ten onrechte op **Binnen**. Kies voor een echte afronding toch **Voltooien**: alleen daar gaan de
+APK-datum, het formulier en de kilometerstand mee, en wordt een vervanger afgesloten.
 
 ---
 
 ## 7.7 Terug in dienst — de auto weer verhuurbaar maken
 
-Het afronden van een onderhoudsblok (7.6) geeft de auto **niet** vrij. Dat doet één van de twee
-knoppen uit 7.5. Loop daarom na elk onderhoud dit rijtje langs — het kost een halve minuut en
-voorkomt de fout die het vaakst gemaakt wordt: een auto die op het terrein staat maar in geen
-enkele lijst met vrije auto's voorkomt.
+Het afronden van een onderhoudsblok (7.6) geeft de auto zelf vrij: de werkplaatsstatus gaat eraf en
+hij is weer verhuurbaar, tenzij er vandaag nog een ander openstaand blok loopt. Staat de auto op een
+andere manier in de werkplaats — bijvoorbeeld omdat iemand zijn werkplaatsstatus met de hand zette,
+zonder dat er een blok aan hangt — dan doet één van de twee knoppen uit 7.5 dat. Loop daarom na elk
+onderhoud dit rijtje langs — het kost een halve minuut en voorkomt de fout die het vaakst gemaakt
+wordt: een auto die op het terrein staat maar in geen enkele lijst met vrije auto's voorkomt.
 
-1. **Geef de auto vrij.** Scan hem en klik op **Terug uit onderhoud**, of gebruik bij een
-   vervanger **Terug van onderhoud** in de reservering. Je krijgt **Voertuig is terug uit
+1. **Controleer of de auto vrij is.** Na **Voltooien** (7.6) is dat al gebeurd. Is het niet zo,
+   scan hem dan en klik op **Terug uit onderhoud**, of gebruik bij een vervanger **Terug van
+   onderhoud** in de reservering. Je krijgt **Voertuig is terug uit
    onderhoud**, respectievelijk **Voertuig teruggekeerd van onderhoud**. Beide knoppen halen de
    werkplaatsstatus eraf, sluiten het onderhoudsblok dat op dat moment loopt, en zetten de
    **Beschikbaarheidsstatus** meteen terug op een verhuurbare waarde. Je hoeft die status dus
@@ -333,7 +389,7 @@ enkele lijst met vrije auto's voorkomt.
    blokkeert die vervanger voor iedereen. Neem hem in, of annuleer de reservering als de auto
    nooit is meegegaan.
 4. **Controleer de APK-datum.** Is de auto gekeurd, dan moet de nieuwe datum op de voertuigkaart
-   staan.
+   staan. Vulde je hem bij het afronden in (7.6), dan staat hij er al.
 
 Controleer stap 1 door de auto te scannen: pas als er **Beschikbaar** staat en er geen oranje
 blok **Onderhoud** meer is, kun je hem weer meegeven.
@@ -367,7 +423,19 @@ regel staan het type, het label **Gepland** of **Reparatie**, de auto, de regel 
 - **Terugdraaien** — het onderhoud is toch niet klaar. Je krijgt **Onderhoud teruggedraaid** —
   *Onderhoud is weer gemarkeerd als actief*, en het blok staat weer in de kalender.
 - **Verwijderen** — *Dit verwijdert dit onderhoudsrecord permanent. Deze actie kan niet ongedaan
-  worden gemaakt.* Doe dit alleen bij een regel die er nooit had moeten staan.
+  worden gemaakt.* Doe dit alleen bij een regel die er nooit had moeten staan. De tekst klopt niet
+  helemaal: het blok gaat naar de prullenbak van dit scherm (zie hieronder) en is daar terug te
+  zetten.
+
+**De prullenbak van Onderhoud.** Rechtsboven staat de knop **Verwijderd onderhoud**. Daarin staan de
+verwijderde onderhoudsplanningen, met het label **Onderhoud** (vroeger stonden ze tussen de
+reserveringen). Je kunt een regel **terugzetten** — dat lukt ook als er intussen een verhuring op die
+dagen staat, want een blok mag overlappen (7.3) — of **definitief verwijderen**, per regel, per
+selectie of met **Prullenbak leegmaken**. Een definitief verwijderd blok verdwijnt met zijn contracten
+en schadechecks; **documenten van de auto, zoals een APK-bewijs, blijven staan**. Een planning met
+fiscale beoordelingen wordt overgeslagen en blijft in de prullenbak staan. De knop is er voor iedereen
+met het vinkje **Prullenbak beheren**; zonder dat vinkje staat hij grijs (hoofdstuk 10, paragraaf
+10.6, en hoofdstuk 15, paragraaf 15.16).
 
 ---
 
@@ -435,8 +503,9 @@ vervangend voertuig aan wordt toegewezen.
 | De auto echt op slot zetten | Reservering → **Voertuig markeren voor onderhoud** |
 | Een vervanger aanwijzen | **Vervangend voertuig toewijzen**, of **Dashboard** → **Beheer vervangende voertuigen** → **Nog te bepalen** → **Voertuig toewijzen** |
 | Een TBD-vervanger invullen | **Onderhoud** → **Lijstweergave** → **Vervangers** → **Toewijzen** |
-| Het onderhoud afronden | Dag openen in de kalender → **Voltooien** |
+| Het onderhoud afronden (met APK-datum, formulier en kilometerstand in één keer) | Dag openen in de kalender → **Voltooien** (7.6) |
 | De vervangende huur afsluiten | Reservering → **Terug van onderhoud** |
 | De auto weer vrijgeven | **Scannen** → **Terug uit onderhoud** (zet ook de status terug, 7.7) |
 | Een afgerond onderhoud terugdraaien | **Voltooide bekijken (…)** → **Terugdraaien** |
+| Een verwijderd onderhoud terugzetten | **Verwijderd onderhoud** → **Terugzetten** (vraagt het vinkje **Prullenbak beheren**) |
 | Een portaalaanvraag afhandelen | **Klantenportaal** → tegel **Aanvragen** → klik op de aanvraag |

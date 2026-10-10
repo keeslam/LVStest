@@ -123,11 +123,27 @@ belt met "ik heb niks ontvangen".
 
 ### Het scherm Communicatie
 
-Onder **Communicatie** staat een tabblad **E-maillogboek**. Let op: **dit tabblad toont geen
-echte verzendingen.** Er staan drie vaste voorbeeldregels uit maart 2024 in, die er altijd staan
-en die niets met jouw werk te maken hebben. Hetzelfde geldt voor het tabblad **Analyse**.
-Gebruik dit tabblad dus niet om te controleren of een mail eruit is; gebruik de regel bij het
-document.
+Onder **Communicatie** staat een tabblad **E-maillogboek** — *Elke verstuurde en mislukte e-mail,
+de nieuwste bovenaan.* Sinds oktober 2026 toont het de **echte verzendgeschiedenis**. (Tot dan stonden
+er drie vaste voorbeeldregels uit maart 2024 in, die niets met jouw werk te maken hadden.)
+
+Per regel zie je het onderwerp, de datum en de tijd, de soort (**APK**, **Onderhoud**, **Aangepast**
+of **GPS-activatie**; een andere soort toont zijn ruwe naam), de ontvanger — of, bij een hele
+verzendronde, *N ontvangers · X verstuurd, Y mislukt* — en een label **verzonden**, **mislukt** of
+**deels mislukt**. Bij een mislukking staat eronder **Reden van mislukking:**, in de tekst zoals de
+log hem bewaart (meestal Engels). Is er nog niets verstuurd, dan staat er *Er zijn nog geen e-mails
+verstuurd*; lukt het laden niet, dan staat er een eigen foutregel.
+
+Het tabblad **Analyse** rekent zijn cijfers uit diezelfde regels: **Verstuurde e-mails**,
+**Mislukte e-mails**, **Verzendrondes** en **Rondes met mislukkingen**, en per soort (**APK-meldingen**,
+**Onderhoudsherinneringen**, **Aangepaste berichten**, **Overige e-mails**) hoeveel er verstuurd en
+mislukt is. Een zin onderaan zegt wat niet meetelt: mislukkingen vóór het versturen (zoals een klant
+zonder e-mailadres) staan alleen bij hun ronde, en oudere verzendingen zonder regel per ontvanger
+tellen niet mee.
+
+Beide tabbladen vragen het recht **E-mailsjablonen beheren**; zonder dat recht staat er *Geen toegang
+tot deze gegevens*. Voor de vraag "heeft deze klant zijn papieren gekregen?" blijft de regel bij het
+document hierboven de plek die je gebruikt.
 
 ### Het meldingencentrum
 

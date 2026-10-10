@@ -28,8 +28,10 @@ Een **Beheerder** is de uitzondering. Die mag alles, ongeacht de vinkjes. Er is 
 voor een beheerder apart aangevinkt moet staan; zie 15.5.
 
 **Wees er niet te makkelijk in.** Iedereen beheerder maken is verleidelijk, maar dan kan iedereen
-de prullenbak leegtrekken, gebruikers wijzigen en een back-up terugzetten. Geef mensen de vinkjes
-die bij hun werk horen, en houd het aantal beheerders klein.
+gebruikers wijzigen, de instellingen aanpassen en een back-up terugzetten. Geef mensen de vinkjes
+die bij hun werk horen, en houd het aantal beheerders klein. Voor de prullenbak, het terugdraaien
+van een overdracht en het annuleren van een opgehaalde huur hoef je niemand beheerder te maken:
+daar zijn sinds oktober 2026 eigen vinkjes voor (15.16).
 
 ---
 
@@ -52,12 +54,15 @@ beheerder in één oogopslag ziet wat voor account het is.
 
 ## 15.3 De beheerder
 
-Een beheerder herken je aan drie dingen:
+Een beheerder herken je aan twee dingen:
 
 1. In het menu links staan **alle twaalf** items.
 2. Rechtsboven, onder je eigen naam, staat het kopje **Beheer** met **Gebruikers**,
    **Back-upbeheer** en **App-instellingen**.
-3. Op het scherm **Voertuigen** staat de knop **Verwijderde voertuigen** — de prullenbak.
+
+De prullenbak hoort daar sinds oktober 2026 niet meer bij: die staat op elk scherm voor iedereen met
+het vinkje **Prullenbak beheren** (15.16), en is dus ook geen herkenningsteken meer voor een
+beheerder.
 
 **Wat alleen een beheerder kan:**
 
@@ -67,7 +72,6 @@ Een beheerder herken je aan drie dingen:
 | Het volledige activiteitenlog lezen | **App-instellingen → Activiteit** |
 | Back-ups bekijken, maken, downloaden en terugzetten | **Back-upbeheer** |
 | De app-instellingen wijzigen | **App-instellingen** |
-| Iets uit de prullenbak **terugzetten** | **Voertuigen → Verwijderde voertuigen** |
 | Een nieuw beheerdersaccount aanmaken | **Gebruikers** |
 | De uitgifte van een auto uit de werkplaats forceren, met opgaaf van reden | Het venster **Uitgifte geblokkeerd** bij het ophalen |
 
@@ -84,8 +88,9 @@ wat je met vernieuwen oplost. Zie 15.8.
 
 ## 15.4 De rechten, één voor één
 
-In het beheerscherm staan onder **Aanvullende rechten** zesentwintig vinkjes. Hieronder staat per
-vinkje wat het opent.
+In het beheerscherm staan onder **Aanvullende rechten** vijfendertig vinkjes. Negenentwintig daarvan
+bepalen het dagelijkse werk; die staan hieronder, per vinkje wat het opent. De zes vinkjes van de
+fiscale mobiliteitscheck staan onderaan in een eigen tabel.
 
 ### Voertuigen, klanten en verhuur
 
@@ -98,6 +103,8 @@ vinkje wat het opent.
 | **Reserveringen bekijken** | De kalender, de lijst en de details van een verhuring lezen | **Reserveringen**, **Transporten** |
 | **Reserveringen beheren** | Alles hierboven, plus boeken, wijzigen, annuleren, **ophalen** en **innemen** | **Reserveringen**, **Transporten** |
 | **Kilometerverlaging goedkeuren** | Een kilometerstand invoeren die lager is dan de vorige, met je eigen wachtwoord | — |
+| **Overdracht terugdraaien** | Een ophaling, een inname of een annulering ongedaan maken, na een voorvertoning en een bevestiging (hoofdstuk 5, paragraaf 5.14) | — |
+| **Opgehaalde huur annuleren of verwijderen** | Een huur annuleren of verwijderen die al is opgehaald, na een waarschuwing (hoofdstuk 5, paragraaf 5.15) | — |
 
 ### Werkplaats, kosten en rapporten
 
@@ -137,6 +144,22 @@ vinkje wat het opent.
 | **Gebruikers beheren** | Accounts en rechten wijzigen en het activiteitenlog lezen — **maar alleen als de rol Beheerder is** | — |
 | **Instellingen beheren** | De app-instellingen opslaan — idem | — |
 | **Back-ups beheren** | Back-ups maken en terugzetten — idem | — |
+| **Prullenbak beheren** | De prullenbakken van Voertuigen, Klanten, Reserveringen, Onderhoud, Transporten en Boetes openen, er iets uit terugzetten en er iets definitief uit verwijderen (hoofdstuk 10, paragraaf 10.6). Dit vinkje is **niet** aan de rol Beheerder gebonden | — (een knop op elk van die schermen) |
+
+### Fiscale mobiliteitscheck
+
+Deze zes vinkjes horen bij de fiscale check (de pseudo-eindheffing voor huurauto's, vanaf 2027). De
+check zelf staat beschreven in `docs/fiscaal/07-handleiding-kantoor.md`; hier alleen wat elk vinkje
+opent.
+
+| Vinkje | Wat het toestaat | Waar |
+|---|---|---|
+| **Fiscaal bekijken** | Het overzicht met de tegels per status, het tabblad **Fiscaal** bij een voertuig, de kaart **Fiscaal gebruik** bij een reservering en het fiscale maandrapport | **Klantenportaal** → **Fiscale check**, **Rapporten** → **Fiscaal** |
+| **Fiscale beoordelingen en gegevens beheren** | Een beoordeling bevestigen, een voertuiggegeven corrigeren en de beoordelingswachtrij afwerken | Het tabblad **Fiscaal**, de kaart **Fiscaal gebruik**, de **Wachtrij** |
+| **Fiscale configuratie voorbereiden** | Een nieuwe versie van de fiscale regels voorbereiden | **App-instellingen** → **Klantenportaal** → **Fiscale check** |
+| **Fiscale configuratie goedkeuren** | Een voorbereide versie goedkeuren | Idem |
+| **Fiscale configuratie publiceren** | Een goedgekeurde versie publiceren | Idem |
+| **Fiscale auditlog bekijken** | De auditlog van de fiscale check lezen | Idem, tabblad **Audit** |
 
 ---
 
@@ -211,7 +234,9 @@ af dat bij het ophalen is gemaakt.
 **Reserveringen**, **Documenten**, **Transporten**.
 
 **Wat hij niet mag:** een auto of klant wijzigen of aanmaken, kosten registreren, onderhoud
-plannen, rapporten openen, een document genereren of mailen, een portaalaanvraag afhandelen.
+plannen, rapporten openen, een document genereren of mailen, een portaalaanvraag afhandelen, een
+overdracht terugdraaien en een opgehaalde huur annuleren of verwijderen (daar zijn sinds oktober
+2026 eigen vinkjes voor, 15.16).
 
 **Hoort bij:** de werkstromen ophalen, innemen en achterstallige verhuringen nalopen (hoofdstuk
 16).
@@ -230,7 +255,8 @@ vastleggen.
 (**Meldingen beheren** of **E-mailsjablonen beheren**) en **Rapporten** (**Rapporten bekijken**).
 
 **Wat hij niet mag:** gebruikers beheren, de instellingen wijzigen, back-ups maken of terugzetten,
-en iets uit de prullenbak halen.
+en — tenzij je de vinkjes uit 15.16 erbij aanzet — iets uit de prullenbak halen, een overdracht
+terugdraaien of een opgehaalde huur annuleren.
 
 ### Kijker (meekijken, niets wijzigen)
 
@@ -255,10 +281,11 @@ afronden, reparatiekosten vastleggen.
 **Wat hij niet ziet:** **Dashboard** (daar is **Dashboard bekijken** voor nodig), **Klanten**,
 **Reserveringen** en **Transporten**.
 
-**Let op:** zonder **Reserveringen bekijken** ziet hij bij een onderhoudsblok niet welke verhuring
-eronder ligt, en staat **Transporten** niet in zijn menu. Wil je dat hij zelf kan zien of er een
-klant op die auto wacht en dat hij de transporten kan volgen, vink dan ook **Reserveringen
-bekijken** aan.
+**Let op:** zonder **Reserveringen bekijken** (of **beheren**) opent het onderhoudsscherm wel, maar
+toont het geen blokken: de kalender leest de reserveringen mee, ook voor de blokken zelf, en laat
+dan alleen de regel *Geen toegang tot deze gegevens (recht 'Reserveringen bekijken')* zien. Ook
+staat **Transporten** dan niet in zijn menu. Voor dit profiel hoort **Reserveringen bekijken** er
+dus gewoon bij; zie ook 15.11.
 
 ### Boekhouding
 
@@ -361,7 +388,8 @@ daar concreet wel en niet dekt, staat in 15.11.
 
 Wie alleen **Onderhoud beheren** heeft — en niet ook **Reserveringen beheren** — komt op een grens
 die niet voor de hand ligt. De werkplaatskalender opent gewoon, en een bestaand blok **afronden**
-werkt, maar **nieuw onderhoud inplannen niet**: dat loopt via dezelfde route als een gewone
+werkt (mits de kalender de blokken mag tonen; zie onderaan), maar **nieuw onderhoud inplannen
+niet**: dat loopt via dezelfde route als een gewone
 boeking, en die vraagt **Reserveringen beheren**.
 
 | Handeling op het onderhoudsscherm | Wat er nodig is | Werkt met alléén 'Onderhoud beheren'? |
@@ -369,19 +397,28 @@ boeking, en die vraagt **Reserveringen beheren**.
 | Nieuw onderhoud inplannen (kop-knop, dag-tegel "+", vanuit een leeg dag-venster) | Reserveringen beheren | Nee |
 | Een bestaand onderhoudsblok bewerken (datum, type, notities) | Reserveringen beheren | Nee |
 | Onderhoud **afronden**: het blok sluiten, de werkplaats-vlag wissen, de vervanger terugzetten | Onderhoud beheren **of** Reserveringen beheren | Ja |
-| Bij het afronden ook de APK-datum, kilometerstand of laatste-onderhoud-datum van het voertuig bijwerken (zelfde formulier, alleen als je die velden invult) | Voertuigen beheren | Nee |
-| Bij het afronden een APK-formulier uploaden (zelfde formulier, alleen als je een bestand kiest) | Documenten bewerken en genereren | Nee |
+| Bij het afronden ook de APK-datum, kilometerstand of laatste-onderhoud-datum van het voertuig bijwerken (zelfde formulier, dezelfde handeling) | Onderhoud beheren **of** Reserveringen beheren | Ja — sinds oktober 2026; vroeger had je hier ook Voertuigen beheren voor nodig |
+| Bij het afronden een APK-formulier uploaden (zelfde formulier, dezelfde handeling) | Onderhoud beheren **of** Reserveringen beheren | Ja — sinds oktober 2026; vroeger had je hier ook Documenten bewerken en genereren voor nodig |
 | Een onderhoudsblok verwijderen | Reserveringen beheren | Nee |
 | Een afgeronde onderhoudsregistratie terugzetten | Reserveringen beheren | Nee |
 | Bij het bekijken van een onderhoudsblok: een vervanger op "nog te bepalen" of "eigen vervoer" zetten | Reserveringen beheren | Nee |
 | Bij het bekijken: foto's, servicerapport of overige documenten uploaden | Documenten bewerken en genereren | Nee |
 | Bij het bekijken: kosten aanmaken via de factuurscanner | Kosten beheren | Nee |
+| De prullenbak van Onderhoud openen, iets terugzetten of definitief verwijderen | Prullenbak beheren | Nee |
 | Reservevoertuig toewijzen als een nieuw onderhoudsblok een bestaande verhuring raakt | Onderhoud beheren **of** Reserveringen beheren | Kan pas nadat het blok is aangemaakt — en dat lukt niet zonder Reserveringen beheren (zie regel 1) |
 
 **Kort gezegd:** met alléén **Onderhoud beheren** kun je een bestaand blok afronden, maar geen
 nieuw onderhoud inplannen, geen blok bewerken of verwijderen, en geen afgeronde registratie
 terugzetten — daar is ook **Reserveringen beheren** voor nodig. Wil je dat de werkplaats zelf
 onderhoud kan inplannen, geef dat account dan ook **Reserveringen beheren**.
+
+Het afronden zelf is sinds oktober 2026 **één handeling met één vinkje**: de APK-datum, het
+APK-formulier en de kilometerstand gaan in dezelfde stap mee, ook zonder **Voertuigen beheren** of
+**Documenten bewerken en genereren** (hoofdstuk 7, paragraaf 7.6). Eén grens blijft: je opent het
+afrondvenster vanuit de onderhoudskalender, en die toont de blokken pas als je ook voertuigen en
+reserveringen mag bekijken (**Voertuigen bekijken** of **beheren**, en **Reserveringen bekijken** of
+**beheren**). Het afronden vraagt dus één vinkje, maar om bij het blok te komen heb je er twee meer
+nodig.
 
 Eén uitzondering: vanaf het scanscherm (**Voertuigen → Scannen**) kan iemand met alléén
 **Onderhoud beheren** een bestaand onderhoudsblok van het gescande voertuig wél bewerken via de
@@ -439,10 +476,51 @@ bovendien een kwartier vast (hoofdstuk 12).
 - Documenten hebben **eigen** rechten. Zonder die vinkjes kun je wél ophalen, maar het contract
   niet openen.
 - **Kilometerverlaging goedkeuren** heeft zelfs een beheerder apart nodig.
-- De drie beheerschermen (**Gebruikers**, **Back-upbeheer**, **App-instellingen**) en de
-  **prullenbak** zitten vast aan de rol Beheerder, niet aan een vinkje.
+- De drie beheerschermen (**Gebruikers**, **Back-upbeheer**, **App-instellingen**) zitten vast aan
+  de rol Beheerder, niet aan een vinkje. De **prullenbak** niet meer: die heeft sinds oktober 2026
+  zijn eigen vinkje, **Prullenbak beheren**.
+- Een overdracht terugdraaien, een opgehaalde huur annuleren of verwijderen en de prullenbak
+  beheren: elk een eigen vinkje (15.16). **Reserveringen beheren** alleen is daarvoor niet genoeg.
 - Zie je een knop niet, dan is dat bijna altijd een recht — geen storing.
 - Zie je een knop wél maar **grijs**, met een tekstballon die een recht noemt: zelfde verhaal,
   alleen laat het scherm het nu al vooraf zien in plaats van pas na een klik (15.9).
 - **Onderhoud beheren** dekt niet alles op het onderhoudsscherm: nieuw onderhoud inplannen, een
   blok bewerken of verwijderen vraagt ook **Reserveringen beheren** (15.11).
+
+---
+
+## 15.16 Overdracht terugdraaien, opgehaalde huur annuleren en de prullenbak: drie eigen vinkjes (sinds oktober 2026)
+
+Drie handelingen hingen vroeger aan **Reserveringen beheren**, of — bij de prullenbak — aan de rol
+Beheerder. Sinds oktober 2026 heeft elk een eigen vinkje:
+
+| Vinkje | Wat het opent | Uitleg |
+|---|---|---|
+| **Overdracht terugdraaien** | Een ophaling, een inname of een annulering ongedaan maken | Hoofdstuk 5, paragraaf 5.14 |
+| **Opgehaalde huur annuleren of verwijderen** | Een huur annuleren of verwijderen die al is opgehaald | Hoofdstuk 5, paragraaf 5.15 |
+| **Prullenbak beheren** | De prullenbakken openen, iets terugzetten en definitief verwijderen | Hoofdstuk 10, paragraaf 10.6 |
+
+**Wie ze heeft.**
+
+- Een **beheerder** altijd; die gaat voor elk vinkje vanzelf door.
+- Elk account met de rol **Manager** heeft ze **één keer** automatisch gekregen, bij de eerste start na
+  de uitrol van deze versie. Dat is eenmalig. Haal je een vinkje bij een manager weg, dan blijft het
+  weg. En een manager die je ná de uitrol aanmaakt, krijgt ze **niet** vanzelf: vink ze zelf aan.
+- Voor **elk ander account** staan ze uit totdat je ze in **Gebruikers** aanvinkt. Ze verschijnen
+  vanzelf in het rijtje onder **Aanvullende rechten**, met de namen uit de tabel hierboven.
+
+**Wat dit verandert.** Wie alleen **Reserveringen beheren** heeft, kan niet meer terugdraaien en
+geen opgehaalde huur meer annuleren of verwijderen; daar is het eigen vinkje voor nodig. Een
+reservering die nog niet is opgehaald annuleren of verwijderen vraagt nog steeds alleen
+**Reserveringen beheren**. En de prullenbakken zijn niet meer voorbehouden aan de rol Beheerder: wie
+**Prullenbak beheren** heeft, ziet ze, zet er iets uit terug en mag ze ook leegmaken.
+
+**Wat je ziet zonder het vinkje.** De knop staat er, maar is grijs, met een tekstballon die het recht
+noemt (15.9). Kom je er via een omweg toch langs, dan antwoordt de app met *Not authorized. One of
+these permissions required: …*; de Engelse namen daarin zijn `revert_handover`,
+`cancel_picked_up_rental` en `manage_recycle_bin`.
+
+**Niet hetzelfde als Kilometerverlaging goedkeuren.** Gaat de kilometerstand van een auto omlaag
+doordat je een overdracht terugdraait, dan vraagt de app geen wachtwoord, maar een vinkje in het
+venster zelf (5.14). Het wachtwoordvenster uit 15.6 hoort bij het invoeren van een lagere stand bij
+het ophalen of innemen.

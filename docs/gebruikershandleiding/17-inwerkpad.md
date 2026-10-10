@@ -216,15 +216,16 @@ welke volgorde onderhoud, vervanger en transport aan de beurt zijn.
 
 **Doen:**
 
-1. Lees de tabel in hoofdstuk 11, paragraaf 11.18, en onthoud de drie regels waar **Nee** staat.
-   Dat zijn de handelingen waarbij je vóór het klikken kijkt: een inname, een annulering en een
-   verzonden e-mail.
+1. Lees de tabel in hoofdstuk 11, paragraaf 11.18, en onthoud de regel waar **Nee** staat: een
+   verzonden e-mail. Een inname en een annulering kun je sinds oktober 2026 wél terugdraaien (5.14),
+   maar ook daar kijk je liever vóór het klikken.
 2. Zoek in hoofdstuk 12, deel 2, drie meldingen op die je deze week zelf hebt gezien.
-3. Draai op je oefenreservering een ophaling terug met **Terugzetten naar geboekt**. Lees precies
-   wat de app zegt dat er gewist wordt.
+3. Draai op je oefenreservering een ophaling terug met **Overdracht terugdraaien** (daar is het
+   vinkje **Overdracht terugdraaien** voor nodig; vraag het anders aan je begeleider). Lees precies
+   wat de voorvertoning zegt dat er gewist wordt.
 4. Bekijk de **Geschiedenis** van die reservering: staat er nu wat je gedaan hebt?
-5. Bespreek met je begeleider wat je doet als je iets verwijderd hebt: wie kan het terugzetten, en
-   hoe vraag je dat?
+5. Bespreek met je begeleider wat je doet als je iets verwijderd hebt: wie heeft het vinkje
+   **Prullenbak beheren** en kan het dus terugzetten, en hoe vraag je dat?
 
 **Na deze stap kun je:** een foutmelding lezen zonder te schrikken, zelf beoordelen of je iets kunt
 herstellen of dat je er iemand bij moet halen, en de geschiedenis gebruiken als bewijs.
@@ -243,8 +244,9 @@ bestaat — ook als je er zelf niet bij kunt.
    kunt zien.
 3. Bespreek de twee documentvinkjes: wat kun je met **Documenten bekijken** en wat komt er bij met
    **Documenten bewerken en genereren**?
-4. Bespreek wat er alleen langs een beheerder kan: de prullenbak, de gebruikers, de back-up en de
-   instellingen. Spreek af bij wie je daarvoor aanklopt.
+4. Bespreek wat er alleen langs een beheerder kan — de gebruikers, de back-up en de instellingen —
+   en wat een eigen vinkje vraagt: de prullenbak, een overdracht terugdraaien en een opgehaalde huur
+   annuleren (15.16). Spreek af bij wie je daarvoor aanklopt.
 
 **Na deze stap kun je:** uitleggen waarom jij iets wel of niet ziet, en een rechtenvraag gericht
 stellen in plaats van te melden dat "het niet werkt".
@@ -297,8 +299,8 @@ terug naar de stap die erbij hoort.
 
 ## 17.14 Voor de begeleider
 
-- Laat de nieuwe medewerker de **eerste week niets verwijderen**. Verwijderen kan alleen een
-  beheerder terugzetten, en dat is een omweg die niemand nodig heeft.
+- Laat de nieuwe medewerker de **eerste week niets verwijderen**. Terugzetten kan alleen wie het
+  vinkje **Prullenbak beheren** heeft, en dat is een omweg die niemand nodig heeft.
 - Loop de oefenklanten en oefenreserveringen aan het eind van de inwerkperiode samen langs en ruim
   ze op.
 - Geef rechten **na** de stap waarin ze aan bod komen, niet vooraf. Iemand die op dag 1 al alles

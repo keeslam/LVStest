@@ -317,20 +317,25 @@ het ophalen gewoon door.
 
 **Hoe je het merkt.** De reservering staat op **Opgehaald** en het voertuig op verhuurd.
 
-**Hoe je het herstelt.** Dit kan de app wél terugdraaien.
+**Hoe je het herstelt.** Dit kan de app wél terugdraaien, met **Overdracht terugdraaien**
+(hoofdstuk 5, paragraaf 5.14).
 
-1. Open de reservering en kies **Terugzetten naar geboekt** — *"Dit maakt het ophalen ongedaan en
-   zet de reservering terug naar de status Geboekt."*
-2. De app vraagt twee keer om bevestiging en zegt precies wat er verdwijnt: *"Het contractnummer,
-   de kilometerstand bij ophalen en het brandstofniveau bij ophalen worden gewist. De
-   daadwerkelijke ophaaldatum wordt ook verwijderd. Dit kan niet ongedaan worden gemaakt."*
-3. Bevestig met **Ja, terugzetten**.
+1. Open de reservering in de kalender of in de lijstweergave en klik op **Overdracht
+   terugdraaien**. Staat de knop grijs, dan heb je het vinkje **Overdracht terugdraaien** niet;
+   vraag het een collega die het wél heeft (hoofdstuk 15, paragraaf 15.16).
+2. Lees de voorvertoning: *Status: Opgehaald wordt Geboekt.*, wat er gewist wordt (de ophaaldatum,
+   de kilometerstand bij ophalen, het brandstofniveau bij ophalen en het contractnummer) en wat er
+   met de kilometerstand van de auto gebeurt.
+3. Gaat de kilometerstand van de auto omlaag, zet dan het vinkje aan, en bevestig met **Overdracht
+   terugdraaien**.
 
-Daarna staat er **Reservering teruggezet** — *"De reservering is terug naar Geboekt.
-Ophaalgegevens zijn gewist."* Het contractnummer komt weer vrij voor de volgende huur.
+Daarna staat er **Overdracht teruggedraaid** — *"Reservering #… heeft weer de status Geboekt."* Het
+contractnummer komt weer vrij voor de volgende huur, en de auto staat weer op de stand van vóór het
+ophalen.
 
-**Wat je daarna zelf nog moet doen:** het contract dat bij het foute ophalen is gemaakt, blijft
-aan de reservering hangen. Verwijder dat document, of markeer voor jezelf dat het niet geldig is.
+**Wat je daarna zelf nog moet doen:** met het contract niets. Het contract dat bij het foute ophalen
+is gemaakt, krijgt zelf het label **Verouderd** en blijft bewaard (hoofdstuk 8, paragraaf 8.6). Bij
+het opnieuw ophalen maakt de app een nieuw contract.
 
 ---
 
@@ -341,15 +346,19 @@ afgesloten en de auto weer vrij.
 
 **Hoe je het merkt.** De reservering staat op afgesloten en de auto is weer beschikbaar.
 
-**Hoe je het herstelt.** Open **Reserveringen** → **Voltooid bekijken (…)**, zoek de verhuring
-op en klik op **Terugzetten**. De verhuring gaat terug naar **Opgehaald** en de kilometerstand,
-het brandstofniveau en de inleverdatum van die inname worden gewist; de afgesproken begin- en
-einddatum blijven staan. Je krijgt **Verhuur teruggezet**. Neem daarna de juiste auto in.
+**Hoe je het herstelt.** Dit kan de app wél terugdraaien. Open **Reserveringen** → **Voltooid
+bekijken (…)**, zoek de verhuring op en klik op **Overdracht terugdraaien** (hoofdstuk 5, paragraaf
+5.14). De verhuring gaat terug naar **Opgehaald**, de kilometerstand, het brandstofniveau en de
+inleverdatum van die inname worden gewist en de auto gaat terug naar de stand van vóór het
+innemen; de afgesproken begin- en einddatum blijven staan. De schadecheck van de inname krijgt het
+label **Verouderd**. Je krijgt **Overdracht teruggedraaid**. Neem daarna de juiste auto in.
 
 Let op:
 
+- De voorvertoning vraagt een vinkje als de kilometerstand van de auto daardoor omlaag gaat. Dat
+  vinkje staat los van het wachtwoord uit 11.16.
 - Was de auto ondertussen al op **Onderhoud nodig** gezet, dan kan dat blijven staan —
-  terugzetten wordt daar niet door tegengehouden.
+  terugdraaien wordt daar niet door tegengehouden.
 - Klopte alleen de kilometerstand of de datum niet, dan hoef je niets terug te zetten: corrigeer
   die velden gewoon op de reservering.
 - Twijfel je, roep dan een beheerder. In de **Geschiedenis** staat precies wat er gebeurd is,
@@ -367,14 +376,18 @@ voordat je afrondt. Dit is de fout met de duurste nasleep.
 **Hoe je het merkt.** De reservering staat op geannuleerd. Hij blijft wel zichtbaar op de
 kalender en in de lijsten.
 
-**Hoe je het herstelt.** **Een annulering kan niet ongedaan worden gemaakt.** De app weigert het:
+**Hoe je het herstelt.** Sinds oktober 2026 kan een annulering wél terug. Open de geannuleerde
+reservering in de kalender of in de lijstweergave en klik op **Annulering terugdraaien**
+(hoofdstuk 5, paragraaf 5.14). De reservering gaat naar **Opgehaald** als de huur al was opgehaald,
+anders naar **Geboekt**.
 
-> *Invalid status transition from 'cancelled' to 'booked'*
-
-Er is geen knop en geen omweg die dit wel doet.
-
-Wat je moet doen: **maak een nieuwe reservering** met dezelfde gegevens, en zet in de notities
-waarom. De geannuleerde regel blijft staan als spoor van wat er gebeurd is.
+Het lukt alleen als de auto in die periode nog vrij is. Is hij intussen opnieuw geboekt, dan zegt het
+venster *Het voertuig is voor deze periode niet meer vrij, dus de annulering kan niet worden
+teruggedraaid.* Maak dan **een nieuwe reservering** met dezelfde gegevens en zet in de notities
+waarom. Het terugdraaien zet ook niets terug van wat je bij het annuleren meegaf: een transport, een
+vervanger of een chauffeurstoewijzing zet je zelf weer klaar. Zet je een geannuleerde reservering via
+het statuslijstje op **Geboekt**, dan weigert de app met *Undoing a handover or a cancellation goes
+through POST /api/reservations/:id/revert.*: gebruik de knop.
 
 **Hoe je het voorkomt.** Kijk in het venster **Reservering annuleren** naar het nummer van de
 reservering en naar het lijstje **Hieraan hangt nog:** voordat je bevestigt. Twijfel je, klik dan
@@ -401,12 +414,16 @@ op **Niet annuleren**.
 - Heeft die klant een lopende of toekomstige huur, dan wordt het geweigerd: *"Verwijderen kan
   niet: deze klant heeft een lopende of toekomstige reservering."*, met de blokkerende
   reserveringen erbij. De knop blijft grijs, ook als je de naam correct overtypt.
+- Een reservering die al is **opgehaald** verwijder je niet zomaar: dat vraagt een eigen vinkje en een
+  waarschuwing die je bevestigt (hoofdstuk 5, paragraaf 5.15).
 
-**Hoe je het herstelt.** Alles wat je verwijdert gaat naar de **prullenbak** en is terug te
-zetten, met alles wat eraan hing. Zie hoofdstuk 10.
+**Hoe je het herstelt.** Alles wat je verwijdert gaat naar de **prullenbak van het scherm waar je
+het verwijderde** en is terug te zetten, met alles wat eraan hing. Zie hoofdstuk 10, paragraaf 10.6.
 
-Alleen een **beheerder** kan iets terugzetten. Loop dus naar een beheerder in plaats van alles
-opnieuw in te typen.
+Terugzetten kan iedereen met het vinkje **Prullenbak beheren**: een beheerder, een manager, of een
+ander account waarbij het is aangezet (hoofdstuk 15, paragraaf 15.16). Heb je het vinkje niet, loop
+dan naar iemand die het wél heeft in plaats van alles opnieuw in te typen. Pas op met **Definitief
+verwijderen** in dezelfde prullenbak: wat je daar weghaalt, komt niet meer terug.
 
 ---
 
@@ -464,10 +481,10 @@ staat in de geschiedenis van het voertuig.
 | Dubbele klant | Waarschuwing vooraf | **Openen** in de waarschuwing |
 | Huur niet afgesloten | Ja | **Reserveringen** → **… achterstallig** → **Details bekijken** → **Inleveren starten** |
 | Te vroeg opgehaald | Vraag vooraf | **Ja, startdatum naar vandaag** |
-| Per ongeluk opgehaald | Ja | **Terugzetten naar geboekt** |
-| Per ongeluk ingenomen | **Nee** | Nieuwe reservering + notitie |
-| Per ongeluk geannuleerd | **Nee** | Nieuwe reservering + notitie |
-| Per ongeluk verwijderd | Ja, door een beheerder | **Prullenbak** → **Terugzetten** |
+| Per ongeluk opgehaald | Ja, met het vinkje **Overdracht terugdraaien** | **Overdracht terugdraaien** |
+| Per ongeluk ingenomen | Ja, met het vinkje **Overdracht terugdraaien** | **Overdracht terugdraaien** (achter **Voltooid bekijken (…)**) |
+| Per ongeluk geannuleerd | Ja, als de auto nog vrij is | **Annulering terugdraaien** |
+| Per ongeluk verwijderd | Ja, met het vinkje **Prullenbak beheren** | De prullenbak van dat scherm → **Terugzetten** |
 | Document te vroeg gemaakt | Ja | **Opnieuw genereren** |
 | Mail naar de verkeerde klant | **Nee** | Bellen |
 | Vervanger of transport blijft hangen | Ja, handmatig | Innemen of annuleren |

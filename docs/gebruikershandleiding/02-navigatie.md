@@ -72,7 +72,7 @@ Rechtsboven staan de knoppen:
 
 | Knop | Waarvoor |
 |---|---|
-| **Verwijderde voertuigen** | De prullenbak — alleen zichtbaar voor een beheerder, zie hieronder |
+| **Verwijderde voertuigen** | De prullenbak van dit scherm — alleen voor voertuigen, zie hieronder |
 | **Barcodeboek** | Alle sleutellabels op een rij om af te drukken |
 | **Sleutelkast-audit** | De sleutelkast nalopen en aftekenen |
 | **Reservesleutelkast-audit** | Hetzelfde voor de reservesleutels |
@@ -102,11 +102,18 @@ knoppen **Terug**, **Barcode bekijken**, **Bewerken**, **Brandstofstatus bijwerk
 - **Onderhoud** — de werkplaatsbezoeken.
 - **Geschiedenis** — wie wat wanneer aan deze auto heeft gewijzigd.
 
-**De prullenbak.** De knop **Verwijderde voertuigen** is misleidend genoemd: het venster toont
-álle verwijderde records, niet alleen voertuigen. Je ziet er labels **Voertuig**, **Klant**,
-**Reservering**, **Transport** en **Boete**. Per regel staat wie het wanneer verwijderde en wat
-er aan hing; met **Terugzetten** komt het record met alles eraan weer terug. Alleen een
-beheerder ziet deze knop.
+**De prullenbak.** De knop **Verwijderde voertuigen** opent de prullenbak van dit scherm, met
+alleen voertuigen erin (vroeger stonden hier alle soorten door elkaar; sinds oktober 2026 heeft
+elk scherm zijn eigen prullenbak, zie hieronder en hoofdstuk 10, paragraaf 10.6). Per regel staat
+wie het wanneer verwijderde en wat er aan hing; met **Terugzetten** komt het voertuig met alles
+eraan weer terug, en met **Definitief verwijderen** gaat het er voorgoed uit. De knop is er voor
+iedereen met het vinkje **Prullenbak beheren**; zonder dat vinkje staat hij er grijs.
+
+**Alle prullenbakken.** De zes prullenbakken staan op hun eigen scherm: **Verwijderde voertuigen**
+(Voertuigen, 2.3), **Verwijderde klanten** (Klanten, 2.5), **Verwijderde reserveringen**
+(Reserveringen, 2.7), **Verwijderd onderhoud** (Onderhoud, 2.8), **Verwijderde transporten**
+(Transporten, 2.8) en de knop **Prullenbak** bij de bekeuringen (Klantenportaal → **Bekeuringen**,
+2.6).
 
 ---
 
@@ -136,7 +143,8 @@ niet, gebruik dan de USB-scanner of typ de code.
 
 Het scherm heet **Klanten**, met daaronder de **Klantendatabase**.
 
-- Rechtsboven: **Klant toevoegen**.
+- Rechtsboven: **Klant toevoegen** en **Verwijderde klanten** (de prullenbak van dit scherm, voor
+  wie het vinkje **Prullenbak beheren** heeft).
 - Boven de lijst: een zoekveld, een sorteerkeuze (**Naam (A-Z)**, **Nieuwste eerst**, **Meeste
   verhuur**, **Actieve verhuur**, …) en **Filters** (onder andere *Zakelijk*, *Particulier*,
   *Actieve verhuur*, *Onvolledig profiel*).
@@ -154,8 +162,9 @@ verhuringen, de actieve verhuringen en het totaal aantal gereden kilometers, de 
 laat eerst zien wat er aan de klant hangt (*Dit verwijdert ook:*) en vraagt je daarna de naam
 van de klant over te typen. Is er een lopende of toekomstige reservering, dan weigert de app met
 *Verwijderen kan niet: deze klant heeft een lopende of toekomstige reservering.* en noemt die
-reserveringen erbij. Lukt het verwijderen wel, dan gaat de klant naar de prullenbak en kan een
-beheerder hem terugzetten. Uitgebreid in hoofdstuk 3, paragraaf 3.8.
+reserveringen erbij. Lukt het verwijderen wel, dan gaat de klant naar de prullenbak van dit scherm (**Verwijderde
+klanten**) en kan iemand met het vinkje **Prullenbak beheren** hem terugzetten. Uitgebreid in
+hoofdstuk 3, paragraaf 3.8.
 
 ---
 
@@ -187,6 +196,9 @@ lijst.
 *Het scherm **Klantenportaal beheren**: de tegels bovenaan zijn ingangen naar een lijst, de
 panelen eronder tonen de laatste regels.*
 
+In de lijst achter de tegel **Bekeuringen** staat de knop **Prullenbak** voor verwijderde bekeuringen
+(hoofdstuk 10, paragraaf 10.6).
+
 Nieuwe aanvragen handel je hier af, via de tegel **Aanvragen** of het paneel **Aandacht nodig**.
 Als er iets nieuws is, zie je dat bovenin elk scherm aan de portaaltegel en aan het rode bolletje
 achter **Klantenportaal** in het menu.
@@ -203,6 +215,7 @@ Rechtsboven staan:
 |---|---|
 | **Lijstweergave** | Dezelfde reserveringen als lijst in plaats van kalender |
 | **Voltooid bekijken (…)** | De afgesloten verhuringen |
+| **Verwijderde reserveringen** | De prullenbak van dit scherm |
 | **… achterstallig** | De verhuringen die over hun einddatum heen zijn |
 | **Administratie** | Factuurgegevens, zie hieronder |
 | **Nieuwe reservering** | Een nieuwe boeking |
@@ -231,7 +244,8 @@ gegevens waarmee elders gefactureerd wordt.
 ## 2.8 Onderhoud, Kosten, Documenten, Transporten, Communicatie en Rapporten
 
 **Onderhoud** — het scherm **Onderhoudskalender** met de **Onderhoudsplanning**. Rechtsboven
-**Lijstweergave**, **Voltooide bekijken (…)** en **Onderhoud plannen**. In de kalender staan de
+**Lijstweergave**, **Voltooide bekijken (…)**, **Verwijderd onderhoud** (de prullenbak van dit
+scherm) en **Onderhoud plannen**. In de kalender staan de
 werkplaatsafspraken en de APK-signalen (*APK-keuring verschuldigd*, *APK Herinnering (2
 maanden)*), met labels als **Vervanger nodig** en **Verhuur komt eraan**. Uitgebreid in
 hoofdstuk 7.
@@ -249,7 +263,8 @@ en **Schadecheck-sjablonen**. Uitgebreid in hoofdstuk 8.
 en andere voertuigbewegingen*. Bovenaan **Route-optimalisatie** en de tellers **Wacht op
 planning**, **Klaar voor levering**, **In uitvoering** en **Leveringen voltooid**. Daaronder de
 tabbladen **Alle transporten**, **Voertuigwissel**, **Slepen**, **Terughalen**, **Levering** en
-**Overig**, en de knop **Nieuw transport**. Uitgebreid in hoofdstuk 6.
+**Overig**, en de knoppen **Nieuw transport** en **Verwijderde transporten** (de prullenbak van dit
+scherm). Uitgebreid in hoofdstuk 6.
 
 **Communicatie** — het scherm **Klantcommunicatie** met de tabbladen **Meldingen versturen**,
 **Sjabloonbouwer**, **E-maillogboek** en **Analyse**. Onder **Meldingen versturen** kies je

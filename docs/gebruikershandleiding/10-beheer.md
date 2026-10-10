@@ -4,7 +4,8 @@ Dit hoofdstuk gaat over het beheerdeel van de app: gebruikers en hun rechten, de
 de mailinstellingen, de back-ups, de geschiedenis per record en de prullenbak.
 
 Bijna alles in dit hoofdstuk kan alleen een **beheerder**. Herken je de schermen hieronder niet,
-dan heb je geen beheerdersaccount — dat is geen storing.
+dan heb je geen beheerdersaccount — dat is geen storing. De prullenbakken (10.6) zijn de uitzondering:
+die openen ook voor wie het vinkje **Prullenbak beheren** heeft.
 
 ---
 
@@ -36,7 +37,7 @@ Klik op **Gebruiker toevoegen**. Je krijgt het formulier **Nieuwe gebruiker toev
 | Veld | Toelichting |
 |---|---|
 | **Gebruikersnaam** | De inlognaam. Kan later niet meer gewijzigd worden. |
-| **Wachtwoord** | Minimaal 6 tekens. Bij het bewerken van een bestaande gebruiker: leeg laten om het huidige wachtwoord te behouden. |
+| **Wachtwoord** | Bij een nieuwe gebruiker verplicht, minimaal 6 tekens; laat je het leeg, dan staat er *Een wachtwoord is verplicht*. Bij het bewerken van een bestaande gebruiker: leeg laten om het huidige wachtwoord te behouden. |
 | **Volledige naam** | De naam die overal in de app bij wijzigingen komt te staan. |
 | **E-mail** | Het adres van de medewerker. |
 | **Rol** | Zie hieronder. |
@@ -44,6 +45,12 @@ Klik op **Gebruiker toevoegen**. Je krijgt het formulier **Nieuwe gebruiker toev
 | **Prijzen verbergen** | *"Gebruiker ziet nergens in de app prijzen/geldbedragen"*. |
 
 Opslaan met **Gebruiker aanmaken** of **Gebruiker bijwerken**.
+
+**Een leeg wachtwoordveld verandert nooit iets.** Sinds oktober 2026 geldt bij het bijwerken van een
+gebruiker: staat het veld leeg (of staan er alleen spaties), dan blijft het wachtwoord zoals het was.
+Tot dan kon een leeg veld het wachtwoord van het account leegmaken, of vervangen door spaties; dat is
+hersteld. Een nieuw wachtwoord voor een **andere** gebruiker instellen kan alleen een beheerder; een
+ander account dat het probeert, krijgt *Only an administrator can set another account's password*.
 
 **Een medewerker die weggaat, zet je op inactief.** Verwijderen kan ook, maar dan is de link
 tussen zijn naam en zijn wijzigingen minder duidelijk. De bevestiging is: *"Weet je zeker dat je
@@ -86,6 +93,16 @@ daaronder een raster met alle rechten. Je vinkt aan wat iemand nodig heeft. De b
 | Back-ups beheren | Back-ups maken en terugzetten |
 | Kilometerverlaging goedkeuren | Een lagere kilometerstand mogen invoeren dan de vorige |
 | Dashboard bekijken | Het dashboard |
+| **Overdracht terugdraaien** | Een ophaling, een inname of een annulering ongedaan maken (hoofdstuk 5, paragraaf 5.14) |
+| **Opgehaalde huur annuleren of verwijderen** | Een huur die al is opgehaald annuleren of verwijderen (5.15) |
+| **Prullenbak beheren** | De prullenbakken openen, iets terugzetten en definitief verwijderen (10.6) |
+
+**De drie vinkjes van oktober 2026 hebben een eenmalige start.** **Overdracht terugdraaien**,
+**Opgehaalde huur annuleren of verwijderen** en **Prullenbak beheren** hebben alle accounts met de
+rol **Manager** één keer automatisch gekregen, bij de eerste start na de uitrol. Een beheerder heeft
+ze altijd. Een manager die je daarna aanmaakt, krijgt ze niet vanzelf; vink ze zelf aan. Wie alleen
+**Reserveringen beheren** heeft, kan niet terugdraaien en geen opgehaalde huur annuleren. Zie
+hoofdstuk 15, paragraaf 15.16.
 
 **De twee documentvinkjes zijn met opzet gescheiden.** In een contract staan het adres, het
 telefoonnummer en het rijbewijsnummer van de klant. Wie die gegevens niet nodig heeft, krijgt
@@ -273,40 +290,129 @@ actie), **Gebruiker**, **Actie**, **Vanaf** en **Tot en met**, en wist alles met
 
 ---
 
-## 10.6 De prullenbak
+## 10.6 De prullenbakken
 
-Wat je verwijdert is niet weg. Het gaat naar de prullenbak en is daar terug te halen.
+Wat je verwijdert is niet weg. Het gaat naar de prullenbak van het scherm waar je het verwijderde, en
+is daar terug te halen — of voorgoed te verwijderen.
 
-**Waar:** op het scherm **Voertuigen** staat rechtsboven de knop **Verwijderde voertuigen**.
-Ondanks de naam staat daar alles in. Bij de bekeuringen staat een eigen knop **Prullenbak**.
-Beide knoppen zijn alleen zichtbaar voor een beheerder.
+**Zes prullenbakken, één per scherm.** Sinds oktober 2026 is er niet meer één gedeeld venster met
+alles door elkaar. Elk scherm heeft zijn eigen prullenbak, met alleen zijn eigen soort:
 
-**Wat erin zit:** vijf soorten records, elk met een label:
-**Voertuig**, **Klant**, **Reservering**, **Transport** en **Boete**.
+| Scherm | De knop | Wat erin staat |
+|---|---|---|
+| **Voertuigen** | **Verwijderde voertuigen** | Voertuigen (label **Voertuig**), met hun reserveringen, documenten en kosten |
+| **Klanten** | **Verwijderde klanten** | Klanten (**Klant**), met hun chauffeurs en portaalgegevens |
+| **Reserveringen** (de kalender) | **Verwijderde reserveringen** | Reserveringen (**Reservering**) |
+| **Onderhoud** | **Verwijderd onderhoud** | Onderhoudsplanningen (**Onderhoud**) |
+| **Transporten** | **Verwijderde transporten** | Transporten (**Transport**) |
+| **Klantenportaal** → **Bekeuringen** | **Prullenbak** | Bekeuringen (**Boete**); het venster heet **Verwijderde bekeuringen** |
 
-Per regel zie je wat het was, **Verwijderd &lt;datum&gt; door &lt;naam&gt;**, en **Bevat: …** — wat er nog
-aan hangt (reserveringen, documenten, kosten). Is er niets, dan staat er *"geen gekoppelde
-records"*.
+Onderhoud heeft zijn eigen soort. Een verwijderd onderhoudsblok stond vroeger met het label
+**Reservering** tussen de rest; bij de eerste start na de uitrol zijn die oude regels verhuisd naar
+**Onderhoud**. Een vervangreservering die automatisch meegaat met een verwijderd onderhoudsblok of
+transport krijgt geen eigen regel in de prullenbak.
 
-**Terugzetten:** klik op **Terugzetten**. Alles wat met het record mee is gegaan, komt mee terug.
-Je krijgt de melding **Teruggezet** — *"Het voertuig en zijn gegevens zijn terug."* Daarna staat
-er bij de regel **Teruggezet &lt;datum&gt; door &lt;naam&gt;** en is de knop grijs.
+**Wie erbij kan.** Iedereen met het vinkje **Prullenbak beheren** (hoofdstuk 15, paragraaf 15.16):
+een beheerder altijd, een manager eenmalig vanzelf, een ander account alleen als je het vinkje
+aanzet. Wie het vinkje mist, ziet de knop wel, maar grijs, met een tekstballon die het recht noemt
+(15.9). Je hoeft dus geen beheerder meer te zijn om iets terug te zetten; wie het vinkje heeft, kan
+dat ook zelf doen als hij de fout maakte.
+
+**Wat je ziet.** Bovenin een zoekveld (*Zoeken op omschrijving of naam…*), **Alles selecteren** en
+twee knoppen om voorgoed te verwijderen (hieronder). Per regel:
+
+- een vinkje, het label en de omschrijving, bijvoorbeeld *Reservering #3366 — HL-02-HL 2026-10-05*;
+- *Verwijderd &lt;datum&gt; door &lt;naam&gt;*;
+- **Bevat: …** — wat er nog aan hing, in woorden, bijvoorbeeld *2 reserveringen, 1 document*. Hing er
+  niets aan, dan staat er *geen gekoppelde gegevens*;
+- de knoppen **Terugzetten** en **Definitief verwijderen**.
+
+Per soort staan de nieuwste 200 regels erin, de nieuwste bovenaan. Een regel die al is teruggezet,
+blijft staan met het groene label **Teruggezet** en *Teruggezet &lt;datum&gt; door &lt;naam&gt;*, en zijn knop
+**Terugzetten** is grijs. Is er niets, dan staat er bijvoorbeeld *Geen verwijderde voertuigen.*
+
+### Terugzetten
+
+Klik op **Terugzetten**. Alles wat met het record mee is gegaan, komt mee terug. Je krijgt
+**Teruggezet** — *&lt;omschrijving&gt; is teruggezet.* Elke keer dat iemand iets terugzet, komt dat in de
+geschiedenis te staan.
+
+Per soort goed om te weten:
+
+- Een **reservering** komt alleen terug als de auto in die periode vrij is. Gesloten vervangers,
+  transporten en chauffeurtoewijzingen komen niet vanzelf terug.
+- Een **onderhoudsplanning** kan terug, ook als er intussen een verhuring op die dagen staat: een
+  blok mag overlappen met een verhuring (hoofdstuk 7, paragraaf 7.3). Gesloten vervangers komen
+  niet vanzelf terug.
+- Een **transport** komt terug met zijn vervangend voertuig, als dat nog vrij is.
+- Een **klant** behield zijn debiteurnummer zolang hij in de prullenbak stond (3.9).
 
 De app weigert het terugzetten als dat niet meer kan. De meldingen:
 
 | Melding | Wat het betekent |
 |---|---|
-| *This record was already restored.* | Iemand was je voor |
-| *That deleted record no longer exists.* | De regel bestaat niet meer |
-| *A vehicle with the same license plate already exists. Delete or rename it first.* | Er is intussen een nieuwe auto met datzelfde kenteken |
-| *Another vehicle already uses the same barcode. Clear it there first.* | De barcode zit nu op een andere auto |
-| **"Deze reservering kan niet terug: het voertuig is in de tussentijd geboekt voor die periode."** | De auto is inmiddels opnieuw verhuurd in die periode |
+| *Dit record is al teruggezet.* | Iemand was je voor |
+| *Dit record staat niet meer in de prullenbak.* | De regel bestaat niet meer, bijvoorbeeld omdat hij net definitief is verwijderd |
+| *Het oorspronkelijke nummer is intussen aan iets anders gegeven, dus terugzetten kan niet.* | Het nummer van het record is niet meer vrij |
+| *Er bestaat al een voertuig met hetzelfde kenteken. Verwijder of hernoem dat eerst.* | Er is intussen een nieuwe auto met datzelfde kenteken |
+| *Een ander voertuig gebruikt dezelfde barcode. Maak die daar eerst leeg.* | De barcode zit nu op een andere auto |
+| **Deze reservering kan niet terug: het voertuig is in de tussentijd geboekt voor die periode.** | De auto is inmiddels opnieuw verhuurd in die periode |
+| *Dit debiteurnummer is al in gebruik bij klant &lt;naam&gt;.* | Een andere klant heeft het nummer intussen gekregen |
+| *De bewaarde gegevens zijn leeg, er is niets om terug te zetten.* en *Dit soort record kan nog niet worden teruggezet.* | Zeldzaam; meld het aan wie de app beheert |
 
-Elke keer dat iemand iets terugzet, komt dat in de geschiedenis te staan.
+### Definitief verwijderen (de prullenbak legen)
 
-**Er is geen knop om de prullenbak definitief te legen.** Wat erin zit, blijft erin. De lijst
-toont de honderd meest recente regels.
+Sinds oktober 2026 kun je een prullenbak ook leegmaken, op drie manieren:
 
-**Wie mag terugzetten:** alleen een beheerder. Dat betekent in de praktijk dat degene die de
-fout maakte hem meestal niet zelf kan herstellen. Loop dus naar een beheerder in plaats van het
-opnieuw in te typen.
+1. **Eén regel:** klik achter de regel op **Definitief verwijderen**.
+2. **Een selectie:** vink de regels aan (of kies **Alles selecteren**, dat alleen de regels aanvinkt
+   die je nu in de lijst ziet; heb je gezocht, dan alleen de gevonden regels) en klik op
+   **Geselecteerde verwijderen (…)**.
+3. **Alles van die soort:** klik op **Prullenbak leegmaken**. Dat haalt *alles* uit deze prullenbak
+   weg, ook de regels die niet in de lijst staan. Toont de lijst er het maximum van 200, dan zegt
+   het venster dat ook.
+
+Er verschijnt altijd een bevestiging, **Definitief verwijderen?**, die het aantal en de soort noemt
+— bijvoorbeeld *2 klanten worden definitief uit de prullenbak verwijderd.* — en zegt wat er
+verdwijnt, *Een bestand dat nog door andere gegevens wordt gebruikt, blijft staan.* en *Dit kan niet
+ongedaan worden gemaakt.* Pas na **Definitief verwijderen** gebeurt er iets; **Annuleren** laat
+alles zoals het was. Je krijgt dan **Definitief verwijderd** — *2 regels definitief verwijderd.*
+
+Lukt een regel niet, dan staat er **Niet alles is gelukt** met per regel de reden, in het Nederlands.
+Dit kan voorkomen:
+
+| Melding | Wat het betekent |
+|---|---|
+| *Dit record stond al niet meer in de prullenbak.* | Iemand was je voor |
+| *Dit record kon niet worden verwijderd en staat nog in de prullenbak.* | Er ging iets mis; er is niets weggehaald. Probeer het opnieuw |
+| *Het record is verwijderd, maar een of meer bestanden konden niet van de schijf worden gehaald.* | De regel is weg; een bestand staat er nog. Meld het aan wie de app beheert |
+| *Deze reservering heeft fiscale beoordelingen; die blijven bewaard, dus kan ze niet definitief worden verwijderd.* | Zie hieronder |
+
+**Wat definitief verwijderen weghaalt**, per soort:
+
+| Soort | Wat er verdwijnt | Wat blijft staan |
+|---|---|---|
+| **Voertuig** | Het voertuig, met alles wat erbij hoort: reserveringen, documenten en kosten, en hun bestanden | — |
+| **Klant** | De klant, met zijn chauffeurs en portaalgegevens, en hun bestanden. Het **debiteurnummer komt weer vrij** | — |
+| **Reservering** | De reservering, met haar contracten, schadechecks, transportrapporten en bezorgtaken, en hun bestanden | **Overige documenten van het voertuig** (zoals een APK-bewijs, een factuur of een verzekering) blijven staan, zonder reservering. Een reservering **met fiscale beoordelingen** wordt overgeslagen en blijft in de prullenbak staan |
+| **Onderhoud** | De onderhoudsplanning, met eventuele contracten en schadechecks, en hun bestanden | Documenten van het voertuig, zoals een **APK-bewijs**, blijven staan. Een planning met fiscale beoordelingen wordt overgeslagen en blijft in de prullenbak staan |
+| **Transport** | Het transport | — |
+| **Boete** | De boete, met de bijgevoegde brief | — |
+
+**Bestanden gaan alleen weg als niets ze nog gebruikt.** De app haalt een bestand pas van de schijf
+nadat de regel definitief is verwijderd, en alleen een bestand in de uploadmap van de app waar geen
+ander levend record meer naar verwijst. Een bestand dat nog ergens anders wordt gebruikt, blijft
+staan.
+
+**Waarom een reservering met fiscale beoordelingen blijft staan.** De fiscale beoordelingen van een
+huur horen bewaard te blijven (zie `docs/fiscaal/07-handleiding-kantoor.md`). Zo'n reservering kun
+je dus wél terugzetten, maar niet definitief verwijderen. Met **Prullenbak leegmaken** en bij een
+selectie wordt ze overgeslagen en blijft ze in de lijst staan; bij **Definitief verwijderen** op die
+ene regel krijg je de melding uit de tabel hierboven.
+
+**Wat je niet terugkrijgt.** Wat je definitief verwijdert, kun je niet meer terugzetten. De app
+schrijft elke definitieve verwijdering op in het activiteitenlog (10.5), met de actie
+*&lt;soort&gt;.purge* (bijvoorbeeld *customer.purge*), wie het deed en wat er is weggehaald.
+
+> **Loop eerst langs wat erin staat.** Een regel die je niet herkent, is vaak van een collega. Met
+> **Prullenbak leegmaken** gaat álles van die soort weg, ook wat anderen er gisteren in hebben gezet.

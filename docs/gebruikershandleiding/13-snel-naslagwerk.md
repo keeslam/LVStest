@@ -73,8 +73,10 @@ Zie hoofdstuk 1, paragraaf 1.4, en hoofdstuk 16.
 | Het voertuig op een boeking wijzigen | Open de reservering → **Voertuig wijzigen** |
 | De datums wijzigen | Open de reservering → **Datums wijzigen** |
 | Het contractnummer wijzigen | Open de reservering → het potloodje bij **Contractnummer** (**Contractnummer bewerken**) → **Opslaan** |
-| Een ophaling ongedaan maken | Open de reservering → **Terugzetten naar geboekt** → **Ja, terugzetten** |
-| Een inname ongedaan maken | **Reserveringen** → **Voltooid bekijken (…)** → **Terugzetten** |
+| Een ophaling ongedaan maken | Open de reservering → **Overdracht terugdraaien** → voorvertoning lezen → bevestigen |
+| Een inname ongedaan maken | **Reserveringen** → **Voltooid bekijken (…)** → **Overdracht terugdraaien** |
+| Een annulering ongedaan maken | Open de geannuleerde reservering → **Annulering terugdraaien** |
+| Een opgehaalde huur annuleren of verwijderen | **Reservering annuleren** of het prullenbakje → de waarschuwing lezen → het vinkje aanzetten → bevestigen |
 | Een boeking annuleren | Zoekveld bovenin → de reservering openen → **Reservering annuleren** → aanvinken wat meegaat |
 | Een oude huur alsnog afsluiten | **Reserveringen** → **… achterstallig** → **Details bekijken** → **Inleveren starten** |
 | De factuurgegevens uitlezen | **Reserveringen** → **Administratie** |
@@ -131,7 +133,7 @@ Zie hoofdstuk 4.
 | Een auto direct op onderhoud zetten | Open de reservering → **Voertuig markeren voor onderhoud** → **Onderhoud nodig** of **Momenteel in onderhoud** |
 | Een auto op onderhoud zetten via de scanner | **Scannen** → scan → **Onderhoud inplannen** |
 | Een vervanger toewijzen | **Dashboard** → **Beheer vervangende voertuigen** → **Nog te bepalen** → **Voertuig toewijzen**, of **Onderhoud** → **Lijstweergave** → **Vervangers** → **Toewijzen** |
-| Een onderhoudsblok afsluiten | **Onderhoud** → de dag openen → **Voltooien** |
+| Een onderhoudsblok afsluiten, met APK-datum, formulier en kilometerstand | **Onderhoud** → de dag openen → **Voltooien** |
 | Een vervanging afsluiten en de auto vrijgeven | Open de reservering → **Terug van onderhoud** → inleverdatum + km |
 | Een auto vrijgeven via de scanner | **Scannen** → scan → **Terug uit onderhoud** |
 | De werkplaatskalender openen | **Onderhoud** |
@@ -243,10 +245,12 @@ Zie hoofdstuk 2, paragraaf 2.8.
 |---|---|
 | Zien wie iets gewijzigd heeft | Open de reservering, het voertuig of de klant → **Geschiedenis** |
 | Een huur alsnog afsluiten | **Reserveringen** → **… achterstallig** → **Details bekijken** → **Inleveren starten** |
-| Een ophaling terugdraaien | Open de reservering → **Terugzetten naar geboekt** |
-| Een inname terugdraaien | **Reserveringen** → **Voltooid bekijken (…)** → **Terugzetten** |
-| Een verwijderd record terughalen | Vraag een beheerder: **Voertuigen** → **Verwijderde voertuigen** → **Terugzetten** |
-| Een verwijderde bekeuring terughalen | Vraag een beheerder: **Klantenportaal** → **Bekeuringen** → **Prullenbak** |
+| Een ophaling terugdraaien | Open de reservering → **Overdracht terugdraaien** |
+| Een inname terugdraaien | **Reserveringen** → **Voltooid bekijken (…)** → **Overdracht terugdraaien** |
+| Een annulering terugdraaien | Open de geannuleerde reservering → **Annulering terugdraaien** |
+| Een verwijderd record terughalen | Het scherm waar je het verwijderde → de knop **Verwijderde …** (bijvoorbeeld **Verwijderde klanten**) → **Terugzetten**. Mis je het vinkje **Prullenbak beheren**, vraag het dan aan iemand die het wél heeft |
+| Een verwijderde bekeuring terughalen | **Klantenportaal** → **Bekeuringen** → **Prullenbak** → **Terugzetten** (zelfde vinkje) |
+| Iets definitief uit de prullenbak halen | De prullenbak van het scherm → **Definitief verwijderen**, een selectie, of **Prullenbak leegmaken** — niet terug te draaien |
 | Een contract dat niet meer klopt vervangen | Bij het document → **Opnieuw genereren** |
 
 Zie hoofdstuk 11 en hoofdstuk 12.

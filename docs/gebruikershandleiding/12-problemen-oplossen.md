@@ -186,10 +186,10 @@ Kijk eerst wát je gedaan hebt; het antwoord verschilt per handeling.
 
 | Handeling | Terug te draaien? | Hoe |
 |---|---|---|
-| Ophalen | Ja | **Terugzetten naar geboekt** |
-| Innemen | Nee | Nieuwe reservering + notitie |
-| Annuleren | Nee | Nieuwe reservering + notitie |
-| Verwijderen | Ja, door een beheerder | **Prullenbak** → **Terugzetten** |
+| Ophalen | Ja, met het vinkje **Overdracht terugdraaien** | **Overdracht terugdraaien** (5.14) |
+| Innemen | Ja, met het vinkje **Overdracht terugdraaien** | **Overdracht terugdraaien** (5.14) |
+| Annuleren | Ja, als de auto nog vrij is | **Annulering terugdraaien** (5.14) |
+| Verwijderen | Ja, met het vinkje **Prullenbak beheren** | De prullenbak van dat scherm → **Terugzetten** (10.6) |
 | Klant, voertuig of datums gewijzigd | Ja | **Klant / Voertuig / Datums wijzigen** |
 | Document gegenereerd | Niet nodig | **Opnieuw genereren** maakt een nieuwe versie |
 | E-mail verstuurd | Nee | Bellen |
@@ -205,8 +205,8 @@ regel wie het deed, wanneer, welk veld en de oude en nieuwe waarde. Een beheerde
 elkaar onder **App-instellingen → Activiteit → Activiteitenlog**, met filters op gebruiker,
 actie en periode.
 
-Ontbreekt het record helemaal, kijk dan in de **prullenbak**: daar staat wie het wanneer heeft
-verwijderd, en kan een beheerder het terugzetten.
+Ontbreekt het record helemaal, kijk dan in de **prullenbak van dat scherm**: daar staat wie het
+wanneer heeft verwijderd, en kan iemand met het vinkje **Prullenbak beheren** het terugzetten.
 
 ---
 
@@ -230,6 +230,8 @@ te zien wat er bedoeld wordt.
 | **"Kilometerstand-overschrijving vereist"** | De ingevoerde stand is lager dan de vorige | Heb je goed afgelezen? | **Ja**, als je het recht hebt: vul je eigen wachtwoord in | Als je het recht niet hebt |
 | *"Je hebt geen recht om een verlaging van de kilometerstand te autoriseren."* | Je mist het recht | — | Nee | **Ja** |
 | **"Contractnummer vereist"** | Het veld is leeg | — | **Ja** | Nee |
+| *De reservering of het voertuig is intussen gewijzigd. Hierboven staat het bijgewerkte overzicht; controleer het en bevestig opnieuw.* (in het venster **Overdracht terugdraaien**) | Terwijl je het venster open had, is er iets veranderd | Lees het nieuwe overzicht | **Ja** — zet het vinkje voor de kilometerstand opnieuw aan en bevestig | Nee |
+| *Het voertuig is voor deze periode niet meer vrij, dus de annulering kan niet worden teruggedraaid.* | De auto is na de annulering opnieuw geboekt | De nieuwe boeking | Nee — maak een nieuwe reservering | Nee |
 
 ### Bij boeken en wijzigen
 
@@ -239,7 +241,7 @@ te zien wat er bedoeld wordt.
 | *"Let op: dit voertuig staat in deze periode ingepland voor onderhoud (… t/m …). Opslaan mag; het onderhoudsblok blijft staan."* | Waarschuwing, geen blokkade | Kan het onderhoud verzet worden? | **Ja** — je mag doorgaan | Nee |
 | *This customer is blacklisted for this vehicle and cannot be booked on it.* | Deze klant mag niet in deze auto | Klopt de zwarte lijst nog? | Alleen door een andere auto te kiezen | Voor het aanpassen van de lijst |
 | *"De einddatum kan niet vóór de begindatum liggen."* | Datums omgedraaid | — | **Ja** | Nee |
-| *Invalid status transition from 'cancelled' to 'booked'* | Een annulering kan niet terug | — | Nee — maak een nieuwe reservering | Nee |
+| *Undoing a handover or a cancellation goes through POST /api/reservations/:id/revert.* | Je probeerde een ophaling, inname of annulering via het statuslijstje terug te zetten | — | **Ja** — gebruik **Overdracht terugdraaien** of **Annulering terugdraaien** (5.14) | Alleen als je het vinkje mist |
 | *Vehicle not found* / *Customer not found* | Het voertuig of de klant bestaat niet (meer) | Staat het record in de prullenbak? | Nee | **Ja**, om terug te zetten |
 
 ### Bij verwijderen en terugzetten
@@ -248,10 +250,14 @@ te zien wat er bedoeld wordt.
 |---|---|---|---|---|
 | **"Dit voertuig heeft een lopende of geplande huur en kan niet worden verwijderd."** | Er hangt nog een huur aan | De blokkerende huren staan erbij | **Ja** — rond de huur af of annuleer hem eerst | Nee |
 | **"Deze klant heeft een lopende of toekomstige reservering en kan niet worden verwijderd."** | Idem, bij een klant | Idem | **Ja** | Nee |
-| *This record was already restored.* | Iemand was je voor | — | **Ja** — vernieuw het scherm | Nee |
-| *A vehicle with the same license plate already exists. Delete or rename it first.* | Er staat inmiddels een andere auto op dat kenteken | Welke auto dat is | Nee | **Ja** |
+| *Dit record is al teruggezet.* | Iemand was je voor | — | **Ja** — vernieuw het scherm | Nee |
+| *Er bestaat al een voertuig met hetzelfde kenteken. Verwijder of hernoem dat eerst.* | Er staat inmiddels een andere auto op dat kenteken | Welke auto dat is | Nee | **Ja** |
 | **"Deze reservering kan niet terug: het voertuig is in de tussentijd geboekt voor die periode."** | De auto is opnieuw verhuurd in die periode | De nieuwe boeking | **Ja** — boek de huur opnieuw op andere datums | Nee |
-| *Not authorized. Admin access required.* | Alleen een beheerder mag dit | — | Nee | **Ja** |
+| *Not authorized. One of these permissions required: manage_recycle_bin* | Je mist het vinkje **Prullenbak beheren** voor de prullenbak | — | Nee | **Ja** — vinkje aanzetten |
+| *Not authorized. One of these permissions required: revert_handover* | Je mist het vinkje **Overdracht terugdraaien** | — | Nee | **Ja** — vinkje aanzetten |
+| **"Voor een opgehaalde huur is het recht 'Opgehaalde huur annuleren of verwijderen' nodig."** | Je probeerde een opgehaalde huur te annuleren of te verwijderen zonder dat vinkje | — | Nee | **Ja** — vinkje aanzetten |
+| **"Deze reservering heeft fiscale beoordelingen; die blijven bewaard, dus kan ze niet definitief worden verwijderd."** | Je probeerde een reservering met fiscale beoordelingen definitief uit de prullenbak te halen | — | Nee — laat hem in de prullenbak staan | Nee |
+| *Not authorized. Admin access required.* | Alleen een beheerder mag dit (bijvoorbeeld de beheerschermen). Voor de prullenbak geldt sinds oktober 2026 een eigen vinkje | — | Nee | **Ja** |
 
 ### Bij documenten
 
@@ -286,12 +292,15 @@ Dit zijn dingen die op dit moment **niet** werken zoals je zou verwachten. Ze st
 er niet op stukloopt. **Dit is geen werkwijze.** Gebruik de gewone weg uit de vorige
 hoofdstukken; dit is alleen om te weten waar je moet opletten.
 
-### 12.9 Een annulering is definitief
+### 12.9 Een annulering terugdraaien lukt niet altijd
 
-Een geannuleerde reservering kan niet terug naar geboekt. Dat moet je oplossen door een nieuwe
-reservering aan te maken en dat in de notities te zetten. Kijk dus goed voordat je annuleert.
+Een geannuleerde reservering kun je terugdraaien met **Annulering terugdraaien** (hoofdstuk 5,
+paragraaf 5.14), maar alleen als de auto in die periode nog vrij is. Is hij intussen opnieuw geboekt,
+dan moet je een nieuwe reservering aanmaken en dat in de notities zetten. Wat je bij het annuleren
+meegaf (transport, vervanger, chauffeurstoewijzing) komt bovendien niet vanzelf terug. Kijk dus goed
+voordat je annuleert.
 
-Een **inname** is dat niet: die draai je terug met **Terugzetten** in de lijst achter **Voltooid
+Een **inname** draai je terug met **Overdracht terugdraaien** in de lijst achter **Voltooid
 bekijken (…)** (hoofdstuk 5, paragraaf 5.8, en hoofdstuk 11, paragraaf 11.13).
 
 ### 12.10 Bij annuleren beslis je zelf wat er meegaat
@@ -313,12 +322,16 @@ portaalaanvraag en rond zijn portaalaccount. De klant krijgt **geen** automatisc
 
 Bel of mail in die gevallen zelf. Een document stuur je met **E-mailen** of **Mail naar klant**.
 
-### 12.12 Het tabblad "E-maillogboek" toont voorbeeldgegevens
+### 12.12 Het tabblad "E-maillogboek" toont de echte verzendgeschiedenis
 
-Onder **Communicatie** staat een tabblad **E-maillogboek** met drie regels uit maart 2024. Die
-regels zijn vast ingebouwd en hebben niets met jouw verzendingen te maken. Hetzelfde geldt voor
-het tabblad **Analyse**. Wil je weten of een document verstuurd is, kijk dan in
-**Reserveringsdocumenten** bij het document zelf.
+Onder **Communicatie** staat een tabblad **E-maillogboek**. Tot oktober 2026 stonden daar drie vaste
+voorbeeldregels uit maart 2024; sinds die tijd toont het wat de app echt heeft verstuurd, en berekent
+het tabblad **Analyse** zijn cijfers uit diezelfde regels (hoofdstuk 9, paragraaf 9.4). Wat je moet
+weten: de reden van een mislukking staat in het Engels, zoals de log hem bewaart; een soort e-mail
+zonder Nederlandse naam toont zijn ruwe naam; en een mislukking vóór het versturen (bijvoorbeeld een
+klant zonder e-mailadres) staat alleen bij de verzendronde en telt in de Analyse niet mee. Wil je
+weten of een **document** verstuurd is, kijk dan nog steeds in **Reserveringsdocumenten** bij het
+document zelf.
 
 ### 12.13 Twee van de drie handmatige downloadknoppen werken niet
 
@@ -332,11 +345,14 @@ Dit raakt de nachtelijke back-up **niet**: die maakt elke nacht gewoon zowel de 
 geüploade bestanden. Wil je die bestanden op je eigen computer, gebruik dan de knop
 **Downloaden** bij een van de **Bestand-back-ups** in de lijst erboven.
 
-### 12.14 De prullenbak kan niet geleegd worden
+### 12.14 Wat het leegmaken van de prullenbak niet doet
 
-Wat in de prullenbak zit, blijft daar staan. Er is geen knop om hem definitief te legen, en de
-lijst toont de honderd meest recente regels. Dat betekent ook dat een verwijderde klant nooit
-echt uit het systeem verdwijnt.
+Sinds oktober 2026 kun je elke prullenbak leegmaken (hoofdstuk 10, paragraaf 10.6), per regel, per
+selectie of alles van die soort; een verwijderde klant kan dus echt uit het systeem verdwijnen, en
+zijn debiteurnummer komt dan weer vrij. Twee beperkingen om te kennen. Een **reservering met fiscale
+beoordelingen** kan niet definitief worden verwijderd: ze wordt overgeslagen en blijft in de
+prullenbak staan. En de lijst toont per soort de nieuwste 200 regels; **Prullenbak leegmaken**
+haalt wel alles van die soort weg, ook wat niet in de lijst staat. Wat je definitief verwijdert, kun je niet terugzetten.
 
 ### 12.15 Een deel van de meldingen is Engels
 
