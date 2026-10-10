@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { NoDataAccess } from "@/components/ui/no-data-access";
 import { UserPermission, UserRole } from "@shared/schema";
 import { CustomerPortalTab } from "@/components/customers/customer-portal-tab";
 import { ReservationAddDialog } from "@/components/reservations/reservation-add-dialog";
@@ -84,13 +86,18 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
   const customerReservationsQueryKey = [`/api/reservations/customer/${customerId}`];
   const customerDriversQueryKey = [`/api/customers/${customerId}/drivers`];
   const portalAccounts = usePortalAccounts();
+  // The rights the server routes behind these queries need. Without them a query would only come back 403
+  // and show a red toast (the fine dialog's "Klant openen" reaches this screen with view_fines alone).
+  const canViewCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
+  const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
   
   // Fetch customer details with proper caching
   const { 
     data: customer, 
     isLoading: isLoadingCustomer
   } = useQuery<Customer>({
-    queryKey: customerQueryKey
+    queryKey: customerQueryKey,
+    enabled: canViewCustomers,
   });
   
   // Fetch customer reservations with proper caching
@@ -98,7 +105,8 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
     data: reservations, 
     isLoading: isLoadingReservations
   } = useQuery<Reservation[]>({
-    queryKey: customerReservationsQueryKey
+    queryKey: customerReservationsQueryKey,
+    enabled: canViewReservations,
   });
   
   // Find active reservation for selected driver (memoized)
@@ -119,6 +127,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
     refetch: refetchDrivers
   } = useQuery<Driver[]>({
     queryKey: customerDriversQueryKey,
+    enabled: canViewCustomers,
     staleTime: 0, // Always consider data stale
     refetchOnMount: 'always', // Always refetch when component mounts
   });
@@ -129,6 +138,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
     isLoading: isLoadingBlockedVehicles
   } = useQuery<any[]>({
     queryKey: [`/api/customers/${customerId}/blacklist`],
+    enabled: canViewCustomers,
   });
   
   // Mutation for deleting drivers with optimistic updates
@@ -481,6 +491,14 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
     );
   };
   
+  if (!canViewCustomers) {
+    return (
+      <div className="p-8 text-center">
+        <NoDataAccess permission={UserPermission.VIEW_CUSTOMERS} />
+      </div>
+    );
+  }
+
   if (isLoadingCustomer) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -1282,7 +1300,9 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
                 </div>
               </CardHeader>
               <CardContent>
-                {isLoadingReservations ? (
+                {!canViewReservations ? (
+                  <NoDataAccess permission={UserPermission.VIEW_RESERVATIONS} />
+                ) : isLoadingReservations ? (
                   <div className="flex justify-center p-6">
                     <svg className="animate-spin h-6 w-6 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -1419,7 +1439,9 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
                 </Button>
               </CardHeader>
               <CardContent>
-                {isLoadingReservations ? (
+                {!canViewReservations ? (
+                  <NoDataAccess permission={UserPermission.VIEW_RESERVATIONS} />
+                ) : isLoadingReservations ? (
                   <div className="flex justify-center p-6">
                     <svg className="animate-spin h-6 w-6 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
