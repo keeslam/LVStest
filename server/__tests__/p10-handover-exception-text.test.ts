@@ -12,6 +12,7 @@ const { agentFor, cleanupFixtureUsers } = await import("./helpers/app");
 const { createFixtureCustomer, createFixtureVehicle, createFixtureReservation, cleanupFixtures } = await import("./helpers/fixtures");
 const { storage } = await import("../storage");
 const { isoDay } = await import("./helpers/dates");
+const { HttpError } = await import("../utils/route-errors");
 
 const SECRET = 'SECRET-PG duplicate key value violates unique constraint "reservations_pkey" Key (id)=(7) already exists.';
 
@@ -47,6 +48,7 @@ describe("handover routes - exception text stays on the server", () => {
       refusals: [
         ["Pickup mileage (5) cannot be less than vehicle's current mileage (10)", 409],
         ["Cannot pickup reservation with status: picked_up. Only 'booked' reservations can be picked up.", 400],
+        ["Cannot pickup reservation without a vehicle", 400],
         ["Reservation not found", 400],
       ],
     },
@@ -58,6 +60,7 @@ describe("handover routes - exception text stays on the server", () => {
       refusals: [
         ["Return mileage (5) cannot be less than pickup mileage (10)", 409],
         ["Cannot return reservation with status: booked. Only 'picked_up' reservations can be returned.", 400],
+        ["Cannot return reservation without a vehicle", 400],
       ],
     },
     {
@@ -88,6 +91,7 @@ describe("handover routes - exception text stays on the server", () => {
       refusals: [
         ["Vehicle is currently in service and not available", 409],
         ["Vehicle not found", 404],
+        ["Replacement vehicle cannot be the same as the original vehicle", 400],
       ],
     },
   ];
@@ -106,6 +110,21 @@ describe("handover routes - exception text stays on the server", () => {
         expect(wire).not.toContain("duplicate key");
         expect(wire).not.toContain("already exists");
         expect(quiet).toHaveBeenCalled();
+      } finally {
+        spy.mockRestore();
+        quiet.mockRestore();
+      }
+    });
+
+    it(`${site.name}: a coded HttpError passes through with its status, message and code untouched`, async () => {
+      const spy = vi.spyOn(storage, site.method as any).mockRejectedValue(
+        new HttpError(409, "Deliberate coded refusal.", { code: "SOME_LIFECYCLE_CODE" }),
+      );
+      const quiet = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        const res = await site.send();
+        expect(res.status).toBe(409);
+        expect(res.body).toMatchObject({ message: "Deliberate coded refusal.", code: "SOME_LIFECYCLE_CODE" });
       } finally {
         spy.mockRestore();
         quiet.mockRestore();

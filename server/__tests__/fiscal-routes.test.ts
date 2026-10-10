@@ -5,11 +5,10 @@
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { db } from "../db";
-import { fiscalAuditEvents } from "../../shared/schema";
+import { fiscalAuditEvents, reservations } from "../../shared/schema";
 import { eq, and } from "drizzle-orm";
 import { makeApp, agentFor, anonAgent, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureCustomer, createFixtureVehicle, createFixtureReservation, cleanupFixtures, FIXTURE_PREFIX } from "./helpers/fixtures";
-import { reservations } from "../../shared/schema";
 import { cleanupFiscalFixtures, FIXTURE_ACTOR, FIXTURE_PARAMETER_VALUES } from "./helpers/fiscal";
 import { syncUsagePeriodForReservation, confirmUsage } from "../services/fiscal/usage-periods";
 import { assessUsagePeriod } from "../services/fiscal/assess";

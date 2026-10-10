@@ -5209,6 +5209,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.post("/api/reservations/:id/return-from-service", hasPermission(UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
     try {
       const replacementReservationId = parseInt(req.params.id);
+      // Unreachable over HTTP: the central id-param guard (middleware/parseIntParam.ts) refuses a non-integer id first.
       if (isNaN(replacementReservationId)) {
         return res.status(400).json({ message: "Ongeldig reserveringsnummer.", code: "INVALID_RESERVATION_ID" });
       }
@@ -5857,6 +5858,10 @@ export async function registerRoutes(app: Express): Promise<void> {
         damageCheckDocument
       });
     } catch (error) {
+      // FIX-G: the loser of two parallel returns gets its coded 409 (ALREADY_RETURNED), as on pickup.
+      if (error instanceof HttpError) {
+        return res.status(error.status).json({ message: error.message, code: error.code });
+      }
       console.error("Error during reservation return:", error);
 
       if (isDeliberateStorageRefusal(error)) {
@@ -5900,6 +5905,10 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.status(201).json(placeholderReservation);
       
     } catch (error) {
+      // A coded refusal keeps its status, message and code, as on the other four handover routes.
+      if (error instanceof HttpError) {
+        return res.status(error.status).json({ message: error.message, code: error.code });
+      }
       console.error("Error creating placeholder reservation:", error);
       
       if (error instanceof z.ZodError) {
