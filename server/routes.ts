@@ -91,6 +91,7 @@ import {
   BLOCK_TO_VEHICLE_MAINTENANCE,
   assertVehicleMaintenanceStatus,
   normalizeReservationStatus,
+  CLOSED_RESERVATION_STATUSES,
   isReservationTransitionAllowed,
   isReservationRevert,
   decideHandover,
@@ -3368,7 +3369,12 @@ export async function registerRoutes(app: Express): Promise<void> {
           !r.deletedAt &&
           r.vehicleId === reservationData.vehicleId &&
           r.type === 'standard' &&
-          r.customerId !== null
+          r.customerId !== null &&
+          // A-7-1: a cancelled, completed or returned rental no longer holds the
+          // vehicle. The fallback is for rentals that are still open under a
+          // surprising status, not for closed ones (they produced an empty
+          // "assign spare vehicles" dialog).
+          !CLOSED_RESERVATION_STATUSES.has(normalizeReservationStatus(r.status) ?? "")
         ).filter(r => {
           const rs = new Date(r.startDate);
           const re = r.endDate ? new Date(r.endDate) : new Date('9999-12-31');
