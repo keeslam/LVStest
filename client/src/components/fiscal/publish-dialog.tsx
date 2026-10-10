@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
@@ -42,7 +43,7 @@ export function PublishDialog({ open, onOpenChange, version, current, definition
       onPublished(published);
       onOpenChange(false);
     },
-    onError: (e: Error) => setError(e.message.replace(/^\d{3}:\s*/, "")),
+    onError: (e: Error) => setError(describeApiError(e)),
   });
 
   const changes = definitions

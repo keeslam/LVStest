@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -54,7 +55,7 @@ export function MaintenanceApproval({ request: r, onApproved }: { request: Porta
       ? { startDate, ...(durationStr !== "" ? { durationDays: Math.min(60, Math.max(1, Number(durationStr) || 1)) } : {}), note: note.trim() || undefined }
       : { startDate, durationDays: days, category, note: note.trim() || undefined })).json(),
     onSuccess: (data: { block: { id: number } }) => { toast({ title: t(isChange ? "admin.maintenance.moved" : "admin.maintenance.created", { id: data.block.id }) }); onApproved(data.block.id); },
-    onError: (e: Error) => toast({ title: e.message.replace(/^\d+:\s*/, ""), variant: "destructive" }),
+    onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
 
   return (

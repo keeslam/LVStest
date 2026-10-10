@@ -334,7 +334,20 @@
       "LICENSE_PLATE_REQUIRED": "Het kenteken ontbreekt.",
       "VEHICLE_ALREADY_EXISTS": "Dit voertuig bestaat al.",
       "INVALID_DATE": "Een datum kon niet worden gelezen (gebruik dd-mm-jjjj).",
-      "IMPORT_ROW_FAILED": "Dit voertuig kon niet worden geïmporteerd."
+      "IMPORT_ROW_FAILED": "Dit voertuig kon niet worden geïmporteerd.",
+      "RETURN_FROM_SERVICE_REFUSED": "Terug van onderhoud kan niet: de reservering bestaat niet meer of is geen vervangingsreservering.",
+      "RETURN_FROM_SERVICE_FAILED": "Terugnemen van onderhoud is niet gelukt.",
+      "RETURN_DATE_REQUIRED": "Vul een inleverdatum in.",
+      "RETURN_DATE_INVALID": "De inleverdatum is geen bestaande datum.",
+      "INVALID_RESERVATION_ID": "Ongeldig reserveringsnummer.",
+      "MAINTENANCE_WEEKEND": "Kies een werkdag: de werkplaats is in het weekend gesloten.",
+      "MAINTENANCE_IN_PAST": "Onderhoud kan niet in het verleden worden ingepland.",
+      "MAINTENANCE_NEEDS_BLOCK": "Een onderhoudsmelding handel je af via Inplannen of Afwijzen.",
+      "BOOKING_NEEDS_RESERVATION": "Een huuraanvraag handel je af via Goedkeuren of Afwijzen.",
+      "ALREADY_HANDLED": "Deze aanvraag is al afgehandeld.",
+      "SPARE_CONFLICT": "De toegewezen vervanger is niet vrij in de nieuwe periode. Wijs eerst een andere auto toe.",
+      "WORKSHOP_OVERRIDE_FORBIDDEN": "Alleen een beheerder mag een voertuig meegeven dat in de werkplaats staat of niet verhuurbaar is.",
+      "WORKSHOP_OVERRIDE_REASON_REQUIRED": "Vul een reden in (minimaal 3 tekens) om een geblokkeerd voertuig toch mee te geven."
     }
   },
   "validation": {

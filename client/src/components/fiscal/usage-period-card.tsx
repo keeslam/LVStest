@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { formatDate } from "@/lib/format-utils";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -105,7 +106,7 @@ export function UsagePeriodCard({ reservationId, startDate }: { reservationId: n
       queryClient.setQueryData(key, (old: UsagePeriodResponse | null | undefined) => ({ ...(old ?? row), ...row, latestAssessment: row.latestAssessment ?? old?.latestAssessment ?? null }));
       queryClient.invalidateQueries({ queryKey: key });
     },
-    onError: (e: Error) => setServerError(e.message.replace(/^\d{3}:\s*/, "")),
+    onError: (e: Error) => setServerError(describeApiError(e)),
   });
 
   // A reservation before the derivation date has no period for anybody: an account that may not look gets

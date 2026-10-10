@@ -1,3 +1,4 @@
+import { notifyFileReady } from "@/lib/file-ready";
 import { describeApiError } from "@/lib/api-error";
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -173,6 +174,7 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       toast({ title: t('damageCheckTemplatesPage.toasts.successTitle'), description: t('damageCheckTemplatesPage.toasts.templateExportedDescription') });
+      notifyFileReady(a.download, blob.size);
     } catch (error) {
       console.error("Error exporting template:", error);
       toast({ title: t('damageCheckTemplatesPage.toasts.errorTitle'), description: t('damageCheckTemplatesPage.toasts.exportFailedDescription'), variant: "destructive" });

@@ -1,3 +1,4 @@
+import { notifyFileReady } from "@/lib/file-ready";
 import { describeApiError } from "@/lib/api-error";
 import { v } from "@/lib/zod-i18n";
 import { useState, useEffect, useMemo, useRef } from "react";
@@ -2712,6 +2713,7 @@ export function ReservationForm({
                                     const url = window.URL.createObjectURL(blob);
                                     window.open(url, '_blank');
                                     window.URL.revokeObjectURL(url);
+                                    notifyFileReady(`schadecheck-${check.id}.pdf`, blob.size);
                                   }
                                 } catch (error) {
                                   console.error('Failed to view damage check:', error);
@@ -2753,6 +2755,7 @@ export function ReservationForm({
                                     const url = window.URL.createObjectURL(blob);
                                     window.open(url, '_blank');
                                     window.URL.revokeObjectURL(url);
+                                    notifyFileReady(`schadecheck-${check.id}.pdf`, blob.size);
                                   }
                                 } catch (error) {
                                   console.error('Failed to view damage check:', error);

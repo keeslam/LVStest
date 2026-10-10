@@ -1,3 +1,4 @@
+import { notifyFileReady } from "@/lib/file-ready";
 import { describeApiError } from "@/lib/api-error";
 import { useState, useRef } from "react";
 import { useTranslation, Trans } from "react-i18next";
@@ -208,6 +209,8 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
       document.body.removeChild(a);
 
       toast({ title: t('backupDialog.dataDownloadedTitle'), description: t('backupDialog.dataDownloadedDescription') });
+      // A-19-8: name and size of what was just saved; shown last so it is the toast that stays.
+      notifyFileReady(a.download, blob.size);
     } catch (error) {
       toast({
         title: t('backupDialog.downloadFailedTitle'),
@@ -236,6 +239,8 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
       document.body.removeChild(a);
 
       toast({ title: t('backupDialog.codeDownloadedTitle'), description: t('backupDialog.codeDownloadedDescription') });
+      // A-19-8: name and size of what was just saved; shown last so it is the toast that stays.
+      notifyFileReady(a.download, blob.size);
     } catch (error) {
       toast({
         title: t('backupDialog.downloadFailedTitle'),
@@ -264,6 +269,8 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
       document.body.removeChild(a);
 
       toast({ title: t('backupDialog.filesDownloadedTitle'), description: t('backupDialog.filesDownloadedDescription') });
+      // A-19-8: name and size of what was just saved; shown last so it is the toast that stays.
+      notifyFileReady(a.download, blob.size);
     } catch (error) {
       toast({
         title: t('backupDialog.downloadFailedTitle'),
@@ -406,6 +413,8 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
       document.body.removeChild(a);
 
       toast({ title: t('backupDialog.backupDownloadedTitle'), description: t('backupDialog.backupDownloadedDescription', { filename }) });
+      // A-19-8: name and size of what was just saved; shown last so it is the toast that stays.
+      notifyFileReady(a.download, blob.size);
     } catch (error) {
       toast({
         title: t('backupDialog.downloadFailedTitle'),

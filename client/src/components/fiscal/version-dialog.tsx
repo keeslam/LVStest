@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { formatDateTime } from "@/lib/format-utils";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -120,7 +121,7 @@ export function VersionDialog({ versionId, onOpenChange, definitions, current }:
     queryClient.invalidateQueries({ queryKey: ["/api/fiscal/configuration"] });
     queryClient.invalidateQueries({ queryKey: ["/api/fiscal/overview"] });
   };
-  const failed = (e: Error) => setError(e.message.replace(/^\d{3}:\s*/, ""));
+  const failed = (e: Error) => setError(describeApiError(e));
 
   const save = useMutation({
     mutationFn: async () => {

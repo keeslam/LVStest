@@ -17,7 +17,8 @@ import { useTranslation } from "react-i18next";
  *   <ConfirmDialog {...guard.confirmProps} />
  *
  * A successful save closes the dialog directly (`close()`), which also marks
- * the form clean, so a reopened dialog never asks about the previous session.
+ * the form clean in the hook; the form itself reports clean again when it mounts,
+ * so a reopened dialog never asks about the previous session.
  *
  * Switching the reservation dialogs and the three document editors to this
  * hook is left for the final wave.
@@ -62,9 +63,8 @@ export function useUnsavedChangesGuard({ close, open }: UnsavedChangesGuardOptio
         open?.();
         return;
       }
-      // A nested dialog (a duplicate warning, the GPS dialog) closing is not this
-      // form closing: leave it alone, as the reservation dialogs do.
-      if (document.querySelectorAll('[role="dialog"][data-state="open"]').length > 1) return;
+      // Radix only calls the topmost layer's onOpenChange, so a nested dialog's own
+      // close never reaches this one; a stacked clean form must still close on Escape.
       requestClose();
     },
     [open, requestClose],

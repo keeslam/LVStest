@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -58,12 +59,12 @@ export function BlacklistTable({ initialPlate, initialCustomerId }: { initialPla
       return res.json();
     },
     onSuccess: () => { invalidate(); toast({ title: t(editing ? "admin.blacklist.updated" : "admin.blacklist.added") }); closeForm(); },
-    onError: (e: Error) => toast({ title: e.message.replace(/^\d+:\s*/, ""), variant: "destructive" }),
+    onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
   const remove = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `${KEY[0]}/${id}`),
     onSuccess: () => { invalidate(); toast({ title: t("admin.blacklist.removed") }); setConfirmRemove(null); },
-    onError: (e: Error) => toast({ title: e.message.replace(/^\d+:\s*/, ""), variant: "destructive" }),
+    onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
 
   const q = search.trim().toLowerCase();

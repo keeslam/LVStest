@@ -101,7 +101,7 @@ describe("gebruiksblok van een reservering", () => {
     expect(screen.getByText("Catalogusprijs ontbreekt")).toBeInTheDocument();
   });
 
-  it("sends the confirmation and shows the server's objection when a reason is missing", async () => {
+  it("sends the confirmation and shows a Dutch objection (worded by status, not the server text) when a reason is missing", async () => {
     const user = userEvent.setup();
     renderCard();
     await screen.findByText("1 maart 2027 t/m 10 maart 2027");
@@ -109,7 +109,7 @@ describe("gebruiksblok van een reservering", () => {
     await user.click(screen.getByLabelText("Nee", { selector: "#usage-commuting-no" }));
     await user.click(screen.getByLabelText("Nee", { selector: "#usage-providedBeforeCutoff-no" }));
     await user.click(screen.getByTestId("button-usage-confirm"));
-    expect(await screen.findByText(/reden van vervanging is verplicht/)).toBeInTheDocument();
+    expect(await screen.findByText(/De invoer klopt niet/)).toBeInTheDocument();
 
     await user.selectOptions(screen.getByTestId("select-usage-replacementReason"), "accident");
     await user.click(screen.getByTestId("button-usage-confirm"));

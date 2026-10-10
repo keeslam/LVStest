@@ -28,6 +28,23 @@ describe("csvText", () => {
   });
 });
 
+describe("csv formula injection", () => {
+  it("prefixes a single quote to text that a spreadsheet would run as a formula", () => {
+    const rows = [['=HYPERLINK("http://x")'], ["+cmd"], ["-cmd"], ["@SUM(A1)"], ["\tTab"], ["\rCR"]];
+    const lines = csvText(["a"], rows).slice(1).split("\r\n");
+    expect(lines[1]).toBe('"\'=HYPERLINK(""http://x"")"');
+    expect(lines[2]).toBe("'+cmd");
+    expect(lines[3]).toBe("'-cmd");
+    expect(lines[4]).toBe("'@SUM(A1)");
+    expect(lines[5]).toBe("'\tTab");
+  });
+
+  it("leaves real numbers and ordinary text alone", () => {
+    const lines = csvText(["a"], [[-5], ["-5,00"], ["-12.5"], ["Jan-Willem"], ["95,00"]]).slice(1).split("\r\n");
+    expect(lines.slice(1)).toEqual(["-5", "-5,00", "-12.5", "Jan-Willem", "95,00"]);
+  });
+});
+
 describe("csv values", () => {
   it("writes numbers with a decimal comma and two decimals", () => {
     expect(csvNumber(95)).toBe("95,00");

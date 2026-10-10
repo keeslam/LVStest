@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { formatDate } from "@/lib/format-utils";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -70,7 +71,7 @@ function NewDraftDialog({ open, onOpenChange, ruleKey, versions, onCreated }: { 
       onOpenChange(false);
       onCreated(row.id);
     },
-    onError: (e: Error) => setError(e.message.replace(/^\d{3}:\s*/, "")),
+    onError: (e: Error) => setError(describeApiError(e)),
   });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

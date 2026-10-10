@@ -1,3 +1,4 @@
+import { notifyFileReady } from "@/lib/file-ready";
 import { describeApiError } from "@/lib/api-error";
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from "react-i18next";
@@ -451,6 +452,7 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
         title: t('templateEditor.toasts.previewGeneratedTitle'),
         description: t('templateEditor.toasts.previewGeneratedDescription'),
       });
+      notifyFileReady('sjabloonvoorbeeld.pdf', data.size);
     },
     onError: (error: Error) => {
       toast({

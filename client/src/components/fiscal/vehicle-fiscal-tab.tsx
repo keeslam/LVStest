@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { formatDateTime } from "@/lib/format-utils";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -40,7 +41,7 @@ export function VehicleFiscalTab({ vehicleId }: { vehicleId: number }) {
       queryClient.invalidateQueries({ queryKey: ["/api/fiscal/overview"] });
       toast(row.refresh.ok ? { title: t("vehicle.refreshed", { count: row.refresh.changed.length }) } : { title: t("vehicle.refreshFailed", { message: rdwReason(row.refresh.error) }), variant: "destructive" });
     },
-    onError: (e: Error) => toast({ title: e.message.replace(/^\d{3}:\s*/, ""), variant: "destructive" }),
+    onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
 
   const save = useMutation({
@@ -58,7 +59,7 @@ export function VehicleFiscalTab({ vehicleId }: { vehicleId: number }) {
       queryClient.invalidateQueries({ queryKey: ["/api/fiscal/overview"] });
       toast({ title: t("vehicle.saved") });
     },
-    onError: (e: Error) => setFormError(e.message.replace(/^\d{3}:\s*/, "")),
+    onError: (e: Error) => setFormError(describeApiError(e)),
   });
 
   if (isLoading) return <p className="text-sm text-muted-foreground">{t("common.loading")}</p>;

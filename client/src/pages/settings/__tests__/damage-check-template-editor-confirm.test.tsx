@@ -18,7 +18,7 @@ import DamageCheckTemplateCanvasEditor from "@/pages/settings/damage-check-templ
 
 const TEMPLATE = {
   id: 1, name: "Standaard", description: null, isDefault: true, language: "nl",
-  canvasFields: [{ id: "f1", type: "text", x: 20, y: 20, width: 120, height: 24, label: "Bestaand veld" }],
+  canvasFields: [{ id: "f1", type: "inspection", name: "Bestaand veld", x: 20, y: 20, width: 120, height: 24, fontSize: 10, damageTypes: [] }],
   headerText: null, footerText: null,
 };
 const calls: string[] = [];
@@ -50,5 +50,10 @@ describe("damage check template editor: default layout", () => {
     await user.click(screen.getByTestId("confirm-dialog-cancel"));
     await waitFor(() => expect(screen.queryByTestId("button-confirm-replace-layout")).not.toBeInTheDocument());
     expect(calls.filter((c) => !c.startsWith("GET"))).toEqual([]);
+    // Cancel left the layout alone; only the confirm button replaces it.
+    expect(screen.getByText("Bestaand veld")).toBeInTheDocument();
+    await user.click(screen.getByTestId("button-insert-default-layout"));
+    await user.click(await screen.findByTestId("button-confirm-replace-layout"));
+    await waitFor(() => expect(screen.queryByText("Bestaand veld")).not.toBeInTheDocument());
   });
 });

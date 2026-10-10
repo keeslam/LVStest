@@ -89,12 +89,13 @@ describe("WAVE 13 — 'Terug van onderhoud' in het scherm", () => {
     expect(posts[0].body.body).toBeUndefined();
   });
 
-  it("shows a refusal in Dutch, not the server's English", async () => {
+  it("shows a refusal in Dutch, worded by its code", async () => {
     failWith = {
       status: 404,
       body: {
         message:
           "Deze reservering is geen vervangingsreservering, dus er is hier niets terug te nemen van onderhoud.",
+        code: "RETURN_FROM_SERVICE_REFUSED",
       },
     };
     const user = userEvent.setup();

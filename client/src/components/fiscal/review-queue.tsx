@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -38,7 +39,7 @@ export function ReviewQueue() {
       queryClient.invalidateQueries({ queryKey: ["/api/fiscal/review-cases"] });
       queryClient.invalidateQueries({ queryKey: ["/api/fiscal/overview"] });
     },
-    onError: (e: Error) => setError(e.message.replace(/^\d{3}:\s*/, "")),
+    onError: (e: Error) => setError(describeApiError(e)),
   });
 
   return (

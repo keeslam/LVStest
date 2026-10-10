@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -56,7 +57,7 @@ export function MileageOverridePasswordDialog({
         setError(t('mileageOverrideDialog.incorrectPassword'));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('mileageOverrideDialog.genericError'));
+      setError(describeApiError(err, undefined, t('mileageOverrideDialog.genericError')));
     } finally {
       setIsVerifying(false);
     }

@@ -334,7 +334,20 @@
       "LICENSE_PLATE_REQUIRED": "The license plate is missing.",
       "VEHICLE_ALREADY_EXISTS": "This vehicle already exists.",
       "INVALID_DATE": "A date could not be read (use dd-mm-yyyy).",
-      "IMPORT_ROW_FAILED": "This vehicle could not be imported."
+      "IMPORT_ROW_FAILED": "This vehicle could not be imported.",
+      "RETURN_FROM_SERVICE_REFUSED": "Return from service is not possible: the reservation no longer exists or is not a replacement reservation.",
+      "RETURN_FROM_SERVICE_FAILED": "Taking the vehicle back from service failed.",
+      "RETURN_DATE_REQUIRED": "Enter a return date.",
+      "RETURN_DATE_INVALID": "The return date is not a real date.",
+      "INVALID_RESERVATION_ID": "Invalid reservation number.",
+      "MAINTENANCE_WEEKEND": "Pick a working day: the workshop is closed at the weekend.",
+      "MAINTENANCE_IN_PAST": "Maintenance cannot be scheduled in the past.",
+      "MAINTENANCE_NEEDS_BLOCK": "Handle a maintenance request through Schedule or Reject.",
+      "BOOKING_NEEDS_RESERVATION": "Handle a rental request through Approve or Reject.",
+      "ALREADY_HANDLED": "This request has already been handled.",
+      "SPARE_CONFLICT": "The assigned replacement is not free in the new period. Assign another car first.",
+      "WORKSHOP_OVERRIDE_FORBIDDEN": "Only an administrator may hand over a vehicle that is in the workshop or not for rental.",
+      "WORKSHOP_OVERRIDE_REASON_REQUIRED": "Enter a reason (at least 3 characters) to hand over a blocked vehicle anyway."
     }
   },
   "validation": {

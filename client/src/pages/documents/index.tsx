@@ -1617,7 +1617,7 @@ function DiagramTemplateManager() {
     onError: (error: Error) => {
       toast({
         title: t('indexPage.diagramTemplates.toasts.errorTitle'),
-        description: diagramImageErrorText(error) ?? (error.message || t('indexPage.diagramTemplates.toasts.uploadFailed')),
+        description: diagramImageErrorText(error) ?? describeApiError(error, undefined, t('indexPage.diagramTemplates.toasts.uploadFailed')),
         variant: "destructive",
       });
     },
@@ -1651,7 +1651,7 @@ function DiagramTemplateManager() {
     onError: (error: Error) => {
       toast({
         title: t('indexPage.diagramTemplates.toasts.errorTitle'),
-        description: diagramImageErrorText(error) ?? (error.message || t('indexPage.diagramTemplates.toasts.updateFailed')),
+        description: diagramImageErrorText(error) ?? describeApiError(error, undefined, t('indexPage.diagramTemplates.toasts.updateFailed')),
         variant: "destructive",
       });
     },

@@ -101,3 +101,41 @@ describe("customer add dialog", () => {
     await waitFor(() => expect(screen.queryByLabelText("Volledige naam")).not.toBeInTheDocument());
   });
 });
+
+describe("a customer edit dialog stacked inside another open dialog", () => {
+  it("closes on Escape while the form is clean (the other dialog stays)", async () => {
+    const { Dialog, DialogContent, DialogTitle, DialogDescription } = await import("@/components/ui/dialog");
+    const { CustomerEditDialog } = await import("@/components/customers/customer-edit-dialog");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = typeof input === "string" ? input : (input as Request).url;
+        const body = url.includes("/api/customers/5") ? { id: 5, name: "Stapel Klant", email: "", phone: "" } : [];
+        return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
+      }),
+    );
+    const user = userEvent.setup();
+    // The app's own client, so the customer query really goes through fetch.
+    const { queryClient: appClient } = await import("@/lib/queryClient");
+    appClient.clear();
+    render(
+      <QueryClientProvider client={appClient}>
+      <GlobalDialogProvider>
+      <Dialog open>
+        <DialogContent>
+          <DialogTitle>Buitenste dialoog</DialogTitle>
+          <DialogDescription>Klantdetails</DialogDescription>
+          <CustomerEditDialog customerId={5} />
+        </DialogContent>
+      </Dialog>
+      </GlobalDialogProvider>
+      </QueryClientProvider>,
+    );
+    await user.click(screen.getByTestId("button-edit-customer-5"));
+    expect(await screen.findByDisplayValue("Stapel Klant")).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByDisplayValue("Stapel Klant")).not.toBeInTheDocument());
+    expect(screen.getByText("Buitenste dialoog")).toBeInTheDocument();
+    expect(screen.queryByText("Wijzigingen verwerpen?")).not.toBeInTheDocument();
+  });
+});

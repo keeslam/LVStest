@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -60,7 +61,7 @@ export function BookingApproval({ request: r, onApproved }: { request: PortalReq
     onSuccess: (data: { reservation: { id: number } }) => { toast({ title: t("admin.booking.created", { id: data.reservation.id }) }); onApproved(data.reservation.id); },
     onError: (e: ApproveError) => {
       const c = e.conflicts?.[0];
-      toast({ title: c ? t("admin.requests.dialog.conflict", { id: c.id, from: c.startDate, to: c.endDate ?? "…" }) : e.message.replace(/^\d+:\s*/, ""), variant: "destructive" });
+      toast({ title: c ? t("admin.requests.dialog.conflict", { id: c.id, from: c.startDate, to: c.endDate ?? "…" }) : describeApiError(e), variant: "destructive" });
     },
   });
 

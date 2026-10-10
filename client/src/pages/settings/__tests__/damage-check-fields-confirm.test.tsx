@@ -41,12 +41,22 @@ describe("damage check fields: resets ask in our own dialog", () => {
     const confirmSpy = vi.spyOn(window, "confirm");
     const user = userEvent.setup();
     renderIt();
-    await user.click(await screen.findByTestId("button-reset-defaults"));
+    const groupId = DEFAULT_DAMAGE_CHECK_FIELDS.groups[0].id;
+    const label = (await screen.findByTestId(`input-label-${groupId}-0`)) as HTMLInputElement;
+    const original = label.value;
+    await user.clear(label);
+    await user.type(label, "Mijn eigen veld");
+    await user.click(screen.getByTestId("button-reset-defaults"));
     expect(await screen.findByTestId("confirm-dialog")).toBeInTheDocument();
     expect(confirmSpy).not.toHaveBeenCalled();
     await user.click(screen.getByTestId("confirm-dialog-cancel"));
     await waitFor(() => expect(screen.queryByTestId("confirm-dialog")).not.toBeInTheDocument());
     expect(calls.filter((c) => !c.startsWith("GET"))).toEqual([]);
+    // Cancel left the edited config alone; only the confirm button resets it.
+    expect(screen.getByTestId(`input-label-${groupId}-0`)).toHaveValue("Mijn eigen veld");
+    await user.click(screen.getByTestId("button-reset-defaults"));
+    await user.click(await screen.findByTestId("button-confirm-reset"));
+    await waitFor(() => expect(screen.getByTestId(`input-label-${groupId}-0`)).toHaveValue(original));
   });
 
   it("the header reset asks first, and cancel sends no DELETE", async () => {

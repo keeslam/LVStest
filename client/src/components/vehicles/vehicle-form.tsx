@@ -51,8 +51,19 @@ const handleFieldValue = (value: any): string => {
   return value === null || value === undefined ? '' : String(value);
 };
 
+// The shared schema's odometer messages are English (the server shares it); the form says them in the user's language.
+const mileageMessages = z.coerce
+  .number({ invalid_type_error: v("numberInvalid") })
+  .int(v("integerRequired"))
+  .min(0, v("mileageNegative"))
+  .max(9999999, v("numberMax", { max: 9999999 }))
+  .nullable()
+  .optional();
+
 // Extended schema with validation
 export const formSchema = insertVehicleSchema.extend({
+  currentMileage: mileageMessages,
+  lastServiceMileage: mileageMessages,
   licensePlate: z.string().min(1, v("licensePlateRequired")),
   brand: z.string().min(1, v("brandRequired")),
   model: z.string().min(1, v("modelRequired")),

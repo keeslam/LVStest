@@ -138,4 +138,22 @@ describe("backup dialog", () => {
     expect((await screen.findAllByText(/Onbekende datum/)).length).toBeGreaterThan(0);
     expect(screen.queryByText(/1970/)).toBeNull();
   });
+
+  it("A-19-8: a downloaded data backup is announced with its file name and size", async () => {
+    const download = vi.fn(async () => new Response("x".repeat(2048), { status: 200 }));
+    vi.stubGlobal("fetch", vi.fn(async (url: unknown, init?: RequestInit) =>
+      String(url).includes("/api/backups/download-data") ? download() : fetchMock(url, init)));
+    Object.assign(URL, { createObjectURL: vi.fn(() => "blob:x"), revokeObjectURL: vi.fn() });
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    const user = userEvent.setup();
+    renderDialog();
+    await user.click(await screen.findByTestId("dialog-download-data-button"));
+    await vi.waitFor(() => expect(download).toHaveBeenCalled());
+    await vi.waitFor(() => {
+      const last = toast.mock.calls[toast.mock.calls.length - 1][0];
+      expect(last.title).toBe("Bestand gemaakt");
+    });
+    const last = toast.mock.calls[toast.mock.calls.length - 1][0];
+    expect(last.description).toMatch(/^car-rental-data-[0-9]{4}-[0-9]{2}-[0-9]{2}[.]sql [(]2 kB[)]$/);
+  });
 });

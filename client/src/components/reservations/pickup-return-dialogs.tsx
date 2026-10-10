@@ -403,7 +403,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
       // A force that the server refused: stay in the same dialog and say why,
       // instead of dropping a toast behind a window that just closed.
       if (error.code === "WORKSHOP_OVERRIDE_FORBIDDEN" || error.code === "WORKSHOP_OVERRIDE_REASON_REQUIRED") {
-        setWorkshopOverrideError(error.message || t('pickupReturn.pickup.processPickupFailedFallback'));
+        setWorkshopOverrideError(describeApiError(error, undefined, t('pickupReturn.pickup.processPickupFailedFallback')));
         return;
       }
       toast({

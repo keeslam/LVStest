@@ -910,7 +910,9 @@
       "genericUpdateFailed": "Failed to update vehicle",
       "genericCreateFailed": "Failed to create vehicle",
       "unknownError": "Unknown error",
-      "lookupFailedFallback": "Failed to lookup vehicle"
+      "lookupFailedFallback": "Failed to lookup vehicle",
+      "saveFailedDescriptionUpdate": "Updating the vehicle failed: {{message}}",
+      "saveFailedDescriptionCreate": "Creating the vehicle failed: {{message}}"
     }
   },
   "remarksWarningDialog": {

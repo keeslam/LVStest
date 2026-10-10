@@ -301,7 +301,7 @@ export function ReservationViewDialog({
           ) : error || !reservation ? (
             <div className="bg-red-50 border border-red-200 p-4 rounded-md">
               <h3 className="text-lg font-semibold text-red-800">{t('viewDialog.errorTitle')}</h3>
-              <p className="text-red-600">{t('viewDialog.failedToLoad', { error: (error as Error)?.message || '' })}</p>
+              <p className="text-red-600">{t('viewDialog.failedToLoad', { error: describeApiError(error) })}</p>
             </div>
           ) : (
             <div className="space-y-6">

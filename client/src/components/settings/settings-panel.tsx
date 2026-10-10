@@ -720,7 +720,7 @@ export function SettingsPanel() {
       setSmtpTestResult(result);
     },
     onError: (error: any) => {
-      setSmtpTestResult({ success: false, userMessage: error.message || t('settingsPage.email.testConnectionErrorFallback') });
+      setSmtpTestResult({ success: false, userMessage: describeApiError(error, undefined, t('settingsPage.email.testConnectionErrorFallback')) });
     },
   });
 

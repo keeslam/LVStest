@@ -1,4 +1,4 @@
-import { UserFacingError } from "@/lib/api-error";
+import { UserFacingError, describeApiError } from "@/lib/api-error";
 import { v } from "@/lib/zod-i18n";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -113,8 +113,8 @@ export function ReturnFromServiceDialog({
     onError: (error: Error) => {
       toast({
         title: t('returnFromServiceDialog.toasts.errorTitle'),
-        // This endpoint answers in Dutch on purpose (Terug van onderhoud refusals): show its sentence.
-        description: error.message,
+        // Worded by the server's stable code (RETURN_FROM_SERVICE_*), in the current language.
+        description: describeApiError(error),
         variant: "destructive",
       });
     },
