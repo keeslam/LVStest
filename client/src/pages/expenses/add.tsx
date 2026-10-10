@@ -1,81 +1,24 @@
-import { ExpenseForm } from "@/components/expenses/expense-form";
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { Expense } from "@shared/schema";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ExpenseAddDialog } from "@/components/expenses/expense-add-dialog";
 
+/**
+ * The old /expenses/add address (A-9-7). Recording an expense used to be a page
+ * from the Kosten screen and a dialog from the dashboard; it is one dialog now
+ * (ExpenseAddDialog). This route stays so old links, shared/page-access.ts and
+ * `?vehicleId=` / `?category=` links keep working: it opens that dialog and
+ * goes back to the Kosten list when the dialog closes.
+ */
 export default function ExpenseAdd() {
-  const { t } = useTranslation("expenses");
-  const [vehicleId, setVehicleId] = useState<number | null>(null);
-  const [location] = useLocation();
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [expenseId, setExpenseId] = useState<number | null>(null);
-  
-  // State for preselected category
-  const [preselectedCategory, setPreselectedCategory] = useState<string | null>(null);
-  
-  // Check if we're in edit mode by looking at the URL pattern
-  useEffect(() => {
-    // First, check if we're in edit mode by matching the URL pattern
-    const editMatch = location.match(/\/expenses\/edit\/(\d+)/);
-    if (editMatch && editMatch[1]) {
-      const id = parseInt(editMatch[1]);
-      console.log("Edit mode detected for expense ID:", id);
-      setIsEditMode(true);
-      setExpenseId(id);
-    } else {
-      // If we're not in edit mode, check for query parameters
-      const urlParams = new URLSearchParams(window.location.search);
-      
-      // Check for vehicleId parameter
-      const vehicleIdParam = urlParams.get("vehicleId");
-      if (vehicleIdParam) {
-        console.log("Found vehicleId in URL:", vehicleIdParam);
-        setVehicleId(Number(vehicleIdParam));
-      }
-      
-      // Check for category parameter
-      const categoryParam = urlParams.get("category");
-      if (categoryParam) {
-        console.log("Found category in URL:", categoryParam);
-        setPreselectedCategory(categoryParam);
-      }
-    }
-  }, [location]);
-  
-  // Fetch expense data if in edit mode
-  const { data: expense, isLoading } = useQuery<Expense>({
-    queryKey: [`/api/expenses/${expenseId}`],
-    enabled: isEditMode && !!expenseId,
-  });
-  
-  if (isEditMode && isLoading) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold">{t('addPage.editExpenseTitle')}</h1>
-        <div className="space-y-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-32 w-full" />
-        </div>
-      </div>
-    );
-  }
-  
+  const [, navigate] = useLocation();
+  const params = new URLSearchParams(window.location.search);
+  const vehicleId = Number(params.get("vehicleId"));
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">
-        {isEditMode ? t('addPage.editExpenseTitle') : t('addPage.recordNewExpenseTitle')}
-      </h1>
-      <ExpenseForm 
-        editMode={isEditMode}
-        initialData={expense}
-        preselectedVehicleId={isEditMode ? null : vehicleId}
-        preselectedCategory={isEditMode ? null : preselectedCategory}
-      />
-    </div>
+    <ExpenseAddDialog
+      open
+      vehicleId={Number.isInteger(vehicleId) && vehicleId > 0 ? vehicleId : undefined}
+      category={params.get("category")}
+      onOpenChange={(open) => { if (!open) navigate("/expenses"); }}
+    />
   );
 }

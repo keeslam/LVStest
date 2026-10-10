@@ -66,10 +66,12 @@ const ACCEPTED_FILE_TYPES = [
 
 // Extended schema with validation
 export const formSchema = insertExpenseSchema.extend({
+  // A-9-5: the form starts on vehicleId 0 (nothing chosen), which a bare z.number()
+  // accepted - so leaving the vehicle empty gave no message at all.
   vehicleId: z.number({
     required_error: v("vehicleRequired"),
     invalid_type_error: v("vehicleRequired"),
-  }),
+  }).int(v("vehicleRequired")).min(1, v("vehicleRequired")),
   category: z.string().min(1, v("categoryRequired")),
   amount: z.number({
     required_error: v("amountRequired"),
@@ -363,7 +365,8 @@ export function ExpenseForm({
                 name="vehicleId"
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
-                    <FormLabel>{t('form.vehicle')}</FormLabel>
+                    <FormLabel>{t('form.vehicle')} <span aria-hidden="true">*</span></FormLabel>
+                    <FormDescription>{t('form.vehicleRequiredHint')}</FormDescription>
                     {!canViewVehicles ? (
                       <NoDataAccess permission={UserPermission.VIEW_VEHICLES} />
                     ) : (

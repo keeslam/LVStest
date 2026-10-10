@@ -22,6 +22,7 @@
       "other": "Overig"
     },
     "vehicle": "Voertuig",
+    "vehicleRequiredHint": "Een voertuig is verplicht: elke kostenpost hoort bij één voertuig.",
     "searchSelectVehicle": "Zoek en selecteer een voertuig...",
     "category": "Categorie",
     "selectCategory": "Selecteer kostencategorie",

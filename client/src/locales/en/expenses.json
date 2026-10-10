@@ -22,6 +22,7 @@
       "other": "Other"
     },
     "vehicle": "Vehicle",
+    "vehicleRequiredHint": "A vehicle is required: every expense belongs to one vehicle.",
     "searchSelectVehicle": "Search and select a vehicle...",
     "category": "Category",
     "selectCategory": "Select expense category",

@@ -54,7 +54,7 @@ import { InlineDocumentUpload } from "@/components/documents/inline-document-upl
 import { ReservationForm } from "@/components/reservations/reservation-form";
 import { VehicleForm } from "@/components/vehicles/vehicle-form";
 import { CustomerForm } from "@/components/customers/customer-form";
-import { ExpenseForm } from "@/components/expenses/expense-form";
+import { ExpenseAddDialog } from "@/components/expenses/expense-add-dialog";
 import InteractiveDamageCheck from "@/pages/interactive-damage-check";
 import { DamageCheckScanDialog } from "@/components/barcodes/damage-check-scan-dialog";
 import { FuelStatusUpdateDialog } from "@/components/vehicles/fuel-status-update-dialog";
@@ -427,7 +427,6 @@ export function QuickActions() {
   const [reservationDialogOpen, setReservationDialogOpen] = useState(false);
   const [vehicleDialogOpen, setVehicleDialogOpen] = useState(false);
   const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
-  const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
   
   // State for APK notifications dialog
   const [apkNotificationsDialogOpen, setApkNotificationsDialogOpen] = useState(false);
@@ -1137,38 +1136,26 @@ export function QuickActions() {
             // For log expense dialog
             if (action.dialog === "log-expense") {
               return (
-                <Dialog key={action.label} open={expenseDialogOpen} onOpenChange={setExpenseDialogOpen}>
-                  <DialogTrigger asChild>
-                    <RequiresPermission anyOf={[UserPermission.MANAGE_EXPENSES]}>
-                      <Button
-                        variant="outline"
-                        className="bg-primary-50 text-primary-600 hover:bg-primary-100"
-                        size="sm"
-                        data-testid="button-quick-log-expense"
-                      >
-                        <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
-                        {t(`quickActions.buttons.${action.dialog}`)}
-                      </Button>
-                    </RequiresPermission>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>{t('quickActions.logExpenseTitle')}</DialogTitle>
-                      <DialogDescription>
-                        {t('quickActions.logExpenseDescription')}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="py-4">
-                      <ExpenseForm
-                        onSuccess={() => {
-                          setExpenseDialogOpen(false);
-                          invalidateByPrefix("/api/expenses");
-                          toast({ title: t('common:status.success'), description: t('quickActions.expenseLogged') });
-                        }}
-                      />
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                // A-9-7: the same dialog the Kosten page opens (ExpenseAddDialog).
+                <ExpenseAddDialog
+                  key={action.label}
+                  onSuccess={() => {
+                    invalidateByPrefix("/api/expenses");
+                    toast({ title: t('common:status.success'), description: t('quickActions.expenseLogged') });
+                  }}
+                >
+                  <RequiresPermission anyOf={[UserPermission.MANAGE_EXPENSES]}>
+                    <Button
+                      variant="outline"
+                      className="bg-primary-50 text-primary-600 hover:bg-primary-100"
+                      size="sm"
+                      data-testid="button-quick-log-expense"
+                    >
+                      <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
+                      {t(`quickActions.buttons.${action.dialog}`)}
+                    </Button>
+                  </RequiresPermission>
+                </ExpenseAddDialog>
               );
             }
             
