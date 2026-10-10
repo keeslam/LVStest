@@ -118,9 +118,22 @@ export async function migrateManagerRightsC(
   };
 }
 
+/**
+ * `true` only when the database name IS the path of the URL (lvs_fixtest_copy, a
+ * path that merely ends in it and a query string that mentions it all fail). Parsed,
+ * not pattern-matched; the same check as c-01-rights.test.ts.
+ */
+export function pointsAtFixtest(url: string): boolean {
+  try {
+    return new URL(url).pathname === "/lvs_fixtest";
+  } catch {
+    return false;
+  }
+}
+
 /** `true` only for the dedicated remediation test database. */
 function isTestDatabase(): boolean {
-  return /\/lvs_fixtest(\?|$)/.test(process.env.DATABASE_URL ?? "");
+  return pointsAtFixtest(process.env.DATABASE_URL ?? "");
 }
 
 async function main(): Promise<void> {
