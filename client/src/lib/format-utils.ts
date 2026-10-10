@@ -239,7 +239,7 @@ export function capitalizeWords(text: string): string {
 
 /**
  * Capitalize proper names (handles prefixes like "van", "de", "van der")
- * Example: "jan van der berg" -> "Jan van der Berg"
+ * Example: "jan van der berg" -> "Jan van der Berg"; "DHL Express B.V." stays as typed.
  */
 export function capitalizeName(name: string): string {
   if (!name) return '';
@@ -258,8 +258,13 @@ export function capitalizeName(name: string): string {
         return lowerWord;
       }
       
+      // A-4-1: a word that already has a capital beyond its first letter or a period (B.V., N.V.,
+      // DHL, ABN AMRO, McDonald's) was typed on purpose: keep it. Only a word typed completely in
+      // lower case is capitalised; lower-casing the rest used to turn "B.V." into "B.v.".
+      if (/[A-Z]/.test(word.slice(1)) || word.includes(".")) return word;
+
       // Capitalize first letter
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      return word.charAt(0).toUpperCase() + word.slice(1);
     })
     .join(' ');
 }
