@@ -87,17 +87,19 @@ base("check() does not lose or hang on a destructive toast that closes before it
   // DOM. Only that live capture, not check()'s own DOM read, can have seen
   // the one that is gone by the time check() runs.
   await page.route("**/api/expenses/recent*", (route) => route.fulfill({ status: 500, contentType: "application/json", body: '{"message":"toast one"}' }));
+  // P10 (A-19-5): the default error toast no longer echoes the server's text, it speaks per status.
+  // The two toasts are therefore told apart by status: 500 reads "Er ging iets mis op de server", 503 "tijdelijk niet bereikbaar".
   await page.route("**/api/vehicles/apk-expiring*", async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 800));
-    await route.fulfill({ status: 500, contentType: "application/json", body: '{"message":"toast two"}' });
+    await route.fulfill({ status: 503, contentType: "application/json", body: '{"message":"toast two"}' });
   });
   const watcher = await watchPage(page);
   await page.goto("/");
   await settle(page);
   await watcher.check();
   const realToastDetails = watcher.violations.filter((v) => v.kind === "toast").map((v) => v.detail);
-  expect(realToastDetails.some((d) => d.includes("toast one"))).toBe(true);
-  expect(realToastDetails.some((d) => d.includes("toast two"))).toBe(true);
+  expect(realToastDetails.some((d) => d.includes("Er ging iets mis op de server"))).toBe(true);
+  expect(realToastDetails.some((d) => d.includes("tijdelijk niet bereikbaar"))).toBe(true);
 
   // This part is what actually exercises the fixed race (the real toasts
   // above are not guaranteed to land check() mid-removal on every run — this
