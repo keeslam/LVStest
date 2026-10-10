@@ -4,6 +4,7 @@ import { customNotifications, customers, drivers, fines, portalCustomerSettings,
 import { portalStorage } from "./portal-storage";
 import { requestsStorage } from "./portal-requests-storage";
 import type { PortalDashboard } from "../../shared/portal-types";
+import { customerDisplayName } from "./customer-display-name";
 
 /** Days ahead the "upcoming pickups/returns" panel looks. */
 export const DASHBOARD_WINDOW_DAYS = 14;
@@ -40,7 +41,7 @@ export async function getPortalDashboard(): Promise<PortalDashboard> {
       .orderBy(desc(customNotifications.createdAt), desc(customNotifications.id)).limit(NOTIFICATION_LIMIT),
     db.select({
       r: reservations,
-      customerName: sql<string>`coalesce(nullif(${customers.companyName}, ''), ${customers.name})`,
+      customerName: customerDisplayName(),
       driverName: drivers.displayName,
       vehicle: { id: vehicles.id, brand: vehicles.brand, model: vehicles.model, licensePlate: vehicles.licensePlate },
       viaPortal: sql<boolean>`exists (select 1 from ${portalRequests} pr where pr.reservation_id = ${reservations.id})`,

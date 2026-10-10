@@ -8,6 +8,7 @@ import {
 } from "../../shared/schema";
 import { and, desc, eq, exists, inArray, isNull, or, sql, type SQL } from "drizzle-orm";
 import { isContractDocument, isDamageCheckDocument } from "../../shared/document-types";
+import { customerDisplayName, customerDisplayNameFor } from "./customer-display-name";
 
 /** Set for driver-role users: restricts to reservations they were assigned to. */
 export interface PortalScope {
@@ -177,7 +178,7 @@ export const portalStorage = {
         FROM portal_activity_log l LEFT JOIN portal_users u ON u.id = l.portal_user_id
         ORDER BY l.customer_id, l.created_at DESC, l.id DESC
       )
-      SELECT c.id AS customer_id, COALESCE(NULLIF(c.company_name, ''), c.name) AS customer_name,
+      SELECT c.id AS customer_id, ${customerDisplayNameFor("c")} AS customer_name,
              COALESCE(s.portal_enabled, true) AS portal_enabled,
              COALESCE(acc.accounts_total, 0) AS accounts_total, COALESCE(acc.accounts_active, 0) AS accounts_active,
              COALESCE(acc.accounts_blocked, 0) AS accounts_blocked, COALESCE(acc.online_now, 0) AS online_now,
@@ -301,7 +302,7 @@ export const portalStorage = {
   async listBlacklist(): Promise<Array<{ id: number; vehicleId: number; licensePlate: string; brand: string; model: string; offeredOnline: boolean; customerId: number; customerName: string; reason: string | null; createdAt: Date }>> {
     return db.select({
       id: vehicleCustomerBlacklist.id, vehicleId: vehicles.id, licensePlate: vehicles.licensePlate, brand: vehicles.brand, model: vehicles.model, offeredOnline: vehicles.offeredOnline,
-      customerId: customers.id, customerName: sql<string>`coalesce(nullif(${customers.companyName}, ''), ${customers.name})`,
+      customerId: customers.id, customerName: customerDisplayName(),
       reason: vehicleCustomerBlacklist.reason, createdAt: vehicleCustomerBlacklist.createdAt,
     }).from(vehicleCustomerBlacklist)
       .innerJoin(vehicles, eq(vehicleCustomerBlacklist.vehicleId, vehicles.id))

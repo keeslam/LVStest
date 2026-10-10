@@ -2,6 +2,7 @@ import { db } from "../db";
 import { portalNotifications, reservations, vehicles, customers, portalUsers, type PortalNotification } from "../../shared/schema";
 import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { getServiceDueVehicles } from "../utils/service-due-scanner";
+import { customerDisplayName } from "./customer-display-name";
 
 /** How far ahead the customer hears about an APK that is about to expire. */
 export const APK_WARNING_DAYS = 30;
@@ -136,6 +137,6 @@ export async function scanVehicleAlertsForPortal(): Promise<{ apk: number; servi
 }
 
 export async function customerNameOf(customerId: number): Promise<string> {
-  const [c] = await db.select({ name: sql<string>`coalesce(nullif(${customers.companyName}, ''), ${customers.name})` }).from(customers).where(eq(customers.id, customerId));
+  const [c] = await db.select({ name: customerDisplayName() }).from(customers).where(eq(customers.id, customerId));
   return c?.name ?? String(customerId);
 }

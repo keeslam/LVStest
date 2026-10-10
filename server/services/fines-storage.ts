@@ -3,6 +3,7 @@ import { fines, customers, drivers, vehicles, deletedRecords, type Fine } from "
 import { and, desc, eq, gte, inArray, lte, sql, type SQL } from "drizzle-orm";
 import { CUSTOMER_VISIBLE_FINE_STATUSES } from "../../shared/fines";
 import type { PortalScope } from "./portal-storage";
+import { customerDisplayName } from "./customer-display-name";
 
 export type FineListRow = Fine & { customerName: string | null; driverName: string | null };
 export type InsertFineRow = typeof fines.$inferInsert;
@@ -12,7 +13,7 @@ export interface FineFilters { status?: string; customerId?: number; licensePlat
 async function select(where: SQL | undefined): Promise<FineListRow[]> {
   const rows = await db.select({
     fine: fines,
-    customerName: sql<string | null>`coalesce(nullif(${customers.companyName}, ''), ${customers.name})`,
+    customerName: customerDisplayName(),
     driverName: drivers.displayName,
   })
     .from(fines)

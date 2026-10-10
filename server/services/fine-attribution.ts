@@ -4,6 +4,7 @@ import { and, asc, desc, eq, gte, inArray, isNull, lte, ne, or, sql } from "driz
 import { finesStorage } from "./fines-storage";
 import { portalStorage } from "./portal-storage";
 import { normalizeLicensePlate } from "../../shared/fines";
+import { customerDisplayName } from "./customer-display-name";
 
 export interface CandidateReservation {
   id: number; customerId: number | null; customerName: string | null;
@@ -32,7 +33,7 @@ export async function findCandidates(licensePlate: string, offenceAt: Date): Pro
   const day = isoDay(offenceAt);
   const rows = await db.select({
     id: reservations.id, customerId: reservations.customerId,
-    customerName: sql<string | null>`coalesce(nullif(${customers.companyName}, ''), ${customers.name})`,
+    customerName: customerDisplayName(),
     startDate: reservations.startDate, endDate: reservations.endDate,
     actualPickupDate: reservations.actualPickupDate, actualReturnDate: reservations.actualReturnDate,
     driverId: reservations.driverId, driverName: drivers.displayName,

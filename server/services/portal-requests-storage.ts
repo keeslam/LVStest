@@ -5,6 +5,7 @@ import {
 } from "../../shared/schema";
 import { and, desc, eq, inArray, sql, type SQL } from "drizzle-orm";
 import type { PortalRequestDto } from "../../shared/portal-requests";
+import { customerDisplayName } from "./customer-display-name";
 
 export type RequestRow = PortalRequest & {
   customerName: string; submittedBy: string | null; submitterEmail: string | null;
@@ -14,7 +15,7 @@ export type RequestRow = PortalRequest & {
 async function select(where: SQL | undefined, limit = 500): Promise<RequestRow[]> {
   const rows = await db.select({
     r: portalRequests,
-    customerName: sql<string>`coalesce(nullif(${customers.companyName}, ''), ${customers.name})`,
+    customerName: customerDisplayName(),
     submittedBy: portalUsers.fullName,
     submitterEmail: portalUsers.email,
     reservationLabel: sql<string | null>`case when ${reservations.id} is null then null else concat(${vehicles.licensePlate}, ' ', ${reservations.startDate}, ' - ', coalesce(${reservations.endDate}, '...')) end`,

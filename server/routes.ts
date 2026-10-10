@@ -223,6 +223,17 @@ function normaliseDebtorNumber(value: string | null | undefined): string | null 
 }
 
 /**
+ * A-12-2 (audit 2026-10-09) — the customer form sends "" for an empty company
+ * name. "" is never a name: it is stored as NULL, so no screen can show a
+ * blank line where the person's name should appear (customerDisplayName() in
+ * the queries covers rows written before this). `undefined` (not in the PATCH
+ * body at all) passes through untouched.
+ */
+function normaliseCompanyName(value: string | null | undefined): string | null | undefined {
+  return normaliseDebtorNumber(value);
+}
+
+/**
  * besluiten B-35 — the conflict check shared by POST and PATCH /api/customers:
  * a live customer holding the number, then a customer sitting in the recycle
  * bin holding it. `excludeId` lets PATCH exclude the row being edited so
@@ -2659,6 +2670,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       const dataWithTracking = {
         ...customerData,
         debtorNumber,
+        companyName: normaliseCompanyName(customerData.companyName ?? null),
         createdBy: user ? user.username : null,
         updatedBy: user ? user.username : null
       };
@@ -2727,6 +2739,10 @@ export async function registerRoutes(app: Express): Promise<void> {
       };
       if (debtorNumber !== undefined) {
         dataWithTracking.debtorNumber = debtorNumber;
+      }
+      const companyName = normaliseCompanyName(customerData.companyName);
+      if (companyName !== undefined) {
+        dataWithTracking.companyName = companyName;
       }
 
       // Specifically track status changes

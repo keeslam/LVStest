@@ -546,6 +546,66 @@ async function relabelMaintenanceBlockBinRows() {
   }
 }
 
+// ==================== P2 (audit A-12-2): NO EMPTY COMPANY NAME ====================
+// The customer form used to send "" for an empty company name, and "" is not
+// NULL: `coalesce(company_name, name)` kept the empty string, so the fines list
+// and the portal screens showed a blank customer. The app now stores NULL (and
+// every query falls back with customerDisplayName()); this one-time step brings
+// the rows written before that into line.
+//
+// Only "" and whitespace-only values change; a real company name is never
+// touched. Idempotent twice over: the app_settings marker stops a second pass,
+// and the UPDATE only matches rows that are still empty. Never aborts the boot:
+// a failure is reported and skipped (no marker, so the next start retries).
+const P2_COMPANY_NAME_MARKER = 'migration:p2_empty_company_name_null';
+
+async function nullEmptyCompanyNames() {
+  try {
+    const tables = await db.execute(sql`
+      SELECT tablename FROM pg_tables
+       WHERE schemaname = 'public' AND tablename IN ('customers', 'app_settings')
+    `);
+    if (tables.rows.length < 2) {
+      console.log('⚠️ customers or app_settings does not exist yet, skipping the empty company name clean-up (P2)');
+      return;
+    }
+
+    const already = await db.execute(sql`SELECT 1 FROM app_settings WHERE key = ${P2_COMPANY_NAME_MARKER}`);
+    if (already.rows.length > 0) {
+      console.log('Empty company names already cleaned up, skipping');
+      return;
+    }
+
+    let updated = 0;
+    await db.transaction(async (tx) => {
+      const result = await tx.execute(sql`
+        UPDATE customers
+           SET company_name = NULL
+         WHERE company_name IS NOT NULL
+           AND btrim(company_name) = ''
+      `);
+      updated = result.rowCount ?? 0;
+
+      await tx.execute(sql`
+        INSERT INTO app_settings (key, value, category, description)
+        VALUES (
+          ${P2_COMPANY_NAME_MARKER},
+          ${JSON.stringify({ appliedAt: new Date().toISOString(), updated })}::jsonb,
+          'general',
+          'Audit P2 (A-12-2): customers with an empty company name now have NULL'
+        )
+        ON CONFLICT (key) DO NOTHING
+      `);
+    });
+
+    console.log('Empty company names set to NULL: ' + updated + ' row(s) changed');
+  } catch (error) {
+    // Deliberately not rethrown: a failed clean-up must never stop the deploy.
+    // No marker was written, so the next boot tries again.
+    console.error('⚠️ Empty company name clean-up skipped, will retry on the next start:', error && error.message ? error.message : error);
+  }
+}
+
 // ==================== B-22: TIMESTAMPS WITH A TIME ZONE (BUG-224) ====================
 // besluiten.md B-22 - "migreren naar tijdzone-bewuste kolommen, met de
 // aanname dat bestaande waarden Amsterdamse tijd zijn".
@@ -1972,6 +2032,9 @@ async function runMigrations() {
 
     // Sub-project C (B-36): deleted maintenance blocks get their own bin kind.
     await relabelMaintenanceBlockBinRows();
+
+    // Audit P2 (A-12-2): customers with an empty company name get NULL.
+    await nullEmptyCompanyNames();
 
     // B-22 (BUG-224): report - and, only on the owner's explicit switch,
     // perform - the conversion to time-zone-aware columns.
