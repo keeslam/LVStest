@@ -197,7 +197,34 @@
     "empty": "Nothing has been changed on this record yet.",
     "loadFailed": "The history could not be loaded.",
     "notPermitted": "You do not have permission to view this record's history.",
-    "systemUser": "System"
+    "systemUser": "System",
+    "actions": {
+      "reservationPickup": "Pickup",
+      "reservationReturn": "Return",
+      "reservationStatus": "Status changed",
+      "reservationCancel": "Cancelled",
+      "reservationRevert": "Handover reverted",
+      "reservationPurge": "Permanently deleted",
+      "composed": "{{resource}} {{verb}}",
+      "resources": {
+        "reservation": "Reservation",
+        "vehicle": "Vehicle",
+        "customer": "Customer",
+        "document": "Document",
+        "expense": "Expense",
+        "transport": "Transport",
+        "fine": "Fine",
+        "driver": "Driver",
+        "maintenance": "Maintenance"
+      },
+      "verbs": {
+        "create": "created",
+        "update": "updated",
+        "delete": "deleted",
+        "restore": "restored",
+        "upload": "uploaded"
+      }
+    }
   },
   "shortcuts": {
     "title": "Keyboard shortcuts",

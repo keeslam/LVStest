@@ -42,6 +42,7 @@ import {
 import { ExpenseAddDialog } from "@/components/expenses/expense-add-dialog";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { ReservationDocumentsDialog } from "@/components/reservations/reservation-documents-dialog";
+import { StaleDocumentBadge } from "@/components/documents/stale-document";
 import { PickupDialog, ReturnDialog } from "@/components/reservations/pickup-return-dialogs";
 
 const DOCUMENT_QUICK_TYPE_KEYS: Record<string, string> = {
@@ -634,6 +635,8 @@ export function ReservationViewDialog({
                                   )}
                                   <div className="text-left">
                                     <div className="text-xs font-semibold truncate max-w-[150px]">{doc.documentType}</div>
+                                    {/* A-6-4: a document the server marked stale (e.g. after a reversal) says so here too. */}
+                                    <StaleDocumentBadge document={doc} />
                                     <div className="text-[10px] text-gray-500">
                                       {doc.fileName.split('.').pop()?.toUpperCase() || 'FILE'}
                                     </div>
@@ -780,6 +783,8 @@ export function ReservationViewDialog({
                                   )}
                                   <div className="text-left">
                                     <div className="text-xs font-semibold truncate max-w-[150px]">{doc.documentType}</div>
+                                    {/* A-6-4: a document the server marked stale (e.g. after a reversal) says so here too. */}
+                                    <StaleDocumentBadge document={doc} />
                                     <div className="text-[10px] text-gray-500">
                                       {doc.fileName.split('.').pop()?.toUpperCase() || 'FILE'}
                                     </div>

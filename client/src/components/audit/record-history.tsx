@@ -21,6 +21,7 @@ import { useTranslation } from "react-i18next";
 import { History } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDateTimeNl } from "@/lib/format-date-nl";
+import { auditActionLabel } from "@/lib/audit-action-label";
 
 export type RecordHistoryResourceType = "reservation" | "vehicle" | "customer";
 
@@ -112,9 +113,11 @@ export function RecordHistory({ resourceType, resourceId, showHeading = true }: 
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge
                     variant={entry.status === 'failure' ? 'destructive' : 'secondary'}
-                    className="text-xs font-mono"
+                    className="text-xs"
+                    // The code stays reachable for anyone who needs to quote it.
+                    title={entry.action}
                   >
-                    {entry.action}
+                    {auditActionLabel(t, entry.action)}
                   </Badge>
                   <span className="text-sm font-medium">
                     {entry.username || t('recordHistory.systemUser')}

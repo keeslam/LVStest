@@ -197,7 +197,34 @@
     "empty": "Er is nog niets gewijzigd aan dit record.",
     "loadFailed": "De geschiedenis kon niet geladen worden.",
     "notPermitted": "Je hebt geen rechten om de geschiedenis van dit record te bekijken.",
-    "systemUser": "Systeem"
+    "systemUser": "Systeem",
+    "actions": {
+      "reservationPickup": "Ophalen",
+      "reservationReturn": "Inleveren",
+      "reservationStatus": "Status gewijzigd",
+      "reservationCancel": "Geannuleerd",
+      "reservationRevert": "Overdracht teruggedraaid",
+      "reservationPurge": "Definitief verwijderd",
+      "composed": "{{resource}} {{verb}}",
+      "resources": {
+        "reservation": "Reservering",
+        "vehicle": "Voertuig",
+        "customer": "Klant",
+        "document": "Document",
+        "expense": "Kostenpost",
+        "transport": "Transport",
+        "fine": "Boete",
+        "driver": "Chauffeur",
+        "maintenance": "Onderhoud"
+      },
+      "verbs": {
+        "create": "aangemaakt",
+        "update": "gewijzigd",
+        "delete": "verwijderd",
+        "restore": "hersteld",
+        "upload": "geüpload"
+      }
+    }
   },
   "shortcuts": {
     "title": "Sneltoetsen",
