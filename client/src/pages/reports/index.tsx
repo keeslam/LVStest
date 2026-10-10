@@ -23,6 +23,7 @@ import { Vehicle, Expense, Reservation, Customer, VehicleTransport, UserPermissi
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { NoDataAccess } from "@/components/ui/no-data-access";
 import { formatDate, formatCurrency, formatLicensePlate, sumMoney, plateMatches, formatExpenseCategory } from "@/lib/format-utils";
+import { EXPENSE_CATEGORIES } from "@shared/expense-categories";
 import { Price } from "@/components/ui/price";
 import { isTrueValue } from "@/lib/utils";
 import { addDays, subMonths, subDays, startOfMonth, endOfMonth, isWithinInterval, differenceInDays, parseISO, startOfDay } from "date-fns";
@@ -1491,12 +1492,13 @@ function FullReportsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t('reportsPage.filters.allCategoriesPlaceholder')}</SelectItem>
-                  <SelectItem value="maintenance">{t('reportsPage.categories.maintenance')}</SelectItem>
-                  <SelectItem value="tires">{t('reportsPage.categories.tires')}</SelectItem>
+                  {/* The canonical list (A-9-1, A-9-2): fuel, toll and parking are the big ones in the real data. */}
+                  {EXPENSE_CATEGORIES.map((category) => (
+                    <SelectItem key={category} value={category}>{formatExpenseCategory(category)}</SelectItem>
+                  ))}
+                  {/* Two labels older data may still carry. */}
                   <SelectItem value="front window">{t('reportsPage.categories.frontWindow')}</SelectItem>
-                  <SelectItem value="damage">{t('reportsPage.categories.damage')}</SelectItem>
                   <SelectItem value="repair">{t('reportsPage.categories.repair')}</SelectItem>
-                  <SelectItem value="other">{t('reportsPage.categories.other')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

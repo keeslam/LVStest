@@ -4,10 +4,11 @@ import { simpleParser, type ParsedMail } from "mailparser";
 import { getUploadsDir } from "../../../shared/paths";
 import type { InvoiceInboxItem } from "../../../shared/schema";
 import {
-  EXPENSE_CATEGORIES, INTERRUPTED_BOOKING_MESSAGE, REVIEW_REASON_LABELS_NL,
+  INTERRUPTED_BOOKING_MESSAGE, REVIEW_REASON_LABELS_NL,
   isAllowedSender, normalizeSender, senderAuthVerdict,
   type InboxLineItem, type InboxParsedInvoice, type InvoiceInboxConfig, type ReviewReason,
 } from "../../../shared/invoice-inbox";
+import { normalizeExpenseCategory } from "../../../shared/expense-categories";
 import { processInvoiceWithAI, validateParsedInvoice } from "../../utils/invoice-scanner";
 import { getRelativePath } from "../document-paths";
 import { bookInvoiceAsExpenses, groupLinesByCategory } from "../expenses/book-invoice";
@@ -165,10 +166,11 @@ const amsterdamToday = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europ
 /**
  * I4 — the model is asked for one of EXPENSE_CATEGORIES but is not bound by it.
  * A category the cost overview does not know would end up as a stray label on a
- * booked expense; "Other" is what staff can find and correct.
+ * booked expense; "other" is what staff can find and correct. A capitalised
+ * key ("Fuel", what the model and older items carry) is the same category as
+ * "fuel", so it becomes the canonical lower-case key rather than "other".
  */
-const knownCategory = (line: InboxLineItem): InboxLineItem =>
-  ((EXPENSE_CATEGORIES as readonly string[]).includes(line.category) ? line : { ...line, category: "Other" });
+const knownCategory = (line: InboxLineItem): InboxLineItem => ({ ...line, category: normalizeExpenseCategory(line.category) });
 
 /**
  * I7 — two ways the same invoice can already be here: the exact hash (vendor,

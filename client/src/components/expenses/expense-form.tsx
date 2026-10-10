@@ -36,6 +36,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Vehicle, UserPermission } from "@shared/schema";
 import { format } from "date-fns";
 import { formatFileSize, formatExpenseCategory, formatVehicleType } from "@/lib/format-utils";
+import { EXPENSE_CATEGORIES, isExpenseCategory, normalizeExpenseCategory } from "@shared/expense-categories";
 import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { InvoiceScanner } from "@/components/invoice-scanner";
@@ -43,23 +44,11 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { NoDataAccess } from "@/components/ui/no-data-access";
 
 
-// Expense categories
-const expenseCategories = [
-  "Maintenance",
-  "Tires",
-  "Brakes",
-  "Damage",
-  "Fuel",
-  "Insurance",
-  "Registration",
-  "Cleaning",
-  "Accessories",
-  "Other"
-];
-
-// WAVE 14 item 4 — the values are stored verbatim in the database, so they
-// stay in English; the displayed label comes from the one shared helper
-// (formatExpenseCategory) that the cost overview and the reports also use.
+// A-9-1 / A-9-2 — one canonical lower-case list shared with the server and the
+// invoice inbox (shared/expense-categories.ts). The values are stored in the
+// database, so they stay English; the displayed label comes from the one shared
+// helper (formatExpenseCategory) that the cost overview and the reports also use.
+const expenseCategories: readonly string[] = EXPENSE_CATEGORIES;
 
 // Maximum file size (25 MB) - matching server configuration
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
@@ -174,11 +163,10 @@ export function ExpenseForm({
   // Set category from preselectedCategory prop
   useEffect(() => {
     if (preselectedCategory && !editMode && formInitialized) {
-      // Check if it's a valid category and capitalize first letter to match options
-      const normalizedCategory = preselectedCategory.charAt(0).toUpperCase() + preselectedCategory.slice(1).toLowerCase();
-      
-      if (expenseCategories.includes(normalizedCategory)) {
-        console.log("Setting category from preselectedCategory:", normalizedCategory);
+      // Only a category on the canonical list can be preselected (a link may carry any casing).
+      const normalizedCategory = preselectedCategory.trim().toLowerCase();
+
+      if (isExpenseCategory(normalizedCategory)) {
         form.setValue("category", normalizedCategory);
       }
     }
@@ -187,7 +175,7 @@ export function ExpenseForm({
   // Setup form with react-hook-form and zod validation
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData || {
+    defaultValues: initialData ? { ...initialData, category: normalizeExpenseCategory(initialData.category) } : {
       vehicleId: 0, // Will be updated after initialization
       category: "",
       amount: 0,

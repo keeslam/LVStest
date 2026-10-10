@@ -26,7 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Eye, ExternalLink, Trash2, Wrench, CircleDot, AlertTriangle, Hammer, Fuel, Shield, FileText, Sparkles, Package, MoreHorizontal, Disc, ChevronLeft, ChevronRight, Printer } from "lucide-react";
-import { formatDate, formatCurrency, sumMoney } from "@/lib/format-utils";
+import { formatDate, formatCurrency, sumMoney, formatExpenseCategory } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { Expense, Vehicle } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -35,22 +35,8 @@ import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { ExpenseAddDialog } from "./expense-add-dialog";
 import { PdfPreviewDialog } from "@/components/documents/pdf-preview-dialog";
 
-// Category values are stored verbatim in the database (and aren't restricted to the
-// fixed dropdown list - older/seeded data can be lowercase or entirely custom), so
-// they stay as-is; only recognized categories get a translated display label, looked
-// up case-insensitively the same way getExpenseIcon() below matches on category.
-const EXPENSE_CATEGORY_KEYS: Record<string, string> = {
-  "maintenance": "maintenance",
-  "tires": "tires",
-  "brakes": "brakes",
-  "damage": "damage",
-  "fuel": "fuel",
-  "insurance": "insurance",
-  "registration": "registration",
-  "cleaning": "cleaning",
-  "accessories": "accessories",
-  "other": "other",
-};
+// The category label comes from the one shared helper (formatExpenseCategory), which
+// also reads toll, parking and any custom category an older row may carry.
 
 // Function to get expense icon based on category
 function getExpenseIcon(category: string) {
@@ -98,10 +84,7 @@ export function ExpenseViewDialog({
   onOpenChange: controlledOnOpenChange,
 }: ExpenseViewDialogProps) {
   const { t } = useTranslation(["expenses", "common"]);
-  const categoryLabel = (category: string) => {
-    const key = EXPENSE_CATEGORY_KEYS[category.toLowerCase()];
-    return key ? t(`form.categories.${key}`, { defaultValue: category }) : category;
-  };
+  const categoryLabel = (category: string) => formatExpenseCategory(category);
   const { openExpenseDialog } = useGlobalDialog();
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
@@ -168,7 +151,7 @@ export function ExpenseViewDialog({
   });
 
   // Get unique categories from expenses
-  const allCategories = [...new Set(expenses?.map(expense => expense.category) || [])];
+  const allCategories = [...new Set(expenses?.map(expense => (expense.category || "").trim().toLowerCase()) || [])];
   const categories = ["all", ...allCategories];
 
   // Filter expenses based on search and category
@@ -181,7 +164,7 @@ export function ExpenseViewDialog({
       description.toLowerCase().includes(searchLower) ||
       category.toLowerCase().includes(searchLower);
     
-    const matchesCategory = categoryFilter === "all" || category === categoryFilter;
+    const matchesCategory = categoryFilter === "all" || category.trim().toLowerCase() === categoryFilter;
     
     return matchesSearch && matchesCategory;
   }) || [];
@@ -191,7 +174,7 @@ export function ExpenseViewDialog({
   
   // Group expenses by category with sorting (most recent first)
   const expensesByCategory = allCategories.map(category => {
-    const categoryExpenses = (expenses?.filter(expense => expense.category === category) || [])
+    const categoryExpenses = (expenses?.filter(expense => (expense.category || "").trim().toLowerCase() === category) || [])
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
     return {

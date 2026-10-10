@@ -28,7 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, Tag, FileText, FileCheck, Truck, Pencil, Trash2 } from "lucide-react";
-import { formatDate, formatLicensePlate } from "@/lib/format-utils";
+import { formatDate, formatLicensePlate, formatExpenseCategory } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { Expense, Vehicle } from "@shared/schema";
 import { ExpenseForm } from "./expense-form";
@@ -147,7 +147,7 @@ export function ExpenseDetailDialog({ expenseId, open, onOpenChange, hideVehicle
                   <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('detailsPage.categoryLabel')}</h3>
                   <div className="flex items-center">
                     <Tag className="h-4 w-4 mr-2 text-primary" />
-                    <Badge>{expense.category}</Badge>
+                    <Badge>{formatExpenseCategory(expense.category)}</Badge>
                   </div>
                 </div>
 

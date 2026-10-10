@@ -7,7 +7,7 @@ import { GoogleGenAI } from "@google/genai";
 import fs from "fs";
 import path from "path";
 import { PDFDocument } from 'pdf-lib';
-import { EXPENSE_CATEGORIES } from "../../shared/invoice-inbox";
+import { EXPENSE_CATEGORIES, normalizeExpenseCategory } from "../../shared/expense-categories";
 
 // Using Google Gemini for invoice processing - javascript_gemini integration
 // The newest Gemini model series is "gemini-2.5-flash" or "gemini-2.5-pro"
@@ -50,90 +50,98 @@ export interface ParsedInvoice {
 // Category mapping for Dutch and English terms
 const CATEGORY_MAPPINGS = {
   // Maintenance related
-  'onderhoud': 'Maintenance',
-  'maintenance': 'Maintenance', 
-  'reparatie': 'Maintenance',
-  'repair': 'Maintenance',
-  'service': 'Maintenance',
-  'inspectie': 'Maintenance',
-  'inspection': 'Maintenance',
-  'olie': 'Maintenance',
-  'oil': 'Maintenance',
-  'filter': 'Maintenance',
-  'remmen': 'Brakes',
-  'brakes': 'Brakes',
-  'brake': 'Brakes',
-  'remblok': 'Brakes',
-  'brake pad': 'Brakes',
-  'brake disc': 'Brakes',
-  'remschijf': 'Brakes',
+  'onderhoud': 'maintenance',
+  'maintenance': 'maintenance', 
+  'reparatie': 'maintenance',
+  'repair': 'maintenance',
+  'service': 'maintenance',
+  'inspectie': 'maintenance',
+  'inspection': 'maintenance',
+  'olie': 'maintenance',
+  'oil': 'maintenance',
+  'filter': 'maintenance',
+  'remmen': 'brakes',
+  'brakes': 'brakes',
+  'brake': 'brakes',
+  'remblok': 'brakes',
+  'brake pad': 'brakes',
+  'brake disc': 'brakes',
+  'remschijf': 'brakes',
   
   // Tires
-  'banden': 'Tires',
-  'tires': 'Tires',
-  'tyres': 'Tires',
-  'velgen': 'Tires',
-  'wheels': 'Tires',
-  'winterbanden': 'Tires',
-  'winter tires': 'Tires',
-  'zomerbanden': 'Tires',
-  'summer tires': 'Tires',
+  'banden': 'tires',
+  'tires': 'tires',
+  'tyres': 'tires',
+  'velgen': 'tires',
+  'wheels': 'tires',
+  'winterbanden': 'tires',
+  'winter tires': 'tires',
+  'zomerbanden': 'tires',
+  'summer tires': 'tires',
   
   // Damage/Repair
-  'schade': 'Damage',
-  'damage': 'Damage',
-  'herstel': 'Damage',
-  'bodywork': 'Damage',
-  'carrosserie': 'Damage',
-  'deuken': 'Damage',
-  'dent': 'Damage',
-  'krassen': 'Damage',
-  'scratch': 'Damage',
+  'schade': 'damage',
+  'damage': 'damage',
+  'herstel': 'damage',
+  'bodywork': 'damage',
+  'carrosserie': 'damage',
+  'deuken': 'damage',
+  'dent': 'damage',
+  'krassen': 'damage',
+  'scratch': 'damage',
   
   // Fuel
-  'brandstof': 'Fuel',
-  'fuel': 'Fuel',
-  'benzine': 'Fuel',
-  'petrol': 'Fuel',
-  'diesel': 'Fuel',
-  'gas': 'Fuel',
-  'lpg': 'Fuel',
-  'electricity': 'Fuel',
-  'elektriciteit': 'Fuel',
+  'brandstof': 'fuel',
+  'fuel': 'fuel',
+  'benzine': 'fuel',
+  'petrol': 'fuel',
+  'diesel': 'fuel',
+  'gas': 'fuel',
+  'lpg': 'fuel',
+  'electricity': 'fuel',
+  'elektriciteit': 'fuel',
   
   // Insurance
-  'verzekering': 'Insurance',
-  'insurance': 'Insurance',
-  'liability': 'Insurance',
-  'aansprakelijkheid': 'Insurance',
-  'all risk': 'Insurance',
-  'allrisk': 'Insurance',
+  'verzekering': 'insurance',
+  'insurance': 'insurance',
+  'liability': 'insurance',
+  'aansprakelijkheid': 'insurance',
+  'all risk': 'insurance',
+  'allrisk': 'insurance',
   
   // Registration/Legal
-  'registratie': 'Registration',
-  'registration': 'Registration',
-  'belasting': 'Registration',
-  'tax': 'Registration',
-  'kenteken': 'Registration',
-  'license plate': 'Registration',
-  'apk': 'Registration',
-  'mot': 'Registration',
+  'registratie': 'registration',
+  'registration': 'registration',
+  'belasting': 'registration',
+  'tax': 'registration',
+  'kenteken': 'registration',
+  'license plate': 'registration',
+  'apk': 'registration',
+  'mot': 'registration',
   
   // Cleaning
-  'reiniging': 'Cleaning',
-  'cleaning': 'Cleaning',
-  'was': 'Cleaning',
-  'wash': 'Cleaning',
-  'detailing': 'Cleaning',
+  'reiniging': 'cleaning',
+  'cleaning': 'cleaning',
+  'was': 'cleaning',
+  'wash': 'cleaning',
+  'detailing': 'cleaning',
   
   // Accessories
-  'accessoires': 'Accessories',
-  'accessories': 'Accessories',
-  'uitrusting': 'Accessories',
-  'equipment': 'Accessories',
-  'radio': 'Accessories',
-  'navigatie': 'Accessories',
-  'navigation': 'Accessories'
+  'accessoires': 'accessories',
+  'accessories': 'accessories',
+  'uitrusting': 'accessories',
+  'equipment': 'accessories',
+  'radio': 'accessories',
+  'navigatie': 'accessories',
+  'navigation': 'accessories',
+
+  // Toll and parking: the two largest categories in the real data (audit A-9-2)
+  'tolgeld': 'toll',
+  'toll': 'toll',
+  'vignet': 'toll',
+  'parkeren': 'parking',
+  'parking': 'parking',
+  'parkeerkosten': 'parking'
 };
 
 /**
@@ -176,8 +184,8 @@ function categorizeLineItem(description: string): string {
     }
   }
   
-  // Default to Other if no match found
-  return 'Other';
+  // Default to other if no match found
+  return 'other';
 }
 
 /**
@@ -237,7 +245,7 @@ You are an expert invoice processor for a car rental company. Analyze this PDF i
     {
       "description": "Service or item description",
       "amount": 12.34,
-      "category": "One of: Maintenance, Tires, Brakes, Damage, Fuel, Insurance, Registration, Cleaning, Accessories, Other"
+      "category": "One of: ${EXPENSE_CATEGORIES.join(', ')}"
     }
   ],
   "vehicleInfo": {
@@ -255,7 +263,7 @@ IMPORTANT INSTRUCTIONS:
 - Be precise with dates - convert to YYYY-MM-DD format. If the document states no date at all, leave invoiceDate empty; never guess one
 - documentType says what this document is: invoice = a request to pay for delivered goods or services. A credit_note reverses an earlier invoice, a quote (offerte) is a price proposal for work that has not been done, a reminder (herinnering/aanmaning) repeats an earlier invoice. Anything else is other
 - Categorize each line item appropriately based on automotive expense categories
-- If unsure about a category, use "Other"
+- If unsure about a category, use "other"
 - totalAmount is the amount to pay INCLUDING VAT (btw); subtotalAmount is the amount EXCLUDING VAT; vatAmount is the VAT itself. Leave subtotalAmount and vatAmount out when the invoice does not state them
 - Line item amounts are the amounts as printed on the line (usually excluding VAT)
 - licensePlates lists every license plate on the invoice, also when it covers several vehicles; licensePlate is the main one
@@ -380,7 +388,7 @@ Please respond ONLY with the JSON object, no additional text.
         return {
           description: item.description || '',
           amount: Math.abs(amount), // Ensure positive amounts
-          category: item.category || categorizeLineItem(item.description || ''),
+          category: normalizeExpenseCategory(item.category || categorizeLineItem(item.description || '')),
           subcategory: item.subcategory || undefined
         };
       }).filter((item: any) => item.amount > 0), // Filter out zero amounts
@@ -398,7 +406,7 @@ Please respond ONLY with the JSON object, no additional text.
       parsedInvoice.lineItems.push({
         description: `Invoice from ${parsedInvoice.vendor}`,
         amount: parsedInvoice.totalAmount,
-        category: 'Other'
+        category: 'other'
       });
       parsedInvoice.lineItemsFromTotal = true;
     }

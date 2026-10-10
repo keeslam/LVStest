@@ -72,11 +72,13 @@ export const REVIEW_REASON_LABELS_NL: Record<ReviewReason, string> = {
   total_mismatch: 'bedragen of datum kloppen niet',
 };
 
-/** Stored values stay English; only labels are translated. */
-export const EXPENSE_CATEGORIES = [
-  'Maintenance', 'Tires', 'Brakes', 'Damage', 'Fuel',
-  'Insurance', 'Registration', 'Cleaning', 'Accessories', 'Other',
-] as const;
+/**
+ * Stored values stay English; only labels are translated. The one canonical
+ * (lower-case) list lives in shared/expense-categories.ts; the invoice inbox
+ * re-exports it so the scanner, the review dialog and the booking route all
+ * agree with the expense form (audit A-9-1).
+ */
+export { EXPENSE_CATEGORIES } from './expense-categories';
 
 export interface InboxLineItem {
   description: string;

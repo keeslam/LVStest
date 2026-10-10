@@ -546,6 +546,70 @@ async function relabelMaintenanceBlockBinRows() {
   }
 }
 
+// ==================== P1 (audit A-9-1): ONE LOWER-CASE EXPENSE CATEGORY ====================
+// The expense form and the invoice inbox used to store "Fuel" while the older
+// rows hold "fuel", so the cost overview showed two tiles for one category.
+// The app now stores the canonical lower-case keys (shared/expense-categories.ts,
+// normalised in DatabaseStorage.createExpense/updateExpense); this one-time step
+// brings the rows written before that into line.
+//
+// Only the case and the surrounding whitespace change: a label that is not on
+// the canonical list ("front window") is left exactly as it was, never rewritten
+// to "other" - the data is the owner's, the display helper still reads it as
+// words. Additive and idempotent twice over: the app_settings marker stops a
+// second pass, and the UPDATE only touches rows that are not canonical yet.
+// Never aborts the boot: a failure is reported and skipped (no marker, so the
+// next start retries).
+const P1_CATEGORY_MARKER = 'migration:p1_expense_category_lowercase';
+
+async function lowercaseExpenseCategories() {
+  try {
+    const tables = await db.execute(sql`
+      SELECT tablename FROM pg_tables
+       WHERE schemaname = 'public' AND tablename IN ('expenses', 'app_settings')
+    `);
+    if (tables.rows.length < 2) {
+      console.log('⚠️ expenses or app_settings does not exist yet, skipping the expense category lower-casing (P1)');
+      return;
+    }
+
+    const already = await db.execute(sql`SELECT 1 FROM app_settings WHERE key = ${P1_CATEGORY_MARKER}`);
+    if (already.rows.length > 0) {
+      console.log('Expense categories already lower-cased, skipping');
+      return;
+    }
+
+    let updated = 0;
+    await db.transaction(async (tx) => {
+      const result = await tx.execute(sql`
+        UPDATE expenses
+           SET category = lower(btrim(category))
+         WHERE category IS NOT NULL
+           AND category <> lower(btrim(category))
+           AND btrim(category) <> ''
+      `);
+      updated = result.rowCount ?? 0;
+
+      await tx.execute(sql`
+        INSERT INTO app_settings (key, value, category, description)
+        VALUES (
+          ${P1_CATEGORY_MARKER},
+          ${JSON.stringify({ appliedAt: new Date().toISOString(), updated })}::jsonb,
+          'general',
+          'Audit P1 (A-9-1): expense categories written with capitals lower-cased to the canonical keys'
+        )
+        ON CONFLICT (key) DO NOTHING
+      `);
+    });
+
+    console.log('Expense categories lower-cased: ' + updated + ' row(s) changed');
+  } catch (error) {
+    // Deliberately not rethrown: a failed clean-up must never stop the deploy.
+    // No marker was written, so the next boot tries again.
+    console.error('⚠️ Expense category lower-casing skipped, will retry on the next start:', error && error.message ? error.message : error);
+  }
+}
+
 // ==================== P2 (audit A-12-2): NO EMPTY COMPANY NAME ====================
 // The customer form used to send "" for an empty company name, and "" is not
 // NULL: `coalesce(company_name, name)` kept the empty string, so the fines list
@@ -2032,6 +2096,9 @@ async function runMigrations() {
 
     // Sub-project C (B-36): deleted maintenance blocks get their own bin kind.
     await relabelMaintenanceBlockBinRows();
+
+    // Audit P1 (A-9-1): one lower-case key per expense category.
+    await lowercaseExpenseCategories();
 
     // Audit P2 (A-12-2): customers with an empty company name get NULL.
     await nullEmptyCompanyNames();

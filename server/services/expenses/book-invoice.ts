@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { insertExpenseSchema, type Expense, type InsertExpense } from "../../../shared/schema";
 import { toUploadsRelative } from "../../../shared/paths";
+import { normalizeExpenseCategory } from "../../../shared/expense-categories";
 import { storage } from "../../storage";
 import { realtimeEvents } from "../../realtime-events";
 import { getRelativePath, resolveDocumentFilePath } from "../document-paths";
@@ -44,7 +45,7 @@ export function receiptFromStoredPath(storedPath: string | null | undefined, con
 export function groupLinesByCategory(lines: BookableLine[]): BookableLine[] {
   const groups = new Map<string, { cents: number; descriptions: string[] }>();
   for (const line of lines) {
-    const category = line.category || "Other";
+    const category = normalizeExpenseCategory(line.category);
     const group = groups.get(category) ?? { cents: 0, descriptions: [] };
     group.cents += Math.round((Number(line.amount) || 0) * 100);
     if (line.description && !group.descriptions.includes(line.description)) group.descriptions.push(line.description);
@@ -73,7 +74,7 @@ export async function bookInvoiceAsExpenses(input: BookInvoiceInput): Promise<Bo
     try {
       const validated = insertExpenseSchema.parse({
         vehicleId: input.vehicleId,
-        category: line.category || "Other",
+        category: normalizeExpenseCategory(line.category),
         amount: line.amount,
         date: input.invoice.invoiceDate,
         description: invoiceExpenseDescription(line, input.invoice),

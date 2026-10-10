@@ -52,7 +52,9 @@ const bookSchema = z.object({
   lineItems: z.array(z.object({
     description: z.string().trim().min(1).max(1000),
     amount: z.coerce.number().positive().max(1000000),
-    category: z.enum(EXPENSE_CATEGORIES),
+    // Older review items (and the scanner before A-9-1) carry "Maintenance";
+    // the canonical key is lower case. An unknown key is still refused.
+    category: z.preprocess((value) => (typeof value === "string" ? value.trim().toLowerCase() : value), z.enum(EXPENSE_CATEGORIES)),
   })).min(1).max(200),
   groupByCategory: z.boolean().default(true),
 });

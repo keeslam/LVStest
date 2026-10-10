@@ -154,7 +154,7 @@ export function InvoiceReviewDialog({ item, vehicles, onClose }: Props) {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <Button
                     variant="outline" size="sm"
-                    onClick={() => { setLines([...lines, { description: "", amount: 0, category: "Other" }]); setSelected(new Set([...Array.from(selected), lines.length])); }}
+                    onClick={() => { setLines([...lines, { description: "", amount: 0, category: "other" }]); setSelected(new Set([...Array.from(selected), lines.length])); }}
                     data-testid="button-inbox-add-line"
                   >
                     <Plus className="mr-1.5 h-4 w-4" />{t("invoiceInbox.dialog.addLine")}

@@ -92,7 +92,7 @@ describe("invoice inbox importer", () => {
     expect(scannerCalls[0].mimeType).toBe("application/pdf");
 
     const booked = await db.select().from(expenses).where(eq(expenses.inboxItemId, item.id));
-    expect(booked.map((e) => [e.category, e.amount]).sort()).toEqual([["Brakes", "50"], ["Maintenance", "100"]]);
+    expect(booked.map((e) => [e.category, e.amount]).sort()).toEqual([["brakes", "50"], ["maintenance", "100"]]);
     expect(booked[0].receiptFilePath).toBe(item.attachmentPath);
     expect(booked[0].description).toContain(`(Factuur ${scanned.invoiceNumber}, ${VENDOR})`);
 
@@ -289,7 +289,7 @@ describe("invoice inbox importer", () => {
     const item = (await inboxStorage.getByAttachmentHash(sha256(attachment)))!;
     expect(item.status).toBe("booked");
     const booked = await db.select().from(expenses).where(eq(expenses.inboxItemId, item.id));
-    expect(booked.map((e) => e.category)).toEqual(["Other"]);
+    expect(booked.map((e) => e.category)).toEqual(["other"]);
   });
 
   it("records a scanner failure instead of throwing, and keeps the file for manual entry", async () => {

@@ -27,8 +27,8 @@ describe("book-invoice helper", () => {
       { description: "Remblokken", amount: 55.5, category: "Brakes" },
     ]);
     expect(grouped).toEqual([
-      { category: "Maintenance", amount: 10.3, description: "Olie • Filter" },
-      { category: "Brakes", amount: 55.5, description: "Remblokken" },
+      { category: "maintenance", amount: 10.3, description: "Olie • Filter" },
+      { category: "brakes", amount: 55.5, description: "Remblokken" },
     ]);
   });
 
@@ -87,7 +87,7 @@ describe("booking invoices as expenses", () => {
     expect(errors).toEqual([]);
     expect(expenses).toHaveLength(2);
     expect(expenses[0]).toMatchObject({
-      vehicleId, category: "Maintenance", amount: "100", date: "2026-09-10", inboxItemId: item.id,
+      vehicleId, category: "maintenance", amount: "100", date: "2026-09-10", inboxItemId: item.id,
       description: `Grote beurt (Factuur F-1, ${TEST_PREFIX}Garage)`, receiptFilePath: receipt!.relativePath,
       receiptFile: receipt!.fileName, receiptFileSize: receipt!.size, receiptContentType: "application/pdf", createdBy: INBOX_TEST_ACTOR,
     });

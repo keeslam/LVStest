@@ -40,6 +40,7 @@ import { formatCurrency, sumMoney } from "@/lib/format-utils";
 import { displayLicensePlate } from "@/lib/utils";
 import { Vehicle } from "@shared/schema";
 import { InvoiceLineItemsTable } from "@/components/expenses/invoice-line-items-table";
+import { normalizeExpenseCategory } from "@shared/expense-categories";
 
 interface ParsedInvoiceLineItem {
   description: string;
@@ -107,7 +108,7 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated, children 
   // Group line items by category
   const groupLineItemsByCategory = (items: ParsedInvoiceLineItem[]): ParsedInvoiceLineItem[] => {
     const grouped = items.reduce((acc, item) => {
-      const category = item.category;
+      const category = normalizeExpenseCategory(item.category);
       
       if (!acc[category]) {
         acc[category] = {

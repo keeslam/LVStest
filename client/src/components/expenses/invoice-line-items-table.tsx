@@ -1,7 +1,8 @@
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Trash2 } from "lucide-react";
-import { EXPENSE_CATEGORIES, type InboxLineItem } from "@shared/invoice-inbox";
+import { EXPENSE_CATEGORIES, normalizeExpenseCategory } from "@shared/expense-categories";
+import type { InboxLineItem } from "@shared/invoice-inbox";
 import { formatExpenseCategory } from "@/lib/format-utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -80,7 +81,8 @@ export function InvoiceLineItemsTable({ items, selected, onItemsChange, onSelect
                   <Input type="number" step="0.01" value={item.amount} onChange={(e) => update(index, { amount: parseFloat(e.target.value) || 0 })} className="w-24" data-testid={`input-amount-${index}`} />
                 </TableCell>
                 <TableCell>
-                  <Select value={item.category} onValueChange={(value) => update(index, { category: value })}>
+                  {/* Older review items carry "Maintenance"; the list is lower case (A-9-1). */}
+                  <Select value={normalizeExpenseCategory(item.category)} onValueChange={(value) => update(index, { category: value })}>
                     <SelectTrigger className="w-32" data-testid={`select-category-${index}`}>
                       <SelectValue />
                     </SelectTrigger>

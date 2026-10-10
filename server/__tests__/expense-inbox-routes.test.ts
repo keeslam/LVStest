@@ -231,7 +231,7 @@ describe("expense inbox routes", () => {
     const res = await request(bookkeeper).post(`/api/expenses/inbox/items/${item.id}/book`).send(body);
     expect(res.status).toBe(200);
     expect(res.body.expenses).toHaveLength(1);
-    expect(res.body.expenses[0]).toMatchObject({ vehicleId, amount: "100", category: "Maintenance", date: "2026-09-11", inboxItemId: item.id, receiptFilePath: item.attachmentPath });
+    expect(res.body.expenses[0]).toMatchObject({ vehicleId, amount: "100", category: "maintenance", date: "2026-09-11", inboxItemId: item.id, receiptFilePath: item.attachmentPath });
     expect(res.body.expenses[0].description).toBe(`Beurt • Olie (Factuur GECORRIGEERD-1, ${VENDOR})`);
     expect(res.body.item).toMatchObject({ status: "booked", reviewReason: null, vehicleId, updatedBy: "staff-test", expenseIds: [res.body.expenses[0].id] });
     expect(res.body.item.parsed.invoiceNumber).toBe("GECORRIGEERD-1");

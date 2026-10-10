@@ -121,6 +121,7 @@ import { getRelativePath } from "./services/document-paths";
 import { formatVehicleBarcode, parseBarcode, normalizeScannedCode } from "../shared/barcode";
 // besluiten B-16 + B-07: one day count and one total, shared with the form.
 import { recalculateTotalPrice } from "../shared/rental-pricing";
+import { normalizeExpenseCategory } from "../shared/expense-categories";
 import { syncUsagePeriodSafely } from "./services/fiscal/usage-periods";
 import * as fs from "fs";
 import * as path from "path";
@@ -3197,6 +3198,9 @@ export class DatabaseStorage implements IStorage {
     // Ensure amount is a string if it's a number
     const finalData = {
       ...expenseData,
+      // A-9-1: every writer (form, invoice inbox, scanner) passes through here,
+      // so the category is stored as one canonical lower-case key.
+      category: normalizeExpenseCategory(expenseData.category),
       amount: typeof expenseData.amount === 'number' ? String(expenseData.amount) : expenseData.amount
     };
     
@@ -3216,6 +3220,9 @@ export class DatabaseStorage implements IStorage {
     const finalData: any = {
       ...expenseData
     };
+
+    // A-9-1: same canonical key as on create (only when the category is part of the update).
+    if (finalData.category !== undefined) finalData.category = normalizeExpenseCategory(finalData.category);
     
     if (finalData.amount !== undefined && typeof finalData.amount === 'number') {
       finalData.amount = String(finalData.amount);

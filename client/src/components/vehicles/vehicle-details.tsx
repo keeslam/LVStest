@@ -1,3 +1,4 @@
+import { notifyFileReady } from "@/lib/file-ready";
 import { v } from "@/lib/zod-i18n";
 import { describeApiError } from "@/lib/api-error";
 import { useState } from "react";
@@ -17,7 +18,7 @@ import { ReservationAddDialog } from "@/components/reservations/reservation-add-
 import { ReservationEditDialog } from "@/components/reservations/reservation-edit-dialog";
 import { ExpenseViewDialog } from "@/components/expenses/expense-view-dialog";
 import { ExpenseAddDialog } from "@/components/expenses/expense-add-dialog";
-import { formatDate, formatCurrency, formatLicensePlate, formatFuelLevel, sumMoney, formatVehicleType } from "@/lib/format-utils";
+import { formatDate, formatCurrency, formatLicensePlate, formatFuelLevel, sumMoney, formatVehicleType, formatExpenseCategory } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
 import { Price } from "@/components/ui/price";
 import { isTrueValue } from "@/lib/utils";
@@ -945,7 +946,8 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
   
   // Group expenses by category
   const expensesByCategory = expenses?.reduce((grouped, expense) => {
-    const category = expense.category;
+    // One group per category key, whatever the casing of an older row (A-9-1).
+    const category = (expense.category || "").trim().toLowerCase();
     if (!grouped[category]) {
       grouped[category] = [];
     }
@@ -1811,7 +1813,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                             <div className="flex justify-between items-center w-full pr-4">
                               <div className="flex items-center gap-3">
                                 <Badge variant="outline" className="text-sm font-medium">
-                                  {category}
+                                  {formatExpenseCategory(category)}
                                 </Badge>
                                 <span className="text-gray-500 text-sm">
                                   {t('details.expenses.expenseCount', { count })}
@@ -1974,7 +1976,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                   ) : (
                     totalByCategory.map(({ category, amount }) => (
                       <div key={category} className="flex justify-between items-center">
-                        <span className="text-sm">{category}</span>
+                        <span className="text-sm">{formatExpenseCategory(category)}</span>
                         <span className="font-medium">{<Price value={amount} />}</span>
                       </div>
                     ))
@@ -2082,6 +2084,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                     title: t('details.documents.toasts.pdfGeneratedTitle'),
                                     description: t('details.documents.toasts.pdfGeneratedDescription')
                                   });
+                                  notifyFileReady(a.download, blob.size);
                                 } catch (error) {
                                   console.error('Error generating PDF:', error);
                                   toast({
@@ -3388,7 +3391,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           </div>
                           <div className="flex-1">
                             <div className="flex justify-between items-center">
-                              <h4 className="font-medium text-sm">{t('details.history.expenseAddedSuffix', { category: expense.category })}</h4>
+                              <h4 className="font-medium text-sm">{t('details.history.expenseAddedSuffix', { category: formatExpenseCategory(expense.category) })}</h4>
                               <span className="text-xs text-gray-500">{formatDate(expense.date)}</span>
                             </div>
                             <p className="text-sm">{<Price value={Number(expense.amount)} />}</p>
