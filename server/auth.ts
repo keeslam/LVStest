@@ -162,6 +162,13 @@ export function usesDatabaseStorage(candidate: unknown): boolean {
   return candidate instanceof DatabaseStorage;
 }
 
+/** Shown for an unknown user AND a wrong password alike (A-1-1). */
+export const INVALID_CREDENTIALS_MESSAGE = "Invalid credentials";
+
+// passport only types `message`; `reason` rides along for the audit log.
+const credentialFailure = (reason: "unknown_user" | "wrong_password"): { message: string } =>
+  ({ message: INVALID_CREDENTIALS_MESSAGE, reason } as { message: string });
+
 export function setupAuth(app: Express) {
   // Determine storage type based on storage implementation
   const useDatabase = usesDatabaseStorage(storage);
@@ -236,13 +243,16 @@ export function setupAuth(app: Express) {
       try {
         const user = await storage.getUserByUsername(username);
         if (!user) {
-          return done(null, false, { message: "Incorrect username" });
+          // A-1-1: the caller gets one neutral message for both failures so the
+          // login form cannot be used to find out which accounts exist. The
+          // real reason only goes to the audit log (see /api/login below).
+          return done(null, false, credentialFailure("unknown_user"));
         }
         
         const passwordMatches = await comparePasswords(password, user.password);
         
         if (!passwordMatches) {
-          return done(null, false, { message: "Incorrect password" });
+          return done(null, false, credentialFailure("wrong_password"));
         }
         
         return done(null, user);
@@ -369,7 +379,7 @@ export function setupAuth(app: Express) {
       }
     }
 
-    passport.authenticate("local", async (err: any, user: User | false, info: { message?: string }) => {
+    passport.authenticate("local", async (err: any, user: User | false, info: { message?: string; reason?: string }) => {
       if (err) return next(err);
       
       if (!user) {
@@ -379,7 +389,7 @@ export function setupAuth(app: Express) {
           await AuditLogger.log({
             username,
             action: 'user.login.failed',
-            details: { reason: info?.message || 'invalid_credentials' },
+            details: { reason: info?.reason || info?.message || 'invalid_credentials' },
             ipAddress,
             userAgent,
             status: 'failure',
