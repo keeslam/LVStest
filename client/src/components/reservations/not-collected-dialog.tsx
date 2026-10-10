@@ -11,7 +11,7 @@
  * through the existing cascade-aware `CancelReservationDialog`. Nothing here
  * changes a business rule; it only surfaces rows that already existed.
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { differenceInDays, parseISO } from "date-fns";
@@ -26,12 +26,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { RequiresPermission } from "@/components/ui/requires-permission";
 import { CancelReservationDialog } from "@/components/reservations/cancel-reservation-dialog";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { UserPermission, type Reservation } from "@shared/schema";
 import { formatLicensePlate } from "@/lib/format-utils";
+import { reservationMatchesSearch } from "@/lib/reservation-search";
 import { safeFormatDate } from "@/lib/safe-date";
 import { invalidateByPrefix } from "@/lib/queryClient";
 
@@ -49,6 +51,9 @@ export function NotCollectedDialog({ open, onOpenChange, onViewReservation }: No
   const { t } = useTranslation(["reservations", "common"]);
   const canView = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
+  // A-5-3: 144 rows with a red button each is a misclick waiting to happen; the
+  // search narrows the list to the one rental the employee came for.
+  const [search, setSearch] = useState("");
 
   // Gated the same way as the page that owns this dialog: a role with
   // neither right must never even ask the server, regardless of whether the
@@ -59,6 +64,11 @@ export function NotCollectedDialog({ open, onOpenChange, onViewReservation }: No
     queryKey: NOT_COLLECTED_QUERY_KEY,
     enabled: canView,
   });
+
+  const visible = useMemo(
+    () => reservations.filter((reservation) => reservationMatchesSearch(reservation, search)),
+    [reservations, search],
+  );
 
   return (
     <>
@@ -78,7 +88,25 @@ export function NotCollectedDialog({ open, onOpenChange, onViewReservation }: No
             </p>
           ) : (
             <div className="space-y-3 mt-4">
-              {reservations.map((reservation) => {
+              <div className="flex items-center gap-3">
+                <Input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder={t("notCollectedDialog.searchPlaceholder")}
+                  aria-label={t("notCollectedDialog.searchPlaceholder")}
+                  className="h-8 flex-1 text-sm"
+                  data-testid="input-not-collected-search"
+                />
+                <span className="whitespace-nowrap text-xs text-muted-foreground" data-testid="not-collected-count">
+                  {t("notCollectedDialog.shownCount", { shown: visible.length, total: reservations.length })}
+                </span>
+              </div>
+              {visible.length === 0 && (
+                <p className="py-6 text-sm text-muted-foreground" data-testid="not-collected-no-match">
+                  {t("notCollectedDialog.noMatch")}
+                </p>
+              )}
+              {visible.map((reservation) => {
                 // task-2-review.md Minor — the office calendar
                 // (Europe/Amsterdam), not the browser's own local zone: a
                 // staff member outside Amsterdam must count the same number
@@ -130,6 +158,7 @@ export function NotCollectedDialog({ open, onOpenChange, onViewReservation }: No
                         size="sm"
                         variant="outline"
                         onClick={() => onViewReservation(reservation)}
+                        aria-label={t("notCollectedDialog.openAria", { plate: formatLicensePlate(reservation.vehicle?.licensePlate || ""), id: reservation.id })}
                         data-testid={`button-open-not-collected-${reservation.id}`}
                       >
                         {t("notCollectedDialog.openButton")}
@@ -139,6 +168,7 @@ export function NotCollectedDialog({ open, onOpenChange, onViewReservation }: No
                           size="sm"
                           variant="destructive"
                           onClick={() => setCancellingId(reservation.id)}
+                          aria-label={t("notCollectedDialog.cancelAria", { plate: formatLicensePlate(reservation.vehicle?.licensePlate || ""), id: reservation.id })}
                           data-testid={`button-cancel-not-collected-${reservation.id}`}
                         >
                           {t("notCollectedDialog.cancelButton")}

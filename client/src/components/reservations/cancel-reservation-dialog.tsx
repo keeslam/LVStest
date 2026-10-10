@@ -40,6 +40,7 @@ import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { formatDutchDate } from "@shared/booking-warnings";
 import { isPickedUpRental } from "@shared/picked-up-cancellation";
 import type { Reservation } from "@shared/schema";
+import { formatLicensePlate } from "@/lib/format-utils";
 import {
   PickedUpWarning, isPickedUpRightRefusal, pickedUpRefusalOf, type PickedUpFacts,
 } from "@/components/reservations/picked-up-cancellation";
@@ -200,6 +201,19 @@ export function CancelReservationDialog({
             {t('cancelDialog.description', { id: reservationId })}
           </DialogDescription>
         </DialogHeader>
+
+        {/* A-5-3: say which rental this is - opened from a long list, the id alone means nothing. */}
+        {reservation && (
+          <p
+            className="rounded-md border bg-muted/40 px-3 py-2 text-sm"
+            data-testid="cancel-reservation-subject"
+          >
+            <span className="font-medium">{formatLicensePlate(reservation.vehicle?.licensePlate || "-")}</span>
+            {reservation.vehicle ? ` ${reservation.vehicle.brand ?? ""} ${reservation.vehicle.model ?? ""}`.trimEnd() : ""}
+            {" · "}
+            {reservation.customer?.companyName || reservation.customer?.name || t('cancelDialog.unknownCustomer')}
+          </p>
+        )}
 
         {pickedUp && (
           <PickedUpWarning

@@ -603,7 +603,8 @@
       "cancelledDescription": "Reservation #{{id}} is now cancelled.",
       "failedTitle": "Could not cancel",
       "failedDescription": "Try again, or reload the page."
-    }
+    },
+    "unknownCustomer": "Unknown customer"
   },
   "pickedUpWarning": {
     "text": "This rental was already picked up on {{date}} with contract {{contract}}.",
@@ -620,7 +621,12 @@
     "daysSinceStart_other": "started {{count}} days ago",
     "openButton": "View",
     "cancelButton": "Cancel",
-    "unknownCustomer": "Unknown customer"
+    "unknownCustomer": "Unknown customer",
+    "searchPlaceholder": "Search by plate, customer, contract number or reservation number...",
+    "shownCount": "{{shown}} of {{total}}",
+    "noMatch": "No uncollected reservation matches your search.",
+    "openAria": "View reservation #{{id}} ({{plate}})",
+    "cancelAria": "Cancel reservation #{{id}} ({{plate}})"
   },
   "revertHandover": {
     "title": "Undo handover",

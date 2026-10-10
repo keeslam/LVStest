@@ -603,7 +603,8 @@
       "cancelledDescription": "Reservering #{{id}} staat nu op Geannuleerd.",
       "failedTitle": "Annuleren is niet gelukt",
       "failedDescription": "Probeer het opnieuw, of herlaad de pagina."
-    }
+    },
+    "unknownCustomer": "Onbekende klant"
   },
   "pickedUpWarning": {
     "text": "Deze huur is al opgehaald op {{date}} met contract {{contract}}.",
@@ -620,7 +621,12 @@
     "daysSinceStart_other": "{{count}} dagen geleden gestart",
     "openButton": "Bekijken",
     "cancelButton": "Annuleren",
-    "unknownCustomer": "Onbekende klant"
+    "unknownCustomer": "Onbekende klant",
+    "searchPlaceholder": "Zoek op kenteken, klant, contractnummer of reserveringsnummer...",
+    "shownCount": "{{shown}} van {{total}}",
+    "noMatch": "Geen niet opgehaalde reservering komt overeen met je zoekopdracht.",
+    "openAria": "Reservering #{{id}} ({{plate}}) bekijken",
+    "cancelAria": "Reservering #{{id}} ({{plate}}) annuleren"
   },
   "revertHandover": {
     "title": "Overdracht terugdraaien",
