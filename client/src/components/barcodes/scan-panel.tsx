@@ -78,12 +78,24 @@ interface ScanPanelProps {
    * thing behind the employee's back.
    */
   intent?: HandoverKind | null;
+  /**
+   * A-6-5: told when a pickup/return form opens or closes from this panel, so a
+   * hosting dialog can step aside instead of lying under it.
+   */
+  onHandoverActiveChange?: (active: boolean) => void;
+  /**
+   * A-6-5: a handover that came from a dashboard tile (an `intent`) is the whole
+   * job; once it is done the host closes the scan window instead of leaving the
+   * card open. Without an intent the panel stays in scan mode and looks the
+   * vehicle up again, as before.
+   */
+  onHandoverFinished?: () => void;
 }
 
 // Shared scan UI + lookup logic used by both the standalone /scan page and the
 // ScanDialog. Keeping this framework-agnostic (no Dialog imports) lets each
 // host wrap it in whatever chrome it needs.
-export function ScanPanel({ active = true, intent = null }: ScanPanelProps) {
+export function ScanPanel({ active = true, intent = null, onHandoverActiveChange, onHandoverFinished }: ScanPanelProps) {
   const { t } = useTranslation(["barcodes", "common"]);
   const { openVehicleDialog, openReservationDialog } = useGlobalDialog();
   const { toast } = useToast();
@@ -115,6 +127,33 @@ export function ScanPanel({ active = true, intent = null }: ScanPanelProps) {
     }
   };
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // A-6-5: while the pickup/return form is open it is the only thing on screen.
+  // ...and, for a handover from a dashboard tile, so is the contract/damage-check
+  // window that follows it (`awaitingResult`), until it is closed.
+  const [awaitingResult, setAwaitingResult] = useState(false);
+  const handoverActive = pickupOpen || returnOpen || awaitingResult;
+  useEffect(() => {
+    onHandoverActiveChange?.(handoverActive);
+  }, [handoverActive, onHandoverActiveChange]);
+  const closesHostWhenDone = Boolean(intent && onHandoverFinished);
+  const handoverDone = () => {
+    setPickupOpen(false);
+    setReturnOpen(false);
+    // Scan mode: look the vehicle up again. A handover that came from a dashboard
+    // tile is the whole job - the host closes once the contract/damage-check
+    // window that follows has been dealt with (handoverResultClosed), so no card
+    // is rebuilt behind it.
+    if (closesHostWhenDone) {
+      setAwaitingResult(true);
+    } else if (result?.type === "vehicle" && result.vehicle.barcode) {
+      lookup(result.vehicle.barcode);
+    }
+  };
+  const handoverResultClosed = () => {
+    setAwaitingResult(false);
+    if (closesHostWhenDone) onHandoverFinished?.();
+  };
 
   const { data: recentScans } = useQuery<ScanEvent[]>({
     queryKey: ["/api/scan-events"],
@@ -224,10 +263,20 @@ export function ScanPanel({ active = true, intent = null }: ScanPanelProps) {
     onError: (error: Error) => toast({ title: t("scanPage.transport.error"), description: error.message, variant: "destructive" }),
   });
 
-  const statusBadge = (vehicle: Vehicle) => {
-    const status = vehicle.availabilityStatus || "available";
+  const statusBadge = (vehicle: Vehicle, activeReservation: ScanReservation | null) => {
+    let status = vehicle.availabilityStatus || "available";
+    // A-11-4: the vehicle is derived as "rented" as soon as a booking covers today
+    // (the server's rule, unchanged), but nobody has it until the pickup is done.
+    // The card says "Verhuurd" only for a picked-up rental.
+    if (status === "rented" && activeReservation && activeReservation.status !== "picked_up") {
+      status = "booked_today";
+    }
     const variant = status === "available" ? "default" : status === "rented" ? "destructive" : "secondary";
-    return <Badge variant={variant}>{t(`scanPage.status.${status}`, { defaultValue: status })}</Badge>;
+    return (
+      <Badge variant={variant} data-testid="scan-vehicle-status">
+        {t(`scanPage.status.${status}`, { defaultValue: status })}
+      </Badge>
+    );
   };
 
   const reservationCard = (reservation: ScanReservation, headingKey: string) => (
@@ -282,7 +331,7 @@ export function ScanPanel({ active = true, intent = null }: ScanPanelProps) {
         </div>
       )}
 
-      {result?.type === "vehicle" && (
+      {result?.type === "vehicle" && !handoverActive && (
         <Card data-testid="scan-result-vehicle">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -294,7 +343,7 @@ export function ScanPanel({ active = true, intent = null }: ScanPanelProps) {
                 {result.scannedSpareKey && (
                   <Badge className="bg-amber-100 text-amber-800">{t("scanPage.spareKeyBadge")}</Badge>
                 )}
-                {statusBadge(result.vehicle)}
+                {statusBadge(result.vehicle, result.activeReservation)}
               </span>
             </CardTitle>
             <CardDescription>
@@ -539,7 +588,7 @@ export function ScanPanel({ active = true, intent = null }: ScanPanelProps) {
         </Card>
       )}
 
-      {result?.type === "reservation" && (
+      {result?.type === "reservation" && !handoverActive && (
         <Card data-testid="scan-result-reservation">
           <CardHeader>
             <CardTitle>{t("scanPage.reservationFound")}</CardTitle>
@@ -605,9 +654,9 @@ export function ScanPanel({ active = true, intent = null }: ScanPanelProps) {
       {handoverReservation && (
         <>
           <PickupDialog open={pickupOpen} onOpenChange={setPickupOpen} reservation={handoverReservation}
-            onSuccess={() => { setPickupOpen(false); if (result?.type === "vehicle" && result.vehicle.barcode) lookup(result.vehicle.barcode); }} />
+            onSuccess={handoverDone} onResultClosed={handoverResultClosed} />
           <ReturnDialog open={returnOpen} onOpenChange={setReturnOpen} reservation={handoverReservation}
-            onSuccess={() => { setReturnOpen(false); if (result?.type === "vehicle" && result.vehicle.barcode) lookup(result.vehicle.barcode); }} />
+            onSuccess={handoverDone} onResultClosed={handoverResultClosed} />
         </>
       )}
 

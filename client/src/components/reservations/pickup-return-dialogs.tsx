@@ -32,9 +32,15 @@ interface PickupDialogProps {
   onOpenChange: (open: boolean) => void;
   reservation: Reservation;
   onSuccess?: () => void | Promise<void>;
+  /**
+   * A-6-5: the "Contract klaar" / "Contract kon niet gemaakt worden" window that
+   * follows a pickup lives in this component, so the host has to stay mounted until
+   * the employee has dealt with it. This tells the host when that has happened.
+   */
+  onResultClosed?: () => void;
 }
 
-export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: PickupDialogProps) {
+export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onResultClosed }: PickupDialogProps) {
   const { t } = useTranslation(["reservations", "common", "vehicles"]);
   const { toast } = useToast();
   const isTBDSpare = reservation.placeholderSpare && !reservation.vehicleId;
@@ -1278,7 +1284,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
       {handoverResult && (
         <HandoverResultDialog
           open
-          onOpenChange={(next) => { if (!next) setHandoverResult(null); }}
+          onOpenChange={(next) => { if (!next) { setHandoverResult(null); onResultClosed?.(); } }}
           reservation={reservation}
           document={handoverResult.document}
           errorMessage={handoverResult.errorMessage}
@@ -1372,9 +1378,11 @@ interface ReturnDialogProps {
   onOpenChange: (open: boolean) => void;
   reservation: Reservation;
   onSuccess?: () => void | Promise<void>;
+  /** A-6-5: see PickupDialogProps.onResultClosed - the "Schadeformulier klaar" window lives here. */
+  onResultClosed?: () => void;
 }
 
-export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: ReturnDialogProps) {
+export function ReturnDialog({ open, onOpenChange, reservation, onSuccess, onResultClosed }: ReturnDialogProps) {
   const { t } = useTranslation(["reservations", "common"]);
   const { toast } = useToast();
   const [returnMileage, setReturnMileage] = useState(
@@ -1563,7 +1571,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
     {handoverResult && (
       <HandoverResultDialog
         open
-        onOpenChange={(next) => { if (!next) setHandoverResult(null); }}
+        onOpenChange={(next) => { if (!next) { setHandoverResult(null); onResultClosed?.(); } }}
         reservation={reservation}
         document={handoverResult.document}
         errorMessage={handoverResult.errorMessage}

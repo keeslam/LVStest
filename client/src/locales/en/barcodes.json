@@ -50,7 +50,8 @@
       "scheduled": "Reserved",
       "rented": "Rented",
       "needs_fixing": "In repair",
-      "not_for_rental": "Not for rental"
+      "not_for_rental": "Not for rental",
+      "booked_today": "Booked, not picked up yet"
     },
     "reservationStatus": {
       "booked": "Booked",

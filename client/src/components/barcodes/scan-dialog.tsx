@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScanLine } from "lucide-react";
@@ -13,6 +14,9 @@ interface ScanDialogProps {
 
 export function ScanDialog({ open, onOpenChange, intent = null }: ScanDialogProps) {
   const { t } = useTranslation(["barcodes", "common"]);
+  // A-6-5: while a pickup/return form is open on top, this window steps aside
+  // (hidden, not closed - closing would throw the form away with it).
+  const [handoverActive, setHandoverActive] = useState(false);
 
   const title = intent === "pickup"
     ? t("scanPage.intent.pickupTitle")
@@ -25,7 +29,11 @@ export function ScanDialog({ open, onOpenChange, intent = null }: ScanDialogProp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="dialog-scan">
+      <DialogContent
+        className={`max-w-2xl max-h-[90vh] overflow-y-auto ${handoverActive ? "invisible" : ""}`}
+        data-testid="dialog-scan"
+        data-handover-active={handoverActive ? "true" : "false"}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ScanLine className="h-6 w-6" />
@@ -34,7 +42,12 @@ export function ScanDialog({ open, onOpenChange, intent = null }: ScanDialogProp
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
-        <ScanPanel active={open} intent={intent} />
+        <ScanPanel
+          active={open}
+          intent={intent}
+          onHandoverActiveChange={setHandoverActive}
+          onHandoverFinished={() => onOpenChange(false)}
+        />
       </DialogContent>
     </Dialog>
   );

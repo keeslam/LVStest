@@ -50,7 +50,8 @@
       "scheduled": "Gepland",
       "rented": "Verhuurd",
       "needs_fixing": "Reparatie nodig",
-      "not_for_rental": "Niet voor verhuur"
+      "not_for_rental": "Niet voor verhuur",
+      "booked_today": "Geboekt, nog niet opgehaald"
     },
     "reservationStatus": {
       "booked": "Geboekt",
