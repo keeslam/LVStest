@@ -385,10 +385,10 @@ op 10-10-2026); alle 123 bevindingen van `docs/audit/fysieke-e2e-audit-2026-10-0
 gesorteerd (gerepareerd, bug, UX, besluit, omgeving) en per module afgewerkt op de branch
 `fix/audit-remediation`. Werkwijze en grootboek: `.superpowers/sdd/2026-10-10-audit-reparaties/`.
 **Uitgevoerd (10-10-2026), op branch `fix/audit-remediation`, nog niet op main:** commits
-`42908eb0..HEAD` (ruim 85, onder andere `a7496057`, `826d52dc`, `340ce451`, `9ef74b38`, `be9f9e6d`,
+`42908eb0..18e8acda` (100 commits, onder andere `a7496057`, `826d52dc`, `340ce451`, `9ef74b38`, `be9f9e6d`,
 `0bf28aba`, `dbfa6b4a`, `49a3407a`, `a38fbb41`, `fa36fcb2`, `7288c4a1`, `608bcbe8`, `e887b42a`). Elke module is
-herzien; de laatste ronde (client en e2e) loopt nog, en er komt een beoordeling van de hele branch
-voordat er gepusht wordt. Handleiding bijgewerkt (10-10-2026), de PDF is nog niet opnieuw gemaakt.
+herzien, de slotronde (client, e2e en server) is af en de beoordeling van de hele branch (11-10-2026) gaf
+READY. Handleiding bijgewerkt (10/11-10-2026), de PDF is nog niet opnieuw gemaakt.
 **Resultaat per module (één regel):**
 - Kosten: één kleine-letterlijst van categorieën met Tol en Parkeren, tankbedrag met komma, één kostenvenster, één lijst met filters en CSV, knop Logboek in Ontvangen facturen.
 - Boetes: administratiekosten blijven bewaard en het totaal staat erbij, annuleren vraagt eerst, elke handeling meldt zichzelf, € / datum / kenteken overal gelijk, lege bedrijfsnaam geeft niet langer een lege klantnaam.
@@ -425,7 +425,7 @@ voordat er gepusht wordt. Handleiding bijgewerkt (10-10-2026), de PDF is nog nie
 9. **D9 (A-12-3)** Bekeuringen: eerder is besloten dat doorbelasten en betalen in de boekhouding gebeuren (de app registreert alleen). Blijft dat zo? Advies: ja; dan halen we "Doorbelast", "Betaald" en "Betwist" uit de filters en keuzes (alleen nog zichtbaar bij oude bekeuringen) en belooft het portaal die statussen niet meer.
 10. **D10 (A-12-9)** Mag het koppelen of aanmaken van een bekeuring de klant meteen mailen? Advies: nee; na het koppelen een knop "Klant informeren" (of vinkje, standaard uit), zodat je eerst controleert; de mail komt in het e-maillogboek.
 11. **D11 (A-12-4, A-15-6)** De tijdzone-omzetting van de database (besluit B-22) nu uitvoeren? Advies: ja, eerst het rapport op een kopie van productie, per kolom bepalen of de waarde Nederlandse tijd of UTC was, dan in een onderhoudsvenster na een verse back-up.
-12. **D12 (A-1-5)** Minimale wachtwoordlengte voor medewerkers? Advies: 10 tekens voor nieuwe wachtwoorden, overal gelijk (nu formulier 6, server 8, aanmaken geen minimum); bestaande wachtwoorden blijven werken.
+12. **D12 (A-1-5)** Minimale wachtwoordlengte voor medewerkers? Advies: 10 tekens voor nieuwe wachtwoorden, overal gelijk (nu profielformulier 8 tekens met hoofd- en kleine letter en een cijfer, gelijk aan de server; gebruikersbeheer bij aanmaken geen minimum); bestaande wachtwoorden blijven werken.
 13. **D13 (A-R-2, A-R-4)** Rechten die alleen niets kunnen (Meldingen beheren zonder Klanten/Voertuigen bekijken, Rapporten bekijken zonder Voertuigen/Reserveringen bekijken): hoe oplossen? Advies: in Gebruikersbeheer bij elk recht tonen welke leesrechten het scherm nodig heeft, met een knop "benodigde rechten ook aanzetten"; geen stille automatische koppeling.
 14. **D14 (A-R-5)** Een knop "Recht aanvragen" op het scherm "geen toegang", die beheerders een melding stuurt? Advies: ja, een eenvoudige melding in het meldingencentrum van wie Gebruikers beheren heeft.
 15. **D15 (A-13)** De sjabloonbouwer biedt velden aan die de app bij het versturen nergens invult (bedrijfsnaam, onderhoudsdatum, e-mailadres en telefoonnummer van de klant, begin- en einddatum van de reservering). Invullen (en uit welke gegevens), of uit de bouwer halen? De voorvertoning waarschuwt er nu voor.
