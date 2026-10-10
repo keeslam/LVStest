@@ -165,6 +165,8 @@ for (const account of SESSIONS) {
           // which would otherwise refuse to click a disabled element.
           await opener.click({ force: true });
           await expect(page.locator('[role="dialog"], [role="alertdialog"]')).toHaveCount(0);
+          // A tab the role may not use must not have been switched to by the forced click either.
+          if (entry.deniedOpener) await expect(opener).toHaveAttribute("aria-selected", "false");
           expect(health.violations).toEqual([]);
         });
       }

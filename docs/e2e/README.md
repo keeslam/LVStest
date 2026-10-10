@@ -233,10 +233,14 @@ meer verzoeken kosten.
 
 | Account | begin staart | einde run |
 |---|---|---|
-| `admin` / `admin-b` | 781 / 313 | 784 / 316 |
+| `admin` / `admin-b` | 781 / 360 | 784 / 363 |
 | `manager` / `manager-b` | 652 / 285 | 717 / 515 |
 | `user` / `user-b` | 761 / 158 | 764 / 161 |
 | `cleaner`, `viewer`, `accountant`, `maintenance` | 466, 542, 536, 544 | 469, 545, 539, 547 |
+
+De `admin-b`-getallen (313 / 316 gemeten op 9 oktober) zijn bijgewerkt met de 47 `/api/`-verzoeken van het documentenverhaal
+(`e2e/layer-b/documents/documents.spec.ts`, auditherstel P11), dat als `admin-b` draait: 360 / 363. Dat is een optelling van het
+gemeten aantal van het verhaal, geen nieuwe meting van een hele run; ruim onder de 800.
 
 Zonder de verdeling had `admin` ongeveer 1094 verzoeken nodig gehad (781 + 313), `manager` 937 en
 `user` 919. De drie profielen die alleen het dashboard en een of twee schermen openen
@@ -276,6 +280,10 @@ mislukt` (ruim 8 minuten). De twee overslagen zijn nog dezelfde als hierboven.
 33 bereikt door een test, 87 nog niet`.
 Met het venster **Onderhoud afronden** (deelproject C, taak 8) erbij: `121 bestanden met een venster, 34 bereikt door een test, 87 nog niet` — de
 grens van 87 is niet veranderd. Laag B (`npm run e2e:b`) draait nu `30 geslaagd, 1 bewust overgeslagen`.
+Met de bevestiging **Opgeslagen rapport verwijderen** (auditherstel, slotgolf A) staat `report-builder.tsx` in het register
+(met `allowedPathNeedsState` en `deniedPathNeedsState`: de seed heeft geen opgeslagen rapport; het bewijs staat in
+`p7a-saved-reports-print.test.tsx`), en de grens is `85`. Bij een tabblad dat de rol niet mag gebruiken (`deniedOpener`)
+controleert `dialogs.spec.ts` na de geforceerde klik ook `aria-selected="false"`.
 
 Het dekkingsoverzicht van de vensters (`npm run e2e:coverage`, draait ook automatisch
 aan het eind van `npm run e2e`):
@@ -386,7 +394,7 @@ groene run staat er dus niets.
   ook nog de strenge controle dat er geen enkel venster overblijft.
 
 **Het dekkingsgetal mag alleen omlaag.** In `e2e/registry/coverage-baseline.json` staat
-hoeveel bestanden met een venster nog niet door een test worden geopend (nu 86). Kijk
+hoeveel bestanden met een venster nog niet door een test worden geopend (nu 85). Kijk
 daar voor het getal van vandaag, want het hoort langzaam te dalen.
 Wordt dat getal hoger, dan stopt `npm run e2e` met een fout. Bereik je een venster meer,
 dan zet je het getal één lager. Andersom nooit.

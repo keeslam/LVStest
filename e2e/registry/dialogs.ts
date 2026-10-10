@@ -273,6 +273,16 @@ export const DIALOGS: DialogEntry[] = [
   // own two other roots, save-report and results, were never opened by any
   // test).
   { page: "/reports", opener: "card-report-builder", anyOf: [P.VIEW_REPORTS, P.MANAGE_REPORTS], source: "client/src/pages/reports/index.tsx", name: "rapportenbouwer" },
+  // The confirmation behind the trash button of a saved report (report-builder.tsx, A-9 / P7a). The opener
+  // is the row of a saved report in the builder dialog's saved tab (`button-delete-report-<id>`), and the e2e
+  // seed holds no saved report; both branches would otherwise look for a control that is not there. The jsdom
+  // test p7a-saved-reports-print.test.tsx opens it and cancels and confirms.
+  {
+    page: "/reports", opener: "button-delete-report-<id>", via: "card-report-builder", anyOf: [P.MANAGE_REPORTS],
+    source: "client/src/pages/reports/report-builder.tsx", name: "opgeslagen rapport verwijderen (bevestiging)",
+    allowedPathNeedsState: "needs a saved report (none seeded): the opener is the trash button on a row of the saved tab inside the report builder dialog; confirm-delete-saved-report is covered by p7a-saved-reports-print.test.tsx",
+    deniedPathNeedsState: "needs a saved report (none seeded): without one the saved tab has no row and so no trash button to find disabled",
+  },
   { page: "/reports", opener: "card-maintenance-costs", anyOf: [P.VIEW_REPORTS, P.MANAGE_REPORTS], source: "client/src/pages/reports/index.tsx", name: "onderhoudskosten" },
 
   // --- /customers --------------------------------------------------------
