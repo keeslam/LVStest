@@ -14,6 +14,8 @@ export class Story {
   async fill(target: Locator, value: string, label: string) { await target.fill(value); this.steps.push(`typ: ${label}`); }
   /** A select, combobox option, radio or checkbox. */
   async choose(open: Locator, option: Locator, label: string) { await open.click(); await option.click(); this.steps.push(`kies: ${label}`); }
+  /** A key on the keyboard (Escape to dismiss a dialog). */
+  async press(page: { keyboard: { press(key: string): Promise<void> } }, key: string, label: string) { await page.keyboard.press(key); this.steps.push(`toets: ${label}`); }
   /** A file input: the file a member of staff picks in the file dialog. */
   async upload(target: Locator, file: { name: string; mimeType: string; buffer: Buffer }, label: string) { await target.setInputFiles(file); this.steps.push(`bestand: ${label}`); }
 

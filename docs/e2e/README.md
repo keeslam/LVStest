@@ -168,6 +168,25 @@ melding is het doel van het verhaal en wordt in de spec op zijn exacte tekst uit
 bewaking zelf is niet versoepeld. Het venster staat in `LAYER_B_SOURCES` (de opener draagt het id van de logregel en
 de seed bevat geen logregels). De overige wijzigingen van P3 staan in `customer-communications-p3.test.tsx`.
 
+**Documenten (auditherstel P11): `e2e/layer-b/documents/documents.spec.ts`.**
+Draait als `admin-b` (de tweeling van `admin`: eigen verzoekenteller; het balieverhaal en de rollenmatrix leunen op
+`admin`). Eén verhaal, budget 25 handelingen (gemeten 25), 47 `/api/`-verzoeken inclusief de vier directe
+API-aanroepen van de voorbereiding. De voorbereiding zet twee documenten klaar zoals de generatoren ze schrijven
+("Damage Check" met de Engelse notitie, "Insurance") en bewijst op de echte server dat een diagramafbeelding van 1198 x 24
+pixels met de code `DIAGRAM_IMAGE_TOO_FLAT` wordt geweigerd. Op het scherm: zoeken op een kenteken zonder streepjes opent
+het juiste voertuig, de bibliotheek toont type en notitie in het Nederlands, *Bekijken* opent een voorbeeld dat met Escape
+sluit, *Document uploaden* toont na de voertuigkeuze direct het formulier (geen tweede knop, geen tweede venster) en het
+geüploade document staat in de lijst, de contractsjabloon-editor weigert *Als standaard instellen* voor een sjabloon
+zonder velden, en Escape op een editor met niet-opgeslagen wijzigingen vraagt eerst (na *Opslaan* sluit hij gewoon).
+Twee dingen die de spec bewust afwacht omdat een script sneller is dan een mens: de PDF-viewer in het voorbeeld pakt het
+toetsenbord na het laden en de pagina geeft het dan terug aan het venster (`release-iframe-focus.ts`), en een zichtbare
+melding is een eigen Radix-laag die de eerste Escape opeet (zo leek Escape in de audit genegeerd na *Opslaan*). De ene rode
+melding ("zonder velden kan niet het standaardsjabloon zijn") is het doel van de stap en wordt op zijn exacte tekst uit de
+paginabewaking gehaald; de bewaking zelf is niet versoepeld. De eigen rijen (twee documenten, één sjabloon) worden in
+`lvs_e2e` weer verwijderd; het geseede standaardsjabloon "E2E contract" wordt nergens aangeraakt, het balieverhaal heeft het
+nodig. Er is geen nieuw venster bijgekomen: het voorbeeld, het uploadvenster en de bevestiging bij niet-opgeslagen
+wijzigingen zitten in bestanden die het register al telt (`documents/index.tsx`, `ui/confirm-dialog.tsx`).
+
 Voorwaarden:
 
 - PostgreSQL moet lokaal draaien (localhost, poort 5432, gebruiker `postgres`).

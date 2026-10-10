@@ -259,14 +259,25 @@
       "updatingButton": "Updating...",
       "updateButton": "Update",
       "deleteDialogTitle": "Delete Diagram Template",
-      "deleteDialogDescription": "Are you sure you want to delete the diagram template for {{make}} {{model}}? This action cannot be undone."
+      "deleteDialogDescription": "Are you sure you want to delete the diagram template for {{make}} {{model}}? This action cannot be undone.",
+      "imageTooFlat": "This image is {{width}} × {{height}} pixels: too flat to mark damage on. Use a picture of the vehicle from above or from the side.",
+      "imageTooSmall": "This image is only {{width}} × {{height}} pixels: too small to mark damage on. Use a larger picture."
     },
     "tabBarcodeLabels": "Barcode labels",
     "barcodeLabelEditorTitle": "Barcode label templates",
     "barcodeLabelEditorDescription": "Design key-label stickers with a barcode and vehicle details",
     "openBarcodeLabelEditorIntro": "Open the editor to create and edit label templates.",
     "openBarcodeLabelEditorButton": "Open editor",
-    "barcodeLabelEditorDialogDescription": "Drag fields on the sticker to lay out the barcode label."
+    "barcodeLabelEditorDialogDescription": "Drag fields on the sticker to lay out the barcode label.",
+    "vehicleFallback": "Vehicle #{{id}}",
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all",
+    "unsavedTemplate": {
+      "title": "Changes not saved",
+      "description": "You have changes to this template that are not saved yet. If you close the editor now, they are lost.",
+      "discard": "Discard changes",
+      "keepEditing": "Keep editing"
+    }
   },
   "templateEditor": {
     "toasts": {
@@ -327,7 +338,10 @@
       "invalidFileTypeTitle": "Invalid file type",
       "invalidFileTypeDescription": "Please upload a JPG, PNG, or PDF file",
       "fileTooLargeTitle": "File too large",
-      "fileTooLargeDescription": "Please upload a file smaller than 10MB"
+      "fileTooLargeDescription": "Please upload a file smaller than 10MB",
+      "defaultNeedsFields": "A template without fields cannot be the default template: every contract made from it would be blank. Place at least one field first.",
+      "defaultEmptyTitle": "Note: the default template has no fields",
+      "defaultEmptyDescription": "As long as it has no fields, making a contract at pickup fails. Add fields or choose another default template."
     },
     "dataSourceOptions": {
       "contractNumber": "Contract Number",
@@ -486,7 +500,17 @@
       "bottomLeft": "Bottom Left",
       "bottomCenter": "Bottom Center",
       "bottomRight": "Bottom Right"
-    }
+    },
+    "defaultEmptyWarningTitle": "This default template has no fields",
+    "defaultEmptyWarningDescription": "Every contract made from it would be blank: picking up a vehicle then shows an error. Add fields, or make another template that has fields the default.",
+    "saveStatus": {
+      "unsaved": "There are unsaved changes.",
+      "saved": "All changes are saved."
+    },
+    "unsavedSwitchTitle": "Changes not saved",
+    "unsavedSwitchDescription": "This template has changes that are not saved yet. If you pick another template, they are lost.",
+    "unsavedSwitchConfirm": "Discard changes",
+    "unsavedKeepEditing": "Keep editing"
   },
   "transportTemplateEditor": {
     "templateNamePlaceholder": "e.g., Driver Handoff Sheet",
@@ -640,7 +664,19 @@
     "clearButton": "Clear",
     "saveSignatureButton": "Save Signature",
     "customerSignatureTitle": "Customer Signature",
-    "customerSignatureAlt": "Customer signature"
+    "customerSignatureAlt": "Customer signature",
+    "relationNote": "This is where you record the damage check of this reservation. The damage check PDF made at return takes over the last saved check of the reservation, so save the check first. The PDF of this check itself is under Documents, at the vehicle.",
+    "savingProgress": "Saving…",
+    "savedAt": "Saved at {{time}}. The PDF is ready.",
+    "diagramFallbackTitle": "No diagram for this model",
+    "diagramFallbackDescription": "This vehicle has no diagram of its own. The diagram of {{make}} {{model}} is shown instead, so markings may differ from the real bodywork. Add a diagram for this model under Documents → Damage check templates.",
+    "diagramUnusableTitle": "This diagram cannot be used",
+    "diagramTooFlat": "The diagram is {{width}} × {{height}} pixels: too flat a strip to mark damage on. Replace it under Documents → Damage check templates with a picture of the vehicle from above or from the side.",
+    "diagramTooSmall": "The diagram is only {{width}} × {{height}} pixels: too small to mark damage on. Replace it under Documents → Damage check templates with a larger picture.",
+    "checklistProgress": "{{filled}} of {{total}} filled in",
+    "allGoodButton": "All good",
+    "allGoodHint": "Fills only the still-empty fields of this block with the normal value (for example clean, good, yes). What you already filled in stays.",
+    "notAnswered": "not filled in"
   },
   "barcodeLabelEditor": {
     "backToDocuments": "Back to documents",
@@ -678,12 +714,57 @@
     "regeneratedTitle": "New version created",
     "regeneratedDescription": "Version {{version}} of {{fileName}} is now in the dossier. The old version is kept.",
     "failedTitle": "Could not regenerate",
-    "notRegeneratable": "This document was uploaded or produced elsewhere, so there is nothing to reproduce it from."
+    "notRegeneratable": "This document was uploaded or produced elsewhere, so there is nothing to reproduce it from.",
+    "errors": {
+      "NO_TEMPLATE": "No contract template has been set up. Create one under Documents → Contract templates.",
+      "NO_DEFAULT_TEMPLATE": "There are several contract templates but none is the default. Pick a default under Documents → Contract templates.",
+      "TEMPLATE_NOT_FOUND": "The contract template no longer exists. Pick another one under Documents → Contract templates.",
+      "TEMPLATE_WITHOUT_FIELDS": "The contract template '{{name}}' has no fields. Fill it under Documents → Contract templates.",
+      "TEMPLATE_WITHOUT_FIELDS_UNKNOWN": "The contract template has no fields. Fill it under Documents → Contract templates.",
+      "TEMPLATE_BACKGROUND_MISSING": "The background of the contract template could not be read. Upload the background again under Documents → Contract templates.",
+      "NO_VEHICLE": "This reservation has no vehicle, so the document cannot be made.",
+      "PLACEHOLDER_RESERVATION": "No vehicle is linked to this reservation yet. Assign a vehicle and make the document again.",
+      "NO_CUSTOMER": "This reservation has no customer, so the document cannot be made.",
+      "MAINTENANCE_BLOCK": "This is a maintenance block, not a rental — it has no document.",
+      "RENDER_FAILED": "The document could not be made because of a technical error. Try again.",
+      "DOCUMENT_NOT_FOUND": "This document no longer exists. Refresh the list.",
+      "NOT_REGENERATABLE": "This document was uploaded or made elsewhere; there is nothing to rebuild it from.",
+      "NO_RESERVATION_LINK": "This document is not linked to a reservation, so it cannot be made again.",
+      "RESERVATION_NOT_FOUND": "The reservation of this document no longer exists.",
+      "NO_DAMAGE_CHECK_TEMPLATE": "There is no damage check template. Create one under Documents → Damage check templates.",
+      "STALE_WRITE": "Someone else just changed this. Refresh the list and try again.",
+      "UNKNOWN": "The document could not be made again. Try again; if it keeps failing, tell the administrator."
+    }
   },
   "mailStatus": {
     "sent": "Sent on {{date}} to {{recipient}}",
     "failed": "Sending failed — {{reason}}",
     "unknownReason": "reason unknown",
     "unknownRecipient": "unknown recipient"
+  },
+  "documentLabels": {
+    "type": {
+      "contracts": "Contracts",
+      "contractUnsigned": "Contract (unsigned)",
+      "contractSigned": "Contract (signed)",
+      "damageCheck": "Damage check",
+      "damageCheckPickup": "Damage check (pickup)",
+      "damageCheckReturn": "Damage check (return)",
+      "damageCheckUnsigned": "Damage check (unsigned)",
+      "transportReport": "Transport report",
+      "editedVersion": "{{type}} - edited (previous version {{stamp}})"
+    },
+    "notes": {
+      "damageCheckAtReturn": "Damage check recorded at return of reservation #{{id}}",
+      "contractGenerated": "Auto-generated unsigned contract for reservation #{{id}}",
+      "damageCheckForPeriod": "Damage check for the reservation from {{from}} to {{to}}",
+      "damageCheckUpdatedForPeriod": "Updated damage check for the reservation from {{from}} to {{to}}",
+      "regenerated": "Regenerated on request; replaces version {{version}}."
+    },
+    "staleReason": {
+      "handoverReverted": "the handover was reverted",
+      "superseded": "superseded by a newer version",
+      "reservationChanged": "the reservation changed after this document was generated"
+    }
   }
 }

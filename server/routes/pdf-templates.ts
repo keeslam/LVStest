@@ -9,7 +9,8 @@ import { sendRouteError } from "../utils/route-errors";
 import { storage } from "../storage";
 import { getRelativePath, unlinkStoredFile } from "../services/document-paths";
 import { generateRentalContractFromTemplate } from "../utils/pdf-generator";
-import { resolveDefaultTemplateRow } from "../services/pdf-template-selection";
+import { resolveDefaultTemplateRow, templateFieldCount } from "../services/pdf-template-selection";
+import { defaultWithoutFieldsViolation, TEMPLATE_DEFAULT_WITHOUT_FIELDS } from "../services/pdf-template-default-guard";
 import path from "path";
 import fs from "fs";
 import { z } from "zod";
@@ -198,9 +199,11 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
     let candidate: unknown = body.fields;
     if (typeof candidate === "string") {
       const parsedArray = coerceFieldArray(candidate);
-      // An empty array only counts when the string really said so; anything
-      // else that does not parse is rejected rather than silently emptied.
-      candidate = candidate.trim() === "" || parsedArray.length > 0 ? parsedArray : candidate;
+      // An empty array only counts when the string really said so ("" or "[]" - the editor sends
+      // a new template's empty field list as the string "[]", which used to be refused as "not an
+      // array", so no template could be created from the screen); anything else that does not
+      // parse is rejected rather than silently emptied.
+      candidate = candidate.trim() === "" || /^\[\s*\]$/.test(candidate.trim()) || parsedArray.length > 0 ? parsedArray : candidate;
     }
     if (!Array.isArray(candidate)) {
       res.status(400).json({ message: "fields must be an array of field definitions" });
@@ -221,6 +224,26 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
     return true;
   };
 
+  /**
+   * A-10-2: answers 409 (and returns true) when this write would leave a contract template as
+   * the default without any field - every contract made from it would be blank and the picker
+   * refuses it (B-34). The message stays English; the client translates by `code`.
+   */
+  const refuseDefaultWithoutFields = (
+    res: Response,
+    input: Parameters<typeof defaultWithoutFieldsViolation>[0],
+    templateName: unknown,
+  ): boolean => {
+    if (!defaultWithoutFieldsViolation(input)) return false;
+    res.status(409).json({
+      message:
+        "A template without fields cannot be the default: every contract made from it would be blank. Place at least one field first.",
+      code: TEMPLATE_DEFAULT_WITHOUT_FIELDS,
+      templateName: typeof templateName === "string" && templateName ? templateName : undefined,
+    });
+    return true;
+  };
+
   // Create a new PDF template
   app.post("/api/pdf-templates", hasPermission(UserPermission.MANAGE_PDF_TEMPLATES), async (req: Request, res: Response) => {
     try {
@@ -228,6 +251,16 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       const user = req.user;
       
       if (!validateTemplateFields(res, req.body)) return;
+
+      if (req.body?.isDefault === true) {
+        const others = await storage.getAllPdfTemplates();
+        if (refuseDefaultWithoutFields(res, {
+          resultingIsDefault: true,
+          resultingFieldCount: Array.isArray(req.body.fields) ? req.body.fields.length : 0,
+          before: null,
+          otherTemplatesExist: others.length > 0,
+        }, req.body.name)) return;
+      }
       
       const templateData = insertPdfTemplateSchema.parse({
         ...req.body,
@@ -277,6 +310,13 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       const requestBody = { ...req.body };
       
       if (!validateTemplateFields(res, requestBody)) return;
+
+      if (refuseDefaultWithoutFields(res, {
+        resultingIsDefault: typeof requestBody.isDefault === "boolean" ? requestBody.isDefault : template.isDefault === true,
+        resultingFieldCount: Array.isArray(requestBody.fields) ? requestBody.fields.length : templateFieldCount(template),
+        before: { isDefault: template.isDefault === true, fieldCount: templateFieldCount(template) },
+        otherTemplatesExist: true,
+      }, requestBody.name ?? template.name)) return;
       
       // Convert fields to string if it's an object (this fixes the date handling issue)
       if (requestBody.fields && typeof requestBody.fields === 'object') {

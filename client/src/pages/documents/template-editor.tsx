@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { UserPermission } from "@shared/schema";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { RequiresPermission } from "@/components/ui/requires-permission";
@@ -96,9 +97,25 @@ const DEFAULT_PRESETS: PositionPreset[] = [
 
 interface PDFTemplateEditorProps {
   onClose?: () => void;
+  /**
+   * A-10-3: told whenever the editor holds changes that are not saved yet, so the dialog around it
+   * can ask before it closes (Escape, the X, a click outside and the back button all end up there).
+   */
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
-const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
+/** What makes two versions of a template "the same" for the unsaved-changes check. */
+const comparableTemplate = (template: Template) =>
+  JSON.stringify({
+    name: template.name,
+    isDefault: !!template.isDefault,
+    fields: (template.fields ?? []).map((f) => ({
+      id: f.id, name: f.name, x: f.x, y: f.y, fontSize: f.fontSize, isBold: !!f.isBold,
+      source: f.source, textAlign: f.textAlign, locked: !!f.locked,
+    })),
+  });
+
+const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = {}) => {
   const { t } = useTranslation(["documents", "common"]);
   const DATA_SOURCE_KEYS: string[] = [
     'contractNumber', 'contractDate', 'licensePlate', 'brand', 'model', 'chassisNumber',
@@ -141,6 +158,8 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
   const [isBackgroundLibraryOpen, setIsBackgroundLibraryOpen] = useState(false);
   const [backgroundName, setBackgroundName] = useState('');
   const [deleteTemplateDialogOpen, setDeleteTemplateDialogOpen] = useState(false);
+  // A-10-3: the template the user asked for while the current one still has unsaved changes.
+  const [pendingTemplateSwitch, setPendingTemplateSwitch] = useState<string | null>(null);
   const [deleteBackgroundDialogOpen, setDeleteBackgroundDialogOpen] = useState(false);
   const [backgroundToDelete, setBackgroundToDelete] = useState<TemplateBackground | null>(null);
   
@@ -193,9 +212,13 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
       });
     },
     onError: (error: Error) => {
+      // A-10-2: the server refuses a default without fields with a stable code; the sentence is ours.
+      const code = (error as Error & { code?: string }).code;
       toast({
         title: t('common:status.error'),
-        description: t('templateEditor.toasts.saveTemplateFailed', { message: error.message }),
+        description: code === 'TEMPLATE_DEFAULT_WITHOUT_FIELDS'
+          ? t('templateEditor.toasts.defaultNeedsFields')
+          : t('templateEditor.toasts.saveTemplateFailed', { message: error.message }),
         variant: "destructive",
       });
     }
@@ -560,6 +583,22 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedFields, copiedFields, history, historyIndex, currentTemplate]);
+
+  // A-10-3: unsaved changes = the template on screen differs from the one the server last gave us.
+  const savedVersion = currentTemplate ? templates.find((candidate) => candidate.id === currentTemplate.id) : undefined;
+  const isDirty = !!currentTemplate && !!savedVersion && comparableTemplate(currentTemplate) !== comparableTemplate(savedVersion);
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+  // Closing the tab or reloading the page while the editor holds changes would lose them as well.
+  useEffect(() => {
+    if (!isDirty) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [isDirty]);
+  // A-10-2: the contract picker refuses a default template without fields (every pickup then fails).
+  const defaultWithoutFields = !!currentTemplate && currentTemplate.isDefault && currentTemplate.fields.length === 0;
 
   const addToHistory = (fields: TemplateField[]) => {
     const newHistory = history.slice(0, historyIndex + 1);
@@ -1133,6 +1172,25 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
     };
     
     saveTemplateMutation.mutate(templateToSave);
+    if (defaultWithoutFields) {
+      toast({
+        title: t('templateEditor.toasts.defaultEmptyTitle'),
+        description: t('templateEditor.toasts.defaultEmptyDescription'),
+      });
+    }
+  };
+
+  const switchToTemplate = (value: string) => {
+    const template = templates.find(t => t.id.toString() === value);
+    if (template) {
+      setCurrentTemplate(template);
+      // Reset all state when switching templates
+      setHistory([{ fields: JSON.parse(JSON.stringify(template.fields)), timestamp: Date.now() }]);
+      setHistoryIndex(0);
+      setSelectedFields([]);
+      setCopiedFields([]);
+      setFieldHistory([]);
+    }
   };
 
   const handleDeleteTemplate = () => {
@@ -1147,6 +1205,15 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
 
   const handleSetDefaultTemplate = () => {
     if (!currentTemplate) return;
+    // A-10-2: an empty default would make every contract fail; the server refuses it too.
+    if (currentTemplate.fields.length === 0) {
+      toast({
+        title: t('common:status.error'),
+        description: t('templateEditor.toasts.defaultNeedsFields'),
+        variant: "destructive",
+      });
+      return;
+    }
     
     const templateToSave = {
       id: currentTemplate.id,
@@ -1208,7 +1275,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
             <Link href="/documents">
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Documents
+                {t('templateEditor.backToDocuments')}
               </Button>
             </Link>
           )}
@@ -1264,7 +1331,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
             <Link href="/documents">
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Documents
+                {t('templateEditor.backToDocuments')}
               </Button>
             </Link>
           )}
@@ -1285,6 +1352,17 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
               <div>
                 <CardTitle>{t('templateEditor.templateSelectionTitle')}</CardTitle>
                 <CardDescription>{t('templateEditor.templateSelectionDescription')}</CardDescription>
+                <p
+                  className={`mt-1 text-sm ${isDirty ? 'text-amber-700' : 'text-muted-foreground'}`}
+                  role="status"
+                  data-testid="template-editor-save-status"
+                >
+                  {isDirty
+                    ? t('templateEditor.saveStatus.unsaved')
+                    : saveTemplateMutation.isSuccess
+                      ? t('templateEditor.saveStatus.saved')
+                      : ''}
+                </p>
               </div>
               <div className="flex space-x-2">
                 <Button onClick={() => handleUndo()} disabled={historyIndex <= 0} variant="outline" size="sm" title={t('templateEditor.undoTitleAttr')}>
@@ -1322,6 +1400,12 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
             </div>
           </CardHeader>
           <CardContent>
+            {defaultWithoutFields && (
+              <Alert variant="destructive" className="mb-4" data-testid="template-default-empty-warning">
+                <AlertTitle>{t('templateEditor.defaultEmptyWarningTitle')}</AlertTitle>
+                <AlertDescription>{t('templateEditor.defaultEmptyWarningDescription')}</AlertDescription>
+              </Alert>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-4">
                 <div className="flex h-6 items-center justify-between">
@@ -1382,16 +1466,8 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                 <Select
                   value={currentTemplate?.id.toString() || ''}
                   onValueChange={(value) => {
-                    const template = templates.find(t => t.id.toString() === value);
-                    if (template) {
-                      setCurrentTemplate(template);
-                      // Reset all state when switching templates
-                      setHistory([{ fields: JSON.parse(JSON.stringify(template.fields)), timestamp: Date.now() }]);
-                      setHistoryIndex(0);
-                      setSelectedFields([]);
-                      setCopiedFields([]);
-                      setFieldHistory([]);
-                    }
+                    if (isDirty) { setPendingTemplateSwitch(value); return; }
+                    switchToTemplate(value);
                   }}
                 >
                   <SelectTrigger>
@@ -1570,7 +1646,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
 
                       <Dialog open={isAddFieldDialogOpen} onOpenChange={setIsAddFieldDialogOpen}>
                         <DialogTrigger asChild>
-                          <Button variant="default">
+                          <Button variant="default" data-testid="button-add-field">
                             <Plus className="mr-2 h-4 w-4" />
                             {t('templateEditor.addFieldButton')}
                           </Button>
@@ -1587,6 +1663,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                               <Label htmlFor="field-name">{t('templateEditor.fieldNameLabel')}</Label>
                               <Input
                                 id="field-name"
+                                data-testid="input-field-name"
                                 value={newFieldName}
                                 onChange={(e) => setNewFieldName(e.target.value)}
                                 placeholder={t('templateEditor.fieldNamePlaceholder')}
@@ -1595,7 +1672,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                             <div>
                               <Label htmlFor="field-source">{t('templateEditor.dataSourceLabel')}</Label>
                               <Select value={newFieldSource} onValueChange={setNewFieldSource}>
-                                <SelectTrigger id="field-source">
+                                <SelectTrigger id="field-source" data-testid="select-field-source">
                                   <SelectValue placeholder={t('templateEditor.dataSourcePlaceholder')} />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1610,7 +1687,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                             <Button variant="outline" onClick={() => setIsAddFieldDialogOpen(false)}>
                               {t('templateEditor.cancelButton')}
                             </Button>
-                            <Button onClick={handleAddField}>{t('templateEditor.addFieldButton')}</Button>
+                            <Button onClick={handleAddField} data-testid="button-add-field-confirm">{t('templateEditor.addFieldButton')}</Button>
                           </DialogFooter>
                         </DialogContent>
                       </Dialog>
@@ -2262,6 +2339,21 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
           }
         }}
         style={{ display: 'none' }}
+      />
+
+      {/* Switching template with unsaved changes (A-10-3) */}
+      <ConfirmDialog
+        open={pendingTemplateSwitch !== null}
+        onOpenChange={(open) => { if (!open) setPendingTemplateSwitch(null); }}
+        title={t('templateEditor.unsavedSwitchTitle')}
+        description={t('templateEditor.unsavedSwitchDescription')}
+        confirmLabel={t('templateEditor.unsavedSwitchConfirm')}
+        cancelLabel={t('templateEditor.unsavedKeepEditing')}
+        variant="warning"
+        onConfirm={() => {
+          if (pendingTemplateSwitch !== null) switchToTemplate(pendingTemplateSwitch);
+          setPendingTemplateSwitch(null);
+        }}
       />
 
       {/* Delete Template Confirmation Dialog */}

@@ -18,6 +18,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import type { Document } from "@shared/schema";
+import { staleReasonLabel } from "@/lib/document-labels";
+import { regenerationErrorText } from "@/lib/regeneration-error-text";
 
 /**
  * The document types the server can produce again — mirrors
@@ -67,7 +69,7 @@ export function StaleDocumentBadge({
       data-testid="document-stale-badge"
       title={
         document.staleReason
-          ? `${t("staleness.badgeTitle")} ${t("staleness.reasonLabel", { reason: document.staleReason })}`
+          ? `${t("staleness.badgeTitle")} ${t("staleness.reasonLabel", { reason: staleReasonLabel(t, document.staleReason) })}`
           : t("staleness.badgeTitle")
       }
       className={`inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-800 ${className ?? ""}`}
@@ -118,7 +120,9 @@ export function RegenerateDocumentButton({
     onError: (error: Error) => {
       toast({
         title: t("staleness.failedTitle"),
-        description: error.message,
+        // The server answers in English with the status in front; the sentence comes from the
+        // translation files, by the stable code the answer carries.
+        description: regenerationErrorText(t, error),
         variant: "destructive",
       });
     },

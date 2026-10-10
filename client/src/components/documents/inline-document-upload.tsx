@@ -27,6 +27,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatFileSize } from "@/lib/format-utils";
+// Values are stored verbatim in the database and matched elsewhere (e.g. isContractDocument), so they
+// stay in English; only the displayed label is translated (client/src/lib/document-labels.ts).
+import { UPLOAD_DOCUMENT_TYPE_KEYS } from "@/lib/document-labels";
 
 // Document types
 const documentTypes = [
@@ -44,24 +47,6 @@ const documentTypes = [
   "Repair Report",
   "Other"
 ];
-
-// Values are stored verbatim in the database and matched elsewhere (e.g. isContractDocument),
-// so they stay in English; only the displayed label is translated via this key map.
-const DOCUMENT_TYPE_KEYS: Record<string, string> = {
-  "APK Inspection": "apkInspection",
-  "Contract": "contract",
-  "Damage Report": "damageReport",
-  "Insurance": "insurance",
-  "Maintenance Record": "maintenanceRecord",
-  "Receipt": "receipt",
-  "Registration": "registration",
-  "Vehicle Photos": "vehiclePhotos",
-  "Warranty": "warranty",
-  "Tire Replacement": "tireReplacement",
-  "Front Window Replacement": "frontWindowReplacement",
-  "Repair Report": "repairReport",
-  "Other": "other",
-};
 
 // Maximum file size (5 MB)
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -103,9 +88,13 @@ interface InlineDocumentUploadProps {
   onSuccess?: () => void;
   preselectedType?: string;
   children?: React.ReactNode;
+  /** Render the form directly instead of behind a button and a second dialog. */
+  inline?: boolean;
+  /** Inline only: what the Cancel button does (closing is the host dialog's business). */
+  onCancel?: () => void;
 }
 
-export function InlineDocumentUpload({ vehicleId, reservationId, onSuccess, preselectedType, children }: InlineDocumentUploadProps) {
+export function InlineDocumentUpload({ vehicleId, reservationId, onSuccess, preselectedType, children, inline = false, onCancel }: InlineDocumentUploadProps) {
   const { t } = useTranslation(["documents", "common"]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -243,6 +232,162 @@ export function InlineDocumentUpload({ vehicleId, reservationId, onSuccess, pres
     }
   };
 
+  // The form itself, shared by the dialog (a button opens it) and the inline use (the documents page
+  // already chose the vehicle, so it shows the form directly - A-10-9: no second button, no second dialog).
+  const formBody = (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {/* Document Type */}
+        <FormField
+          control={form.control}
+          name="documentType"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('uploadDialog.documentType')}</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                value={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('uploadDialog.selectDocumentType')} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {documentTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {t(`uploadDialog.types.${UPLOAD_DOCUMENT_TYPE_KEYS[type]}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        {/* File Upload */}
+        <FormField
+          control={form.control}
+          name="file"
+          render={({ field: { value, onChange, ...field } }) => (
+            <FormItem>
+              <FormLabel>{t('uploadDialog.file')}</FormLabel>
+              <FormControl>
+                <div className="flex flex-col space-y-2">
+                  <Input
+                    type="file"
+                    accept={ACCEPTED_FILE_TYPES.join(",")}
+                    onChange={handleFileChange}
+                    {...field}
+                  />
+                  {selectedFile && (
+                    <p className="text-sm text-gray-500">
+                      {t('uploadDialog.selected', { name: selectedFile.name, size: formatFileSize(selectedFile.size) })}
+                    </p>
+                  )}
+                </div>
+              </FormControl>
+              <FormDescription>
+                {t('uploadDialog.supportedFileTypes')}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        {/* Preview if it's an image */}
+        {previewUrl && (
+          <div>
+            <FormLabel>{t('uploadDialog.preview')}</FormLabel>
+            <div className="mt-2 max-w-full overflow-hidden border rounded-md">
+              <img 
+                src={previewUrl}
+                alt={t('uploadDialog.preview')}
+                className="max-w-full h-auto object-contain"
+                style={{ maxHeight: '200px' }}
+              />
+            </div>
+          </div>
+        )}
+        
+        {/* APK Date - only shown for APK Inspection documents */}
+        {documentType === "APK Inspection" && (
+          <FormField
+            control={form.control}
+            name="apkDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('uploadDialog.newApkExpirationDate')}</FormLabel>
+                <FormControl>
+                  <Input
+                    type="date"
+                    {...field}
+                    data-testid="input-apk-date"
+                  />
+                </FormControl>
+                <FormDescription>
+                  {t('uploadDialog.updateApkDateHint')}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+        
+        {/* Notes */}
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('uploadDialog.notesOptional')}</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder={t('uploadDialog.notesPlaceholder')}
+                  className="min-h-[80px]"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="flex justify-end space-x-2 pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => (inline ? onCancel?.() : setIsOpen(false))}
+          >
+            {t('common:actions.cancel')}
+          </Button>
+          <Button
+            type="submit"
+            disabled={uploadDocumentMutation.isPending || !selectedFile}
+          >
+            {uploadDocumentMutation.isPending ? (
+              <span className="flex items-center">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {t('uploadDialog.uploading')}
+              </span>
+            ) : (
+              t('uploadDialog.title')
+            )}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+
+  if (inline) {
+    return <div data-testid="inline-document-upload">{formBody}</div>;
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogChange}>
       <DialogTrigger asChild>
@@ -265,153 +410,7 @@ export function InlineDocumentUpload({ vehicleId, reservationId, onSuccess, pres
         <DialogHeader>
           <DialogTitle>{t('uploadDialog.title')}</DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Document Type */}
-            <FormField
-              control={form.control}
-              name="documentType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('uploadDialog.documentType')}</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('uploadDialog.selectDocumentType')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {documentTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {t(`uploadDialog.types.${DOCUMENT_TYPE_KEYS[type]}`)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            {/* File Upload */}
-            <FormField
-              control={form.control}
-              name="file"
-              render={({ field: { value, onChange, ...field } }) => (
-                <FormItem>
-                  <FormLabel>{t('uploadDialog.file')}</FormLabel>
-                  <FormControl>
-                    <div className="flex flex-col space-y-2">
-                      <Input
-                        type="file"
-                        accept={ACCEPTED_FILE_TYPES.join(",")}
-                        onChange={handleFileChange}
-                        {...field}
-                      />
-                      {selectedFile && (
-                        <p className="text-sm text-gray-500">
-                          {t('uploadDialog.selected', { name: selectedFile.name, size: formatFileSize(selectedFile.size) })}
-                        </p>
-                      )}
-                    </div>
-                  </FormControl>
-                  <FormDescription>
-                    {t('uploadDialog.supportedFileTypes')}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            {/* Preview if it's an image */}
-            {previewUrl && (
-              <div>
-                <FormLabel>{t('uploadDialog.preview')}</FormLabel>
-                <div className="mt-2 max-w-full overflow-hidden border rounded-md">
-                  <img 
-                    src={previewUrl}
-                    alt={t('uploadDialog.preview')}
-                    className="max-w-full h-auto object-contain"
-                    style={{ maxHeight: '200px' }}
-                  />
-                </div>
-              </div>
-            )}
-            
-            {/* APK Date - only shown for APK Inspection documents */}
-            {documentType === "APK Inspection" && (
-              <FormField
-                control={form.control}
-                name="apkDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('uploadDialog.newApkExpirationDate')}</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        {...field}
-                        data-testid="input-apk-date"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      {t('uploadDialog.updateApkDateHint')}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-            
-            {/* Notes */}
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('uploadDialog.notesOptional')}</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder={t('uploadDialog.notesPlaceholder')}
-                      className="min-h-[80px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsOpen(false)}
-              >
-                {t('common:actions.cancel')}
-              </Button>
-              <Button
-                type="submit"
-                disabled={uploadDocumentMutation.isPending || !selectedFile}
-              >
-                {uploadDocumentMutation.isPending ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    {t('uploadDialog.uploading')}
-                  </span>
-                ) : (
-                  t('uploadDialog.title')
-                )}
-              </Button>
-            </div>
-          </form>
-        </Form>
+        {formBody}
       </DialogContent>
     </Dialog>
   );

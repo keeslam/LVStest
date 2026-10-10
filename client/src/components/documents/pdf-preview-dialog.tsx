@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
+import { releaseIframeFocus } from "@/lib/release-iframe-focus";
 
 interface PdfPreviewDialogProps {
   open: boolean;
@@ -79,6 +80,7 @@ export function PdfPreviewDialog({ open, onOpenChange, url, title }: PdfPreviewD
               className="w-full h-full border-0"
               title={t('indexPage.documentPreviewIframeTitle')}
               onError={() => setIframeError(true)}
+              onLoad={(event) => releaseIframeFocus(event.currentTarget)}
             />
           )}
           {url && iframeError && (

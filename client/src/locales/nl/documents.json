@@ -259,14 +259,25 @@
       "updatingButton": "Bijwerken...",
       "updateButton": "Bijwerken",
       "deleteDialogTitle": "Diagramsjabloon verwijderen",
-      "deleteDialogDescription": "Weet je zeker dat je het diagramsjabloon voor {{make}} {{model}} wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."
+      "deleteDialogDescription": "Weet je zeker dat je het diagramsjabloon voor {{make}} {{model}} wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+      "imageTooFlat": "Deze afbeelding is {{width}} × {{height}} pixels: te plat om schade op te markeren. Gebruik een afbeelding van het voertuig van bovenaf of van opzij.",
+      "imageTooSmall": "Deze afbeelding is maar {{width}} × {{height}} pixels: te klein om schade op te markeren. Gebruik een grotere afbeelding."
     },
     "tabBarcodeLabels": "Barcodelabels",
     "barcodeLabelEditorTitle": "Barcodelabel-sjablonen",
     "barcodeLabelEditorDescription": "Ontwerp sleutellabel-stickers met barcode en voertuiggegevens",
     "openBarcodeLabelEditorIntro": "Open de editor om labelsjablonen te maken en te bewerken.",
     "openBarcodeLabelEditorButton": "Editor openen",
-    "barcodeLabelEditorDialogDescription": "Sleep velden op de sticker om de indeling van het barcodelabel te bepalen."
+    "barcodeLabelEditorDialogDescription": "Sleep velden op de sticker om de indeling van het barcodelabel te bepalen.",
+    "vehicleFallback": "Voertuig #{{id}}",
+    "expandAll": "Alles uitklappen",
+    "collapseAll": "Alles inklappen",
+    "unsavedTemplate": {
+      "title": "Wijzigingen niet opgeslagen",
+      "description": "Je hebt wijzigingen aan dit sjabloon die nog niet zijn opgeslagen. Als je de editor nu sluit, gaan ze verloren.",
+      "discard": "Wijzigingen weggooien",
+      "keepEditing": "Verder bewerken"
+    }
   },
   "templateEditor": {
     "toasts": {
@@ -327,7 +338,10 @@
       "invalidFileTypeTitle": "Ongeldig bestandstype",
       "invalidFileTypeDescription": "Upload een JPG-, PNG- of PDF-bestand",
       "fileTooLargeTitle": "Bestand te groot",
-      "fileTooLargeDescription": "Upload een bestand kleiner dan 10MB"
+      "fileTooLargeDescription": "Upload een bestand kleiner dan 10MB",
+      "defaultNeedsFields": "Een sjabloon zonder velden kan niet het standaardsjabloon zijn: elk contract dat ermee wordt gemaakt zou leeg zijn. Plaats eerst minstens één veld.",
+      "defaultEmptyTitle": "Let op: het standaardsjabloon heeft geen velden",
+      "defaultEmptyDescription": "Zolang er geen velden op staan, mislukt het maken van een contract bij het ophalen. Voeg velden toe of kies een ander standaardsjabloon."
     },
     "dataSourceOptions": {
       "contractNumber": "Contractnummer",
@@ -486,7 +500,17 @@
       "bottomLeft": "Linksonder",
       "bottomCenter": "Onder midden",
       "bottomRight": "Rechtsonder"
-    }
+    },
+    "defaultEmptyWarningTitle": "Dit standaardsjabloon heeft geen velden",
+    "defaultEmptyWarningDescription": "Elk contract dat hiermee wordt gemaakt, zou leeg zijn: het ophalen van een voertuig geeft dan een foutmelding. Voeg velden toe, of maak een ander sjabloon met velden het standaardsjabloon.",
+    "saveStatus": {
+      "unsaved": "Er zijn niet-opgeslagen wijzigingen.",
+      "saved": "Alle wijzigingen zijn opgeslagen."
+    },
+    "unsavedSwitchTitle": "Wijzigingen niet opgeslagen",
+    "unsavedSwitchDescription": "Dit sjabloon heeft wijzigingen die nog niet zijn opgeslagen. Als je een ander sjabloon kiest, gaan die verloren.",
+    "unsavedSwitchConfirm": "Wijzigingen weggooien",
+    "unsavedKeepEditing": "Verder bewerken"
   },
   "transportTemplateEditor": {
     "templateNamePlaceholder": "bijv. Chauffeursoverdrachtsformulier",
@@ -640,7 +664,19 @@
     "clearButton": "Wissen",
     "saveSignatureButton": "Handtekening opslaan",
     "customerSignatureTitle": "Handtekening klant",
-    "customerSignatureAlt": "Handtekening klant"
+    "customerSignatureAlt": "Handtekening klant",
+    "relationNote": "Hier leg je de schadecheck van deze reservering vast. De schadecheck-PDF die bij het inleveren wordt gemaakt, neemt de laatst opgeslagen check van de reservering over: sla de check dus eerst op. De PDF van deze check zelf vind je onder Documenten bij het voertuig.",
+    "savingProgress": "Bezig met opslaan…",
+    "savedAt": "Opgeslagen om {{time}}. De PDF is klaar.",
+    "diagramFallbackTitle": "Geen diagram voor dit model",
+    "diagramFallbackDescription": "Voor dit voertuig is geen eigen voertuigdiagram. Het diagram van {{make}} {{model}} wordt getoond als vervanging; markeringen kunnen dus afwijken van de echte carrosserie. Voeg een diagram voor dit model toe onder Documenten → Schadecheck-sjablonen.",
+    "diagramUnusableTitle": "Dit diagram is niet bruikbaar",
+    "diagramTooFlat": "Het diagram is {{width}} × {{height}} pixels: een te platte strook om schade op te markeren. Vervang het onder Documenten → Schadecheck-sjablonen door een afbeelding van het voertuig van bovenaf of van opzij.",
+    "diagramTooSmall": "Het diagram is maar {{width}} × {{height}} pixels: te klein om schade op te markeren. Vervang het onder Documenten → Schadecheck-sjablonen door een grotere afbeelding.",
+    "checklistProgress": "{{filled}} van {{total}} ingevuld",
+    "allGoodButton": "Alles goed",
+    "allGoodHint": "Vult alleen de nog lege velden in dit blok met de normale waarde (bijvoorbeeld schoon, goed, ja). Wat je al hebt ingevuld blijft staan.",
+    "notAnswered": "niet ingevuld"
   },
   "barcodeLabelEditor": {
     "backToDocuments": "Terug naar documenten",
@@ -678,12 +714,57 @@
     "regeneratedTitle": "Nieuwe versie aangemaakt",
     "regeneratedDescription": "Versie {{version}} van {{fileName}} staat nu in het dossier. De oude versie blijft bewaard.",
     "failedTitle": "Opnieuw genereren is niet gelukt",
-    "notRegeneratable": "Dit document is geüpload of elders gemaakt; er is niets om het opnieuw uit op te bouwen."
+    "notRegeneratable": "Dit document is geüpload of elders gemaakt; er is niets om het opnieuw uit op te bouwen.",
+    "errors": {
+      "NO_TEMPLATE": "Er is geen contractsjabloon ingesteld. Maak er een aan onder Documenten → Contractsjablonen.",
+      "NO_DEFAULT_TEMPLATE": "Er zijn meerdere contractsjablonen maar geen standaard. Kies een standaardsjabloon onder Documenten → Contractsjablonen.",
+      "TEMPLATE_NOT_FOUND": "Het contractsjabloon bestaat niet meer. Kies een ander sjabloon onder Documenten → Contractsjablonen.",
+      "TEMPLATE_WITHOUT_FIELDS": "Het contractsjabloon '{{name}}' heeft geen velden. Vul het sjabloon onder Documenten → Contractsjablonen.",
+      "TEMPLATE_WITHOUT_FIELDS_UNKNOWN": "Het contractsjabloon heeft geen velden. Vul het sjabloon onder Documenten → Contractsjablonen.",
+      "TEMPLATE_BACKGROUND_MISSING": "De achtergrond van het contractsjabloon kon niet worden gelezen. Upload de achtergrond opnieuw onder Documenten → Contractsjablonen.",
+      "NO_VEHICLE": "Aan deze reservering is geen voertuig gekoppeld, dus het document kan niet worden gemaakt.",
+      "PLACEHOLDER_RESERVATION": "Aan deze reservering is nog geen voertuig gekoppeld. Ken een voertuig toe en maak het document daarna opnieuw.",
+      "NO_CUSTOMER": "Aan deze reservering is geen klant gekoppeld, dus het document kan niet worden gemaakt.",
+      "MAINTENANCE_BLOCK": "Dit is een onderhoudsblok, geen verhuur — hier hoort geen document bij.",
+      "RENDER_FAILED": "Het document kon niet worden gemaakt door een technische fout. Probeer het opnieuw.",
+      "DOCUMENT_NOT_FOUND": "Dit document bestaat niet meer. Ververs de lijst.",
+      "NOT_REGENERATABLE": "Dit document is geüpload of elders gemaakt; er is niets om het opnieuw uit op te bouwen.",
+      "NO_RESERVATION_LINK": "Dit document hoort bij geen reservering, dus het kan niet opnieuw worden gemaakt.",
+      "RESERVATION_NOT_FOUND": "De reservering van dit document bestaat niet meer.",
+      "NO_DAMAGE_CHECK_TEMPLATE": "Er is geen schadechecksjabloon. Maak er een aan onder Documenten → Schadecheck-sjablonen.",
+      "STALE_WRITE": "Iemand anders heeft dit net gewijzigd. Ververs de lijst en probeer het opnieuw.",
+      "UNKNOWN": "Het document kon niet opnieuw worden gemaakt. Probeer het opnieuw; blijft het misgaan, meld dat dan aan de beheerder."
+    }
   },
   "mailStatus": {
     "sent": "Verzonden op {{date}} aan {{recipient}}",
     "failed": "Verzenden mislukt — {{reason}}",
     "unknownReason": "reden onbekend",
     "unknownRecipient": "onbekende ontvanger"
+  },
+  "documentLabels": {
+    "type": {
+      "contracts": "Contracten",
+      "contractUnsigned": "Contract (niet ondertekend)",
+      "contractSigned": "Contract (ondertekend)",
+      "damageCheck": "Schadecheck",
+      "damageCheckPickup": "Schadecheck (ophalen)",
+      "damageCheckReturn": "Schadecheck (inleveren)",
+      "damageCheckUnsigned": "Schadecheck (niet ondertekend)",
+      "transportReport": "Transportrapport",
+      "editedVersion": "{{type}} - bewerkt (vorige versie {{stamp}})"
+    },
+    "notes": {
+      "damageCheckAtReturn": "Schadecheck vastgelegd bij het inleveren van reservering #{{id}}",
+      "contractGenerated": "Automatisch aangemaakt contract (niet ondertekend) voor reservering #{{id}}",
+      "damageCheckForPeriod": "Schadecheck voor de reservering van {{from}} tot {{to}}",
+      "damageCheckUpdatedForPeriod": "Bijgewerkte schadecheck voor de reservering van {{from}} tot {{to}}",
+      "regenerated": "Op verzoek opnieuw gemaakt; vervangt versie {{version}}."
+    },
+    "staleReason": {
+      "handoverReverted": "de overdracht is teruggedraaid",
+      "superseded": "vervangen door een nieuwere versie",
+      "reservationChanged": "de reservering is gewijzigd nadat dit document was gemaakt"
+    }
   }
 }

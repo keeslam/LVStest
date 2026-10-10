@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,8 +23,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Document, Vehicle } from "@shared/schema";
-import { formatDate, formatFileSize } from "@/lib/format-utils";
-import { displayLicensePlate } from "@/lib/utils";
+import { formatDate, formatFileSize, formatLicensePlate, plateMatches } from "@/lib/format-utils";
+import { documentTypeLabel, documentNotesLabel } from "@/lib/document-labels";
+import { releaseIframeFocus } from "@/lib/release-iframe-focus";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import {
   RegenerateDocumentButton,
@@ -39,6 +40,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { UserPermission, UserRole } from "@shared/schema";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { RequiresPermission } from "@/components/ui/requires-permission";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 export default function DocumentsIndex() {
   const { t } = useTranslation("documents");
@@ -62,6 +64,14 @@ export default function DocumentsIndex() {
   const [templateDeleteDialogOpen, setTemplateDeleteDialogOpen] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<any | null>(null);
   const [templateEditorDialogOpen, setTemplateEditorDialogOpen] = useState(false);
+  // A-10-3: the contract editor reports unsaved changes; closing it (Escape, X, outside click, back
+  // button) then asks first instead of silently throwing them away.
+  const [templateEditorDirty, setTemplateEditorDirty] = useState(false);
+  const [discardEditorOpen, setDiscardEditorOpen] = useState(false);
+  const requestCloseTemplateEditor = () => {
+    if (templateEditorDirty) { setDiscardEditorOpen(true); return; }
+    setTemplateEditorDialogOpen(false);
+  };
   const [transportTemplateEditorDialogOpen, setTransportTemplateEditorDialogOpen] = useState(false);
   const [barcodeLabelEditorDialogOpen, setBarcodeLabelEditorDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -203,7 +213,7 @@ export default function DocumentsIndex() {
     setEmailSubject(t('indexPage.emailDefaults.subject', { fileName: document.fileName }));
     setEmailMessage(t('indexPage.emailDefaults.message', {
       fileName: document.fileName,
-      documentType: document.documentType,
+      documentType: documentTypeLabel(t, document.documentType),
       uploadDate: new Date(document.uploadDate || '').toLocaleDateString(),
     }));
     setEmailDialogOpen(true);
@@ -371,11 +381,20 @@ export default function DocumentsIndex() {
   
   // Filter documents based on search, vehicle and type filters
   const filteredDocuments = documents?.filter(doc => {
-    const searchLower = searchQuery.toLowerCase();
-    const matchesSearch = (
+    const searchLower = searchQuery.trim().toLowerCase();
+    // A-10-8: with many vehicles the list needs a search that finds a vehicle, not only a file name.
+    // Plates match with or without dashes; brand and model match as typed.
+    const docVehicle = doc.vehicleId != null ? vehicles?.find((v) => v.id === doc.vehicleId) : undefined;
+    const matchesSearch = !searchLower || (
       doc.fileName.toLowerCase().includes(searchLower) ||
       doc.documentType.toLowerCase().includes(searchLower) ||
-      (doc.notes && doc.notes.toLowerCase().includes(searchLower))
+      documentTypeLabel(t, doc.documentType).toLowerCase().includes(searchLower) ||
+      (doc.notes && doc.notes.toLowerCase().includes(searchLower)) ||
+      (doc.notes && documentNotesLabel(t, doc.notes).toLowerCase().includes(searchLower)) ||
+      (docVehicle && (
+        plateMatches(docVehicle.licensePlate, searchLower) ||
+        `${docVehicle.brand ?? ""} ${docVehicle.model ?? ""}`.toLowerCase().includes(searchLower)
+      ))
     );
     
     const matchesVehicle = vehicleFilter === "all" || (doc.vehicleId != null ? doc.vehicleId.toString() : "general") === vehicleFilter;
@@ -438,8 +457,8 @@ export default function DocumentsIndex() {
   const getVehicleName = (vehicleId: number) => {
     const vehicle = vehicles?.find(v => v.id === vehicleId);
     return vehicle 
-      ? `${displayLicensePlate(vehicle.licensePlate)} - ${vehicle.brand} ${vehicle.model}`
-      : `Vehicle #${vehicleId}`;
+      ? `${formatLicensePlate(vehicle.licensePlate)} - ${vehicle.brand} ${vehicle.model}`
+      : t('indexPage.vehicleFallback', { id: vehicleId });
   };
   
   // Toggle vehicle expansion
@@ -470,20 +489,60 @@ export default function DocumentsIndex() {
   };
   
   // Pagination logic
-  const vehicleIds = Object.keys(documentsByVehicle);
-  const totalPages = Math.ceil(vehicleIds.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
+  // Sorted by plate, the "general" group (documents without a vehicle) last, so a long list can be scanned.
+  const vehicleIds = Object.keys(documentsByVehicle).sort((a, b) => {
+    if (a === "general") return 1;
+    if (b === "general") return -1;
+    const plate = (id: string) => formatLicensePlate(vehicles?.find((v) => v.id === Number(id))?.licensePlate ?? "");
+    return plate(a).localeCompare(plate(b)) || Number(a) - Number(b);
+  });
+  const totalPages = Math.max(1, Math.ceil(vehicleIds.length / itemsPerPage));
+  // A filter can leave fewer pages than the one we were on; "page 3 of 1" was an empty list.
+  const activePage = Math.min(currentPage, totalPages);
+  const startIndex = (activePage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedVehicleIds = vehicleIds.slice(startIndex, endIndex);
   
   const [activeTab, setActiveTab] = useState("library");
+
+  // A-10-8: searching is about finding a document, so open what matched (first page) and start at page 1.
+  const searchActive = searchQuery.trim() !== "";
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, vehicleFilter, typeFilter]);
+  useEffect(() => {
+    if (!searchActive) return;
+    const openVehicles = new Set<string>();
+    const openTypes = new Set<string>();
+    for (const vehicleId of vehicleIds.slice(0, itemsPerPage)) {
+      openVehicles.add(vehicleId);
+      for (const type of Object.keys(documentsByVehicle[vehicleId])) openTypes.add(`${vehicleId}-${type}`);
+    }
+    setExpandedVehicles(openVehicles);
+    setExpandedDocumentTypes(openTypes);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, vehicleFilter, typeFilter, documents?.length, vehicles?.length]);
+
+  const expandAll = () => {
+    const openVehicles = new Set<string>(paginatedVehicleIds);
+    const openTypes = new Set<string>();
+    for (const vehicleId of paginatedVehicleIds) {
+      for (const type of Object.keys(documentsByVehicle[vehicleId])) openTypes.add(`${vehicleId}-${type}`);
+    }
+    setExpandedVehicles(openVehicles);
+    setExpandedDocumentTypes(openTypes);
+  };
+  const collapseAll = () => {
+    setExpandedVehicles(new Set());
+    setExpandedDocumentTypes(new Set());
+  };
   
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap justify-between items-center gap-2">
         <h1 className="text-2xl font-bold">{t('indexPage.title')}</h1>
         <RequiresPermission anyOf={[UserPermission.MANAGE_DOCUMENTS]}>
-        <Button onClick={() => { setUploadVehicleId(""); setUploadDialogOpen(true); }}>
+        <Button onClick={() => { setUploadVehicleId(/^\d+$/.test(vehicleFilter) ? vehicleFilter : ""); setUploadDialogOpen(true); }} data-testid="button-upload-document">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-upload mr-2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="17 8 12 3 7 8" />
@@ -495,7 +554,7 @@ export default function DocumentsIndex() {
       </div>
 
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto" data-testid="dialog-upload-document">
           <DialogHeader>
             <DialogTitle>{t('indexPage.uploadVehicleDialogTitle')}</DialogTitle>
             <DialogDescription>{t('indexPage.uploadVehicleDialogDescription')}</DialogDescription>
@@ -507,12 +566,18 @@ export default function DocumentsIndex() {
                 vehicles={vehicles || []}
                 value={uploadVehicleId}
                 onChange={setUploadVehicleId}
+                data-testid="select-upload-vehicle"
               />
             </div>
             {uploadVehicleId && (
+              // A-10-9: the form follows the vehicle choice directly (it used to hide behind a second
+              // button that opened a second dialog); keyed so a changed vehicle starts a clean form.
               <InlineDocumentUpload
+                key={uploadVehicleId}
+                inline
                 vehicleId={parseInt(uploadVehicleId, 10)}
                 onSuccess={() => setUploadDialogOpen(false)}
+                onCancel={() => setUploadDialogOpen(false)}
               />
             )}
           </div>
@@ -560,7 +625,7 @@ export default function DocumentsIndex() {
                       <SelectItem value="general">{t('indexPage.generalReports')}</SelectItem>
                       {vehicles?.map((vehicle) => (
                         <SelectItem key={vehicle.id} value={vehicle.id.toString()}>
-                          {displayLicensePlate(vehicle.licensePlate)}
+                          {formatLicensePlate(vehicle.licensePlate)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -573,7 +638,7 @@ export default function DocumentsIndex() {
                     <SelectContent>
                       {documentTypes.map((type) => (
                         <SelectItem key={type} value={type}>
-                          {type === "all" ? t('indexPage.allDocumentTypes') : type}
+                          {type === "all" ? t('indexPage.allDocumentTypes') : documentTypeLabel(t, type)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -644,6 +709,15 @@ export default function DocumentsIndex() {
                         </div>
                       </CardContent>
                     </Card>
+                  </div>
+
+                  <div className="flex justify-end gap-2 mb-3">
+                    <Button variant="outline" size="sm" onClick={expandAll} data-testid="button-expand-all-documents">
+                      {t('indexPage.expandAll')}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={collapseAll} data-testid="button-collapse-all-documents">
+                      {t('indexPage.collapseAll')}
+                    </Button>
                   </div>
 
                   <div className="space-y-4">
@@ -745,7 +819,7 @@ export default function DocumentsIndex() {
                                   )}
                                   
                                   <h4 className="text-lg font-medium text-gray-800">
-                                    {documentType}
+                                    {documentTypeLabel(t, documentType)}
                                   </h4>
                                   <Badge variant="outline" className="ml-2">
                                     {documentList.length}
@@ -781,8 +855,8 @@ export default function DocumentsIndex() {
                                       </div>
                                       
                                       {doc.notes && (
-                                        <p className="text-sm text-gray-600 mb-3 line-clamp-2" title={doc.notes}>
-                                          {doc.notes}
+                                        <p className="text-sm text-gray-600 mb-3 line-clamp-2" title={documentNotesLabel(t, doc.notes)}>
+                                          {documentNotesLabel(t, doc.notes)}
                                         </p>
                                       )}
                                       
@@ -870,8 +944,8 @@ export default function DocumentsIndex() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(Math.max(1, activePage - 1))}
+                        disabled={activePage === 1}
                       >
                         {t('indexPage.previousButton')}
                       </Button>
@@ -879,7 +953,7 @@ export default function DocumentsIndex() {
                         {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                           <Button
                             key={page}
-                            variant={currentPage === page ? "default" : "outline"}
+                            variant={activePage === page ? "default" : "outline"}
                             size="sm"
                             onClick={() => setCurrentPage(page)}
                             className="w-10"
@@ -891,8 +965,8 @@ export default function DocumentsIndex() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage(Math.min(totalPages, activePage + 1))}
+                        disabled={activePage === totalPages}
                       >
                         {t('indexPage.nextButton')}
                       </Button>
@@ -1238,14 +1312,17 @@ export default function DocumentsIndex() {
       </AlertDialog>
       
       {/* Document Preview Dialog (view and/or print) */}
-      <AlertDialog open={printDialogOpen} onOpenChange={setPrintDialogOpen}>
-        <AlertDialogContent className="max-w-6xl w-[90vw] h-[85vh] flex flex-col">
-          <AlertDialogHeader className="flex-shrink-0">
-            <AlertDialogTitle>{documentToPrint?.fileName}</AlertDialogTitle>
-            <AlertDialogDescription>
+      {/* A-10-4: a plain Dialog, not an AlertDialog. An AlertDialog ignores a click outside it, so a
+          preview that was still open behind another window left the whole page looking dead ("Document
+          uploaden" did nothing); here Escape, the X and a click outside all close it. */}
+      <Dialog open={printDialogOpen} onOpenChange={setPrintDialogOpen}>
+        <DialogContent className="max-w-6xl w-[90vw] h-[85vh] flex flex-col" data-testid="dialog-document-preview">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle>{documentToPrint?.fileName}</DialogTitle>
+            <DialogDescription>
               {t('indexPage.documentPreviewDescription')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+            </DialogDescription>
+          </DialogHeader>
           <div className="flex-1 overflow-hidden border rounded mb-4">
             {documentToPrint && !iframeError && (
               <iframe
@@ -1254,6 +1331,7 @@ export default function DocumentsIndex() {
                 className="w-full h-full border-0"
                 title={t('indexPage.documentPreviewIframeTitle')}
                 onError={handleIframeError}
+                onLoad={(event) => releaseIframeFocus(event.currentTarget)}
               />
             )}
             {documentToPrint && iframeError && (
@@ -1277,18 +1355,18 @@ export default function DocumentsIndex() {
               </div>
             )}
           </div>
-          <AlertDialogFooter className="flex-shrink-0">
-            <AlertDialogCancel onClick={() => setPrintDialogOpen(false)}>{t('indexPage.closeButton')}</AlertDialogCancel>
-            <AlertDialogAction
+          <DialogFooter className="flex-shrink-0">
+            <Button variant="outline" onClick={() => setPrintDialogOpen(false)} data-testid="button-close-document-preview">{t('indexPage.closeButton')}</Button>
+            <Button
               onClick={printDocument}
               className="bg-blue-600 hover:bg-blue-700"
             >
               <Printer className="h-4 w-4 mr-2" />
               {t('indexPage.printButton')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       {/* Email Document Dialog */}
       <AlertDialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
@@ -1361,7 +1439,7 @@ export default function DocumentsIndex() {
       </AlertDialog>
 
       {/* Template Editor Dialog */}
-      <Dialog open={templateEditorDialogOpen} onOpenChange={setTemplateEditorDialogOpen}>
+      <Dialog open={templateEditorDialogOpen} onOpenChange={(open) => { if (open) setTemplateEditorDialogOpen(true); else requestCloseTemplateEditor(); }}>
         <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] max-h-[95vh] p-0 overflow-hidden flex flex-col">
           <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b">
             <DialogTitle>{t('indexPage.contractTemplateEditorTitle')}</DialogTitle>
@@ -1370,10 +1448,21 @@ export default function DocumentsIndex() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto overflow-x-hidden">
-            <PDFTemplateEditor onClose={() => setTemplateEditorDialogOpen(false)} />
+            <PDFTemplateEditor onClose={requestCloseTemplateEditor} onDirtyChange={setTemplateEditorDirty} />
           </div>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={discardEditorOpen}
+        onOpenChange={setDiscardEditorOpen}
+        title={t('indexPage.unsavedTemplate.title')}
+        description={t('indexPage.unsavedTemplate.description')}
+        confirmLabel={t('indexPage.unsavedTemplate.discard')}
+        cancelLabel={t('indexPage.unsavedTemplate.keepEditing')}
+        variant="warning"
+        onConfirm={() => { setTemplateEditorDirty(false); setTemplateEditorDialogOpen(false); }}
+      />
 
       {/* Transport Report Template Editor Dialog */}
       <Dialog open={transportTemplateEditorDialogOpen} onOpenChange={setTransportTemplateEditorDialogOpen}>
@@ -1476,6 +1565,14 @@ function DiagramTemplateManager() {
     queryKey: ['/api/vehicle-diagram-templates'],
   });
 
+  // A-11-1: the server refuses an image that cannot be drawn on, by code (the message is English).
+  const diagramImageErrorText = (error: Error): string | null => {
+    const { code, width, height } = error as Error & { code?: string; width?: number; height?: number };
+    if (code === 'DIAGRAM_IMAGE_TOO_FLAT') return t('indexPage.diagramTemplates.imageTooFlat', { width, height });
+    if (code === 'DIAGRAM_IMAGE_TOO_SMALL') return t('indexPage.diagramTemplates.imageTooSmall', { width, height });
+    return null;
+  };
+
   // Upload mutation
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -1486,7 +1583,8 @@ function DiagramTemplateManager() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Upload failed');
+        // Keep the stable code (and the measured size) so onError can say it in the user's language.
+        throw Object.assign(new Error(error.message || 'Upload failed'), { code: error.code, width: error.width, height: error.height });
       }
 
       return response.json();
@@ -1503,7 +1601,7 @@ function DiagramTemplateManager() {
     onError: (error: Error) => {
       toast({
         title: t('indexPage.diagramTemplates.toasts.errorTitle'),
-        description: error.message || t('indexPage.diagramTemplates.toasts.uploadFailed'),
+        description: diagramImageErrorText(error) ?? (error.message || t('indexPage.diagramTemplates.toasts.uploadFailed')),
         variant: "destructive",
       });
     },
@@ -1519,7 +1617,7 @@ function DiagramTemplateManager() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Update failed');
+        throw Object.assign(new Error(error.message || 'Update failed'), { code: error.code, width: error.width, height: error.height });
       }
 
       return response.json();
@@ -1537,7 +1635,7 @@ function DiagramTemplateManager() {
     onError: (error: Error) => {
       toast({
         title: t('indexPage.diagramTemplates.toasts.errorTitle'),
-        description: error.message || t('indexPage.diagramTemplates.toasts.updateFailed'),
+        description: diagramImageErrorText(error) ?? (error.message || t('indexPage.diagramTemplates.toasts.updateFailed')),
         variant: "destructive",
       });
     },
