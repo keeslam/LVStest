@@ -155,6 +155,19 @@ Het venster zelf (`complete-maintenance-dialog.tsx`) staat in het register met *
 bestaat alleen voor een openstaand blok in het dagvenster van de kalender, en de seed bevat geen blok.
 Het bewijs per recht staat in `complete-maintenance-dialog.test.tsx`.
 
+**Communicatie: een bericht dat niet aankomt (auditherstel P3): `e2e/layer-b/communications/send-and-log.spec.ts`.**
+Draait als `manager-b` (de tweeling van `manager`: eigen verzoekenteller, en beide rechten *Meldingen beheren* en
+*E-mailsjablonen beheren* die `notifications-only` en `templates-only` elk maar half hebben). Eén verhaal, budget
+9 handelingen (gemeten 9), ongeveer 19 `/api/`-verzoeken. De testserver heeft geen e-mailconfiguratie en er gaat
+niets naar buiten, dus een bericht aan klant *E2E Pieter Bakker* mislukt altijd: het verhaal bewijst dat de pagina dan
+niet meer "succesvol verstuurd" zegt maar "Er is niets verstuurd" (en de ontvanger en de tekst laat staan), dat de
+voorvertoning de e-mail toont zoals deze klant hem krijgt (naam ingevuld, `{naam}` en `{{naam}}` allebei), dat het
+E-maillogboek na de verzending meteen de nieuwe regels toont met de reden in het Nederlands (de Engelse tekst blijft
+als technische melding staan) en dat een regel opent in het venster `email-log-detail-dialog.tsx`. Die ene rode
+melding is het doel van het verhaal en wordt in de spec op zijn exacte tekst uit de paginabewaking gehaald; de
+bewaking zelf is niet versoepeld. Het venster staat in `LAYER_B_SOURCES` (de opener draagt het id van de logregel en
+de seed bevat geen logregels). De overige wijzigingen van P3 staan in `customer-communications-p3.test.tsx`.
+
 Voorwaarden:
 
 - PostgreSQL moet lokaal draaien (localhost, poort 5432, gebruiker `postgres`).

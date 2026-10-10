@@ -16,9 +16,11 @@ import { fileURLToPath } from "url";
 // allowed-branch click is skipped for exactly the roles that could do it, and
 // the denied branch only reads a tooltip. `client/src/pages/CustomerCommunications.tsx`
 // is the current instance: it counts as "reached" via its three
-// `button-preview-*` entries, but no test in this suite has ever actually
-// opened its email-preview Dialog. Left as a known overstatement rather than
-// a reason to change the count logic — see those entries' own comment for why.
+// `button-preview-*` entries; only the Aangepast-bericht one is opened by a test
+// (e2e/layer-b/communications/send-and-log.spec.ts, which also opens the log
+// detail dialog), the APK and Onderhoud previews never are. Left as a known
+// overstatement rather than a reason to change the count logic — see those
+// entries' own comment for why.
 
 export interface SourceFile { path: string; text: string }
 export interface DialogFile { path: string; roots: number }

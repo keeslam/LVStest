@@ -354,4 +354,7 @@ export const LAYER_B_SOURCES: string[] = [
   // Opened by the "Overdracht terugdraaien" story in e2e/layer-b/desk/edge-cases.spec.ts
   // (sub-project C, Task 4): pickup, then undo with the odometer confirmation.
   "client/src/components/reservations/revert-handover-dialog.tsx",
+  // Opened by e2e/layer-b/communications/send-and-log.spec.ts (audit remediation P3): the detail
+  // of an e-mail log row. Its opener carries the row's id, and the seed holds no log row.
+  "client/src/components/communications/email-log-detail-dialog.tsx",
 ];
