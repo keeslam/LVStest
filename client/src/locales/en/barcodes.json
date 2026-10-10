@@ -118,7 +118,10 @@
     "regenerateError": "Failed to regenerate barcode.",
     "barcodeDialogTitle": "Vehicle barcode",
     "printKeyLabelShort": "Key label",
-    "printSpareKeyLabelShort": "Spare key label"
+    "printSpareKeyLabelShort": "Spare key label",
+    "printOpenedTitle": "Print window opened",
+    "printOpenedDescription_one": "Your browser's print window is open for the label of {{plate}}. Choose the printer there.",
+    "printOpenedDescription_other": "Your browser's print window is open for {{count}} labels. Choose the printer there."
   },
   "book": {
     "title": "Barcode book",
@@ -161,7 +164,12 @@
     "spareNoneMissing": "No spare keys missing 🎉",
     "spareUnexpectedHeading": "Unexpectedly present (recorded as with the customer, or no spare key)",
     "notASpareKey": "This is a main key. Scan the spare key label (-S).",
-    "notAMainKey": "This is a spare key. Use the spare key cabinet audit for it."
+    "notAMainKey": "This is a spare key. Use the spare key cabinet audit for it.",
+    "justScanned": "Scanned: {{plate}}",
+    "scannedHeading": "Scanned ({{count}})",
+    "noneScannedYet": "Nothing scanned yet",
+    "pendingHeading": "Not scanned yet ({{count}})",
+    "nonePending": "All expected keys are scanned"
   },
   "templatePicker": {
     "label": "Label template",

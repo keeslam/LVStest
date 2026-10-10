@@ -118,7 +118,10 @@
     "regenerateError": "Barcode opnieuw genereren mislukt.",
     "barcodeDialogTitle": "Voertuigbarcode",
     "printKeyLabelShort": "Sleutellabel",
-    "printSpareKeyLabelShort": "Reservesleutel-label"
+    "printSpareKeyLabelShort": "Reservesleutel-label",
+    "printOpenedTitle": "Afdrukvenster geopend",
+    "printOpenedDescription_one": "Het afdrukvenster van je browser is geopend voor het label van {{plate}}. Kies daar de printer.",
+    "printOpenedDescription_other": "Het afdrukvenster van je browser is geopend voor {{count}} labels. Kies daar de printer."
   },
   "book": {
     "title": "Barcodeboek",
@@ -161,7 +164,12 @@
     "spareNoneMissing": "Geen reservesleutels ontbreken 🎉",
     "spareUnexpectedHeading": "Onverwacht aanwezig (staat als bij klant of zonder reservesleutel)",
     "notASpareKey": "Dit is een hoofdsleutel. Scan het reservesleutel-label (-S).",
-    "notAMainKey": "Dit is een reservesleutel. Gebruik hiervoor de reservesleutelkast-audit."
+    "notAMainKey": "Dit is een reservesleutel. Gebruik hiervoor de reservesleutelkast-audit.",
+    "justScanned": "Gescand: {{plate}}",
+    "scannedHeading": "Gescand ({{count}})",
+    "noneScannedYet": "Nog niets gescand",
+    "pendingHeading": "Nog niet gescand ({{count}})",
+    "nonePending": "Alle verwachte sleutels zijn gescand"
   },
   "templatePicker": {
     "label": "Labelsjabloon",

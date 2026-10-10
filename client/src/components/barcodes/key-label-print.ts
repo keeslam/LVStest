@@ -1,4 +1,6 @@
 import JsBarcode from "jsbarcode";
+import i18n from "@/i18n";
+import { toast } from "@/hooks/use-toast";
 import { formatLicensePlate } from "@/lib/format-utils";
 import type { BarcodeLabelTemplate } from "@shared/schema";
 import { BarcodeLabelField, resolveBarcodeLabelSource } from "@shared/barcode";
@@ -155,6 +157,17 @@ export function printKeyLabels(vehicles: LabelVehicle[], template?: BarcodeLabel
 
   // Give layout a tick, print, then remove the frame.
   setTimeout(() => {
+    // A-3-13: this only opens the browser's own print window; whether anything reaches a printer
+    // is decided there. The toast says so instead of the dialog just closing without a word.
+    toast({
+      title: String(i18n.t("barcodes:label.printOpenedTitle")),
+      description: String(
+        i18n.t("barcodes:label.printOpenedDescription", {
+          count: printable.length,
+          plate: formatLicensePlate(printable[0].licensePlate),
+        }),
+      ),
+    });
     frame.contentWindow!.focus();
     frame.contentWindow!.print();
     setTimeout(() => frame.remove(), 2000);

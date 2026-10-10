@@ -43,6 +43,8 @@ export function KeyAuditDialog({ open, onOpenChange, mode = "main" }: KeyAuditDi
   const [cameraOpen, setCameraOpen] = useState(false);
   const [scanned, setScanned] = useState<Map<number, ScannedEntry>>(new Map());
   const [view, setView] = useState<ViewState>("scanning");
+  // A-3-12: the plate of the key that was scanned last, shown in green until the next scan.
+  const [lastScanned, setLastScanned] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   // Synchronous mirror of `scanned` so the scan handler can check membership
   // and commit updates outside of a setState updater — React Strict Mode
@@ -69,6 +71,7 @@ export function KeyAuditDialog({ open, onOpenChange, mode = "main" }: KeyAuditDi
       setAlreadyScanned(false);
       scannedRef.current = new Map();
       setScanned(new Map());
+      setLastScanned(null);
       setView("scanning");
       requestAnimationFrame(() => inputRef.current?.focus());
     }
@@ -121,6 +124,7 @@ export function KeyAuditDialog({ open, onOpenChange, mode = "main" }: KeyAuditDi
           spare: scannedSpare,
         });
         setScanned(new Map(scannedRef.current));
+        setLastScanned(formatLicensePlate(vehicle.licensePlate));
       }
     } catch {
       setError(t("scanPage.lookupError"));
@@ -138,6 +142,8 @@ export function KeyAuditDialog({ open, onOpenChange, mode = "main" }: KeyAuditDi
   };
 
   const missing = expected.filter(v => !scanned.has(v.id));
+  // Newest first, so the key that was just scanned is at the top of the list.
+  const scannedList = Array.from(scanned.values()).reverse();
   const unexpected = Array.from(scanned.keys())
     .map(id => vehicles.find(v => v.id === id))
     .filter((v): v is Vehicle => !!v && (
@@ -150,6 +156,7 @@ export function KeyAuditDialog({ open, onOpenChange, mode = "main" }: KeyAuditDi
   const handleReset = () => {
     scannedRef.current = new Map();
     setScanned(new Map());
+    setLastScanned(null);
     setView("scanning");
     setCode("");
     setError(null);
@@ -207,6 +214,51 @@ export function KeyAuditDialog({ open, onOpenChange, mode = "main" }: KeyAuditDi
 
             <div className="text-sm text-muted-foreground" data-testid="text-key-audit-count">
               {t(isSpare ? "keyAudit.spareScannedCount" : "keyAudit.scannedCount", { scanned: scanned.size, expected: expected.length })}
+            </div>
+
+            {lastScanned && !error && !alreadyScanned && (
+              <div
+                className="border border-green-200 bg-green-50 text-green-800 rounded-md p-3 text-sm font-medium"
+                data-testid="text-key-audit-last-scanned"
+                role="status"
+              >
+                {t("keyAudit.justScanned", { plate: lastScanned })}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-green-800 mb-1">
+                  {t("keyAudit.scannedHeading", { count: scannedList.length })}
+                </h3>
+                {scannedList.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{t("keyAudit.noneScannedYet")}</p>
+                ) : (
+                  <ul className="space-y-1 max-h-48 overflow-y-auto" data-testid="list-key-audit-scanned">
+                    {scannedList.map((entry) => (
+                      <li key={entry.plate} className="border border-green-200 bg-green-50 text-green-800 rounded-md px-3 py-1 text-sm">
+                        {entry.plate}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-red-700 mb-1">
+                  {t("keyAudit.pendingHeading", { count: missing.length })}
+                </h3>
+                {missing.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{t("keyAudit.nonePending")}</p>
+                ) : (
+                  <ul className="space-y-1 max-h-48 overflow-y-auto" data-testid="list-key-audit-pending">
+                    {missing.map((v) => (
+                      <li key={v.id} className="border rounded-md px-3 py-1 text-sm">
+                        {formatLicensePlate(v.licensePlate)} — {v.brand} {v.model}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
 
             <Button
