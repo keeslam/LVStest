@@ -129,8 +129,10 @@ for (const account of SESSIONS) {
         test(`${entry.page}: ${entry.name} (zonder recht: zichtbaar, uitgeschakeld, legt uit)`, async ({ page, health }) => {
           await page.goto(entry.page);
           await settle(page);
-          if (entry.via) await page.getByTestId(entry.via).click();
-          const opener = page.getByTestId(entry.opener);
+          // `deniedOpener`: the gated control is the thing in front of the opener (a disabled tab), so
+          // it is checked directly instead of being clicked through.
+          if (entry.via && !entry.deniedOpener) await page.getByTestId(entry.via).click();
+          const opener = page.getByTestId(entry.deniedOpener ?? entry.opener);
           await expect(opener).toBeVisible();
           await expect(opener).toHaveAttribute("aria-disabled", "true");
           // A disabled control swallows pointer events, so RequiresPermission

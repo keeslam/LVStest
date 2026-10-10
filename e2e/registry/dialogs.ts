@@ -54,6 +54,14 @@ export interface DialogEntry {
    * opens the record first. The value is the reason, so it lives here.
    */
   deniedPathNeedsState?: string;
+  /**
+   * When the control a role without the right sees visible-disabled-explained is NOT the opener but
+   * the thing in front of it (the /documents tabs: the tab itself is gated, so the opener behind it
+   * is never reachable for that role). The denied branch then checks this control, by the same
+   * assertions (visible, aria-disabled, tooltip names the right, a click opens nothing), and does not
+   * try to click `via` first. The allowed branch is unchanged.
+   */
+  deniedOpener?: string;
 }
 
 export const DIALOGS: DialogEntry[] = [
@@ -225,8 +233,11 @@ export const DIALOGS: DialogEntry[] = [
   // Task 4: each wrapped in RequiresPermission with exactly the permission
   // its editor's own save/delete routes need — narrower than the page's own
   // VIEW_DOCUMENTS/MANAGE_DOCUMENTS gate.
-  { page: "/documents", opener: "button-open-template-editor", via: "tab-contract-templates", anyOf: [P.MANAGE_PDF_TEMPLATES], source: "client/src/pages/documents/index.tsx", name: "contractsjabloon-editor" },
-  { page: "/documents", opener: "button-open-transport-template-editor", via: "tab-transport-templates", anyOf: [P.MANAGE_PDF_TEMPLATES], source: "client/src/pages/documents/index.tsx", name: "transportrapport-sjabloon-editor" },
+  // A-18-1 (commit 7c52b21a): the contract and transport tabs are gated themselves (RequiresPermission
+  // around the TabsTrigger), so without manage_pdf_templates the tab is the visible-disabled-explained
+  // control and the editor button behind it cannot be reached: `deniedOpener` is that tab.
+  { page: "/documents", opener: "button-open-template-editor", via: "tab-contract-templates", deniedOpener: "tab-contract-templates", anyOf: [P.MANAGE_PDF_TEMPLATES], source: "client/src/pages/documents/index.tsx", name: "contractsjabloon-editor" },
+  { page: "/documents", opener: "button-open-transport-template-editor", via: "tab-transport-templates", deniedOpener: "tab-transport-templates", anyOf: [P.MANAGE_PDF_TEMPLATES], source: "client/src/pages/documents/index.tsx", name: "transportrapport-sjabloon-editor" },
   { page: "/documents", opener: "button-open-barcode-label-editor", via: "tab-barcode-labels", anyOf: [P.MANAGE_PDF_TEMPLATES], source: "client/src/pages/documents/index.tsx", name: "barcode-labelsjabloon-editor" },
   { page: "/documents", opener: "button-open-damage-check-studio", via: "tab-damage-check-templates", anyOf: [P.MANAGE_DAMAGE_CHECKS], source: "client/src/pages/documents/index.tsx", name: "schadecontrole-sjablonen-studio" },
 

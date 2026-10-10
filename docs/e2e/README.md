@@ -375,6 +375,11 @@ groene run staat er dus niets.
   `deniedPathNeedsState: "<reden>"`. `dialogs.spec.ts` slaat dan ook de weigeringstest voor die ingang
   over, want er is op de pagina niets om uitgeschakeld te vinden. Zonder reden blijft de weigering een
   echte test. Beide velden hebben een geschreven reden nodig; er komt geen uitzondering zonder.
+- Staat er voor een rol zonder het recht niet de opener maar een ding ervoor uitgeschakeld (de tabbladen
+  *Contractsjablonen* en *Transportrapportsjablonen* op `/documents`: het tabblad zelf is afgeschermd, dus de
+  knop erachter is niet te bereiken), dan noemt de ingang dat ding als `deniedOpener`. De weigeringstest
+  controleert dan datzelfde, met dezelfde asserties (zichtbaar, `aria-disabled`, tekstballon met het recht, een klik
+  opent niets) en klikt `via` niet eerst door; de toegestane tak verandert niet.
 - Sluit `dialogs.spec.ts` een venster dat bovenop een ander venster opende (de prullenbak van de
   bekeuringen opent vanuit de bekeuringenlijst), dan controleert hij dat het *geopende* venster zelf uit
   de pagina verdwijnt, niet dat er geen venster meer over is. Alleen als er maar één venster was, geldt
