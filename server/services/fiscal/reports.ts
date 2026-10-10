@@ -207,8 +207,15 @@ export async function monthlyReport(filter: FiscalReportFilter, options: { withA
 
 const STATE_NL: Record<MonthState, string> = { final: "eindberekening", settled: "vastgelegd", provisional: "voorlopig" };
 
+// Same rule as client/src/lib/csv.ts: text starting with = + - @ (or a tab or CR) is run as a formula
+// by Excel, and a customer name or vehicle text is user-controlled. Such text gets a leading quote;
+// a number, or text that is only a number such as "-5,00", is not a formula and stays as it is.
+const FORMULA_START = /^[=+\-@\t\r]/;
+const PLAIN_NUMBER = /^-?[0-9]+([.,][0-9]+)?$/;
+
 function csvField(value: string | number | null | undefined): string {
-  const text = value === null || value === undefined ? "" : String(value);
+  let text = value === null || value === undefined ? "" : String(value);
+  if (typeof value === "string" && FORMULA_START.test(text) && !PLAIN_NUMBER.test(text)) text = `'${text}`;
   return /[;"\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 

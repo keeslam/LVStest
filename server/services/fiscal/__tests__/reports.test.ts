@@ -134,6 +134,32 @@ describe("maandrapport", () => {
     expect(blind).not.toContain("360");
     expect(blind).toContain(";geheven;voorlopig;");
   });
+
+  it("neutralises text cells that a spreadsheet would run as a formula, and leaves numbers alone", () => {
+    const row: FiscalReportRow = {
+      customerId: 1, customerName: '=HYPERLINK("http://x";"klik")', vehicleId: 2, licensePlate: "@SUM(1)", vehicle: "+cmd|' /C calc'!A0",
+      usagePeriodId: 3, reservationId: 4, periodStart: "2027-03-01", periodEnd: null, assessmentId: 5, status: "APPLICABLE", statusLabel: "	Tab",
+      month: "2027-03", days: 31, charged: true, reason: "charged", reasonLabel: "-5 korting", amount: "-12.50", state: "provisional",
+      ruleVersionTitle: "-5,00", assessedAt: "2027-03-15T02:00:00.000Z",
+    };
+    const report: FiscalReport = {
+      year: 2027, withAmounts: true, rows: [row],
+      totals: { amount: "-12.50", settled: "0.00", provisional: "-12.50", chargedMonths: 1, periods: 1, unassessedPeriods: 0 },
+      byCustomer: [], byMonth: [],
+    };
+    const csv = reportToCsv(report);
+    // A leading quote makes the cell text; the rest of the quoting rules still apply.
+    expect(csv).toContain(`"'=HYPERLINK(""http://x"";""klik"")"`);
+    expect(csv).toContain(";'@SUM(1);");
+    expect(csv).toContain(";'+cmd|' /C calc'!A0;");
+    expect(csv).toContain(";'-5 korting;");
+    expect(csv).toContain(";'\tTab;");
+    // Numbers are not text: the amount and a text that is just a number stay as they are.
+    expect(csv).toContain(";-12,50;");
+    expect(csv).toContain(";-5,00;");
+    expect(csv).not.toContain("'-5,00");
+    expect(csv).not.toContain("'-12");
+  });
 });
 
 describe("beoordeling als PDF", () => {

@@ -92,7 +92,7 @@ describe("fines routes", () => {
   });
 
   describe("failures answer a fixed message and a code, never the exception text", () => {
-    const SECRET = "SECRET-FTPS 530 login incorrect for ftps.internal.example:990 C:\secret\path";
+    const SECRET = "SECRET-FTPS 530 login incorrect for ftps.internal.example:990 C:\\secret\\path";
     const quiet = () => vi.spyOn(console, "error").mockImplementation(() => {});
     const wire = (body: unknown) => JSON.stringify(body);
 
