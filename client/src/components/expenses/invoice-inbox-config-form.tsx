@@ -11,7 +11,17 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { describeApiError } from "@/lib/api-error";
+import { describeApiError, parseApiError } from "@/lib/api-error";
+
+/**
+ * This module's validation answers (400) are Dutch sentences written for the person ("Alleen poort 993 ...")
+ * and worth showing; a failure that carries a stable code (IMAP_UNAVAILABLE ...) has English wire text and
+ * is worded by its code instead.
+ */
+function inboxErrorText(error: unknown, fallback?: string): string {
+  const { code, message } = parseApiError(error);
+  return !code && message ? message : describeApiError(error, undefined, fallback);
+}
 import { InvoiceInboxLogButton } from "./invoice-inbox-log-dialog";
 
 export const INVOICE_INBOX_CONFIG_QUERY_KEY = ["/api/expenses/inbox/config"];
@@ -61,12 +71,12 @@ export function InvoiceInboxConfigForm() {
     },
     // M10: the raw server message belongs under a title that says what failed,
     // not in the place of one.
-    onError: (e: Error) => toast({ title: t("invoiceInbox.config.saveFailed"), description: describeApiError(e), variant: "destructive" }),
+    onError: (e: Error) => toast({ title: t("invoiceInbox.config.saveFailed"), description: inboxErrorText(e), variant: "destructive" }),
   });
   const test = useMutation({
     mutationFn: async () => (await apiRequest("POST", "/api/expenses/inbox/config/test", payload())).json(),
     onSuccess: (r: { ok: boolean; unseen: number }) => setTestResult(r),
-    onError: (e: Error) => setTestResult({ ok: false, message: describeApiError(e, undefined, t("invoiceInbox.config.testFailed")) }),
+    onError: (e: Error) => setTestResult({ ok: false, message: inboxErrorText(e, t("invoiceInbox.config.testFailed")) }),
   });
   const run = useMutation({
     mutationFn: async () => (await apiRequest("POST", "/api/expenses/inbox/run")).json(),
@@ -78,7 +88,7 @@ export function InvoiceInboxConfigForm() {
         variant: s.errors.length ? "destructive" : "default",
       });
     },
-    onError: (e: Error) => toast({ title: t("invoiceInbox.runFailed"), description: describeApiError(e), variant: "destructive" }),
+    onError: (e: Error) => toast({ title: t("invoiceInbox.runFailed"), description: inboxErrorText(e), variant: "destructive" }),
   });
 
   // The config GET has its own client-side deadline (REQUEST_TIMEOUT_MS,
@@ -98,7 +108,7 @@ export function InvoiceInboxConfigForm() {
         <CardContent>
           <div className="rounded-md border border-red-300 bg-red-50 p-3 text-sm" data-testid="invoice-inbox-config-error">
             {t("invoiceInbox.config.loadFailed")}
-            {error ? `: ${describeApiError(error)}` : null}
+            {error ? `: ${inboxErrorText(error)}` : null}
           </div>
           <Button variant="outline" className="mt-3" onClick={() => refetch()} disabled={isFetching} data-testid="button-retry-invoice-inbox-config">
             {isFetching && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}{t("invoiceInbox.config.retry")}

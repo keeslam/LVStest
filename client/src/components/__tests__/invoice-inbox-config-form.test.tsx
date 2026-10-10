@@ -102,6 +102,22 @@ describe("InvoiceInboxConfigForm", () => {
     expect(calls.find((c) => c.method === "PUT")!.body.authservId).toBe("mx.host.nl");
   });
 
+  /** Final wave A, item 4b: a failure with a stable code is worded by the code, not by the server's English text. */
+  it("words a refused connection test by its code (IMAP_UNAVAILABLE), in Dutch", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/api/expenses/inbox/status")) return json(status);
+      if (url.endsWith("/api/expenses/inbox/config/test")) return json({ ok: false, message: "Could not connect to the mailbox", code: "IMAP_UNAVAILABLE" }, { status: 502 });
+      if (url.endsWith("/api/expenses/inbox/config")) return json(config);
+      return json({}, { status: 404 });
+    }));
+    mount();
+    await screen.findByLabelText("IMAP-server");
+    await userEvent.click(screen.getByRole("button", { name: "Verbinding testen" }));
+    expect(await screen.findByText(/De verbinding met het postvak is mislukt/)).toBeInTheDocument();
+    expect(screen.queryByText(/Could not connect/)).toBeNull();
+  });
+
   /** M10: the toast used to put the raw server message where the title belongs. */
   it("shows a translated title with the server's message underneath when saving fails", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
