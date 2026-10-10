@@ -62,9 +62,10 @@
     "monthlyCostTrendsTitle": "Maandelijkse kostentrends",
     "monthlyCostTrendsDescription": "Volg onderhoudsuitgaven in de tijd",
     "monthlyCostLegend": "Maandelijkse kosten",
-    "scopeNote": "Telt alleen onderhoudskosten ({{categories}}). Kosten per km deelt door de kilometerstand van de voertuigen met kosten.",
+    "scopeNote": "Telt alleen onderhoudskosten ({{categories}}). Kosten per km deelt door de totale kilometerstand (een levensduurtotaal) van de voertuigen met kosten en wordt daarom alleen bij Alle tijd getoond.",
     "efficiencyInsufficient": "Onvoldoende gegevens",
-    "monthColumn": "Maand"
+    "monthColumn": "Maand",
+    "costPerKmPeriodHint": "alleen bij Alle tijd: de kilometerstand is een totaal"
   },
   "reportBuilderPage": {
     "toasts": {
@@ -299,7 +300,10 @@
       "vehicleSearchPlaceholder": "Zoek op kenteken, merk of model",
       "noVehicleFound": "Geen voertuig gevonden",
       "loading": "Cijfers worden bijgewerkt...",
-      "financialIgnoresCategory": "Het categoriefilter ({{category}}) geldt niet voor het tabblad Financieel: omzet en marge worden over alle kosten berekend."
+      "financialIgnoresCategory": "Het categoriefilter ({{category}}) geldt niet voor het tabblad Financieel: omzet en marge worden over alle kosten berekend.",
+      "categoryNotApplicable": "Het categoriefilter ({{category}}) geldt niet voor {{scope}}.",
+      "categoryScopeTab": "dit tabblad",
+      "categoryScopeApkWarranty": "de overzichten APK en garantie"
     },
     "categories": {
       "maintenance": "Onderhoud",

@@ -46,12 +46,15 @@ const categoryKey = (raw: string | null | undefined): string => (raw ?? "").trim
  *   before the startup migration cannot split "Maintenance" and "maintenance";
  * - cost per km divides by the odometers of the vehicles that carry the costs
  *   (numerator and denominator share one base), not by the whole fleet; with no
- *   kilometres at all it is null, never 0;
+ *   kilometres at all it is null, never 0. The odometer is a lifetime total, so
+ *   the figure only means something when the costs are lifetime too: in a period
+ *   view (month, 3 months, ...) it is null as well (`costPerKmAvailable` false);
  * - the monthly trend is keyed `yyyy-MM`; the client writes the month in Dutch.
  */
 export function buildMaintenanceCostReport(expenses: ExpenseLike[], vehicles: VehicleLike[], options: MaintenanceCostOptions = {}) {
   const { timeRange, brand } = options;
   const now = options.now ?? new Date();
+  const costPerKmAvailable = !timeRange || timeRange === "all";
 
   let filteredExpenses = expenses.filter((e) => isMaintenanceExpenseCategory(e.category));
 
@@ -86,7 +89,7 @@ export function buildMaintenanceCostReport(expenses: ExpenseLike[], vehicles: Ve
     const v = vehicleById.get(id);
     if (v) totalMileage += odometer(v);
   });
-  const averageCostPerKm = totalMileage > 0 ? totalCosts / totalMileage : null;
+  const averageCostPerKm = costPerKmAvailable && totalMileage > 0 ? totalCosts / totalMileage : null;
 
   const categoryMap = new Map<string, number>();
   filteredExpenses.forEach((e) => {
@@ -135,7 +138,7 @@ export function buildMaintenanceCostReport(expenses: ExpenseLike[], vehicles: Ve
       brand: vehicle.brand,
       model: vehicle.model,
       totalCost: data.totalCost,
-      costPerKm: mileage > 0 ? data.totalCost / mileage : null,
+      costPerKm: costPerKmAvailable && mileage > 0 ? data.totalCost / mileage : null,
       currentMileage: mileage,
       expenseCount: data.count,
     };
@@ -162,6 +165,7 @@ export function buildMaintenanceCostReport(expenses: ExpenseLike[], vehicles: Ve
     totalCosts,
     averageCostPerVehicle,
     averageCostPerKm,
+    costPerKmAvailable,
     totalVehicles: vehiclesWithExpenses.size,
     categories: [...MAINTENANCE_EXPENSE_CATEGORIES],
     categoryBreakdown,

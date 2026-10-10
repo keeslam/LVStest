@@ -6,7 +6,7 @@
  * - the monthly trend is labelled in Dutch ("mei 2026"), not "May 2026".
  */
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import MaintenanceCostsPage from "@/pages/reports/maintenance-costs";
@@ -50,6 +50,35 @@ function renderPage(payload: unknown = report) {
   return render(<QueryClientProvider client={client}><MaintenanceCostsPage /></QueryClientProvider>);
 }
 
+describe("cost per km only with the lifetime view (fix round 1, I-1)", () => {
+  const withKm = {
+    ...report,
+    averageCostPerKm: 0.5,
+    vehicleDetails: [{ vehicleId: 1, licensePlate: "AB123C", brand: "TOYOTA", model: "Yaris", totalCost: 475, costPerKm: 0.25, currentMileage: 1900, expenseCount: 6 }],
+  };
+
+  it("shows the number in Alle tijd and says the odometer is a lifetime total", async () => {
+    renderPage(withKm);
+    expect(await screen.findByTestId("text-cost-per-km")).toHaveTextContent("€ 0,50");
+    expect(screen.getByTestId("maintenance-costs-scope-note")).toHaveTextContent(/totale kilometerstand/i);
+    expect(screen.queryByTestId("cost-per-km-period-hint")).toBeNull();
+  });
+
+  it("shows an en dash and a hint in a period view, on the card and per vehicle", async () => {
+    const user = userEvent.setup();
+    renderPage(withKm);
+    await screen.findByTestId("text-cost-per-km");
+    await user.click(screen.getByTestId("select-time-range"));
+    await user.click(await screen.findByRole("option", { name: "Afgelopen jaar" }));
+    await waitFor(() => expect(screen.getByTestId("text-cost-per-km")).toHaveTextContent("–"));
+    expect(screen.getByTestId("text-cost-per-km")).not.toHaveTextContent("0,50");
+    expect(screen.getByTestId("cost-per-km-period-hint")).toHaveTextContent("alleen bij Alle tijd");
+    await user.click(screen.getByTestId("tab-vehicles"));
+    const row = await screen.findByTestId("row-vehicle-1");
+    expect(row).not.toHaveTextContent("0,25");
+  });
+});
+
 describe("Analyse onderhoudskosten display rules", () => {
   it("shows a Dutch label for each category, never the stored key", async () => {
     renderPage();
@@ -82,6 +111,14 @@ describe("Analyse onderhoudskosten display rules", () => {
     expect(audit).not.toHaveTextContent("Uitstekend");
     const toyota = rows.find((r) => within(r).queryByText("TOYOTA"))!;
     expect(toyota).not.toHaveTextContent("Onvoldoende gegevens");
+  });
+
+  it("does not rate a brand on one vehicle, however many lines it has (fix round 1, M-6)", async () => {
+    const user = userEvent.setup();
+    renderPage({ ...report, brandComparison: [{ brand: "OPEL", totalCost: 300, avgCost: 300, vehicleCount: 1, expenseCount: 5 }, ...report.brandComparison] });
+    await user.click(await screen.findByTestId("tab-brands"));
+    const opel = (await screen.findAllByRole("row")).find((r) => within(r).queryByText("OPEL"))!;
+    expect(opel).toHaveTextContent("Onvoldoende gegevens");
   });
 
   it("labels the months of the trend in Dutch", async () => {

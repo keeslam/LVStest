@@ -62,9 +62,10 @@
     "monthlyCostTrendsTitle": "Monthly Cost Trends",
     "monthlyCostTrendsDescription": "Track maintenance spending over time",
     "monthlyCostLegend": "Monthly Cost",
-    "scopeNote": "Counts maintenance costs only ({{categories}}). Cost per km divides by the odometer of the vehicles that carry costs.",
+    "scopeNote": "Counts maintenance costs only ({{categories}}). Cost per km divides by the total odometer (a lifetime figure) of the vehicles that carry costs, so it is only shown for All time.",
     "efficiencyInsufficient": "Insufficient data",
-    "monthColumn": "Month"
+    "monthColumn": "Month",
+    "costPerKmPeriodHint": "only for All time: the odometer is a lifetime total"
   },
   "reportBuilderPage": {
     "toasts": {
@@ -299,7 +300,10 @@
       "vehicleSearchPlaceholder": "Search by plate, brand or model",
       "noVehicleFound": "No vehicle found",
       "loading": "Updating the figures...",
-      "financialIgnoresCategory": "The category filter ({{category}}) does not apply to the Financial tab: revenue and margin are calculated over all costs."
+      "financialIgnoresCategory": "The category filter ({{category}}) does not apply to the Financial tab: revenue and margin are calculated over all costs.",
+      "categoryNotApplicable": "The category filter ({{category}}) does not apply to {{scope}}.",
+      "categoryScopeTab": "this tab",
+      "categoryScopeApkWarranty": "the APK and warranty overviews"
     },
     "categories": {
       "maintenance": "Maintenance",

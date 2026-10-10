@@ -89,6 +89,18 @@ describe("GET /api/reports/maintenance-costs (A-14-2)", () => {
     expect(v1.costPerKm).toBeCloseTo(350 / 100000, 6);
   });
 
+  it("has no cost per km in a period view: period costs over a lifetime odometer is not a rate (fix round 1, I-1)", async () => {
+    const res = await report(`?brand=${BRAND}&timeRange=year`);
+    expect(res.status).toBe(200);
+    expect(res.body.totalCosts).toBeCloseTo(500, 2); // the costs themselves still follow the period
+    expect(res.body.averageCostPerKm).toBeNull();
+    expect(res.body.costPerKmAvailable).toBe(false);
+    for (const v of res.body.vehicleDetails) expect(v.costPerKm).toBeNull();
+    const all = await report(`?brand=${BRAND}&timeRange=all`);
+    expect(all.body.costPerKmAvailable).toBe(true);
+    expect(all.body.averageCostPerKm).toBeCloseTo(500 / 150000, 6);
+  });
+
   it("has no cost per km (null, not 0) when the vehicles with costs have no kilometres", async () => {
     const res = await report(`?brand=${BRAND_EMPTY}`);
     expect(res.status).toBe(200);

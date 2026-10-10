@@ -91,3 +91,25 @@ describe("loading state (A-14-10)", () => {
     await waitFor(() => expect(screen.queryByTestId("reports-loading")).toBeNull(), { timeout: 3000 });
   });
 });
+
+describe("tabs that ignore the category filter say so (fix round 1, M-2)", () => {
+  it("shows a one-line note on Fiscaal, Transporten and Voertuigen once a category is chosen, and not before", async () => {
+    installFetch({
+      vehicles: fleet, expenses,
+      extra: { "/api/fiscal/reports/monthly": { year: 2026, notStarted: false, totals: { amount: 0, settled: 0, provisional: 0, chargedMonths: 0, periods: 0, unassessedPeriods: 0 }, byCustomer: [], rows: [], columns: [] } },
+    });
+    const user = userEvent.setup();
+    renderWithClient(<ReportsPage />);
+    await waitFor(() => expect(screen.getAllByText(/€ 155,00/).length).toBeGreaterThan(0));
+    await openCategories(user);
+    await user.click(screen.getByRole("option", { name: "Onderhoud" }));
+    for (const tab of ["tab-report-transports", "tab-report-fiscal"]) {
+      await user.click(await screen.findByTestId(tab));
+      expect(await screen.findByTestId("category-filter-note"), tab).toHaveTextContent("Onderhoud");
+    }
+    await user.click(screen.getByRole("tab", { name: /Voertuigen/ }));
+    expect(await screen.findByTestId("category-filter-note")).toHaveTextContent(/APK en garantie/);
+    await user.click(screen.getByRole("tab", { name: /Kosten/ }));
+    expect(screen.queryByTestId("category-filter-note")).toBeNull();
+  });
+});

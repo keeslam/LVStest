@@ -7,7 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency, formatLicensePlate } from "@/lib/format-utils";
+import { formatCurrency, formatLicensePlate, formatExpenseCategory } from "@/lib/format-utils";
 
 // Mirrors server/utils/financial-reports.ts
 interface VehicleFinancialRow {
@@ -156,7 +156,7 @@ export function FinancialTab({ dateRange, selectedVehicle }: FinancialTabProps) 
                     <TableCell className="text-right">{formatCurrency(row.revenue)}</TableCell>
                     <TableCell className="text-right">{row.rentalDays > 0 ? formatCurrency(row.revenue / row.rentalDays) : "–"}</TableCell>
                     <TableCell className="text-right text-gray-500">{row.dailyPrice != null ? formatCurrency(row.dailyPrice) : "–"}</TableCell>
-                    <TableCell className="text-right text-red-600" title={Object.entries(row.expensesByCategory).map(([c, a]) => `${c}: ${formatCurrency(a)}`).join("\n")}>{formatCurrency(row.expenses)}</TableCell>
+                    <TableCell className="text-right text-red-600" title={Object.entries(row.expensesByCategory).map(([c, a]) => `${formatExpenseCategory(c)}: ${formatCurrency(a)}`).join("\n")}>{formatCurrency(row.expenses)}</TableCell>
                     <TableCell className="text-right">
                       <span className={row.margin >= 0 ? "text-green-600 font-medium" : "text-red-600 font-medium"}>{formatCurrency(row.margin)}</span>
                       <span className="ml-2 text-xs text-gray-500">{marginPct(row)}</span>

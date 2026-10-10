@@ -2,6 +2,7 @@
  * Pure helpers of /reports (package P7a). Kept out of the page component so the
  * display rules can be tested without rendering a 2,700-line screen.
  */
+import { EXPENSE_CATEGORIES } from "@shared/expense-categories";
 
 export type MonthChange = { kind: "none" } | { kind: "new" } | { kind: "pct"; value: number };
 
@@ -14,7 +15,6 @@ export function monthChange(previous: number, current: number): MonthChange {
   return { kind: "pct", value: ((current - previous) / previous) * 100 };
 }
 
-import { EXPENSE_CATEGORIES } from "@shared/expense-categories";
 
 /**
  * The key a stored category is grouped and filtered on: lower-cased and trimmed,

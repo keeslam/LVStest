@@ -18,6 +18,8 @@ interface MaintenanceCostData {
   /** null when the vehicles that carry the costs have no kilometres: there is nothing to divide by. */
   averageCostPerKm: number | null;
   categories?: string[];
+  /** false in a period view: the odometer is a lifetime total, so costs per km only make sense over all time. */
+  costPerKmAvailable?: boolean;
   totalVehicles: number;
   categoryBreakdown: Array<{category: string, amount: number, percentage: number}>;
   brandComparison: Array<{brand: string, totalCost: number, avgCost: number, vehicleCount: number, expenseCount?: number}>;
@@ -36,10 +38,12 @@ interface MaintenanceCostData {
 
 /**
  * A brand is rated "Uitstekend / Goed / Gemiddeld" only when this many cost
- * lines stand behind it (A-14-2): the brand AUDIT, with a single line of
+ * lines and at least MIN_VEHICLES_FOR_RATING vehicles stand behind it (A-14-2): the brand AUDIT, with a single line of
  * EUR 25.50, used to come out "Uitstekend" on nothing.
  */
 const MIN_EXPENSES_FOR_RATING = 3;
+// One vehicle with three oil changes says nothing about a brand.
+const MIN_VEHICLES_FOR_RATING = 2;
 
 /** "2026-05" as "mei 2026". */
 function monthLabel(key: string): string {
@@ -90,6 +94,8 @@ export default function MaintenanceCostsPage() {
     );
   }
 
+  // The odometer is a lifetime total: per-km figures are only shown over all time (I-1).
+  const showCostPerKm = timeRange === "all" && costData.costPerKmAvailable !== false;
   const trendData = costData.monthlyTrend.map((p) => ({ ...p, label: monthLabel(p.month) }));
   const scopeCategories = (costData.categories ?? [...MAINTENANCE_EXPENSE_CATEGORIES]).map((c) => formatExpenseCategory(c)).join(", ");
 
@@ -170,10 +176,10 @@ export default function MaintenanceCostsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-cost-per-km">
-              {costData.averageCostPerKm == null ? NO_VALUE : <Price value={costData.averageCostPerKm} />}
+              {!showCostPerKm || costData.averageCostPerKm == null ? NO_VALUE : <Price value={costData.averageCostPerKm} />}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {t('maintenanceCostsPage.efficiencyMetric')}
+              {showCostPerKm ? t('maintenanceCostsPage.efficiencyMetric') : <span data-testid="cost-per-km-period-hint">{t('maintenanceCostsPage.costPerKmPeriodHint')}</span>}
             </p>
           </CardContent>
         </Card>
@@ -332,7 +338,7 @@ export default function MaintenanceCostsPage() {
                         const avgCost = brand.avgCost;
                         const overallAvg = costData.averageCostPerVehicle;
                         // A-14-2: no rating on a handful of cost lines; say so instead.
-                        const enoughData = (brand.expenseCount ?? 0) >= MIN_EXPENSES_FOR_RATING && overallAvg > 0;
+                        const enoughData = (brand.expenseCount ?? 0) >= MIN_EXPENSES_FOR_RATING && brand.vehicleCount >= MIN_VEHICLES_FOR_RATING && overallAvg > 0;
                         const efficiency = !enoughData ? t('maintenanceCostsPage.efficiencyInsufficient') : avgCost < overallAvg ? t('maintenanceCostsPage.efficiencyExcellent') : avgCost < overallAvg * 1.2 ? t('maintenanceCostsPage.efficiencyGood') : t('maintenanceCostsPage.efficiencyAverage');
                         const efficiencyColor = !enoughData ? 'text-muted-foreground' : avgCost < overallAvg ? 'text-green-600' : avgCost < overallAvg * 1.2 ? 'text-blue-600' : 'text-orange-600';
                         
@@ -381,7 +387,7 @@ export default function MaintenanceCostsPage() {
                           <td className="p-2 font-medium">{vehicle.licensePlate}</td>
                           <td className="p-2">{vehicle.brand} {vehicle.model}</td>
                           <td className="text-right p-2">{<Price value={vehicle.totalCost} />}</td>
-                          <td className="text-right p-2">{vehicle.costPerKm == null ? NO_VALUE : <Price value={vehicle.costPerKm} />}</td>
+                          <td className="text-right p-2">{!showCostPerKm || vehicle.costPerKm == null ? NO_VALUE : <Price value={vehicle.costPerKm} />}</td>
                           <td className="text-right p-2">{vehicle.currentMileage ? `${vehicle.currentMileage.toLocaleString('nl-NL')} km` : t('maintenanceCostsPage.notAvailable')}</td>
                           <td className="text-right p-2">{vehicle.expenseCount}</td>
                         </tr>

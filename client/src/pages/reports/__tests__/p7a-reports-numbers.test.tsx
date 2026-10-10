@@ -59,15 +59,7 @@ describe("/reports print documents (A-14-8)", () => {
   it("writes the generated moment and the period in the house style, not 09/10/2026", async () => {
     installFetch({ vehicles: fleet, expenses: [] });
     // capture the document the iframe is given instead of opening a print dialog
-    const printed: string[] = [];
-    const realCreate = document.createElement.bind(document);
-    vi.spyOn(document, "createElement").mockImplementation(((tag: string, opts?: any) => {
-      const el = realCreate(tag, opts);
-      if (tag === "iframe") {
-        Object.defineProperty(el, "contentWindow", { value: { print: () => printed.push((el as HTMLIFrameElement).contentDocument!.body.innerHTML), document: undefined } });
-      }
-      return el;
-    }) as any);
+    const { printed, restore } = capturePrints();
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderWithClient(<ReportsPage />);
@@ -77,7 +69,7 @@ describe("/reports print documents (A-14-8)", () => {
     await waitFor(() => expect(printed.length).toBe(1));
     expect(printed[0]).not.toMatch(/\d{2}\/\d{2}\/\d{4}/);
     expect(printed[0]).toMatch(/\d{1,2} [a-z]{3}\.? \d{4} \d{2}:\d{2}/);
-    vi.restoreAllMocks();
+    restore();
   });
 });
 

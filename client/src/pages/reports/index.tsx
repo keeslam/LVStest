@@ -681,6 +681,13 @@ function FullReportsPage() {
     };
   })();
 
+  // M-2: tabs that do not read expense categories say so once a category is chosen (the Financieel tab has its own note).
+  const categoryIgnoredNote = (scope: string) => selectedCategory !== "all" ? (
+    <p className="text-sm text-muted-foreground" data-testid="category-filter-note">
+      {t('reportsPage.filters.categoryNotApplicable', { category: formatExpenseCategory(selectedCategory), scope })}
+    </p>
+  ) : null;
+
   const changeLabel = (change: MonthChange): string => {
     if (change.kind === 'new') return t('reportsPage.operations.trendNew');
     if (change.kind === 'none') return '\u2013';
@@ -1626,6 +1633,7 @@ function FullReportsPage() {
         {/* Fiscal tab: the fiscal check per customer, car and month (docs/fiscaal, stap 6) */}
         {canViewFiscal && (
           <TabsContent value="fiscal" className="space-y-6">
+            {categoryIgnoredNote(t('reportsPage.filters.categoryScopeTab'))}
             <FiscalReportTab />
           </TabsContent>
         )}
@@ -1927,6 +1935,7 @@ function FullReportsPage() {
             <NoDataAccess permission={UserPermission.VIEW_VEHICLES} />
           ) : (
           <>
+          {categoryIgnoredNote(t('reportsPage.filters.categoryScopeApkWarranty'))}
           {/* Vehicle Utilization Stats */}
           <Card>
             <CardHeader>
@@ -2533,6 +2542,7 @@ function FullReportsPage() {
             <NoDataAccess permission={UserPermission.VIEW_RESERVATIONS} />
           ) : (
           <>
+          {categoryIgnoredNote(t('reportsPage.filters.categoryScopeTab'))}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card>
               <CardContent className="p-4">
