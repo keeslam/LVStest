@@ -162,6 +162,9 @@ export function RecycleBinDialog({ kind, open, onOpenChange, onRestored, onPurge
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [confirmTarget, setConfirmTarget] = useState<PurgeTarget | null>(null);
+  // A-3-9: rows that were already put back are history, not work to do; they stay
+  // out of the list until asked for.
+  const [showRestored, setShowRestored] = useState(false);
 
   const { data: allRecords, isLoading, isError } = useQuery<DeletedRecord[]>({
     queryKey: ["/api/deleted-records", { type: kind }],
@@ -171,7 +174,9 @@ export function RecycleBinDialog({ kind, open, onOpenChange, onRestored, onPurge
   // The server already filters; this keeps a cached mixed list from showing
   // another screen's rows.
   const kindRecords = allRecords?.filter((r) => r.entityType === kind);
-  const records = kindRecords?.filter(
+  const restoredCount = kindRecords?.filter((r) => r.restoredAt).length ?? 0;
+  const visibleRecords = kindRecords?.filter((r) => showRestored || !r.restoredAt);
+  const records = visibleRecords?.filter(
     (r) => !q || r.label.toLowerCase().includes(q) || (r.deletedBy ?? "").toLowerCase().includes(q) || (r.restoredBy ?? "").toLowerCase().includes(q),
   );
 
@@ -309,6 +314,17 @@ export function RecycleBinDialog({ kind, open, onOpenChange, onRestored, onPurge
         </DialogHeader>
 
         <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("search")} data-testid="input-deleted-search" />
+
+        {!isLoading && !isError && restoredCount > 0 && (
+          <label className="flex items-center gap-2 text-sm" data-testid="label-show-restored">
+            <Checkbox
+              checked={showRestored}
+              onCheckedChange={(on) => setShowRestored(on === true)}
+              data-testid="checkbox-show-restored"
+            />
+            {t("showRestored", { count: restoredCount })}
+          </label>
+        )}
 
         {!isLoading && !isError && (
           <div className="flex flex-wrap items-center justify-between gap-2" data-testid="recycle-bin-toolbar">

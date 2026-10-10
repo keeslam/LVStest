@@ -178,5 +178,6 @@
     "vehicle_fiscal_profiles_other": "{{count}} fiscal profiles",
     "apk_date_changes_one": "{{count}} APK date change",
     "apk_date_changes_other": "{{count}} APK date changes"
-  }
+  },
+  "showRestored": "Also show restored items ({{count}})"
 }

@@ -129,7 +129,10 @@ function renderBin(kind: DeletedRecordKind, props: { onPurged?: () => void } = {
 
 describe("RecycleBinDialog - the controls for emptying a bin", () => {
   it("gives every row a checkbox and its own purge button, and the toolbar a selected and an all button", async () => {
+    const user = userEvent.setup();
     renderBin("customer");
+    // Row 4 was restored: it is hidden until the checkbox asks for it (A-3-9).
+    await user.click(await screen.findByTestId("checkbox-show-restored"));
     for (const id of [2, 3, 4]) {
       await screen.findByTestId(`deleted-record-${id}`);
       expect(screen.getByTestId(`checkbox-deleted-record-${id}`)).toBeInTheDocument();
@@ -140,7 +143,9 @@ describe("RecycleBinDialog - the controls for emptying a bin", () => {
   });
 
   it("a restored row can be purged too (only its bin entry is removed)", async () => {
+    const user = userEvent.setup();
     renderBin("customer");
+    await user.click(await screen.findByTestId("checkbox-show-restored"));
     await screen.findByTestId("deleted-record-4");
     expect(screen.getByTestId("button-restore-4")).toBeDisabled();
     expect(screen.getByTestId("button-purge-4")).toBeEnabled();
@@ -173,7 +178,8 @@ describe("RecycleBinDialog - the controls for emptying a bin", () => {
     // Row 3 was never shown while the search was on, so it was never ticked.
     expect(screen.getByTestId("checkbox-deleted-record-3")).not.toBeChecked();
     await user.click(screen.getByTestId("checkbox-deleted-select-all")); // some ticked -> tick all
-    expect(screen.getByTestId("button-purge-selected")).toHaveTextContent("(3)");
+    // Rows 2 and 3 only: the restored row 4 is hidden (A-3-9) and select-all follows what is shown.
+    expect(screen.getByTestId("button-purge-selected")).toHaveTextContent("(2)");
     await user.click(screen.getByTestId("checkbox-deleted-select-all")); // all ticked -> none
     expect(screen.getByTestId("button-purge-selected")).toBeDisabled();
   });
@@ -222,6 +228,7 @@ describe("RecycleBinDialog - one confirmation before anything is deleted", () =>
   it("a selection: the confirm names the count and the kind; confirming sends the chosen ids and clears the selection", async () => {
     const user = userEvent.setup();
     renderBin("customer");
+    await user.click(await screen.findByTestId("checkbox-show-restored"));
     await user.click(await screen.findByTestId("checkbox-deleted-record-2"));
     await user.click(screen.getByTestId("checkbox-deleted-record-4"));
     await user.click(screen.getByTestId("button-purge-selected"));

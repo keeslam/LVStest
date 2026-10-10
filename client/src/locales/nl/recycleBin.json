@@ -178,5 +178,6 @@
     "vehicle_fiscal_profiles_other": "{{count}} fiscale profielen",
     "apk_date_changes_one": "{{count}} wijziging van de APK-datum",
     "apk_date_changes_other": "{{count}} wijzigingen van de APK-datum"
-  }
+  },
+  "showRestored": "Teruggezette items ook tonen ({{count}})"
 }

@@ -156,9 +156,13 @@ describe("RecycleBinDialog - one dialog, one kind per screen", () => {
     expect(screen.queryByText("Reservering", { exact: true })).toBeNull();
   });
 
-  it("a restored row keeps its place with the badge and a disabled restore button", async () => {
+  it("a restored row keeps its place with the badge and a disabled restore button once asked for (A-3-9)", async () => {
+    const user = userEvent.setup();
     renderBin("customer");
 
+    expect(await screen.findByTestId("deleted-record-2")).toBeInTheDocument();
+    expect(screen.queryByTestId("deleted-record-7")).toBeNull(); // hidden by default
+    await user.click(screen.getByTestId("checkbox-show-restored"));
     const restored = await screen.findByTestId("deleted-record-7");
     expect(restored).toHaveTextContent("Teruggezet");
     expect(restored).toHaveTextContent("anna");
@@ -180,6 +184,7 @@ describe("RecycleBinDialog - one dialog, one kind per screen", () => {
     const user = userEvent.setup();
     renderBin("customer");
     await screen.findByTestId("deleted-record-2");
+    await user.click(screen.getByTestId("checkbox-show-restored"));
 
     await user.type(screen.getByTestId("input-deleted-search"), "oud bedrijf");
     expect(screen.queryByTestId("deleted-record-2")).toBeNull();
