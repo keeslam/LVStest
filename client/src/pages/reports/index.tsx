@@ -21,8 +21,9 @@ import { UtilizationChart, type UtilizationChartData } from "@/components/report
 import { Vehicle, Expense, Reservation, Customer, VehicleTransport, UserPermission } from "@shared/schema";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { NoDataAccess } from "@/components/ui/no-data-access";
-import { formatDate, formatDateTime, formatCurrency, formatLicensePlate, sumMoney, plateMatches, formatExpenseCategory } from "@/lib/format-utils";
+import { formatDate, formatDateTime, formatCurrency, formatLicensePlate, sumMoney, plateMatches, formatExpenseCategory, formatReservationStatus } from "@/lib/format-utils";
 import { isMaintenanceExpenseCategory } from "@shared/expense-categories";
+import { officeToday } from "@/lib/office-date";
 import { monthChange, categoryKey, presentCategories, type MonthChange } from "@/pages/reports/report-helpers";
 import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox";
 import { Price } from "@/components/ui/price";
@@ -599,6 +600,19 @@ function FullReportsPage() {
     };
   }).sort((a, b) => b.totalExpenses - a.totalExpenses);
   
+  // The customers shown in "Kostencategorieen per klant" and the categories that get a column.
+  const customerCostRows = customerReservationStats.filter(c => c.totalExpenses > 0).slice(0, 10);
+  const customerCostCategories = presentCategories(
+    customerCostRows.flatMap(c => Object.keys(c.expensesByCategory).map(category => ({ category }))),
+  );
+
+  // "Recent" reservations: started already (a booking in November is not recent in October), newest first.
+  const todayYmd = officeToday();
+  const recentCustomerReservations = filteredReservations
+    .filter(r => r.startDate && r.startDate.slice(0, 10) <= todayYmd)
+    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
+    .slice(0, 10);
+
   // Prepare expense chart data
   const expenseChartData: ExpenseChartData[] = Object.entries(expensesByCategory)
     .map(([category, amount]) => ({
@@ -2340,7 +2354,7 @@ function FullReportsPage() {
               </Button>
             </CardHeader>
             <CardContent>
-              <Table>
+              <Table data-testid="customer-impact-table">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t('reportsPage.common.customer')}</TableHead>
@@ -2365,6 +2379,7 @@ function FullReportsPage() {
                           <TableCell>{<Price value={Number(customer.totalExpenses)} />}</TableCell>
                           <TableCell className="text-right font-medium">
                             {<Price value={Number(customer.expensePerDay)} />}
+                            {customer.expensePerDay > 0 && " "}
                             {customer.expensePerDay > 0 && (
                               <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
                                 customer.expensePerDay > (avgExpensePerVehicle / 30) * 2
@@ -2402,66 +2417,41 @@ function FullReportsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
+              {/* A-14-5: a column for every category that occurs in the data. The fixed five
+                  (tires, maintenance, damage, repair, other) missed fuel, toll, insurance and
+                  parking, so a customer with real costs showed a row of dashes. */}
+              <Table data-testid="customer-category-costs">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t('reportsPage.common.customer')}</TableHead>
-                    <TableHead>{t('reportsPage.categories.tires')}</TableHead>
-                    <TableHead>{t('reportsPage.categories.maintenance')}</TableHead>
-                    <TableHead>{t('reportsPage.categories.damage')}</TableHead>
-                    <TableHead>{t('reportsPage.categories.repair')}</TableHead>
-                    <TableHead>{t('reportsPage.categories.other')}</TableHead>
+                    {customerCostCategories.map((category) => (
+                      <TableHead key={category}>{formatExpenseCategory(category)}</TableHead>
+                    ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {customerReservationStats.filter(c => c.totalExpenses > 0).length > 0 ? (
-                    customerReservationStats
-                      .filter(c => c.totalExpenses > 0)
-                      .slice(0, 10)
-                      .map(customer => {
-                        // Get amounts for each category or default to 0
-                        const tires = customer.expensesByCategory['tires'] || 0;
-                        const maintenance = customer.expensesByCategory['maintenance'] || 0;
-                        const damage = customer.expensesByCategory['damage'] || 0;
-                        const repair = customer.expensesByCategory['repair'] || 0;
-                        const other = customer.expensesByCategory['other'] || 0;
-                        
-                        // Determine which category has the highest expense
-                        const categories = [
-                          { name: 'tires', amount: tires },
-                          { name: 'maintenance', amount: maintenance },
-                          { name: 'damage', amount: damage },
-                          { name: 'repair', amount: repair },
-                          { name: 'other', amount: other }
-                        ];
-                        
-                        const highestCategory = categories.reduce((prev, current) => 
-                          (current.amount > prev.amount) ? current : prev, { name: '', amount: 0 });
-                        
-                        return (
-                          <TableRow key={customer.id}>
-                            <TableCell>{customer.name}</TableCell>
-                            <TableCell className={highestCategory.name === 'tires' ? "font-bold" : ""}>
-                              {tires > 0 ? formatCurrency(Number(tires)) : "—"}
-                            </TableCell>
-                            <TableCell className={highestCategory.name === 'maintenance' ? "font-bold" : ""}>
-                              {maintenance > 0 ? formatCurrency(Number(maintenance)) : "—"}
-                            </TableCell>
-                            <TableCell className={highestCategory.name === 'damage' ? "font-bold" : ""}>
-                              {damage > 0 ? formatCurrency(Number(damage)) : "—"}
-                            </TableCell>
-                            <TableCell className={highestCategory.name === 'repair' ? "font-bold" : ""}>
-                              {repair > 0 ? formatCurrency(Number(repair)) : "—"}
-                            </TableCell>
-                            <TableCell className={highestCategory.name === 'other' ? "font-bold" : ""}>
-                              {other > 0 ? formatCurrency(Number(other)) : "—"}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
+                  {customerCostRows.length > 0 ? (
+                    customerCostRows.map(customer => {
+                      const highest = customerCostCategories.reduce(
+                        (prev, category) => ((customer.expensesByCategory[category] || 0) > prev.amount ? { category, amount: customer.expensesByCategory[category] } : prev),
+                        { category: '', amount: 0 });
+                      return (
+                        <TableRow key={customer.id}>
+                          <TableCell>{customer.name}</TableCell>
+                          {customerCostCategories.map((category) => {
+                            const amount = customer.expensesByCategory[category] || 0;
+                            return (
+                              <TableCell key={category} className={highest.category === category ? "font-bold" : ""}>
+                                {amount > 0 ? formatCurrency(Number(amount)) : "\u2014"}
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      );
+                    })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-4">{t('reportsPage.customersTab.noExpenseData')}</TableCell>
+                      <TableCell colSpan={Math.max(2, customerCostCategories.length + 1)} className="text-center py-4">{t('reportsPage.customersTab.noExpenseData')}</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -2478,7 +2468,7 @@ function FullReportsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
+              <Table data-testid="customer-recent-reservations">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t('reportsPage.common.customer')}</TableHead>
@@ -2489,10 +2479,8 @@ function FullReportsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredReservations.length > 0 ? (
-                    filteredReservations
-                      .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
-                      .slice(0, 10)
+                  {recentCustomerReservations.length > 0 ? (
+                    recentCustomerReservations
                       .map(reservation => {
                         const vehicle = vehicles.find(v => v.id === reservation.vehicleId);
                         const customer = customers.find(c => c.id === reservation.customerId);
@@ -2507,8 +2495,8 @@ function FullReportsPage() {
                             </TableCell>
                             <TableCell>{formatDate(reservation.startDate)}</TableCell>
                             <TableCell>{reservation.endDate ? formatDate(reservation.endDate) : t('reportsPage.customersTab.openEnded')}</TableCell>
-                            <TableCell className="capitalize">
-                              {reservation.status?.replace(/_/g, ' ')}
+                            <TableCell>
+                              {formatReservationStatus(reservation.status)}
                             </TableCell>
                           </TableRow>
                         );
