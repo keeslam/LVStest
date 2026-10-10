@@ -71,7 +71,7 @@ async function fillAndSubmit(user: ReturnType<typeof userEvent.setup>, debtorNum
 }
 
 describe("B-35 — debiteurnummer-conflict onder het veld", () => {
-  it("toont de melding onder Debiteurnummer bij DEBTOR_NUMBER_TAKEN, toast blijft algemeen", async () => {
+  it("toont de melding onder Debiteurnummer bij DEBTOR_NUMBER_TAKEN, zonder rode toast erbij", async () => {
     nextResponse = {
       status: 409,
       body: {
@@ -87,9 +87,11 @@ describe("B-35 — debiteurnummer-conflict onder het veld", () => {
     await fillAndSubmit(user, "E2E-DEB-1");
 
     expect(await screen.findByText("Dit debiteurnummer is al in gebruik bij klant Jansen BV.")).toBeInTheDocument();
-    // The pre-existing generic create-failed toast still fires unchanged —
-    // this is not suppressed or replaced by the new field-level message.
-    expect(await screen.findByText(/Kon klant niet aanmaken/)).toBeInTheDocument();
+    // A-4-4 (audit 2026-10-09): the field message is the whole answer. The extra red toast with the
+    // English server sentence ("Another customer (...) already uses this debtor number") is gone.
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(screen.queryByText(/Kon klant niet aanmaken/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Another customer/)).not.toBeInTheDocument();
     expect(postCalls).toBe(1);
   });
 

@@ -75,7 +75,7 @@ export const formSchema = insertCustomerSchema.extend({
 // ever differed in which i18n key they show under the field; a lookup table
 // removes the near-duplicate `if`/`else if` branches. An unrecognised (or
 // missing) `code` finds nothing here and falls through to the generic toast
-// below, unchanged.
+// below, unchanged; a recognised one shows the field message only (A-4-4).
 const DEBTOR_NUMBER_CONFLICT_ERROR_KEYS: Record<string, string> = {
   DEBTOR_NUMBER_TAKEN: 'form.debtorNumberTakenError',
   DEBTOR_NUMBER_IN_RECYCLE_BIN: 'form.debtorNumberInRecycleBinError',
@@ -248,14 +248,16 @@ export function CustomerForm({
     onError: (error: Error & { code?: string; conflictingCustomerName?: string }) => {
       // B-35 — the server names exactly which customer already holds the
       // debtor number (live, or sitting in the recycle bin); show that under
-      // the field itself instead of only in the generic toast below, which
-      // keeps firing unchanged for every other error.
+      // the field itself. A-4-4: that Dutch field message is the whole answer; the
+      // generic toast below (which carried the English server sentence) is for every
+      // other error only.
       const debtorNumberErrorKey = error.code ? DEBTOR_NUMBER_CONFLICT_ERROR_KEYS[error.code] : undefined;
       if (debtorNumberErrorKey) {
         form.setError("debtorNumber", {
           type: "server",
           message: t(debtorNumberErrorKey, { name: error.conflictingCustomerName }),
         });
+        return;
       }
       toast({
         title: t('common:status.error'),
