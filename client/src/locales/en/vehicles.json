@@ -1008,6 +1008,8 @@
     "allSelectedButton": "All selected",
     "anySelectedButton": "Any selected",
     "sortByLabel": "Sort by:",
+    "filterByLabel": "Show:",
+    "filterAllOption": "All vehicles",
     "sortDefaultPlaceholder": "Default",
     "sortDefaultOption": "Default (ID)",
     "sortLicenseOption": "License Plate",

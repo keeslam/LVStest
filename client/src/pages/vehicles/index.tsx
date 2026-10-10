@@ -53,6 +53,8 @@ export default function VehiclesIndex() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<string>("default");
+  // A-3-8: what to show is its own choice now, next to (not inside) the sort order.
+  const [statusFilter, setStatusFilter] = useState<"all" | "needs-fixing" | "opnaam" | "bv" | "unspecified">("all");
   // Feature filters: list of selected vehicle boolean columns to require, plus
   // the match mode (strict = vehicle must have ALL selected; broad = ANY).
   const [featureFilters, setFeatureFilters] = useState<(keyof Vehicle)[]>([]);
@@ -163,18 +165,18 @@ export default function VehiclesIndex() {
       if (!matchesSearch) return false;
     }
     
-    // Apply registration filter based on sortBy value
-    if (sortBy === "filter-opnaam" || sortBy === "filter-bv" || sortBy === "filter-unspecified") {
+    // Apply registration filter
+    if (statusFilter === "opnaam" || statusFilter === "bv" || statusFilter === "unspecified") {
       const isRegisteredToPerson = isTrueValue(vehicle.registeredTo);
       const isRegisteredToCompany = isTrueValue(vehicle.company);
-      
-      if (sortBy === "filter-opnaam" && !isRegisteredToPerson) return false;
-      if (sortBy === "filter-bv" && !isRegisteredToCompany) return false;
-      if (sortBy === "filter-unspecified" && (isRegisteredToPerson || isRegisteredToCompany)) return false;
+
+      if (statusFilter === "opnaam" && !isRegisteredToPerson) return false;
+      if (statusFilter === "bv" && !isRegisteredToCompany) return false;
+      if (statusFilter === "unspecified" && (isRegisteredToPerson || isRegisteredToCompany)) return false;
     }
-    
+
     // Apply availability status filter
-    if (sortBy === "filter-needs-fixing") {
+    if (statusFilter === "needs-fixing") {
       if (vehicle.availabilityStatus !== 'needs_fixing') return false;
     }
 
@@ -190,11 +192,6 @@ export default function VehiclesIndex() {
 
     return true;
   }).sort((a, b) => {
-    // If sortBy is a filter option, use default sorting
-    if (sortBy.startsWith("filter-")) {
-      return a.id - b.id;
-    }
-    
     // Apply sorting based on selected option
     switch (sortBy) {
       case "apk-asc":
@@ -776,7 +773,7 @@ export default function VehiclesIndex() {
             <div className="flex items-center">
               <label htmlFor="sortBy" className="mr-2 text-sm font-medium">{t('indexPage.sortByLabel')}</label>
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-[240px]">
+                <SelectTrigger id="sortBy" className="w-[240px]" data-testid="select-vehicle-sort">
                   <SelectValue placeholder={t('indexPage.sortDefaultPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -787,10 +784,22 @@ export default function VehiclesIndex() {
                   <SelectItem value="apk-desc">{t('indexPage.sortApkDescOption')}</SelectItem>
                   <SelectItem value="availability-asc">{t('indexPage.sortAvailabilityAscOption')}</SelectItem>
                   <SelectItem value="availability-desc">{t('indexPage.sortAvailabilityDescOption')}</SelectItem>
-                  <SelectItem value="filter-needs-fixing">{t('indexPage.sortNeedsFixingOption')}</SelectItem>
-                  <SelectItem value="filter-opnaam">{t('indexPage.sortOpnaamOption')}</SelectItem>
-                  <SelectItem value="filter-bv">{t('indexPage.sortBvOption')}</SelectItem>
-                  <SelectItem value="filter-unspecified">{t('indexPage.sortUnspecifiedOption')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center">
+              <label htmlFor="statusFilter" className="mr-2 text-sm font-medium">{t('indexPage.filterByLabel')}</label>
+              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}>
+                <SelectTrigger id="statusFilter" className="w-[200px]" data-testid="select-vehicle-filter">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('indexPage.filterAllOption')}</SelectItem>
+                  <SelectItem value="needs-fixing">{t('indexPage.sortNeedsFixingOption')}</SelectItem>
+                  <SelectItem value="opnaam">{t('indexPage.sortOpnaamOption')}</SelectItem>
+                  <SelectItem value="bv">{t('indexPage.sortBvOption')}</SelectItem>
+                  <SelectItem value="unspecified">{t('indexPage.sortUnspecifiedOption')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -1007,6 +1007,8 @@
     "allSelectedButton": "Alles geselecteerd",
     "anySelectedButton": "Iets geselecteerd",
     "sortByLabel": "Sorteren op:",
+    "filterByLabel": "Tonen:",
+    "filterAllOption": "Alle voertuigen",
     "sortDefaultPlaceholder": "Standaard",
     "sortDefaultOption": "Standaard (ID)",
     "sortLicenseOption": "Kenteken",

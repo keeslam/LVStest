@@ -48,6 +48,8 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  // A-3-11: "go to page" box. Kept as text so the person can clear it while typing.
+  const [pageInput, setPageInput] = useState("");
   
   // Custom filter function to handle license plates with and without dashes
   const defaultGlobalFilterFn = (row: any, columnId: string, filterValue: string) => {
@@ -193,6 +195,28 @@ export function DataTable<TData, TValue>({
             </Select>
           </div>
           <div className="flex items-center space-x-2">
+            <span className="text-sm text-muted-foreground whitespace-nowrap" data-testid="text-page-of">
+              {t("table.pageOf", { page: table.getState().pagination.pageIndex + 1, pages: Math.max(table.getPageCount(), 1) })}
+            </span>
+            <Input
+              type="number"
+              min={1}
+              max={Math.max(table.getPageCount(), 1)}
+              value={pageInput}
+              placeholder={t("table.goToPagePlaceholder")}
+              aria-label={t("table.goToPage")}
+              onChange={(event) => setPageInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter") return;
+                const wanted = Number.parseInt(pageInput, 10);
+                if (!Number.isFinite(wanted)) return;
+                // Past the last page lands on the last page, below one on the first.
+                table.setPageIndex(Math.min(Math.max(wanted, 1), Math.max(table.getPageCount(), 1)) - 1);
+                setPageInput("");
+              }}
+              className="h-8 w-20"
+              data-testid="input-go-to-page"
+            />
             <Button
               variant="outline"
               size="sm"

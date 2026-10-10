@@ -182,7 +182,10 @@
   "table": {
     "noResults": "No results.",
     "showingNone": "Showing 0 of 0",
-    "showing": "Showing {{from}}-{{to}} of {{total}}"
+    "showing": "Showing {{from}}-{{to}} of {{total}}",
+    "pageOf": "Page {{page}} of {{pages}}",
+    "goToPage": "Go to page",
+    "goToPagePlaceholder": "Page"
   },
   "queryError": {
     "title": "Could not load the data",
