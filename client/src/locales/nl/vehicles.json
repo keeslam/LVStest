@@ -715,7 +715,9 @@
     "allTab": "Alle",
     "recentTab": "Recent",
     "noVehiclesFound": "Geen voertuigen gevonden.",
-    "unknownType": "Onbekend"
+    "unknownType": "Onbekend",
+    "apkExpiredBadge": "APK verlopen",
+    "apkExpiredTitle": "De APK van dit voertuig is verlopen op {{date}}."
   },
   "readonlyVehicleDisplay": {
     "loading": "Voertuiggegevens laden...",
@@ -926,6 +928,7 @@
     "closeButton": "Sluiten",
     "understandButton": "Ik begrijp het",
     "acknowledgeButton": "Ik bevestig & ga door",
+    "chooseHint": "Kies Annuleren of Ik bevestig & ga door om verder te gaan; klikken naast dit venster doet niets.",
     "toasts": {
       "remarksUpdatedTitle": "Opmerkingen bijgewerkt",
       "remarksUpdatedDescription": "Voertuigopmerkingen zijn opgeslagen.",

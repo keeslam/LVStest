@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import {
@@ -41,6 +41,11 @@ export function VehicleRemarksWarningDialog({
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editedRemarks, setEditedRemarks] = useState("");
+  // A-5-2: this is a modal, so a click next to it (typically on the next form
+  // field) used to vanish without a sign. `nudged` turns the hint into a
+  // highlighted one for a moment and focus moves to the confirm button.
+  const [nudged, setNudged] = useState(false);
+  const acknowledgeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (vehicle?.remarks) {
@@ -53,6 +58,26 @@ export function VehicleRemarksWarningDialog({
       setIsEditing(false);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!open || context === "view") return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onPointerDown = (event: Event) => {
+      const target = event.target as Element | null;
+      // Clicks inside the dialog (or a popup it opened) are the employee answering.
+      if (target?.closest?.('[role="alertdialog"], [role="dialog"]')) return;
+      setNudged(true);
+      acknowledgeRef.current?.focus();
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => setNudged(false), 1200);
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      if (timer) clearTimeout(timer);
+      setNudged(false);
+    };
+  }, [open, context]);
 
   const updateRemarksMutation = useMutation({
     mutationFn: async (remarks: string) => {
@@ -201,11 +226,22 @@ export function VehicleRemarksWarningDialog({
           )}
         </div>
 
+        {context !== "view" && (
+          <p
+            className={`text-sm ${nudged ? "font-semibold text-amber-700" : "text-muted-foreground"}`}
+            data-testid="remarks-choose-hint"
+            data-nudged={nudged ? "true" : "false"}
+          >
+            {t('remarksWarningDialog.chooseHint')}
+          </p>
+        )}
+
         <AlertDialogFooter>
           <AlertDialogCancel onClick={handleCancel} data-testid="button-cancel-remarks-warning">
             {context === "view" ? t('remarksWarningDialog.closeButton') : t('remarksWarningDialog.cancelButton')}
           </AlertDialogCancel>
           <AlertDialogAction
+            ref={acknowledgeRef}
             onClick={handleAcknowledge}
             className="bg-amber-600 hover:bg-amber-700"
             data-testid="button-acknowledge-remarks"

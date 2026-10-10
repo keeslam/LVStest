@@ -6,7 +6,8 @@ import { cn, isTrueValue } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { formatLicensePlate } from "@/lib/format-utils";
+import { formatDate, formatLicensePlate } from "@/lib/format-utils";
+import { isApkExpired } from "@/lib/apk-expiry";
 import { Vehicle } from "@shared/schema";
 import {
   Popover,
@@ -29,6 +30,11 @@ interface VehicleSelectorProps {
   className?: string;
   recentVehicleIds?: string[];
   /**
+   * A-3-14: mark vehicles whose APK has run out in the list. A warning only;
+   * the vehicle stays selectable (the reservation form is the caller that asks).
+   */
+  warnExpiredApk?: boolean;
+  /**
    * The id of the <Label> above the selector. The trigger is a button, not an
    * <input>, so `htmlFor` does not reach it — without this a screen reader
    * announces the placeholder and never the field's name. The trigger's own id
@@ -47,6 +53,7 @@ export function VehicleSelector({
   disabled = false,
   className,
   recentVehicleIds = [],
+  warnExpiredApk = false,
   ariaLabelledBy,
   "data-testid": dataTestId,
 }: VehicleSelectorProps) {
@@ -241,6 +248,18 @@ export function VehicleSelector({
                 {vehicle.vehicleType || t('vehicleSelector.unknownType')}
               </Badge>
             </div>
+            {warnExpiredApk && isApkExpired(vehicle.apkDate) && (
+              <div className="mt-1">
+                <Badge
+                  variant="outline"
+                  className="bg-red-50 text-red-800 border-red-200 py-0 px-1 text-[10px] h-4"
+                  title={t('vehicleSelector.apkExpiredTitle', { date: formatDate(vehicle.apkDate!) })}
+                  data-testid="vehicle-apk-expired"
+                >
+                  {t('vehicleSelector.apkExpiredBadge')}
+                </Badge>
+              </div>
+            )}
             <div className="mt-1 text-xs text-muted-foreground">
               {isTrueValue(vehicle.registeredTo)
                 ? <Badge variant="outline" className="bg-blue-50 text-blue-700 py-0 px-1 text-[10px] h-4">Opnaam</Badge>

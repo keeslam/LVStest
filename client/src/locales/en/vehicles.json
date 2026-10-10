@@ -715,7 +715,9 @@
     "allTab": "All",
     "recentTab": "Recent",
     "noVehiclesFound": "No vehicles found.",
-    "unknownType": "Unknown"
+    "unknownType": "Unknown",
+    "apkExpiredBadge": "APK expired",
+    "apkExpiredTitle": "This vehicle's APK expired on {{date}}."
   },
   "readonlyVehicleDisplay": {
     "loading": "Loading vehicle details...",
@@ -925,6 +927,7 @@
     "closeButton": "Close",
     "understandButton": "I Understand",
     "acknowledgeButton": "I Acknowledge & Proceed",
+    "chooseHint": "Choose Cancel or I Acknowledge & Proceed to continue; clicking outside this window does nothing.",
     "toasts": {
       "remarksUpdatedTitle": "Remarks Updated",
       "remarksUpdatedDescription": "Vehicle remarks have been saved.",

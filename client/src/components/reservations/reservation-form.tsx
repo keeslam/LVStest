@@ -65,6 +65,7 @@ import {
 import { SearchableCombobox } from "@/components/ui/searchable-combobox";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
+import { isApkExpired } from "@/lib/apk-expiry";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { suggestEndDate } from "@/lib/suggest-end-date";
 import { Customer, Vehicle, Reservation, Document, Driver, UserPermission, type InteractiveDamageCheck } from "@shared/schema";
@@ -1757,6 +1758,7 @@ export function ReservationForm({
                               }}
                               placeholder={t('form.searchSelectVehiclePlaceholder')}
                               recentVehicleIds={recentVehicles}
+                              warnExpiredApk
                             />
                           </FormControl>
                           
@@ -1776,7 +1778,7 @@ export function ReservationForm({
                                   <Badge variant="outline" className="text-xs">{selectedVehicle.fuel}</Badge>
                                 )}
                                 {selectedVehicle.apkDate && (() => {
-                                  const apkExpired = differenceInDays(new Date(selectedVehicle.apkDate), new Date()) < 0;
+                                  const apkExpired = isApkExpired(selectedVehicle.apkDate);
                                   return (
                                     <Badge
                                       variant="outline"
@@ -1784,23 +1786,30 @@ export function ReservationForm({
                                         ? "bg-red-50 text-red-800 border-red-200 text-xs"
                                         : "bg-blue-50 text-blue-800 border-blue-200 text-xs"}
                                     >
-                                      {t('form.apkLabel', { date: new Date(selectedVehicle.apkDate).toLocaleDateString() })}
+                                      {t('form.apkLabel', { date: formatDate(selectedVehicle.apkDate) })}
                                       {apkExpired && t('form.apkExpiredSuffix')}
                                     </Badge>
                                   );
                                 })()}
                               </div>
-                              {selectedVehicle.apkDate && differenceInDays(new Date(selectedVehicle.apkDate), new Date()) < 0 && (
-                                <div className="mt-2 flex items-start gap-2 bg-red-50 border border-red-200 text-red-800 rounded-md p-2 text-xs">
-                                  <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-                                  <span>
-                                    {t('form.apkExpiredWarning', { date: new Date(selectedVehicle.apkDate).toLocaleDateString() })}
-                                  </span>
-                                </div>
-                              )}
                             </div>
                           )}
                         </>
+                      )}
+
+                      {/* A-3-14: a warning, not a block - for a picked vehicle and for one the
+                          form was opened with (the read-only display has no APK notice). */}
+                      {selectedVehicle?.apkDate && isApkExpired(selectedVehicle.apkDate) && (
+                        <div
+                          className="mt-2 flex items-start gap-2 bg-red-50 border border-red-200 text-red-800 rounded-md p-2 text-xs"
+                          role="status"
+                          data-testid="apk-expired-warning"
+                        >
+                          <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                          <span>
+                            {t('form.apkExpiredWarning', { date: formatDate(selectedVehicle.apkDate) })}
+                          </span>
+                        </div>
                       )}
                       
                       <FormMessage />
