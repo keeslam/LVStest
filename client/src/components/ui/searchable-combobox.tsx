@@ -61,6 +61,8 @@ export function SearchableCombobox({
   const [searchInput, setSearchInput] = React.useState("");
   const [searchQuery, setSearchQuery] = React.useState("");
   const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const listboxId = React.useId();
+  const [activeIndex, setActiveIndex] = React.useState(-1);
   
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -116,6 +118,54 @@ export function SearchableCombobox({
 
   const selectedOption = options.find(option => option.value === value);
 
+  // The rows in the order they are drawn (a "Recent" row can repeat an option of its own group), so the
+  // arrow keys walk what the person sees and every row has an id of its own.
+  const flatRows = React.useMemo(
+    () => Object.entries(groupedOptions).flatMap(([group, groupOptions]) => groupOptions.map((option) => ({ group, option }))),
+    [groupedOptions],
+  );
+  const optionId = (index: number) => `${listboxId}-option-${index}`;
+
+  // The active row starts on the chosen option (or the first row) whenever the list opens or is filtered.
+  const flatKey = flatRows.map((row) => `${row.group}::${row.option.value}`).join("|");
+  React.useEffect(() => {
+    if (!open) return;
+    const chosen = flatRows.findIndex((row) => row.option.value === value);
+    setActiveIndex(chosen >= 0 ? chosen : flatRows.length > 0 ? 0 : -1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, flatKey]);
+  React.useEffect(() => {
+    if (open && activeIndex >= 0) document.getElementById(optionId(activeIndex))?.scrollIntoView?.({ block: "nearest" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, activeIndex]);
+
+  const choose = (option: ComboboxOption) => {
+    onChange(option.value);
+    setOpen(false);
+    setSearchInput("");
+    setSearchQuery("");
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Keys typed in the search box stay in it (a Radix Popover or a form around it must not see them),
+    // except the ones this list gives a meaning to.
+    e.stopPropagation();
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((i) => Math.min(i + 1, flatRows.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const row = flatRows[activeIndex];
+      if (row) choose(row.option);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setOpen(false);
+    }
+  };
+
   return (
     <div className="relative w-full">
       <Popover open={open} onOpenChange={setOpen} modal={true}>
@@ -167,62 +217,82 @@ export function SearchableCombobox({
                 placeholder={searchPlaceholder}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                onKeyDown={(e) => e.stopPropagation()}
+                onKeyDown={handleSearchKeyDown}
+                role="combobox"
+                aria-label={searchPlaceholder}
+                aria-expanded={open}
+                aria-controls={listboxId}
+                aria-autocomplete="list"
+                aria-activedescendant={activeIndex >= 0 ? optionId(activeIndex) : undefined}
                 className="h-8"
               />
             </div>
             
-            {Object.entries(groupedOptions).length === 0 && (
+            {/* Not "no groups": without groups there is always the one "All" group, empty or not. */}
+            {flatRows.length === 0 && (
               <div className="text-center py-6 text-sm text-muted-foreground">
                 {emptyMessage}
               </div>
             )}
-            
-            {Object.entries(groupedOptions).map(([group, groupOptions], groupIndex) => (
-              <div key={group}>
-                {groupIndex > 0 && <div className="my-1 border-t" />}
-                <div>
-                  {group !== "All" && (
-                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{group}</div>
-                  )}
-                  {groupOptions.map((option) => (
-                    <div
-                      key={option.value}
-                      className="flex flex-col items-start py-1.5 px-2 cursor-pointer text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                      onClick={() => {
-                        onChange(option.value);
-                        setOpen(false);
-                        setSearchInput("");
-                        setSearchQuery("");
-                      }}
-                    >
-                      <div className="flex items-start justify-between w-full">
-                        <div className="flex flex-col">
-                          <span className="font-semibold">
-                            {option.label}
-                            {value === option.value && (
-                              <Check className="ml-2 h-4 w-4 text-primary inline" />
-                            )}
-                          </span>
-                          {option.description && (
-                            <span className="text-xs text-muted-foreground mt-0.5 truncate max-w-[400px] lg:max-w-[500px]">
-                              {option.description}
-                            </span>
+
+            <div role="listbox" id={listboxId} aria-label={searchPlaceholder}>
+            {(() => {
+              let rowIndex = 0;
+              return Object.entries(groupedOptions).map(([group, groupOptions], groupIndex) => (
+                <div key={group} role={group !== "All" ? "group" : "presentation"} aria-label={group !== "All" ? group : undefined}>
+                  {groupIndex > 0 && <div className="my-1 border-t" role="presentation" />}
+                  <div role="presentation">
+                    {group !== "All" && (
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground" aria-hidden="true">{group}</div>
+                    )}
+                    {groupOptions.map((option) => {
+                      const index = rowIndex++;
+                      const active = index === activeIndex;
+                      return (
+                        <div
+                          key={`${group}::${option.value}`}
+                          id={optionId(index)}
+                          role="option"
+                          aria-selected={value === option.value}
+                          aria-label={[option.label, option.description].filter(Boolean).join(", ")}
+                          data-active={active ? "true" : undefined}
+                          className={cn(
+                            "flex flex-col items-start py-1.5 px-2 cursor-pointer text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                            active && "bg-accent text-accent-foreground",
                           )}
+                          onMouseMove={() => { if (!active) setActiveIndex(index); }}
+                          onClick={() => choose(option)}
+                        >
+                          <div className="flex items-start justify-between w-full">
+                            <div className="flex flex-col">
+                              <span className="font-semibold">
+                                {option.label}
+                                {value === option.value && (
+                                  <Check className="ml-2 h-4 w-4 text-primary inline" />
+                                )}
+                              </span>
+                              {option.description && (
+                                <span className="text-xs text-muted-foreground mt-0.5 truncate max-w-[400px] lg:max-w-[500px]">
+                                  {option.description}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {option.tags && option.tags.length > 0 && option.tags[0] && (
+                                <Badge variant="outline" className="text-xs">
+                                  {option.tags[0]}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {option.tags && option.tags.length > 0 && option.tags[0] && (
-                            <Badge variant="outline" className="text-xs">
-                              {option.tags[0]}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ));
+            })()}
+            </div>
           </div>
         </PopoverContent>
       </Popover>
