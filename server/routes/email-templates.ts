@@ -50,7 +50,9 @@ router.get('/', async (req, res) => {
     console.error('Error fetching email templates:', error);
     res.status(500).json({ 
       error: 'Failed to fetch email templates',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      // The exception is logged above; its text (relation names, paths) never goes on the wire.
+      message: 'Failed to fetch email templates',
+      code: 'EMAIL_TEMPLATE_LIST_FAILED',
     });
   }
 });
@@ -74,7 +76,9 @@ router.get('/:id', async (req, res) => {
     console.error('Error fetching email template:', error);
     res.status(500).json({ 
       error: 'Failed to fetch email template',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      // The exception is logged above; its text (relation names, paths) never goes on the wire.
+      message: 'Failed to fetch email template',
+      code: 'EMAIL_TEMPLATE_READ_FAILED',
     });
   }
 });
@@ -106,7 +110,9 @@ router.post('/', async (req, res) => {
     console.error('Error creating email template:', error);
     res.status(500).json({ 
       error: 'Failed to create email template',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      // The exception is logged above; its text (relation names, paths) never goes on the wire.
+      message: 'Failed to create email template',
+      code: 'EMAIL_TEMPLATE_CREATE_FAILED',
     });
   }
 });
@@ -150,7 +156,9 @@ router.put('/:id', async (req, res) => {
     console.error('Error updating email template:', error);
     res.status(500).json({ 
       error: 'Failed to update email template',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      // The exception is logged above; its text (relation names, paths) never goes on the wire.
+      message: 'Failed to update email template',
+      code: 'EMAIL_TEMPLATE_UPDATE_FAILED',
     });
   }
 });
@@ -177,7 +185,9 @@ router.delete('/:id', async (req, res) => {
     console.error('Error deleting email template:', error);
     res.status(500).json({ 
       error: 'Failed to delete email template',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      // The exception is logged above; its text (relation names, paths) never goes on the wire.
+      message: 'Failed to delete email template',
+      code: 'EMAIL_TEMPLATE_DELETE_FAILED',
     });
   }
 });

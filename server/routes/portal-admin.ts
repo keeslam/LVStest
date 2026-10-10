@@ -202,7 +202,7 @@ export function registerPortalAdminRoutes(app: Express, _deps: RouteDeps): void 
     const { vehicleId, customerId, reason } = parsed.data;
     if (!(await storage.getVehicle(vehicleId))) return res.status(404).json({ message: "Vehicle not found" });
     if (!(await storage.getCustomer(customerId))) return res.status(404).json({ message: "Customer not found" });
-    if (await storage.isCustomerBlacklistedForVehicle(vehicleId, customerId)) return res.status(409).json({ message: "Deze klant is al geblokkeerd voor dit voertuig" });
+    if (await storage.isCustomerBlacklistedForVehicle(vehicleId, customerId)) return res.status(409).json({ message: "Deze klant is al geblokkeerd voor dit voertuig", code: "ALREADY_BLACKLISTED" });
     const entry = await storage.addToBlacklist({ vehicleId, customerId, reason: reason || null, createdBy: req.user?.id ?? null });
     await AuditLogger.logFromRequest(req, "vehicle.blacklist_add", "vehicle", vehicleId, { customerId, reason: reason || null });
     res.status(201).json(entry);
@@ -219,7 +219,7 @@ export function registerPortalAdminRoutes(app: Express, _deps: RouteDeps): void 
     if (vehicleId !== current.vehicleId && !(await storage.getVehicle(vehicleId))) return res.status(404).json({ message: "Vehicle not found" });
     if (customerId !== current.customerId && !(await storage.getCustomer(customerId))) return res.status(404).json({ message: "Customer not found" });
     if ((vehicleId !== current.vehicleId || customerId !== current.customerId) && await storage.isCustomerBlacklistedForVehicle(vehicleId, customerId)) {
-      return res.status(409).json({ message: "Deze klant is al geblokkeerd voor dit voertuig" });
+      return res.status(409).json({ message: "Deze klant is al geblokkeerd voor dit voertuig", code: "ALREADY_BLACKLISTED" });
     }
     await portalStorage.updateBlacklistEntry(id, { vehicleId, customerId, reason: parsed.data.reason === undefined ? current.reason : parsed.data.reason || null });
     await AuditLogger.logFromRequest(req, "vehicle.blacklist_update", "vehicle", vehicleId, { entryId: id, customerId, reason: parsed.data.reason ?? current.reason });

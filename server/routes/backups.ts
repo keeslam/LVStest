@@ -40,6 +40,9 @@ function restoreErrorMessage(error: unknown): string {
   return 'The restore failed. Nothing was changed, or the server log explains what was. Check the server log for details.';
 }
 
+/** What /status and /health say about a failed run: the reason travels as lastErrorCode, never as the stored text. */
+const BACKUP_FAILED_TEXT = "The most recent backup failed.";
+
 /**
  * BUG-097 hardening. `filename` must be exactly its own basename on both
  * POSIX and Win32 separators, must not be a relative-directory token, and must
@@ -668,7 +671,9 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   app.get("/api/backups/status", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
     try {
       const status = await backupService.getStatus();
-      res.json(status);
+      // The stored failure text can hold a command line or a directory; the
+      // screens translate lastErrorCode and only need to know there is one.
+      res.json({ ...status, lastError: status.lastError ? BACKUP_FAILED_TEXT : undefined });
     } catch (error) {
       console.error("Error getting backup status:", error);
       res.status(500).json({ error: "Failed to get backup status" });
@@ -698,8 +703,8 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
       const backupPathExists = fs.existsSync(pathInfo.path);
       const backupCount = backupPathExists ? (await backupService.listBackups()).length : 0;
       const backupPathError = !backupPathExists
-        ? `The backup directory ${pathInfo.path} does not exist.`
-        : backupCount === 0 ? `No backups were found in ${pathInfo.path}.` : null;
+        ? "The backup directory does not exist."
+        : backupCount === 0 ? "No backups were found in the backup directory." : null;
       const backupPathErrorCode = !backupPathExists ? "BACKUP_DIR_MISSING" : backupCount === 0 ? "NO_BACKUPS" : null;
 
       // BUG-219: restore depends on psql/pg_dump being startable. Finding that
@@ -714,11 +719,12 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
         // that failed is more urgent than a directory that is merely empty —
         // but the path problem gets its own field so the UI can show both,
         // and so neither can hide the other.
-        lastError: status.lastError ?? backupPathError,
+        lastError: status.lastError ? BACKUP_FAILED_TEXT : backupPathError,
         // A-2-7: what the screens show instead of the English lastError text.
         lastErrorCode: status.lastError ? status.lastErrorCode ?? "UNKNOWN" : backupPathErrorCode,
         backupPathError,
-        backupPath: pathInfo.path,
+        // No directory path on the wire (audit 2026-10-09, module 19); the
+        // flag below says whether it comes from BACKUP_PATH.
         backupPathExists,
         backupCount,
         backupPathFromEnv: pathInfo.fromEnv,

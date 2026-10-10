@@ -193,7 +193,9 @@ router.get('/', async (req, res) => {
     console.error('Error fetching filtered vehicles:', error);
     res.status(500).json({ 
       error: 'Failed to fetch filtered vehicles',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      // The exception is logged above; its text (relation names, paths) never goes on the wire.
+      message: 'Failed to fetch filtered vehicles',
+      code: 'FILTERED_VEHICLES_FAILED',
     });
   }
 });

@@ -46,7 +46,9 @@ router.get('/', async (req, res) => {
     console.error('Error fetching vehicles with reservations:', error);
     res.status(500).json({ 
       error: 'Failed to fetch vehicles with reservations',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      // The exception is logged above; its text (relation names, paths) never goes on the wire.
+      message: 'Failed to fetch vehicles with reservations',
+      code: 'VEHICLES_WITH_RESERVATIONS_FAILED',
     });
   }
 });

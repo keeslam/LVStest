@@ -139,7 +139,7 @@ router.get('/scan-status', hasPermission(UserPermission.MANAGE_VEHICLES), (_req,
  */
 type BulkRowResult =
   | { id: number; ok: true }
-  | { id: number; ok: false; reason: 'not_found' | 'not_pending' | 'error'; message: string };
+  | { id: number; ok: false; reason: 'not_found' | 'not_pending' | 'error'; message: string; code?: string };
 
 function summarise(results: BulkRowResult[]) {
   const succeeded = results.filter((r) => r.ok).length;
@@ -177,7 +177,9 @@ async function applyPerRow(
         id,
         ok: false,
         reason: 'error',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        // Logged above; the exception text (database, paths) stays on the server.
+        message: 'Could not process this change',
+        code: 'APK_CHANGE_FAILED',
       });
     }
   }

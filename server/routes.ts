@@ -1172,14 +1172,14 @@ export async function registerRoutes(app: Express): Promise<void> {
           // to "" and inserted - a vehicle with a blank plate that the delete
           // confirmation could never match. bulk-import-csv already had it.
           if (typeof licensePlate !== 'string' || licensePlate.trim() === '') {
-            failed.push({ licensePlate, error: "License plate is required" });
+            failed.push({ licensePlate, error: "License plate is required", code: "LICENSE_PLATE_REQUIRED" });
             continue;
           }
 
           const normalizedPlate = normalizePlate(licensePlate);
 
           if (fleetPlates.has(normalizedPlate)) {
-            failed.push({ licensePlate, error: "Vehicle already exists" });
+            failed.push({ licensePlate, error: "Vehicle already exists", code: "VEHICLE_ALREADY_EXISTS" });
             continue;
           }
 
@@ -1215,9 +1215,11 @@ export async function registerRoutes(app: Express): Promise<void> {
           realtimeEvents.vehicles.created(vehicle);
         } catch (error) {
           console.error(`Error importing vehicle ${licensePlate}:`, error);
+          // The exception is logged above; the row only learns that it failed.
           failed.push({
             licensePlate,
-            error: error instanceof Error ? error.message : "Unknown error"
+            error: "Could not import this vehicle",
+            code: "IMPORT_ROW_FAILED",
           });
         }
       }
@@ -1260,14 +1262,14 @@ export async function registerRoutes(app: Express): Promise<void> {
           const licensePlate = vehicleInput.licensePlate;
           
           if (!licensePlate) {
-            failed.push({ licensePlate: "N/A", error: "License plate is required" });
+            failed.push({ licensePlate: "N/A", error: "License plate is required", code: "LICENSE_PLATE_REQUIRED" });
             continue;
           }
 
           const normalizedPlate = normalizePlate(licensePlate);
 
           if (fleetPlates.has(normalizedPlate)) {
-            failed.push({ licensePlate, error: "Vehicle already exists" });
+            failed.push({ licensePlate, error: "Vehicle already exists", code: "VEHICLE_ALREADY_EXISTS" });
             continue;
           }
 
@@ -1358,7 +1360,7 @@ export async function registerRoutes(app: Express): Promise<void> {
             if (converted !== null) (vehicleData as Record<string, unknown>)[field] = converted;
           }
           if (badDateField) {
-            failed.push({ licensePlate, error: `${badDateField} is not a date we can read (use dd-mm-yyyy or yyyy-MM-dd)` });
+            failed.push({ licensePlate, error: `${badDateField} is not a date we can read (use dd-mm-yyyy or yyyy-MM-dd)`, code: "INVALID_DATE", field: badDateField });
             continue;
           }
           
@@ -1434,9 +1436,11 @@ export async function registerRoutes(app: Express): Promise<void> {
           realtimeEvents.vehicles.created(vehicle);
         } catch (error) {
           console.error(`Error importing vehicle:`, error);
+          // The exception is logged above; the row only learns that it failed.
           failed.push({ 
             licensePlate: vehicleInput.licensePlate || "Unknown", 
-            error: error instanceof Error ? error.message : "Unknown error" 
+            error: "Could not import this vehicle",
+            code: "IMPORT_ROW_FAILED",
           });
         }
       }
@@ -1899,7 +1903,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         console.log("Vehicle after update:", JSON.stringify(verifiedVehicle, null, 2));
       } catch (error) {
         console.error("Error in toggle-registration endpoint:", error);
-        return res.status(400).json({ message: `Error toggling registration status: ${error instanceof Error ? error.message : String(error)}` });
+        return res.status(400).json({ message: "Could not toggle the registration status", code: "TOGGLE_REGISTRATION_FAILED" });
       }
       
       // If we've reached here, the update was successful
@@ -6216,9 +6220,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.json([{ vehicle, customer, reservation }]);
     } catch (error) {
       console.error('Error fetching the current renter for vehicle:', error);
+      // The exception is logged above; its text never goes on the wire.
       res.status(500).json({
         error: 'Failed to fetch customers with reservations',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        message: 'Failed to fetch customers with reservations',
+        code: 'CUSTOMERS_WITH_RESERVATIONS_FAILED',
       });
     }
   });

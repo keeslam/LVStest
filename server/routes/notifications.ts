@@ -450,8 +450,10 @@ router.post('/send', async (req, res) => {
   } catch (error) {
     console.error('Error sending notifications:', error);
     res.status(500).json({ 
-      error: 'Failed to send notifications', 
-      details: error instanceof Error ? error.message : 'Unknown error' 
+      error: 'Failed to send notifications',
+      // The exception is logged above; its text (relation names, paths) never goes on the wire.
+      message: 'Failed to send notifications',
+      code: 'NOTIFICATIONS_SEND_FAILED',
     });
   }
 });
@@ -554,8 +556,10 @@ router.post('/send-gps-activation', async (req, res) => {
   } catch (error) {
     console.error('Error sending GPS activation email:', error);
     res.status(500).json({ 
-      error: 'Failed to send GPS activation email', 
-      details: error instanceof Error ? error.message : 'Unknown error' 
+      error: 'Failed to send GPS activation email',
+      // The exception is logged above; its text (relation names, paths) never goes on the wire.
+      message: 'Failed to send GPS activation email',
+      code: 'GPS_ACTIVATION_SEND_FAILED',
     });
   }
 });

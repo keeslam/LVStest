@@ -439,7 +439,7 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       const isPasswordValid = await comparePasswords(currentPassword, user.password);
       
       if (!isPasswordValid) {
-        return res.status(400).json({ message: "Current password is incorrect" });
+        return res.status(400).json({ message: "Current password is incorrect", code: "CURRENT_PASSWORD_INCORRECT" });
       }
       
       // Hash and update new password.
@@ -450,7 +450,7 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       const hashedPassword = await hashPassword(newPassword);
       const changed = await storage.updateUserPasswordIfCurrent(user.id, user.password, hashedPassword);
       if (!changed) {
-        return res.status(400).json({ message: "Current password is incorrect" });
+        return res.status(400).json({ message: "Current password is incorrect", code: "CURRENT_PASSWORD_INCORRECT" });
       }
 
       // BUG-091: a password change left every other session of this account

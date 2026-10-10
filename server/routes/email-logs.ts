@@ -18,7 +18,9 @@ router.get('/', async (req, res) => {
     console.error('Error fetching email logs:', error);
     res.status(500).json({ 
       error: 'Failed to fetch email logs',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      // The exception is logged above; its text (relation names, paths) never goes on the wire.
+      message: 'Failed to fetch email logs',
+      code: 'EMAIL_LOG_LIST_FAILED',
     });
   }
 });
@@ -42,7 +44,9 @@ router.get('/:id', async (req, res) => {
     console.error('Error fetching email log:', error);
     res.status(500).json({ 
       error: 'Failed to fetch email log',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      // The exception is logged above; its text (relation names, paths) never goes on the wire.
+      message: 'Failed to fetch email log',
+      code: 'EMAIL_LOG_READ_FAILED',
     });
   }
 });
@@ -81,7 +85,9 @@ router.post('/', async (req, res) => {
     console.error('Error creating email log:', error);
     res.status(500).json({ 
       error: 'Failed to create email log',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      // The exception is logged above; its text (relation names, paths) never goes on the wire.
+      message: 'Failed to create email log',
+      code: 'EMAIL_LOG_CREATE_FAILED',
     });
   }
 });

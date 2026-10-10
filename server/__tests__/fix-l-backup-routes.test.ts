@@ -15,6 +15,8 @@ import path from "path";
 
 const TEMP_BACKUPS = fs.mkdtempSync(path.join(os.tmpdir(), "lvs-backups-routes-"));
 const TEMP_UPLOADS = fs.mkdtempSync(path.join(os.tmpdir(), "lvs-uploads-routes-"));
+// How the path would read inside a JSON body (backslashes doubled on Windows).
+const WIRE_PATH = JSON.stringify(TEMP_BACKUPS).slice(1, -1);
 process.env.BACKUP_PATH = TEMP_BACKUPS;
 process.env.UPLOADS_DIR = TEMP_UPLOADS;
 
@@ -104,6 +106,7 @@ describe("FIX-L — the backup routes", () => {
       expect(res.body.backupPathExists).toBe(false);
       expect(res.body.stale).toBe(true);
       expect(String(res.body.backupPathError)).toMatch(/does not exist/i);
+      expect(JSON.stringify(res.body)).not.toContain(WIRE_PATH);
     } finally {
       fs.renameSync(moved, TEMP_BACKUPS);
     }
@@ -113,12 +116,21 @@ describe("FIX-L — the backup routes", () => {
     const res = await admin.get("/api/backups/health");
     expect(res.status).toBe(200);
     expect(res.body.backupPathExists).toBe(true);
-    expect(res.body.backupPath).toBe(TEMP_BACKUPS);
+    // P10 (A-19): no directory path in the answer; the flag says where it came from.
+    expect(res.body).not.toHaveProperty("backupPath");
+    expect(JSON.stringify(res.body)).not.toContain(WIRE_PATH);
+    expect(res.body.backupPathFromEnv).toBe(true);
     // No backups have been written here, so this must not read as healthy.
     expect(res.body.stale).toBe(true);
     expect(String(res.body.backupPathError)).toMatch(/No backups were found/i);
     // BUG-219: whether a restore could even run is part of the health answer.
     expect(res.body).toHaveProperty("restoreToolsOk");
+  });
+
+  it("P10: the status answer carries no directory path either", async () => {
+    const res = await admin.get("/api/backups/status");
+    expect(res.status).toBe(200);
+    expect(JSON.stringify(res.body)).not.toContain(WIRE_PATH);
   });
 
   // ------------------------------------------------------------- BUG-221(b)
