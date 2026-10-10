@@ -42,6 +42,14 @@ manager). Dat bewijst B-29a's eigen besluit: het scherm gaat nu ook open op **Me
 beheren** alleen, terwijl de sjabloonbeheerknoppen (nieuw sjabloon, opslaan, sjabloon
 bewerken/verwijderen) zichtbaar, uitgeschakeld blijven en het ontbrekende recht noemen.
 
+**De drie rechten van deelproject C (oktober 2026).** `revert_handover` (*Overdracht terugdraaien*),
+`cancel_picked_up_rental` (*Opgehaalde huur annuleren of verwijderen*) en `manage_recycle_bin`
+(*Prullenbak beheren*) zitten in de seed alleen bij `admin` (die heeft alles) en `manager`
+(`without(MANAGE_USERS, MANAGE_BACKUPS, MANAGE_SETTINGS)`, dus alle andere rechten, ook deze drie): de app
+geeft ze in de echte omgeving één keer aan elke manager. Geen enkel ander profiel heeft ze, ook `user`
+niet; dat is wat de "zonder recht"-verhalen hieronder en de weigeringstests van `dialogs.spec.ts`
+bewijzen. De twee tweelingen `admin-b` en `manager-b` hebben dezelfde rechten als hun profiel.
+
 **Wat de rechtentests sinds september 2026 controleren.**
 `e2e/layer-a/forbidden.spec.ts` opent voor elke rol elk scherm dat die rol niet mag
 gebruiken en controleert drie dingen: de pagina met **"U heeft geen toegang tot dit
@@ -81,6 +89,24 @@ geven — vertaald op de stabiele foutcode (`TEMPLATE_WITHOUT_FIELDS`), nooit op
 servertekst — in plaats van een leeg contract (BUG-028). Ook hier `mode: "serial"`: de test
 verandert tijdelijk wélk sjabloon standaard is, wat een `lvs_e2e`-brede instelling is, en
 zet die aan het eind weer terug.
+
+**Terugdraaien en een opgehaalde huur annuleren (deelproject C, taak 4 en 5): vier verhalen in
+`e2e/layer-b/desk/edge-cases.spec.ts`.** De bestaande baliestroom en zijn budgetten zijn niet aangeraakt.
+De verhalen draaien als `manager` (heeft de rechten) of als `user` (heeft ze niet), nooit als `admin`: die
+account is door laag A al het verst richting de grens van 1000 verzoeken (zie *Het verzoekbudget*). Elk
+verhaal maakt zijn voertuig en boeking via de API en laat het eigenlijke werk op het scherm doen.
+
+| Verhaal | Account | Budget (handelingen) | Wat het bewijst |
+|---|---|---|---|
+| *Overdracht terugdraaien* | `manager` | 10 (gemeten 10) | Ophalen met een tikfout in de kilometerstand (20350 km), daarna terugdraaien: de voorvertoning zegt *van 20.350 km naar 20.000 km*, het vinkje voor de lagere stand is nodig, daarna is de reservering weer geboekt, de teller staat op 20000, de auto is beschikbaar en het niet-ondertekende contract is als verouderd gemarkeerd |
+| *Overdracht terugdraaien zonder recht* | `user` | 2 (gemeten 2) | De knop staat er uitgeschakeld met een tekstballon die het recht noemt, en er opent niets |
+| *Opgehaalde huur annuleren* | `manager` | 4 (gemeten 4) | Een te late opgehaalde huur vanaf het dashboard: eerst de waarschuwing met datum en contract, pas na het vinkje wordt er geannuleerd; contractnummer en kilometerstand blijven, de auto is beschikbaar |
+| *Opgehaalde huur verwijderen zonder recht* | `user` | 3 (gemeten 3) | De verwijderknoppen van een opgehaalde huur (lijst en kalenderkaart) staan uitgeschakeld met het recht genoemd; die van een geboekte huur werkt gewoon |
+
+De knop *Overdracht terugdraaien* staat in het register (`e2e/registry/dialogs.ts`) met
+`allowedPathNeedsState` en, omdat hij alleen binnen het detailvenster van een reservering bestaat, met
+`deniedPathNeedsState` (zie *Een scherm of een venster toevoegen*); hetzelfde geldt voor *Reservering
+annuleren*. Het bewijs per recht staat in de verhalen hierboven en in de componenttests.
 
 **Prullenbakken (deelproject C, taak 7): een derde staarttest, `e2e/layer-b-tail/recycle-bin/bins.spec.ts`.**
 Draait als `manager-b`, de tweeling van `manager` (zie *Het verzoekbudget* hieronder), het profiel dat naast de beheerder het recht *Prullenbak beheren*
@@ -312,9 +338,18 @@ groene run staat er dus niets.
   gewoon een echte test: die leest alleen `RequiresPermission`'s tekstballon en klikt
   nooit. Voorbeeld: de drie voorbeeld-en-verzendknoppen op **Communicatie**
   (`e2e/registry/dialogs.ts`, sectie `/communications`).
+- Een knop die op een kale paginalading niet bestaat, omdat hij alleen binnen een venster van een
+  record staat (de *Overdracht terugdraaien*-knop in het reserveringsdetail), krijgt daarnaast
+  `deniedPathNeedsState: "<reden>"`. `dialogs.spec.ts` slaat dan ook de weigeringstest voor die ingang
+  over, want er is op de pagina niets om uitgeschakeld te vinden. Zonder reden blijft de weigering een
+  echte test. Beide velden hebben een geschreven reden nodig; er komt geen uitzondering zonder.
+- Sluit `dialogs.spec.ts` een venster dat bovenop een ander venster opende (de prullenbak van de
+  bekeuringen opent vanuit de bekeuringenlijst), dan controleert hij dat het *geopende* venster zelf uit
+  de pagina verdwijnt, niet dat er geen venster meer over is. Alleen als er maar één venster was, geldt
+  ook nog de strenge controle dat er geen enkel venster overblijft.
 
 **Het dekkingsgetal mag alleen omlaag.** In `e2e/registry/coverage-baseline.json` staat
-hoeveel bestanden met een venster nog niet door een test worden geopend (nu 89). Kijk
+hoeveel bestanden met een venster nog niet door een test worden geopend (nu 87). Kijk
 daar voor het getal van vandaag, want het hoort langzaam te dalen.
 Wordt dat getal hoger, dan stopt `npm run e2e` met een fout. Bereik je een venster meer,
 dan zet je het getal één lager. Andersom nooit.
