@@ -23,12 +23,13 @@
  * `invalidateByPrefix` is what refreshes the list. jsdom project, real i18n.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, renderHook, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { DELETED_RECORD_KINDS, type DeletedRecordKind } from "@shared/schema";
 import { invalidateByPrefix, queryClient } from "@/lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
 import nlBin from "@/locales/nl/recycleBin.json";
 import enBin from "@/locales/en/recycleBin.json";
 import { RecycleBinDialog } from "@/components/recycle-bin/recycle-bin-dialog";
@@ -89,6 +90,11 @@ function defaultPurgeAnswer(call: Call): Response {
 }
 
 beforeEach(() => {
+  // The toast store is module state that outlives a test (a toast is only removed after ~17 minutes):
+  // close what the previous test left, so this test's Toaster does not start with its toast.
+  const store = renderHook(() => useToast());
+  act(() => store.result.current.dismiss());
+  store.unmount();
   queryClient.clear();
   serverRows = SEED_ROWS();
   calls = [];
@@ -117,6 +123,15 @@ afterEach(() => {
   vi.restoreAllMocks();
   queryClient.clear();
 });
+
+/**
+ * Toast texts are looked up inside the toast viewport only. Radix also renders an off-screen
+ * live-region copy of every toast ("Notification <title> <description>") into the body, a frame or so
+ * after the toast itself: a lookup on the whole screen finds that copy as well whenever it is
+ * substring-matching (exact: false) or counting, so it passes or fails with the machine's load.
+ * (hidden: true - the open modal dialog puts aria-hidden on everything outside it, the viewport included.)
+ */
+const toasts = () => within(screen.getByRole("region", { name: /Notifications/, hidden: true }));
 
 function renderBin(kind: DeletedRecordKind, props: { onPurged?: () => void } = {}) {
   return render(
@@ -218,7 +233,7 @@ describe("RecycleBinDialog - one confirmation before anything is deleted", () =>
     await user.click(await screen.findByTestId("button-confirm-purge"));
 
     await waitFor(() => expect(calls).toEqual([{ method: "DELETE", url: "/api/deleted-records/2", body: null }]));
-    expect(await screen.findByText("1 regel definitief verwijderd.")).toBeInTheDocument();
+    expect(await toasts().findByText("1 regel definitief verwijderd.")).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByTestId("deleted-record-2")).toBeNull());
     expect(screen.getByTestId("deleted-record-3")).toBeInTheDocument();
     expect(screen.queryByTestId("dialog-confirm-purge")).toBeNull();
@@ -240,7 +255,7 @@ describe("RecycleBinDialog - one confirmation before anything is deleted", () =>
 
     await user.click(within(confirm).getByTestId("button-confirm-purge"));
     await waitFor(() => expect(calls).toEqual([{ method: "POST", url: "/api/deleted-records/purge", body: { ids: [2, 4] } }]));
-    expect(await screen.findByText("2 regels definitief verwijderd.")).toBeInTheDocument();
+    expect(await toasts().findByText("2 regels definitief verwijderd.")).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByTestId("deleted-record-2")).toBeNull());
     expect(screen.queryByTestId("deleted-record-4")).toBeNull();
     expect(screen.getByTestId("deleted-record-3")).toBeInTheDocument();
@@ -358,9 +373,9 @@ describe("RecycleBinDialog - what the server answers", () => {
     await user.click(await screen.findByTestId("button-purge-2"));
     await user.click(await screen.findByTestId("button-confirm-purge"));
 
-    expect(await screen.findByText("Het record is verwijderd, maar een of meer bestanden konden niet van de schijf worden gehaald.")).toBeInTheDocument();
-    expect(screen.getByText("Niet alles is gelukt")).toBeInTheDocument();
-    expect(screen.queryByText(/could not be/)).toBeNull();
+    expect(await toasts().findByText("Het record is verwijderd, maar een of meer bestanden konden niet van de schijf worden gehaald.")).toBeInTheDocument();
+    expect(toasts().getByText("Niet alles is gelukt")).toBeInTheDocument();
+    expect(toasts().queryByText(/could not be/)).toBeNull();
     await waitFor(() => expect(screen.queryByTestId("deleted-record-2")).toBeNull());
   });
 
@@ -374,8 +389,8 @@ describe("RecycleBinDialog - what the server answers", () => {
     await user.click(await screen.findByTestId("button-purge-2"));
     await user.click(await screen.findByTestId("button-confirm-purge"));
 
-    expect(await screen.findByText("Dit record stond al niet meer in de prullenbak.")).toBeInTheDocument();
-    expect(screen.queryByText(/no longer exists/)).toBeNull();
+    expect(await toasts().findByText("Dit record stond al niet meer in de prullenbak.")).toBeInTheDocument();
+    expect(toasts().queryByText(/no longer exists/)).toBeNull();
     await waitFor(() => expect(screen.queryByTestId("deleted-record-2")).toBeNull());
   });
 
@@ -385,7 +400,7 @@ describe("RecycleBinDialog - what the server answers", () => {
     renderBin("customer");
     await user.click(await screen.findByTestId("button-purge-3"));
     await user.click(await screen.findByTestId("button-confirm-purge"));
-    expect(await screen.findByText("Dit record kon niet worden verwijderd en staat nog in de prullenbak.")).toBeInTheDocument();
+    expect(await toasts().findByText("Dit record kon niet worden verwijderd en staat nog in de prullenbak.")).toBeInTheDocument();
     expect(screen.getByTestId("deleted-record-3")).toBeInTheDocument();
 
     purgeAnswer = () => jsonResponse({ code: "SOMETHING_NEW", message: "Server says no." }, 403);
@@ -393,8 +408,8 @@ describe("RecycleBinDialog - what the server answers", () => {
     await waitFor(() => expect(screen.getByTestId("button-purge-3")).toBeEnabled());
     await user.click(screen.getByTestId("button-purge-3"));
     await user.click(await screen.findByTestId("button-confirm-purge"));
-    expect(await screen.findByText("Het verwijderen is niet gelukt.")).toBeInTheDocument();
-    expect(screen.queryByText(/Server says no/)).toBeNull();
+    expect(await toasts().findByText("Het verwijderen is niet gelukt.")).toBeInTheDocument();
+    expect(toasts().queryByText(/Server says no/)).toBeNull();
   });
 
   it("a reservation with fiscal assessments is refused: said in Dutch by its code, the row stays, the rest of a selection goes", async () => {
@@ -415,10 +430,10 @@ describe("RecycleBinDialog - what the server answers", () => {
     await user.click(screen.getByTestId("button-purge-selected"));
     await user.click(await screen.findByTestId("button-confirm-purge"));
 
-    expect(await screen.findByText("Deze reservering heeft fiscale beoordelingen; die blijven bewaard, dus kan ze niet definitief worden verwijderd.", { exact: false })).toBeInTheDocument();
-    expect(screen.getByText("Niet alles is gelukt")).toBeInTheDocument();
-    expect(screen.getByText("1 regel definitief verwijderd.", { exact: false })).toBeInTheDocument();
-    expect(screen.queryByText(/fiscal assessments or review cases/)).toBeNull();
+    expect(await toasts().findByText("Deze reservering heeft fiscale beoordelingen; die blijven bewaard, dus kan ze niet definitief worden verwijderd.", { exact: false })).toBeInTheDocument();
+    expect(toasts().getByText("Niet alles is gelukt")).toBeInTheDocument();
+    expect(toasts().getByText("1 regel definitief verwijderd.", { exact: false })).toBeInTheDocument();
+    expect(toasts().queryByText(/fiscal assessments or review cases/)).toBeNull();
     await waitFor(() => expect(screen.queryByTestId("deleted-record-7")).toBeNull());
     expect(screen.getByTestId("deleted-record-5")).toBeInTheDocument();
   });
@@ -434,9 +449,9 @@ describe("RecycleBinDialog - what the server answers", () => {
     await user.click(await screen.findByTestId("button-purge-5"));
     await user.click(await screen.findByTestId("button-confirm-purge"));
 
-    expect(await screen.findByText("Deze reservering heeft fiscale beoordelingen; die blijven bewaard, dus kan ze niet definitief worden verwijderd.")).toBeInTheDocument();
-    expect(screen.getByText("Verwijderen mislukt")).toBeInTheDocument();
-    expect(screen.queryByText(/fiscal assessments or review cases/)).toBeNull();
+    expect(await toasts().findByText("Deze reservering heeft fiscale beoordelingen; die blijven bewaard, dus kan ze niet definitief worden verwijderd.")).toBeInTheDocument();
+    expect(toasts().getByText("Verwijderen mislukt")).toBeInTheDocument();
+    expect(toasts().queryByText(/fiscal assessments or review cases/)).toBeNull();
     expect(screen.getByTestId("deleted-record-5")).toBeInTheDocument();
   });
 
@@ -454,9 +469,9 @@ describe("RecycleBinDialog - what the server answers", () => {
     await user.click(await screen.findByTestId("button-purge-all"));
     await user.click(await screen.findByTestId("button-confirm-purge"));
 
-    expect(await screen.findByText("1 regel definitief verwijderd.", { exact: false })).toBeInTheDocument();
-    expect(screen.getAllByText("Dit record stond al niet meer in de prullenbak.", { exact: false })).toHaveLength(1);
-    expect(screen.getByText("Dit record kon niet worden verwijderd en staat nog in de prullenbak.", { exact: false })).toBeInTheDocument();
+    expect(await toasts().findByText("1 regel definitief verwijderd.", { exact: false })).toBeInTheDocument();
+    expect(toasts().getAllByText("Dit record stond al niet meer in de prullenbak.", { exact: false })).toHaveLength(1);
+    expect(toasts().getByText("Dit record kon niet worden verwijderd en staat nog in de prullenbak.", { exact: false })).toBeInTheDocument();
   });
 });
 
