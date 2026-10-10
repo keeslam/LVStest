@@ -1,3 +1,5 @@
+import { v } from "@/lib/zod-i18n";
+import { describeApiError } from "@/lib/api-error";
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
@@ -74,17 +76,17 @@ const ACCEPTED_FILE_TYPES = [
 ];
 
 // Extended schema with validation
-const formSchema = insertExpenseSchema.extend({
+export const formSchema = insertExpenseSchema.extend({
   vehicleId: z.number({
-    required_error: "Please select a vehicle",
-    invalid_type_error: "Please select a vehicle",
+    required_error: v("vehicleRequired"),
+    invalid_type_error: v("vehicleRequired"),
   }),
-  category: z.string().min(1, "Category is required"),
+  category: z.string().min(1, v("categoryRequired")),
   amount: z.number({
-    required_error: "Amount is required",
-    invalid_type_error: "Amount must be a number",
-  }).min(0, "Amount must be positive"),
-  date: z.string().min(1, "Date is required"),
+    required_error: v("amountRequired"),
+    invalid_type_error: v("amountNotNumber"),
+  }).min(0, v("amountNotNegative")),
+  date: z.string().min(1, v("dateRequired")),
   receiptFile: z
     .instanceof(File)
     .optional()
@@ -92,13 +94,13 @@ const formSchema = insertExpenseSchema.extend({
       if (!file) return true;
       return file.size <= MAX_FILE_SIZE;
     }, {
-      message: `File size must be less than ${formatFileSize(MAX_FILE_SIZE)}.`,
+      message: v("fileTooLarge", { size: formatFileSize(MAX_FILE_SIZE) }),
     })
     .refine((file) => {
       if (!file) return true;
       return ACCEPTED_FILE_TYPES.includes(file.type);
     }, {
-      message: "File type not supported.",
+      message: v("fileTypeNotSupported"),
     }),
 });
 
@@ -326,8 +328,8 @@ export function ExpenseForm({
       toast({
         title: t('form.errorTitle'),
         description: editMode
-          ? t('form.updateExpenseFailedDescription', { error: error.message })
-          : t('form.recordExpenseFailedDescription', { error: error.message }),
+          ? t('form.updateExpenseFailedDescription', { error: describeApiError(error) })
+          : t('form.recordExpenseFailedDescription', { error: describeApiError(error) }),
         variant: "destructive",
       });
     },

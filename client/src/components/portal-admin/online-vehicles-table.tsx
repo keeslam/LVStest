@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -51,7 +52,7 @@ export function OnlineVehiclesTable() {
     },
     onError: (e: Error, _v, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(KEY, ctx.previous);
-      toast({ title: e.message, variant: "destructive" });
+      toast({ title: describeApiError(e), variant: "destructive" });
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: KEY }),
   });
@@ -62,7 +63,7 @@ export function OnlineVehiclesTable() {
       setSelected(new Set());
       queryClient.invalidateQueries({ queryKey: KEY });
     },
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
   const statusLabel = (status: string) => t(`admin.vehicles.status.${status}`, { defaultValue: status });
   const notRentable = (id: number) => NOT_RENTABLE.includes(data.find((r) => r.id === id)?.availabilityStatus ?? "");

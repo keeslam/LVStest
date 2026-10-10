@@ -1,3 +1,5 @@
+import { v } from "@/lib/zod-i18n";
+import { describeApiError } from "@/lib/api-error";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
@@ -67,16 +69,16 @@ const ACCEPTED_FILE_TYPES = [
 // Extended schema with validation
 const formSchema = z.object({
   vehicleId: z.number({
-    required_error: "Vehicle ID is required",
+    required_error: v("vehicleRequired"),
   }),
-  documentType: z.string().min(1, "Document type is required"),
+  documentType: z.string().min(1, v("documentTypeRequired")),
   file: z
     .instanceof(File)
     .refine((file) => file.size <= MAX_FILE_SIZE, {
-      message: `File size must be less than ${formatFileSize(MAX_FILE_SIZE)}.`,
+      message: v("fileTooLarge", { size: formatFileSize(MAX_FILE_SIZE) }),
     })
     .refine((file) => ACCEPTED_FILE_TYPES.includes(file.type), {
-      message: "File type not supported.",
+      message: v("fileTypeNotSupported"),
     }),
   notes: z.string().optional(),
   apkDate: z.string().optional(), // Optional APK date for APK Inspection documents
@@ -207,7 +209,7 @@ export function InlineDocumentUpload({ vehicleId, reservationId, onSuccess, pres
     onError: (error) => {
       toast({
         title: t('uploadDialog.errorTitle'),
-        description: t('uploadDialog.uploadFailedDescription', { error: error.message }),
+        description: t('uploadDialog.uploadFailedDescription', { error: describeApiError(error) }),
         variant: "destructive",
       });
     },

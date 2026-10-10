@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -110,7 +111,7 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
     onError: (error: Error) => {
       toast({
         title: t('damageCheckTemplatesPage.toasts.errorTitle'),
-        description: error.message || t('damageCheckTemplatesPage.toasts.deleteFailedFallback'),
+        description: describeApiError(error, undefined, t('damageCheckTemplatesPage.toasts.deleteFailedFallback')),
         variant: "destructive",
       });
     },
@@ -127,7 +128,7 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
     onError: (error: Error) => {
       toast({
         title: t('damageCheckTemplatesPage.toasts.errorTitle'),
-        description: error.message || t('damageCheckTemplatesPage.toasts.setDefaultFailedFallback'),
+        description: describeApiError(error, undefined, t('damageCheckTemplatesPage.toasts.setDefaultFailedFallback')),
         variant: "destructive",
       });
     },
@@ -149,7 +150,7 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
     onError: (error: Error) => {
       toast({
         title: t('damageCheckTemplatesPage.toasts.errorTitle'),
-        description: error.message || t('damageCheckTemplatesPage.toasts.cloneFailedFallback'),
+        description: describeApiError(error, undefined, t('damageCheckTemplatesPage.toasts.cloneFailedFallback')),
         variant: "destructive",
       });
     },
@@ -192,7 +193,7 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
       console.error("Error importing template:", error);
       toast({
         title: t('damageCheckTemplatesPage.toasts.errorTitle'),
-        description: error.message || t('damageCheckTemplatesPage.toasts.importFailedFallback'),
+        description: describeApiError(error, undefined, t('damageCheckTemplatesPage.toasts.importFailedFallback')),
         variant: "destructive",
       });
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -599,7 +600,7 @@ function TemplateMetadataDialog({
     onError: (error: Error) => {
       toast({
         title: t('damageCheckTemplatesPage.toasts.errorTitle'),
-        description: error.message || t('damageCheckTemplatesPage.toasts.saveFailedFallback'),
+        description: describeApiError(error, undefined, t('damageCheckTemplatesPage.toasts.saveFailedFallback')),
         variant: "destructive",
       });
     },

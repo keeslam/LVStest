@@ -1,3 +1,4 @@
+import { v } from "@/lib/zod-i18n";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
@@ -24,9 +25,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
 
-const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
-  password: z.string().min(1, "Password is required"),
+export const loginSchema = z.object({
+  username: z.string().min(1, v("usernameRequired")),
+  password: z.string().min(1, v("passwordRequired")),
 });
 
 type LoginFormValues = {

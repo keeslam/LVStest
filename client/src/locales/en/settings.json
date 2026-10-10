@@ -115,7 +115,8 @@
     "backupAlreadyRunning": "A backup is already running. Wait for it to finish.",
     "oldBackupWarningTitle": "The last successful backup is older than a day",
     "oldBackupWarningHours": "The last successful backup was {{hours}} hours ago. The schedule says daily at 02:00; check that backups are still running.",
-    "oldBackupWarningNever": "No successful backup is known yet. Make one now with Back up now."
+    "oldBackupWarningNever": "No successful backup is known yet. Make one now with Back up now.",
+    "backupLocationFixed": "set through BACKUP_PATH (the path itself is not shown, for security)."
   },
   "usersDialog": {
     "accessDeniedTitle": "Access Denied",
@@ -651,7 +652,10 @@
     "optionsField": "Options (comma-separated)",
     "optionsNotUsedPlaceholder": "— not used —",
     "addFieldToGroupButton": "Add field to {{label}}",
-    "saveChangesButton": "Save changes"
+    "saveChangesButton": "Save changes",
+    "confirmTitle": "Are you sure?",
+    "confirmResetHeaderButton": "Reset header",
+    "confirmResetDefaultsButton": "Reset"
   },
   "damageCheckTemplatesPage": {
     "toasts": {
@@ -864,7 +868,9 @@
       "currentDate": "Today's Date",
       "notes": "Inspection Notes",
       "inspectorName": "Inspector / Logged-in User (Controle door)"
-    }
+    },
+    "confirmTitle": "Replace fields?",
+    "confirmReplaceLayoutButton": "Replace"
   },
   "backupSettingsPanel": {
     "toasts": {

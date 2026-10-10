@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -305,7 +306,7 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
     onError: (error: any) => {
       toast({
         title: t('transportDialog.couldntCalculateTitle'),
-        description: error?.message || t('transportDialog.checkAddresses'),
+        description: describeApiError(error, undefined, t('transportDialog.checkAddresses')),
         variant: "destructive",
       });
     },
@@ -399,7 +400,7 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
     onError: (error: any) => {
       toast({
         title: t('transportDialog.saveFailedTitle'),
-        description: error?.message || t('transportDialog.checkFormTryAgain'),
+        description: describeApiError(error, undefined, t('transportDialog.checkFormTryAgain')),
         variant: "destructive",
       });
     },

@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -183,7 +184,7 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
       console.error('Error deleting maintenance:', error);
       toast({
         title: t('listDialog.errorTitle'),
-        description: error instanceof Error ? error.message : t('listDialog.deleteFailedDescription'),
+        description: describeApiError(error, undefined, t('listDialog.deleteFailedDescription')),
         variant: "destructive",
       });
     } finally {

@@ -1,3 +1,5 @@
+import { v } from "@/lib/zod-i18n";
+import { describeApiError } from "@/lib/api-error";
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { displayNotification } from "@/lib/notification-display";
@@ -62,10 +64,10 @@ import { formatDate } from "@/lib/format-utils";
 import { officeToday } from "@/lib/office-date";
 
 const notificationSchema = z.object({
-  title: z.string().min(3, { message: "Title must be at least 3 characters" }),
-  description: z.string().min(5, { message: "Description must be at least 5 characters" }),
-  date: z.string().min(1, { message: "Date is required" }),
-  type: z.string().min(1, { message: "Type is required" }),
+  title: z.string().min(3, { message: v("titleMin", { count: 3 }) }),
+  description: z.string().min(5, { message: v("descriptionMin", { count: 5 }) }),
+  date: z.string().min(1, { message: v("dateRequired") }),
+  type: z.string().min(1, { message: v("typeRequired") }),
   icon: z.string().optional(),
   link: z.string().optional(),
   priority: z.enum(["low", "normal", "high"]),
@@ -157,7 +159,7 @@ export function CustomNotificationsPanel({ onBack }: CustomNotificationsPanelPro
       createForm.reset();
     },
     onError: (error: Error) => {
-      toast({ title: t('customNotificationsPage.toasts.errorTitle'), description: t('customNotificationsPage.toasts.createFailedDescription', { message: error.message }), variant: "destructive" });
+      toast({ title: t('customNotificationsPage.toasts.errorTitle'), description: t('customNotificationsPage.toasts.createFailedDescription', { message: describeApiError(error) }), variant: "destructive" });
     },
   });
 
@@ -172,7 +174,7 @@ export function CustomNotificationsPanel({ onBack }: CustomNotificationsPanelPro
       setIsEditDialogOpen(false);
     },
     onError: (error: Error) => {
-      toast({ title: t('customNotificationsPage.toasts.errorTitle'), description: t('customNotificationsPage.toasts.updateFailedDescription', { message: error.message }), variant: "destructive" });
+      toast({ title: t('customNotificationsPage.toasts.errorTitle'), description: t('customNotificationsPage.toasts.updateFailedDescription', { message: describeApiError(error) }), variant: "destructive" });
     },
   });
 
@@ -187,7 +189,7 @@ export function CustomNotificationsPanel({ onBack }: CustomNotificationsPanelPro
       setSelectedIds(new Set());
     },
     onError: (error: Error) => {
-      toast({ title: t('customNotificationsPage.toasts.errorTitle'), description: t('customNotificationsPage.toasts.deleteFailedDescription', { message: error.message }), variant: "destructive" });
+      toast({ title: t('customNotificationsPage.toasts.errorTitle'), description: t('customNotificationsPage.toasts.deleteFailedDescription', { message: describeApiError(error) }), variant: "destructive" });
     },
   });
 

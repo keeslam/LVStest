@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -246,7 +247,7 @@ export function ScanPanel({ active = true, intent = null, onHandoverActiveChange
       // refresh the card
       if (result?.type === "vehicle" && result.vehicle.barcode) lookup(result.vehicle.barcode);
     },
-    onError: (error: Error) => toast({ title: t("scanPage.actions.maintenanceError"), description: error.message, variant: "destructive" }),
+    onError: (error: Error) => toast({ title: t("scanPage.actions.maintenanceError"), description: describeApiError(error), variant: "destructive" }),
   });
 
   const transportMutation = useMutation({
@@ -260,7 +261,7 @@ export function ScanPanel({ active = true, intent = null, onHandoverActiveChange
       // refresh the card
       if (result?.type === "vehicle" && result.vehicle.barcode) lookup(result.vehicle.barcode);
     },
-    onError: (error: Error) => toast({ title: t("scanPage.transport.error"), description: error.message, variant: "destructive" }),
+    onError: (error: Error) => toast({ title: t("scanPage.transport.error"), description: describeApiError(error), variant: "destructive" }),
   });
 
   const statusBadge = (vehicle: Vehicle, activeReservation: ScanReservation | null) => {

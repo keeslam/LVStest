@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useEffect, useMemo, useState, type ReactNode, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -95,7 +96,7 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children, 
       }
       setOpen(false);
     },
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
 
   function submit(e: FormEvent) {

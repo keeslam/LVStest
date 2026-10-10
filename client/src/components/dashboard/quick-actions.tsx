@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { useTranslation } from "react-i18next";
@@ -525,7 +526,7 @@ export function QuickActions() {
     onError: (error: any) => {
       toast({
         title: t("common:status.error"),
-        description: error.message || t("quickActions.rdwScanFailedDescription"),
+        description: describeApiError(error, undefined, t("quickActions.rdwScanFailedDescription")),
         variant: "destructive",
       });
     },
@@ -704,7 +705,7 @@ export function QuickActions() {
     } catch (error) {
       toast({
         title: t('common:status.error'),
-        description: error instanceof Error ? error.message : t('quickActions.registrationUpdateFailed'),
+        description: describeApiError(error, undefined, t('quickActions.registrationUpdateFailed')),
         variant: "destructive",
       });
     } finally {
@@ -795,7 +796,7 @@ export function QuickActions() {
     } catch (error) {
       toast({
         title: t('common:status.error'),
-        description: error instanceof Error ? error.message : t('quickActions.documentUploadFailed'),
+        description: describeApiError(error, undefined, t('quickActions.documentUploadFailed')),
         variant: "destructive",
       });
     } finally {
@@ -917,7 +918,7 @@ export function QuickActions() {
         toast({
           title: t('quickActions.partialSuccess'),
           description: t('quickActions.apkReportPartialFailWithError', {
-            error: error instanceof Error ? error.message : t('quickActions.unknownError'),
+            error: describeApiError(error, undefined, t('quickActions.unknownError')),
           }),
           variant: "destructive",
         });
@@ -925,7 +926,7 @@ export function QuickActions() {
     } catch (error) {
       toast({
         title: t('common:status.error'),
-        description: error instanceof Error ? error.message : t('quickActions.apkReportUploadFailed'),
+        description: describeApiError(error, undefined, t('quickActions.apkReportUploadFailed')),
         variant: "destructive",
       });
     } finally {
@@ -1552,7 +1553,7 @@ export function QuickActions() {
                             console.error('Failed to send notifications:', error);
                             toast({
                               title: t('quickActions.failedToSendTitle'),
-                              description: error instanceof Error ? error.message : t('quickActions.anErrorOccurred'),
+                              description: describeApiError(error, undefined, t('quickActions.anErrorOccurred')),
                               variant: "destructive",
                             });
                           } finally {

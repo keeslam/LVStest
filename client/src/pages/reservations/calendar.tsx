@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState, useMemo, useEffect } from "react";
 import { bucketByVehicleAndDay, cellKey, type BucketableReservation } from "@/lib/reservation-buckets";
 import { useTranslation } from "react-i18next";
@@ -448,7 +449,7 @@ export default function ReservationCalendarPage() {
       console.error('Error moving reservation:', error);
       toast({
         title: t('common:status.error'),
-        description: error instanceof Error ? error.message : t('calendarPage.moveReservationFailedFallback'),
+        description: describeApiError(error, undefined, t('calendarPage.moveReservationFailedFallback')),
         variant: "destructive",
       });
     }
@@ -527,7 +528,7 @@ export default function ReservationCalendarPage() {
 
       toast({
         title: t('calendarPage.deleteFailedTitle'),
-        description: isPickedUpRightRefusal(error) ? t('pickedUpWarning.rightRequired') : error.message,
+        description: isPickedUpRightRefusal(error) ? t('pickedUpWarning.rightRequired') : describeApiError(error),
         variant: "destructive",
       });
     },

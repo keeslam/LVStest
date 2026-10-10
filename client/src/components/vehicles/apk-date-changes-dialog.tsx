@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -149,7 +150,7 @@ export function ApkDateChangesDialog() {
       toast({ title: t("common:status.success"), description: t("apkDateChanges.confirmedDescription") });
     },
     onError: (error: any) => {
-      toast({ title: t("common:status.error"), description: error.message, variant: "destructive" });
+      toast({ title: t("common:status.error"), description: describeApiError(error), variant: "destructive" });
     },
   });
 
@@ -160,7 +161,7 @@ export function ApkDateChangesDialog() {
       toast({ title: t("common:status.success"), description: t("apkDateChanges.dismissedDescription") });
     },
     onError: (error: any) => {
-      toast({ title: t("common:status.error"), description: error.message, variant: "destructive" });
+      toast({ title: t("common:status.error"), description: describeApiError(error), variant: "destructive" });
     },
   });
 
@@ -217,7 +218,7 @@ export function ApkDateChangesDialog() {
       reportBulkResult(result, "apkDateChanges.bulkDismissedDescription");
     },
     onError: (error: any) => {
-      toast({ title: t("common:status.error"), description: error.message, variant: "destructive" });
+      toast({ title: t("common:status.error"), description: describeApiError(error), variant: "destructive" });
     },
   });
 
@@ -233,7 +234,7 @@ export function ApkDateChangesDialog() {
       reportBulkResult(result, "apkDateChanges.bulkConfirmedDescription");
     },
     onError: (error: any) => {
-      toast({ title: t("common:status.error"), description: error.message, variant: "destructive" });
+      toast({ title: t("common:status.error"), description: describeApiError(error), variant: "destructive" });
     },
   });
 

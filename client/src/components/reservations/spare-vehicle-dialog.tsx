@@ -1,3 +1,5 @@
+import { describeApiError } from "@/lib/api-error";
+import { v } from "@/lib/zod-i18n";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -33,8 +35,8 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Car, AlertTriangle } from "lucide-react";
 
 const spareVehicleSchema = z.object({
-  spareVehicleId: z.string().min(1, "Please select a spare vehicle"),
-  startDate: z.string().min(1, "Start date is required"),
+  spareVehicleId: z.string().min(1, v("spareVehicleRequired")),
+  startDate: z.string().min(1, v("startDateRequired")),
   endDate: z.string().optional(),
 });
 
@@ -152,7 +154,7 @@ export function SpareVehicleDialog({
     onError: (error: Error) => {
       toast({
         title: t('spareVehicleDialog.toasts.errorTitle'),
-        description: error.message,
+        description: describeApiError(error),
         variant: "destructive",
       });
     },

@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
@@ -184,7 +185,7 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
     onError: (error: Error) => {
       toast({
         title: t('common:status.error'),
-        description: t('templateEditor.toasts.saveTemplateFailed', { message: error.message }),
+        description: t('templateEditor.toasts.saveTemplateFailed', { message: describeApiError(error) }),
         variant: "destructive",
       });
     }
@@ -213,7 +214,7 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
     onError: (error: Error) => {
       toast({
         title: t('common:status.error'),
-        description: t('templateEditor.toasts.deleteTemplateFailed', { message: error.message }),
+        description: t('templateEditor.toasts.deleteTemplateFailed', { message: describeApiError(error) }),
         variant: "destructive",
       });
     }

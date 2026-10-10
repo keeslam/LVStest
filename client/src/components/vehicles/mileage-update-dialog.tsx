@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
@@ -82,7 +83,7 @@ export function MileageUpdateDialog({
       if (error?.code === "MILEAGE_OVERRIDE_INVALID_PASSWORD" || error?.code === "MILEAGE_OVERRIDE_FORBIDDEN") {
         return;
       }
-      toast({ title: t("mileageUpdateDialog.errorTitle"), description: error.message, variant: "destructive" });
+      toast({ title: t("mileageUpdateDialog.errorTitle"), description: describeApiError(error), variant: "destructive" });
     },
   });
 

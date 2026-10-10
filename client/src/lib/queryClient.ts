@@ -12,6 +12,7 @@ import {
 
 import { queryKeyUrl } from "./query-key-url";
 import { readJsonBody } from "./read-json-body";
+import { describeApiError, parseApiError } from "./api-error";
 
 export { fetchWithTimeout, shouldForceLogout, REQUEST_TIMEOUT_MS, RequestTimeoutError };
 export { queryKeyUrl };
@@ -208,15 +209,15 @@ export const queryClient =
     // navigates to the login page and a toast would only add noise.
     queryCache: new QueryCache({
       onError: (error) => {
-        const message = error instanceof Error ? error.message : String(error);
-        if (/^401:/.test(message)) return;
+        if (parseApiError(error).status === 401) return;
         // WAVE 13 item 7 — this title was a hard-coded English string, so the
         // one toast that fires on *any* screen was the one thing on a Dutch app
         // that never spoke Dutch. `common:queryError.*` has held the wording
         // since BUG-212; it just was not used here.
         toast({
           title: i18n.t("common:queryError.title", { defaultValue: "Could not load the data" }),
-          description: message || i18n.t("common:queryError.description", { defaultValue: "Try again, or reload the page." }),
+          // A-19-5: a sentence per code/status, never the wire text ("500: {...}").
+          description: describeApiError(error),
           variant: "destructive",
         });
       },

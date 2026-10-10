@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -38,7 +39,7 @@ export function CustomerPortalSettingsForm({ customerId, readOnly }: { customerI
       const [flag, value] = Object.entries(patch).find(([k]) => (ALL_FLAGS as readonly string[]).includes(k)) ?? [];
       toast({ title: flag ? t("admin.settings.savedFlag", { label: t(`admin.settings.${flag}`), state: t(value ? "admin.settings.stateOn" : "admin.settings.stateOff") }) : t("admin.settings.saved") });
     },
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
   if (!data) return null;
 

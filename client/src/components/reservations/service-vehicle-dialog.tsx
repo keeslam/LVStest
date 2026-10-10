@@ -1,3 +1,5 @@
+import { describeApiError } from "@/lib/api-error";
+import { v } from "@/lib/zod-i18n";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -41,7 +43,7 @@ import { officeToday } from "@/lib/office-date";
 
 const serviceVehicleSchema = z.object({
   maintenanceStatus: z.enum(["needs_service", "in_service"], {
-    required_error: "Please select a maintenance status",
+    required_error: v("maintenanceStatusRequired"),
   }),
   maintenanceNote: z.string().optional(),
   serviceStartDate: z.string().optional(),
@@ -117,7 +119,7 @@ export function ServiceVehicleDialog({
     onError: (error: Error) => {
       toast({
         title: t('serviceVehicleDialog.toasts.errorTitle'),
-        description: error.message,
+        description: describeApiError(error),
         variant: "destructive",
       });
     },

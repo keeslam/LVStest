@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
@@ -218,7 +219,7 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
         title: t('common:status.error'),
         description: code === 'TEMPLATE_DEFAULT_WITHOUT_FIELDS'
           ? t('templateEditor.toasts.defaultNeedsFields')
-          : t('templateEditor.toasts.saveTemplateFailed', { message: error.message }),
+          : t('templateEditor.toasts.saveTemplateFailed', { message: describeApiError(error) }),
         variant: "destructive",
       });
     }
@@ -247,7 +248,7 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
     onError: (error: Error) => {
       toast({
         title: t('common:status.error'),
-        description: t('templateEditor.toasts.deleteTemplateFailed', { message: error.message }),
+        description: t('templateEditor.toasts.deleteTemplateFailed', { message: describeApiError(error) }),
         variant: "destructive",
       });
     }
@@ -286,7 +287,7 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
       console.error('Background upload error:', error);
       toast({
         title: t('common:status.error'),
-        description: t('templateEditor.toasts.uploadBackgroundFailed', { message: error.message }),
+        description: t('templateEditor.toasts.uploadBackgroundFailed', { message: describeApiError(error) }),
         variant: "destructive",
       });
     }
@@ -313,7 +314,7 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
     onError: (error: Error) => {
       toast({
         title: t('common:status.error'),
-        description: t('templateEditor.toasts.removeBackgroundFailed', { message: error.message }),
+        description: t('templateEditor.toasts.removeBackgroundFailed', { message: describeApiError(error) }),
         variant: "destructive",
       });
     }
@@ -353,7 +354,7 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
     onError: (error: Error) => {
       toast({
         title: t('common:status.error'),
-        description: t('templateEditor.toasts.addBackgroundFailed', { message: error.message }),
+        description: t('templateEditor.toasts.addBackgroundFailed', { message: describeApiError(error) }),
         variant: "destructive",
       });
     }
@@ -408,7 +409,7 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
     onError: (error: Error) => {
       toast({
         title: t('common:status.error'),
-        description: t('templateEditor.toasts.selectBackgroundFailed', { message: error.message }),
+        description: t('templateEditor.toasts.selectBackgroundFailed', { message: describeApiError(error) }),
         variant: "destructive",
       });
     }
@@ -429,7 +430,7 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
     onError: (error: Error) => {
       toast({
         title: t('common:status.error'),
-        description: t('templateEditor.toasts.deleteBackgroundFailed', { message: error.message }),
+        description: t('templateEditor.toasts.deleteBackgroundFailed', { message: describeApiError(error) }),
         variant: "destructive",
       });
     }
@@ -454,7 +455,7 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
     onError: (error: Error) => {
       toast({
         title: t('common:status.error'),
-        description: t('templateEditor.toasts.generatePreviewFailed', { message: error.message }),
+        description: t('templateEditor.toasts.generatePreviewFailed', { message: describeApiError(error) }),
         variant: "destructive",
       });
       setPreviewPdfUrl(null);

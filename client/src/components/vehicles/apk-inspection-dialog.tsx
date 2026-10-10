@@ -1,3 +1,5 @@
+import { v } from "@/lib/zod-i18n";
+import { describeApiError } from "@/lib/api-error";
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
@@ -39,8 +41,8 @@ import { Calendar, Wrench, AlertTriangle, Clock, ChevronLeft, ChevronRight, Chec
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const apkInspectionSchema = z.object({
-  scheduledDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Please enter a valid date (YYYY-MM-DD)").min(1, "Date is required"),
-  duration: z.number().min(1, "Duration must be at least 1 day").max(7, "APK inspection should not exceed 7 days"),
+  scheduledDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, v("dateFormatIso")).min(1, v("dateRequired")),
+  duration: z.number().min(1, v("durationMin", { count: 1 })).max(7, v("durationMax", { count: 7 })),
   notes: z.string().optional(),
   needsSpareVehicle: z.boolean().default(false),
 });
@@ -208,7 +210,7 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
     onError: (error: Error) => {
       toast({
         title: t('apkInspectionDialog.toasts.errorTitle'),
-        description: error.message,
+        description: describeApiError(error),
         variant: "destructive",
       });
     },

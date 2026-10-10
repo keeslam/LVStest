@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -68,7 +69,7 @@ export function VehicleBarcodeDialog({ vehicle, open, onOpenChange }: VehicleBar
       invalidateByPrefix(`/api/vehicles/${vehicle.id}`);
     },
     onError: (error: Error) => {
-      toast({ title: t("label.regenerateError"), description: error.message, variant: "destructive" });
+      toast({ title: t("label.regenerateError"), description: describeApiError(error), variant: "destructive" });
     },
   });
 

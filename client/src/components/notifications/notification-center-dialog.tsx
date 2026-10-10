@@ -1,3 +1,5 @@
+import { v } from "@/lib/zod-i18n";
+import { describeApiError } from "@/lib/api-error";
 import { useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
@@ -93,9 +95,9 @@ export function sameOriginNotificationLink(link: unknown): string | null {
 }
 
 const notificationSchema = z.object({
-  title: z.string().min(3, { message: "Title must be at least 3 characters" }),
-  description: z.string().min(5, { message: "Description must be at least 5 characters" }),
-  date: z.string().min(1, { message: "Date is required" }),
+  title: z.string().min(3, { message: v("titleMin", { count: 3 }) }),
+  description: z.string().min(5, { message: v("descriptionMin", { count: 5 }) }),
+  date: z.string().min(1, { message: v("dateRequired") }),
   priority: z.enum(["low", "normal", "high"]),
 });
 
@@ -200,7 +202,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
       form.reset();
     },
     onError: (error: Error) => {
-      toast({ title: t('centerDialog.errorTitle'), description: error.message, variant: "destructive" });
+      toast({ title: t('centerDialog.errorTitle'), description: describeApiError(error), variant: "destructive" });
     },
   });
 
@@ -217,7 +219,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
       form.reset();
     },
     onError: (error: Error) => {
-      toast({ title: t('centerDialog.errorTitle'), description: error.message, variant: "destructive" });
+      toast({ title: t('centerDialog.errorTitle'), description: describeApiError(error), variant: "destructive" });
     },
   });
 
@@ -232,7 +234,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
       setDeleteNotification(null);
     },
     onError: (error: Error) => {
-      toast({ title: t('centerDialog.errorTitle'), description: error.message, variant: "destructive" });
+      toast({ title: t('centerDialog.errorTitle'), description: describeApiError(error), variant: "destructive" });
     },
   });
 

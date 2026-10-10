@@ -20,6 +20,7 @@
  * the row was picked up after that read (a stale screen) the server answers 409
  * PICKED_UP_CONFIRMATION_REQUIRED and the warning appears with the server's facts.
  */
+import { describeApiError } from "@/lib/api-error";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -184,7 +185,7 @@ export function CancelReservationDialog({
         // By code, never the English message of a known refusal.
         description: isPickedUpRightRefusal(error)
           ? t('pickedUpWarning.rightRequired')
-          : error?.message || t('cancelDialog.toasts.failedDescription'),
+          : describeApiError(error, undefined, t('cancelDialog.toasts.failedDescription')),
       });
     },
   });

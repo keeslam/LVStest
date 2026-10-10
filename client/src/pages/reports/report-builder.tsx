@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -91,7 +92,7 @@ export default function ReportBuilder() {
     onError: (error: any) => {
       toast({
         title: t('reportBuilderPage.toasts.executeErrorTitle'),
-        description: error.message || t('reportBuilderPage.toasts.executeErrorDescription'),
+        description: describeApiError(error, undefined, t('reportBuilderPage.toasts.executeErrorDescription')),
         variant: "destructive",
       });
     },
@@ -114,7 +115,7 @@ export default function ReportBuilder() {
     onError: (error: any) => {
       toast({
         title: t('reportBuilderPage.toasts.saveErrorTitle'),
-        description: error.message || t('reportBuilderPage.toasts.saveErrorDescription'),
+        description: describeApiError(error, undefined, t('reportBuilderPage.toasts.saveErrorDescription')),
         variant: "destructive",
       });
     },

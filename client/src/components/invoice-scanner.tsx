@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -204,7 +205,7 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated, children 
     onError: (error: Error) => {
       toast({
         title: t('invoiceScanner.scanFailedTitle'),
-        description: error.message,
+        description: describeApiError(error),
         variant: "destructive",
       });
     }
@@ -284,7 +285,7 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated, children 
     onError: (error: Error) => {
       toast({
         title: t('invoiceScanner.createExpensesFailedTitle'),
-        description: error.message,
+        description: describeApiError(error),
         variant: "destructive",
       });
     }

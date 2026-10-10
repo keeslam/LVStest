@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -262,7 +263,7 @@ export default function DeliveryDashboard() {
     onError: (error: any) => {
       toast({
         title: t('dashboardPage.toasts.deleteFailedTitle'),
-        description: error?.message || t('dashboardPage.toasts.genericTryAgain'),
+        description: describeApiError(error, undefined, t('dashboardPage.toasts.genericTryAgain')),
         variant: "destructive",
       });
     },
@@ -283,7 +284,7 @@ export default function DeliveryDashboard() {
     onError: (error: any) => {
       toast({
         title: t('dashboardPage.toasts.updateFailedTitle'),
-        description: error?.message || t('dashboardPage.toasts.genericTryAgain'),
+        description: describeApiError(error, undefined, t('dashboardPage.toasts.genericTryAgain')),
         variant: "destructive",
       });
     },
@@ -370,7 +371,7 @@ export default function DeliveryDashboard() {
     onError: (error: any) => {
       toast({
         title: t('dashboardPage.toasts.generateReportFailedTitle'),
-        description: error?.message || t('dashboardPage.toasts.genericTryAgain'),
+        description: describeApiError(error, undefined, t('dashboardPage.toasts.genericTryAgain')),
         variant: "destructive",
       });
     },
@@ -415,7 +416,7 @@ export default function DeliveryDashboard() {
     onError: (error: any) => {
       toast({
         title: t('dashboardPage.toasts.updateFailedTitle'),
-        description: error?.message || t('dashboardPage.toasts.genericTryAgain'),
+        description: describeApiError(error, undefined, t('dashboardPage.toasts.genericTryAgain')),
         variant: "destructive",
       });
     },

@@ -1,3 +1,5 @@
+import { v } from "@/lib/zod-i18n";
+import { describeApiError } from "@/lib/api-error";
 import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -201,7 +203,7 @@ const DISPLAY_NAMES: Record<string, string> = {
 
 // Form schema for license plate input
 const licensePlateFormSchema = z.object({
-  licensePlates: z.string().min(1, "Please enter at least one license plate"),
+  licensePlates: z.string().min(1, v("licensePlatesRequired")),
 });
 
 type LicensePlateFormValues = z.infer<typeof licensePlateFormSchema>;
@@ -1051,7 +1053,7 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
                           <li key={`failed-${index}`} className="text-sm flex items-baseline">
                             <AlertCircle className="h-4 w-4 mr-2 text-red-500" />
                             <div>
-                              <span className="font-medium">{item.licensePlate}</span> - {item.error}
+                              <span className="font-medium">{item.licensePlate}</span> - {describeApiError(Object.assign(new Error(item.error), { code: item.code }), undefined, t('common:errors.codes.IMPORT_ROW_FAILED'))}
                             </div>
                           </li>
                         ))}

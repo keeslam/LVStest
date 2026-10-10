@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState, useRef } from "react";
 import { useTranslation, Trans } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -56,7 +57,7 @@ interface BackupHealth {
   stale: boolean;
   lastError: string | null;
   lastErrorCode?: string | null;
-  backupPath?: string;
+  // The server no longer sends the directory itself (audit 2026-10-09, module 19).
   backupPathFromEnv?: boolean;
 }
 
@@ -210,7 +211,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     } catch (error) {
       toast({
         title: t('backupDialog.downloadFailedTitle'),
-        description: error instanceof Error ? error.message : t('backupDialog.downloadDataFailed'),
+        description: describeApiError(error, undefined, t('backupDialog.downloadDataFailed')),
         variant: 'destructive',
       });
     } finally {
@@ -238,7 +239,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     } catch (error) {
       toast({
         title: t('backupDialog.downloadFailedTitle'),
-        description: error instanceof Error ? error.message : t('backupDialog.downloadCodeFailed'),
+        description: describeApiError(error, undefined, t('backupDialog.downloadCodeFailed')),
         variant: 'destructive',
       });
     } finally {
@@ -266,7 +267,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     } catch (error) {
       toast({
         title: t('backupDialog.downloadFailedTitle'),
-        description: error instanceof Error ? error.message : t('backupDialog.downloadFilesFailed'),
+        description: describeApiError(error, undefined, t('backupDialog.downloadFilesFailed')),
         variant: 'destructive',
       });
     } finally {
@@ -306,7 +307,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     } catch (error) {
       toast({
         title: t('backupDialog.restoreFailedTitle'),
-        description: error instanceof Error ? error.message : t('backupDialog.restoreDataFailed'),
+        description: describeApiError(error, undefined, t('backupDialog.restoreDataFailed')),
         variant: 'destructive',
       });
     } finally {
@@ -343,7 +344,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     } catch (error) {
       toast({
         title: t('backupDialog.restoreFailedTitle'),
-        description: error instanceof Error ? error.message : t('backupDialog.restoreCodeFailed'),
+        description: describeApiError(error, undefined, t('backupDialog.restoreCodeFailed')),
         variant: 'destructive',
       });
     } finally {
@@ -381,7 +382,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     } catch (error) {
       toast({
         title: t('backupDialog.restoreFailedTitle'),
-        description: error instanceof Error ? error.message : t('backupDialog.restoreFilesFailed'),
+        description: describeApiError(error, undefined, t('backupDialog.restoreFilesFailed')),
         variant: 'destructive',
       });
     } finally {
@@ -408,7 +409,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     } catch (error) {
       toast({
         title: t('backupDialog.downloadFailedTitle'),
-        description: error instanceof Error ? error.message : t('backupDialog.downloadBackupFailed'),
+        description: describeApiError(error, undefined, t('backupDialog.downloadBackupFailed')),
         variant: 'destructive',
       });
     }
@@ -448,7 +449,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     } catch (error) {
       toast({
         title: t('backupDialog.restoreFailedTitle'),
-        description: error instanceof Error ? error.message : t('backupDialog.restoreBackupFailed'),
+        description: describeApiError(error, undefined, t('backupDialog.restoreBackupFailed')),
         variant: 'destructive',
       });
     } finally {
@@ -603,7 +604,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                     </div>
                   </div>
                 )}
-                {health?.backupPath && (
+                {typeof health?.backupPathFromEnv === 'boolean' && (
                   <div className={`mt-3 flex items-start gap-2 p-2 rounded-lg border ${
                     health.backupPathFromEnv
                       ? 'bg-gray-50 border-gray-200'
@@ -616,7 +617,9 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                     )}
                     <div>
                       <p className={`text-xs font-medium ${health.backupPathFromEnv ? 'text-gray-700' : 'text-amber-900'}`}>
-                        {t('backupDialog.backupLocation')} <span className="font-mono">{health.backupPath}</span>
+                        {health.backupPathFromEnv
+                          ? `${t('backupDialog.backupLocation')} ${t('backupDialog.backupLocationFixed')}`
+                          : t('backupDialog.backupLocation').replace(/:$/, '')}
                       </p>
                       {!health.backupPathFromEnv && (
                         <p className="text-xs text-amber-700 mt-0.5">

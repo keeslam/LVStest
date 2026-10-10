@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -149,7 +150,7 @@ export function VehicleDeleteDialog({
     onError: (error: Error) => {
       toast({
         title: t('deleteDialog.toasts.errorTitle'),
-        description: error.message || t('deleteDialog.toasts.errorFallback'),
+        description: describeApiError(error, undefined, t('deleteDialog.toasts.errorFallback')),
         variant: "destructive"
       });
     }

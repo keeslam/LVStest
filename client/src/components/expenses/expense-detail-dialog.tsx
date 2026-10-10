@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -85,7 +86,7 @@ export function ExpenseDetailDialog({ expenseId, open, onOpenChange, hideVehicle
     onError: (error: Error) => {
       toast({
         title: t('viewDialog.deleteExpenseErrorTitle'),
-        description: error.message || t('viewDialog.deleteExpenseErrorDescription'),
+        description: describeApiError(error, undefined, t('viewDialog.deleteExpenseErrorDescription')),
         variant: "destructive",
       });
     }

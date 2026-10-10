@@ -1,3 +1,5 @@
+import { UserFacingError } from "@/lib/api-error";
+import { v } from "@/lib/zod-i18n";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -32,7 +34,7 @@ import { Loader2, CheckCircle } from "lucide-react";
 import { officeToday } from "@/lib/office-date";
 
 const returnFromServiceSchema = z.object({
-  returnDate: z.string().min(1, "Return date is required"),
+  returnDate: z.string().min(1, v("returnDateRequired")),
   mileage: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -72,7 +74,7 @@ export function ReturnFromServiceDialog({
       if (!replacementReservation) {
         // WAVE 13 item 7 — Dutch, and about this dialog rather than about a
         // request that was never made.
-        throw new Error(t('returnFromServiceDialog.toasts.noReplacement'));
+        throw new UserFacingError(t('returnFromServiceDialog.toasts.noReplacement'));
       }
 
       // `apiRequest` already throws on a non-2xx, carrying the server's message.
@@ -111,6 +113,7 @@ export function ReturnFromServiceDialog({
     onError: (error: Error) => {
       toast({
         title: t('returnFromServiceDialog.toasts.errorTitle'),
+        // This endpoint answers in Dutch on purpose (Terug van onderhoud refusals): show its sentence.
         description: error.message,
         variant: "destructive",
       });

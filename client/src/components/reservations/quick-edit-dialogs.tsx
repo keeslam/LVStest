@@ -19,6 +19,7 @@
  * FIX-F runs the conflict check inside the write transaction (plus the
  * blacklist check, B-07's price recalculation and B-09's maintenance warning).
  */
+import { describeApiError } from "@/lib/api-error";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -117,11 +118,10 @@ function useQuickEdit(kind: QuickEditKind, reservationId: number, onSaved?: () =
     onError: (error: any) => {
       // The conflict check lives in the shared handler; a 409 arrives here the
       // same way it does for the full form.
-      const raw = String(error?.message ?? "").replace(/^\d+:\s*/, "");
       toast({
         variant: "destructive",
         title: t(`quickEdit.${kind}.failedTitle`),
-        description: raw || t('common:messages.tryAgain', { defaultValue: raw }),
+        description: describeApiError(error, undefined, t('common:messages.tryAgain')),
       });
     },
   });

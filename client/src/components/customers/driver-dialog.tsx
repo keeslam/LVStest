@@ -1,3 +1,5 @@
+import { v } from "@/lib/zod-i18n";
+import { describeApiError } from "@/lib/api-error";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
@@ -46,7 +48,7 @@ const driverFormSchema = insertDriverSchema.omit({
   updatedBy: true,
   licenseFilePath: true,
 }).extend({
-  displayName: z.string().min(1, "Display name is required"),
+  displayName: z.string().min(1, v("displayNameRequired")),
   licenseFile: z.any().optional(),
 });
 
@@ -212,7 +214,7 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
     onError: (error: Error) => {
       toast({
         title: t('common:status.error'),
-        description: error.message || (isEdit ? t('driverForm.updateFailedDescription') : t('driverForm.addFailedDescription')),
+        description: describeApiError(error, undefined, isEdit ? t('driverForm.updateFailedDescription') : t('driverForm.addFailedDescription')),
         variant: "destructive"
       });
     }

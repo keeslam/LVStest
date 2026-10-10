@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -44,7 +45,7 @@ export function PortalConfigForm() {
       phone: phone.trim(),
     })).json(),
     onSuccess: (saved) => { queryClient.setQueryData(KEY, saved); toast({ title: t("admin.config.saved") }); },
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
 
   return (

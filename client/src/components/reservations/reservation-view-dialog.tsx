@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -137,7 +138,7 @@ export function ReservationViewDialog({
       }
       toast({
         title: t('viewDialog.errorTitle'),
-        description: isPickedUpRightRefusal(error) ? t('pickedUpWarning.rightRequired') : error.message,
+        description: isPickedUpRightRefusal(error) ? t('pickedUpWarning.rightRequired') : describeApiError(error),
         variant: "destructive"
       });
     }

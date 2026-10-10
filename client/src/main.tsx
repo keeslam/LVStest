@@ -1,5 +1,6 @@
 import "./lib/csrf-fetch-interceptor";
 import "./i18n";
+import "./lib/zod-i18n";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";

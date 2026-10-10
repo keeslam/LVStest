@@ -1,3 +1,5 @@
+import { UserFacingError, describeApiError } from "@/lib/api-error";
+import { v } from "@/lib/zod-i18n";
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -46,7 +48,7 @@ import { blockStatusForForm } from "@/lib/maintenance-status";
 import { RequiresPermission } from "@/components/ui/requires-permission";
 
 const scheduleMaintenanceSchema = z.object({
-  vehicleId: z.string().min(1, "Please select a vehicle"),
+  vehicleId: z.string().min(1, v("vehicleRequired")),
   customerId: z.string().optional(), // Optional customer
   maintenanceType: z.enum([
     "breakdown", 
@@ -64,10 +66,10 @@ const scheduleMaintenanceSchema = z.object({
     "accident_damage",
     "other"
   ], {
-    required_error: "Please select a maintenance type",
+    required_error: v("maintenanceTypeRequired"),
   }),
-  scheduledDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Please enter a valid date (YYYY-MM-DD)").min(1, "Date when vehicle comes in is required"),
-  maintenanceDuration: z.number().min(1, "Duration must be at least 1 day").max(90, "Duration cannot exceed 90 days"),
+  scheduledDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, v("dateFormatIso")).min(1, v("comesInDateRequired")),
+  maintenanceDuration: z.number().min(1, v("durationMin", { count: 1 })).max(90, v("durationMax", { count: 90 })),
   maintenanceStatus: z.enum(["scheduled", "in", "out"]).default("scheduled"),
   description: z.string().optional(),
   notes: z.string().optional(),
@@ -317,7 +319,7 @@ export function ScheduleMaintenanceDialog({
       // Validate and sanitize the scheduled date
       const startDate = data.scheduledDate?.trim();
       if (!startDate || startDate === 'undefined') {
-        throw new Error('Please select a valid scheduled date');
+        throw new UserFacingError(v("invalidDate"));
       }
       
       // Calculate end date from start date + duration
@@ -413,7 +415,7 @@ export function ScheduleMaintenanceDialog({
     onError: (error: Error) => {
       toast({
         title: t('scheduleDialog.errorTitle'),
-        description: error.message,
+        description: describeApiError(error),
         variant: "destructive",
       });
     },
@@ -639,7 +641,7 @@ export function ScheduleMaintenanceDialog({
     onError: (error: Error) => {
       toast({
         title: t('scheduleDialog.errorTitle'),
-        description: error.message,
+        description: describeApiError(error),
         variant: "destructive",
       });
     },
@@ -863,8 +865,8 @@ export function ScheduleMaintenanceDialog({
   // Helper to format date for display
   const formatDisplayDate = (dateStr: string) => {
     if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    // A-2-10: Dutch month names (was en-GB).
+    return formatDateNl(dateStr, 'd MMM');
   };
 
   return (

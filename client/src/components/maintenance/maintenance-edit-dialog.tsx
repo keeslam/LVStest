@@ -1,3 +1,5 @@
+import { v } from "@/lib/zod-i18n";
+import { describeApiError } from "@/lib/api-error";
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
@@ -45,8 +47,8 @@ import { blockStatusForForm } from "@/lib/maintenance-status";
 // Form schema for maintenance editing - only fields that can be edited
 const maintenanceEditSchema = z.object({
   vehicleId: z.union([
-    z.number().min(1, "Please select a vehicle"),
-    z.string().min(1, "Please select a vehicle").transform(val => parseInt(val)),
+    z.number().min(1, v("vehicleRequired")),
+    z.string().min(1, v("vehicleRequired")).transform(val => parseInt(val)),
   ]),
   customerId: z.string().optional(), // Optional customer
   contactPhone: z.string().optional(), // Phone number for person dropping off vehicle
@@ -67,8 +69,8 @@ const maintenanceEditSchema = z.object({
     "other"
   ]),
   description: z.string().optional(), // Description/details of the maintenance
-  startDate: z.string().min(1, "Date when vehicle comes in is required"),
-  maintenanceDuration: z.number().min(1, "Duration must be at least 1 day").max(90, "Duration cannot exceed 90 days"),
+  startDate: z.string().min(1, v("comesInDateRequired")),
+  maintenanceDuration: z.number().min(1, v("durationMin", { count: 1 })).max(90, v("durationMax", { count: 90 })),
   maintenanceStatus: z.enum(["scheduled", "in", "out"]).default("scheduled"),
   notes: z.string().optional(), // Additional notes
 });
@@ -373,7 +375,7 @@ export function MaintenanceEditDialog({
       console.error("Error updating maintenance:", error);
       toast({
         title: t('editDialog.errorTitle'),
-        description: error.message || t('editDialog.updateFailedDescription'),
+        description: describeApiError(error, undefined, t('editDialog.updateFailedDescription')),
         variant: "destructive",
       });
     },

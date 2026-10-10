@@ -28,6 +28,8 @@ export interface ConfirmDialogProps {
    * action behind it cannot be taken without it; cancel and Escape stay available.
    */
   confirmDisabled?: boolean;
+  /** Test id for the confirm button, so a caller's flow can be told apart from the others (A-19-6). Defaults to "confirm-dialog-confirm". */
+  confirmTestId?: string;
   /** Extra content between the description and the buttons (a warning box with its own checkbox). */
   children?: ReactNode;
 }
@@ -44,6 +46,7 @@ export function ConfirmDialog({
   onCancel,
   isLoading = false,
   confirmDisabled = false,
+  confirmTestId,
   children,
 }: ConfirmDialogProps) {
   const { t } = useTranslation("common");
@@ -111,7 +114,7 @@ export function ConfirmDialog({
             onClick={handleConfirm}
             disabled={isLoading || confirmDisabled}
             className={getConfirmButtonClass()}
-            data-testid="confirm-dialog-confirm"
+            data-testid={confirmTestId ?? "confirm-dialog-confirm"}
           >
             {isLoading ? t('status.processing') : finalConfirmLabel}
           </AlertDialogAction>

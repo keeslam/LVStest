@@ -10,6 +10,7 @@
  * something different when the deadline was the cause, and it offers the one
  * action that helps.
  */
+import { describeApiError } from "@/lib/api-error";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, Clock, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,8 @@ export function isTimeoutError(error: unknown): boolean {
 export function QueryErrorState({ error, onRetry, className }: QueryErrorStateProps) {
   const { t } = useTranslation("common");
   const timedOut = isTimeoutError(error);
-  const detail = error instanceof Error ? error.message : undefined;
+  // A-19-5: a sentence per code/status, never the wire text ("500: {...}").
+  const detail = error ? describeApiError(error) : undefined;
 
   return (
     <div

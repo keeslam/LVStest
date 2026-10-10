@@ -1,3 +1,4 @@
+import { UserFacingError, describeApiError } from "@/lib/api-error";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -26,11 +27,11 @@ export function CjibConfigForm() {
   const save = useMutation({
     mutationFn: async () => {
       // Without a server there is nothing to fetch from; saving "on" would only make the poller fail every round.
-      if (form?.enabled && !form.host.trim()) throw new Error(t("admin.fines.cjib.saveNeedsHost"));
+      if (form?.enabled && !form.host.trim()) throw new UserFacingError(t("admin.fines.cjib.saveNeedsHost"));
       return (await apiRequest("PUT", CJIB_CONFIG_KEY[0], form)).json();
     },
     onSuccess: (saved: CjibConfig) => { queryClient.setQueryData(CJIB_CONFIG_KEY, saved); invalidateByPrefix("/api/fines/imports"); toast({ title: t("admin.config.saved") }); },
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
   const test = useMutation({
     mutationFn: async () => {
@@ -46,7 +47,7 @@ export function CjibConfigForm() {
       invalidateByPrefix("/api/fines");
       toast({ title: t("admin.fines.cjib.runDone", { files: s.files, created: s.created, linked: s.linked }), description: s.errors.join("\n") || undefined, variant: s.errors.length ? "destructive" : "default" });
     },
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
 
   if (!form) return null;

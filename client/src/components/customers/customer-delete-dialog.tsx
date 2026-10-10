@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Trans, useTranslation } from "react-i18next";
@@ -154,7 +155,7 @@ export function CustomerDeleteDialog({
     onError: (error: Error) => {
       toast({
         title: t('common:status.error'),
-        description: error.message || t('deleteDialog.deleteFailed'),
+        description: describeApiError(error, undefined, t('deleteDialog.deleteFailed')),
         variant: "destructive"
       });
     }

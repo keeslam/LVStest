@@ -677,7 +677,10 @@
         "deleted": "Fine moved to the recycle bin",
         "changeCustomer": "Change",
         "moreCustomers": "{{shown}} of {{total}} shown, type to narrow down.",
-        "noCustomerRight": "To link a customer to this fine you also need the right to view customers."
+        "noCustomerRight": "To link a customer to this fine you also need the right to view customers.",
+        "deleteTitle": "Delete fine?",
+        "deleteConfirmNamed": "Move fine {{plate}} of {{amount}} to the recycle bin? Anyone who may manage the recycle bin can restore it from there.",
+        "deleteConfirmButton": "Delete"
       },
       "cjib": {
         "button": "CJIB imports",

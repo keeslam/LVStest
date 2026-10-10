@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, subDays, addWeeks, isSameDay, parseISO, startOfMonth, endOfMonth, getDate, getDay, getMonth, getYear, isSameMonth, addMonths, subMonths, startOfDay, endOfDay, isBefore, isAfter, differenceInDays, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
@@ -287,7 +288,7 @@ export default function MaintenanceCalendar() {
       console.error('Error deleting maintenance:', error);
       toast({
         title: t('common:status.error'),
-        description: error instanceof Error ? error.message : t('maintenance:listDialog.deleteFailedDescription'),
+        description: describeApiError(error, undefined, t('maintenance:listDialog.deleteFailedDescription')),
         variant: "destructive",
       });
     }

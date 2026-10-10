@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
@@ -125,7 +126,7 @@ export function FuelStatusUpdateDialog({
     onError: (error: Error) => {
       toast({
         title: t('fuelStatusUpdateDialog.toasts.errorTitle'),
-        description: error.message,
+        description: describeApiError(error),
         variant: "destructive",
       });
     },

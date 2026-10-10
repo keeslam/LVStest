@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
@@ -185,7 +186,7 @@ export function SpareVehicleAssignmentDialog({
     onError: (error: Error) => {
       toast({
         title: t('spareVehicleAssignmentDialog.toasts.assignmentFailedTitle'),
-        description: error.message,
+        description: describeApiError(error),
         variant: "destructive",
       });
     },

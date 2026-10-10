@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useMemo, useState } from "react";
 // FIX-R (BUG-072): a stored link is opened through one guard, never raw.
 import { openStoredUrl } from "@/lib/safe-url";
@@ -142,7 +143,7 @@ export function RouteOptimizationDialog({
     onError: (error: any) => {
       toast({
         title: t('routeOptimization.optimizeFailedTitle'),
-        description: error?.message || t('routeOptimization.tryAgain'),
+        description: describeApiError(error, undefined, t('routeOptimization.tryAgain')),
         variant: "destructive",
       });
     },

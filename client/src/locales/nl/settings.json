@@ -115,7 +115,8 @@
     "backupAlreadyRunning": "Er loopt al een back-up. Wacht tot die klaar is.",
     "oldBackupWarningTitle": "De laatste geslaagde back-up is ouder dan een dag",
     "oldBackupWarningHours": "De laatste geslaagde back-up was {{hours}} uur geleden. De planning zegt dagelijks 02:00; controleer of de back-ups nog lopen.",
-    "oldBackupWarningNever": "Er is nog geen geslaagde back-up bekend. Maak er nu een met Nu back-uppen."
+    "oldBackupWarningNever": "Er is nog geen geslaagde back-up bekend. Maak er nu een met Nu back-uppen.",
+    "backupLocationFixed": "vast ingesteld via BACKUP_PATH (het pad zelf wordt om veiligheidsredenen niet getoond)."
   },
   "usersDialog": {
     "accessDeniedTitle": "Toegang geweigerd",
@@ -651,7 +652,10 @@
     "optionsField": "Opties (komma-gescheiden)",
     "optionsNotUsedPlaceholder": "— niet gebruikt —",
     "addFieldToGroupButton": "Veld toevoegen aan {{label}}",
-    "saveChangesButton": "Wijzigingen opslaan"
+    "saveChangesButton": "Wijzigingen opslaan",
+    "confirmTitle": "Weet je het zeker?",
+    "confirmResetHeaderButton": "Header terugzetten",
+    "confirmResetDefaultsButton": "Terugzetten"
   },
   "damageCheckTemplatesPage": {
     "toasts": {
@@ -864,7 +868,9 @@
       "currentDate": "Datum van vandaag",
       "notes": "Inspectienotities",
       "inspectorName": "Inspecteur / ingelogde gebruiker (Controle door)"
-    }
+    },
+    "confirmTitle": "Velden vervangen?",
+    "confirmReplaceLayoutButton": "Vervangen"
   },
   "backupSettingsPanel": {
     "toasts": {

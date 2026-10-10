@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -42,7 +43,7 @@ export function NewFineDialog() {
       setForm((f) => ({ ...f, ...scanToForm(result.parsed, f) }));
       toast({ title: t("admin.fines.scan.done") });
     },
-    onError: (e: Error) => toast({ title: t("admin.fines.scan.failed"), description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: t("admin.fines.scan.failed"), description: describeApiError(e), variant: "destructive" }),
   });
 
   const save = useMutation({
@@ -61,7 +62,7 @@ export function NewFineDialog() {
       closeNewFineDialog();
       openFineDialog(fine.id);
     },
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
   const set = (k: keyof typeof form) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm({ ...form, [k]: e.target.value });
   function submit(e: FormEvent) { e.preventDefault(); save.mutate(); }

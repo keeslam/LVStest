@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState } from "react";
 // FIX-R (BUG-072): a stored link is opened through one guard, never raw.
 import { openStoredUrl } from "@/lib/safe-url";
@@ -160,7 +161,7 @@ export function ExpenseViewDialog({
     onError: (error: Error) => {
       toast({
         title: t('viewDialog.deleteExpenseErrorTitle'),
-        description: error.message || t('viewDialog.deleteExpenseErrorDescription'),
+        description: describeApiError(error, undefined, t('viewDialog.deleteExpenseErrorDescription')),
         variant: "destructive"
       });
     }

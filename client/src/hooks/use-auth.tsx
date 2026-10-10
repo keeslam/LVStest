@@ -1,3 +1,4 @@
+import { describeApiError, parseApiError } from "@/lib/api-error";
 import { createContext, ReactNode, useContext, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -74,7 +75,10 @@ function AuthProvider({ children }: { children: ReactNode }) {
     onError: (error: Error) => {
       toast({
         title: t('authHook.loginFailedTitle'),
-        description: error.message || t('authHook.invalidCredentialsDescription'),
+        // A wrong password is a 401 too: say so, not "your session has expired".
+        description: parseApiError(error).status === 401
+          ? t('authHook.invalidCredentialsDescription')
+          : describeApiError(error, undefined, t('authHook.invalidCredentialsDescription')),
         variant: "destructive",
       });
     },
@@ -102,7 +106,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
     onError: (error: Error) => {
       toast({
         title: t('authHook.registrationFailedTitle'),
-        description: error.message,
+        description: describeApiError(error),
         variant: "destructive",
       });
     },
@@ -150,7 +154,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
       
       toast({
         title: t('authHook.logoutFailedTitle'),
-        description: error.message,
+        description: describeApiError(error),
         variant: "destructive",
       });
       

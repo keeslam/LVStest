@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
@@ -103,7 +104,7 @@ export function VehicleRemarksWarningDialog({
     onError: (error: Error) => {
       toast({
         title: t('remarksWarningDialog.toasts.errorTitle'),
-        description: error.message || t('remarksWarningDialog.toasts.updateFailedDescription'),
+        description: describeApiError(error, undefined, t('remarksWarningDialog.toasts.updateFailedDescription')),
         variant: "destructive",
       });
     },
