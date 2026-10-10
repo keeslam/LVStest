@@ -3,7 +3,16 @@
     "noVerifiedBackupHours": "No verified backup in {{hours}} hours",
     "noVerifiedBackupEver": "No verified backup on record",
     "lastError": "Last error: {{error}}",
-    "openBackupPrompt": "Open Backup & Recovery to run one now."
+    "openBackupPrompt": "Open Backup & Recovery to run one now.",
+    "errorByCode": {
+      "TOOL_MISSING": "the backup program (pg_dump or tar) was not found on the server",
+      "DATABASE_UNREACHABLE": "the server cannot reach the database",
+      "DISK_FULL": "the server disk is full",
+      "PERMISSION_DENIED": "the server may not write to the backup location",
+      "BACKUP_DIR_MISSING": "the backup folder does not exist",
+      "NO_BACKUPS": "there are no backups in the backup folder yet",
+      "UNKNOWN": "the backup failed for a reason not known here. See the server log for details"
+    }
   },
   "backupDialog": {
     "accessDeniedTitle": "Access Denied",
@@ -100,7 +109,13 @@
     "restoreBackupFailed": "Failed to restore backup",
     "databaseRestoredTitle": "Database Restored",
     "databaseRestoredDefaultDescription": "Database restored from {{filename}}. Please refresh your browser and log in again.",
-    "databaseRestoredWithSafetyDescription": "{{message}} A backup of your previous data was saved as {{filename}}."
+    "databaseRestoredWithSafetyDescription": "{{message}} A backup of your previous data was saved as {{filename}}.",
+    "backupFailedReason": "The backup failed: {{reason}}.",
+    "backupFailedUnknown": "The backup failed. See the server log for the reason.",
+    "backupAlreadyRunning": "A backup is already running. Wait for it to finish.",
+    "oldBackupWarningTitle": "The last successful backup is older than a day",
+    "oldBackupWarningHours": "The last successful backup was {{hours}} hours ago. The schedule says daily at 02:00; check that backups are still running.",
+    "oldBackupWarningNever": "No successful backup is known yet. Make one now with Back up now."
   },
   "usersDialog": {
     "accessDeniedTitle": "Access Denied",

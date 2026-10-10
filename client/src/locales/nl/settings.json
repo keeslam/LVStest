@@ -3,7 +3,16 @@
     "noVerifiedBackupHours": "Geen geverifieerde back-up in {{hours}} uur",
     "noVerifiedBackupEver": "Geen geverifieerde back-up bekend",
     "lastError": "Laatste fout: {{error}}",
-    "openBackupPrompt": "Open Back-up & Herstel om er nu een uit te voeren."
+    "openBackupPrompt": "Open Back-up & Herstel om er nu een uit te voeren.",
+    "errorByCode": {
+      "TOOL_MISSING": "het back-upprogramma (pg_dump of tar) is niet gevonden op de server",
+      "DATABASE_UNREACHABLE": "de server kan de database niet bereiken",
+      "DISK_FULL": "de schijf van de server is vol",
+      "PERMISSION_DENIED": "de server mag niet naar de back-uplocatie schrijven",
+      "BACKUP_DIR_MISSING": "de back-upmap bestaat niet",
+      "NO_BACKUPS": "er staan nog geen back-ups in de back-upmap",
+      "UNKNOWN": "de back-up is mislukt om een reden die hier niet bekend is. Zie het serverlog voor details"
+    }
   },
   "backupDialog": {
     "accessDeniedTitle": "Toegang geweigerd",
@@ -100,7 +109,13 @@
     "restoreBackupFailed": "Back-up herstellen mislukt",
     "databaseRestoredTitle": "Database hersteld",
     "databaseRestoredDefaultDescription": "Database hersteld vanaf {{filename}}. Vernieuw je browser en log opnieuw in.",
-    "databaseRestoredWithSafetyDescription": "{{message}} Een back-up van je vorige gegevens is opgeslagen als {{filename}}."
+    "databaseRestoredWithSafetyDescription": "{{message}} Een back-up van je vorige gegevens is opgeslagen als {{filename}}.",
+    "backupFailedReason": "De back-up is mislukt: {{reason}}.",
+    "backupFailedUnknown": "De back-up is mislukt. Zie het serverlog voor de reden.",
+    "backupAlreadyRunning": "Er loopt al een back-up. Wacht tot die klaar is.",
+    "oldBackupWarningTitle": "De laatste geslaagde back-up is ouder dan een dag",
+    "oldBackupWarningHours": "De laatste geslaagde back-up was {{hours}} uur geleden. De planning zegt dagelijks 02:00; controleer of de back-ups nog lopen.",
+    "oldBackupWarningNever": "Er is nog geen geslaagde back-up bekend. Maak er nu een met Nu back-uppen."
   },
   "usersDialog": {
     "accessDeniedTitle": "Toegang geweigerd",

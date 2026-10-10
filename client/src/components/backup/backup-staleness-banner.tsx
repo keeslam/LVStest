@@ -3,12 +3,15 @@ import { AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/use-auth';
 import { UserRole, UserPermission } from '@shared/schema';
+import { backupErrorReason } from '@/lib/backup-error-text';
 
 interface BackupHealth {
   lastSuccessAt: string | null;
   ageHours: number | null;
   stale: boolean;
   lastError: string | null;
+  /** Stable reason for lastError; the screen shows Dutch text for it, never lastError itself. */
+  lastErrorCode?: string | null;
 }
 
 /**
@@ -43,7 +46,7 @@ export function BackupStalenessBanner() {
         </p>
         <p className="mt-0.5">
           {data.lastError
-            ? t('backup.lastError', { error: data.lastError })
+            ? t('backup.lastError', { error: backupErrorReason(data.lastErrorCode, (k) => t(k)) })
             : t('backup.openBackupPrompt')}
         </p>
       </div>

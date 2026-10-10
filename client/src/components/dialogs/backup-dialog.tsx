@@ -30,6 +30,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/hooks/use-auth";
 import { UserRole } from "@shared/schema";
 import { officeToday } from "@/lib/office-date";
+import { backupErrorReason, isKnownBackupReason } from "@/lib/backup-error-text";
 
 interface BackupSettings {
   id: number;
@@ -44,6 +45,7 @@ interface BackupStatus {
   lastRun?: string;
   lastSuccess?: string;
   lastError?: string;
+  lastErrorCode?: string;
   isRunning: boolean;
   nextScheduled?: string;
 }
@@ -53,6 +55,7 @@ interface BackupHealth {
   ageHours: number | null;
   stale: boolean;
   lastError: string | null;
+  lastErrorCode?: string | null;
   backupPath?: string;
   backupPathFromEnv?: boolean;
 }
@@ -128,14 +131,10 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     mutationFn: async (enabled: boolean) => {
       if (!settings) throw new Error(t('backupDialog.settingsNotLoaded'));
 
+      // apiRequest throws on a non-2xx answer; onError shows our own Dutch text.
       const response = await apiRequest('PUT', `/api/backup-settings/${settings.id}`, {
         enableAutoBackup: enabled,
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || t('backupDialog.updateSettingsFailed'));
-      }
 
       return await response.json();
     },
@@ -151,7 +150,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     onError: (error: Error) => {
       toast({
         title: t('backupDialog.updateFailedTitle'),
-        description: error.message,
+        description: t('backupDialog.updateSettingsFailed'),
         variant: 'destructive',
       });
     },
@@ -160,13 +159,9 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
   // Run a backup now
   const runBackupMutation = useMutation({
     mutationFn: async () => {
+      // apiRequest throws on a non-2xx answer and copies the body's code/reason
+      // onto the error; the message of that error is "500: {json}" and is never shown (A-17-3).
       const response = await apiRequest('POST', '/api/backups/run');
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || t('backupDialog.runBackupFailed'));
-      }
-
       return await response.json();
     },
     onSuccess: () => {
@@ -179,11 +174,21 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     onError: (error: Error) => {
       toast({
         title: t('backupDialog.backupFailedTitle'),
-        description: error.message,
+        description: runBackupErrorText(error),
         variant: 'destructive',
       });
     },
   });
+
+  /** Dutch text for a failed "Nu back-uppen", chosen by the server's code and reason. */
+  const runBackupErrorText = (error: unknown): string => {
+    const { code, reason } = (error ?? {}) as { code?: string; reason?: string };
+    if (code === 'BACKUP_ALREADY_RUNNING') return t('backupDialog.backupAlreadyRunning');
+    if (isKnownBackupReason(reason)) {
+      return t('backupDialog.backupFailedReason', { reason: backupErrorReason(reason, (k) => t(k)) });
+    }
+    return t('backupDialog.backupFailedUnknown');
+  };
 
   const handleDownloadData = async () => {
     setDownloadingData(true);
@@ -462,7 +467,8 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
   const formatDate = (dateString?: string) => {
     if (!dateString) return t('backupDialog.never');
     const date = new Date(dateString);
-    if (Number.isNaN(date.getTime())) return t('backupDialog.unknownDate');
+    // A-17-4: a date before 2000 is a missing timestamp (the epoch), not a backup from 1970.
+    if (Number.isNaN(date.getTime()) || date.getFullYear() < 2000) return t('backupDialog.unknownDate');
     // BUG-223: this was 'en-US' — "Sep 11, 2026, 12:54 AM" on a Dutch screen.
     return date.toLocaleString('nl-NL', {
       day: 'numeric',
@@ -572,12 +578,28 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                     </div>
                   </div>
                 </div>
+                {health && (health.lastSuccessAt === null || (health.ageHours ?? 0) > 24) && (
+                  <div
+                    className="mt-3 flex items-start gap-2 p-2 bg-amber-50 rounded-lg border border-amber-300"
+                    data-testid="backup-old-warning"
+                  >
+                    <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-900">{t('backupDialog.oldBackupWarningTitle')}</p>
+                      <p className="text-xs text-amber-800">
+                        {health.lastSuccessAt === null
+                          ? t('backupDialog.oldBackupWarningNever')
+                          : t('backupDialog.oldBackupWarningHours', { hours: health.ageHours })}
+                      </p>
+                    </div>
+                  </div>
+                )}
                 {status?.lastError && (
                   <div className="mt-3 flex items-start gap-2 p-2 bg-red-50 rounded-lg border border-red-200">
                     <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="text-sm font-medium text-red-900">{t('backupDialog.lastBackupError')}</p>
-                      <p className="text-xs text-red-700">{status.lastError}</p>
+                      <p className="text-xs text-red-700">{backupErrorReason(status.lastErrorCode, (k) => t(k))}</p>
                     </div>
                   </div>
                 )}
