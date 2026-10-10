@@ -131,7 +131,94 @@
     "foundResultsCount_one": "{{count}} resultaat gevonden",
     "foundResultsCount_other": "{{count}} resultaten gevonden",
     "noResultsFound": "Geen resultaten gevonden",
-    "closeButton": "Sluiten"
+    "closeButton": "Sluiten",
+    "sources": {
+      "vehicles": "Voertuigen",
+      "customers": "Klanten",
+      "reservations": "Reserveringen",
+      "expenses": "Kosten",
+      "drivers": "Chauffeurs"
+    },
+    "fields": {
+      "vehicles": {
+        "id": "ID",
+        "licensePlate": "Kenteken",
+        "brand": "Merk",
+        "model": "Model",
+        "vehicleType": "Voertuigtype",
+        "fuel": "Brandstof",
+        "monthlyPrice": "Maandprijs",
+        "dailyPrice": "Dagprijs",
+        "currentMileage": "Kilometerstand",
+        "apkDate": "APK-datum",
+        "warrantyEndDate": "Einddatum garantie",
+        "maintenanceStatus": "Onderhoudsstatus",
+        "gps": "Heeft GPS"
+      },
+      "customers": {
+        "id": "ID",
+        "name": "Naam",
+        "debtorNumber": "Debiteurnummer",
+        "email": "E-mail",
+        "phone": "Telefoon",
+        "customerType": "Klanttype",
+        "corporateDiscount": "Zakelijke korting (%)",
+        "city": "Plaats",
+        "country": "Land"
+      },
+      "reservations": {
+        "id": "ID",
+        "startDate": "Startdatum",
+        "endDate": "Einddatum",
+        "status": "Status",
+        "reservationType": "Reserveringstype",
+        "dailyRate": "Dagtarief",
+        "totalAmount": "Totaalbedrag",
+        "paymentStatus": "Betaalstatus",
+        "paidAmount": "Betaald bedrag",
+        "pickupMileage": "Kilometerstand bij ophalen",
+        "returnMileage": "Kilometerstand bij inleveren",
+        "deliveryRequired": "Bezorging nodig",
+        "deliveryFee": "Bezorgkosten"
+      },
+      "expenses": {
+        "id": "ID",
+        "category": "Categorie",
+        "amount": "Bedrag",
+        "date": "Datum",
+        "description": "Omschrijving",
+        "mileage": "Kilometerstand bij onderhoud"
+      },
+      "drivers": {
+        "id": "ID",
+        "firstName": "Voornaam",
+        "lastName": "Achternaam",
+        "email": "E-mail",
+        "phone": "Telefoon",
+        "isPrimary": "Hoofdchauffeur"
+      }
+    },
+    "operators": {
+      "equals": "is gelijk aan",
+      "not_equals": "is niet gelijk aan",
+      "contains": "bevat",
+      "not_contains": "bevat niet",
+      "starts_with": "begint met",
+      "ends_with": "eindigt op",
+      "greater_than": "is groter dan",
+      "less_than": "is kleiner dan",
+      "greater_or_equal": "is groter dan of gelijk aan",
+      "less_or_equal": "is kleiner dan of gelijk aan",
+      "is_null": "is leeg",
+      "is_not_null": "is niet leeg",
+      "between": "ligt tussen",
+      "in": "is een van",
+      "not_in": "is geen van"
+    },
+    "exportCsvButton": "Exporteren naar CSV",
+    "printButton": "Afdrukken",
+    "printSubtitle_one": "Gemaakt op {{date}}, {{count}} resultaat",
+    "printSubtitle_other": "Gemaakt op {{date}}, {{count}} resultaten"
   },
   "financialTab": {
     "loading": "Laden...",

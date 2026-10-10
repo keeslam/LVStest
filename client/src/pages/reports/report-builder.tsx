@@ -12,10 +12,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Play, Save, Trash2, X, Filter as FilterIcon, Download, Settings, BarChart3 } from "lucide-react";
+import { Plus, Play, Save, Trash2, X, Filter as FilterIcon, Download, Printer, Settings, BarChart3 } from "lucide-react";
 import { apiRequest, queryClient, invalidateByPrefix } from "@/lib/queryClient";
 import { UserPermission } from "@shared/schema";
 import { RequiresPermission } from "@/components/ui/requires-permission";
+import { downloadCsv } from "@/lib/csv";
+import { formatDateTime } from "@/lib/format-utils";
+import {
+  sourceLabel, fieldLabel, operatorLabel, outputHeader, csvCell, displayCell, printReportTable, reportFileSubject,
+} from "@/pages/reports/report-builder-output";
 import {
   DATA_SOURCES, 
   type ReportConfiguration, 
@@ -48,6 +53,10 @@ export default function ReportBuilder() {
   const [filters, setFilters] = useState<ReportFilter[]>([]);
   const [groupBy, setGroupBy] = useState<ReportGrouping[]>([]);
   const [reportResults, setReportResults] = useState<any[]>([]);
+  // The columns and name of the report that was last run. A saved report is run without opening
+  // it in the builder, so the result must not borrow the builder's own (possibly empty) columns.
+  const [resultColumns, setResultColumns] = useState<ReportColumn[]>([]);
+  const [resultName, setResultName] = useState('');
   const [showResultsDialog, setShowResultsDialog] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [loadingReport, setLoadingReport] = useState<number | null>(null);
@@ -81,8 +90,10 @@ export default function ReportBuilder() {
       const res = await apiRequest('POST', '/api/reports/execute', config);
       return await res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data, config) => {
       setReportResults(data);
+      setResultColumns(config.columns);
+      setResultName(config.name);
       setShowResultsDialog(true);
       toast({
         title: t('reportBuilderPage.toasts.reportExecutedTitle'),
@@ -240,7 +251,7 @@ export default function ReportBuilder() {
                         className="h-4 w-4"
                         data-testid={`checkbox-datasource-${source.id}`}
                       />
-                      <span className="font-medium">{source.name}</span>
+                      <span className="font-medium">{sourceLabel(t, source.id, source.name)}</span>
                     </div>
                     {selectedDataSources.includes(source.id) && (
                       <div className="ml-6 space-y-1">
@@ -255,7 +266,7 @@ export default function ReportBuilder() {
                             className="text-sm text-muted-foreground hover:text-foreground block w-full text-left py-1"
                             data-testid={`button-add-field-${field.name}`}
                           >
-                            + {field.label}
+                            + {fieldLabel(t, field.table, field.name, field.label)}
                           </button>
                         ))}
                         {source.fields.length > 5 && (
@@ -316,7 +327,7 @@ export default function ReportBuilder() {
                       columns.map((col, idx) => (
                         <div key={idx} className="flex items-center justify-between p-2 bg-secondary rounded">
                           <span className="text-sm">
-                            {col.label} {col.aggregation && `(${col.aggregation})`}
+                            {fieldLabel(t, col.table, col.field, col.label)} {col.aggregation && `(${col.aggregation})`}
                           </span>
                           <Button
                             variant="ghost"
@@ -398,7 +409,8 @@ export default function ReportBuilder() {
         open={showResultsDialog}
         onOpenChange={setShowResultsDialog}
         results={reportResults}
-        columns={columns}
+        columns={resultColumns}
+        reportName={resultName}
       />
     </div>
   );
@@ -470,7 +482,7 @@ function FilterBuilder({
                 <SelectContent>
                   {availableFields.map(field => (
                     <SelectItem key={`${field.table}-${field.name}`} value={field.name}>
-                      {field.label}
+                      {fieldLabel(t, field.table, field.name, field.label)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -489,7 +501,7 @@ function FilterBuilder({
                 <SelectContent>
                   {selectedField?.operators.map(op => (
                     <SelectItem key={op} value={op}>
-                      {op.replace(/_/g, ' ')}
+                      {operatorLabel(t, op)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -525,7 +537,7 @@ function FilterBuilder({
           filters.map((filter, idx) => (
             <div key={idx} className="flex items-center justify-between p-2 bg-secondary rounded">
               <span className="text-sm">
-                {getField(filter.table, filter.field)?.label} {filter.operator.replace(/_/g, ' ')} {filter.value}
+                {fieldLabel(t, filter.table, filter.field, getField(filter.table, filter.field)?.label)} {operatorLabel(t, filter.operator)} {filter.value}
               </span>
               <Button
                 variant="ghost"
@@ -592,7 +604,7 @@ function SavedReportsTab({
                 <div className="flex gap-2 mt-2">
                   <Badge variant="outline">{t('reportBuilderPage.columnsCount', { count: report.configuration.columns.length })}</Badge>
                   <Badge variant="outline">{t('reportBuilderPage.filtersCount', { count: report.configuration.filters.length })}</Badge>
-                  <Badge variant="outline">{report.configuration.dataSources.join(', ')}</Badge>
+                  <Badge variant="outline">{report.configuration.dataSources.map((id) => sourceLabel(t, id)).join(', ')}</Badge>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -633,18 +645,41 @@ function SavedReportsTab({
   );
 }
 
-function ReportResultsDialog({ 
-  open, 
-  onOpenChange, 
-  results, 
-  columns 
-}: { 
-  open: boolean; 
+function ReportResultsDialog({
+  open,
+  onOpenChange,
+  results,
+  columns,
+  reportName,
+}: {
+  open: boolean;
   onOpenChange: (open: boolean) => void;
   results: any[];
   columns: ReportColumn[];
+  reportName: string;
 }) {
   const { t } = useTranslation("reports");
+  const header = outputHeader(t, columns);
+  const canOutput = results.length > 0 && columns.length > 0;
+
+  // A-14-1: the same writer as every other CSV in the application (Dutch decimals and dates, dated file name, "file made" toast).
+  const exportCsv = () => {
+    downloadCsv(
+      reportFileSubject(reportName || t('reportBuilderPage.untitledReport')),
+      header,
+      results.map((row) => columns.map((col) => csvCell(t, col, row[col.field]))),
+    );
+  };
+
+  const printResults = () => {
+    printReportTable({
+      title: reportName || t('reportBuilderPage.untitledReport'),
+      subtitle: t('reportBuilderPage.printSubtitle', { date: formatDateTime(new Date()), count: results.length }),
+      header,
+      rows: results.map((row) => columns.map((col) => displayCell(t, col, row[col.field]))),
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[80vh] overflow-auto" data-testid="dialog-report-results">
@@ -657,7 +692,7 @@ function ReportResultsDialog({
             <TableHeader>
               <TableRow>
                 {columns.map((col, idx) => (
-                  <TableHead key={idx}>{col.label}</TableHead>
+                  <TableHead key={idx}>{header[idx]}</TableHead>
                 ))}
               </TableRow>
             </TableHeader>
@@ -672,11 +707,7 @@ function ReportResultsDialog({
                 results.map((row, rowIdx) => (
                   <TableRow key={rowIdx}>
                     {columns.map((col, colIdx) => (
-                      <TableCell key={colIdx}>
-                        {row[col.field] !== null && row[col.field] !== undefined 
-                          ? String(row[col.field]) 
-                          : '-'}
-                      </TableCell>
+                      <TableCell key={colIdx}>{displayCell(t, col, row[col.field])}</TableCell>
                     ))}
                   </TableRow>
                 ))
@@ -685,6 +716,14 @@ function ReportResultsDialog({
           </Table>
         </div>
         <DialogFooter>
+          <Button variant="outline" onClick={exportCsv} disabled={!canOutput} data-testid="button-export-report-csv">
+            <Download className="h-4 w-4 mr-2" />
+            {t('reportBuilderPage.exportCsvButton')}
+          </Button>
+          <Button variant="outline" onClick={printResults} disabled={!canOutput} data-testid="button-print-report">
+            <Printer className="h-4 w-4 mr-2" />
+            {t('reportBuilderPage.printButton')}
+          </Button>
           <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-close-results">
             {t('reportBuilderPage.closeButton')}
           </Button>

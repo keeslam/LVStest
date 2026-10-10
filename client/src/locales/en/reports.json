@@ -131,7 +131,94 @@
     "foundResultsCount_one": "Found {{count}} result",
     "foundResultsCount_other": "Found {{count}} results",
     "noResultsFound": "No results found",
-    "closeButton": "Close"
+    "closeButton": "Close",
+    "sources": {
+      "vehicles": "Vehicles",
+      "customers": "Customers",
+      "reservations": "Reservations",
+      "expenses": "Expenses",
+      "drivers": "Drivers"
+    },
+    "fields": {
+      "vehicles": {
+        "id": "ID",
+        "licensePlate": "License Plate",
+        "brand": "Brand",
+        "model": "Model",
+        "vehicleType": "Vehicle Type",
+        "fuel": "Fuel Type",
+        "monthlyPrice": "Monthly Price",
+        "dailyPrice": "Daily Price",
+        "currentMileage": "Current Mileage",
+        "apkDate": "APK Date",
+        "warrantyEndDate": "Warranty End Date",
+        "maintenanceStatus": "Maintenance Status",
+        "gps": "Has GPS"
+      },
+      "customers": {
+        "id": "ID",
+        "name": "Name",
+        "debtorNumber": "Debtor Number",
+        "email": "Email",
+        "phone": "Phone",
+        "customerType": "Customer Type",
+        "corporateDiscount": "Corporate Discount (%)",
+        "city": "City",
+        "country": "Country"
+      },
+      "reservations": {
+        "id": "ID",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "status": "Status",
+        "reservationType": "Reservation Type",
+        "dailyRate": "Daily Rate",
+        "totalAmount": "Total Amount",
+        "paymentStatus": "Payment Status",
+        "paidAmount": "Paid Amount",
+        "pickupMileage": "Pickup Mileage",
+        "returnMileage": "Return Mileage",
+        "deliveryRequired": "Delivery Required",
+        "deliveryFee": "Delivery Fee"
+      },
+      "expenses": {
+        "id": "ID",
+        "category": "Category",
+        "amount": "Amount",
+        "date": "Date",
+        "description": "Description",
+        "mileage": "Mileage at Service"
+      },
+      "drivers": {
+        "id": "ID",
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "email": "Email",
+        "phone": "Phone",
+        "isPrimary": "Is Primary Driver"
+      }
+    },
+    "operators": {
+      "equals": "equals",
+      "not_equals": "does not equal",
+      "contains": "contains",
+      "not_contains": "does not contain",
+      "starts_with": "starts with",
+      "ends_with": "ends with",
+      "greater_than": "is greater than",
+      "less_than": "is less than",
+      "greater_or_equal": "is greater than or equal to",
+      "less_or_equal": "is less than or equal to",
+      "is_null": "is empty",
+      "is_not_null": "is not empty",
+      "between": "is between",
+      "in": "is one of",
+      "not_in": "is none of"
+    },
+    "exportCsvButton": "Export to CSV",
+    "printButton": "Print",
+    "printSubtitle_one": "Created {{date}}, {{count}} result",
+    "printSubtitle_other": "Created {{date}}, {{count}} results"
   },
   "financialTab": {
     "loading": "Loading...",
