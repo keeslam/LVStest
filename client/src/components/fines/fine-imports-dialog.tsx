@@ -8,7 +8,7 @@ import type { FineImportFile } from "@shared/schema";
 import type { CjibRunSummary } from "@shared/fines";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -54,7 +54,10 @@ export function FineImportsDialog() {
   return (
     <Dialog open={open} onOpenChange={(o) => !o && closeFineImportsDialog()}>
       <DialogContent className="max-w-[95vw] max-h-[90vh] flex flex-col">
-        <DialogHeader><DialogTitle>{t("admin.fines.cjib.importsTitle")}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{t("admin.fines.cjib.importsTitle")}</DialogTitle>
+          <DialogDescription className="sr-only">{t("admin.fines.cjib.importsDescription")}</DialogDescription>
+        </DialogHeader>
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 p-3 text-sm">
           <div className="space-y-0.5">
             <div>

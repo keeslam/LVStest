@@ -136,6 +136,9 @@
     "printFilteredButton": "Print filtered ({{count}})",
     "noVehicles": "No vehicles found",
     "pageHeader": "Barcode book — Auto Lease LAM",
+    "printOpenedTitle": "Print window opened",
+    "printOpenedDescription_one": "Your browser's print window is open for the barcode book ({{count}} vehicle). Choose the printer there.",
+    "printOpenedDescription_other": "Your browser's print window is open for the barcode book ({{count}} vehicles). Choose the printer there.",
     "printStickersButton": "Print stickers"
   },
   "damageScan": {

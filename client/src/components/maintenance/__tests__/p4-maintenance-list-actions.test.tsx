@@ -126,3 +126,23 @@ describe("the new buttons are gated like their screens", () => {
     expect(screen.getByTestId("button-list-checkin-7")).toHaveAttribute("aria-disabled", "true");
   });
 });
+
+describe("the search matches what the row says (final wave A, item 9)", () => {
+  it("'pech' finds a breakdown block, whose stored notes say 'breakdown: ...'", async () => {
+    const user = await renderOverview();
+    const search = screen.getByTestId("input-maintenance-search");
+    await user.type(search, "pech");
+    expect(screen.getByTestId("row-maintenance-7")).toBeInTheDocument();
+    expect(screen.getByTestId("row-maintenance-9")).toBeInTheDocument();
+    // The stored word still works, and so does the description.
+    await user.clear(search);
+    await user.type(search, "breakdown");
+    expect(screen.getByTestId("row-maintenance-7")).toBeInTheDocument();
+    await user.clear(search);
+    await user.type(search, "lekke");
+    expect(screen.getByTestId("row-maintenance-7")).toBeInTheDocument();
+    await user.clear(search);
+    await user.type(search, "zzzzzz");
+    expect(screen.queryByTestId("row-maintenance-7")).toBeNull();
+  });
+});

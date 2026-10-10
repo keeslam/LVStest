@@ -655,6 +655,7 @@
       },
       "dialog": {
         "title": "Bekeuring #{{id}}",
+        "description": "Bekijk en behandel deze bekeuring: koppeling aan een klant, doorbelasten en de brief.",
         "newTitle": "Nieuwe bekeuring",
         "newTooltip": "Eén bekeuring invullen, eventueel met de brief erbij",
         "newIntro": "Voor één bekeuring: vul de velden in, of kies de brief en laat hem inlezen, dan worden de velden voor je ingevuld. Jij controleert ze voordat je opslaat. Voor een stapel brieven gebruik je Brieven scannen.",
@@ -724,6 +725,7 @@
         "runDone": "{{files}} bestand(en) opgehaald, {{created}} bekeuringen aangemaakt, {{linked}} gekoppeld",
         "running": "Bezig met ophalen…",
         "importsTitle": "CJIB-importen",
+        "importsDescription": "De bestanden die het CJIB heeft aangeleverd en wat er met elk bestand is gedaan.",
         "statusOn": "Automatisch ophalen elke {{minutes}} min",
         "statusOff": "Automatisch ophalen staat uit",
         "lastRun": "Laatste run {{at}}: {{files}} bestand(en), {{created}} aangemaakt, {{errors}} fout(en)",
@@ -952,6 +954,7 @@
     "title": "Bekeuringen",
     "empty": "Er zijn geen bekeuringen.",
     "detailTitle": "Bekeuring",
+    "detailDescription": "De gegevens van deze bekeuring en een manier om er een vraag over te stellen.",
     "letter": "Brief bekijken",
     "ask": "Vraag stellen over deze bekeuring",
     "fields": {

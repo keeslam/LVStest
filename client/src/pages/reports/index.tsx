@@ -873,7 +873,7 @@ function FullReportsPage() {
       `;
       
       // Get date range string
-      const dateRangeString = dateRange.from && dateRange.to
+      const dateRangeString = dateRange.from && dateRange.to && !isAllDataRange
         ? `${formatDate(dateRange.from)} ${t('reportsPage.printReport.dateRangeSeparator')} ${formatDate(dateRange.to)}`
         : t('reportsPage.common.allData');
         
@@ -1935,7 +1935,6 @@ function FullReportsPage() {
             <NoDataAccess permission={UserPermission.VIEW_VEHICLES} />
           ) : (
           <>
-          {categoryIgnoredNote(t('reportsPage.filters.categoryScopeApkWarranty'))}
           {/* Vehicle Utilization Stats */}
           <Card>
             <CardHeader>
@@ -2027,6 +2026,8 @@ function FullReportsPage() {
             </CardContent>
           </Card>
 
+          {/* The category filter does not reach the APK and warranty blocks: the note sits right above them. */}
+          {categoryIgnoredNote(t('reportsPage.filters.categoryScopeApkWarranty'))}
           {/* APK Inspection Status */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

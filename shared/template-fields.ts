@@ -20,6 +20,9 @@
  */
 import { z } from "zod";
 
+/** The stable code of the 409 a contract template without fields gets when it would be the default (A-10-2). */
+export const TEMPLATE_DEFAULT_WITHOUT_FIELDS = "TEMPLATE_DEFAULT_WITHOUT_FIELDS" as const;
+
 /** A4 in PDF points — the coordinate space every template field lives in. */
 export const PAGE_WIDTH = 595;
 export const PAGE_HEIGHT = 842;

@@ -11,7 +11,7 @@ import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -91,6 +91,7 @@ export function FineDialog() {
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">{t("admin.fines.dialog.title", { id })} {fine && <FineStatusBadge status={fine.status} />}</DialogTitle>
+          <DialogDescription className="sr-only">{t("admin.fines.dialog.description")}</DialogDescription>
           {fine?.source === "cjib" && <p className="text-xs text-muted-foreground" data-testid="fine-source">{t("admin.fines.cjib.sourceLine", { file: fine.importFileId ?? "?" })}</p>}
         </DialogHeader>
         {fine && (

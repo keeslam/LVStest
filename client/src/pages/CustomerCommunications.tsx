@@ -418,10 +418,13 @@ export default function CustomerCommunications() {
       if (outcome === 'failed') {
         toast({
           title: t('customerCommunications.toasts.failedTitle'),
-          description: t('customerCommunications.toasts.failedDescription', {
-            failed: t('customerCommunications.toasts.failedCount', { count: failed }),
-            reason: failureCodeText(t as any, firstFailureCode(result.errors)),
-          }),
+          // { sent: 0, failed: 0 }: nobody was handled, so "0 e-mails mislukt" would be a strange thing to say.
+          description: failed === 0
+            ? t('customerCommunications.toasts.nobodyToMailDescription')
+            : t('customerCommunications.toasts.failedDescription', {
+                failed: t('customerCommunications.toasts.failedCount', { count: failed }),
+                reason: failureCodeText(t as any, firstFailureCode(result.errors)),
+              }),
           variant: "destructive",
         });
         // Nothing went out: keep the recipients and the text so it can be tried again.
@@ -656,6 +659,10 @@ export default function CustomerCommunications() {
     templateBuilderRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
     setTimeout(() => templateNameRef.current?.focus({ preventScroll: true }), 0);
   };
+
+  // Judged by the stored row, not by what is typed in the field (typing "portal_x" must not lock it).
+  const storedEditing = editingTemplate === null ? undefined : savedTemplates.find((tpl: any) => tpl.id === editingTemplate);
+  const editingSystemTemplate = !!storedEditing && isSystemTemplate(storedEditing);
 
   const beginEditingTemplate = (template: any) => {
     setEditingTemplate(template.id);
@@ -1724,8 +1731,10 @@ export default function CustomerCommunications() {
                     ref={templateNameRef}
                     id="template-name"
                     placeholder={t('customerCommunications.templates.templateNamePlaceholder')}
-                    value={templateName}
+                    value={editingSystemTemplate ? templateDisplayName({ name: templateName }) : templateName}
                     onChange={(e) => setTemplateName(e.target.value)}
+                    // The portal looks a system template up by its name, so a renamed one silently falls back to the built-in text.
+                    disabled={editingSystemTemplate}
                   />
                 </div>
 
@@ -2171,6 +2180,16 @@ export default function CustomerCommunications() {
                               key={recipient.key}
                               className={`p-3 space-y-2 cursor-pointer ${recipient.key === shown.key ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
                               onClick={() => setPreviewRecipientKey(recipient.key)}
+                              // Keyboard: the row itself (not the controls inside it) takes Enter and Space.
+                              tabIndex={0}
+                              aria-current={recipient.key === shown.key ? "true" : undefined}
+                              onKeyDown={(event) => {
+                                if (event.target !== event.currentTarget) return;
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                  event.preventDefault();
+                                  setPreviewRecipientKey(recipient.key);
+                                }
+                              }}
                               data-testid={`preview-recipient-${recipient.key}`}
                             >
                               <div className="flex justify-between items-start">

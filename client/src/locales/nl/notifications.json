@@ -127,6 +127,7 @@
       "failedCount_other": "{{count}} e-mails mislukt",
       "partialTitle": "Gedeeltelijk verstuurd",
       "partialDescription": "{{sent}}, {{failed}}. De redenen staan in het E-maillogboek.",
+      "nobodyToMailDescription": "Er was niemand om naar te mailen.",
       "failedTitle": "Er is niets verstuurd",
       "failedDescription": "{{failed}}. {{reason}}"
     },

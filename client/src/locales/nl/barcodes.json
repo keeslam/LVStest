@@ -136,6 +136,9 @@
     "printFilteredButton": "Gefilterde afdrukken ({{count}})",
     "noVehicles": "Geen voertuigen gevonden",
     "pageHeader": "Barcodeboek — Auto Lease LAM",
+    "printOpenedTitle": "Afdrukvenster geopend",
+    "printOpenedDescription_one": "Het afdrukvenster van je browser is geopend voor het barcodeboek ({{count}} voertuig). Kies daar de printer.",
+    "printOpenedDescription_other": "Het afdrukvenster van je browser is geopend voor het barcodeboek ({{count}} voertuigen). Kies daar de printer.",
     "printStickersButton": "Stickers afdrukken"
   },
   "damageScan": {

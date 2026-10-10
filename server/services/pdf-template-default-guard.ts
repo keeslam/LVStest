@@ -9,6 +9,8 @@
  * the editor starts); refusing it would make the editor unusable on a fresh install, so it is
  * exempt - the editor warns there.
  */
+import { TEMPLATE_DEFAULT_WITHOUT_FIELDS } from "../../shared/template-fields";
+
 export interface DefaultGuardInput {
   /** `isDefault` the row will have after this write. */
   resultingIsDefault: boolean;
@@ -20,7 +22,8 @@ export interface DefaultGuardInput {
   otherTemplatesExist: boolean;
 }
 
-export const TEMPLATE_DEFAULT_WITHOUT_FIELDS = "TEMPLATE_DEFAULT_WITHOUT_FIELDS" as const;
+// The literal lives in shared/ so the editor and this guard cannot drift apart.
+export { TEMPLATE_DEFAULT_WITHOUT_FIELDS };
 
 export function defaultWithoutFieldsViolation(input: DefaultGuardInput): boolean {
   if (!input.resultingIsDefault || input.resultingFieldCount > 0) return false;

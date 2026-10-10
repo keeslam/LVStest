@@ -115,7 +115,10 @@ describe("tabs that ignore the category filter say so (fix round 1, M-2)", () =>
       expect(await screen.findByTestId("category-filter-note"), tab).toHaveTextContent("Onderhoud");
     }
     await user.click(screen.getByRole("tab", { name: /Voertuigen/ }));
-    expect(await screen.findByTestId("category-filter-note")).toHaveTextContent(/APK en garantie/);
+    const vehiclesNote = await screen.findByTestId("category-filter-note");
+    expect(vehiclesNote).toHaveTextContent(/APK en garantie/);
+    // It sits directly above the block it is about, not above the utilization table that does follow the category.
+    expect(vehiclesNote.nextElementSibling).toHaveTextContent("APK-keuring overzicht");
     await user.click(screen.getByRole("tab", { name: /Kosten/ }));
     expect(screen.queryByTestId("category-filter-note")).toBeNull();
   });

@@ -112,6 +112,18 @@ describe("A-10-2 - the default template without fields", () => {
   });
 });
 
+describe("the empty-default warning toast follows the server's answer (final wave A, item 9)", () => {
+  it("is not shown when the server refuses the save", async () => {
+    const user = userEvent.setup();
+    templates = [{ id: 1, name: "Standaard", isDefault: true, fields: [] }];
+    patchResponse = { status: 500, body: { message: "boom" } };
+    renderEditor();
+    await user.click(await screen.findByTestId("button-save-template"));
+    await waitFor(() => expect(toastSpy.mock.calls.some(([c]) => c.variant === "destructive")).toBe(true));
+    expect(toastSpy.mock.calls.some(([c]) => /geen velden/.test(c.title ?? ""))).toBe(false);
+  });
+});
+
 describe("A-10-3 - unsaved changes are reported", () => {
   it("reports a clean editor as not dirty and says nothing in the save status", async () => {
     templates = [{ id: 1, name: "Standaard", isDefault: true, fields: [FIELD] }];

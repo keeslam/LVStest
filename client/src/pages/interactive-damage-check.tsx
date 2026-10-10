@@ -228,6 +228,11 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
     const loadSavedCheck = async () => {
       if (!editingCheckId) return;
 
+      // Read and clear in one go: a reload that fails or is skipped must not leave the marker behind
+      // to silence the "Check geladen" toast of a later, real load of the same check.
+      const justSaved = justSavedCheckIdRef.current === editingCheckId;
+      justSavedCheckIdRef.current = null;
+
       try {
         const response = await fetch(`/api/interactive-damage-checks/${editingCheckId}`, {
           credentials: 'include',
@@ -313,9 +318,7 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
           }
         }
 
-        if (justSavedCheckIdRef.current === editingCheckId) {
-          justSavedCheckIdRef.current = null;
-        } else {
+        if (!justSaved) {
           toast({
             title: t('interactiveDamageCheck.toasts.checkLoadedTitle'),
             description: t('interactiveDamageCheck.toasts.checkLoadedDescription'),

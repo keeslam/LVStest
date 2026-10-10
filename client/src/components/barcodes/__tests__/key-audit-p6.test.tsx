@@ -22,7 +22,7 @@ vi.mock("@/hooks/use-toast", async (importOriginal) => ({
 vi.mock("jsbarcode", () => ({ default: vi.fn() }));
 
 import { KeyAuditDialog } from "@/components/barcodes/key-audit-dialog";
-import { printKeyLabels } from "@/components/barcodes/key-label-print";
+import { printBarcodeBook, printKeyLabels } from "@/components/barcodes/key-label-print";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -109,6 +109,23 @@ describe("A-3-13 — printing a key label says what happened", () => {
       expect(arg.title).toBe("Afdrukvenster geopend");
       expect(arg.description).toContain("AB-123-C");
       expect(arg.description).not.toMatch(/verstuurd naar de printer/i);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("the barcode book toasts the same way once its print window opens (final wave A, item 9)", () => {
+    vi.useFakeTimers();
+    try {
+      const v = (id: number) => ({ id, barcode: `VEH-00000${id}`, licensePlate: "AB123C", brand: "X", model: "Y" });
+      printBarcodeBook([v(1), v(2)], "Barcodeboek");
+      expect(toastSpy).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(300);
+      expect(toastSpy).toHaveBeenCalledTimes(1);
+      const arg = toastSpy.mock.calls[0][0];
+      expect(arg.title).toBe("Afdrukvenster geopend");
+      expect(arg.description).toContain("barcodeboek");
+      expect(arg.description).toContain("2 voertuigen");
     } finally {
       vi.useRealTimers();
     }

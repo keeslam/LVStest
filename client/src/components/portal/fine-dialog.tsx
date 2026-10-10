@@ -6,7 +6,7 @@ import type { PortalFineDto } from "@shared/fines";
 import { portalQueryFn } from "@/lib/portal-api";
 import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { DetailRow } from "./reservation-dialog";
@@ -27,6 +27,7 @@ export function FineDialog({ id, onClose }: { id: number | null; onClose: () => 
           <DialogTitle className="flex items-center gap-2">
             {t("fines.detailTitle")} #{id}
           </DialogTitle>
+          <DialogDescription className="sr-only">{t("fines.detailDescription")}</DialogDescription>
         </DialogHeader>
         {isError ? <p className="p-6 text-center text-sm text-muted-foreground">{t("errors.PORTAL_NOT_FOUND")}</p> : isLoading || !f ? <div className="flex justify-center p-6"><Loader2 className="h-5 w-5 animate-spin" /></div> : (
           <div className="space-y-3">

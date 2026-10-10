@@ -248,6 +248,11 @@ export function printBarcodeBook(vehicles: LabelVehicle[], pageHeader: string): 
 
   // Give layout a tick, print, then remove the frame.
   setTimeout(() => {
+    // Same as printKeyLabels: this only opens the browser's print window, and the toast says so.
+    toast({
+      title: String(i18n.t("barcodes:book.printOpenedTitle")),
+      description: String(i18n.t("barcodes:book.printOpenedDescription", { count: printable.length })),
+    });
     frame.contentWindow!.focus();
     frame.contentWindow!.print();
     setTimeout(() => frame.remove(), 2000);

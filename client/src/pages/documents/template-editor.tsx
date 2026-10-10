@@ -42,6 +42,7 @@ import { Separator } from "@/components/ui/separator";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { UserPermission } from "@shared/schema";
+import { TEMPLATE_DEFAULT_WITHOUT_FIELDS } from "@shared/template-fields";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { RequiresPermission } from "@/components/ui/requires-permission";
 import { comparableTemplate } from "./comparable-template";
@@ -208,7 +209,7 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
       const code = (error as Error & { code?: string }).code;
       toast({
         title: t('common:status.error'),
-        description: code === 'TEMPLATE_DEFAULT_WITHOUT_FIELDS'
+        description: code === TEMPLATE_DEFAULT_WITHOUT_FIELDS
           ? t('templateEditor.toasts.defaultNeedsFields')
           : t('templateEditor.toasts.saveTemplateFailed', { message: describeApiError(error) }),
         variant: "destructive",
@@ -1164,13 +1165,17 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
       }))
     };
     
-    saveTemplateMutation.mutate(templateToSave);
-    if (defaultWithoutFields) {
-      toast({
-        title: t('templateEditor.toasts.defaultEmptyTitle'),
-        description: t('templateEditor.toasts.defaultEmptyDescription'),
-      });
-    }
+    // The warning belongs to a save that went through: after a refusal it would sit next to the error.
+    saveTemplateMutation.mutate(templateToSave, {
+      onSuccess: () => {
+        if (defaultWithoutFields) {
+          toast({
+            title: t('templateEditor.toasts.defaultEmptyTitle'),
+            description: t('templateEditor.toasts.defaultEmptyDescription'),
+          });
+        }
+      },
+    });
   };
 
   const switchToTemplate = (value: string) => {

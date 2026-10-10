@@ -73,6 +73,24 @@ describe("/reports print documents (A-14-8)", () => {
   });
 });
 
+describe("/reports print header for 'Alle gegevens' (final wave A, item 9)", () => {
+  it("says 'Alle gegevens', not the 2000 - 2050 the preset is made of", async () => {
+    installFetch({ vehicles: fleet, expenses: [] });
+    const { printed, restore } = capturePrints();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderWithClient(<ReportsPage />);
+    await user.click(await screen.findByRole("button", { name: /Alle gegevens/ }));
+    await user.click(await screen.findByTestId("print-report-apk"));
+    await vi.advanceTimersByTimeAsync(1000);
+    vi.useRealTimers();
+    await waitFor(() => expect(printed.length).toBe(1));
+    expect(printed[0]).toContain("Datumbereik: Alle gegevens");
+    expect(printed[0]).not.toMatch(/2000|2050/);
+    restore();
+  });
+});
+
 describe("/reports customer impact print (A-14-8)", () => {
   it("leaves out customers without reservations in the period", async () => {
     installFetch({

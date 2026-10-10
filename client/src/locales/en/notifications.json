@@ -127,6 +127,7 @@
       "failedCount_other": "{{count}} emails failed",
       "partialTitle": "Partly sent",
       "partialDescription": "{{sent}}, {{failed}}. The reasons are in the Email log.",
+      "nobodyToMailDescription": "There was nobody to email.",
       "failedTitle": "Nothing was sent",
       "failedDescription": "{{failed}}. {{reason}}"
     },

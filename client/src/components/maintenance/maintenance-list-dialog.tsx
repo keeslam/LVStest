@@ -275,7 +275,9 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
   };
   
   // Create unified search filter
-  const filterItems = (items: any[], searchFields: string[]) => {
+  // `shown` adds text the row displays but does not store (a block's notes say "breakdown: ..." and the
+  // row reads "Pech: ..."), so people can find a row by the word they see.
+  const filterItems = (items: any[], searchFields: string[], shown?: (item: any) => string) => {
     if (!searchTerm) return items;
     
     const search = searchTerm.toLowerCase();
@@ -283,7 +285,7 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
       searchFields.some((field) => {
         const value = field.split('.').reduce((obj, key) => obj?.[key], item);
         return value?.toString().toLowerCase().includes(search);
-      })
+      }) || (shown?.(item) ?? "").toLowerCase().includes(search)
     );
   };
 
@@ -298,7 +300,7 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
     'vehicle.brand', 
     'vehicle.model', 
     'notes'
-  ]);
+  ], (reservation) => formatMaintenanceNotes(reservation.notes));
   const filteredSpareAssignments = filterItems(spareAssignments, [
     'customer.name', 
     'customer.firstName', 

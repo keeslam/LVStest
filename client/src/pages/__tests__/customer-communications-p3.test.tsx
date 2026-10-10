@@ -532,3 +532,67 @@ describe("A-13-13 and the log in Dutch", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 });
+
+describe("final wave A, item 9 - minors carried from the P3 review", () => {
+  it("a system (portal) template keeps its name: the field is disabled and shows the Dutch name", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole("tab", { name: "Sjabloonbouwer" }));
+    await screen.findByTestId("template-card-2");
+    await user.click(screen.getByTestId("button-edit-2"));
+    const name = screen.getByLabelText("Sjabloonnaam");
+    expect(name).toBeDisabled();
+    expect(name).toHaveValue("Portaal: uitnodiging");
+    // An ordinary template stays renameable.
+    await user.click(screen.getByTestId("button-edit-4"));
+    expect(screen.getByLabelText("Sjabloonnaam")).toBeEnabled();
+    expect(screen.getByLabelText("Sjabloonnaam")).toHaveValue("Algemeen bericht");
+  });
+
+  it("a send that handled no recipient at all says nobody was there to mail, not '0 e-mails mislukt'", async () => {
+    sendResponse = () => json({ success: true, sent: 0, failed: 0, errors: [] });
+    const user = userEvent.setup();
+    renderPage();
+    await customMessageToCustomers(user, "customer-card-1");
+    await user.click(await screen.findByTestId("button-confirm-send-notifications"));
+    await waitFor(() => expect(toastSpy).toHaveBeenCalled());
+    const toast = toastSpy.mock.calls.at(-1)![0];
+    expect(toast.title).toBe("Er is niets verstuurd");
+    expect(toast.description).toContain("Er was niemand om naar te mailen");
+    expect(toast.description).not.toContain("mislukt");
+    expect(toast.variant).toBe("destructive");
+  });
+
+  it("a template chosen on one tab is not still selected after a trip to another tab", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByTestId("select-apk-template"));
+    await user.click(await screen.findByRole("option", { name: "APK herinnering" }));
+    expect(screen.getByTestId("select-apk-template")).toHaveTextContent("APK herinnering");
+    await user.click(screen.getByTestId("tab-maintenance"));
+    await user.click(screen.getByTestId("tab-apk"));
+    expect(await screen.findByTestId("select-apk-template")).not.toHaveTextContent("APK herinnering");
+  });
+
+  it("the recipient rows of the send preview can be chosen from the keyboard", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByTestId("tab-custom"));
+    await user.click(await screen.findByTestId("customer-card-2"));
+    await user.click(await screen.findByTestId("vehicle-card-custom-10"));
+    await pasteInto(user, screen.getByTestId("input-custom-subject"), "Nieuws voor {customerName}");
+    await pasteInto(user, screen.getByTestId("textarea-custom-message"), "Hallo {customerName}");
+    await user.click(screen.getByTestId("button-preview-custom"));
+    const dialog = await screen.findByRole("dialog");
+    const second = within(dialog).getByTestId("preview-recipient-c2");
+    expect(within(dialog).getByTestId("preview-subject")).toHaveTextContent("Nieuws voor Audit Testklant B.v.");
+
+    second.focus();
+    expect(second).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(within(dialog).getByTestId("preview-subject")).toHaveTextContent("Nieuws voor Tweede Klant");
+    expect(second).toHaveAttribute("aria-current", "true");
+    await user.keyboard(" ");
+    expect(within(dialog).getByTestId("preview-subject")).toHaveTextContent("Nieuws voor Tweede Klant");
+  });
+});
