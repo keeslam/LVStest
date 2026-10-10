@@ -24,7 +24,8 @@
       "apk_inspection": "APK Inspection",
       "warranty_service": "Warranty Service",
       "accident_damage": "Accident Damage",
-      "other": "Other"
+      "other": "Other",
+      "vehicle_maintenance_block": "Maintenance block"
     },
     "description_field": "Description",
     "descriptionPlaceholder": "Brief description of the maintenance work",
@@ -244,6 +245,8 @@
     "activeRentalHint": "This vehicle has an active rental with this customer",
     "selectCustomerOptional": "Select customer (optional)",
     "noneNoCustomer": "None (no customer)",
+    "searchCustomerPlaceholder": "Search by name, phone or city...",
+    "noCustomerFound": "No customers found.",
     "whoIsBringingVehicle": "Who is bringing the vehicle in for maintenance?",
     "maintenanceType": "Maintenance Type",
     "typesFull": {

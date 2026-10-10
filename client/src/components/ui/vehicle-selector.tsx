@@ -42,6 +42,12 @@ interface VehicleSelectorProps {
    * `aria-labelledby` at the label alone would replace the button's own text.
    */
   ariaLabelledBy?: string;
+  /**
+   * A modal list swallows the first click outside it (it only closes the list).
+   * Callers whose confirm button sits right below the list pass `false` so one
+   * click both closes the list and acts (A-7-8).
+   */
+  modal?: boolean;
   "data-testid"?: string;
 }
 
@@ -55,6 +61,7 @@ export function VehicleSelector({
   recentVehicleIds = [],
   warnExpiredApk = false,
   ariaLabelledBy,
+  modal = true,
   "data-testid": dataTestId,
 }: VehicleSelectorProps) {
   const { t } = useTranslation("vehicles");
@@ -119,7 +126,7 @@ export function VehicleSelector({
 
   return (
     <div className="relative w-full">
-      <Popover open={open} onOpenChange={setOpen} modal={true}>
+      <Popover open={open} onOpenChange={setOpen} modal={modal}>
         <PopoverTrigger asChild>
           <Button
             type="button"

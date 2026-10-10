@@ -24,7 +24,8 @@
       "apk_inspection": "APK-keuring",
       "warranty_service": "Garantieservice",
       "accident_damage": "Ongevalschade",
-      "other": "Overig"
+      "other": "Overig",
+      "vehicle_maintenance_block": "Onderhoudsblok"
     },
     "description_field": "Omschrijving",
     "descriptionPlaceholder": "Korte omschrijving van de onderhoudswerkzaamheden",
@@ -244,6 +245,8 @@
     "activeRentalHint": "Dit voertuig heeft een actieve verhuur bij deze klant",
     "selectCustomerOptional": "Selecteer klant (optioneel)",
     "noneNoCustomer": "Geen (geen klant)",
+    "searchCustomerPlaceholder": "Zoek op naam, telefoon of plaats...",
+    "noCustomerFound": "Geen klanten gevonden.",
     "whoIsBringingVehicle": "Wie brengt het voertuig voor onderhoud?",
     "maintenanceType": "Onderhoudstype",
     "typesFull": {

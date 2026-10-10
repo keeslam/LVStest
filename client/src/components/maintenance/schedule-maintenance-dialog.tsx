@@ -42,6 +42,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox";
 import { Loader2, Calendar, AlertTriangle, Wrench, Clock, Car, Filter } from "lucide-react";
 import { officeToday } from "@/lib/office-date";
 import { blockStatusForForm } from "@/lib/maintenance-status";
@@ -222,6 +223,25 @@ export function ScheduleMaintenanceDialog({
     enabled: open && canViewCustomers,
   });
 
+  // A-7-6: the same searchable picker the reservation form uses. "none" stays the
+  // first choice: the customer is optional and the picker has no clear button.
+  const customerOptions: ComboboxOption[] = [
+    { value: "none", label: t('scheduleDialog.noneNoCustomer') },
+    ...customers.map((customer: any) => {
+      const description = [
+        [customer.phone, customer.email].filter(Boolean).join(' • '),
+        [customer.city, customer.postalCode].filter(Boolean).join(' '),
+      ].filter(Boolean).join(' • ');
+      const tag = customer.companyName || (customer.debtorNumber ? `#${customer.debtorNumber}` : undefined);
+      return {
+        value: customer.id.toString(),
+        label: customer.name,
+        description: description || undefined,
+        tags: tag ? [tag] : undefined,
+      };
+    }),
+  ];
+
   // Fetch all reservations to filter out vehicles with maintenance (if filter is enabled)
   const { data: allReservations = [] } = useQuery<any[]>({
     queryKey: ['/api/reservations'],
@@ -361,12 +381,15 @@ export function ScheduleMaintenanceDialog({
 
       const result = await response.json();
       
-      // Check if spare vehicles are needed
-      if (result.needsSpareVehicle) {
+      // Check if spare vehicles are needed. A-7-1: only when there is somebody to
+      // assign one to; an empty list would open a shell with just a Cancel button.
+      if (result.needsSpareVehicle && Array.isArray(result.conflictingReservations) && result.conflictingReservations.length > 0) {
         console.log('🚗 Spare vehicles needed! Showing spare dialog...', result);
         console.log('Conflicting reservations:', result.conflictingReservations);
         console.log('Maintenance reservation ID:', result.maintenanceReservationId);
         setConflictingReservations(result.conflictingReservations);
+        setSpareVehicleAssignments({});
+        setSpareVehicleDurations({});
         setMaintenanceData({
           ...result.maintenanceData,
           maintenanceId: result.maintenanceReservationId, // Store the created maintenance ID
@@ -608,12 +631,11 @@ export function ScheduleMaintenanceDialog({
         description: t('scheduleDialog.spareAssignedScheduledDescription'),
       });
       
-      // Close dialogs immediately for better UX
+      // Close dialogs immediately for better UX. The conflict list is NOT emptied
+      // here: the dialog fades out for a moment and an emptied list showed up as
+      // a second, empty "Vervangende voertuigen toewijzen" (A-7-1). It is replaced
+      // the next time the spare dialog opens.
       setShowSpareDialog(false);
-      setConflictingReservations([]);
-      setMaintenanceData(null);
-      setSpareVehicleAssignments({});
-      setSpareVehicleDurations({});
       onOpenChange(false);
       
       // Call parent onSuccess if provided
@@ -986,21 +1008,18 @@ export function ScheduleMaintenanceDialog({
                     </div>
                   ) : (
                     <>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-customer">
-                            <SelectValue placeholder={t('scheduleDialog.selectCustomerOptional')} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="max-h-60">
-                          <SelectItem value="none">{t('scheduleDialog.noneNoCustomer')}</SelectItem>
-                          {customers.map((customer: any) => (
-                            <SelectItem key={customer.id} value={customer.id.toString()}>
-                              {customer.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <SearchableCombobox
+                          options={customerOptions}
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          placeholder={t('scheduleDialog.selectCustomerOptional')}
+                          searchPlaceholder={t('scheduleDialog.searchCustomerPlaceholder')}
+                          emptyMessage={t('scheduleDialog.noCustomerFound')}
+                          groups={false}
+                          data-testid="select-customer"
+                        />
+                      </FormControl>
                       <FormDescription>
                         {t('scheduleDialog.whoIsBringingVehicle')}
                       </FormDescription>
@@ -1206,6 +1225,9 @@ export function ScheduleMaintenanceDialog({
               />
             </div>
 
+            {/* A-7-9: a new block always starts as planned; the status belongs to a
+                block that exists (the edit mode, and the scan panel's edit flow). */}
+            {editingReservation && (
             <FormField
               control={form.control}
               name="maintenanceStatus"
@@ -1231,6 +1253,7 @@ export function ScheduleMaintenanceDialog({
                 </FormItem>
               )}
             />
+            )}
 
             <FormField
               control={form.control}
@@ -1329,7 +1352,7 @@ export function ScheduleMaintenanceDialog({
     </Dialog>
 
     {/* Spare Vehicle Selection Dialog */}
-    <Dialog open={showSpareDialog} onOpenChange={setShowSpareDialog}>
+    <Dialog open={showSpareDialog && conflictingReservations.length > 0} onOpenChange={setShowSpareDialog}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -1428,6 +1451,9 @@ export function ScheduleMaintenanceDialog({
                               }}
                               placeholder={t('scheduleDialog.chooseSpareVehiclePlaceholder')}
                               disabled={availableVehicles.length === 0}
+                              // A-7-8: the list hangs over the confirm button; a modal list made
+                              // the first click on that button only close the list.
+                              modal={false}
                             />
                             {/* Show selected duration */}
                             {spareVehicleDurations[reservation.id] && (
@@ -1512,11 +1538,8 @@ export function ScheduleMaintenanceDialog({
           <Button
             variant="outline"
             onClick={() => {
+              // See onSuccess: the list stays until the next open (A-7-1).
               setShowSpareDialog(false);
-              setConflictingReservations([]);
-              setMaintenanceData(null);
-              setSpareVehicleAssignments({});
-              setSpareVehicleDurations({});
             }}
             disabled={createMaintenanceWithSpareMutation.isPending}
           >

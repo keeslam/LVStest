@@ -30,6 +30,14 @@ interface SearchableComboboxProps {
   variant?: "default" | "outline" | "subtle";
   className?: string;
   recentValues?: string[];
+  /**
+   * FormControl hands these to its single child. The trigger is a button, so the
+   * label's `htmlFor` and the error/description links only work when they land on it.
+   */
+  id?: string;
+  "aria-describedby"?: string;
+  "aria-invalid"?: boolean | "true" | "false";
+  "data-testid"?: string;
 }
 
 export function SearchableCombobox({
@@ -44,6 +52,10 @@ export function SearchableCombobox({
   variant = "default",
   className,
   recentValues = [],
+  id,
+  "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
+  "data-testid": dataTestId,
 }: SearchableComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [searchInput, setSearchInput] = React.useState("");
@@ -117,6 +129,10 @@ export function SearchableCombobox({
               className
             )}
             disabled={disabled}
+            id={id}
+            aria-describedby={ariaDescribedBy}
+            aria-invalid={ariaInvalid}
+            data-testid={dataTestId}
           >
             <div className="flex items-center truncate">
               {selectedOption ? (
