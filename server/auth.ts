@@ -7,8 +7,9 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { DatabaseStorage } from "./database-storage";
-import { User, UserRole, insertUserSchema } from "../shared/schema";
-import { pool } from "./db";
+import { User, UserRole, insertUserSchema, users as usersTable } from "../shared/schema";
+import { pool, db } from "./db";
+import { eq } from "drizzle-orm";
 import { passwordPolicyIssues, passwordTooWeakBody } from "../shared/password-policy";
 import connectPg from "connect-pg-simple";
 import createMemoryStore from "memorystore";
@@ -448,6 +449,18 @@ export function setupAuth(app: Express) {
           // against the NEW session, and overwrite the cookie.
           attachCsrfToken(req as any, res, () => {});
 
+          // D14: the previous login time is read from the row the strategy
+          // loaded BEFORE it is overwritten. It goes back in the login answer
+          // and into the session (GET /api/user), so the administrator
+          // dashboard can ask what was refused since then, also after a reload.
+          const previousLoginAt: Date | null = (user as any).lastLoginAt ?? null;
+          (req.session as any).previousLoginAt = previousLoginAt ? previousLoginAt.toISOString() : null;
+          try {
+            await db.update(usersTable).set({ lastLoginAt: new Date() }).where(eq(usersTable.id, user.id));
+          } catch (lastLoginError) {
+            console.error('Could not store the last login time:', lastLoginError);
+          }
+
           // Record successful login attempt
           await settleLoginAttempt(attemptId, { success: true });
 
@@ -485,7 +498,7 @@ export function setupAuth(app: Express) {
           
           // Return user without password
           const { password, ...userWithoutPassword } = user;
-          res.status(200).json(userWithoutPassword);
+          res.status(200).json({ ...userWithoutPassword, previousLoginAt: previousLoginAt ? previousLoginAt.toISOString() : null });
         });
       });
     })(req, res, next);
@@ -530,7 +543,7 @@ export function setupAuth(app: Express) {
     
     // Return user without password
     const { password, ...userWithoutPassword } = req.user as User;
-    res.json(userWithoutPassword);
+    res.json({ ...userWithoutPassword, previousLoginAt: (req.session as any)?.previousLoginAt ?? null });
   });
 
   // Heartbeat endpoint to keep session alive during user activity

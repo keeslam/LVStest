@@ -32,6 +32,7 @@ const AUTHENTICATED_ONLY_ROUTES = new Set([
   "POST /api/reauthenticate",
   "PATCH /api/users/:id", // self-service profile; role/permissions are guarded inside (BUG-001)
   "POST /api/users/change-password", // own password, old password required
+  "POST /api/access-denied", // D14: the no-access page reports the screen it refused; a row is written only for a page the caller really may not open
   // (The six /api/contracts/* routes used to live here. Besluit B-23 /
   // BUG-167 moved them onto view_documents / manage_documents; they are now
   // permission-guarded like everything else, which is what makes the

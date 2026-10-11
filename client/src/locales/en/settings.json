@@ -194,6 +194,21 @@
     "cannotDeleteLastAdmin": "This is the last active administrator; it cannot be deleted",
     "lastAdmin": "The last active administrator cannot be deleted, deactivated or given another role"
   },
+  "accessDenied": {
+    "banner_one": "Since your previous login ({{date}}) {{count}} colleague tried something they have no right to do",
+    "banner_other": "Since your previous login ({{date}}) {{count}} colleagues tried something they have no right to do",
+    "view": "View",
+    "dialogTitle": "Refused attempts",
+    "dialogDescription": "What colleagues tried since your previous login ({{date}}) and were not allowed to do.",
+    "colWho": "Who",
+    "colWhat": "What",
+    "colNeeded": "Missing right",
+    "colWhen": "When",
+    "page": "Screen {{path}}",
+    "read": "Fetch data {{path}}",
+    "write": "Change {{path}}",
+    "truncated": "Only the newest {{shown}} of {{total}} attempts are shown."
+  },
   "backupPage": {
     "title": "Backup & Recovery",
     "subtitle": "Download backups of your app data and source code",

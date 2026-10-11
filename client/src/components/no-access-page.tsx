@@ -1,4 +1,6 @@
-import { Link } from "wouter";
+import { useEffect } from "react";
+import { Link, useLocation } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +28,14 @@ interface NoAccessPageProps {
  */
 export function NoAccessPage({ anyOf, wayOut }: NoAccessPageProps) {
   const { t } = useTranslation("common");
+  const [location] = useLocation();
+
+  // D14: tell the server which screen was refused, so an administrator can be
+  // told at the next login. Fire and forget: the page is the same whether or
+  // not the report arrives, and a failure must never raise an error toast.
+  useEffect(() => {
+    apiRequest("POST", "/api/access-denied", { page: location }).catch(() => {});
+  }, [location]);
 
   // Reuses the same labels users-dialog.tsx shows for each permission
   // checkbox (shared/permission-labels.ts) rather than inventing a second

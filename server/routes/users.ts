@@ -3,12 +3,14 @@ import { users, patchUserSchema } from "../../shared/schema";
 import { parsePartialUpdate } from "../middleware/validateBody";
 import { revokeUserSessions } from "../utils/security/sessionManager.js";
 import { z } from "zod";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, gt, sql } from "drizzle-orm";
 import { db } from "../db";
 import { insertUserSchema, UserRole, UserPermission } from "../../shared/schema";
 import { hashPassword, comparePasswords } from "../auth";
 import { realtimeEvents } from "../realtime-events";
-import { hasPermission } from "../middleware/permissions.js";
+import { hasPermission, recordAccessDenied, ACCESS_DENIED_ACTION } from "../middleware/permissions.js";
+import { auditLogs } from "../../shared/schema";
+import { canOpenPage, pageAccessFor } from "../../shared/page-access";
 import { passwordPolicyIssues, passwordTooWeakBody } from "../../shared/password-policy";
 import type { Express } from "express";
 import type { RouteDeps } from "./deps";
@@ -136,6 +138,81 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
     } catch (error) {
       console.error("Error fetching audit log filters:", error);
       res.status(500).json({ message: "Failed to fetch activity log filters" });
+    }
+  });
+
+  // ==================== D14: REFUSED ATTEMPTS ====================
+  // The no-access page reports the screen it showed instead of a page. Any
+  // signed-in user may report - there is nothing to guard beyond the page
+  // address being sane - but a row is written only for a page the user really
+  // may not open, so nobody can plant attempts that never happened, and the
+  // same page is written at most once per 5 minutes.
+  app.post("/api/access-denied", requireAuth, async (req, res) => {
+    try {
+      const raw = typeof req.body?.page === "string" ? req.body.page : "";
+      const page = raw.split(/[?#]/)[0];
+      if (!/^\/[A-Za-z0-9\-._~%:/]*$/.test(page) || page.length > 200) {
+        return res.status(400).json({ message: "Invalid page", code: "INVALID_PAGE", field: "page" });
+      }
+      const user = req.user!;
+      if (canOpenPage(user, page)) {
+        return res.json({ recorded: false });
+      }
+      const recorded = await recordAccessDenied({
+        userId: user.id,
+        username: user.username,
+        method: "GET",
+        path: page,
+        required: pageAccessFor(page)?.anyOf ?? [],
+        page,
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent") || undefined,
+      });
+      res.json({ recorded });
+    } catch (error) {
+      console.error("Error recording a refused page:", error);
+      res.status(500).json({ message: "Failed to record the refused attempt" });
+    }
+  });
+
+  // The administrator dashboard banner and its list: what was refused since
+  // `since` (the previous login), newest first.
+  app.get("/api/access-denied", requireAuth, hasPermission(UserPermission.MANAGE_USERS), async (req, res) => {
+    try {
+      const since = typeof req.query.since === "string" ? new Date(req.query.since) : null;
+      if (!since || Number.isNaN(since.getTime())) {
+        return res.status(400).json({ message: "A valid since date is required", code: "INVALID_SINCE", field: "since" });
+      }
+      const where = and(eq(auditLogs.action, ACCESS_DENIED_ACTION), gt(auditLogs.createdAt, since));
+      const rows = await db.select().from(auditLogs).where(where).orderBy(desc(auditLogs.createdAt), desc(auditLogs.id)).limit(200);
+      const [totals] = await db
+        .select({
+          count: sql<number>`count(*)::int`,
+          users: sql<number>`count(distinct coalesce(${auditLogs.username}, ''))::int`,
+        })
+        .from(auditLogs)
+        .where(where);
+      res.json({
+        since: since.toISOString(),
+        count: Number(totals?.count) || 0,
+        users: Number(totals?.users) || 0,
+        entries: rows.map((row) => {
+          const details = (row.details ?? {}) as Record<string, unknown>;
+          return {
+            id: row.id,
+            userId: row.userId,
+            username: row.username,
+            createdAt: row.createdAt,
+            method: details.method ?? null,
+            path: details.path ?? null,
+            required: Array.isArray(details.required) ? details.required : [],
+            page: details.page ?? null,
+          };
+        }),
+      });
+    } catch (error) {
+      console.error("Error fetching refused attempts:", error);
+      res.status(500).json({ message: "Failed to fetch refused attempts" });
     }
   });
 

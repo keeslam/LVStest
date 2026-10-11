@@ -163,6 +163,9 @@ export const users = pgTable("users", {
   active: boolean("active").notNull().default(true),
   hidePrices: boolean("hide_prices").notNull().default(false),
   mileageOverridePasswordHash: text("mileage_override_password_hash"),
+  // D14: set at every successful login, after the previous value was read, so the
+  // next login can tell an administrator what was refused in between.
+  lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   createdBy: text("created_by"),

@@ -11,7 +11,7 @@
  * missing/renamed translation key fails this test instead of silently
  * rendering the raw key.
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
@@ -23,7 +23,36 @@ function withRouter(node: React.ReactNode) {
   return render(<Router hook={hook}>{node}</Router>);
 }
 
+const fetchMock = vi.fn(async (_url: unknown, _init?: RequestInit) =>
+  new Response(JSON.stringify({ recorded: true }), { status: 200, headers: { "Content-Type": "application/json" } }),
+);
+
+beforeEach(() => {
+  fetchMock.mockClear();
+  vi.stubGlobal("fetch", fetchMock);
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 describe("NoAccessPage", () => {
+  it("tells the server which screen was refused (D14), once", async () => {
+    withRouter(<NoAccessPage anyOf={[UserPermission.MANAGE_MAINTENANCE]} wayOut={null} />);
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(String(url)).toBe("/api/access-denied");
+    expect(init?.method).toBe("POST");
+    expect(JSON.parse(String(init?.body))).toEqual({ page: "/maintenance" });
+  });
+
+  it("shows the page even when the report cannot be sent", async () => {
+    fetchMock.mockRejectedValueOnce(new Error("offline"));
+    withRouter(<NoAccessPage anyOf={[UserPermission.MANAGE_MAINTENANCE]} wayOut={null} />);
+    expect(screen.getByTestId("no-access-page")).toBeInTheDocument();
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(screen.getByTestId("no-access-page")).toBeInTheDocument();
+  });
+
   it("shows the data-testid and the fixed heading", () => {
     withRouter(<NoAccessPage anyOf={[UserPermission.MANAGE_MAINTENANCE]} wayOut={null} />);
     const root = screen.getByTestId("no-access-page");

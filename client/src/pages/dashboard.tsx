@@ -8,12 +8,16 @@ import { RecentExpenses } from "@/components/dashboard/recent-expenses";
 import { ReservationCalendar } from "@/components/dashboard/reservation-calendar";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { BackupStalenessBanner } from "@/components/backup/backup-staleness-banner";
+import { AccessDeniedBanner } from "@/components/security/access-denied-banner";
 
 export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Backup Health */}
       <BackupStalenessBanner />
+
+      {/* D14: refused attempts since the administrator's previous login */}
+      <AccessDeniedBanner />
 
       {/* OPT-001 - the entry to the work-day screen, above everything else. */}
 

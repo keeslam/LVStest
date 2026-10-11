@@ -194,6 +194,21 @@
     "cannotDeleteLastAdmin": "Dit is de laatste actieve beheerder; die kan niet worden verwijderd",
     "lastAdmin": "De laatste actieve beheerder kan niet worden verwijderd, gedeactiveerd of een andere rol krijgen"
   },
+  "accessDenied": {
+    "banner_one": "Sinds je vorige inlog ({{date}}) probeerde {{count}} medewerker iets waarvoor die geen recht heeft",
+    "banner_other": "Sinds je vorige inlog ({{date}}) probeerden {{count}} medewerkers iets waarvoor ze geen recht hebben",
+    "view": "Bekijken",
+    "dialogTitle": "Geweigerde pogingen",
+    "dialogDescription": "Wat medewerkers probeerden sinds je vorige inlog ({{date}}) en niet mochten.",
+    "colWho": "Wie",
+    "colWhat": "Wat",
+    "colNeeded": "Recht dat ontbrak",
+    "colWhen": "Wanneer",
+    "page": "Scherm {{path}}",
+    "read": "Gegevens ophalen {{path}}",
+    "write": "Wijzigen {{path}}",
+    "truncated": "Alleen de nieuwste {{shown}} van {{total}} pogingen worden getoond."
+  },
   "backupPage": {
     "title": "Back-up & herstel",
     "subtitle": "Download back-ups van je app-gegevens en broncode",

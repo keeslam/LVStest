@@ -76,6 +76,10 @@ export const DIALOGS: DialogEntry[] = [
   // for admin, matching the real gate; hiddenWithoutRight since B-27 keeps
   // admin-only controls hidden rather than showing them disabled.
   { page: "/", opener: "menu-users", via: "user-menu-button", anyOf: [], hiddenWithoutRight: true, source: "client/src/components/dialogs/users-dialog.tsx", name: "gebruikersbeheer" },
+  // D14: the dashboard banner for administrators only shows after a login that had a
+  // previous login AND at least one refused attempt since, which no seeded profile has,
+  // so the allowed branch is left to a Layer B story; non-admins never see it.
+  { page: "/", opener: "button-access-denied-view", anyOf: [], hiddenWithoutRight: true, allowedPathNeedsState: "the banner appears only for an administrator whose previous login is followed by at least one refused attempt (access.denied audit row); the seed holds none", source: "client/src/components/security/access-denied-banner.tsx", name: "geweigerde pogingen (dashboardbanner)" },
   { page: "/", opener: "menu-backup", via: "user-menu-button", anyOf: [], hiddenWithoutRight: true, source: "client/src/components/dialogs/backup-dialog.tsx", name: "back-upbeheer" },
   { page: "/", opener: "menu-settings", via: "user-menu-button", anyOf: [], hiddenWithoutRight: true, source: "client/src/components/settings/settings-dialog.tsx", name: "app-instellingen (heeft tabbladen, eenmalig geregistreerd)" },
   // Task 3 (docs/superpowers/specs/2026-09-21-toegang-design.md, §4): each
