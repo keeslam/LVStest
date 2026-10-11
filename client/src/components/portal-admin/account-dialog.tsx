@@ -31,16 +31,23 @@ function customerPerson(c: Customer): string {
   return [c.firstName, c.lastName].map((p) => p?.trim()).filter(Boolean).join(" ") || c.contactPerson || c.primaryContactName || c.driverName || "";
 }
 
+/** The `name` column when it says something the company and person texts do not (so a search on it still finds the customer). */
+function extraCustomerName(c: Customer, person: string): string {
+  const name = (c.name ?? "").trim();
+  const same = (x: string | null | undefined) => (x ?? "").trim().toLowerCase() === name.toLowerCase();
+  return name && !same(c.companyName) && !same(person) ? name : "";
+}
+
 /** Compact card under the customer field: which name is the company and which the person, and the main contact details. */
 function CustomerSummary({ customer: c, driverCount }: { customer: Customer; driverCount: number | null }) {
   const { t } = useTranslation("portal");
   const person = customerPerson(c);
   const place = [c.postalCode, c.city].filter(Boolean).join(" ");
   const items: Array<[string, string | null | undefined]> = [
-    // The `name` column is only shown when there is neither a company nor a person name.
+    // The `name` column is shown when it differs from the company and the person text.
     ["company", c.companyName],
     ["contact", person],
-    ["name", !c.companyName && !person ? c.name : null],
+    ["name", extraCustomerName(c, person)],
     ["debtor", c.debtorNumber],
     ["phone", c.phone],
     ["email", c.email],
@@ -113,7 +120,8 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children, 
     return {
       value: String(c.id),
       label: c.companyName && person ? `${c.companyName} — ${person}` : c.companyName || person || c.name,
-      description: c.debtorNumber ? `${t("admin.dialog.debtorNumber")} ${c.debtorNumber}` : undefined,
+      // The description is searched too: the name column stays findable when the label shows the person.
+      description: [c.debtorNumber ? `${t("admin.dialog.debtorNumber")} ${c.debtorNumber}` : null, extraCustomerName(c, person) || null].filter(Boolean).join(" · ") || undefined,
     };
   }), [customers, t]);
   // The chosen customer's row is already loaded with the list; the card needs no extra request.

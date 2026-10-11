@@ -88,8 +88,8 @@ describe("portaalaccount - klant gekozen", () => {
     renderDialog();
     await user.click(await screen.findByTestId("select-portal-customer"));
     expect(await screen.findByRole("option", { name: /Hoek B.V. — Anna Hoek/ })).toBeInTheDocument();
-    // No company: the option is the person, never the `name` column.
-    expect(screen.getByRole("option", { name: /Pjoter Mecjentef/ })).not.toHaveTextContent("Klant 5");
+    // No company: the label is the person; the name column sits in the description (searchable).
+    expect(screen.getByRole("option", { name: /Pjoter Mecjentef/ })).toHaveTextContent("Klant 5 B.V.");
     await user.click(screen.getByRole("option", { name: /Hoek B.V. — Anna Hoek/ }));
     await waitFor(() => expect(screen.getByTestId("input-account-name")).toHaveValue("Anna Hoek"));
   });
@@ -101,8 +101,29 @@ describe("portaalaccount - klant gekozen", () => {
     const card = await screen.findByTestId("portal-customer-summary");
     expect(within(card).getByTestId("summary-contact")).toHaveTextContent("Pjoter Mecjentef");
     expect(within(card).queryByTestId("summary-company")).toBeNull();
-    expect(within(card).queryByTestId("summary-name")).toBeNull();
-    expect(card.textContent).not.toContain("Klant 5 B.V.");
+  });
+
+  it("still shows the name column as Naam when it differs from company and person", async () => {
+    const user = userEvent.setup();
+    renderDialog();
+    await choose(user, /Pjoter Mecjentef/);
+    const card = await screen.findByTestId("portal-customer-summary");
+    expect(within(card).getByTestId("summary-name")).toHaveTextContent("Klant 5 B.V.");
+  });
+
+  it("finds a customer without a company by the name column and by the person name", async () => {
+    const user = userEvent.setup();
+    renderDialog();
+    await user.click(await screen.findByTestId("select-portal-customer"));
+    const search = await screen.findByRole("combobox", { name: /Zoek op naam of debiteurnummer/ });
+    await user.type(search, "Klant 5");
+    const option = await screen.findByRole("option", { name: /Pjoter Mecjentef/ });
+    expect(option).toHaveTextContent("Debiteurnr. D-0005 · Klant 5 B.V.");
+    await waitFor(() => expect(screen.queryByRole("option", { name: /Bouw B.V./ })).toBeNull());
+    await user.clear(search);
+    await user.type(search, "Mecjentef");
+    expect(await screen.findByRole("option", { name: /Pjoter Mecjentef/ })).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("option", { name: /Bouw B.V./ })).toBeNull());
   });
 
   it("falls back to the company name when there is no contact person", async () => {
