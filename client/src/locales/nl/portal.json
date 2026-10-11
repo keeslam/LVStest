@@ -412,6 +412,16 @@
       "customerPlaceholder": "Kies een klant",
       "customerNone": "Geen klant gevonden.",
       "debtorNumber": "Debiteurnr.",
+      "summary": {
+        "company": "Bedrijf",
+        "name": "Naam",
+        "contact": "Contactpersoon",
+        "debtor": "Debiteurnr.",
+        "phone": "Telefoon",
+        "email": "E-mail",
+        "address": "Adres",
+        "drivers": "Bestuurders"
+      },
       "customerRequired": "Kies eerst een klant",
       "email": "E-mailadres",
       "fullName": "Naam",

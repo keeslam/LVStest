@@ -26,6 +26,32 @@ export interface PortalAccountRow {
 const NO_CUSTOMERS: Customer[] = [];
 const NO_DRIVERS: Driver[] = [];
 
+/** Compact card under the customer field: which name is the company and which the person, and the main contact details. */
+function CustomerSummary({ customer: c, driverCount }: { customer: Customer; driverCount: number | null }) {
+  const { t } = useTranslation("portal");
+  const person = c.contactPerson || c.driverName || "";
+  const place = [c.postalCode, c.city].filter(Boolean).join(" ");
+  const items: Array<[string, string | null | undefined]> = [
+    [c.companyName ? "company" : "name", c.companyName || c.name],
+    ["contact", person && person !== (c.companyName || c.name) ? person : null],
+    ["debtor", c.debtorNumber],
+    ["phone", c.phone],
+    ["email", c.email],
+    ["address", place || null],
+    ["drivers", driverCount === null ? null : String(driverCount)],
+  ];
+  return (
+    <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-0.5 rounded-md bg-muted/50 px-3 py-2 text-xs md:grid-cols-3" data-testid="portal-customer-summary">
+      {items.filter(([, v]) => v).map(([key, v]) => (
+        <div key={key} className="min-w-0">
+          <dt className="inline text-muted-foreground">{t(`admin.dialog.summary.${key}`)}: </dt>
+          <dd className="inline break-words" data-testid={`summary-${key}`}>{v}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 /**
  * Create (invite) or edit a portal account. Without a `customerId` the dialog
  * starts with a searchable customer picker, so staff can invite from the
@@ -56,7 +82,7 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children, 
 
   const needsPicker = fixedCustomerId === undefined && !account;
   const { data: customers = NO_CUSTOMERS } = useQuery<Customer[]>({ queryKey: ["/api/customers"], enabled: open && needsPicker });
-  const { data: drivers = NO_DRIVERS } = useQuery<Driver[]>({ queryKey: [`/api/customers/${customerId}/drivers`], enabled: open && customerId !== null });
+  const { data: drivers = NO_DRIVERS, isFetched: driversLoaded } = useQuery<Driver[]>({ queryKey: [`/api/customers/${customerId}/drivers`], enabled: open && customerId !== null });
   const { data: customer } = useQuery<Customer>({ queryKey: [`/api/customers/${customerId}`], enabled: open && !account && customerId !== null });
 
   // Suggest the address and name: from the driver for a driver account, else from the customer.
@@ -66,7 +92,7 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children, 
     const driver = role === "driver" && driverId ? drivers.find((d) => String(d.id) === driverId) : undefined;
     // A driver without an e-mail address falls back to the customer address.
     const suggestedEmail = driver?.email || customer?.email || "";
-    const suggestedName = driver ? driver.displayName : customer?.contactPerson || customer?.driverName || "";
+    const suggestedName = driver ? driver.displayName : customer?.contactPerson || customer?.driverName || customer?.companyName || customer?.name || "";
     setPrefillSource({ email: driver?.email ? "driver" : customer?.email ? "customer" : null, name: driver ? "driver" : customer ? "customer" : null });
     if (suggestedEmail && (email === "" || autoFilled.email)) { setEmail(suggestedEmail); setAutoFilled((a) => ({ ...a, email: true })); }
     if (suggestedName && (fullName === "" || autoFilled.fullName)) { setFullName(suggestedName); setAutoFilled((a) => ({ ...a, fullName: true })); }
@@ -74,11 +100,17 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children, 
   }, [open, account, customer, role, driverId, drivers]);
 
   // The combobox searches name, debtor number and the description itself, so every customer is an option.
-  const customerOptions = useMemo<ComboboxOption[]>(() => customers.map((c) => ({
-    value: String(c.id),
-    label: c.companyName || c.name,
-    description: [c.debtorNumber ? `${t("admin.dialog.debtorNumber")} ${c.debtorNumber}` : null, c.companyName && c.name !== c.companyName ? c.name : null].filter(Boolean).join(" · ") || undefined,
-  })), [customers, t]);
+  // "Bedrijf — contactpersoon" when both exist, so it is clear which name is the company and which the person.
+  const customerOptions = useMemo<ComboboxOption[]>(() => customers.map((c) => {
+    const person = c.contactPerson || c.driverName || "";
+    return {
+      value: String(c.id),
+      label: c.companyName && person && person !== c.companyName ? `${c.companyName} — ${person}` : c.companyName || c.name,
+      description: c.debtorNumber ? `${t("admin.dialog.debtorNumber")} ${c.debtorNumber}` : undefined,
+    };
+  }), [customers, t]);
+  // The chosen customer's row is already loaded with the list; the card needs no extra request.
+  const chosenCustomer = needsPicker && customerId !== null ? customers.find((c) => c.id === customerId) : undefined;
 
   const save = useMutation({
     mutationFn: async () => {
@@ -123,6 +155,7 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children, 
                 onChange={(v) => { setCustomerId(v ? Number(v) : null); setDriverId(""); }}
                 placeholder={t("admin.dialog.customerPlaceholder")} searchPlaceholder={t("admin.dialog.customerSearch")} emptyMessage={t("admin.dialog.customerNone")}
                 data-testid="select-portal-customer" />
+              {chosenCustomer && <CustomerSummary customer={chosenCustomer} driverCount={driversLoaded ? drivers.length : null} />}
             </div>
           )}
           <div className="grid gap-x-6 gap-y-3 md:grid-cols-2">
@@ -132,7 +165,9 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children, 
                 <Input id="pa-email" type="email" value={email} disabled={Boolean(account)} onChange={(e) => { setEmail(e.target.value); setAutoFilled((a) => ({ ...a, email: false })); }} required data-testid="input-account-email" />
                 {!account && autoFilled.email && prefillSource.email && <p className="mt-1 text-xs text-muted-foreground">{t(`admin.dialog.prefilledFrom.${prefillSource.email}`)}</p>}
               </div>
-              <div><Label htmlFor="pa-name">{t("admin.dialog.fullName")}</Label><Input id="pa-name" value={fullName} onChange={(e) => { setFullName(e.target.value); setAutoFilled((a) => ({ ...a, fullName: false })); }} required data-testid="input-account-name" /></div>
+              <div><Label htmlFor="pa-name">{t("admin.dialog.fullName")}</Label><Input id="pa-name" value={fullName} onChange={(e) => { setFullName(e.target.value); setAutoFilled((a) => ({ ...a, fullName: false })); }} required data-testid="input-account-name" />
+                {!account && autoFilled.fullName && prefillSource.name && <p className="mt-1 text-xs text-muted-foreground">{t(`admin.dialog.prefilledFrom.${prefillSource.name}`)}</p>}
+              </div>
               <div>
                 <Label htmlFor="pa-role">{t("admin.dialog.role")}</Label>
                 <select id="pa-role" className="w-full rounded-md border px-3 py-2 text-sm" value={role} onChange={(e) => setRole(e.target.value as "admin" | "driver")}>

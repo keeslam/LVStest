@@ -412,6 +412,16 @@
       "customerPlaceholder": "Choose a customer",
       "customerNone": "No customer found.",
       "debtorNumber": "Debtor no.",
+      "summary": {
+        "company": "Company",
+        "name": "Name",
+        "contact": "Contact person",
+        "debtor": "Debtor no.",
+        "phone": "Phone",
+        "email": "E-mail",
+        "address": "Address",
+        "drivers": "Drivers"
+      },
       "customerRequired": "Choose a customer first",
       "email": "E-mail address",
       "fullName": "Name",
