@@ -444,16 +444,15 @@ Dit kan voorkomen:
 | *Dit record stond al niet meer in de prullenbak.* | Iemand was je voor |
 | *Dit record kon niet worden verwijderd en staat nog in de prullenbak.* | Er ging iets mis; er is niets weggehaald. Probeer het opnieuw |
 | *Het record is verwijderd, maar een of meer bestanden konden niet van de schijf worden gehaald.* | De regel is weg; een bestand staat er nog. Meld het aan wie de app beheert |
-| *Deze reservering heeft fiscale beoordelingen; die blijven bewaard, dus kan ze niet definitief worden verwijderd.* | Zie hieronder |
 
 **Wat definitief verwijderen weghaalt**, per soort:
 
 | Soort | Wat er verdwijnt | Wat blijft staan |
 |---|---|---|
 | **Voertuig** | Het voertuig, met alles wat erbij hoort: reserveringen, documenten en kosten, en hun bestanden | — |
-| **Klant** | De klant, met zijn chauffeurs en portaalgegevens, en hun bestanden. Het **debiteurnummer komt weer vrij** | — |
-| **Reservering** | De reservering, met haar contracten, schadechecks, transportrapporten en bezorgtaken, en hun bestanden | **Overige documenten van het voertuig** (zoals een APK-bewijs, een factuur of een verzekering) blijven staan, zonder reservering. Een reservering **met fiscale beoordelingen** wordt overgeslagen en blijft in de prullenbak staan |
-| **Onderhoud** | De onderhoudsplanning, met eventuele contracten en schadechecks, en hun bestanden | Documenten van het voertuig, zoals een **APK-bewijs**, blijven staan. Een planning met fiscale beoordelingen wordt overgeslagen en blijft in de prullenbak staan |
+| **Klant** | De klant, met zijn chauffeurs en portaalgegevens, en hun bestanden. Het **debiteurnummer komt weer vrij**. De **fiscale beoordelingen** van de klant gaan mee | — |
+| **Reservering** | De reservering, met haar contracten, schadechecks, transportrapporten en bezorgtaken, en hun bestanden. Haar **fiscale beoordelingen** gaan mee | **Overige documenten van het voertuig** (zoals een APK-bewijs, een factuur of een verzekering) blijven staan, zonder reservering |
+| **Onderhoud** | De onderhoudsplanning, met eventuele contracten en schadechecks, en hun bestanden. Eventuele **fiscale beoordelingen** gaan mee | Documenten van het voertuig, zoals een **APK-bewijs**, blijven staan |
 | **Transport** | Het transport | — |
 | **Boete** | De boete, met de bijgevoegde brief | — |
 
@@ -462,11 +461,20 @@ nadat de regel definitief is verwijderd, en alleen een bestand in de uploadmap v
 ander levend record meer naar verwijst. Een bestand dat nog ergens anders wordt gebruikt, blijft
 staan.
 
-**Waarom een reservering met fiscale beoordelingen blijft staan.** De fiscale beoordelingen van een
-huur horen bewaard te blijven (zie `docs/fiscaal/07-handleiding-kantoor.md`). Zo'n reservering kun
-je dus wél terugzetten, maar niet definitief verwijderen. Met **Prullenbak leegmaken** en bij een
-selectie wordt ze overgeslagen en blijft ze in de lijst staan; bij **Definitief verwijderen** op die
-ene regel krijg je de melding uit de tabel hierboven.
+**Fiscale beoordelingen gaan mee.** Wordt een reservering, een onderhoudsplanning of een klant
+definitief verwijderd, dan worden ook de fiscale beoordelingen en de bijbehorende beoordelingszaken
+(zie `docs/fiscaal/07-handleiding-kantoor.md`) definitief verwijderd, ook de beoordelingen van een
+andere periode die naar die reservering verwijzen. In de lijst staat bij zo'n regel bij **Bevat** hoeveel
+fiscale beoordelingen het zijn, en de bevestiging **Definitief verwijderen?** noemt het aantal nog een
+keer. Het activiteitenlog (10.5) telt ze mee in de regel *&lt;soort&gt;.purge*, en het fiscale auditlog
+(app-instellingen, Klantenportaal) krijgt de actie *Definitief verwijderd (prullenbak)* met wie het
+deed en hoeveel het er waren. Dat auditlog kan niemand in de app wissen: het blijft het bewijs dat er iets is
+weggehaald.
+
+> **Let op: bewaarplicht.** Fiscale gegevens vallen onder de wettelijke bewaarplicht. Dat de
+> beoordelingen met de reservering meegaan, is een bewuste keuze van de eigenaar (besluit B-41), niet
+> een eis van de wet. Wie twijfelt of een reservering nog nodig is voor de administratie, laat hem in de
+> prullenbak staan.
 
 **Wat je niet terugkrijgt.** Wat je definitief verwijdert, kun je niet meer terugzetten. De app
 schrijft elke definitieve verwijdering op in het activiteitenlog (10.5), met de actie

@@ -90,7 +90,7 @@ type PurgeTarget =
   | { mode: "all" };
 
 /** Codes the purge routes answer; anything else gets one generic sentence. */
-const PURGE_ERROR_CODES = new Set(["NOT_FOUND", "PURGE_FAILED", "FILE_REMOVAL_FAILED", "FISCAL_DATA_PRESENT"]);
+const PURGE_ERROR_CODES = new Set(["NOT_FOUND", "PURGE_FAILED", "FILE_REMOVAL_FAILED"]);
 
 /**
  * What a restore or a purge changes: whatever fed this bin, plus every bin list. One list
@@ -311,6 +311,19 @@ export function RecycleBinDialog({ kind, customerId, open, onOpenChange, onResto
       return next;
     });
 
+  /**
+   * Sub-project D, DH (B-41): a reservation, maintenance block or customer takes its fiscal
+   * assessments along when it is purged. How many, for what the confirmation is about, from the
+   * list's `relatedCounts.fiscalAssessments` (the server adds it); 0 for the other kinds.
+   * For "all" it is what the list shows: rows beyond the list's cap are not counted.
+   */
+  const fiscalCountOf = (target: PurgeTarget): number => {
+    const countOf = (r: DeletedRecord) => (r.restoredAt ? 0 : r.relatedCounts?.fiscalAssessments ?? 0);
+    if (target.mode === "one") return countOf(target.record);
+    const rows = (kindRecords ?? []).filter((r) => target.mode === "all" || target.ids.includes(r.id));
+    return rows.reduce((sum, r) => sum + countOf(r), 0);
+  };
+
   /** The confirm text: how many, of what, and that there is no way back. */
   const noun = (count: number) => t(`kinds.${kind}.noun`, { count });
   const confirmSummary = (target: PurgeTarget): string => {
@@ -501,6 +514,11 @@ export function RecycleBinDialog({ kind, customerId, open, onOpenChange, onResto
                     {confirmSummary(confirmTarget)}
                   </span>
                   <span className="mt-2 block">{t(`kinds.${kind}.purgeNote`)}</span>
+                  {fiscalCountOf(confirmTarget) > 0 && (
+                    <span className="mt-2 block font-medium text-foreground" data-testid="text-confirm-purge-fiscal">
+                      {t("purge.fiscalCount", { count: fiscalCountOf(confirmTarget) })}
+                    </span>
+                  )}
                   <span className="mt-2 block">{t("purge.filesKept")}</span>
                   <span className="mt-2 block font-medium text-foreground">{t("purge.irreversible")}</span>
                 </>

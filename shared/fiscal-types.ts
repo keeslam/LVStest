@@ -256,6 +256,9 @@ export const FISCAL_AUDIT_ACTIONS = [
   "usage_overridden",
   "profile_refreshed",
   "profile_overridden",
+  // Sub-project D, DH (B-41): fiscal records were deleted for good together with a reservation or customer
+  // emptied from the recycle bin. The trail is append-only, so this is what proves they once existed.
+  "purged",
 ] as const;
 export type FiscalAuditAction = (typeof FISCAL_AUDIT_ACTIONS)[number];
 

@@ -183,7 +183,8 @@
       "usage_confirmed": "Usage confirmed",
       "usage_overridden": "Usage overridden",
       "profile_refreshed": "Profile refreshed",
-      "profile_overridden": "Profile set by hand"
+      "profile_overridden": "Profile set by hand",
+      "purged": "Deleted for good (recycle bin)"
     },
     "filterAction": "Action",
     "allActions": "All actions",

@@ -185,7 +185,7 @@ import { onMaintenanceBlockChanged, onReplacementAssigned, onRentalVehicleChange
 // besluiten B-06 (BUG-134): the other three events of the decision.
 import { onReservationChangedByStaff } from "./services/portal-reservation-events";
 import { previewRevert, applyRevert } from "./services/reservation-revert";
-import { purgeDeletedRecords, purgeAllOfKind, type PurgeHooks } from "./services/recycle-bin-purge";
+import { purgeDeletedRecords, purgeAllOfKind, fiscalCountsForBinRows, withFiscalCounts, type PurgeHooks } from "./services/recycle-bin-purge";
 import { checkPickedUpCancellation } from "./services/picked-up-cancellation";
 import { REVERT_CODES } from "../shared/revert-codes";
 import type { RouteDeps } from "./routes/deps";
@@ -2383,13 +2383,15 @@ export async function registerRoutes(app: Express): Promise<void> {
         customerId = Number(raw);
       }
       const records = (await storage.getDeletedRecords?.(type ? 200 : 100, type, customerId !== undefined ? { customerId } : undefined)) || [];
+      // Sub-project D (DH): what a purge would delete of the fiscal records besides the record itself.
+      const fiscalCounts = await fiscalCountsForBinRows(records);
       // The full snapshot can be megabytes; the list only needs the headline.
       res.json(records.map((record: any) => ({
         id: record.id,
         entityType: record.entityType,
         entityId: record.entityId,
         label: record.label,
-        relatedCounts: record.relatedCounts,
+        relatedCounts: withFiscalCounts(record.relatedCounts, fiscalCounts.get(record.id)),
         deletedAt: record.deletedAt,
         deletedBy: record.deletedBy,
         restoredAt: record.restoredAt,
@@ -2512,10 +2514,8 @@ export async function registerRoutes(app: Express): Promise<void> {
       const result = await purgeDeletedRecords([id], purgeActorOf(req), purgeHooksOf(req));
       if (result.purged === 0) {
         const failure = result.failed[0];
-        // 404: the bin row is gone. 409: the purge declined because fiscal records stand in the way
-        // (nothing broke, and the same call will keep answering this until they are gone). Anything
-        // else is a fault of ours.
-        const status = failure?.code === "NOT_FOUND" ? 404 : failure?.code === "FISCAL_DATA_PRESENT" ? 409 : 500;
+        // 404: the bin row is gone. Anything else is a fault of ours.
+        const status = failure?.code === "NOT_FOUND" ? 404 : 500;
         return res.status(status).json({
           code: failure?.code ?? "PURGE_FAILED",
           message: failure?.message ?? "This record could not be removed.",

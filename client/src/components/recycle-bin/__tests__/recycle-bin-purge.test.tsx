@@ -14,8 +14,10 @@
  *   - afterwards the bin list (and the screens it feeds) is invalidated, so the rows
  *     are gone without a reload;
  *   - what the server answers is shown by its stable `code`, in Dutch, never by the
- *     English message (including FISCAL_DATA_PRESENT: a reservation with fiscal
- *     assessments is never purged);
+ *     English message;
+ *   - a reservation, maintenance block or customer takes its fiscal assessments along (DH, the
+ *     owner's choice B-41): the note says so and the confirmation names the count (from the
+ *     list's relatedCounts.fiscalAssessments);
  *   - "empty the bin" says it empties everything of the kind, also rows the list does not
  *     show; a restore and a purge refresh the same screens.
  *
@@ -326,26 +328,25 @@ describe("RecycleBinDialog - one confirmation before anything is deleted", () =>
     }
   });
 
-  // Final wave, item 18: the server refuses to purge a reservation that has fiscal assessments (they are
-  // immutable records), so "empty the bin" cannot honestly say it removes everything.
-  it("the reservation and maintenance bins say up front that reservations with fiscal assessments are skipped and stay", async () => {
+  // Sub-project D, DH (B-41): the owner chose that a purge also deletes the fiscal assessments of the record.
+  it("the reservation, maintenance and customer bins say up front that fiscal assessments are deleted too", async () => {
     const user = userEvent.setup();
-    for (const kind of ["reservation", "maintenance_block"] as DeletedRecordKind[]) {
+    for (const kind of ["reservation", "maintenance_block", "customer"] as DeletedRecordKind[]) {
       serverRows = SEED_ROWS();
       queryClient.clear();
       const view = renderBin(kind);
       await user.click(await screen.findByTestId("button-purge-all"));
       const confirm = await screen.findByTestId("dialog-confirm-purge");
       expect(confirm, kind).toHaveTextContent("fiscale beoordelingen");
-      expect(confirm, kind).toHaveTextContent("overgeslagen");
-      expect(confirm, kind).toHaveTextContent("blijft in de prullenbak staan");
+      expect(confirm, kind).toHaveTextContent("ook definitief verwijderd");
+      expect(confirm, kind).not.toHaveTextContent("overgeslagen");
       view.unmount();
     }
   });
 
   it("the other bins do not mention fiscal assessments", async () => {
     const user = userEvent.setup();
-    for (const kind of ["vehicle", "customer"] as DeletedRecordKind[]) {
+    for (const kind of ["vehicle", "driver", "expense"] as DeletedRecordKind[]) {
       serverRows = SEED_ROWS();
       queryClient.clear();
       const view = renderBin(kind);
@@ -355,9 +356,53 @@ describe("RecycleBinDialog - one confirmation before anything is deleted", () =>
     }
   });
 
+  it("the confirmation names how many fiscal assessments go with a record, a selection or the bin; no line when there are none", async () => {
+    serverRows = [
+      row({ id: 5, entityType: "reservation", label: "Reservering #3387 - AB-123-C 2030-02-01", relatedCounts: { fiscalAssessments: 3, fiscalReviewCases: 1 } }),
+      row({ id: 7, entityType: "reservation", label: "Reservering #3391 - AB-123-C 2030-04-01", relatedCounts: { fiscalAssessments: 1 } }),
+      row({ id: 8, entityType: "reservation", label: "Reservering #3392 - AB-123-C 2030-05-01", relatedCounts: {} }),
+    ];
+    const user = userEvent.setup();
+    renderBin("reservation");
+
+    // The list itself says what the record contains.
+    expect(await screen.findByTestId("deleted-record-5")).toHaveTextContent("Bevat: 3 fiscale beoordelingen, 1 fiscale beoordelingszaak");
+    await user.click(await screen.findByTestId("button-purge-5"));
+    let confirm = await screen.findByTestId("dialog-confirm-purge");
+    expect(within(confirm).getByTestId("text-confirm-purge-fiscal")).toHaveTextContent("3 fiscale beoordelingen");
+    await user.click(screen.getByTestId("button-cancel-purge"));
+    await waitFor(() => expect(screen.queryByTestId("dialog-confirm-purge")).toBeNull());
+
+    // A record with a single one reads in the singular.
+    await user.click(await screen.findByTestId("button-purge-7"));
+    confirm = await screen.findByTestId("dialog-confirm-purge");
+    expect(within(confirm).getByTestId("text-confirm-purge-fiscal")).toHaveTextContent("1 fiscale beoordeling wordt");
+    await user.click(screen.getByTestId("button-cancel-purge"));
+    await waitFor(() => expect(screen.queryByTestId("dialog-confirm-purge")).toBeNull());
+
+    await user.click(await screen.findByTestId("button-purge-8"));
+    confirm = await screen.findByTestId("dialog-confirm-purge");
+    expect(within(confirm).queryByTestId("text-confirm-purge-fiscal")).toBeNull();
+    await user.click(screen.getByTestId("button-cancel-purge"));
+    await waitFor(() => expect(screen.queryByTestId("dialog-confirm-purge")).toBeNull());
+
+    // A selection and the whole bin add the rows up.
+    await user.click(await screen.findByTestId("checkbox-deleted-record-5"));
+    await user.click(screen.getByTestId("checkbox-deleted-record-8"));
+    await user.click(screen.getByTestId("button-purge-selected"));
+    confirm = await screen.findByTestId("dialog-confirm-purge");
+    expect(within(confirm).getByTestId("text-confirm-purge-fiscal")).toHaveTextContent("3 fiscale beoordelingen");
+    await user.click(screen.getByTestId("button-cancel-purge"));
+    await waitFor(() => expect(screen.queryByTestId("dialog-confirm-purge")).toBeNull());
+
+    await user.click(screen.getByTestId("button-purge-all"));
+    confirm = await screen.findByTestId("dialog-confirm-purge");
+    expect(within(confirm).getByTestId("text-confirm-purge-fiscal")).toHaveTextContent("4 fiscale beoordelingen");
+  });
+
   it("has the sentence in English too", () => {
-    for (const kind of ["reservation", "maintenance_block"]) {
-      expect((enBin as any).kinds[kind].purgeNote, kind).toMatch(/fiscal assessments is skipped and stays in the bin/);
+    for (const kind of ["reservation", "maintenance_block", "customer"]) {
+      expect((enBin as any).kinds[kind].purgeNote, kind).toMatch(/fiscal assessments of this .+ are also deleted permanently/);
     }
   });
 });
@@ -415,33 +460,9 @@ describe("RecycleBinDialog - what the server answers", () => {
     expect(toasts().queryByText(/Server says no/)).toBeNull();
   });
 
-  it("a reservation with fiscal assessments is refused: said in Dutch by its code, the row stays, the rest of a selection goes", async () => {
-    serverRows = [
-      row({ id: 5, entityType: "reservation", label: "Reservering #3387 - AB-123-C 2030-02-01" }),
-      row({ id: 7, entityType: "reservation", label: "Reservering #3391 - AB-123-C 2030-04-01" }),
-    ];
-    purgeAnswer = (call) => {
-      serverRows = serverRows.filter((r) => !call.body.ids.includes(r.id) || r.id === 5);
-      return jsonResponse({
-        purged: 1,
-        failed: [{ id: 5, code: "FISCAL_DATA_PRESENT", message: "This reservation has fiscal assessments or review cases, which are kept; it cannot be purged." }],
-      });
-    };
-    const user = userEvent.setup();
-    renderBin("reservation");
-    await user.click(await screen.findByTestId("checkbox-deleted-select-all"));
-    await user.click(screen.getByTestId("button-purge-selected"));
-    await user.click(await screen.findByTestId("button-confirm-purge"));
-
-    expect(await toasts().findByText("Deze reservering heeft fiscale beoordelingen; die blijven bewaard, dus kan ze niet definitief worden verwijderd.", { exact: false })).toBeInTheDocument();
-    expect(toasts().getByText("Niet alles is gelukt")).toBeInTheDocument();
-    expect(toasts().getByText("1 regel definitief verwijderd.", { exact: false })).toBeInTheDocument();
-    expect(toasts().queryByText(/fiscal assessments or review cases/)).toBeNull();
-    await waitFor(() => expect(screen.queryByTestId("deleted-record-7")).toBeNull());
-    expect(screen.getByTestId("deleted-record-5")).toBeInTheDocument();
-  });
-
-  it("the single-record route's refusal (an error status carrying the code) reads the same", async () => {
+  it("FISCAL_DATA_PRESENT is gone: the server no longer refuses a reservation with fiscal assessments, and a stale answer with that code gets the generic sentence", async () => {
+    expect((nlBin.purge.errors as Record<string, string>).FISCAL_DATA_PRESENT).toBeUndefined();
+    expect((enBin.purge.errors as Record<string, string>).FISCAL_DATA_PRESENT).toBeUndefined();
     serverRows = [row({ id: 5, entityType: "reservation", label: "Reservering #3387 - AB-123-C 2030-02-01" })];
     purgeAnswer = () => jsonResponse({
       code: "FISCAL_DATA_PRESENT", message: "This reservation has fiscal assessments or review cases, which are kept; it cannot be purged.",
@@ -452,10 +473,8 @@ describe("RecycleBinDialog - what the server answers", () => {
     await user.click(await screen.findByTestId("button-purge-5"));
     await user.click(await screen.findByTestId("button-confirm-purge"));
 
-    expect(await toasts().findByText("Deze reservering heeft fiscale beoordelingen; die blijven bewaard, dus kan ze niet definitief worden verwijderd.")).toBeInTheDocument();
-    expect(toasts().getByText("Verwijderen mislukt")).toBeInTheDocument();
+    expect(await toasts().findByText("Het verwijderen is niet gelukt.")).toBeInTheDocument();
     expect(toasts().queryByText(/fiscal assessments or review cases/)).toBeNull();
-    expect(screen.getByTestId("deleted-record-5")).toBeInTheDocument();
   });
 
   it("a bulk answer with several kinds of trouble lists each sentence once", async () => {
@@ -543,7 +562,7 @@ describe("recycleBin locales - the purge texts", () => {
 
   it("every code the purge routes can answer has a Dutch sentence and an English one", () => {
     for (const bin of [nlBin, enBin] as Array<typeof nlBin>) {
-      for (const code of ["NOT_FOUND", "PURGE_FAILED", "FILE_REMOVAL_FAILED", "FISCAL_DATA_PRESENT"]) {
+      for (const code of ["NOT_FOUND", "PURGE_FAILED", "FILE_REMOVAL_FAILED"]) {
         expect((bin.purge.errors as Record<string, string>)[code], code).toBeTruthy();
       }
     }

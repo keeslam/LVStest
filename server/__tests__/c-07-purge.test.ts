@@ -17,11 +17,16 @@
  *                           transport reports, with their files); every other document
  *                           that names it is DETACHED (reservation_id null, file kept);
  *                           scan events keep their row with a null reservation;
- *                           self-links on other reservations are nulled. A reservation
- *                           with fiscal assessments or review cases is refused
- *                           (FISCAL_DATA_PRESENT), bin row and everything else untouched
+ *                           self-links on other reservations are nulled. Fiscal assessments
+ *                           and review cases go with it (DH, owner's choice B-41): its own
+ *                           period's and every assessment that names it; the audit row counts
+ *                           them (removed.fiscal_assessments / fiscal_review_cases) and the
+ *                           append-only fiscal trail gets a `purged` event
  *   vehicle/customer/fine/  the bin row, plus the files named in the snapshot
  *   transport
+ *
+ * A customer's fiscal rows left with the customer (cascade) and sit in the snapshot; they
+ * are counted and recorded the same way when the bin row goes.
  *
  * A file is only removed after the commit, only when it resolves under the uploads
  * directory and when no live row in any file-bearing table still points at it (in any
@@ -35,7 +40,7 @@ import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { and, desc, eq, inArray, like } from "drizzle-orm";
+import { and, desc, eq, inArray, like, sql } from "drizzle-orm";
 
 import { useTempUploadsDir, removeTempUploadsDir } from "./helpers/uploads";
 
@@ -47,7 +52,7 @@ const { db } = await import("../db");
 const schema = await import("../../shared/schema");
 const {
   invoiceInboxItems, auditLogs, customers, damageCheckTemplateBackgrounds, damageCheckTemplates, deletedRecords, deliveryTasks,
-  documents, drivers, expenses, fines, fiscalAssessments, fiscalReviewCases, interactiveDamageChecks,
+  documents, drivers, expenses, fines, fiscalAssessments, fiscalAuditEvents, fiscalReviewCases, interactiveDamageChecks,
   pdfTemplates, portalDocumentAcks, portalRequestAttachments, portalRequests, reservationDriverAssignments,
   reservations, scanEvents, templateBackgrounds, transportReportTemplateBackgrounds, transportReportTemplates,
   vehicleDiagramTemplates, vehicleTransports, vehicleUsagePeriods, vehicles,
@@ -154,6 +159,8 @@ afterAll(async () => {
     await db.delete(vehicleTransports).where(inArray(vehicleTransports.vehicleId, ids));
   }
   await db.delete(scanEvents).where(like(scanEvents.code, `${ROW_PREFIX}%`));
+  // The `purged` events the DH tests caused (the trail is append-only for the app, not for the test database).
+  await db.delete(fiscalAuditEvents).where(and(eq(fiscalAuditEvents.action, "purged"), eq(fiscalAuditEvents.username, binKeeper.username)));
   await cleanupFixtures();
   await cleanupFixtureUsers();
   removeTempUploadsDir(UPLOADS);
@@ -654,7 +661,7 @@ describe("C-07 - a reservation: the soft-deleted row goes after its dependants",
   });
 });
 
-describe("C-07 fix round - fiscal evidence: a reservation that has any is never purged", () => {
+describe("Sub-project D, DH (B-41, fiscale prullenbak) - fiscal records go with the reservation, and the trail says so", () => {
   /** A soft-deleted reservation with its bin row, after `setup` has hung whatever it wants off it. */
   async function binned(setup: (rental: { id: number }, vehicle: { id: number; licensePlate: string }) => Promise<void> = async () => {}) {
     const vehicle = await createFixtureVehicle();
@@ -664,89 +671,104 @@ describe("C-07 fix round - fiscal evidence: a reservation that has any is never 
     const record = await binRowFor("reservation", rental.id);
     return { vehicle, rental, record };
   }
-  const refusal = (id: number) => ({ id, code: "FISCAL_DATA_PRESENT", message: expect.any(String) });
   const stillThere = async (table: any, col: any, id: number) => (await db.select().from(table).where(eq(col, id))).length;
+  const addCase = async (periodId: number, vehicleId: number) =>
+    (await db.insert(fiscalReviewCases).values({ usagePeriodId: periodId, customerId, vehicleId, reasons: ["test"], status: "open" }).returning())[0];
+  /** The fiscal trail's `purged` events that name this reservation. */
+  const purgedEvents = (reservationId: number) =>
+    db.select().from(fiscalAuditEvents)
+      .where(and(eq(fiscalAuditEvents.action, "purged"), sql`${fiscalAuditEvents.details}->>'reservationId' = ${String(reservationId)}`));
 
-  it("an assessment of the reservation's own usage period: refused, and the bin row, the reservation, the period, the assessment and the documents are all untouched", async () => {
+  it("an assessment and a review case of the reservation's own usage period: the purge succeeds and takes the period, the assessment, the case, the reservation and its documents; the audit row and the fiscal trail count them", async () => {
     let contract = "";
     let periodId = 0;
     let assessmentId = 0;
+    let caseId = 0;
     let docId = 0;
-    const { rental, record } = await binned(async (r, v) => {
+    const { vehicle, rental, record } = await binned(async (r, v) => {
       contract = put(`${v.licensePlate}/fiscal-own-${unique("fo")}.pdf`);
       docId = (await addDocument({ vehicleId: v.id, reservationId: r.id, filePath: contract, documentType: "Contract (Unsigned)" })).id;
       const period = await addPeriod(r.id, v.id);
       periodId = period.id;
       // reservation_id null on purpose: only the period ties the assessment to this reservation.
       assessmentId = (await addAssessment(period.id, v.id, null)).id;
+      caseId = (await addCase(period.id, v.id)).id;
     });
 
     const res = await binKeeper.post("/api/deleted-records/purge").send({ ids: [record.id] });
     expect(res.status).toBe(200);
-    expect(res.body.purged).toBe(0);
-    expect(res.body.failed).toEqual([refusal(record.id)]);
-    expect(JSON.stringify(res.body)).not.toMatch(/fiscal_assessments|vehicle_usage_periods|select |insert /i);
+    expect(res.body).toEqual({ purged: 1, failed: [] });
 
-    expect(await binRowExists(record.id)).toBe(true);
-    const [row] = await db.select().from(reservations).where(eq(reservations.id, rental.id));
-    expect(row, "the reservation row").toBeDefined();
-    expect(row.deletedAt).not.toBeNull();
-    expect(await stillThere(vehicleUsagePeriods, vehicleUsagePeriods.id, periodId)).toBe(1);
-    expect(await stillThere(fiscalAssessments, fiscalAssessments.id, assessmentId)).toBe(1);
-    expect(await stillThere(documents, documents.id, docId), "its documents").toBe(1);
-    expect(onDisk(contract), "and their files").toBe(true);
+    expect(await binRowExists(record.id)).toBe(false);
+    expect(await stillThere(reservations, reservations.id, rental.id)).toBe(0);
+    expect(await stillThere(vehicleUsagePeriods, vehicleUsagePeriods.id, periodId)).toBe(0);
+    expect(await stillThere(fiscalAssessments, fiscalAssessments.id, assessmentId)).toBe(0);
+    expect(await stillThere(fiscalReviewCases, fiscalReviewCases.id, caseId)).toBe(0);
+    expect(await stillThere(documents, documents.id, docId), "its documents").toBe(0);
+    expect(onDisk(contract), "and their files").toBe(false);
 
-    // The refusal is on the trail: the owner can see that somebody tried.
     const audit = await auditRows("reservation.purge", rental.id);
     expect(audit).toHaveLength(1);
-    expect(audit[0].status).toBe("failure");
-    expect(audit[0].details).toMatchObject({ deletedRecordId: record.id, code: "FISCAL_DATA_PRESENT", fiscal: { assessments: 1, reviewCases: 0 } });
-    // ...and by whom: the acting account is in the details as well as on the row.
-    expect(audit[0].details).toMatchObject({ purgedBy: binKeeper.username });
+    expect(audit[0].status).toBe("success");
+    expect(audit[0].details).toMatchObject({
+      deletedRecordId: record.id, purgedBy: binKeeper.username,
+      removed: { reservations: 1, vehicle_usage_periods: 1, fiscal_assessments: 1, fiscal_review_cases: 1 },
+    });
+
+    // The fiscal trail is append-only: it stays behind as the proof that something was thrown away.
+    const events = await purgedEvents(rental.id);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      action: "purged", entityType: "assessment", entityId: null, username: binKeeper.username,
+      customerId, vehicleId: vehicle.id,
+    });
+    expect(events[0].details).toMatchObject({ source: "recycle_bin_purge", entity: "reservation", reservationId: rental.id, deletedRecordId: record.id, assessments: 1, reviewCases: 1 });
   });
 
-  it("a review case alone is enough: refused, nothing touched", async () => {
-    let periodId = 0;
+  it("a review case alone is no obstacle either: DELETE answers 200 and the case goes", async () => {
     let caseId = 0;
     const { rental, record } = await binned(async (r, v) => {
-      const period = await addPeriod(r.id, v.id);
-      periodId = period.id;
-      const [reviewCase] = await db.insert(fiscalReviewCases).values({ usagePeriodId: period.id, customerId, vehicleId: v.id, reasons: ["test"], status: "open" }).returning();
-      caseId = reviewCase.id;
+      caseId = (await addCase((await addPeriod(r.id, v.id)).id, v.id)).id;
     });
 
     const res = await binKeeper.delete(`/api/deleted-records/${record.id}`);
-    // A refusal the caller can understand is a 409 (conflict with fiscal records), not a 500: nothing
-    // broke, the purge declined. A record that is simply gone stays a 404.
-    expect(res.status).toBe(409);
-    expect(res.body.code).toBe("FISCAL_DATA_PRESENT");
-    expect(res.body.purged).toBe(0);
-    expect(res.body.failed).toEqual([refusal(record.id)]);
-
-    expect(await binRowExists(record.id)).toBe(true);
-    expect(await stillThere(reservations, reservations.id, rental.id)).toBe(1);
-    expect(await stillThere(vehicleUsagePeriods, vehicleUsagePeriods.id, periodId)).toBe(1);
-    expect(await stillThere(fiscalReviewCases, fiscalReviewCases.id, caseId)).toBe(1);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ purged: 1, failed: [] });
+    expect(await binRowExists(record.id)).toBe(false);
+    expect(await stillThere(reservations, reservations.id, rental.id)).toBe(0);
+    expect(await stillThere(fiscalReviewCases, fiscalReviewCases.id, caseId)).toBe(0);
+    const removed = ((await auditRows("reservation.purge", rental.id))[0].details as any).removed;
+    expect(removed).toMatchObject({ fiscal_review_cases: 1 });
+    expect(removed).not.toHaveProperty("fiscal_assessments");
+    const events = await purgedEvents(rental.id);
+    expect(events).toHaveLength(1);
+    expect(events[0].details).toMatchObject({ assessments: 0, reviewCases: 1 });
   });
 
-  it("an assessment of ANOTHER period that names the reservation also blocks, and keeps its link", async () => {
+  it("an assessment of ANOTHER period that names the reservation goes too; that other period and its reservation stay", async () => {
     let assessmentId = 0;
+    let siblingId = 0;
+    let siblingPeriodId = 0;
     const { rental, record } = await binned(async (r, v) => {
       const sibling = await createFixtureReservation({ customerId, vehicleId: v.id, startDate: "2031-05-01", endDate: "2031-05-03" });
+      siblingId = sibling.id;
       const siblingPeriod = await addPeriod(sibling.id, v.id);
+      siblingPeriodId = siblingPeriod.id;
       assessmentId = (await addAssessment(siblingPeriod.id, v.id, r.id)).id;
     });
 
     const res = await binKeeper.post("/api/deleted-records/purge").send({ ids: [record.id] });
-    expect(res.body.purged).toBe(0);
-    expect(res.body.failed).toEqual([refusal(record.id)]);
-    expect(await binRowExists(record.id)).toBe(true);
-    expect(await stillThere(reservations, reservations.id, rental.id)).toBe(1);
-    const [assessment] = await db.select().from(fiscalAssessments).where(eq(fiscalAssessments.id, assessmentId));
-    expect(assessment.reservationId, "the link is not cleared by a refused purge").toBe(rental.id);
+    expect(res.body).toEqual({ purged: 1, failed: [] });
+    expect(await binRowExists(record.id)).toBe(false);
+    expect(await stillThere(reservations, reservations.id, rental.id)).toBe(0);
+    expect(await stillThere(fiscalAssessments, fiscalAssessments.id, assessmentId), "the assessment that names it").toBe(0);
+    expect(await stillThere(reservations, reservations.id, siblingId), "the other reservation").toBe(1);
+    expect(await stillThere(vehicleUsagePeriods, vehicleUsagePeriods.id, siblingPeriodId), "the other period").toBe(1);
+    expect((await auditRows("reservation.purge", rental.id))[0].details).toMatchObject({ removed: { fiscal_assessments: 1 } });
+    expect((await purgedEvents(rental.id))[0].details).toMatchObject({ assessments: 1, reviewCases: 0 });
   });
 
-  it("a reservation without fiscal rows still purges - its usage period (an empty one) goes with it", async () => {
+  it("a reservation without fiscal rows still purges, with no fiscal key in the audit row and no fiscal event", async () => {
     let periodId = 0;
     const { rental, record } = await binned(async (r, v) => {
       periodId = (await addPeriod(r.id, v.id)).id;
@@ -757,25 +779,129 @@ describe("C-07 fix round - fiscal evidence: a reservation that has any is never 
     expect(await binRowExists(record.id)).toBe(false);
     expect(await stillThere(reservations, reservations.id, rental.id)).toBe(0);
     expect(await stillThere(vehicleUsagePeriods, vehicleUsagePeriods.id, periodId)).toBe(0);
-    expect((await auditRows("reservation.purge", rental.id))[0].details).toMatchObject({ removed: { reservations: 1, vehicle_usage_periods: 1 } });
+    const details = (await auditRows("reservation.purge", rental.id))[0].details as any;
+    expect(details.removed).toMatchObject({ reservations: 1, vehicle_usage_periods: 1 });
+    expect(details.removed).not.toHaveProperty("fiscal_assessments");
+    expect(details.removed).not.toHaveProperty("fiscal_review_cases");
+    expect(await purgedEvents(rental.id)).toHaveLength(0);
   });
 
-  it("a refusal inside a mixed selection is reported for its own id; the others are purged", async () => {
-    const blocked = await binned(async (r, v) => {
+  it("a mixed selection: the reservation with fiscal rows and the one without are both purged", async () => {
+    const withFiscal = await binned(async (r, v) => {
       await addAssessment((await addPeriod(r.id, v.id)).id, v.id, null);
     });
     const plain = await binned();
     const bin = await insertBinRow("transport");
 
-    const res = await binKeeper.post("/api/deleted-records/purge").send({ ids: [plain.record.id, blocked.record.id, bin.id] });
+    const res = await binKeeper.post("/api/deleted-records/purge").send({ ids: [plain.record.id, withFiscal.record.id, bin.id] });
     expect(res.status).toBe(200);
-    expect(res.body.purged).toBe(2);
-    expect(res.body.failed).toEqual([refusal(blocked.record.id)]);
-    expect(await binRowExists(plain.record.id)).toBe(false);
+    expect(res.body).toEqual({ purged: 3, failed: [] });
     expect(await stillThere(reservations, reservations.id, plain.rental.id)).toBe(0);
-    expect(await binRowExists(bin.id)).toBe(false);
-    expect(await binRowExists(blocked.record.id)).toBe(true);
-    expect(await stillThere(reservations, reservations.id, blocked.rental.id)).toBe(1);
+    expect(await stillThere(reservations, reservations.id, withFiscal.rental.id)).toBe(0);
+    expect(await binRowExists(withFiscal.record.id)).toBe(false);
+  });
+
+  it("a purge that rolls back keeps the fiscal rows and writes no fiscal event", async () => {
+    let assessmentId = 0;
+    let caseId = 0;
+    const { rental, record } = await binned(async (r, v) => {
+      const period = await addPeriod(r.id, v.id);
+      assessmentId = (await addAssessment(period.id, v.id, null)).id;
+      caseId = (await addCase(period.id, v.id)).id;
+    });
+
+    const original = db.transaction.bind(db);
+    const spy = vi.spyOn(db, "transaction").mockImplementationOnce(((work: any) =>
+      original(async (tx: any) => { await work(tx); throw new Error("forced rollback"); })) as any);
+    const res = await binKeeper.delete(`/api/deleted-records/${record.id}`);
+    spy.mockRestore();
+
+    expect(res.status).toBe(500);
+    expect(res.body.code).toBe("PURGE_FAILED");
+    expect(await binRowExists(record.id)).toBe(true);
+    expect(await stillThere(reservations, reservations.id, rental.id)).toBe(1);
+    expect(await stillThere(fiscalAssessments, fiscalAssessments.id, assessmentId)).toBe(1);
+    expect(await stillThere(fiscalReviewCases, fiscalReviewCases.id, caseId)).toBe(1);
+    expect(await purgedEvents(rental.id)).toHaveLength(0);
+    expect((await auditRows("reservation.purge", rental.id))[0].status).toBe("failure");
+  });
+
+  it("a maintenance block is treated the same way", async () => {
+    const vehicle = await createFixtureVehicle();
+    const block = await createFixtureReservation({ customerId: null, vehicleId: vehicle.id, startDate: FUTURE.start, endDate: FUTURE.end, type: "maintenance_block" });
+    const period = await addPeriod(block.id, vehicle.id);
+    const assessment = await addAssessment(period.id, vehicle.id, null);
+    expect((await admin.delete(`/api/reservations/${block.id}`)).status).toBe(200);
+    const record = await binRowFor("maintenance_block", block.id);
+
+    const res = await binKeeper.delete(`/api/deleted-records/${record.id}`);
+    expect(res.body).toEqual({ purged: 1, failed: [] });
+    expect(await stillThere(fiscalAssessments, fiscalAssessments.id, assessment.id)).toBe(0);
+    expect((await auditRows("maintenance_block.purge", block.id))[0].details).toMatchObject({ removed: { fiscal_assessments: 1 } });
+    expect((await purgedEvents(block.id))[0].details).toMatchObject({ entity: "maintenance_block", assessments: 1 });
+  });
+
+  it("GET /api/deleted-records adds the fiscal count per row (relatedCounts.fiscalAssessments / fiscalReviewCases): own period and naming assessments counted once; none when there are none; none on a restored row", async () => {
+    let siblingId = 0;
+    const withFiscal = await binned(async (r, v) => {
+      const own = await addPeriod(r.id, v.id);
+      await addAssessment(own.id, v.id, null);
+      await addAssessment(own.id, v.id, r.id); // names the reservation AND sits on its period: still one row each
+      await addCase(own.id, v.id);
+      const sibling = await createFixtureReservation({ customerId, vehicleId: v.id, startDate: "2031-06-01", endDate: "2031-06-03" });
+      siblingId = sibling.id;
+      await addAssessment((await addPeriod(sibling.id, v.id)).id, v.id, r.id);
+    });
+    const plain = await binned();
+    const restored = await binned(async (r, v) => {
+      await addAssessment((await addPeriod(r.id, v.id)).id, v.id, null);
+    });
+    await db.update(deletedRecords).set({ restoredAt: new Date() }).where(eq(deletedRecords.id, restored.record.id));
+
+    const res = await binKeeper.get("/api/deleted-records").query({ type: "reservation" });
+    expect(res.status).toBe(200);
+    const byId = new Map<number, any>(res.body.map((r: any) => [r.id, r]));
+    expect(byId.get(withFiscal.record.id).relatedCounts).toMatchObject({ fiscalAssessments: 3, fiscalReviewCases: 1 });
+    expect(byId.get(plain.record.id).relatedCounts ?? {}).not.toHaveProperty("fiscalAssessments");
+    expect(byId.get(restored.record.id).relatedCounts ?? {}).not.toHaveProperty("fiscalAssessments");
+    expect(siblingId).toBeGreaterThan(0);
+  });
+
+  it("a customer: the fiscal rows that left with the customer are counted in the list, in the audit row and on the fiscal trail when the bin row goes", async () => {
+    const created = await admin.post("/api/customers").send({ name: `${ROW_PREFIX}Klant-${unique("kf")}`, customerType: "business", debtorNumber: `C07F-${Date.now().toString(36)}` });
+    expect(created.status).toBe(201);
+    const id = created.body.id;
+    const vehicle = await createFixtureVehicle();
+    // The period belongs to the new customer (so it cascades with it); the reservation is a fixture one.
+    const rental = await createFixtureReservation({ customerId, vehicleId: vehicle.id, startDate: PAST.start, endDate: PAST.end });
+    const period = await addPeriod(rental.id, vehicle.id, id);
+    await db.insert(fiscalAssessments).values({
+      usagePeriodId: period.id, customerId: id, vehicleId: vehicle.id, reservationId: rental.id,
+      periodStart: PAST.start, periodEndEffective: PAST.end, calculationDate: PAST.start,
+      ruleKey: "test", status: "ok", months: [], dataQuality: "complete", explanation: "test",
+      inputs: {}, parameters: [], inputHash: unique("hash"), trigger: "test",
+    });
+    await db.insert(fiscalReviewCases).values({ usagePeriodId: period.id, customerId: id, vehicleId: vehicle.id, reasons: ["test"], status: "open" });
+
+    expect((await admin.delete(`/api/customers/${id}`)).status).toBe(204);
+    const record = await binRowFor("customer", id);
+    expect(record).toBeDefined();
+
+    const list = await binKeeper.get("/api/deleted-records").query({ type: "customer" });
+    const row = list.body.find((r: any) => r.id === record.id);
+    expect(row.relatedCounts).toMatchObject({ fiscalAssessments: 1, fiscalReviewCases: 1 });
+
+    const res = await binKeeper.delete(`/api/deleted-records/${record.id}`);
+    expect(res.body).toEqual({ purged: 1, failed: [] });
+    expect(await binRowExists(record.id)).toBe(false);
+    const audit = await auditRows("customer.purge", id);
+    expect(audit).toHaveLength(1);
+    expect(audit[0].details).toMatchObject({ removed: { fiscal_assessments: 1, fiscal_review_cases: 1 } });
+    const events = await db.select().from(fiscalAuditEvents)
+      .where(and(eq(fiscalAuditEvents.action, "purged"), sql`${fiscalAuditEvents.details}->>'customerId' = ${String(id)}`));
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({ entityType: "assessment", customerId: id, username: binKeeper.username });
+    expect(events[0].details).toMatchObject({ source: "recycle_bin_purge", entity: "customer", deletedRecordId: record.id, assessments: 1, reviewCases: 1 });
   });
 });
 

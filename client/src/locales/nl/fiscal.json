@@ -183,7 +183,8 @@
       "usage_confirmed": "Gebruik bevestigd",
       "usage_overridden": "Gebruik overschreven",
       "profile_refreshed": "Profiel ververst",
-      "profile_overridden": "Profiel handmatig gezet"
+      "profile_overridden": "Profiel handmatig gezet",
+      "purged": "Definitief verwijderd (prullenbak)"
     },
     "filterAction": "Actie",
     "allActions": "Alle acties",

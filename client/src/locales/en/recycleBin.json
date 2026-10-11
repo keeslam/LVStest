@@ -51,7 +51,7 @@
       "badge": "Customer",
       "noun_one": "customer",
       "noun_other": "customers",
-      "purgeNote": "The customer disappears with its drivers and portal data, and the debtor number becomes free again. Files that belong to it are removed from disk."
+      "purgeNote": "The customer disappears with its drivers and portal data, and the debtor number becomes free again. Files that belong to it are removed from disk. The fiscal assessments of this customer are also deleted permanently."
     },
     "reservation": {
       "openButton": "Deleted reservations",
@@ -61,7 +61,7 @@
       "badge": "Reservation",
       "noun_one": "reservation",
       "noun_other": "reservations",
-      "purgeNote": "The reservation disappears with its contracts, damage checks and delivery tasks. Documents of the vehicle stay. The files of what disappears are removed from disk. A reservation with fiscal assessments is skipped and stays in the bin."
+      "purgeNote": "The reservation disappears with its contracts, damage checks and delivery tasks. Documents of the vehicle stay. The files of what disappears are removed from disk. The fiscal assessments of this reservation are also deleted permanently."
     },
     "maintenance_block": {
       "openButton": "Deleted maintenance",
@@ -71,7 +71,7 @@
       "badge": "Maintenance",
       "noun_one": "maintenance entry",
       "noun_other": "maintenance entries",
-      "purgeNote": "The maintenance entry disappears, with any contracts and damage checks. Documents of the vehicle, such as an APK certificate, stay. The files of what disappears are removed from disk. A maintenance entry with fiscal assessments is skipped and stays in the bin."
+      "purgeNote": "The maintenance entry disappears, with any contracts and damage checks. Documents of the vehicle, such as an APK certificate, stay. The files of what disappears are removed from disk. The fiscal assessments of this maintenance entry are also deleted permanently."
     },
     "transport": {
       "openButton": "Deleted transports",
@@ -127,6 +127,8 @@
     "confirmAll": "Everything in this recycle bin will be deleted permanently: all {{noun}}, including entries that are not in the list ({{count}} in the list).",
     "confirmAllCapped": "Everything in this recycle bin will be deleted permanently: all {{noun}}, including entries that are not in the list (the list shows at most {{count}}).",
     "filesKept": "A file that other data still uses is kept.",
+    "fiscalCount_one": "Note: {{count}} fiscal assessment is also deleted permanently.",
+    "fiscalCount_other": "Note: {{count}} fiscal assessments are also deleted permanently.",
     "irreversible": "This cannot be undone.",
     "confirmButton": "Delete permanently",
     "cancel": "Cancel",
@@ -141,8 +143,7 @@
     "errors": {
       "NOT_FOUND": "This record was no longer in the recycle bin.",
       "PURGE_FAILED": "This record could not be deleted and is still in the recycle bin.",
-      "FILE_REMOVAL_FAILED": "The record was deleted, but one or more files could not be removed from disk.",
-      "FISCAL_DATA_PRESENT": "This reservation has fiscal assessments; they are kept, so it cannot be deleted permanently."
+      "FILE_REMOVAL_FAILED": "The record was deleted, but one or more files could not be removed from disk."
     },
     "confirmAllRestoredHidden_one": "That includes {{count}} restored entry that is hidden from the list now.",
     "confirmAllRestoredHidden_other": "That includes {{count}} restored entries that are hidden from the list now."
@@ -200,6 +201,14 @@
     "delivery_tasks_other": "{{count}} delivery tasks",
     "vehicle_usage_periods_one": "{{count}} usage period",
     "vehicle_usage_periods_other": "{{count}} usage periods",
+    "fiscalAssessments_one": "{{count}} fiscal assessment",
+    "fiscalAssessments_other": "{{count}} fiscal assessments",
+    "fiscalReviewCases_one": "{{count}} fiscal review case",
+    "fiscalReviewCases_other": "{{count}} fiscal review cases",
+    "fiscal_assessments_one": "{{count}} fiscal assessment",
+    "fiscal_assessments_other": "{{count}} fiscal assessments",
+    "fiscal_review_cases_one": "{{count}} fiscal review case",
+    "fiscal_review_cases_other": "{{count}} fiscal review cases",
     "vehicle_fiscal_profiles_one": "{{count}} fiscal profile",
     "vehicle_fiscal_profiles_other": "{{count}} fiscal profiles",
     "apk_date_changes_one": "{{count}} APK date change",

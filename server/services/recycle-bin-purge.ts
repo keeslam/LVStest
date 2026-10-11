@@ -19,13 +19,18 @@
  *                            reservations are nulled; the CASCADE / SET NULL foreign
  *                            keys do the rest. A row that is no longer soft-deleted
  *                            (it is live again) is never deleted: only the stale bin
- *                            row goes. A reservation with fiscal evidence (a fiscal
- *                            assessment or review case of its usage period, or an
- *                            assessment that names it) is REFUSED, `FISCAL_DATA_PRESENT`:
- *                            those records are immutable and the cascade would erase
- *                            them for good
- *   vehicle, customer,       the rows are already gone; the bin row goes, and the
- *   fine, transport          files named in the snapshot
+ *                            row goes. Fiscal evidence goes with it (sub-project D, DH,
+ *                            the owner's choice B-41; he was told about the retention
+ *                            duty): the review cases and assessments of its usage period
+ *                            and every assessment that names it, in the SAME transaction.
+ *                            The audit row counts them and the append-only fiscal trail
+ *                            gets a `purged` event, the proof that they once existed
+ *   customer                 the rows are already gone (the customer delete cascaded
+ *                            them into the snapshot); the bin row goes, and the files
+ *                            named in the snapshot. The fiscal rows in the snapshot go
+ *                            with it: counted in the audit row, `purged` on the trail
+ *   vehicle, fine, transport the rows are already gone; the bin row goes, and the
+ *                            files named in the snapshot
  *
  * FILES. A file is removed only AFTER the commit (a rolled-back purge must not cost
  * a file), only when its stored path resolves to a regular file under the uploads
@@ -56,6 +61,7 @@ import {
   type DeletedRecord,
 } from "../../shared/schema";
 import { getUploadsDir, getUploadsRoot, isInsideUploads } from "../../shared/paths";
+import { recordFiscalEvent, type Actor as FiscalActor } from "./fiscal/audit";
 import { isContractDocument, isDamageCheckDocument, isTransportReportDocument } from "../../shared/document-types";
 
 /* ------------------------------------------------------------------ *
@@ -68,7 +74,7 @@ export interface PurgeActor {
 }
 
 /** Stable codes the client translates; the messages stay English. */
-export type PurgeFailureCode = "NOT_FOUND" | "PURGE_FAILED" | "FILE_REMOVAL_FAILED" | "FISCAL_DATA_PRESENT";
+export type PurgeFailureCode = "NOT_FOUND" | "PURGE_FAILED" | "FILE_REMOVAL_FAILED";
 
 export interface PurgeFailure {
   id: number;
@@ -366,12 +372,105 @@ const bump = (counts: Record<string, number>, table: string, by: number) => {
   if (by > 0) counts[table] = (counts[table] ?? 0) + by;
 };
 
-/** Thrown inside the transaction, before anything is written, when fiscal evidence stands in the way. */
-class FiscalDataPresentError extends Error {
-  constructor(readonly assessments: number, readonly reviewCases: number) {
-    super("This reservation has fiscal assessments or review cases; they are kept, so it cannot be purged.");
-    this.name = "FiscalDataPresentError";
+/** What a purge needs to put on the fiscal trail. */
+interface FiscalPurgeContext {
+  actor?: PurgeActor;
+  deletedRecordId: number;
+  entity: "reservation" | "maintenance_block" | "customer";
+}
+
+/**
+ * Sub-project D, DH (besluit B-41, the owner's choice; he was told that fiscal data falls under the
+ * retention duty): the fiscal records of a purged reservation or customer are deleted too. The fiscal
+ * audit trail is append-only and keeps no foreign key, so it is the one thing left behind: this writes
+ * the `purged` event, in the purge's own transaction (no event without the deletion and the other way
+ * round). Nothing is written when there was nothing fiscal to remove.
+ */
+async function recordFiscalPurge(
+  tx: Tx, ctx: FiscalPurgeContext, removedCounts: { assessments: number; reviewCases: number },
+  subject: { reservationId?: number; customerId?: number | null; vehicleId?: number | null },
+): Promise<void> {
+  if (removedCounts.assessments === 0 && removedCounts.reviewCases === 0) return;
+  const actor: FiscalActor = { userId: ctx.actor?.userId ?? null, username: ctx.actor?.username ?? "system", permissionUsed: "manage_recycle_bin" };
+  await recordFiscalEvent(actor, {
+    action: "purged",
+    entityType: "assessment",
+    customerId: subject.customerId ?? null,
+    vehicleId: subject.vehicleId ?? null,
+    details: {
+      source: "recycle_bin_purge",
+      entity: ctx.entity,
+      ...(subject.reservationId !== undefined && { reservationId: subject.reservationId }),
+      ...(ctx.entity === "customer" && subject.customerId != null && { customerId: subject.customerId }),
+      deletedRecordId: ctx.deletedRecordId,
+      assessments: removedCounts.assessments,
+      reviewCases: removedCounts.reviewCases,
+    },
+  }, tx);
+}
+
+/** The fiscal rows a customer delete cascaded into the bin snapshot (they go with the bin row). */
+export function fiscalCountsInSnapshot(payload: unknown): { assessments: number; reviewCases: number } {
+  const deleted = (payload as { cascade?: { deleted?: Array<{ table?: string; rows?: unknown[] }> } } | null)?.cascade?.deleted;
+  const rowsOf = (table: string) => (Array.isArray(deleted) ? deleted : []).filter((d) => d?.table === table).reduce((n, d) => n + (d.rows?.length ?? 0), 0);
+  return { assessments: rowsOf("fiscal_assessments"), reviewCases: rowsOf("fiscal_review_cases") };
+}
+
+/**
+ * The fiscal count per bin row for the list (`GET /api/deleted-records`): what a purge would delete
+ * besides the record itself. Only rows that are still to be purged (not restored) and only the kinds
+ * that carry fiscal rows. A row without any is left out of the map.
+ */
+export async function fiscalCountsForBinRows(
+  rows: Array<{ id: number; entityType: string; entityId: number; restoredAt?: Date | string | null; payload?: unknown }>,
+): Promise<Map<number, { assessments: number; reviewCases: number }>> {
+  const result = new Map<number, { assessments: number; reviewCases: number }>();
+  const open = rows.filter((r) => !r.restoredAt);
+  for (const r of open) {
+    if (r.entityType !== "customer") continue;
+    const counts = fiscalCountsInSnapshot(r.payload);
+    if (counts.assessments > 0 || counts.reviewCases > 0) result.set(r.id, counts);
   }
+
+  const reservationRows = open.filter((r) => r.entityType === "reservation" || r.entityType === "maintenance_block");
+  if (reservationRows.length === 0) return result;
+  const reservationIds = [...new Set(reservationRows.map((r) => r.entityId))];
+  const periods = await db.select({ id: vehicleUsagePeriods.id, reservationId: vehicleUsagePeriods.reservationId })
+    .from(vehicleUsagePeriods).where(inArray(vehicleUsagePeriods.reservationId, reservationIds));
+  const periodIds = periods.map((p) => p.id);
+  const reservationOfPeriod = new Map(periods.map((p) => [p.id, p.reservationId]));
+  const assessments = await db.select({ id: fiscalAssessments.id, usagePeriodId: fiscalAssessments.usagePeriodId, reservationId: fiscalAssessments.reservationId })
+    .from(fiscalAssessments).where(
+      periodIds.length > 0
+        ? or(inArray(fiscalAssessments.usagePeriodId, periodIds), inArray(fiscalAssessments.reservationId, reservationIds))
+        : inArray(fiscalAssessments.reservationId, reservationIds),
+    );
+  const cases = periodIds.length > 0
+    ? await db.select({ usagePeriodId: fiscalReviewCases.usagePeriodId }).from(fiscalReviewCases).where(inArray(fiscalReviewCases.usagePeriodId, periodIds))
+    : [];
+
+  // An assessment counts once for a reservation, whether its own period or its reservation_id ties it.
+  const assessmentsOf = new Map<number, Set<number>>();
+  const addAssessment = (reservationId: number | null | undefined, assessmentId: number) => {
+    if (reservationId == null || !reservationIds.includes(reservationId)) return;
+    if (!assessmentsOf.has(reservationId)) assessmentsOf.set(reservationId, new Set());
+    assessmentsOf.get(reservationId)!.add(assessmentId);
+  };
+  for (const a of assessments) {
+    addAssessment(a.reservationId, a.id);
+    addAssessment(reservationOfPeriod.get(a.usagePeriodId), a.id);
+  }
+  const casesOf = new Map<number, number>();
+  for (const c of cases) {
+    const reservationId = reservationOfPeriod.get(c.usagePeriodId);
+    if (reservationId != null) casesOf.set(reservationId, (casesOf.get(reservationId) ?? 0) + 1);
+  }
+
+  for (const r of reservationRows) {
+    const counts = { assessments: assessmentsOf.get(r.entityId)?.size ?? 0, reviewCases: casesOf.get(r.entityId) ?? 0 };
+    if (counts.assessments > 0 || counts.reviewCases > 0) result.set(r.id, counts);
+  }
+  return result;
 }
 
 /**
@@ -397,34 +496,40 @@ interface ReservationPurgeDocuments {
 }
 
 /**
- * Hard-deletes the soft-deleted reservation behind a bin row, dependants first. Returns
- * false (touching nothing) when the row is gone or live again; throws
- * `FiscalDataPresentError` (also touching nothing) when fiscal evidence exists.
+ * Hard-deletes the soft-deleted reservation behind a bin row, dependants first, its fiscal
+ * records included (DH). Returns false (touching nothing) when the row is gone or live again.
  */
 async function purgeReservationRows(
   tx: Tx, reservationId: number, paths: Set<string>, removed: Record<string, number>, docs: ReservationPurgeDocuments,
+  ctx: FiscalPurgeContext,
 ): Promise<boolean> {
   const [row] = await tx.select().from(reservations).where(eq(reservations.id, reservationId)).for("update");
   // Live again (restored by hand): the reservation is not ours to delete.
   if (!row || row.deletedAt == null) return false;
 
-  // Fiscal evidence first, before ANYTHING is written. The usage period cascades to its
-  // assessments and review cases, which are immutable records the fiscal rules rest on: a
-  // purge must never erase them. The period rows are locked, so an assessment being written
-  // right now either shows in the count or waits for this transaction.
+  // Fiscal records (the owner's choice, B-41): the review cases and assessments of the usage period go
+  // first, then the assessments of ANOTHER period that name this reservation (`reservation_id` has no
+  // foreign key, so no cascade reaches them), then the period itself with the reservation (CASCADE).
+  // The period rows are locked, so an assessment being written right now either shows here or waits
+  // for this transaction.
   const periods = await tx.select({ id: vehicleUsagePeriods.id }).from(vehicleUsagePeriods)
     .where(eq(vehicleUsagePeriods.reservationId, reservationId)).for("update");
   const periodIds = periods.map((p) => p.id);
-  const count = sql<number>`count(*)::int`;
-  const [assessmentCount] = await tx.select({ n: count }).from(fiscalAssessments).where(
+  const reviewCaseRows = periodIds.length > 0
+    ? await tx.select({ id: fiscalReviewCases.id }).from(fiscalReviewCases).where(inArray(fiscalReviewCases.usagePeriodId, periodIds))
+    : [];
+  const assessmentRows = await tx.select({ id: fiscalAssessments.id }).from(fiscalAssessments).where(
     periodIds.length > 0
       ? or(inArray(fiscalAssessments.usagePeriodId, periodIds), eq(fiscalAssessments.reservationId, reservationId))
       : eq(fiscalAssessments.reservationId, reservationId),
   );
-  const [reviewCaseCount] = periodIds.length > 0
-    ? await tx.select({ n: count }).from(fiscalReviewCases).where(inArray(fiscalReviewCases.usagePeriodId, periodIds))
-    : [{ n: 0 }];
-  if (assessmentCount.n > 0 || reviewCaseCount.n > 0) throw new FiscalDataPresentError(assessmentCount.n, reviewCaseCount.n);
+  if (reviewCaseRows.length > 0) await tx.delete(fiscalReviewCases).where(inArray(fiscalReviewCases.id, reviewCaseRows.map((c) => c.id)));
+  if (assessmentRows.length > 0) await tx.delete(fiscalAssessments).where(inArray(fiscalAssessments.id, assessmentRows.map((x) => x.id)));
+  bump(removed, "fiscal_review_cases", reviewCaseRows.length);
+  bump(removed, "fiscal_assessments", assessmentRows.length);
+  await recordFiscalPurge(tx, ctx, { assessments: assessmentRows.length, reviewCases: reviewCaseRows.length }, {
+    reservationId, customerId: row.customerId, vehicleId: row.vehicleId,
+  });
 
   if (row.damageCheckPath) paths.add(row.damageCheckPath);
 
@@ -439,7 +544,7 @@ async function purgeReservationRows(
   const assignments = await tx.select({ id: reservationDriverAssignments.id }).from(reservationDriverAssignments)
     .where(eq(reservationDriverAssignments.reservationId, reservationId));
   bump(removed, "reservation_driver_assignments", assignments.length);
-  // The period itself goes with the reservation (CASCADE); it has no assessments or cases, or we would have stopped above.
+  // The period itself goes with the reservation (CASCADE); its assessments and cases are already gone.
   bump(removed, "vehicle_usage_periods", periods.length);
 
   // NO ACTION foreign key: it would block the delete.
@@ -487,17 +592,32 @@ async function purgeReservationRows(
   return true;
 }
 
+/**
+ * `relatedCounts` as the list shows it, with the fiscal count added (`fiscalAssessments`,
+ * `fiscalReviewCases`; only when above 0). A customer's snapshot already counts its fiscal tables under
+ * their table names; those go, so the same rows are not listed twice.
+ */
+export function withFiscalCounts(
+  relatedCounts: Record<string, number> | null | undefined, counts: { assessments: number; reviewCases: number } | undefined,
+): Record<string, number> | null | undefined {
+  if (!counts) return relatedCounts;
+  const { fiscal_assessments: _a, fiscal_review_cases: _c, ...rest } = relatedCounts ?? {};
+  return {
+    ...rest,
+    ...(counts.assessments > 0 && { fiscalAssessments: counts.assessments }),
+    ...(counts.reviewCases > 0 && { fiscalReviewCases: counts.reviewCases }),
+  };
+}
+
 type OneResult =
   | { ok: true; record: PurgedRecord; paths: Set<string> }
   | {
       ok: false;
       failure: PurgeFailure;
       known?: { entityType: string; entityId: number; label: string };
-      /** Extra audit details for a refusal that is worth a trail (the fiscal one). */
-      auditDetails?: Record<string, unknown>;
     };
 
-async function purgeOne(id: number): Promise<OneResult> {
+async function purgeOne(id: number, actor?: PurgeActor): Promise<OneResult> {
   let known = undefined as { entityType: string; entityId: number; label: string } | undefined;
   try {
     const outcome = await db.transaction(async (tx) => {
@@ -513,8 +633,16 @@ async function purgeOne(id: number): Promise<OneResult> {
       const restored = bin.restoredAt != null;
       if (!restored) {
         if (bin.entityType === "reservation" || bin.entityType === "maintenance_block") {
-          await purgeReservationRows(tx, bin.entityId, paths, removed, docs);
+          await purgeReservationRows(tx, bin.entityId, paths, removed, docs, { actor, deletedRecordId: id, entity: bin.entityType });
         } else {
+          if (bin.entityType === "customer") {
+            // The customer delete cascaded the fiscal rows into the snapshot; they go with the bin row. Count
+            // them and leave the proof on the fiscal trail.
+            const fiscal = fiscalCountsInSnapshot(bin.payload);
+            bump(removed, "fiscal_assessments", fiscal.assessments);
+            bump(removed, "fiscal_review_cases", fiscal.reviewCases);
+            await recordFiscalPurge(tx, { actor, deletedRecordId: id, entity: "customer" }, fiscal, { customerId: bin.entityId });
+          }
           collectSnapshotPaths(bin.payload, paths);
         }
       }
@@ -535,15 +663,6 @@ async function purgeOne(id: number): Promise<OneResult> {
       },
     };
   } catch (error) {
-    if (error instanceof FiscalDataPresentError) {
-      // A refusal, not a fault: the transaction rolled back before it wrote anything, the bin row is still there.
-      return {
-        ok: false,
-        failure: { id, code: "FISCAL_DATA_PRESENT", message: "This reservation has fiscal assessments or review cases, which are kept; it cannot be purged." },
-        known,
-        auditDetails: { fiscal: { assessments: error.assessments, reviewCases: error.reviewCases } },
-      };
-    }
     console.error(`[recycle-bin-purge] could not purge deleted record ${id}:`, error);
     return { ok: false, failure: { id, code: "PURGE_FAILED", message: "This record could not be removed." }, known };
   }
@@ -587,13 +706,13 @@ export async function purgeDeletedRecords(ids: number[], actor?: PurgeActor, hoo
   const purgedBy = actor?.username ? { purgedBy: actor.username } : {};
 
   for (const id of [...new Set(ids)]) {
-    const one = await purgeOne(id);
+    const one = await purgeOne(id, actor);
     if (!one.ok) {
       result.failed.push(one.failure);
-      if ((one.failure.code === "PURGE_FAILED" || one.failure.code === "FISCAL_DATA_PRESENT") && one.known) {
+      if (one.failure.code === "PURGE_FAILED" && one.known) {
         await audit(hooks, {
           action: `${one.known.entityType}.purge`, entityType: one.known.entityType, entityId: one.known.entityId, status: "failure",
-          details: { label: one.known.label, deletedRecordId: id, code: one.failure.code, ...purgedBy, ...one.auditDetails },
+          details: { label: one.known.label, deletedRecordId: id, code: one.failure.code, ...purgedBy },
         });
       }
       continue;
