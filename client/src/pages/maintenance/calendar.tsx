@@ -1923,7 +1923,12 @@ export default function MaintenanceCalendar() {
                                 variant="outline"
                                 onClick={async () => {
                                   try {
+                                    // One save puts the block back as an OPEN one: the status moves
+                                    // with the maintenance status, otherwise the list (status) and the
+                                    // calendar (maintenance status) disagree and the edit dialog's
+                                    // save is refused (completed -> picked_up needs both together).
                                     await apiRequest('PATCH', `/api/reservations/${maintenance.id}`, {
+                                      status: 'picked_up',
                                       maintenanceStatus: 'in'
                                     });
                                     invalidateRelatedQueries('reservations');

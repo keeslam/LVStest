@@ -50,11 +50,11 @@ function json(body: unknown, status = 200) {
 
 const VEHICLE = { id: VEHICLE_ID, licensePlate: "11-AAA-1", brand: "Audi", model: "A4", currentMileage: 45000, apkDate: "2027-01-01" };
 
-const block = (maintenanceStatus: string | null) => ({
+const block = (maintenanceStatus: string | null, status?: string) => ({
   id: 501,
   vehicleId: VEHICLE_ID,
   type: "maintenance_block",
-  status: maintenanceStatus === "out" ? "completed" : "booked",
+  status: status ?? (maintenanceStatus === "out" ? "completed" : "booked"),
   startDate: START,
   endDate: START,
   maintenanceStatus,
@@ -63,7 +63,7 @@ const block = (maintenanceStatus: string | null) => ({
   customerId: null,
 }) as any;
 
-function renderDialog(maintenanceStatus: string | null, onOpenChange: (open: boolean) => void = () => {}) {
+function renderDialog(maintenanceStatus: string | null, onOpenChange: (open: boolean) => void = () => {}, status?: string) {
   const client = new QueryClient({
     defaultOptions: { queries: { queryFn: async () => [], retry: false, gcTime: Infinity, staleTime: Infinity } },
   });
@@ -72,7 +72,7 @@ function renderDialog(maintenanceStatus: string | null, onOpenChange: (open: boo
   client.setQueryData(["/api/vehicles", VEHICLE_ID, "overlaps", START, START], []);
   return render(
     <QueryClientProvider client={client}>
-      <MaintenanceEditDialog open onOpenChange={onOpenChange} reservation={block(maintenanceStatus)} />
+      <MaintenanceEditDialog open onOpenChange={onOpenChange} reservation={block(maintenanceStatus, status)} />
     </QueryClientProvider>,
   );
 }
@@ -158,6 +158,20 @@ describe("MaintenanceEditDialog - saving (D7)", () => {
     const user = userEvent.setup();
     renderDialog("in");
 
+    await user.click(await screen.findByTestId("button-update-maintenance"));
+
+    await waitFor(() => expect(calls.some((c) => c.method === "PATCH")).toBe(true));
+    expect(calls.find((c) => c.method === "PATCH")!.body).toMatchObject({ status: "in", maintenanceStatus: "in" });
+  });
+
+  it.each([
+    ["reverted from the history (picked_up / in)", "picked_up"],
+    ["reverted by the old history button (completed / in)", "completed"],
+  ])("a block %s is an open block: Afronden is offered and the save sends status in + maintenance in", async (_label, status) => {
+    const user = userEvent.setup();
+    renderDialog("in", () => {}, status);
+
+    expect(await screen.findByTestId("button-edit-complete-maintenance")).toBeInTheDocument();
     await user.click(await screen.findByTestId("button-update-maintenance"));
 
     await waitFor(() => expect(calls.some((c) => c.method === "PATCH")).toBe(true));

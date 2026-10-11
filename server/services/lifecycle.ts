@@ -187,6 +187,14 @@ export interface TransitionOptions {
    * `completed` from any status for the same reason.
    */
   maintenanceBlock?: boolean;
+  /**
+   * Only with `maintenanceBlock`: the same save puts the car back "Binnen"
+   * (`maintenanceStatus: 'in'`). That is the history dialog's "Terugdraaien" and
+   * the edit dialog of a block that was reverted before: a finished block
+   * (`completed`) may become `picked_up` again, so the list, the calendar and
+   * Afronden agree on it. A customer rental never comes back from `completed`.
+   */
+  reopenBlock?: boolean;
 }
 
 export function isReservationTransitionAllowed(
@@ -200,7 +208,15 @@ export function isReservationTransitionAllowed(
   if ((RESERVATION_TRANSITIONS[current] ?? []).includes(to)) return true;
   if (opts.allowReversion && (RESERVATION_REVERSIONS[current] ?? []).includes(to)) return true;
   if (opts.maintenanceBlock && current === "booked" && to === "completed") return true;
+  if (opts.maintenanceBlock && opts.reopenBlock && current === "completed" && to === "picked_up") return true;
   return false;
+}
+
+/** True when a block save asks the car to be "Binnen" (`in`, or the legacy `in_service`). */
+export function patchPutsBlockInside(maintenanceStatus: unknown): boolean {
+  if (typeof maintenanceStatus !== "string") return false;
+  const value = maintenanceStatus.trim().toLowerCase();
+  return value === "in" || value === "in_service";
 }
 
 /** Throws `StateTransitionError` (400) for an illegal jump. */

@@ -90,6 +90,7 @@ import {
 } from "./vehicle-status-helper";
 import {
   assertReservationTransition,
+  patchPutsBlockInside,
   assertReservationStatusValue,
   BLOCK_TO_VEHICLE_MAINTENANCE,
   assertVehicleMaintenanceStatus,
@@ -4177,6 +4178,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           (reservationData.type ?? existingBasic.type) === "maintenance_block";
         reservationData.status = assertReservationTransition(existingBasic.status, reservationData.status, {
           maintenanceBlock: basicIsBlockEdit,
+          reopenBlock: basicIsBlockEdit && patchPutsBlockInside(reservationData.maintenanceStatus),
         });
         // Sub-project C (B-33, B-39): no client sends a cancellation through here,
         // but the route can write `cancelled`, so a picked-up rental is held to the
@@ -4838,7 +4840,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         reservationData.status = assertReservationTransition(
           existingReservationForDiff.status,
           reservationData.status,
-          { maintenanceBlock: patchIsBlockEdit },
+          { maintenanceBlock: patchIsBlockEdit, reopenBlock: patchIsBlockEdit && patchPutsBlockInside(reservationData.maintenanceStatus) },
         );
         // Sub-project C (B-33, B-39): the edit form's "Geannuleerd" is the same
         // cancellation as the cancel dialog's; a multipart submit sends the flag
