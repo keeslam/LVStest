@@ -239,9 +239,12 @@ Vier instellingen komen vaak terug:
   Lam*. Klik na het invullen op **Bedrijfsnaam opslaan**; je krijgt *De bedrijfsnaam is opgeslagen.*
   Een naam van meer dan 100 tekens, of met een regeleinde, wordt geweigerd met *Vul een naam in van
   maximaal 100 tekens, zonder regeleinden.* Een afzendernaam die je bij de e-mailinstellingen hebt
-  ingevuld, gaat voor op de bedrijfsnaam. Mails aan portaalklanten zeiden vroeger *Lam Groep*; ze volgen
-  nu deze instelling. Een portaalsjabloon dat je zelf hebt aangepast, houdt zijn eigen tekst. Alleen de
-  meldingen die de klant in het portaal zelf ziet, zeggen nog *Lam Groep*.
+  ingevuld, gaat voor op de bedrijfsnaam. Mails aan portaalklanten zeiden vroeger *Lam Groep*. De portaalsjablonen
+  die nog de oude standaardtekst hebben, gaan de bedrijfsnaam volgen zodra je hem **voor het eerst
+  opslaat**; tot dan blijven die mails *Lam Groep* zeggen. Wil je dus dat de portaalmails ook *Autolease
+  Lam* (of een andere naam) zeggen, sla dan één keer de bedrijfsnaam op. Een portaalsjabloon dat je zelf
+  hebt aangepast, houdt altijd zijn eigen tekst. De meldingen die de klant in het portaal zelf ziet,
+  zeggen nog *Lam Groep*.
 
 **Wat je typt, blijft staan.** Wissel je tijdens het invullen van tabblad, dan raak je niets kwijt:
 een tabblad dat je eenmaal hebt geopend, houdt wat je erin hebt ingevuld, ook de onderdelen met een

@@ -63,8 +63,14 @@ Naast de uitnodigings- en wachtwoordmails gebruikt het portaal twee sjablonen
   lopen buiten de app om via het boekhoudprogramma: er is geen status
   "doorbelast"/"betaald" en geen administratiekosten meer; de app toont alleen
   het bedrag van de bekeuring.
-- `portal_request_replied`: naar de indiener van een aanvraag zodra Lam Groep
+- `portal_request_replied`: naar de indiener van een aanvraag zodra kantoor
   antwoordt of een verlenging/eerder inleveren goedkeurt.
+
+In de teksten van de portaalsjablonen staat de naam van het bedrijf als `{{companyName}}`. Die naam is één
+instelling voor alle mails van de app: App-instellingen > Bedrijfsregels > Bedrijfsnaam (standaard
+"Autolease Lam"). Portaalsjablonen die nog de oude standaardtekst met "Lam Groep" hebben, gaan de naam
+volgen zodra hij voor het eerst is opgeslagen; een sjabloon die kantoor zelf heeft aangepast, houdt zijn
+eigen tekst. De meldingen die de klant in het portaal zelf ziet (het belletje), zeggen nog "Lam Groep".
 
 Beide vereisen werkende SMTP-instellingen onder Instellingen > E-mail; zonder
 SMTP wordt de actie wel uitgevoerd maar blijft de mail achterwege (zie serverlog).
@@ -242,7 +248,8 @@ naar het APK/onderhouds-adres van de klant of anders het accountadres.
 
 ## Meldingen, gesprekken en overige klantfuncties (2026-09-06)
 
-- **Belletje in het portaal** (`portal_notifications`): antwoorden en beslissingen op aanvragen, nieuwe berichten van staff, gekoppelde bekeuringen, en dagelijks om 04:00 (`PortalAlertScheduler`) waarschuwingen voor voertuigen die de klant in gebruik heeft: APK die binnen 30 dagen verloopt of verlopen is, en onderhoud dat (bijna) nodig is (zelfde berekening als het staff-onderhoudsschema). Eén melding per voertuig per onderwerp per maand.
+- **Belletje in het portaal** (`portal_notifications`): antwoorden en beslissingen op aanvragen, nieuwe berichten van staff, bekeuringen waarover kantoor de klant heeft geïnformeerd (knop **Klant informeren**), en dagelijks om 04:00 (`PortalAlertScheduler`) waarschuwingen voor voertuigen die de klant in gebruik heeft: APK die binnen 30 dagen verloopt of verlopen is, en onderhoud dat (bijna) nodig is (zelfde berekening als het staff-onderhoudsschema). Eén melding per voertuig per onderwerp per maand.
+- **Tijdzone**: `GET /api/portal/me` geeft `officeTimeZone` mee (de tijdzone van het kantoor uit App-instellingen, standaard `Europe/Amsterdam`); het portaal gebruikt die voor "vandaag" en voor tijden. Het dagelijkse alarm om 04:00 en de overige nachtelijke taken volgen dezelfde instelling.
 - **Gesprek per aanvraag** (`portal_request_messages`): klant en staff kunnen berichten toevoegen zolang de aanvraag open is; een staff-antwoord via "Beantwoorden" wordt ook als bericht vastgelegd. Staff: `POST /api/portal-requests/:id/messages`; klant: `POST /api/portal/requests/:id/messages`.
 - **Gezien en akkoord** op een contract (`portal_document_acks`): één keer, met naam, tijdstip en IP; staff krijgt een melding en het staat in de activiteit.
 - **Nieuw apparaat**: bij inloggen vanaf een browser die het account nog niet kent (cookie `portal_device`, lijst in `portal_users.known_devices`) gaat het mailsjabloon `portal_new_device` naar het account; niet bij de allereerste login. Sessies verlopen na 1 uur zonder activiteit.
