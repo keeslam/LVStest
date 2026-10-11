@@ -304,10 +304,13 @@ beschikbaarheidsstatus niet meer met de hand terug te zetten.
 Onderhoud dat verderop in de kalender staat, blijft gewoon staan. Alleen het blok dat vandaag
 loopt gaat dicht.
 
-> **Alleen Voertuigen beheren is niet genoeg.** Het venster **Onderhoud afronden** vraagt het vinkje
-> **Onderhoud beheren** of **Reserveringen beheren**. Een scanaccount dat alleen **Voertuigen beheren**
-> heeft, kan het onderhoud dus niet vanaf het scanscherm afronden; vraag iemand die een van die vinkjes
-> heeft (hoofdstuk 15, paragraaf 15.9).
+> **Alleen Voertuigen beheren is niet genoeg.** Staat de auto op **Binnen** in een lopend onderhoud, dan
+> is **Terug uit onderhoud** het afronden van dat onderhoud, en dat vraagt het vinkje **Onderhoud beheren**
+> of **Reserveringen beheren**. Een scanaccount dat alleen **Voertuigen beheren** heeft, ziet de knop
+> grijs; wijs of tik erop en de app zegt welk vinkje er ontbreekt (hoofdstuk 15, paragraaf 15.9). Vraag
+> iemand die een van die vinkjes heeft. Wie **Onderhoud beheren** heeft, hoeft **Voertuigen beheren** niet
+> te hebben: het venster **Onderhoud afronden** opent meteen. Een auto in de werkplaats zonder lopend
+> onderhoud geef je wel vrij met alleen **Voertuigen beheren**.
 
 **B. Terug van onderhoud (bij een vervanger).** Heeft de klant een vervangende auto gekregen, dan
 staat er in de reservering een oranje blok **Vervangend voertuig toegewezen** — *Voertuig wordt
