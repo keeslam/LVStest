@@ -1981,18 +1981,16 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Update fuel status (with optional receipt upload)
-  app.patch("/api/vehicles/:id/fuel-status", 
-    hasPermission(UserPermission.MANAGE_VEHICLES), 
   //
   // Besluit B-41 D1: an amount typed here is also an expense (category `fuel`) on
   // the vehicle. The vehicle update and the expense are one transaction, the
   // receipt is shared, and the route stays manage_vehicles on purpose (approved
   // proposal B-42): booking the expense is a consequence of the refill and needs
   // no "Kosten beheren".
+  app.patch("/api/vehicles/:id/fuel-status", 
+    hasPermission(UserPermission.MANAGE_VEHICLES), 
     fuelReceiptUpload.single('receipt'),
     async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
     // Multer has already written the receipt by the time we run; every way out
     // that does not keep the vehicle update removes it again.
     // Set when the expense (not the vehicle) is what failed: its own error code.
@@ -2000,16 +1998,18 @@ export async function registerRoutes(app: Express): Promise<void> {
     const discardUpload = () => {
       if (req.file) fs.promises.unlink(req.file.path).catch(() => {});
     };
+    try {
+      const id = parseInt(req.params.id);
       if (isNaN(id)) {
+        discardUpload();
         return res.status(400).json({ message: "Invalid vehicle ID" });
       }
-        discardUpload();
 
       const vehicle = await storage.getVehicle(id);
       if (!vehicle) {
+        discardUpload();
         return res.status(404).json({ message: "Vehicle not found" });
       }
-        discardUpload();
 
       const { fuelLevel, cost, notes } = req.body;
 
@@ -2020,14 +2020,12 @@ export async function registerRoutes(app: Express): Promise<void> {
       };
       const normalizedFuelLevel = fuelLevel ? fuelLevelCanonical[fuelLevel.toLowerCase()] : undefined;
       if (fuelLevel && !normalizedFuelLevel) {
+        discardUpload();
         return res.status(400).json({
           message: "Invalid fuel level. Must be one of: Empty, 1/4, 1/2, 3/4, Full"
-        discardUpload();
         });
       }
 
-      // Build update data
-      const updateData: any = {
       // The amount is validated here, not left to the numeric column: it becomes
       // an expense, which refuses zero and anything above 1,000,000.
       const fuelCost = parseFuelCost(cost);
@@ -2039,17 +2037,19 @@ export async function registerRoutes(app: Express): Promise<void> {
         });
       }
 
+      // Build update data
+      const updateData: any = {
         updatedBy: req.user ? (req.user as any).username : null,
       };
 
       if (normalizedFuelLevel) {
         updateData.currentFuelLevel = normalizedFuelLevel;
-        updateData.fuelRefillDate = new Date();
-      }
       }
       // "Laatste tankbedrag" shows an amount with a date, so an amount without a
       // level dates the refill too.
       if (normalizedFuelLevel || fuelCost.kind === "ok") {
+        updateData.fuelRefillDate = new Date();
+      }
       
       if (fuelCost.kind === "ok") {
         updateData.fuelRefillCost = fuelCost.amount.toFixed(2);
@@ -2069,9 +2069,9 @@ export async function registerRoutes(app: Express): Promise<void> {
           'document'
         );
         if (!validation.valid) {
+          discardUpload();
           return res.status(400).json({ message: validation.error });
         }
-          discardUpload();
         
         const sanitizedPlate = vehicle.licensePlate.replace(/[^a-zA-Z0-9]/g, '');
         // posix: the stored shape is `uploads/<plate>/fuel_receipt/<file>` on every platform.
