@@ -51,9 +51,9 @@ import { request as newApiRequestContext } from "@playwright/test";
  *    no-access-page.tsx) reports the screen it refused with one
  *    POST /api/access-denied, by design (D14, besluit B-41): that is how an
  *    administrator hears who tried what. The route is authenticated-only and
- *    always answers 200 (recorded true or false), so it can neither refuse nor
- *    open anything, and it is not a request of the page component that was
- *    kept from mounting - which is what this list proves.
+ *    answers 200 (recorded true or false) or, for an address it cannot read,
+ *    400 INVALID_PAGE, so it can neither grant nor withhold anything, and it
+ *    is not a request of the page component that was kept from mounting - which is what this list proves.
  *  - /api/app-settings/key/office_timezone: OfficeTimeZoneLoader
  *    (client/src/App.tsx), mounted once per app load for every logged-in
  *    user. The office time zone (D11) decides what "today" is on every

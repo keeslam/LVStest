@@ -70,22 +70,37 @@ export async function recordAccessDenied(attempt: AccessDeniedAttempt): Promise<
     window = { start: now, written: 0, summarized: false };
     perUserWindow.set(attempt.userId, window);
   }
+  // Everything below is decided and reserved synchronously, BEFORE the awaited
+  // insert: one account's parallel requests are in flight together, and a
+  // reservation made after the await would let all of them through the checks
+  // above (one row each, no cap). A failed insert gives its reservation back
+  // and rethrows, so the next attempt is not suppressed by a row that never existed.
   if (window.written >= ACCESS_DENIED_USER_CAP) {
-    if (!window.summarized) {
+    if (window.summarized) return false;
+    window.summarized = true;
+    try {
       await insertAccessDenied(attempt, { summary: true, method: 'ANY', path: '*', required: [] });
-      window.summarized = true;
+    } catch (error) {
+      window.summarized = false;
+      throw error;
     }
     return false;
   }
 
-  await insertAccessDenied(attempt, {
-    method: attempt.method,
-    path: attempt.path,
-    required: [...attempt.required],
-    ...(attempt.page ? { page: attempt.page } : {}),
-  });
   window.written += 1;
   recentlyDenied.set(key, now);
+  try {
+    await insertAccessDenied(attempt, {
+      method: attempt.method,
+      path: attempt.path,
+      required: [...attempt.required],
+      ...(attempt.page ? { page: attempt.page } : {}),
+    });
+  } catch (error) {
+    window.written -= 1;
+    if (recentlyDenied.get(key) === now) recentlyDenied.delete(key);
+    throw error;
+  }
 
   if (recentlyDenied.size > 2000) {
     for (const [k, at] of recentlyDenied) {
@@ -133,7 +148,9 @@ export const hasPermission = (...permissions: string[]) => {
           method: req.method,
           path: req.originalUrl.split('?')[0],
           // The route pattern, so /api/customers/1 and /api/customers/2 are one refusal.
-          dedupeKey: `${req.method} ${req.route?.path !== undefined ? req.baseUrl + String(req.route.path) : req.baseUrl || req.originalUrl.split('?')[0]}`,
+          // Neither a route nor a mount point (a guard used outside a router): one constant key per
+          // method, so varying the URL cannot get around the dedupe; the cap still applies.
+          dedupeKey: `${req.method} ${req.route?.path !== undefined ? req.baseUrl + String(req.route.path) : req.baseUrl || '(unrouted)'}`,
           required: permissions,
           ipAddress: req.ip,
           userAgent: req.get('user-agent') || undefined,

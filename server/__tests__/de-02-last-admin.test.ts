@@ -17,7 +17,10 @@
  * DE02_ALLOW_ADMIN_TOGGLE=1 is set, by whoever runs it ALONE (nothing else
  * testing against the same database). The ids are snapshotted before the first
  * switch and restored in a finally, and, if the process dies, by an exit hook
- * that restores them synchronously through a child process.
+ * that restores them synchronously through a child process. SIGINT and SIGTERM
+ * (a Ctrl+C, a kill) run the same restore and then end the process, because Node
+ * does not emit `exit` for them. Only a hard kill (SIGKILL, power loss) cannot be
+ * caught: then run `UPDATE users SET active = true WHERE role = 'admin'` by hand.
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { execFileSync } from "node:child_process";
@@ -37,6 +40,14 @@ const FK_MARKER = "migration:d19_user_fk_set_null";
 let snapshot: number[] = [];
 let restoredByHook = false;
 let counter = 0;
+
+/** Signal handler: put the administrators back, then end the process the way the signal would have. */
+function restoreAndExit(signal: NodeJS.Signals): void {
+  restoreSynchronously();
+  process.exit(signal === "SIGINT" ? 130 : 143);
+}
+const onSigint = () => restoreAndExit("SIGINT");
+const onSigterm = () => restoreAndExit("SIGTERM");
 
 /** Synchronous, for the exit hook: a child process puts the snapshot back. */
 function restoreSynchronously(): void {
@@ -123,6 +134,8 @@ describe.skipIf(!ALLOWED)("D19 - the last administrator account is protected", (
     snapshot = active.map((r) => r.id);
     restoredByHook = false;
     process.on("exit", restoreSynchronously);
+    process.once("SIGINT", onSigint);
+    process.once("SIGTERM", onSigterm);
     await ensureUserForeignKeyRule();
     manager = await agentFor([UserPermission.MANAGE_USERS]);
   }, 90_000);
@@ -131,8 +144,11 @@ describe.skipIf(!ALLOWED)("D19 - the last administrator account is protected", (
     try {
       // First: put the administrators back. Then the fixture clean-up, which may fail.
       await restoreAdmins();
-    } finally {
+      // Only after a successful restore: if it threw, the exit hook stays as the backstop.
       process.off("exit", restoreSynchronously);
+      process.off("SIGINT", onSigint);
+      process.off("SIGTERM", onSigterm);
+    } finally {
       await cleanupFixtureUsers();
     }
   });

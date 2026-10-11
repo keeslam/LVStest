@@ -160,6 +160,47 @@ describe("D14 - the dedupe is per route pattern, with a cap per user (fix round 
     expect(await deniedRows(user.userId)).toHaveLength(ACCESS_DENIED_USER_CAP + 2);
   });
 
+  it("parallel refusals of one route are one row: the dedupe is reserved before the insert", async () => {
+    const user = await agentFor([]);
+    const answers = await Promise.all(Array.from({ length: 60 }, () => user.get("/api/vehicles")));
+    expect(answers.every((res) => res.status === 403)).toBe(true);
+    expect(await deniedRows(user.userId)).toHaveLength(1);
+  });
+
+  it("parallel refusals on many routes stop at the cap: 50 rows and exactly one summary row", async () => {
+    const user = await agentFor([]);
+    const results = await Promise.all(
+      Array.from({ length: ACCESS_DENIED_USER_CAP + 30 }, (_unused, i) =>
+        recordAccessDenied({
+          userId: user.userId,
+          username: user.username,
+          method: "GET",
+          path: `/api/parallel-${i}`,
+          required: ["view_vehicles"],
+        }),
+      ),
+    );
+    expect(results.filter(Boolean)).toHaveLength(ACCESS_DENIED_USER_CAP);
+    const rows = await deniedRows(user.userId);
+    expect(rows).toHaveLength(ACCESS_DENIED_USER_CAP + 1);
+    expect(rows.filter((r) => (r.details as any).summary === true)).toHaveLength(1);
+  });
+
+  it("a failed insert gives its reservation back: the cap slot and the dedupe entry are free again", async () => {
+    const user = await agentFor([]);
+    const attempt = (path: string) =>
+      recordAccessDenied({ userId: user.userId, username: user.username, method: "GET", path, required: [] });
+    const spy = vi.spyOn(db, "insert").mockImplementation(() => {
+      throw new Error("audit table unavailable");
+    });
+    await expect(attempt("/api/returns")).rejects.toThrow("audit table unavailable");
+    spy.mockRestore();
+    expect(await attempt("/api/returns")).toBe(true);
+    // The slot was given back: the full cap is still available.
+    for (let i = 0; i < ACCESS_DENIED_USER_CAP - 1; i += 1) expect(await attempt(`/api/slot-${i}`)).toBe(true);
+    expect(await deniedRows(user.userId)).toHaveLength(ACCESS_DENIED_USER_CAP);
+  });
+
   it("a failing audit insert still answers 403, and the next attempt is recorded (no dedupe entry for a failed write)", async () => {
     const user = await agentFor([]);
     const spy = vi.spyOn(db, "insert").mockImplementation(() => {
