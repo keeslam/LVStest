@@ -1206,8 +1206,6 @@ export function ReservationForm({
       // always Geboekt (the server forces it) and an existing one changes only through
       // Ophalen, Inleveren, Annuleren and Terugdraaien. A legacy value kept in the loaded row
       // would be refused by PATCH /:id as a status change.
-      const currentReservationStatus = initialData?.status || "booked";
-
       // Prepare submission data for both edit and create modes
       // IMPORTANT: Use null (not undefined) for open-ended rentals
       // undefined values are omitted from JSON, so backend wouldn't receive the update
@@ -1217,17 +1215,10 @@ export function ReservationForm({
       };
       delete submissionData.isOpenEnded;
       delete submissionData.status;
-      // Contract number is normally assigned during pickup; it's only editable
-      // in this form when editing an already picked-up/completed reservation.
-      const allowContractEdit =
-        editMode &&
-        (currentReservationStatus === "picked_up" ||
-          currentReservationStatus === "completed");
-      if (!allowContractEdit) {
-        delete submissionData.contractNumber;
-      } else if (typeof submissionData.contractNumber === "string") {
-        submissionData.contractNumber = submissionData.contractNumber.trim() || null;
-      }
+      // D3: the contract number is assigned at pickup and edited only in the separate
+      // edit-contract-number dialog, never from this form (an echo of the loaded value would
+      // also bypass that dialog's uniqueness check).
+      delete submissionData.contractNumber;
       
       createReservationMutation.mutate(submissionData);
     } catch (error) {
@@ -2107,33 +2098,6 @@ export function ReservationForm({
             <div className="space-y-6">
               <div className="text-lg font-medium">{t('form.section3Title')}</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Contract Number - editable when reservation has been picked up */}
-                {editMode && (currentStatus === "picked_up" || currentStatus === "completed") && (
-                  <FormField
-                    control={form.control}
-                    name="contractNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium">{t('form.contractNumberLabel')}</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="text"
-                            placeholder={t('form.contractNumberPlaceholder')}
-                            {...field}
-                            value={field.value ?? ""}
-                            className="h-12 text-base"
-                            data-testid="input-edit-form-contract-number"
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          {t('form.contractNumberHint')}
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-
                 {/* Price */}
                 <FormField
                   control={form.control}

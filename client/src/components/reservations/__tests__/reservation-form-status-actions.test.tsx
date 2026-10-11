@@ -143,8 +143,17 @@ describe("D3 - the reservation form has no status field", () => {
     await waitFor(() => expect(sent.some((r) => r.url === "/api/reservations/77" && r.method === "PATCH")).toBe(true));
     const patch = sent.find((r) => r.url === "/api/reservations/77" && r.method === "PATCH")!;
     expect(patch.form!.has("status")).toBe(false);
-    // The contract number of a picked-up rental stays editable here, as before.
-    expect(patch.form!.get("contractNumber")).toBe("C-1");
+    // The contract number is edited only in its own dialog: not sent from here either.
+    expect(patch.form!.has("contractNumber")).toBe(false);
+  });
+});
+
+describe("D3 - the contract number is not a field of the form", () => {
+  it("a picked-up rental in the edit form has no contract number input", async () => {
+    renderForm({ editMode: true, initialData: rental });
+    await screen.findByTestId("button-submit-reservation");
+    expect(screen.queryByTestId("input-edit-form-contract-number")).toBeNull();
+    expect(screen.queryByLabelText("Contractnummer")).toBeNull();
   });
 });
 

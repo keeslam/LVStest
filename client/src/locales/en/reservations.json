@@ -435,9 +435,6 @@
       "completed": "Completed",
       "cancelled": "Cancelled"
     },
-    "contractNumberLabel": "Contract Number",
-    "contractNumberPlaceholder": "Enter contract number",
-    "contractNumberHint": "Edit the contract number assigned at pickup. Must be unique.",
     "totalPriceLabel": "Total Price (€)",
     "totalPriceAutoFilledHint": "Auto-filled from the €{{price}}/day rate for {{dayText}} — edit to override",
     "totalPriceEnterForDaysHint": "Enter the total price for the {{dayText}} rental",

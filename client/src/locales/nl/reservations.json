@@ -435,9 +435,6 @@
       "completed": "Voltooid",
       "cancelled": "Geannuleerd"
     },
-    "contractNumberLabel": "Contractnummer",
-    "contractNumberPlaceholder": "Voer contractnummer in",
-    "contractNumberHint": "Bewerk het contractnummer dat bij ophalen is toegewezen. Moet uniek zijn.",
     "totalPriceLabel": "Totaalprijs (€)",
     "totalPriceAutoFilledHint": "Automatisch ingevuld op basis van het dagtarief van €{{price}} voor {{dayText}} — bewerk om te overschrijven",
     "totalPriceEnterForDaysHint": "Voer de totaalprijs in voor de huur van {{dayText}}",

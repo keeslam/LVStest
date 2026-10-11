@@ -303,10 +303,11 @@ Kies een ander nummer.*
 ## 5.6 Het volledige bewerkformulier
 
 Klik op **Bewerken** in het venster van de reservering. Je krijgt hetzelfde formulier als bij het
-aanmaken, met dezelfde drie genummerde stappen. Onder **3. Reserveringsdetails** staan hier extra
-veld: **Contractnummer** (alleen bij een opgehaalde of voltooide huur). De velden **Kilometerstand bij
-inleveren**, **Brandstofniveau bij inleveren** en **Brandstofkosten (€)** staan niet meer in het
-formulier: **Inleveren** legt ze vast en je ziet ze in het venster van de reservering.
+aanmaken, met dezelfde drie genummerde stappen. Er staan geen extra velden in. **Contractnummer**,
+**Kilometerstand bij inleveren**, **Brandstofniveau bij inleveren** en **Brandstofkosten (€)** staan niet
+meer in het formulier: het contractnummer pas je aan in het kleine venster **Contractnummer bewerken**
+(zie *Het contractnummer wijzigen* in 5.5); de andere drie legt **Inleveren** vast en je ziet ze in het
+venster van de reservering.
 
 Een **Reserveringsstatus** kies je hier niet. Onderaan staat bij een lopende reservering de knop
 **Reservering annuleren**; die opent hetzelfde annuleervenster als in het venster van de reservering (5.9),
