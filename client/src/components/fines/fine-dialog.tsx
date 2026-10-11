@@ -27,6 +27,8 @@ type FineDetail = FineRow & {
   reference: string | null; receivedAt: string | null; letterFilePath: string | null; internalNotes: string | null; customerNote: string | null;
   source?: string | null; importFileId?: number | null;
   invoiceReference: string | null; linkedBy: string | null; linkedAt: string | null; driverId: number | null;
+  /** B-41 D10: when "Klant informeren" last mailed the customer; and, for managers on a linked fine, the address it would go to (null = none known). */
+  customerNotifiedAt?: string | null; notifyAddress?: string | null;
   candidates?: { covering: Candidate[]; near: Candidate[] };
 };
 
@@ -66,6 +68,18 @@ export function FineDialog() {
   const call = useMutation({
     mutationFn: async ({ method, url, body }: { method: string; url: string; body?: unknown; outcome: Outcome }) => (await apiRequest(method, url, body)).json(),
     onSuccess: (_data, { outcome }) => { done(); toast({ title: t(`admin.fines.dialog.outcome.${outcome}`) }); },
+    onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
+  });
+  // B-41 D10: nothing is mailed on create, import or link; this button is the one way the customer is told.
+  const [confirmingNotify, setConfirmingNotify] = useState(false);
+  type NotifyAnswer = { sent: boolean; reason?: "NO_CUSTOMER" | "NO_EMAIL" | "PORTAL_DISABLED" | "MAIL_FAILED" };
+  const notify = useMutation({
+    mutationFn: async (): Promise<NotifyAnswer> => (await apiRequest("POST", `/api/fines/${id}/notify-customer`)).json(),
+    onSuccess: (answer) => {
+      done();
+      if (answer.sent) toast({ title: t("admin.fines.dialog.outcome.informed") });
+      else toast({ title: t(`admin.fines.dialog.notifyReason.${answer.reason ?? "MAIL_FAILED"}`), variant: "destructive" });
+    },
     onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
   const closed = fine?.status === "cancelled";
@@ -112,6 +126,7 @@ export function FineDialog() {
               {fine.customerId && <Button size="sm" variant="link" className="px-0" onClick={() => openCustomerDialog(fine.customerId!, "portal")}>{t("admin.fines.dialog.openCustomer")}: {fine.customerName}</Button>}
               {fine.reservationId && <Button size="sm" variant="link" className="px-0" onClick={() => openReservationDialog(fine.reservationId!)}>{t("admin.fines.dialog.openReservation")} #{fine.reservationId}</Button>}
               {fine.driverName && <span>· {fine.driverName}</span>}
+              {fine.customerNotifiedAt && <span className="text-muted-foreground" data-testid="fine-notified-at">· {t("admin.fines.dialog.notifiedAt", { at: formatDateTime(fine.customerNotifiedAt) })}</span>}
               {fine.linkedBy && <span className="text-muted-foreground">· {t("admin.fines.dialog.linkedBy", { by: fine.linkedBy, at: fine.linkedAt ? formatDateTime(fine.linkedAt) : "" })}</span>}
               {fine.letterFilePath && <Button size="sm" variant="outline" onClick={() => preview.open(`/api/fines/${id}/letter`, t("admin.fines.dialog.viewLetter"))} data-testid="button-view-letter">{t("admin.fines.dialog.viewLetter")}</Button>}
             </div>
@@ -166,6 +181,11 @@ export function FineDialog() {
               <Button size="sm" variant="outline" onClick={guard.requestClose} data-testid="button-close-fine">{t("common:actions.close")}</Button>
               {canManage && (<>
                 {!closed && <Button size="sm" data-testid="button-save-fine-detail" onClick={() => call.mutate({ method: "PATCH", url: `/api/fines/${id}`, body: { ...edit, amount: Number(edit.amount), adminFee: Number(edit.adminFee) }, outcome: "saved" })}>{t("admin.fines.dialog.save")}</Button>}
+                {fine.status === "linked" && fine.customerId && (
+                  <Button size="sm" variant="outline" disabled={notify.isPending} onClick={() => setConfirmingNotify(true)} data-testid="button-notify-customer">
+                    {fine.customerNotifiedAt ? t("admin.fines.dialog.notifyAgain") : t("admin.fines.dialog.notifyCustomer")}
+                  </Button>
+                )}
                 {allowed.includes("new") && fine.status !== "cancelled" && <Button size="sm" variant="outline" data-testid="button-unlink-fine" onClick={() => call.mutate({ method: "POST", url: `/api/fines/${id}/unlink`, outcome: "unlinked" })}>{t("admin.fines.dialog.unlink")}</Button>}
                 {allowed.includes("linked") && ["disputed", "charged", "paid"].includes(fine.status) && <Button size="sm" variant="outline" onClick={() => setStatus("linked", "linked")}>{t("admin.fines.dialog.link")}</Button>}
                 {allowed.includes("cancelled") && <Button size="sm" variant="destructive" onClick={() => setConfirmingCancel(true)} data-testid="button-cancel-fine">{t("admin.fines.dialog.cancelFine")}</Button>}
@@ -191,6 +211,22 @@ export function FineDialog() {
         cancelLabel={t("admin.fines.dialog.cancelKeep")}
         confirmTestId="button-confirm-cancel-fine"
         onConfirm={() => setStatus("cancelled", "cancelled")}
+      />
+    )}
+    {fine && (
+      <ConfirmDialog
+        open={confirmingNotify}
+        onOpenChange={setConfirmingNotify}
+        variant="info"
+        title={t("admin.fines.dialog.notifyTitle")}
+        description={t(fine.customerNotifiedAt ? "admin.fines.dialog.notifyConfirmAgain" : "admin.fines.dialog.notifyConfirm", {
+          plate: formatLicensePlate(fine.licensePlate), amount: formatCurrency(fine.totalAmount ?? fine.amount),
+          address: fine.notifyAddress || t("admin.fines.dialog.notifyNoAddress"), at: fine.customerNotifiedAt ? formatDateTime(fine.customerNotifiedAt) : "",
+        })}
+        confirmLabel={fine.customerNotifiedAt ? t("admin.fines.dialog.notifyAgain") : t("admin.fines.dialog.notifyCustomer")}
+        cancelLabel={t("admin.fines.dialog.notifyKeep")}
+        confirmTestId="button-confirm-notify-customer"
+        onConfirm={() => notify.mutate()}
       />
     )}
     {fine && (

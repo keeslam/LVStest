@@ -730,6 +730,7 @@ export default function CustomerCommunications() {
     if (['apk', 'maintenance', 'custom'].includes(template)) return getTemplateInfo(template).title;
     if (template === 'gps') return t('customerCommunications.history.kindGps');
     if (template === 'documents') return t('customerCommunications.history.kindDocuments');
+    if (template === 'fine_linked') return t('customerCommunications.history.kindFine');
     return t('customerCommunications.history.kindOther');
   };
 

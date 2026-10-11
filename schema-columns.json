@@ -2380,6 +2380,13 @@
         "default": null
       },
       {
+        "name": "customer_notified_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
         "name": "created_at",
         "type": "timestamp with time zone",
         "notNull": true,

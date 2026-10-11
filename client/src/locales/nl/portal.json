@@ -671,7 +671,22 @@
         "cancelTitle": "Bekeuring annuleren?",
         "cancelConfirmNamed": "Bekeuring {{plate}} van {{amount}} annuleren? Je kunt hem daarna weer heractiveren.",
         "cancelKeep": "Nee, laten staan",
+        "notifyCustomer": "Klant informeren",
+        "notifyAgain": "Opnieuw informeren",
+        "notifyTitle": "Klant informeren?",
+        "notifyConfirm": "Een e-mail over bekeuring {{plate}} van {{amount}} gaat naar {{address}}, en de klant krijgt een melding in het portaal.",
+        "notifyConfirmAgain": "De klant is al geïnformeerd op {{at}}. Opnieuw een e-mail over bekeuring {{plate}} van {{amount}} sturen naar {{address}}?",
+        "notifyNoAddress": "het e-mailadres van de klant",
+        "notifyKeep": "Nee, niet sturen",
+        "notifiedAt": "Klant geïnformeerd op {{at}}",
+        "notifyReason": {
+          "NO_CUSTOMER": "Er is geen klant aan deze bekeuring gekoppeld, dus er is niets verstuurd.",
+          "NO_EMAIL": "Deze klant heeft geen e-mailadres, dus er is niets verstuurd.",
+          "PORTAL_DISABLED": "Het portaal staat uit voor deze klant, dus er is niets verstuurd.",
+          "MAIL_FAILED": "De mail kon niet worden verstuurd. Controleer de e-mailinstellingen en probeer het opnieuw."
+        },
         "outcome": {
+          "informed": "Klant geïnformeerd.",
           "saved": "Bekeuring opgeslagen.",
           "linked": "Bekeuring gekoppeld.",
           "unlinked": "Bekeuring ontkoppeld.",

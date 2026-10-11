@@ -671,7 +671,22 @@
         "cancelTitle": "Cancel fine?",
         "cancelConfirmNamed": "Cancel fine {{plate}} of {{amount}}? You can reactivate it afterwards.",
         "cancelKeep": "No, keep it",
+        "notifyCustomer": "Inform customer",
+        "notifyAgain": "Inform again",
+        "notifyTitle": "Inform the customer?",
+        "notifyConfirm": "An e-mail about fine {{plate}} of {{amount}} goes to {{address}}, and the customer gets a notification in the portal.",
+        "notifyConfirmAgain": "The customer was already informed on {{at}}. Send another e-mail about fine {{plate}} of {{amount}} to {{address}}?",
+        "notifyNoAddress": "the customer's e-mail address",
+        "notifyKeep": "No, do not send",
+        "notifiedAt": "Customer informed on {{at}}",
+        "notifyReason": {
+          "NO_CUSTOMER": "No customer is linked to this fine, so nothing was sent.",
+          "NO_EMAIL": "This customer has no e-mail address, so nothing was sent.",
+          "PORTAL_DISABLED": "The portal is switched off for this customer, so nothing was sent.",
+          "MAIL_FAILED": "The e-mail could not be sent. Check the e-mail settings and try again."
+        },
         "outcome": {
+          "informed": "Customer informed.",
           "saved": "Fine saved.",
           "linked": "Fine linked.",
           "unlinked": "Fine unlinked.",

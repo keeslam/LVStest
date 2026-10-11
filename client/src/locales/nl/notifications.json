@@ -321,6 +321,7 @@
         "partial": "deels mislukt"
       },
       "kindDocuments": "Document per e-mail",
+      "kindFine": "Bekeuring",
       "kindOther": "Overige e-mail",
       "detailButton": "Details",
       "detailTitle": "E-mail in het logboek",

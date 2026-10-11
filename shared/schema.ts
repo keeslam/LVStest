@@ -773,6 +773,8 @@ export const fines = pgTable("fines", {
   /** manual | scan | cjib; null = manual (rows from before the import feature) */
   source: text("source"),
   importFileId: integer("import_file_id"),
+  /** B-41 D10: when the "Klant informeren" button last mailed the customer about this fine; null = never. Server-set only. */
+  customerNotifiedAt: timestamp("customer_notified_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   createdBy: text("created_by"),

@@ -321,6 +321,7 @@
         "partial": "partly failed"
       },
       "kindDocuments": "Document by e-mail",
+      "kindFine": "Fine",
       "kindOther": "Other e-mail",
       "detailButton": "Details",
       "detailTitle": "E-mail in the log",

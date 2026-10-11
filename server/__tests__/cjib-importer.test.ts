@@ -10,7 +10,7 @@ import { resolveDocumentFilePath } from "../services/document-paths";
 import { importStorage } from "../services/cjib/import-storage";
 import { finesStorage } from "../services/fines-storage";
 import { storage } from "../storage";
-import { createTestCustomer, createTestVehicle, createTestDriver, createTestReservation, cleanupPortalTestData, TEST_PREFIX } from "./portal-helpers";
+import { createTestCustomer, createTestVehicle, createTestDriver, createTestReservation, cleanupPortalTestData, TEST_PREFIX, TEST_EMAIL_DOMAIN } from "./portal-helpers";
 
 const fixture = (name: string) => fs.readFileSync(path.join(__dirname, "fixtures", "cjib", name));
 
@@ -52,6 +52,9 @@ describe("cjib importer", () => {
     const fine = await finesStorage.getFine(linked.fineId!);
     expect(fine).toMatchObject({ status: "linked", customerId, reservationId, source: "cjib", importFileId: file.id, amount: "95.00", receivedAt: "2026-07-30" });
     expect(fine!.internalNotes).toContain("Feitcode VM012");
+    // B-41 D10: an auto-linked CJIB fine does not mail the customer; staff press "Klant informeren".
+    // (The one mail that does go out is the staff notice about the import itself.)
+    expect(sendEmail.mock.calls.map((c) => (c as unknown as [{ to: string }])[0].to)).not.toContain(`cjib@${TEST_EMAIL_DOMAIN}`);
 
     const unlinked = file.details.find((d) => d.reference === "1234567891")!;
     expect(unlinked.outcome).toBe("created");

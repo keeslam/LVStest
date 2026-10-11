@@ -100,6 +100,8 @@ export async function linkFineManually(fineId: number, input: { customerId: numb
   const updated = await finesStorage.updateFine(fineId, {
     customerId: input.customerId, reservationId: input.reservationId ?? null, driverId: input.driverId ?? null,
     status: "linked", linkedAt: new Date(), linkedBy: by, updatedBy: by,
+    // A new attribution: whoever it points at has not been told yet (B-41 D10).
+    customerNotifiedAt: null,
   });
   return updated!;
 }
@@ -107,6 +109,7 @@ export async function linkFineManually(fineId: number, input: { customerId: numb
 export async function unlinkFine(fineId: number, by: string): Promise<Fine> {
   const updated = await finesStorage.updateFine(fineId, {
     customerId: null, reservationId: null, driverId: null, status: "new", linkedAt: null, linkedBy: null, updatedBy: by,
+    customerNotifiedAt: null,
   });
   if (!updated) throw new Error("Fine not found");
   return updated;

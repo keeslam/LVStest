@@ -505,6 +505,19 @@ describe("A-13-13 and the log in Dutch", () => {
     expect(within(rows[2]).getByText(/Overige e-mail/)).toBeInTheDocument();
   });
 
+  it("B-41 D10: the fine mail from the button shows as a fine mail, not as Overige e-mail", async () => {
+    logRows = [{
+      id: 12, template: "fine_linked", subject: "Nieuwe bekeuring AB-12-CD", recipients: 1, emailsSent: 1, emailsFailed: 0, failureReason: null,
+      vehicleIds: [], sentAt: "2026-10-11T12:00:00.000Z", recipient: "klant@e2e.invalid", result: "sent", documentId: null,
+    }];
+    renderPage();
+    await userEvent.setup().click(await screen.findByRole("tab", { name: "E-maillogboek" }));
+    const [row] = await screen.findAllByTestId("email-log-row");
+    expect(within(row).getByText(/Bekeuring/)).toBeInTheDocument();
+    expect(within(row).queryByText(/fine_linked/)).not.toBeInTheDocument();
+    expect(within(row).queryByText(/Overige e-mail/)).not.toBeInTheDocument();
+  });
+
   it("shows the reason in Dutch with the stored text kept as the detail", async () => {
     const rows = await openLog(userEvent.setup());
     expect(within(rows[0]).getByText(/geen werkende e-mailconfiguratie/i)).toBeInTheDocument();

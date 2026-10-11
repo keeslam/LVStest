@@ -15,7 +15,7 @@ wie hem krijgt, waar je ziet of hij aangekomen is, en wat je doet als het misgaa
 | **Bevestiging nieuw e-mailadres / nieuwe aanmelding** | De klant zelf, in het portaal | De portaalgebruiker |
 | **Onderhoudsmelding** | De app, zodra onderhoud gepland, verzet of afgerond wordt | De klant van de huur waar dat onderhoud bij hoort |
 | **Reservering gewijzigd, geannuleerd of nieuw document** | De app, zodra kantoor dat doet | De klant van die reservering — zie 9.8 |
-| **Bekeuring gekoppeld** | De app, zodra een bekeuring aan een klant wordt gekoppeld | Die klant |
+| **Bekeuring gekoppeld** | Jij, met de knop **Klant informeren** in het venster van de bekeuring (alleen bij een gekoppelde bekeuring) | Het e-mailadres van die klant; het bevestigingsvenster noemt het adres |
 | **Reactie op een portaalaanvraag** | Jij, als je een aanvraag beantwoordt | De klant die de aanvraag deed |
 | **APK-herinnering** | Jij, met **APK-meldingen versturen** of de knop op de voertuigkaart | De huidige huurder — zie 9.2 |
 | **Onderhoudsherinnering en vrij bericht** | Jij, vanuit **Communicatie** | De klanten die je selecteert |
@@ -29,6 +29,13 @@ De onderhoudsmail kent zeven soorten bericht. De aanleiding staat in het onderwe
 
 > Onderhouds- en bekeuringsmail gaat alleen uit als het klantenportaal aan staat. Staat het
 > portaal uit, dan krijgt de klant geen bericht.
+>
+> Een bekeuring invoeren, inlezen, importeren of koppelen stuurt zelf **geen** mail. De klant hoort
+> het pas als jij op **Klant informeren** drukt. Daarna staat in het venster *Klant geïnformeerd op
+> …* en heet de knop **Opnieuw informeren**. Lukt het versturen niet, dan zegt de melding waarom:
+> er is geen klant gekoppeld, de klant heeft geen e-mailadres, het portaal staat uit voor die klant,
+> of de mail kon niet worden verstuurd. In het **E-maillogboek** staat de mail onder het soort
+> **Bekeuring**.
 
 ---
 
@@ -232,8 +239,9 @@ kies een sjabloon, om te kunnen voorvertonen.*
 Op de voertuigkaart luidt de foutmelding **Fout bij versturen APK-herinnering** — *"APK-herinnering
 versturen mislukt. Probeer het opnieuw."*
 
-**Onderhouds- en bekeuringsmail die vanzelf uitgaat** en mislukt, zie je nergens in het scherm
-terug. Bel de klant als het belangrijk is dat het bericht aankomt.
+**Onderhoudsmail die vanzelf uitgaat** en mislukt, zie je nergens in het scherm
+terug. Bel de klant als het belangrijk is dat het bericht aankomt. De bekeuringsmail start je zelf
+met **Klant informeren**; die meldt direct als hij niet is verstuurd.
 
 ---
 
@@ -331,8 +339,8 @@ Drie dingen om te weten:
 - Gaat het versturen mis, dan mislukt jouw wijziging daar niet door. De wijziging staat gewoon
   opgeslagen; controleer in dat geval het verzendoverzicht uit paragraaf 9.6.
 
-Wat wél vanzelf gaat, staat in de tabel in 9.1: onderhoud, bekeuringen, portaalaccounts en
-reacties op portaalaanvragen.
+Wat wél vanzelf gaat, staat in de tabel in 9.1: onderhoud, portaalaccounts en
+reacties op portaalaanvragen. Een bekeuringsmail gaat alleen uit als jij hem start.
 
 ---
 

@@ -1,6 +1,5 @@
 import { finesStorage } from "./fines-storage";
 import { attributeFine } from "./fine-attribution";
-import { sendFineLinkedMail } from "./portal-mail";
 import { normalizeLicensePlate, type FineSource } from "../../shared/fines";
 import type { Fine } from "../../shared/schema";
 import type { CandidateReservation } from "./fine-attribution";
@@ -30,8 +29,9 @@ export interface CreatedFine {
 
 /**
  * The one way a fine comes into existence: manual form, letter scan and CJIB
- * import all end up here. Creates the row, runs attribution and mails the
- * customer when it linked. The mail never fails the creation.
+ * import all end up here. Creates the row and runs attribution. B-41 D10: nothing
+ * is mailed here, not even when the fine linked; staff press "Klant informeren"
+ * in the fine's detail when the customer should hear about it.
  */
 export async function createFineWithAttribution(input: NewFineInput, actor: string): Promise<CreatedFine> {
   const plate = normalizeLicensePlate(input.licensePlate);
@@ -46,9 +46,5 @@ export async function createFineWithAttribution(input: NewFineInput, actor: stri
     source: input.source, importFileId: input.importFileId ?? null,
     createdBy: actor, updatedBy: actor,
   });
-  const result = await attributeFine(fine.id);
-  if (result.fine.status === "linked") {
-    try { await sendFineLinkedMail(fine.id); } catch (e) { console.error("fine linked mail failed:", e); }
-  }
-  return result;
+  return attributeFine(fine.id);
 }

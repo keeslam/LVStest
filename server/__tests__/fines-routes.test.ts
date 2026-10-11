@@ -9,12 +9,14 @@ vi.mock("../utils/email-service", () => ({ sendEmail }));
 import { registerFineRoutes } from "../routes/fines";
 import { buildStaffTestApp, createTestCustomer, createTestVehicle, createTestDriver, createTestReservation, cleanupPortalTestData } from "./portal-helpers";
 import { getUploadsDir } from "../../shared/paths";
-import { UserPermission, customers } from "../../shared/schema";
+import { UserPermission, customers, fines, portalNotifications } from "../../shared/schema";
+import { AuditLogger } from "../utils/security/auditLogger";
+import { portalStorage } from "../services/portal-storage";
 import { db } from "../db";
 import { storage } from "../storage";
 import { ftpsClient } from "../services/cjib/ftps-client";
 import { finesStorage } from "../services/fines-storage";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 const deps = { uploadsDir: getUploadsDir(), requireAuth: (_r: any, _s: any, n: any) => n() } as any;
 const manager = buildStaffTestApp([UserPermission.MANAGE_FINES], (app) => registerFineRoutes(app, deps));
@@ -48,8 +50,9 @@ describe("fines routes", () => {
     expect(res.body.fine.customerId).toBe(customerId);
     expect(res.body.fine.driverId).toBe(driverId);
     expect(res.body.fine.letterFilePath).toBeTruthy();
-    expect(sendEmail).toHaveBeenCalledTimes(1);
-    expect((sendEmail.mock.calls[0][0] as any).to).toBe("fr@portal-test.invalid");
+    // B-41 D10: creating (and auto-linking) a fine mails nobody; staff press "Klant informeren".
+    expect(sendEmail).not.toHaveBeenCalled();
+    expect(res.body.fine.customerNotifiedAt).toBeNull();
   });
 
   it("lists with filters and streams the letter", async () => {
@@ -90,13 +93,17 @@ describe("fines routes", () => {
     const id = created.body.fine.id;
     const wrong = await request(manager).post(`/api/fines/${id}/link`).send({ customerId: otherId, reservationId: resId });
     expect(wrong.status).toBe(400);
+    sendEmail.mockClear();
     const ok = await request(manager).post(`/api/fines/${id}/link`).send({ customerId, reservationId: resId, driverId });
     expect(ok.body.status).toBe("linked");
+    // B-41 D10: a manual link sends neither mail nor portal notification either.
+    expect(sendEmail).not.toHaveBeenCalled();
+    expect(await db.select().from(portalNotifications).where(and(eq(portalNotifications.customerId, customerId), eq(portalNotifications.type, "fine_linked"), eq(portalNotifications.link, `/bekeuringen/${id}`)))).toEqual([]);
     const back = await request(manager).post(`/api/fines/${id}/unlink`);
     expect(back.body.status).toBe("new");
   });
 
-  it("the fine-linked mail writes the plate with dashes in the body and the subject", async () => {
+  it("creating a fine mails nobody; the notify button sends the mail with the plate written with dashes", async () => {
     const v = await createTestVehicle("PT99ZY");
     await createTestReservation({ customerId, vehicleId: v.id, driverId, startDate: "2026-09-01", endDate: "2026-09-10", status: "picked_up" });
     sendEmail.mockClear();
@@ -104,6 +111,10 @@ describe("fines routes", () => {
       .send({ licensePlate: "PT99ZY", offenceAt: "2026-09-03T10:00:00.000Z", description: "Parkeren", amount: 60 });
     expect(res.status).toBe(201);
     expect(res.body.fine.status).toBe("linked");
+    expect(sendEmail).not.toHaveBeenCalled();
+    const notify = await request(manager).post(`/api/fines/${res.body.fine.id}/notify-customer`);
+    expect(notify.status).toBe(200);
+    expect(notify.body).toEqual({ sent: true });
     expect(sendEmail).toHaveBeenCalledTimes(1);
     const mail = sendEmail.mock.calls[0][0] as any;
     expect(mail.subject).toContain("PT-99-ZY");
@@ -251,6 +262,99 @@ describe("fines routes", () => {
     // A plate nobody has legacy rows for reports an empty object.
     const none = await request(viewer).get("/api/fines?licensePlate=ZZ0000");
     expect(JSON.parse(none.headers["x-legacy-fine-status-counts"])).toEqual({});
+  });
+
+  describe("POST /api/fines/:id/notify-customer (B-41 D10)", () => {
+    const linkedFine = (over: Record<string, unknown> = {}) => finesStorage.createFine({
+      licensePlate: plate, offenceAt: new Date("2026-09-07T10:00:00Z"), description: "Informeren", amount: "40.00", adminFee: "0.00", totalAmount: "40.00",
+      status: "linked", customerId, ...over,
+    } as any);
+
+    it("mails the customer, logs it as fine_linked, adds a portal notification, audits and stamps customer_notified_at", async () => {
+      const fine = await linkedFine();
+      sendEmail.mockClear();
+      const audit = vi.spyOn(AuditLogger, "logFromRequest");
+      try {
+        const res = await request(manager).post(`/api/fines/${fine.id}/notify-customer`);
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({ sent: true });
+        expect(sendEmail).toHaveBeenCalledTimes(1);
+        const options = sendEmail.mock.calls[0][0] as any;
+        expect(options.to).toBe("fr@portal-test.invalid");
+        expect(options.logTemplate).toBe("fine_linked");
+        expect(audit).toHaveBeenCalledWith(expect.anything(), "fine.notify-customer", "fine", fine.id, expect.objectContaining({ sent: true }));
+      } finally { audit.mockRestore(); }
+      const [row] = await db.select().from(fines).where(eq(fines.id, fine.id));
+      expect(row.customerNotifiedAt).toBeInstanceOf(Date);
+      const notes = await db.select().from(portalNotifications).where(and(eq(portalNotifications.customerId, customerId), eq(portalNotifications.type, "fine_linked"), eq(portalNotifications.link, `/bekeuringen/${fine.id}`)));
+      expect(notes).toHaveLength(1);
+      // The detail carries the date, and a second press ("Opnieuw informeren") mails again.
+      expect((await request(manager).get(`/api/fines/${fine.id}`)).body.customerNotifiedAt).toBeTruthy();
+      const again = await request(manager).post(`/api/fines/${fine.id}/notify-customer`);
+      expect(again.body).toEqual({ sent: true });
+      expect(sendEmail).toHaveBeenCalledTimes(2);
+      // Unlinking forgets the date: the next customer has not been told.
+      await request(manager).post(`/api/fines/${fine.id}/unlink`);
+      expect((await finesStorage.getFine(fine.id))!.customerNotifiedAt).toBeNull();
+    });
+
+    it("the detail names the address the mail would go to, for managers only", async () => {
+      const fine = await linkedFine();
+      expect((await request(manager).get(`/api/fines/${fine.id}`)).body.notifyAddress).toBe("fr@portal-test.invalid");
+      expect((await request(viewer).get(`/api/fines/${fine.id}`)).body.notifyAddress).toBeUndefined();
+      const bare = await linkedFine({ customerId: null });
+      expect((await request(manager).get(`/api/fines/${bare.id}`)).body.notifyAddress).toBeNull();
+    });
+
+    it("NO_CUSTOMER: a linked fine without a customer", async () => {
+      const fine = await linkedFine({ customerId: null });
+      sendEmail.mockClear();
+      const res = await request(manager).post(`/api/fines/${fine.id}/notify-customer`);
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ sent: false, reason: "NO_CUSTOMER" });
+      expect(sendEmail).not.toHaveBeenCalled();
+      expect((await finesStorage.getFine(fine.id))!.customerNotifiedAt).toBeNull();
+    });
+
+    it("NO_EMAIL: the customer has no address", async () => {
+      const noMail = (await createTestCustomer("FR3")).id;
+      await db.update(customers).set({ email: null, emailForInvoices: null }).where(eq(customers.id, noMail));
+      const fine = await linkedFine({ customerId: noMail });
+      sendEmail.mockClear();
+      const res = await request(manager).post(`/api/fines/${fine.id}/notify-customer`);
+      expect(res.body).toEqual({ sent: false, reason: "NO_EMAIL" });
+      expect(sendEmail).not.toHaveBeenCalled();
+      expect((await finesStorage.getFine(fine.id))!.customerNotifiedAt).toBeNull();
+    });
+
+    it("PORTAL_DISABLED: the portal is off for this customer", async () => {
+      const off = (await createTestCustomer("FR4")).id;
+      await portalStorage.updateCustomerSettings(off, { portalEnabled: false }, "test");
+      const fine = await linkedFine({ customerId: off });
+      sendEmail.mockClear();
+      const res = await request(manager).post(`/api/fines/${fine.id}/notify-customer`);
+      expect(res.body).toEqual({ sent: false, reason: "PORTAL_DISABLED" });
+      expect(sendEmail).not.toHaveBeenCalled();
+    });
+
+    it("MAIL_FAILED: the mail server refuses; nothing is stamped", async () => {
+      const fine = await linkedFine();
+      sendEmail.mockClear();
+      sendEmail.mockResolvedValueOnce(false);
+      const res = await request(manager).post(`/api/fines/${fine.id}/notify-customer`);
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ sent: false, reason: "MAIL_FAILED" });
+      expect((await finesStorage.getFine(fine.id))!.customerNotifiedAt).toBeNull();
+    });
+
+    it("refuses a fine that is not linked, a missing fine and a viewer", async () => {
+      const fine = await linkedFine({ status: "new", customerId: null });
+      const notLinked = await request(manager).post(`/api/fines/${fine.id}/notify-customer`);
+      expect(notLinked.status).toBe(400);
+      expect(notLinked.body.code).toBe("FINE_NOT_LINKED");
+      expect((await request(manager).post("/api/fines/2147483000/notify-customer")).status).toBe(404);
+      expect((await request(viewer).post(`/api/fines/${fine.id}/notify-customer`)).status).toBe(403);
+    });
   });
 
   it("recomputes the total on patch", async () => {

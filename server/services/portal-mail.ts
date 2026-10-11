@@ -245,15 +245,30 @@ export async function sendEmailChangeMail(user: PortalUser, newEmail: string): P
   return { sent, token };
 }
 
-/** Tells the customer a fine was attributed to them. Skips silently without an address or with the portal off. */
-export async function sendFineLinkedMail(fineId: number): Promise<boolean> {
+/** Why the fine mail did not go out; the codes the client words (B-41 D10). */
+export type FineMailRefusal = "NO_CUSTOMER" | "NO_EMAIL" | "PORTAL_DISABLED" | "MAIL_FAILED";
+export type FineMailResult = { sent: true; to: string } | { sent: false; reason: FineMailRefusal };
+
+/** The address a fine mail goes to: the customer's own, else the invoice address. */
+export function fineMailAddress(customer: { email?: string | null; emailForInvoices?: string | null } | undefined | null): string | null {
+  return customer?.email || customer?.emailForInvoices || null;
+}
+
+/**
+ * Tells the customer about a fine linked to them, and says why when it did not go out. Sent only on
+ * request ("Klant informeren", B-41 D10), never on create or link. The attempt is logged as template
+ * `fine_linked`, including a failed send.
+ */
+export async function sendFineLinkedMailDetailed(fineId: number): Promise<FineMailResult> {
   const fine = await finesStorage.getFineRow(fineId);
-  if (!fine || !fine.customerId) return false;
+  if (!fine || !fine.customerId) return { sent: false, reason: "NO_CUSTOMER" };
   const [customer, settings, config] = await Promise.all([
     storage.getCustomer(fine.customerId), portalStorage.getOrCreateCustomerSettings(fine.customerId), getPortalConfig(),
   ]);
-  const to = customer?.email || customer?.emailForInvoices;
-  if (!customer || !settings.portalEnabled || !to) return false;
+  if (!customer) return { sent: false, reason: "NO_CUSTOMER" };
+  if (!settings.portalEnabled) return { sent: false, reason: "PORTAL_DISABLED" };
+  const to = fineMailAddress(customer);
+  if (!to) return { sent: false, reason: "NO_EMAIL" };
   const template = await getPortalTemplate(PORTAL_TEMPLATE.FINE_LINKED);
   const vars = {
     name: customer.contactPerson || customer.companyName || customer.name,
@@ -264,7 +279,13 @@ export async function sendFineLinkedMail(fineId: number): Promise<boolean> {
     link: `${config.portalBaseUrl.replace(/\/$/, "")}/portaal/bekeuringen/${fine.id}`,
   };
   const html = renderTemplate(template.content, vars);
-  return sendEmail({ to, subject: renderTemplateText(template.subject, vars), html, text: stripHtml(html) }, "custom");
+  const sent = await sendEmail({ to, subject: renderTemplateText(template.subject, vars), html, text: stripHtml(html), logTemplate: "fine_linked" }, "custom");
+  return sent ? { sent: true, to } : { sent: false, reason: "MAIL_FAILED" };
+}
+
+/** Boolean wrapper for callers that only need to know whether the mail went out. */
+export async function sendFineLinkedMail(fineId: number): Promise<boolean> {
+  return (await sendFineLinkedMailDetailed(fineId)).sent;
 }
 
 /** Maintenance news for a customer: planned, moved, car in, car ready, cancelled, replacement ready. */

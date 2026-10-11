@@ -57,8 +57,9 @@ toegestane website-adressen.
 Naast de uitnodigings- en wachtwoordmails gebruikt het portaal twee sjablonen
 (te bewerken onder Communicatie > E-mailsjablonen):
 
-- `portal_fine_linked`: naar de klant zodra een bekeuring aan hem is gekoppeld
-  (bedrag en link naar de bekeuring in het portaal). Doorbelasten en betaling
+- `portal_fine_linked`: naar de klant zodra kantoor in het venster van de bekeuring op
+  **Klant informeren** drukt (bedrag en link naar de bekeuring in het portaal). Invoeren, importeren
+  of koppelen van een bekeuring stuurt zelf geen mail en geen portaalmelding. Doorbelasten en betaling
   lopen buiten de app om via het boekhoudprogramma: er is geen status
   "doorbelast"/"betaald" en geen administratiekosten meer; de app toont alleen
   het bedrag van de bekeuring.

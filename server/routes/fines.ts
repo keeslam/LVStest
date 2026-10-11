@@ -9,12 +9,12 @@ import multer from "multer";
 import { z } from "zod";
 import { OutboundBlockedError, OUTBOUND_BLOCKED_MESSAGE } from "../utils/security/outboundGuard";
 import { hasPermission } from "../middleware/permissions.js";
-import { UserPermission, insertFineSchema } from "../../shared/schema";
+import { UserPermission, UserRole, insertFineSchema } from "../../shared/schema";
 import { isValidFineTransition, isLegacyFineStatus, FINE_TRANSITIONS, LEGACY_FINE_STATUS_COUNTS_HEADER, normalizeLicensePlate, type FineStatusValue } from "../../shared/fines";
 import { finesStorage } from "../services/fines-storage";
 import { findCandidates, linkFineManually, unlinkFine } from "../services/fine-attribution";
 import { createFineWithAttribution } from "../services/fine-create";
-import { sendFineLinkedMail } from "../services/portal-mail";
+import { sendFineLinkedMailDetailed, fineMailAddress } from "../services/portal-mail";
 import { customerNotifications } from "../services/portal-customer-notifications";
 import { getPortalConfig } from "../services/portal-config";
 import { storage } from "../storage";
@@ -81,19 +81,6 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
     if (error instanceof LetterRejectedError) return res.status(400).json({ message: error.message, code: "FINE_LETTER_INVALID" });
     console.error("Fine letter could not be stored:", error);
     return res.status(500).json({ message: "The letter could not be stored", code: "FINE_LETTER_FAILED" });
-  }
-
-  async function notifyLinked(fineId: number) {
-    try { await sendFineLinkedMail(fineId); } catch (e) { console.error("fine linked mail failed:", e); }
-    try {
-      const fine = await finesStorage.getFine(fineId);
-      if (fine?.customerId) {
-        await customerNotifications.notify({
-          customerId: fine.customerId, type: "fine_linked", title: `Nieuwe bekeuring: ${fine.licensePlate}`,
-          description: `${fine.description} · € ${fine.amount}`, link: `/bekeuringen/${fineId}`, dedupeTag: `fine:${fineId}`, dedupeDays: 365,
-        });
-      }
-    } catch (e) { console.error("fine linked notification failed:", e); }
   }
 
   // ---- CJIB import (FTPS) --------------------------------------------------------
@@ -241,7 +228,13 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
     const fine = await finesStorage.getFineRow(id);
     if (!fine) return res.status(404).json({ message: "Fine not found" });
     const candidates = fine.status === "new" ? await findCandidates(fine.licensePlate, fine.offenceAt) : undefined;
-    res.json({ ...fine, candidates });
+    // B-41 D10: the "Klant informeren" confirmation names the address. Only a manager sees it (a viewer gets no
+    // customer address from this screen); null = there is nobody to mail.
+    const mayManage = req.user?.role === UserRole.ADMIN || (req.user?.permissions ?? []).includes(UserPermission.MANAGE_FINES);
+    const notifyAddress = mayManage && fine.status === "linked"
+      ? fineMailAddress(fine.customerId ? await storage.getCustomer(fine.customerId) : null)
+      : undefined;
+    res.json({ ...fine, candidates, ...(notifyAddress !== undefined ? { notifyAddress } : {}) });
   });
 
   app.post("/api/fines", canManage, letterUpload.single("letterFile"), async (req, res) => {
@@ -315,7 +308,6 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
     try {
       const fine = await linkFineManually(id, parsed.data, actor(req));
       await AuditLogger.logFromRequest(req, "fine.link", "fine", id, parsed.data);
-      await notifyLinked(id);
       res.json(fine);
     } catch (e) {
       const code = fineRefusalCode(e);
@@ -323,6 +315,32 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
       console.error("Fine could not be linked:", e);
       res.status(500).json({ message: "The fine could not be linked", code: "FINE_LINK_FAILED" });
     }
+  });
+
+  // B-41 D10: the one place the customer hears about a fine. Create, CJIB import and manual link send nothing;
+  // staff press "Klant informeren" in the fine's detail. Answers {sent, reason?}; a refusal to send is not an HTTP error.
+  app.post("/api/fines/:id/notify-customer", canManage, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const fine = await finesStorage.getFine(id);
+    if (!fine) return res.status(404).json({ message: "Fine not found", code: "FINE_NOT_FOUND" });
+    if (fine.status !== "linked") return res.status(400).json({ message: "Only a linked fine can be announced to its customer", code: "FINE_NOT_LINKED" });
+    let result: Awaited<ReturnType<typeof sendFineLinkedMailDetailed>>;
+    try { result = await sendFineLinkedMailDetailed(id); } catch (e) {
+      console.error("fine linked mail failed:", e);
+      result = { sent: false, reason: "MAIL_FAILED" };
+    }
+    if (result.sent && fine.customerId) {
+      // The portal bell follows the mail; a notification failure never undoes a mail that went out.
+      try {
+        await customerNotifications.notify({
+          customerId: fine.customerId, type: "fine_linked", title: `Nieuwe bekeuring: ${fine.licensePlate}`,
+          description: `${fine.description} · € ${fine.amount}`, link: `/bekeuringen/${id}`, dedupeTag: `fine:${id}`, dedupeDays: 365,
+        });
+      } catch (e) { console.error("fine linked notification failed:", e); }
+      await finesStorage.updateFine(id, { customerNotifiedAt: new Date(), updatedBy: actor(req) });
+    }
+    await AuditLogger.logFromRequest(req, "fine.notify-customer", "fine", id, result.sent ? { sent: true } : { sent: false, reason: result.reason });
+    res.json(result.sent ? { sent: true } : { sent: false, reason: result.reason });
   });
 
   app.post("/api/fines/:id/unlink", canManage, async (req, res) => {
