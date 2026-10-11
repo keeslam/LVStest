@@ -75,37 +75,135 @@ describe("PERMISSION_DEPENDENCIES - the table itself", () => {
   });
 });
 
-describe("PERMISSION_DEPENDENCIES - tied to the screens", () => {
-  it("every right that opens a screen in PAGE_ACCESS has a rule", () => {
-    for (const page of PAGE_ACCESS) {
-      for (const right of page.anyOf) {
-        expect(PERMISSION_DEPENDENCIES[right], `${page.path} -> ${right}`).toBeDefined();
+/**
+ * Which source files render which screen's missing-data lines. A page is
+ * listed by its PAGE_ACCESS path (the rights that open it come from there);
+ * a feature that is not a page names the rights it belongs to. A NoDataAccess
+ * site in a file that is in none of these lists fails the test below, so a new
+ * site cannot appear without a rule.
+ */
+const SCREEN_SOURCES: Array<{ screen: string; files: string[]; rights?: string[] }> = [
+  { screen: "/", files: ["client/src/components/dashboard/", "client/src/pages/dashboard.tsx"] },
+  { screen: "/customers", files: ["client/src/components/customers/customer-details.tsx", "client/src/pages/customers/"] },
+  { screen: "/expenses", files: ["client/src/components/expenses/expense-form.tsx"] },
+  { screen: "/communications", files: ["client/src/pages/CustomerCommunications.tsx"] },
+  { screen: "/delivery", files: ["client/src/pages/delivery/"] },
+  { screen: "/maintenance", files: ["client/src/pages/maintenance/"] },
+  { screen: "/reports", files: ["client/src/pages/reports/"] },
+  // Not pages of their own: the fiscal cards belong to the rights that work with them.
+  { screen: "fiscal review", files: ["client/src/components/fiscal/usage-period-card.tsx"], rights: [UserPermission.MANAGE_FISCAL_REVIEW] },
+  {
+    screen: "fiscal configuration",
+    files: ["client/src/components/fiscal/fiscal-settings-section.tsx"],
+    rights: [UserPermission.MANAGE_FISCAL_CONFIGURATION, UserPermission.APPROVE_FISCAL_CONFIGURATION, UserPermission.PUBLISH_FISCAL_CONFIGURATION],
+  },
+];
+
+/** Screens in PAGE_ACCESS that show no missing-data line at all today. */
+const PAGES_WITHOUT_SITES = ["/vehicles", "/scan", "/portal-admin", "/fines", "/reservations", "/documents", "/reservations/edit/:id", "/expenses/add"];
+
+interface Site {
+  file: string;
+  rights: string[];
+}
+
+/** Every <NoDataAccess permission={...}> in the client source, with all rights named in the prop (also an array or a conditional). */
+function findSites(): Site[] {
+  const root = join(__dirname, "..");
+  const sites: Site[] = [];
+  for (const abs of walk(join(root, "client", "src"))) {
+    const text = readFileSync(abs, "utf8");
+    const opened = [...text.matchAll(/<NoDataAccess\b/g)];
+    let parsed = 0;
+    for (const match of opened) {
+      const from = match.index!;
+      const propAt = text.indexOf("permission=", from);
+      const tagEnd = text.indexOf("/>", from);
+      if (propAt < 0 || (tagEnd >= 0 && propAt > tagEnd)) continue;
+      // Balanced scan of the {...} value.
+      let depth = 0;
+      let i = text.indexOf("{", propAt);
+      const valueStart = i;
+      for (; i < text.length; i += 1) {
+        if (text[i] === "{") depth += 1;
+        if (text[i] === "}") {
+          depth -= 1;
+          if (depth === 0) break;
+        }
       }
+      const value = text.slice(valueStart, i + 1);
+      const rights = [...value.matchAll(/UserPermission\.([A-Z_]+)/g)].map(
+        (m) => UserPermission[m[1] as keyof typeof UserPermission] as string,
+      );
+      expect(rights.length, `${relative(root, abs)}: NoDataAccess permission prop names no UserPermission: ${value}`).toBeGreaterThan(0);
+      sites.push({ file: relative(root, abs).split("\\").join("/"), rights });
+      parsed += 1;
+    }
+    // A <NoDataAccess without a parsable prop would hide a site from this test.
+    expect(parsed, `${relative(root, abs)}: a <NoDataAccess> whose permission prop could not be read`).toBe(opened.length);
+  }
+  return sites;
+}
+
+type Table = typeof PERMISSION_DEPENDENCIES;
+
+/** Every (screen, missing right) pair whose opening rights do not list that right in the given table. */
+function screenGaps(table: Table): string[] {
+  const sites = findSites();
+  const gaps: string[] = [];
+  for (const entry of SCREEN_SOURCES) {
+    const openedBy = entry.rights ?? PAGE_ACCESS.find((page) => page.path === entry.screen)!.anyOf;
+    const named = new Set<string>();
+    for (const site of sites) {
+      if (entry.files.some((prefix) => site.file.startsWith(prefix))) site.rights.forEach((right) => named.add(right));
+    }
+    if (named.size === 0) gaps.push(`${entry.screen}: no NoDataAccess site found in its files`);
+    for (const needed of named) {
+      // The screen's own rights satisfy themselves (a reservations right on the delivery screen);
+      // everything else has to be written down in the table.
+      const own = satisfiesDependency(openedBy, needed);
+      const listed = openedBy.some((right) => table[right] && [...table[right].required, ...table[right].optional].includes(needed));
+      if (!own && !listed) gaps.push(`${entry.screen}: shows "missing ${needed}" but no right that opens it (${openedBy.join(", ")}) lists it`);
+    }
+  }
+  return gaps;
+}
+
+describe("PERMISSION_DEPENDENCIES - tied to the screens", () => {
+  it("every screen in PAGE_ACCESS is either mapped to its source files or known to show no missing-data line", () => {
+    const mapped = new Set(SCREEN_SOURCES.map((entry) => entry.screen));
+    for (const page of PAGE_ACCESS) {
+      expect(mapped.has(page.path) || PAGES_WITHOUT_SITES.includes(page.path), `${page.path} is neither in SCREEN_SOURCES nor in PAGES_WITHOUT_SITES`).toBe(true);
+    }
+    for (const entry of SCREEN_SOURCES) {
+      if (entry.rights) continue;
+      expect(PAGE_ACCESS.some((page) => page.path === entry.screen), `${entry.screen} is not a PAGE_ACCESS path`).toBe(true);
+    }
+    for (const path of PAGES_WITHOUT_SITES) {
+      expect(PAGE_ACCESS.some((page) => page.path === path), `${path} is not a PAGE_ACCESS path`).toBe(true);
     }
   });
 
-  it("every right a NoDataAccess site names is needed (required or optional) by some right in the table", () => {
-    const needed = new Set<string>();
-    for (const dep of Object.values(PERMISSION_DEPENDENCIES)) {
-      for (const right of [...dep.required, ...dep.optional]) needed.add(right);
-    }
+  it("finds the NoDataAccess sites (about thirty), each in a file that belongs to a screen", () => {
+    const sites = findSites();
+    expect(sites.length).toBeGreaterThanOrEqual(28);
+    const unmapped = sites.filter((site) => !SCREEN_SOURCES.some((entry) => entry.files.some((prefix) => site.file.startsWith(prefix))));
+    expect(unmapped.map((site) => site.file), "NoDataAccess sites in files no screen claims").toEqual([]);
+  });
 
-    const root = join(__dirname, "..", "client", "src");
-    const sites: Array<{ file: string; right: string }> = [];
-    for (const file of walk(root)) {
-      const text = readFileSync(file, "utf8");
-      for (const match of text.matchAll(/<NoDataAccess[^>]*permission=\{UserPermission\.([A-Z_]+)\}/g)) {
-        sites.push({ file: relative(root, file).split("\\").join("/"), right: UserPermission[match[1] as keyof typeof UserPermission] });
-      }
-    }
+  it("for each screen, the rule of a right that opens it lists every read right its sites name", () => {
+    expect(screenGaps(PERMISSION_DEPENDENCIES)).toEqual([]);
+  });
 
-    // The scan must really find the sites (30 at the time of writing); a regex
-    // that silently matches nothing would make this test vacuous.
-    expect(sites.length).toBeGreaterThanOrEqual(25);
-    for (const site of sites) {
-      expect(site.right, `${site.file} names an unknown right`).toBeTruthy();
-      expect(needed.has(site.right), `${site.file}: ${site.right} is shown as missing data but no right in PERMISSION_DEPENDENCIES lists it`).toBe(true);
-    }
+  it("the tie depends on the table: dropping a dependency is noticed", () => {
+    const dashboard = PERMISSION_DEPENDENCIES[UserPermission.VIEW_DASHBOARD];
+    const without: Table = {
+      ...PERMISSION_DEPENDENCIES,
+      [UserPermission.VIEW_DASHBOARD]: { ...dashboard, required: dashboard.required.filter((r) => r !== UserPermission.VIEW_VEHICLES) },
+    };
+    const gaps = screenGaps(without);
+    expect(gaps).toHaveLength(1);
+    expect(gaps[0]).toContain(`/: shows "missing ${UserPermission.VIEW_VEHICLES}"`);
   });
 });
 

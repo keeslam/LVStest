@@ -8,7 +8,7 @@
  * Runs in the jsdom project, real i18n (setup-jsdom.ts).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -36,19 +36,32 @@ const SUMMARY = {
 };
 
 let fetchMock: ReturnType<typeof vi.fn>;
+let queryClient: QueryClient;
+
+/** The request was made and answered, and nothing is still loading: absence can now be asserted. */
+async function settled() {
+  await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
+  await vi.waitFor(() => expect(queryClient.isFetching()).toBe(0));
+  await act(async () => {});
+}
 
 function renderBanner(answer: unknown = SUMMARY, status = 200) {
   fetchMock = vi.fn(async () => json(answer, status));
   vi.stubGlobal("fetch", fetchMock);
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   return render(
-    <QueryClientProvider client={client}>
+    <QueryClientProvider client={queryClient}>
       <AccessDeniedBanner />
     </QueryClientProvider>,
   );
 }
 
 beforeEach(() => {
+  try {
+    sessionStorage.clear();
+  } catch {
+    /* storage unavailable */
+  }
   auth.user = { id: 1, username: "kees", role: "admin", permissions: [], previousLoginAt: "2026-10-09T08:00:00.000Z" };
 });
 afterEach(() => {
@@ -72,15 +85,14 @@ describe("access denied banner (D14)", () => {
 
   it("shows nothing when nothing was refused", async () => {
     renderBanner({ since: SUMMARY.since, count: 0, users: 0, entries: [] });
-    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settled();
     expect(screen.queryByTestId("banner-access-denied")).toBeNull();
   });
 
   it("shows nothing, and asks nothing, for a user who is not an administrator", async () => {
     auth.user = { id: 2, username: "jan", role: "manager", permissions: ["manage_users"], previousLoginAt: "2026-10-09T08:00:00.000Z" };
     renderBanner();
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await act(async () => {});
     expect(screen.queryByTestId("banner-access-denied")).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -88,16 +100,45 @@ describe("access denied banner (D14)", () => {
   it("shows nothing, and asks nothing, at a first login (no previous login)", async () => {
     auth.user = { id: 1, username: "kees", role: "admin", permissions: [], previousLoginAt: null };
     renderBanner();
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await act(async () => {});
     expect(screen.queryByTestId("banner-access-denied")).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("a failing request shows no banner and no error", async () => {
     renderBanner({ message: "boom" }, 500);
-    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settled();
     expect(screen.queryByTestId("banner-access-denied")).toBeNull();
+  });
+
+  it("can be dismissed for the rest of the session", async () => {
+    // Its own previous-login moment: the dismissal is remembered per moment, also in module memory.
+    auth.user = { id: 1, username: "kees", role: "admin", permissions: [], previousLoginAt: "2026-10-01T08:00:00.000Z" };
+    const user = userEvent.setup();
+    const first = renderBanner();
+    await screen.findByTestId("banner-access-denied");
+    await user.click(screen.getByRole("button", { name: "Sluiten" }));
+    expect(screen.queryByTestId("banner-access-denied")).toBeNull();
+
+    // A new mount in the same session (dashboard visited again) stays dismissed.
+    first.unmount();
+    renderBanner();
+    await settled();
+    expect(screen.queryByTestId("banner-access-denied")).toBeNull();
+  });
+
+  it("shows the summary row of a user who hit the cap as one line, not as a path", async () => {
+    const user = userEvent.setup();
+    renderBanner({
+      ...SUMMARY,
+      entries: [{ id: 9, userId: 7, username: "jan", createdAt: "2026-10-10T10:00:00.000Z", method: "ANY", path: "*", required: [], page: null, summary: true }, ...SUMMARY.entries],
+    });
+    await screen.findByTestId("banner-access-denied");
+    await user.click(screen.getByRole("button", { name: "Bekijken" }));
+    const rows = within(await screen.findByRole("dialog")).getAllByTestId("access-denied-row");
+    expect(rows[0].textContent).toContain("jan");
+    expect(rows[0].textContent).toContain("Meer geweigerde pogingen zijn niet apart vastgelegd");
+    expect(rows[0].textContent).not.toContain("*");
   });
 
   it("Bekijken opens the list: who, what, when", async () => {

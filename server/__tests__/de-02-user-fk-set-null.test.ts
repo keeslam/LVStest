@@ -9,7 +9,8 @@
  * process against lvs_fixtest.
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { execFileSync } from "node:child_process";
+import { execFile, execFileSync } from "node:child_process";
+import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { eq, sql } from "drizzle-orm";
 import { db } from "../db";
@@ -24,6 +25,7 @@ const MARKER = "migration:d19_user_fk_set_null";
 const MANAGER_MARKER = "migration:c_manager_rights";
 const AUDIT_FK = "audit_logs_user_id_users_id_fk";
 const CUSTOMER_FK = "customers_created_by_user_id_users_id_fk";
+const SAVED_FK = "saved_reports_created_by_user_id_users_id_fk";
 
 /** pg_constraint.confdeltype for every FK to users.id: a = no action, n = set null, c = cascade. */
 async function deleteRules(): Promise<Record<string, string>> {
@@ -48,6 +50,16 @@ describe("startup-migration.js: user foreign keys become ON DELETE SET NULL (mar
       encoding: "utf8",
       timeout: 60_000,
     });
+  }
+
+  /** Async twin: while a lock is held in this process the worker must keep answering vitest. */
+  async function runStartupMigrationAsync(): Promise<string> {
+    const { stdout, stderr } = await promisify(execFile)(process.execPath, [STARTUP_SCRIPT], {
+      cwd: REPO_ROOT,
+      env: { ...process.env, DATABASE_SSL: "false", TIMESTAMPTZ_MIGRATION: "" },
+      timeout: 60_000,
+    });
+    return String(stdout) + String(stderr);
   }
 
   async function makeUser(label: string): Promise<number> {
@@ -156,5 +168,28 @@ describe("startup-migration.js: user foreign keys become ON DELETE SET NULL (mar
     const third = runStartupMigration();
     expect(third).toContain("Database migration completed successfully");
     expect(await deleteRules()).toEqual(rules);
+  }, 120_000);
+
+  it("a table that stays locked is skipped after the lock timeout, with no marker; the next start finishes the job", async () => {
+    // Put one key back to 'no action' and hold an exclusive lock on its table, as a long
+    // transaction of the old container would during a deploy.
+    await db.execute(sql.raw(`ALTER TABLE saved_reports DROP CONSTRAINT IF EXISTS ${SAVED_FK}`));
+    await db.execute(sql.raw(`ALTER TABLE saved_reports ADD CONSTRAINT ${SAVED_FK} FOREIGN KEY (created_by_user_id) REFERENCES users(id)`));
+    await db.delete(appSettings).where(eq(appSettings.key, MARKER));
+
+    let blocked = "";
+    await db.transaction(async (tx) => {
+      await tx.execute(sql`LOCK TABLE saved_reports IN ACCESS EXCLUSIVE MODE`);
+      blocked = await runStartupMigrationAsync(); // waits for the lock timeout, then reports and moves on
+    });
+    expect(blocked).toContain("Database migration completed successfully");
+    expect(blocked).toMatch(/could not change saved_reports/);
+    expect((await deleteRules())[SAVED_FK]).toBe("a");
+    expect(await db.select().from(appSettings).where(eq(appSettings.key, MARKER))).toHaveLength(0);
+
+    const retry = runStartupMigration();
+    expect(retry).toMatch(/ON DELETE SET NULL/);
+    expect((await deleteRules())[SAVED_FK]).toBe("n");
+    expect(await db.select().from(appSettings).where(eq(appSettings.key, MARKER))).toHaveLength(1);
   }, 120_000);
 });

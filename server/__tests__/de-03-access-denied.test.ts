@@ -14,6 +14,7 @@ import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from "vitest
 import { and, eq } from "drizzle-orm";
 import { db } from "../db";
 import { auditLogs, users, UserPermission } from "../../shared/schema";
+import { ACCESS_DENIED_USER_CAP, recordAccessDenied } from "../middleware/permissions";
 import { agentFor, anonAgent, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 
 const deniedRows = (userId: number) =>
@@ -95,6 +96,93 @@ describe("D14 - hasPermissionMiddleware records refused attempts", () => {
     const rows = await deniedRows(user.userId);
     expect(rows).toHaveLength(1);
     expect((rows[0].details as any).method).toBe("POST");
+  });
+});
+
+describe("D14 - the dedupe is per route pattern, with a cap per user (fix round 1)", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+  afterAll(async () => {
+    await cleanupFixtureUsers();
+  });
+
+  it("/api/customers/1 and /api/customers/2 are one refusal, and the first concrete path is kept", async () => {
+    const user = await agentFor([]);
+    expect((await user.get("/api/customers/1")).status).toBe(403);
+    expect((await user.get("/api/customers/2")).status).toBe(403);
+    expect((await user.get("/api/customers/3")).status).toBe(403);
+    const rows = await deniedRows(user.userId);
+    expect(rows).toHaveLength(1);
+    expect((rows[0].details as any).path).toBe("/api/customers/1");
+  });
+
+  it("different methods or different patterns are still separate rows", async () => {
+    const user = await agentFor([]);
+    await user.get("/api/customers/1");
+    await user.get("/api/customers");
+    await user.get("/api/vehicles/7");
+    expect(await deniedRows(user.userId)).toHaveLength(3);
+  });
+
+  it("the no-access page: /reservations/edit/1, /2 and a case variant are one row", async () => {
+    const user = await agentFor([]);
+    await user.post("/api/access-denied").send({ page: "/reservations/edit/1" });
+    await user.post("/api/access-denied").send({ page: "/reservations/edit/2" });
+    await user.post("/api/access-denied").send({ page: "/Reservations/Edit/3" });
+    const rows = await deniedRows(user.userId);
+    expect(rows).toHaveLength(1);
+    expect((rows[0].details as any).page).toBe("/reservations/edit/1");
+  });
+
+  it("a user writes at most ACCESS_DENIED_USER_CAP rows per window, then one summary row, then nothing", async () => {
+    const user = await agentFor([]);
+    const attempt = (i: number) =>
+      recordAccessDenied({
+        userId: user.userId,
+        username: user.username,
+        method: "GET",
+        path: `/api/probe-${i}`,
+        required: ["view_vehicles"],
+      });
+    for (let i = 0; i < ACCESS_DENIED_USER_CAP + 10; i += 1) await attempt(i);
+
+    const rows = await deniedRows(user.userId);
+    expect(rows).toHaveLength(ACCESS_DENIED_USER_CAP + 1);
+    const summaries = rows.filter((r) => (r.details as any).summary === true);
+    expect(summaries).toHaveLength(1);
+    expect(rows[rows.length - 1].id).toBe(summaries[0].id);
+
+    // The window passes: the user is recorded again.
+    const now = Date.now();
+    vi.spyOn(Date, "now").mockReturnValue(now + 16 * 60 * 1000);
+    expect(await attempt(9999)).toBe(true);
+    expect(await deniedRows(user.userId)).toHaveLength(ACCESS_DENIED_USER_CAP + 2);
+  });
+
+  it("a failing audit insert still answers 403, and the next attempt is recorded (no dedupe entry for a failed write)", async () => {
+    const user = await agentFor([]);
+    const spy = vi.spyOn(db, "insert").mockImplementation(() => {
+      throw new Error("audit table unavailable");
+    });
+    const refused = await user.get("/api/vehicles");
+    spy.mockRestore();
+    expect(refused.status).toBe(403);
+    expect(await deniedRows(user.userId)).toHaveLength(0);
+
+    expect((await user.get("/api/vehicles")).status).toBe(403);
+    expect(await deniedRows(user.userId)).toHaveLength(1);
+  });
+
+  it("the row never holds body content or the query string", async () => {
+    const user = await agentFor([]);
+    await user.post("/api/vehicles?token=QUERYSECRET").send({ licensePlate: "BODYSECRET-123", notes: "BODYSECRET-456" });
+    const rows = await deniedRows(user.userId);
+    expect(rows).toHaveLength(1);
+    const text = JSON.stringify(rows[0]);
+    expect(text).not.toContain("BODYSECRET");
+    expect(text).not.toContain("QUERYSECRET");
+    expect(Object.keys(rows[0].details as object).sort()).toEqual(["method", "path", "required"]);
   });
 });
 
@@ -222,6 +310,7 @@ describe("D14 - last login", () => {
     const user = await agentFor([]);
     const first = await lastLoginOf(user.userId);
 
+    await new Promise((resolve) => setTimeout(resolve, 20)); // the second login must be strictly later
     const anon = await anonAgent();
     const login = await anon.post("/api/login").send({ username: user.username, password: user.password });
     expect(login.status).toBe(200);
@@ -232,6 +321,6 @@ describe("D14 - last login", () => {
     expect(new Date(me.body.previousLoginAt).getTime()).toBe(first!.getTime());
 
     const second = await lastLoginOf(user.userId);
-    expect(second!.getTime()).toBeGreaterThanOrEqual(first!.getTime());
+    expect(second!.getTime()).toBeGreaterThan(first!.getTime());
   });
 });

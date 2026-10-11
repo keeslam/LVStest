@@ -9,17 +9,76 @@
  * "Last" is a property of the whole table, so each test first makes the
  * accounts it creates the only active administrators: every other active
  * administrator of the test database is switched off for the duration of the
- * file and switched back on in afterAll.
+ * file and switched back on afterwards.
+ *
+ * THAT IS DANGEROUS ON A SHARED DATABASE: any other test file logging in as an
+ * administrator at the same time fails, and a killed run would leave every
+ * administrator switched off. So the file only runs when
+ * DE02_ALLOW_ADMIN_TOGGLE=1 is set, by whoever runs it ALONE (nothing else
+ * testing against the same database). The ids are snapshotted before the first
+ * switch and restored in a finally, and, if the process dies, by an exit hook
+ * that restores them synchronously through a child process.
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { and, eq, inArray, notInArray } from "drizzle-orm";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
 import { db } from "../db";
-import { users, UserPermission } from "../../shared/schema";
+import { appSettings, users, UserPermission } from "../../shared/schema";
 import { hashPassword } from "../auth";
 import { agentFor, cleanupFixtureUsers, FIXTURE_USER_PREFIX, type TestAgent } from "./helpers/app";
 
-const switchedOff: number[] = [];
+const ALLOWED = process.env.DE02_ALLOW_ADMIN_TOGGLE === "1";
+const STARTUP_SCRIPT = fileURLToPath(new URL("../../startup-migration.js", import.meta.url));
+const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
+const FK_MARKER = "migration:d19_user_fk_set_null";
+
+/** Active administrators as they were before this file touched anything. */
+let snapshot: number[] = [];
+let restoredByHook = false;
 let counter = 0;
+
+/** Synchronous, for the exit hook: a child process puts the snapshot back. */
+function restoreSynchronously(): void {
+  if (restoredByHook || snapshot.length === 0) return;
+  restoredByHook = true;
+  try {
+    execFileSync(
+      process.execPath,
+      [
+        "-e",
+        "const {Client}=require('pg');(async()=>{const c=new Client({connectionString:process.env.DATABASE_URL});await c.connect();await c.query(\"UPDATE users SET active = true WHERE role = 'admin' AND id = ANY($1::int[])\",[JSON.parse(process.argv[1])]);await c.end()})()",
+        JSON.stringify(snapshot),
+      ],
+      { cwd: REPO_ROOT, env: { ...process.env, DATABASE_SSL: "false" }, timeout: 20_000 },
+    );
+  } catch {
+    /* nothing more can be done while exiting */
+  }
+}
+
+async function restoreAdmins(): Promise<void> {
+  if (snapshot.length === 0) return;
+  await db.update(users).set({ active: true }).where(and(eq(users.role, "admin"), inArray(users.id, snapshot)));
+  restoredByHook = true; // restored in-process: the exit hook has nothing left to do
+}
+
+/** The "logged-in account can be deleted" test needs the D19 FK rule; apply the step if the database lacks it. */
+async function ensureUserForeignKeyRule(): Promise<void> {
+  const res = await db.execute(sql`
+    SELECT 1 FROM pg_constraint
+     WHERE contype = 'f' AND confrelid = 'users'::regclass AND confdeltype = 'a'
+       AND conrelid = 'audit_logs'::regclass
+  `);
+  if (res.rows.length === 0) return;
+  await db.delete(appSettings).where(eq(appSettings.key, FK_MARKER));
+  execFileSync(process.execPath, [STARTUP_SCRIPT], {
+    cwd: REPO_ROOT,
+    env: { ...process.env, DATABASE_SSL: "false", TIMESTAMPTZ_MIGRATION: "" },
+    encoding: "utf8",
+    timeout: 60_000,
+  });
+}
 
 /** Switches off every active admin except `keep`, remembering them for afterAll. */
 async function onlyActiveAdmins(keep: number[]): Promise<void> {
@@ -29,7 +88,6 @@ async function onlyActiveAdmins(keep: number[]): Promise<void> {
     .where(and(eq(users.role, "admin"), eq(users.active, true), keep.length ? notInArray(users.id, keep) : undefined));
   const ids = others.map((r) => r.id);
   if (ids.length === 0) return;
-  switchedOff.push(...ids);
   await db.update(users).set({ active: false }).where(inArray(users.id, ids));
 }
 
@@ -50,17 +108,33 @@ async function secondAdmin(active = true): Promise<number> {
 
 const exists = async (id: number) => (await db.select({ id: users.id }).from(users).where(eq(users.id, id))).length === 1;
 
-describe("D19 - the last administrator account is protected", () => {
+if (!ALLOWED) {
+  console.warn(
+    "[de-02-last-admin] SKIPPED: the file switches every other active administrator of the test database off while it runs. " +
+      "Run it alone (nothing else testing against the same database) with DE02_ALLOW_ADMIN_TOGGLE=1.",
+  );
+}
+
+describe.skipIf(!ALLOWED)("D19 - the last administrator account is protected", () => {
   let manager: TestAgent;
 
   beforeAll(async () => {
+    const active = await db.select({ id: users.id }).from(users).where(and(eq(users.role, "admin"), eq(users.active, true)));
+    snapshot = active.map((r) => r.id);
+    restoredByHook = false;
+    process.on("exit", restoreSynchronously);
+    await ensureUserForeignKeyRule();
     manager = await agentFor([UserPermission.MANAGE_USERS]);
   }, 90_000);
 
   afterAll(async () => {
-    await cleanupFixtureUsers();
-    const restore = switchedOff.filter(Boolean);
-    if (restore.length) await db.update(users).set({ active: true }).where(inArray(users.id, restore));
+    try {
+      // First: put the administrators back. Then the fixture clean-up, which may fail.
+      await restoreAdmins();
+    } finally {
+      process.off("exit", restoreSynchronously);
+      await cleanupFixtureUsers();
+    }
   });
 
   it("DELETE of the last active admin answers 409 LAST_ADMIN and deletes nothing", async () => {

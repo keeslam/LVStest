@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 import { UserRole } from "@shared/schema";
@@ -24,6 +24,8 @@ interface AccessDeniedEntry {
   path: string | null;
   required: string[];
   page: string | null;
+  /** The user hit the per-window cap: this one row stands for all further refusals. */
+  summary?: boolean;
 }
 
 interface AccessDeniedSummary {
@@ -36,6 +38,28 @@ interface AccessDeniedSummary {
   entries: AccessDeniedEntry[];
 }
 
+const DISMISSED_KEY = "access-denied-banner-dismissed";
+/** Same-tab fallback for when sessionStorage is unavailable (private window, blocked site data). */
+const dismissedInMemory = new Set<string>();
+
+function isDismissed(since: string): boolean {
+  if (dismissedInMemory.has(since)) return true;
+  try {
+    return sessionStorage.getItem(DISMISSED_KEY) === since;
+  } catch {
+    return false;
+  }
+}
+
+function rememberDismissed(since: string) {
+  dismissedInMemory.add(since);
+  try {
+    sessionStorage.setItem(DISMISSED_KEY, since);
+  } catch {
+    /* the in-memory set still covers this page load */
+  }
+}
+
 /**
  * D14 (B-41): "who tried something they may not do". An administrator is told
  * on the dashboard, once per login, how many colleagues were refused since the
@@ -44,13 +68,18 @@ interface AccessDeniedSummary {
  * `access.denied`). Nothing is shown when nothing happened, for anybody who is
  * not an administrator, and at a first login (nothing to compare with).
  *
+ * The banner can be dismissed; that holds for the rest of the browser session
+ * (per previous-login moment, so the next login shows a new one).
+ *
  * The request never throws: a decorative banner must not raise the red "could
  * not load the data" toast when the log cannot be read.
  */
 export function AccessDeniedBanner() {
   const { t } = useTranslation("settings");
+  const { t: tCommon } = useTranslation("common");
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   const isAdmin = user?.role === UserRole.ADMIN;
   const since = (user as { previousLoginAt?: string | null } | null)?.previousLoginAt ?? null;
@@ -69,11 +98,13 @@ export function AccessDeniedBanner() {
   });
 
   if (!isAdmin || !since || !data || data.users === 0) return null;
+  if (dismissed || isDismissed(since)) return null;
 
   const date = formatDateTime(since);
 
   const describe = (entry: AccessDeniedEntry): string => {
     const path = entry.path ?? "";
+    if (entry.summary) return t("accessDenied.summary");
     if (entry.page) return t("accessDenied.page", { path });
     if ((entry.method ?? "GET").toUpperCase() === "GET") return t("accessDenied.read", { path });
     return t("accessDenied.write", { path });
@@ -89,9 +120,24 @@ export function AccessDeniedBanner() {
           <ShieldAlert className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
           <p className="text-sm font-semibold">{t("accessDenied.banner", { count: data.users, date })}</p>
         </div>
-        <Button size="sm" variant="outline" onClick={() => setOpen(true)} data-testid="button-access-denied-view">
-          {t("accessDenied.view")}
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button size="sm" variant="outline" onClick={() => setOpen(true)} data-testid="button-access-denied-view">
+            {t("accessDenied.view")}
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8"
+            aria-label={tCommon("actions.close")}
+            onClick={() => {
+              rememberDismissed(since);
+              setDismissed(true);
+            }}
+            data-testid="button-access-denied-dismiss"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>

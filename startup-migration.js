@@ -721,6 +721,17 @@ async function setUserForeignKeysToSetNull() {
        ORDER BY 3, 2
     `);
 
+    // Multi-column keys to users are not touched by this step; say so, so the log explains itself.
+    const composite = await db.execute(sql`
+      SELECT c.conrelid::regclass::text AS table_name, c.conname AS constraint_name
+        FROM pg_constraint c
+       WHERE c.contype = 'f' AND c.confrelid = 'public.users'::regclass
+         AND c.confdeltype = 'a' AND array_length(c.conkey, 1) > 1
+    `);
+    for (const fk of composite.rows) {
+      console.warn(`⚠️ D19: ${fk.table_name}.${fk.constraint_name} is a multi-column key to users, leaving it without ON DELETE SET NULL`);
+    }
+
     const quote = (identifier) => '"' + String(identifier).replace(/"/g, '""') + '"';
     let changed = 0;
     let skipped = 0;
@@ -740,6 +751,10 @@ async function setUserForeignKeysToSetNull() {
       const rebuilt = head + ' ON DELETE SET NULL' + (tail ? tail[0] : '');
       try {
         await db.transaction(async (tx) => {
+          // A deploy can overlap the old container; if it holds a long lock on this
+          // table, give up on this key after a few seconds (it is retried next start)
+          // instead of making the whole boot wait. ADD CONSTRAINT revalidates the table.
+          await tx.execute(sql.raw(`SET LOCAL lock_timeout = '5s'`));
           await tx.execute(sql.raw(`ALTER TABLE ${fk.table_name} DROP CONSTRAINT ${quote(fk.constraint_name)}`));
           await tx.execute(sql.raw(`ALTER TABLE ${fk.table_name} ADD CONSTRAINT ${quote(fk.constraint_name)} ${rebuilt}`));
         });

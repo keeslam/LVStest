@@ -212,6 +212,7 @@
     "page": "Scherm {{path}}",
     "read": "Gegevens ophalen {{path}}",
     "write": "Wijzigen {{path}}",
+    "summary": "Meer geweigerde pogingen zijn niet apart vastgelegd",
     "truncated": "Alleen de nieuwste {{shown}} van {{total}} pogingen worden getoond."
   },
   "backupPage": {

@@ -278,16 +278,6 @@ export class DatabaseStorage implements IStorage {
   }
   
   
-  async deleteUser(id: number): Promise<boolean> {
-    try {
-      const result = await db.delete(users).where(eq(users.id, id));
-      return (result.rowCount ?? 0) > 0;
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      return false;
-    }
-  }
-
   // Vehicle methods
   async getAllVehicles(searchQuery?: string): Promise<Vehicle[]> {
     if (!searchQuery) {

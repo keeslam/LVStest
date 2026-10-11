@@ -163,6 +163,8 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
         username: user.username,
         method: "GET",
         path: page,
+        // /reservations/edit/1 and /Reservations/Edit/2 are one page.
+        dedupeKey: `PAGE ${pageAccessFor(page)?.path ?? page}`,
         required: pageAccessFor(page)?.anyOf ?? [],
         page,
         ipAddress: req.ip,
@@ -207,6 +209,7 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
             path: details.path ?? null,
             required: Array.isArray(details.required) ? details.required : [],
             page: details.page ?? null,
+            summary: details.summary === true,
           };
         }),
       });
@@ -418,12 +421,13 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       // For self-update, only allow certain fields (username, fullName, email)
       let userData: Record<string, any>;
       if (isSelfUpdate && !isAdmin && !hasManageUsersPermission) {
-        const { username, fullName, email, password } = patch;
+        // No password here: any password on a self-update was already answered
+        // with USE_CHANGE_PASSWORD above.
+        const { username, fullName, email } = patch;
         userData = {
           username,
           fullName,
           email,
-          password,
           updatedBy: currentUser.username
         };
 
@@ -564,8 +568,8 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       // D19: the last active administrator is refused (409); another admin may
       // be deleted. Count and delete happen in one transaction, the admins
       // locked, so two simultaneous deletes cannot empty the table of admins.
-      // (storage.deleteUser swallowed every error as "not found", which hid a
-      // foreign-key refusal behind a 404; here only a missing row is a 404.)
+      // (The old storage.deleteUser swallowed every error as "not found", which
+      // hid a foreign-key refusal behind a 404; here only a missing row is a 404.)
       const outcome = await db.transaction(async (tx) => {
         const adminIds = await lockActiveAdminIds(tx);
         if (adminIds.length <= 1 && adminIds.includes(id)) return "last-admin" as const;

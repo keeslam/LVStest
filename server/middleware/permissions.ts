@@ -1,24 +1,39 @@
 import { Request, Response, NextFunction } from 'express';
 import { UserRole } from '../../shared/schema.js';
-import { AuditLogger } from '../utils/security/auditLogger.js';
+import { db } from '../db.js';
+import { auditLogs } from '../../shared/schema.js';
 
 /**
  * D14: a refused attempt is written to the audit log (action `access.denied`,
  * status failure) so an administrator can be told at the next login who tried
- * what they may not do. The same user refused on the same path again within
- * five minutes is not written again - a screen that retries or polls a refused
- * request must not fill the log. The window lives in this process only; after
- * a restart the first refusal is simply recorded again.
+ * what they may not do.
+ *
+ * Two brakes keep a screen that retries, or a caller that varies path
+ * parameters, from filling the log:
+ * - the same user refused on the same route PATTERN (`GET /api/customers/:id`,
+ *   not `/api/customers/17`) again within five minutes is not written again;
+ *   the concrete path of the first refusal stays in `details`;
+ * - one user writes at most ACCESS_DENIED_USER_CAP rows per 15 minutes; the next
+ *   refusal writes one summary row (`details.summary = true`) and after that
+ *   nothing until the window has passed.
+ * Both windows live in this process only; after a restart the first refusals
+ * are simply recorded again.
  */
 export const ACCESS_DENIED_ACTION = 'access.denied';
 export const ACCESS_DENIED_DEDUPE_MS = 5 * 60 * 1000;
+export const ACCESS_DENIED_USER_CAP = 50;
+export const ACCESS_DENIED_USER_WINDOW_MS = 15 * 60 * 1000;
 const recentlyDenied = new Map<string, number>();
+const perUserWindow = new Map<number, { start: number; written: number; summarized: boolean }>();
 
 export interface AccessDeniedAttempt {
   userId: number;
   username: string;
   method: string;
+  /** The concrete path, kept in the audit row. */
   path: string;
+  /** What the dedupe is keyed on: the route pattern. Defaults to `path`. */
+  dedupeKey?: string;
   required: readonly string[];
   /** Set when the no-access page reported the refusal (POST /api/access-denied). */
   page?: string;
@@ -26,32 +41,62 @@ export interface AccessDeniedAttempt {
   userAgent?: string;
 }
 
-/** Returns true when a row was written, false when the attempt fell inside the dedupe window. */
+async function insertAccessDenied(
+  attempt: AccessDeniedAttempt,
+  details: Record<string, unknown>,
+): Promise<void> {
+  // Written here, not through AuditLogger.log: that one swallows its own errors,
+  // and the dedupe entry must only be set once the row really exists.
+  await db.insert(auditLogs).values({
+    userId: attempt.userId,
+    username: attempt.username,
+    action: ACCESS_DENIED_ACTION,
+    details,
+    ipAddress: attempt.ipAddress ?? null,
+    userAgent: attempt.userAgent ?? null,
+    status: 'failure',
+  });
+}
+
+/** Returns true when a row was written, false when the attempt was left out (dedupe or cap). */
 export async function recordAccessDenied(attempt: AccessDeniedAttempt): Promise<boolean> {
   const now = Date.now();
-  const key = `${attempt.userId}|${attempt.path}`;
+  const key = `${attempt.userId}|${attempt.dedupeKey ?? attempt.path}`;
   const last = recentlyDenied.get(key);
   if (last !== undefined && now - last < ACCESS_DENIED_DEDUPE_MS) return false;
+
+  let window = perUserWindow.get(attempt.userId);
+  if (!window || now - window.start >= ACCESS_DENIED_USER_WINDOW_MS) {
+    window = { start: now, written: 0, summarized: false };
+    perUserWindow.set(attempt.userId, window);
+  }
+  if (window.written >= ACCESS_DENIED_USER_CAP) {
+    if (!window.summarized) {
+      await insertAccessDenied(attempt, { summary: true, method: 'ANY', path: '*', required: [] });
+      window.summarized = true;
+    }
+    return false;
+  }
+
+  await insertAccessDenied(attempt, {
+    method: attempt.method,
+    path: attempt.path,
+    required: [...attempt.required],
+    ...(attempt.page ? { page: attempt.page } : {}),
+  });
+  window.written += 1;
   recentlyDenied.set(key, now);
+
   if (recentlyDenied.size > 2000) {
     for (const [k, at] of recentlyDenied) {
       if (now - at >= ACCESS_DENIED_DEDUPE_MS) recentlyDenied.delete(k);
     }
   }
-  await AuditLogger.log({
-    userId: attempt.userId,
-    username: attempt.username,
-    action: ACCESS_DENIED_ACTION,
-    details: {
-      method: attempt.method,
-      path: attempt.path,
-      required: [...attempt.required],
-      ...(attempt.page ? { page: attempt.page } : {}),
-    },
-    ipAddress: attempt.ipAddress,
-    userAgent: attempt.userAgent,
-    status: 'failure',
-  });
+  if (perUserWindow.size > 2000) {
+    for (const [id, w] of perUserWindow) {
+      if (now - w.start >= ACCESS_DENIED_USER_WINDOW_MS) perUserWindow.delete(id);
+    }
+  }
   return true;
 }
 
@@ -87,6 +132,8 @@ export const hasPermission = (...permissions: string[]) => {
           username: req.user.username,
           method: req.method,
           path: req.originalUrl.split('?')[0],
+          // The route pattern, so /api/customers/1 and /api/customers/2 are one refusal.
+          dedupeKey: `${req.method} ${req.route?.path !== undefined ? req.baseUrl + String(req.route.path) : req.baseUrl || req.originalUrl.split('?')[0]}`,
           required: permissions,
           ipAddress: req.ip,
           userAgent: req.get('user-agent') || undefined,

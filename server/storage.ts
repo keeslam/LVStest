@@ -96,7 +96,6 @@ export interface IStorage {
   getAuditLogFilterOptions(): Promise<{ users: string[]; actions: string[]; resourceTypes: string[] }>;
   updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined>;
   updateUserPassword(id: number, hashedPassword: string): Promise<boolean>;
-  deleteUser(id: number): Promise<boolean>;
   
   // Vehicle methods
   getAllVehicles(): Promise<Vehicle[]>;

@@ -212,6 +212,7 @@
     "page": "Screen {{path}}",
     "read": "Fetch data {{path}}",
     "write": "Change {{path}}",
+    "summary": "More refused attempts were not recorded separately",
     "truncated": "Only the newest {{shown}} of {{total}} attempts are shown."
   },
   "backupPage": {
