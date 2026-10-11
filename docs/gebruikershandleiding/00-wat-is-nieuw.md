@@ -144,7 +144,8 @@ er niet, of is hij grijs, dan klik of tik je erop: de app zegt welk vinkje je mi
    [hoofdstuk 10, paragraaf 10.6](10-beheer.md).
 
 9. **Na de uitrol heb je een kort lijstje.** Bedrijfsnaam opslaan, tijdzone controleren, RDW-typen
-   controleren en toepassen, het opstartlog lezen en de collega's de wachtwoordregel melden.
+   controleren en toepassen, het opstartlog lezen en de collega's de wachtwoordregel melden. Het staat
+   afvinkbaar onder "Na de uitrol (beheerder)" in [hoofdstuk 19](19-acceptatiechecklist.md).
 
 ---
 
@@ -184,3 +185,4 @@ niet, omdat ze in een eerder deel van het werk zaten.
 
 - De schermafbeeldingen in de handleiding zijn niet vernieuwd. De tekst is leidend.
 - Zie je in de app iets anders dan hier staat, geloof dan de app en meld het.
+- Wil je alles zelf uitproberen, doorloop dan [de acceptatiechecklist](19-acceptatiechecklist.md).

@@ -33,6 +33,7 @@ woord ook hier — dan weet je zeker dat je het goede knopje hebt.
 ## Hoe je deze handleiding gebruikt
 
 - Wil je weten wat er sinds de laatste uitrol anders werkt? Hoofdstuk 0.
+- Wil je alles zelf uitproberen en afvinken? Hoofdstuk 19, de acceptatiechecklist.
 - Ben je vandaag begonnen? Lees hoofdstuk 1 en 2, en werk daarna hoofdstuk 17 af.
 - Zoek je één handeling? Kijk in hoofdstuk 13, het snel naslagwerk.
 - Wil je weten hoe een werkdag hoort te lopen? Hoofdstuk 16.
@@ -63,8 +64,10 @@ woord ook hier — dan weet je zeker dat je het goede knopje hebt.
 | 16 | [Dagelijks werk](16-dagelijks-werk.md) | De ochtend, de dag, het einde van de dag |
 | 17 | [Inwerkpad](17-inwerkpad.md) | In welke volgorde je dit leert, met oefeningen |
 | 18 | [Barcode en scannen](18-barcode-en-scannen.md) | Sleutellabels scannen, doorwerken vanaf het scanscherm, de sleutelkast-audit |
+| 19 | [Acceptatiechecklist](19-acceptatiechecklist.md) | Een afvinkbare lijst van alles wat de app doet, hoofdstuk voor hoofdstuk, om zelf uit te proberen |
 
-Alle achttien hoofdstukken zijn af, met daarbij een overzicht van wat nieuw is (hoofdstuk 0). De schermafbeeldingen staan in de map `afbeeldingen/` en
+Alle achttien hoofdstukken zijn af, met daarbij een overzicht van wat nieuw is (hoofdstuk 0) en een
+acceptatiechecklist (hoofdstuk 19). De schermafbeeldingen staan in de map `afbeeldingen/` en
 worden vanuit de hoofdstukken zelf getoond.
 
 **Bijgewerkt op 12 oktober 2026.** De tekst volgt de reparaties na de fysieke audit (10 oktober) en
