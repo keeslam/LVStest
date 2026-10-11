@@ -435,9 +435,36 @@ READY. Handleiding bijgewerkt (10/11-10-2026), de PDF is nog niet opnieuw gemaak
 19. **D19 (A-17-8)** Een beheerder ook via de API niet verwijderbaar maken, zoals nu in het venster? De server weigert nu alleen dat je jezelf verwijdert.
 20. **Fiscale prullenbak (uit deelproject C):** een reservering met fiscale beoordelingen kan niet definitief uit de prullenbak verwijderd worden, alleen teruggezet. Zo houden, of de fiscale regels loskoppelen en definitief verwijderen toestaan?
 
+### B-41 — Antwoorden op de open vragen van B-40 (11-10-2026)
+
+Kees beantwoordde alle vragen een voor een. Besluiten (te bouwen in een volgend deelproject, nog niet gebouwd):
+
+- **D1 ja:** een tankbedrag bij "Brandstofstatus bijwerken" wordt ook een kostenpost (categorie Brandstof) op dat voertuig; "laatste tankbedrag" op het voertuig blijft.
+- **D2 ja, met vinkje:** een kenteken dat de RDW niet kent wordt bij de bulkimport niet aangemaakt (bij een RDW-storing wel, met waarschuwing), tenzij het vinkje "ook onbekende kentekens aanmaken" aanstaat; zulke regels tellen als waarschuwing, niet als geslaagd.
+- **D3 nee:** het statusveld verdwijnt uit het reserveringsformulier; nieuw is altijd Geboekt; de status verandert alleen via Ophalen, Inleveren, Annuleren en Terugdraaien.
+- **D4:** "Annuleren" in "Vervangende voertuigen toewijzen" maakt het hele plannen ongedaan (het aangemaakte onderhoud wordt weer weggehaald); zonder vervanger plannen gaat via "Later vervanger toewijzen".
+- **D5 nee:** een gepland onderhoud dat vandaag loopt zet de auto pas op "Reparatie nodig" als de auto "Binnen" is gemeld; de geplande periode blokkeert wel nieuwe reserveringen.
+- **D6 ja:** bij verwijderen of annuleren van een onderhoud vervalt "Reparatie nodig" als die stand alleen door dat onderhoud kwam (geen ander open onderhoud, geen handmatige schademelding).
+- **D7 ja:** "Uit (onderhoud voltooid)" in het bewerkscherm wordt vervangen door de knop "Afronden".
+- **D8 ja:** chauffeurs en kostenposten krijgen elk een prullenbak.
+- **D9 ja:** de app registreert bekeuringen alleen; Doorbelast, Betaald en Betwist gaan uit de filters en keuzes (alleen nog zichtbaar bij oude bekeuringen die ze al hebben) en het klantenportaal belooft ze niet meer.
+- **D10 nee:** koppelen of aanmaken van een bekeuring mailt de klant niet meer vanzelf; daarna een knop "Klant informeren" (of vinkje, standaard uit); de mail komt in het e-maillogboek.
+- **D11 ja, in stappen:** eerst het rapport op een kopie van productie, per kolom bepalen of de waarde Nederlandse tijd of UTC was, dan in een onderhoudsvenster na een verse back-up. **Aanvulling van Kees:** een tijdzone-instelling in App-instellingen, die rekening houdt met zomer- en wintertijd en standaard op Nederlandse tijd staat; de app gebruikt die overal waar nu Nederlandse tijd vast staat.
+- **D12:** nieuwe wachtwoorden minimaal 10 tekens met hoofdletter, kleine letter en cijfer, overal gelijk (server, profiel, gebruikersbeheer bij aanmaken en wijzigen); bestaande wachtwoorden blijven werken.
+- **D13:** Gebruikersbeheer toont bij elk recht welke leesrechten het scherm nodig heeft, met een knop "benodigde rechten ook aanzetten"; geen stille automatische koppeling.
+- **D14 nee, maar:** geen knop "Recht aanvragen". Wel: geweigerde pogingen worden vastgelegd en een beheerder krijgt bij het inloggen een melding wie wat probeerde dat niet mocht, sinds de vorige keer.
+- **D15:** plekhouders invullen waar de gegevens er zijn (bedrijfsnaam uit de instellingen; e-mail, telefoon, begin- en einddatum uit de reservering); de onderhoudsdatum alleen aanbieden in onderhoudssjablonen.
+- **D16 nee:** /scan blijft een opzoekscherm met kaartje; geen automatische overdracht.
+- **D17 ja:** na de uitrol eerst de proefdraai van de RDW-typehermapping op productie, de lijst aan Kees, dan toepassen.
+- **D18 nee:** het tabblad Financieel krijgt geen categoriefilter.
+- **D19 ja:** de server weigert het verwijderen van het laatste beheerdersaccount en van je eigen account; andere beheerders mag een beheerder wel verwijderen; het venster volgt dezelfde regel.
+- **Fiscale prullenbak: nee (afwijkend van het advies):** wordt een reservering definitief verwijderd, dan gaan haar fiscale beoordelingen mee. De bevestiging zegt dat uitdrukkelijk en het logboek legt vast wat er weg is. Kanttekening van de uitvoerder: fiscale gegevens vallen onder de bewaarplicht; dit is Kees' keuze.
+- **"Pech" blijft** (geen "Storing").
+- **D20 niets doen:** geen schakelaar voor de planners in de testserver; regel: geen browsertests draaien tussen 02:00 en 04:00.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
-- (zie B-40) De vragen D1 t/m D19 en de fiscale prullenbak uit de auditreparaties staan daar.
+- De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan is een volgend deelproject.
 
 - (beslist, zie B-17) OPT-001 — wat telt als "openstaand punt" op het werkdagscherm.
 - OPT-009 — mag de app zelf een vervanger voorstellen/toewijzen, en op welke criteria.
