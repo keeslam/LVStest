@@ -9,7 +9,8 @@
  *   `email-log-detail-dialog.tsx`, which this story is the registry's proof for).
  *
  * The preview is checked on the way: it shows the mail as THIS customer gets it (name and plate
- * filled in, double braces too), not the template with its placeholders.
+ * filled in, double braces too, and the customer's phone number from the D15 placeholder list),
+ * not the template with its placeholders.
  *
  * The one destructive toast ("Er is niets verstuurd") is the point of the story; it is consumed
  * from the page-health violations by its exact text instead of loosening the guard.
@@ -61,13 +62,13 @@ test("een bericht dat niet aankomt: eerlijke melding, ontvangers blijven staan, 
   await expect(customer).toHaveCount(1);
   await story.click(customer, "klant E2E Pieter Bakker");
   await story.fill(page.getByTestId("input-custom-subject"), `${SUBJECT_PREFIX} nieuws voor {customerName}`, "onderwerp");
-  await story.fill(page.getByTestId("textarea-custom-message"), "Beste {customerName} en {{customerName}}, uw {vehiclePlate} staat klaar.", "bericht");
+  await story.fill(page.getByTestId("textarea-custom-message"), "Beste {customerName} en {{customerName}}, uw {vehiclePlate} staat klaar. Bel ons op {customerPhone}.", "bericht");
   await story.click(page.getByTestId("button-preview-custom"), "Voorvertonen & versturen");
 
   // The preview is the mail this customer gets.
   const preview = page.getByRole("dialog");
   await expect(preview.getByTestId("preview-subject")).toHaveText(`${SUBJECT_PREFIX} nieuws voor E2E Pieter Bakker`);
-  await expect(preview.getByTestId("preview-content")).toHaveText("Beste E2E Pieter Bakker en E2E Pieter Bakker, uw staat klaar.");
+  await expect(preview.getByTestId("preview-content")).toHaveText("Beste E2E Pieter Bakker en E2E Pieter Bakker, uw staat klaar. Bel ons op 0612345603.");
   await expect(preview.getByTestId("preview-empty-note")).toContainText("Kenteken");
   await expect(preview).toContainText("bakker@e2e.invalid");
 
