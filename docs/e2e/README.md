@@ -199,6 +199,23 @@ Voorwaarden:
 Het dekkingsoverzicht hoef je meestal niet apart te draaien: bij `npm run e2e` gebeurt
 dat automatisch aan het eind.
 
+**Eén servertest hoort niet in een gewone run: `server/__tests__/de-02-last-admin.test.ts` (deelproject D, D19).**
+Die test bewijst dat het laatste actieve beheerdersaccount niet verwijderd, teruggezet of uitgezet kan worden
+(409 `LAST_ADMIN`). "Laatste" geldt voor de hele gebruikerstabel, dus de test zet voor de duur van het bestand **alle
+andere actieve beheerders van de testdatabase tijdelijk uit** en daarna weer aan. Op een gedeelde database laat dat elke
+andere test of browserrun die dan als beheerder inlogt falen. Het bestand slaat zichzelf daarom over, tenzij je het
+bewust aanzet met `DE02_ALLOW_ADMIN_TOGGLE=1`:
+
+```
+DE02_ALLOW_ADMIN_TOGGLE=1 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/lvs_fixtest DATABASE_SSL=false   npx vitest run --project server server/__tests__/de-02-last-admin.test.ts --no-file-parallelism
+```
+
+Draai het **alleen en op een rustige database**: geen andere vitest-run, geen Playwright-run en geen app op dezelfde database
+tegelijk. De test bewaart de ids van de beheerders vóór de eerste wijziging, zet ze terug in een `finally`, en bij een
+onderbreking (Ctrl+C, `kill`, een crash) zet een afsluithaak ze terug. Alleen een harde kill (SIGKILL, stroomuitval) kan dat
+niet opvangen; herstel dan met `UPDATE users SET active = true WHERE role = 'admin'` op die database. Zonder de variabele
+telt het bestand als overgeslagen, niet als geslaagd of mislukt.
+
 ## Het verzoekbudget (`admin-b`, `manager-b`, `user-b`)
 
 De applicatie geeft elke ingelogde gebruiker 1000 API-verzoeken per 15 minuten (`apiLimiter` in
