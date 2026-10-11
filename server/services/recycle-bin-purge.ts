@@ -189,6 +189,10 @@ const EXTRA_LIVE_COLUMNS: any[] = [
   vehicleDiagramTemplates.diagramPath, // the legacy local path of a vehicle diagram
   // An expense can carry a file name or a path in these two besides `receipt_file_path`.
   expenses.receiptFile, expenses.receiptUrl,
+  // Besluit B-41 D1: the fuel receipt is both the vehicle's `fuel_refill_receipt` and the receipt of the
+  // expense the same request booked. Binning and emptying that expense must not unlink a file the
+  // vehicle still shows.
+  vehicles.fuelRefillReceipt,
   backupSettings.localPath, // where local backups are written
 ];
 

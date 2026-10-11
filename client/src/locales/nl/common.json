@@ -351,6 +351,8 @@
       "ALREADY_BLACKLISTED": "Deze klant is al geblokkeerd voor dit voertuig.",
       "LICENSE_PLATE_REQUIRED": "Het kenteken ontbreekt.",
       "VEHICLE_ALREADY_EXISTS": "Dit voertuig bestaat al.",
+      "FUEL_COST_INVALID": "Het tankbedrag moet een positief bedrag zijn van ten hoogste € 1.000.000.",
+      "FUEL_EXPENSE_FAILED": "De kostenpost voor de tankbeurt kon niet worden geboekt; er is niets opgeslagen. Probeer het opnieuw.",
       "INVALID_DATE": "Een datum kon niet worden gelezen (gebruik dd-mm-jjjj).",
       "IMPORT_ROW_FAILED": "Dit voertuig kon niet worden geïmporteerd.",
       "RETURN_FROM_SERVICE_REFUSED": "Terug van onderhoud kan niet: de reservering bestaat niet meer of is geen vervangingsreservering.",

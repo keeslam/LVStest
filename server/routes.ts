@@ -46,6 +46,7 @@ import {
   assignVehicleToPlaceholderSchema,
   Reservation,
   type Vehicle,
+  type InsertExpense,
   UserRole,
   UserPermission,
   DELETED_RECORD_KINDS,
@@ -187,6 +188,7 @@ import { UploadRejectedError } from "./utils/security/fileUploadSecurity";
 import { db } from "./db";
 import { sql, eq, desc } from "drizzle-orm";
 
+import { FUEL_REFILL_SOURCE, parseFuelCost, fuelSourceRef, fuelExpenseDescription, findRecentFuelExpense } from "./services/expenses/fuel-refill";
 /**
  * The fields that move a booking in time or onto another vehicle. A PATCH that
  * touches none of them cannot create a double booking, so the (expensive)
@@ -1961,18 +1963,33 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Update fuel status (with optional receipt upload)
   app.patch("/api/vehicles/:id/fuel-status", 
     hasPermission(UserPermission.MANAGE_VEHICLES), 
+  //
+  // Besluit B-41 D1: an amount typed here is also an expense (category `fuel`) on
+  // the vehicle. The vehicle update and the expense are one transaction, the
+  // receipt is shared, and the route stays manage_vehicles on purpose (approved
+  // proposal B-42): booking the expense is a consequence of the refill and needs
+  // no "Kosten beheren".
     fuelReceiptUpload.single('receipt'),
     async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+    // Multer has already written the receipt by the time we run; every way out
+    // that does not keep the vehicle update removes it again.
+    // Set when the expense (not the vehicle) is what failed: its own error code.
+    let expenseFailed = false;
+    const discardUpload = () => {
+      if (req.file) fs.promises.unlink(req.file.path).catch(() => {});
+    };
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid vehicle ID" });
       }
+        discardUpload();
 
       const vehicle = await storage.getVehicle(id);
       if (!vehicle) {
         return res.status(404).json({ message: "Vehicle not found" });
       }
+        discardUpload();
 
       const { fuelLevel, cost, notes } = req.body;
 
@@ -1985,11 +2002,23 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (fuelLevel && !normalizedFuelLevel) {
         return res.status(400).json({
           message: "Invalid fuel level. Must be one of: Empty, 1/4, 1/2, 3/4, Full"
+        discardUpload();
         });
       }
 
       // Build update data
       const updateData: any = {
+      // The amount is validated here, not left to the numeric column: it becomes
+      // an expense, which refuses zero and anything above 1,000,000.
+      const fuelCost = parseFuelCost(cost);
+      if (fuelCost.kind === "invalid") {
+        discardUpload();
+        return res.status(400).json({
+          code: "FUEL_COST_INVALID",
+          message: "The fuel cost must be a positive amount of at most 1,000,000",
+        });
+      }
+
         updatedBy: req.user ? (req.user as any).username : null,
       };
 
@@ -1997,9 +2026,13 @@ export async function registerRoutes(app: Express): Promise<void> {
         updateData.currentFuelLevel = normalizedFuelLevel;
         updateData.fuelRefillDate = new Date();
       }
+      }
+      // "Laatste tankbedrag" shows an amount with a date, so an amount without a
+      // level dates the refill too.
+      if (normalizedFuelLevel || fuelCost.kind === "ok") {
       
-      if (cost) {
-        updateData.fuelRefillCost = cost;
+      if (fuelCost.kind === "ok") {
+        updateData.fuelRefillCost = fuelCost.amount.toFixed(2);
       }
       
       if (notes) {
@@ -2018,29 +2051,86 @@ export async function registerRoutes(app: Express): Promise<void> {
         if (!validation.valid) {
           return res.status(400).json({ message: validation.error });
         }
+          discardUpload();
         
         const sanitizedPlate = vehicle.licensePlate.replace(/[^a-zA-Z0-9]/g, '');
-        const relativePath = path.join(sanitizedPlate, 'fuel_receipt', req.file.filename);
+        // posix: the stored shape is `uploads/<plate>/fuel_receipt/<file>` on every platform.
+        const relativePath = path.posix.join(sanitizedPlate, 'fuel_receipt', req.file.filename);
         updateData.fuelRefillReceipt = `uploads/${relativePath}`;
         console.log(`Fuel receipt uploaded: ${updateData.fuelRefillReceipt}`);
       }
 
-      // Update vehicle
-      const updatedVehicle = await storage.updateVehicle(id, updateData);
-      
-      if (!updatedVehicle) {
-        return res.status(500).json({ message: "Failed to update vehicle fuel status" });
-      }
+      // Update the vehicle and book the expense together. The vehicle UPDATE comes
+      // first: it takes the row lock, which makes two identical requests run one
+      // after the other, so the second finds the first one's expense below.
+      const { updatedVehicle, bookedExpense } = await db.transaction(async (tx) => {
+        const [row] = await tx.update(vehicles).set(updateData).where(eq(vehicles.id, id)).returning();
+        if (!row) throw new Error("Failed to update vehicle fuel status");
+
+        let booked: Awaited<ReturnType<typeof storage.createExpense>> | null = null;
+        if (fuelCost.kind === "ok") {
+          try {
+            const date = isoToday();
+            const level = normalizedFuelLevel ?? null;
+            const sourceRef = fuelSourceRef(id, level, fuelCost.amount, date);
+            // A double click or a retried upload is the same refill: no second expense.
+            const existing = await findRecentFuelExpense(tx, id, sourceRef);
+            if (!existing) {
+              const validated = insertExpenseSchema.parse({
+                vehicleId: id,
+                category: "fuel",
+                amount: fuelCost.amount,
+                date,
+                description: fuelExpenseDescription(level, date),
+                createdBy: req.user ? (req.user as any).username : null,
+                updatedBy: null,
+              });
+              // Server-set fields: the insert schema omits them (BUG-060). The
+              // receipt is the SAME stored path the vehicle points at.
+              booked = await storage.createExpense({
+                ...validated,
+                source: FUEL_REFILL_SOURCE,
+                sourceRef,
+                receiptFile: req.file ? req.file.filename : null,
+                receiptFilePath: updateData.fuelRefillReceipt ?? null,
+                receiptFileSize: req.file ? req.file.size : null,
+                receiptContentType: req.file ? req.file.mimetype : null,
+              } as InsertExpense, tx);
+            }
+          } catch (expenseError) {
+            expenseFailed = true;
+            throw expenseError;
+          }
+        }
+        return { updatedVehicle: row, bookedExpense: booked };
+      });
 
       // Broadcast real-time update to all connected clients
       realtimeEvents.vehicles.updated(updatedVehicle);
 
-      res.json(updatedVehicle);
+      if (bookedExpense) {
+        realtimeEvents.expenses.created(bookedExpense);
+        // The middleware only sees `vehicle.fuel-status`; the expense needs its own row.
+        await AuditLogger.logFromRequest(req, "expense.create", "expense", bookedExpense.id, {
+          source: FUEL_REFILL_SOURCE,
+          vehicleId: id,
+          amount: fuelCost.kind === "ok" ? fuelCost.amount : undefined,
+        });
+      }
+
+      // The vehicle row, as before, plus what was booked so the dialog can say so.
+      res.json({
+        ...updatedVehicle,
+        ...(bookedExpense ? { fuelExpense: { id: bookedExpense.id, amount: Number(bookedExpense.amount) } } : {}),
+      });
     } catch (error) {
       console.error("Error updating fuel status:", error);
-      res.status(500).json({ 
-        message: "Failed to update fuel status", 
-      });
+      // Nothing was committed, so the receipt that arrived with the request is
+      // not referenced by anything.
+      discardUpload();
+      res.status(500).json(expenseFailed
+        ? { code: "FUEL_EXPENSE_FAILED", message: "The fuel expense could not be booked; nothing was saved" }
+        : { message: "Failed to update fuel status" });
     }
   });
 

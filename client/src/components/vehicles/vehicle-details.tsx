@@ -1241,6 +1241,15 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
             <p className={`font-semibold capitalize ${displayReservation ? 'text-lg' : 'text-2xl'}`} data-testid="text-current-fuel-level">
               {formatFuelLevel(vehicle.currentFuelLevel) || t('details.general.na')}
             </p>
+            {/* Besluit B-41 D1: the last fuel amount, with the day it was entered. */}
+            {vehicle.fuelRefillCost != null && Number(vehicle.fuelRefillCost) > 0 && (
+              <p className="mt-1 text-xs text-gray-500" data-testid="text-last-fuel-refill">
+                {t('details.infoCards.lastFuelRefill', {
+                  amount: formatCurrency(vehicle.fuelRefillCost),
+                  date: vehicle.fuelRefillDate ? formatDate(vehicle.fuelRefillDate) : t('details.general.na'),
+                })}
+              </p>
+            )}
           </CardContent>
         </Card>
 

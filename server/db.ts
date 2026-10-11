@@ -97,6 +97,9 @@ export { pool };
 
 export const db = drizzle(pool, { schema });
 
+/** The `tx` handed to a `db.transaction(async (tx) => ...)` callback. */
+export type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 export async function getPoolStats() {
   return {
     total: pool.totalCount,

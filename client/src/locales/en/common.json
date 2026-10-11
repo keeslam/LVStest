@@ -351,6 +351,8 @@
       "ALREADY_BLACKLISTED": "This customer is already blocked for this vehicle.",
       "LICENSE_PLATE_REQUIRED": "The license plate is missing.",
       "VEHICLE_ALREADY_EXISTS": "This vehicle already exists.",
+      "FUEL_COST_INVALID": "The fuel amount must be a positive amount of at most € 1,000,000.",
+      "FUEL_EXPENSE_FAILED": "The expense for this refill could not be booked; nothing was saved. Please try again.",
       "INVALID_DATE": "A date could not be read (use dd-mm-yyyy).",
       "IMPORT_ROW_FAILED": "This vehicle could not be imported.",
       "RETURN_FROM_SERVICE_REFUSED": "Return from service is not possible: the reservation no longer exists or is not a replacement reservation.",

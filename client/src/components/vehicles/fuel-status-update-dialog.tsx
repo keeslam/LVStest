@@ -24,7 +24,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Fuel, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import { invalidateVehicleData } from "@/lib/cache-utils";
+import { invalidateVehicleData, invalidateExpenseData } from "@/lib/cache-utils";
+import { formatCurrency } from "@/lib/format-utils";
 import { parseMoneyInput } from "@/lib/money-input";
 
 // Older rows stored "full"/"empty" lowercase; the app now writes "Full"/"Empty"
@@ -100,20 +101,30 @@ export function FuelStatusUpdateDialog({
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to update fuel status');
+        const error = await response.json().catch(() => ({}));
+        // Carry the server's stable `code` so describeApiError can speak Dutch.
+        throw Object.assign(new Error(error.message || 'Failed to update fuel status'), {
+          code: typeof error.code === 'string' ? error.code : undefined,
+          httpStatus: response.status,
+        });
       }
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (vehicle: { fuelExpense?: { id: number; amount: number } }) => {
+      // Besluit B-41 D1: an amount also became an expense; say which one.
+      const booked = vehicle?.fuelExpense;
       toast({
         title: t('fuelStatusUpdateDialog.toasts.successTitle'),
-        description: t('fuelStatusUpdateDialog.toasts.successDescription'),
+        description: booked
+          ? t('fuelStatusUpdateDialog.toasts.successWithExpense', { amount: formatCurrency(booked.amount) })
+          : t('fuelStatusUpdateDialog.toasts.successDescription'),
       });
       
       // Use comprehensive cache invalidation
       invalidateVehicleData(vehicleId);
+      // The new expense also shows on the Kosten page, the dashboard and the vehicle's Kosten tab.
+      if (booked) invalidateExpenseData(booked.id, vehicleId);
       
       // Reset form
       setFuelLevel(normalizeFuelLevel(currentFuelLevel));
@@ -142,9 +153,14 @@ export function FuelStatusUpdateDialog({
 
     // A-3-2: a value that is not an amount is refused out loud; it used to be
     // dropped from the request while the toast said "Gelukt".
-    if (cost.trim() && parseMoneyInput(cost) === null) {
-      setCostError(t('fuelStatusUpdateDialog.costInvalid'));
-      return;
+    // Zero and anything above 1,000,000 are refused too: the amount becomes an
+    // expense, and the server answers FUEL_COST_INVALID for them.
+    if (cost.trim()) {
+      const amount = parseMoneyInput(cost);
+      if (amount === null || amount <= 0 || amount > 1_000_000) {
+        setCostError(t('fuelStatusUpdateDialog.costInvalid'));
+        return;
+      }
     }
 
     if (!fuelLevel && !cost.trim() && !notes && !receipt) {

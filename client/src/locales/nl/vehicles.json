@@ -206,6 +206,7 @@
     "toasts": {
       "successTitle": "Gelukt",
       "successDescription": "Brandstofstatus succesvol bijgewerkt",
+      "successWithExpense": "Brandstofstatus bijgewerkt; kostenpost van {{amount}} geboekt",
       "errorTitle": "Fout",
       "provideOneFieldDescription": "Geef minstens één veld op om bij te werken"
     }
@@ -237,6 +238,7 @@
       "mileageDecreased": "Kilometerstand verlaagd",
       "fromKmBy": "Van {{previous}} km door {{by}}",
       "currentFuelLevel": "Huidig brandstofniveau",
+      "lastFuelRefill": "Laatste tankbedrag: {{amount}} ({{date}})",
       "apkExpiration": "APK-vervaldatum",
       "warrantyExpiration": "Garantievervaldatum",
       "daysOverdue": "{{count}} dagen te laat",

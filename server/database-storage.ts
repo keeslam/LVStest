@@ -113,7 +113,7 @@ class RestoreAbort extends Error {
   }
 }
 import { addMonths, addDays, parseISO, isBefore, isAfter, isEqual } from "date-fns";
-import { db } from "./db";
+import { db, type DbTransaction } from "./db";
 import { eq, ne, and, gte, lte, asc, desc, sql, inArray, not, or, ilike, isNull, isNotNull, getTableColumns, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { IStorage, type CompleteMaintenanceResult, type CompleteMaintenanceFile, type ExpenseFilters } from "./storage";
@@ -3204,7 +3204,8 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async createExpense(expenseData: InsertExpense): Promise<Expense> {
+  async createExpense(expenseData: InsertExpense, tx?: DbTransaction): Promise<Expense> {
+    const conn = tx ?? db;
     // Ensure amount is a string if it's a number
     const finalData = {
       ...expenseData,
@@ -3215,9 +3216,9 @@ export class DatabaseStorage implements IStorage {
     };
     
     console.log("Database - creating expense with data:", finalData);
-    const [expense] = await db.insert(expenses).values(finalData).returning();
+    const [expense] = await conn.insert(expenses).values(finalData).returning();
     
-    const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, expense.vehicleId));
+    const [vehicle] = await conn.select().from(vehicles).where(eq(vehicles.id, expense.vehicleId));
     
     return {
       ...expense,

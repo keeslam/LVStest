@@ -28,6 +28,7 @@ import {
   vehicleTransports, type VehicleTransport, type InsertVehicleTransport
 } from "../shared/schema";
 import { formatVehicleBarcode } from "../shared/barcode";
+import type { DbTransaction } from "./db";
 import { addMonths, addDays, parseISO, isBefore, isAfter, isEqual } from "date-fns";
 
 /**
@@ -212,7 +213,9 @@ export interface IStorage {
   // Expense methods
   getAllExpenses(filters?: ExpenseFilters): Promise<Expense[]>;
   getExpense(id: number): Promise<Expense | undefined>;
-  createExpense(expense: InsertExpense): Promise<Expense>;
+  // `tx`: write inside the caller's transaction (the fuel-status route books the
+  // expense together with the vehicle update).
+  createExpense(expense: InsertExpense, tx?: DbTransaction): Promise<Expense>;
   updateExpense(id: number, expenseData: Partial<InsertExpense>): Promise<Expense | undefined>;
   getExpensesByVehicle(vehicleId: number): Promise<Expense[]>;
   getRecentExpenses(limit: number): Promise<Expense[]>;

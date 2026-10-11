@@ -2034,6 +2034,20 @@
         "default": null
       },
       {
+        "name": "source",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "source_ref",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
         "name": "created_at",
         "type": "timestamp with time zone",
         "notNull": true,

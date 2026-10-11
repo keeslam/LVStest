@@ -206,6 +206,7 @@
     "toasts": {
       "successTitle": "Success",
       "successDescription": "Fuel status updated successfully",
+      "successWithExpense": "Fuel status updated; expense of {{amount}} booked",
       "errorTitle": "Error",
       "provideOneFieldDescription": "Please provide at least one field to update"
     }
@@ -237,6 +238,7 @@
       "mileageDecreased": "Mileage Decreased",
       "fromKmBy": "From {{previous}} km by {{by}}",
       "currentFuelLevel": "Current Fuel Level",
+      "lastFuelRefill": "Last fuel amount: {{amount}} ({{date}})",
       "apkExpiration": "APK Expiration",
       "warrantyExpiration": "Warranty Expiration",
       "daysOverdue": "{{count}} days overdue",

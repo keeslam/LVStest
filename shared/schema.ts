@@ -1246,6 +1246,13 @@ export const expenses = pgTable("expenses", {
   // Invoices by e-mail: the inbox item this expense was booked from. Set by
   // the server only (see the omit list below); null for hand-typed expenses.
   inboxItemId: integer("inbox_item_id").references((): AnyPgColumn => invoiceInboxItems.id, { onDelete: "set null" }),
+  // Besluit B-41 D1: an expense the server booked as a side effect of something
+  // else. `source` names the origin (today only `fuel_refill`, a fuel amount typed
+  // at "Brandstofstatus bijwerken"); `source_ref` identifies the event
+  // (`vehicle:<id>:<level>:<amount>:<office date>`) so a double submit within two
+  // minutes finds the expense it already booked. Server-set only (omitted below).
+  source: text("source"),
+  sourceRef: text("source_ref"),
 
   // Tracking
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -1282,6 +1289,10 @@ export const insertExpenseSchema = createInsertSchema(expenses).omit({
   // Server-set, like the receipt fields: a request body may not attach an
   // expense to an inbox item of its choosing.
   inboxItemId: true,
+  // Server-set as well (besluit B-41 D1): a request body may not claim an
+  // expense came from a fuel refill, or the double-submit lookup could be fed.
+  source: true,
+  sourceRef: true,
 }).extend({
   amount: z.union([
     z.number(),
