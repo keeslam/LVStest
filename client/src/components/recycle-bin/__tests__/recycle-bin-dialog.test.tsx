@@ -55,6 +55,7 @@ const ALL_ROWS: Row[] = [
   row({ id: 6, entityType: "fine", label: "Boete AB-123-C", relatedCounts: { requests: 0 } }),
   row({ id: 7, entityType: "customer", label: "Oud Bedrijf", restoredAt: "2026-09-05T10:00:00.000Z", restoredBy: "anna" }),
   row({ id: 8, entityType: "driver", label: "Chauffeur Piet Pieters — Jansen Verhuur BV", relatedCounts: { "reservations.driver_id": 2 } }),
+  row({ id: 10, entityType: "driver", label: "Chauffeur Oud — Jansen Verhuur BV", restoredAt: "2026-09-05T10:00:00.000Z", restoredBy: "anna" }),
   row({ id: 9, entityType: "expense", label: "Kostenpost #12 — AB-123-C fuel € 45,50 2026-10-01", relatedCounts: { invoice_inbox_items: 1 } }),
 ];
 
@@ -296,6 +297,35 @@ describe("RecycleBinDialog - restoring", () => {
 
     await waitFor(() => expect(purgeBodies).toHaveLength(1));
     expect(purgeBodies[0]).toEqual({ ids: [8] });
+  });
+
+  it("a customer's driver bin counts and purges only the rows shown; restored rows join once they are shown", async () => {
+    const user = userEvent.setup();
+    const purgeBodies: any[] = [];
+    const baseFetch = globalThis.fetch;
+    vi.stubGlobal("fetch", vi.fn(async (input: any, init?: any) => {
+      const url = typeof input === "string" ? input : input?.url ?? "";
+      if ((init?.method ?? "GET").toUpperCase() === "POST" && url === "/api/deleted-records/purge") {
+        purgeBodies.push(JSON.parse(init.body));
+        return jsonResponse({ purged: 1, failed: [] });
+      }
+      return baseFetch(input, init);
+    }));
+    renderBin("driver", { customerId: 41 });
+    await screen.findByTestId("deleted-record-8");
+    expect(screen.queryByTestId("deleted-record-10")).toBeNull(); // restored: hidden
+
+    await user.click(screen.getByTestId("button-purge-all"));
+    expect(await screen.findByTestId("text-confirm-purge-summary")).toHaveTextContent("1 chauffeur wordt definitief");
+    await user.click(screen.getByTestId("button-cancel-purge"));
+
+    await user.click(screen.getByTestId("checkbox-show-restored"));
+    await screen.findByTestId("deleted-record-10");
+    await user.click(screen.getByTestId("button-purge-all"));
+    expect(await screen.findByTestId("text-confirm-purge-summary")).toHaveTextContent("2 chauffeurs worden definitief");
+    await user.click(screen.getByTestId("button-confirm-purge"));
+    await waitFor(() => expect(purgeBodies).toEqual([{ ids: expect.arrayContaining([8, 10]) }]));
+    expect(purgeBodies[0].ids).toHaveLength(2);
   });
 
   it("a refused debtor number names the customer who holds it, from the structured field", async () => {

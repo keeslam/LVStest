@@ -1,4 +1,4 @@
-import { and, eq, gte } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { expenses, type Expense } from "../../../shared/schema";
 import type { DbTransaction } from "../../db";
 
@@ -61,14 +61,13 @@ export async function findRecentFuelExpense(
   tx: DbTransaction,
   vehicleId: number,
   sourceRef: string,
-  now: Date = new Date(),
 ): Promise<Expense | undefined> {
-  const since = new Date(now.getTime() - FUEL_DOUBLE_SUBMIT_WINDOW_MS);
   const [row] = await tx.select().from(expenses).where(and(
     eq(expenses.vehicleId, vehicleId),
     eq(expenses.source, FUEL_REFILL_SOURCE),
     eq(expenses.sourceRef, sourceRef),
-    gte(expenses.createdAt, since),
+    // The window is measured by the database clock, the same one that wrote `created_at`.
+    sql`${expenses.createdAt} >= now() - make_interval(secs => ${FUEL_DOUBLE_SUBMIT_WINDOW_MS / 1000})`,
   )).limit(1);
   return row as Expense | undefined;
 }

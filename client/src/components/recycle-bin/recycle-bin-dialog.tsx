@@ -377,11 +377,12 @@ export function RecycleBinDialog({ kind, customerId, open, onOpenChange, onResto
               <Button
                 variant="destructive"
                 size="sm"
-                disabled={!kindRecords || kindRecords.length === 0 || purgeMutation.isPending}
+                disabled={!kindRecords || kindRecords.length === 0 || (customerId != null && (visibleRecords?.length ?? 0) === 0) || purgeMutation.isPending}
                 onClick={() =>
-                  // A bin filtered to one customer never empties "everything of the kind" on the server.
+                  // A bin filtered to one customer never empties "everything of the kind" on the server:
+                  // it removes exactly the rows shown (restored rows only once they are shown), by id.
                   setConfirmTarget(customerId != null
-                    ? { mode: "selected", ids: (kindRecords ?? []).map((r) => r.id) }
+                    ? { mode: "selected", ids: (visibleRecords ?? []).map((r) => r.id) }
                     : { mode: "all" })}
                 data-testid="button-purge-all"
               >

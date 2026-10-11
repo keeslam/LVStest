@@ -171,6 +171,8 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
     onSuccess: async () => {
       // Manually trigger refetch
       await refetchDrivers();
+      // Sub-project D (B-41 D8): the driver is in the recycle bin now; a bin list cached from before is stale.
+      invalidateByPrefix('/api/deleted-records');
       
       toast({
         title: t('details.driverDeletedTitle'),

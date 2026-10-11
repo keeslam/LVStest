@@ -136,6 +136,8 @@ export function ExpenseViewDialog({
       // Invalidate all relevant queries
       invalidateByPrefix("/api/expenses");
       invalidateByPrefix(`/api/expenses/vehicle/${vehicleId}`);
+      // Sub-project D (B-41 D8): the expense is in the recycle bin now; a bin list cached from before is stale.
+      invalidateByPrefix("/api/deleted-records");
 
       if (onSuccess) {
         onSuccess();

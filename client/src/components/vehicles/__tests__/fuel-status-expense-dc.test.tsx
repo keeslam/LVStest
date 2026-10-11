@@ -79,7 +79,8 @@ describe("fuel dialog and the booked expense", () => {
     await user.type(screen.getByTestId("input-fuel-cost"), "45.50");
     await user.click(screen.getByTestId("button-submit-fuel-update"));
     await waitFor(() => expect(toastSpy).toHaveBeenCalled());
-    expect(flat(toastSpy.mock.calls[0][0].description)).toMatch(/expense of .*45[.,]50.* booked/i);
+    // formatCurrency is nl-NL in both languages (A-12-7), so the amount reads "€ 45,50" in the English sentence too.
+    expect(flat(toastSpy.mock.calls[0][0].description)).toBe("Fuel status updated; expense of € 45,50 booked");
   });
 
   it("keeps the plain success text when nothing was booked (no amount typed)", async () => {

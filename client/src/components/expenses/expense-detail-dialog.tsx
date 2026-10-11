@@ -2,7 +2,7 @@ import { describeApiError } from "@/lib/api-error";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
+import { apiRequest, invalidateByPrefix, invalidateRelatedQueries } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import {
@@ -81,6 +81,8 @@ export function ExpenseDetailDialog({ expenseId, open, onOpenChange, hideVehicle
         id: expenseId ?? undefined,
         vehicleId: expense?.vehicleId,
       });
+      // Sub-project D (B-41 D8): the expense is in the recycle bin now; a bin list cached from before is stale.
+      invalidateByPrefix("/api/deleted-records");
       onOpenChange(false);
     },
     onError: (error: Error) => {

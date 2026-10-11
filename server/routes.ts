@@ -2057,6 +2057,9 @@ export async function registerRoutes(app: Express): Promise<void> {
     // that does not keep the vehicle update removes it again.
     // Set when the expense (not the vehicle) is what failed: its own error code.
     let expenseFailed = false;
+    // Set once the transaction has committed: from then on the receipt is referenced by the saved
+    // vehicle (and expense), so a later failure (broadcast, audit, response) must not delete it.
+    let committed = false;
     const discardUpload = () => {
       if (req.file) fs.promises.unlink(req.file.path).catch(() => {});
     };
@@ -2186,6 +2189,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
         return { updatedVehicle: row, bookedExpense: booked };
       });
+      committed = true;
 
       // Broadcast real-time update to all connected clients
       realtimeEvents.vehicles.updated(updatedVehicle);
@@ -2207,9 +2211,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       });
     } catch (error) {
       console.error("Error updating fuel status:", error);
-      // Nothing was committed, so the receipt that arrived with the request is
-      // not referenced by anything.
-      discardUpload();
+      // Before the commit nothing was saved, so the receipt that arrived with the request is
+      // not referenced by anything; after it, it is.
+      if (!committed) discardUpload();
       res.status(500).json(expenseFailed
         ? { code: "FUEL_EXPENSE_FAILED", message: "The fuel expense could not be booked; nothing was saved" }
         : { message: "Failed to update fuel status" });

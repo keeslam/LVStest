@@ -258,6 +258,8 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
         description: t('details.expenses.expenseDeletedDescription'),
       });
       await invalidateRelatedQueries('expenses', { vehicleId });
+      // Sub-project D (B-41 D8): the expense is in the recycle bin now; a bin list cached from before is stale.
+      invalidateByPrefix("/api/deleted-records");
       setExpenseToDelete(null);
     },
     onError: (error: Error) => {

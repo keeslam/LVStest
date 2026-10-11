@@ -40,6 +40,7 @@ const TEMP_UPLOADS = useTempUploadsDir("lvs-dc01-");
 const { db } = await import("../db");
 const { expenses, vehicles, auditLogs, deletedRecords } = await import("../../shared/schema");
 const { storage } = await import("../storage");
+const { realtimeEvents } = await import("../realtime-events");
 const { isoToday } = await import("../services/lifecycle");
 const { agentFor, cleanupFixtureUsers } = await import("./helpers/app");
 const { createFixtureVehicle, cleanupFixtures } = await import("./helpers/fixtures");
@@ -237,6 +238,21 @@ describe("D1 - a fuel amount becomes a fuel expense", () => {
     expect(car.fuelRefillReceipt).toBeNull();
     expect(await expensesOf(vehicle.id)).toHaveLength(0);
     expect(listFilesRecursive(TEMP_UPLOADS)).toEqual(filesBefore);
+  });
+
+  it("keeps the receipt when something fails AFTER the commit (the file is referenced by the saved vehicle and expense)", async () => {
+    const vehicle = await createFixtureVehicle();
+    vi.spyOn(realtimeEvents.vehicles, "updated").mockImplementationOnce(() => { throw new Error("broadcast failed"); });
+
+    const res = await fuelRequest(admin, vehicle.id, { fuelLevel: "Full", cost: "33.00" }, receipt("FIXT-dc01-after-commit"));
+    expect(res.status).toBe(500);
+
+    // Committed: the vehicle and the expense are saved, so the shared receipt must still be on disk.
+    const car = await vehicleRow(vehicle.id);
+    expect(car.fuelRefillReceipt).toBeTruthy();
+    const [expense] = await expensesOf(vehicle.id);
+    expect(expense.receiptFilePath).toBe(car.fuelRefillReceipt);
+    expect(fs.existsSync(path.join(TEMP_UPLOADS, car.fuelRefillReceipt!.slice("uploads/".length)))).toBe(true);
   });
 
   it("keeps working without an amount when the receipt is only a vehicle receipt", async () => {

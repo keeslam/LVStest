@@ -37,7 +37,7 @@ import { EXPENSE_CATEGORIES } from "@shared/expense-categories";
 import { formatDate, plateMatches, formatExpenseCategory, formatLicensePlate, sumMoney } from "@/lib/format-utils";
 import { Price, useHidePrices } from "@/components/ui/price";
 import { downloadCsv, csvDate, csvNumber } from "@/lib/csv";
-import { apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
+import { apiRequest, invalidateByPrefix, invalidateRelatedQueries } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { Archive, Download, Eye, PlusCircle, Trash2 } from "lucide-react";
@@ -90,6 +90,8 @@ export default function ExpensesIndex() {
         id: expenseId,
         vehicleId: expenseToDelete?.vehicleId
       });
+      // Sub-project D (B-41 D8): the expense is in the recycle bin now; a bin list cached from before is stale.
+      invalidateByPrefix("/api/deleted-records");
       setDeleteDialogOpen(false);
       setExpenseToDelete(null);
     },
