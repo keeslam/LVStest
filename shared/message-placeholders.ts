@@ -26,6 +26,34 @@ export interface PlaceholderOptions {
   transform?: (value: string, key: string) => string;
 }
 
+/**
+ * Every placeholder the send path fills in (D15). The template builder offers them,
+ * the send route fills them and the preview knows them: one list, so none of the
+ * three can drift. `maintenanceDate` only exists in maintenance templates.
+ */
+export const MESSAGE_PLACEHOLDER_KEYS = [
+  "customerName",
+  "vehiclePlate",
+  "vehicleBrand",
+  "vehicleModel",
+  "apkDate",
+  "companyName",
+  "customerEmail",
+  "customerPhone",
+  "reservationStart",
+  "reservationEnd",
+  "maintenanceDate",
+] as const;
+export type MessagePlaceholderKey = (typeof MESSAGE_PLACEHOLDER_KEYS)[number];
+
+/** Offered, and filled, only for templates of category `maintenance`. */
+export const MAINTENANCE_ONLY_PLACEHOLDERS: readonly MessagePlaceholderKey[] = ["maintenanceDate"];
+
+/** The placeholders that make sense in a template of this category. */
+export function placeholderKeysForCategory(category: string | null | undefined): MessagePlaceholderKey[] {
+  return MESSAGE_PLACEHOLDER_KEYS.filter((key) => category === "maintenance" || !MAINTENANCE_ONLY_PLACEHOLDERS.includes(key));
+}
+
 const PLACEHOLDER = /\{\{\s*(\w+)\s*\}\}|\{(\w+)\}/g;
 
 export function fillPlaceholders(

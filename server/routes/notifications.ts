@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { installIdParamValidation } from '../middleware/parseIntParam';
 import { db } from '../db.js';
-import { vehicles, customers, reservations, emailLogs } from '../../shared/schema.js';
+import { vehicles, customers, reservations, emailLogs, emailTemplates } from '../../shared/schema.js';
 import { eq, and, isNotNull, inArray } from 'drizzle-orm';
 import { sendEmail, EmailTemplates, resolveEmailConfig } from '../utils/email-service.js';
-import { vehicleNotificationTargets } from '../services/vehicle-notification-recipients.js';
+import { vehicleNotificationTargets, maintenanceDateForVehicle, type VehicleRenter } from '../services/vehicle-notification-recipients.js';
 import { formatDateNL } from '../utils/dutch-format.js';
-import { fillPlaceholders } from '../../shared/message-placeholders.js';
+import { fillPlaceholders, MESSAGE_PLACEHOLDER_KEYS } from '../../shared/message-placeholders.js';
 import { EMAIL_FAILURE_CODES as FAILURE, withFailureCode } from '../../shared/email-failure.js';
 import { 
   getApkReminderTemplate, 
@@ -19,20 +19,20 @@ import { getCompanyName } from '../services/company-name.js';
 // both styles ({customerName} from the template builder, {{customerName}} as
 // the portal templates are written) go through the one shared replacer, which
 // the preview on screen uses as well.
-function replacePlaceholders(text: string, data: {
-  customerName?: string;
-  vehiclePlate?: string;
-  vehicleBrand?: string;
-  vehicleModel?: string;
-  apkDate?: string;
-}): string {
-  return fillPlaceholders(text, {
-    customerName: data.customerName,
-    vehiclePlate: data.vehiclePlate,
-    vehicleBrand: data.vehicleBrand,
-    vehicleModel: data.vehicleModel,
-    apkDate: data.apkDate,
-  });
+//
+// D15: every known placeholder is always present in the values, empty when the data is not there
+// (no reservation, no phone, not a maintenance template), and a {{key}} nobody knows is dropped:
+// the customer never receives a placeholder as code.
+type PlaceholderData = Partial<Record<(typeof MESSAGE_PLACEHOLDER_KEYS)[number], string>>;
+function replacePlaceholders(text: string, data: PlaceholderData): string {
+  const values: Record<string, string> = {};
+  for (const key of MESSAGE_PLACEHOLDER_KEYS) values[key] = data[key] ?? '';
+  return fillPlaceholders(text, values, { unknown: 'blank' });
+}
+
+/** A yyyy-MM-dd (or timestamp) date as dd-mm-jjjj; empty when there is none. */
+function dutchDate(value: string | null | undefined): string {
+  return value ? formatDateNL(value) : '';
 }
 
 // Format license plate consistently using Dutch license plate patterns
@@ -131,7 +131,8 @@ installIdParamValidation(router);
 // Send notifications to customers
 router.post('/send', async (req, res) => {
   try {
-    const { vehicleIds, customerIds, template, customMessage, customSubject, emailFieldSelection, individualEmailSelections } = req.body;
+    const { vehicleIds, customerIds, template, customMessage, customSubject, emailFieldSelection, individualEmailSelections, templateId } = req.body;
+    let { category } = req.body as { category?: unknown };
     
     // Must have either vehicleIds or customerIds
     if ((!vehicleIds || !Array.isArray(vehicleIds) || vehicleIds.length === 0) && 
@@ -147,7 +148,15 @@ router.post('/send', async (req, res) => {
       return res.status(400).json({ error: 'Custom subject and message are required for custom template' });
     }
 
-    let vehicleData: Array<{ vehicle: any | null; customer: any }> = [];
+    // D15: the category decides whether {maintenanceDate} is filled. A saved template's own category
+    // wins over what the page sent along; without a template the page's value is used.
+    if (templateId !== undefined && templateId !== null && Number.isInteger(Number(templateId))) {
+      const [saved] = await db.select({ category: emailTemplates.category }).from(emailTemplates).where(eq(emailTemplates.id, Number(templateId)));
+      if (saved?.category) category = saved.category;
+    }
+    const templateCategory = typeof category === 'string' ? category : null;
+
+    let vehicleData: Array<{ vehicle: any | null; customer: any; reservation?: VehicleRenter | null }> = [];
     /**
      * besluiten **B-24**: "Staat de auto leeg, dan gaat er alleen een melding
      * naar kantoor." These are the vehicles with no running or upcoming rental
@@ -190,7 +199,7 @@ router.post('/send', async (req, res) => {
         }
         const c = target.customer;
         if (c.email || c.emailGeneral || c.emailForMOT || c.emailForInvoices) {
-          vehicleData.push({ vehicle: target.vehicle, customer: c });
+          vehicleData.push({ vehicle: target.vehicle, customer: c, reservation: target.reservation });
         } else {
           // A current renter we cannot reach is still the office's problem.
           unrentedVehicles.push(target.vehicle);
@@ -306,7 +315,16 @@ router.post('/send', async (req, res) => {
           vehiclePlate: formattedPlate,
           vehicleBrand: vehicle?.brand || '',
           vehicleModel: vehicle?.model || '',
-          apkDate: vehicle?.apkDate ? new Date(vehicle.apkDate).toLocaleDateString('nl-NL') : ''
+          apkDate: vehicle?.apkDate ? new Date(vehicle.apkDate).toLocaleDateString('nl-NL') : '',
+          // D15
+          companyName: senderName,
+          customerEmail: selectedEmail,
+          customerPhone: customer?.phone || '',
+          reservationStart: dutchDate(data.reservation?.startDate),
+          reservationEnd: dutchDate(data.reservation?.endDate),
+          maintenanceDate: templateCategory === 'maintenance' && vehicle
+            ? dutchDate(await maintenanceDateForVehicle(vehicle))
+            : '',
         };
 
         // Get customer's preferred language

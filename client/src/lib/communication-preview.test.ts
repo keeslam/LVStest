@@ -8,13 +8,13 @@
 import { describe, it, expect } from "vitest";
 import {
   autoEmailField, emailOptionsOf, placeholderValuesFor, buildRecipients, renderForRecipient, emptyPlaceholders,
-  MASS_SEND_THRESHOLD,
+  unsupportedPlaceholders, KNOWN_PLACEHOLDERS, MASS_SEND_THRESHOLD,
 } from "./communication-preview";
 
-const customerA: any = { id: 1, name: "Audit Testklant B.v.", email: "a@e2e.invalid", emailForMOT: "apk@e2e.invalid", emailGeneral: null, emailForInvoices: null };
+const customerA: any = { id: 1, name: "Audit Testklant B.v.", email: "a@e2e.invalid", emailForMOT: "apk@e2e.invalid", emailGeneral: null, emailForInvoices: null, phone: "06-11111111" };
 const customerB: any = { id: 2, name: "Tweede Klant", email: null, emailForMOT: "alleen-apk@e2e.invalid", emailGeneral: null, emailForInvoices: null };
 const customerC: any = { id: 3, name: "Derde Klant", email: null, emailForMOT: null, emailGeneral: "algemeen@e2e.invalid", emailForInvoices: null };
-const vehicle1: any = { id: 10, licensePlate: "97GRD4", brand: "Toyota", model: "Yaris", apkDate: "2026-12-31" };
+const vehicle1: any = { id: 10, licensePlate: "97GRD4", brand: "Toyota", model: "Yaris", apkDate: "2026-12-31", lastServiceDate: "2026-03-04" };
 const vehicle2: any = { id: 11, licensePlate: "12ABCD", brand: "Ford", model: "Focus", apkDate: null };
 const items: any[] = [
   { vehicle: vehicle1, customer: customerA },
@@ -35,18 +35,62 @@ describe("which address the send route uses", () => {
 });
 
 describe("placeholder values per recipient", () => {
-  it("takes customer and vehicle data the way the route does", () => {
-    expect(placeholderValuesFor(vehicle1, customerA)).toEqual({
+  it("takes customer and vehicle data the way the route does (D15: all eleven keys)", () => {
+    const values = placeholderValuesFor(vehicle1, customerA, {
+      companyName: "Garage Voorbeeld",
+      reservation: { startDate: "2026-10-01", endDate: "2026-10-09" },
+    });
+    expect(values).toEqual({
       customerName: "Audit Testklant B.v.",
       vehiclePlate: "97-GRD-4",
       vehicleBrand: "Toyota",
       vehicleModel: "Yaris",
       apkDate: new Date("2026-12-31").toLocaleDateString("nl-NL"),
+      companyName: "Garage Voorbeeld",
+      customerEmail: "a@e2e.invalid",
+      customerPhone: "06-11111111",
+      reservationStart: "01-10-2026",
+      reservationEnd: "09-10-2026",
+      maintenanceDate: "",
     });
+    expect(Object.keys(values).sort()).toEqual([...KNOWN_PLACEHOLDERS].sort());
+  });
+
+  it("fills maintenanceDate only for a maintenance template", () => {
+    expect(placeholderValuesFor(vehicle1, customerA, { category: "maintenance" }).maintenanceDate).toBe("04-03-2026");
+    expect(placeholderValuesFor(vehicle1, customerA, { category: "custom" }).maintenanceDate).toBe("");
+  });
+
+  it("defaults the company name and leaves reservation dates empty without a reservation", () => {
+    expect(placeholderValuesFor(vehicle1, customerA)).toMatchObject({ companyName: "Autolease Lam", reservationStart: "", reservationEnd: "" });
   });
 
   it("is empty for what is not known (a customer without a vehicle has no plate)", () => {
-    expect(placeholderValuesFor(null, customerA)).toMatchObject({ vehiclePlate: "", vehicleBrand: "", vehicleModel: "", apkDate: "" });
+    expect(placeholderValuesFor(null, customerA)).toMatchObject({ vehiclePlate: "", vehicleBrand: "", vehicleModel: "", apkDate: "", maintenanceDate: "" });
+  });
+});
+
+describe("recipients carry the reservation of their vehicle (D15)", () => {
+  it("the dates of the running reservation reach the values of that recipient only", () => {
+    const withReservation: any[] = [
+      { vehicle: vehicle1, customer: customerA, reservation: { startDate: "2026-10-01", endDate: "2026-10-09" } },
+      { vehicle: vehicle2, customer: null },
+    ];
+    const rows = buildRecipients({ mode: "apk", selectedVehicles: [vehicle1, vehicle2], selectedCustomers: [], vehicleItems: withReservation, companyName: "Garage Voorbeeld" });
+    expect(rows[0].values).toMatchObject({ reservationStart: "01-10-2026", reservationEnd: "09-10-2026", companyName: "Garage Voorbeeld" });
+    expect(rows[1].values.reservationStart).toBe("");
+  });
+
+  it("a customer picked without a vehicle has no reservation dates, and the chosen address fills customerEmail", () => {
+    const [row] = buildRecipients({ mode: "custom", selectedVehicles: [], selectedCustomers: [customerA], vehicleItems: items });
+    expect(row.values.reservationStart).toBe("");
+    expect(renderForRecipient("{customerEmail}", row)).toBe("a@e2e.invalid");
+    expect(renderForRecipient("{customerEmail}", { ...row, email: "apk@e2e.invalid" })).toBe("apk@e2e.invalid");
+  });
+
+  it("the category of the template reaches maintenanceDate", () => {
+    const [row] = buildRecipients({ mode: "custom", selectedVehicles: [vehicle1], selectedCustomers: [], vehicleItems: items, category: "maintenance" });
+    expect(row.values.maintenanceDate).toBe("04-03-2026");
   });
 });
 
@@ -74,6 +118,14 @@ describe("recipients", () => {
     const rows = buildRecipients({ mode: "custom", selectedVehicles: [], selectedCustomers: [customerB], vehicleItems: items });
     expect(rows[0]).toMatchObject({ emailField: null, email: null });
     expect(rows[0].emailOptions).toHaveLength(1);
+  });
+});
+
+describe("unsupported placeholders", () => {
+  it("none of the eleven known keys is reported, a typo is", () => {
+    const all = KNOWN_PLACEHOLDERS.map((key) => `{${key}}`).join(" ");
+    expect(unsupportedPlaceholders(all)).toEqual([]);
+    expect(unsupportedPlaceholders("{customerName} {{companyNaam}} {css}")).toEqual(["companyNaam", "css"]);
   });
 });
 

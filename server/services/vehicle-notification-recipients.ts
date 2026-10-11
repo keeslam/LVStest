@@ -88,6 +88,8 @@ export interface VehicleNotificationTarget {
   vehicle: typeof vehicles.$inferSelect;
   /** The current renter, or null when the vehicle is not rented out. */
   customer: typeof customers.$inferSelect | null;
+  /** D15: the reservation that makes that customer the renter (its dates fill the placeholders); null with no renter. */
+  reservation: VehicleRenter | null;
 }
 
 /**
@@ -105,11 +107,38 @@ export async function vehicleNotificationTargets(
     if (!vehicle) continue;
     const renter = await currentRenterReservation(vehicleId, today);
     if (!renter) {
-      targets.push({ vehicle, customer: null });
+      targets.push({ vehicle, customer: null, reservation: null });
       continue;
     }
     const [customer] = await db.select().from(customers).where(eq(customers.id, renter.customerId));
-    targets.push({ vehicle, customer: customer ?? null });
+    targets.push({ vehicle, customer: customer ?? null, reservation: renter });
   }
   return targets;
+}
+
+/**
+ * D15: the date a maintenance template means by `{maintenanceDate}`: the vehicle's last service date,
+ * else the date of the maintenance block that covers today, else of the next one still to come.
+ * Null when the vehicle has neither (the placeholder is then sent empty).
+ */
+export async function maintenanceDateForVehicle(
+  vehicle: { id: number; lastServiceDate?: string | null },
+  today: string = isoToday(),
+): Promise<string | null> {
+  if (vehicle.lastServiceDate) return vehicle.lastServiceDate;
+  const blocks = await db
+    .select({ startDate: reservations.startDate, endDate: reservations.endDate })
+    .from(reservations)
+    .where(
+      and(
+        eq(reservations.vehicleId, vehicle.id),
+        eq(reservations.type, "maintenance_block"),
+        isNull(reservations.deletedAt),
+        ne(sql`lower(${reservations.status})`, "cancelled"),
+        or(isNull(reservations.endDate), gte(reservations.endDate, today)),
+      ),
+    )
+    .orderBy(asc(reservations.startDate), asc(reservations.id));
+  const covering = blocks.find((b) => b.startDate <= today);
+  return (covering ?? blocks[0])?.startDate ?? null;
 }

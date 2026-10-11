@@ -21,7 +21,8 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { NoDataAccess } from "@/components/ui/no-data-access";
 import { formatLicensePlate, plateMatches, formatVehicleType, formatDate } from "@/lib/format-utils";
 import { formatDateNl, formatDateTimeNl } from "@/lib/format-date-nl";
-import { fillPlaceholders } from "@shared/message-placeholders";
+import { fillPlaceholders, placeholderKeysForCategory } from "@shared/message-placeholders";
+import { COMPANY_NAME_KEY, companyNameFromSetting } from "@shared/company-name";
 import { templatesForMode, isSystemTemplate, systemTemplateLabelKey, htmlToPlainText } from "@/lib/communication-templates";
 import {
   buildRecipients, renderForRecipient, emptyPlaceholders, unsupportedPlaceholders, MASS_SEND_THRESHOLD,
@@ -173,6 +174,16 @@ export default function CustomerCommunications() {
     },
     enabled: canManageEmailTemplates,
   });
+
+  // D15: the company name setting fills {companyName} in the preview, as the server does when it sends.
+  const { data: companyNameSetting } = useQuery<{ value?: unknown } | null>({
+    queryKey: [`/api/app-settings/key/${COMPANY_NAME_KEY}`],
+  });
+  const companyName = companyNameFromSetting(companyNameSetting?.value);
+  // The saved template that is chosen, if any: its id and category travel with the send.
+  const selectedSavedTemplate = selectedTemplateId && selectedTemplateId !== "none"
+    ? savedTemplates.find((tpl: any) => tpl.id.toString() === selectedTemplateId)
+    : undefined;
 
   // Fetch vehicles with active reservations (filtered or all)
   const { data: vehiclesWithReservations = [] } = useQuery({
@@ -376,6 +387,12 @@ export default function CustomerCommunications() {
         emailFieldSelection: "auto",
         individualEmailSelections,
       };
+      // D15: the server fills {maintenanceDate} only for a maintenance template, and takes the
+      // category from the saved template itself; both travel along.
+      if (selectedSavedTemplate) {
+        requestBody.templateId = selectedSavedTemplate.id;
+        requestBody.category = selectedSavedTemplate.category;
+      }
 
       // For custom mode, send both customerIds and vehicleIds
       if (communicationMode === 'custom') {
@@ -538,6 +555,8 @@ export default function CustomerCommunications() {
       selectedVehicles,
       selectedCustomers,
       vehicleItems: vehiclesWithReservations,
+      companyName,
+      category: selectedSavedTemplate?.category ?? null,
     });
 
     setEmailPreview({
@@ -698,7 +717,7 @@ export default function CustomerCommunications() {
   });
 
   // Available placeholders
-  const placeholders = [
+  const allPlaceholders = [
     { key: 'customerName', label: t('customerCommunications.placeholders.customerName.label'), description: t('customerCommunications.placeholders.customerName.description') },
     { key: 'vehiclePlate', label: t('customerCommunications.placeholders.vehiclePlate.label'), description: t('customerCommunications.placeholders.vehiclePlate.description') },
     { key: 'vehicleBrand', label: t('customerCommunications.placeholders.vehicleBrand.label'), description: t('customerCommunications.placeholders.vehicleBrand.description') },
@@ -711,6 +730,9 @@ export default function CustomerCommunications() {
     { key: 'reservationStart', label: t('customerCommunications.placeholders.reservationStart.label'), description: t('customerCommunications.placeholders.reservationStart.description') },
     { key: 'reservationEnd', label: t('customerCommunications.placeholders.reservationEnd.label'), description: t('customerCommunications.placeholders.reservationEnd.description') }
   ];
+  // D15: the maintenance date only makes sense in a maintenance template.
+  const offered = placeholderKeysForCategory(templateCategory) as string[];
+  const placeholders = allPlaceholders.filter((placeholder) => offered.includes(placeholder.key));
 
   // The address chosen for one recipient in the preview dialog.
   const handleEmailSelection = (recipientKey: string, selectedEmailField: string) => {

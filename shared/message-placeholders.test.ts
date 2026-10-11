@@ -39,3 +39,21 @@ describe("fillPlaceholders", () => {
     expect(fillPlaceholders("{toString} {{constructor}}", {})).toBe("{toString} {{constructor}}");
   });
 });
+
+import { MESSAGE_PLACEHOLDER_KEYS, placeholderKeysForCategory } from "./message-placeholders";
+describe("D15 - the placeholder list", () => {
+  it("has the eleven keys of the send path", () => {
+    expect([...MESSAGE_PLACEHOLDER_KEYS]).toEqual([
+      "customerName", "vehiclePlate", "vehicleBrand", "vehicleModel", "apkDate",
+      "companyName", "customerEmail", "customerPhone", "reservationStart", "reservationEnd", "maintenanceDate",
+    ]);
+  });
+
+  it("offers maintenanceDate only for the category maintenance", () => {
+    expect(placeholderKeysForCategory("maintenance")).toContain("maintenanceDate");
+    for (const category of ["custom", "apk", "portal", null, undefined]) {
+      expect(placeholderKeysForCategory(category)).not.toContain("maintenanceDate");
+      expect(placeholderKeysForCategory(category)).toHaveLength(10);
+    }
+  });
+});

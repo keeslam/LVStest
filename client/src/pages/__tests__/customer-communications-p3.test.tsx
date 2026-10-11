@@ -37,7 +37,7 @@ function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
 
-const CUSTOMER_A = { id: 1, name: "Audit Testklant B.v.", email: "audit@e2e.invalid", emailForMOT: "apk@e2e.invalid", emailGeneral: null, emailForInvoices: null, hasActiveReservation: true };
+const CUSTOMER_A = { id: 1, name: "Audit Testklant B.v.", email: "audit@e2e.invalid", emailForMOT: "apk@e2e.invalid", emailGeneral: null, emailForInvoices: null, hasActiveReservation: true, phone: "06-11111111" };
 const CUSTOMER_B = { id: 2, name: "Tweede Klant", email: "tweede@e2e.invalid", emailForMOT: null, emailGeneral: null, emailForInvoices: null, hasActiveReservation: false };
 const VEHICLE_1 = { id: 10, licensePlate: "97GRD4", brand: "Toyota", model: "Yaris", apkDate: "2026-12-31", vehicleType: "Personenauto" };
 
@@ -95,7 +95,8 @@ beforeEach(() => {
       return json(templates);
     }
     if (url.includes("/api/email-logs")) return json(logRows);
-    if (url.includes("/api/vehicles/")) return json([{ vehicle: VEHICLE_1, customer: CUSTOMER_A }]);
+    if (url.includes("/api/vehicles/")) return json([{ vehicle: VEHICLE_1, customer: CUSTOMER_A, reservation: { startDate: "2026-10-01", endDate: "2026-10-09" } }]);
+    if (url.includes("/api/app-settings/key/company_name")) return json({ key: "company_name", value: "Garage Voorbeeld" });
     if (url.includes("/api/customers/with-reservations")) return json([CUSTOMER_A, CUSTOMER_B]);
     if (url.includes("/api/customers")) return json([CUSTOMER_A, CUSTOMER_B]);
     return json([]);
@@ -344,6 +345,70 @@ describe("A-13-3 - the preview is the mail each recipient gets", () => {
     expect(within(dialog).getByTestId("preview-recipient-v10")).toHaveTextContent("audit@e2e.invalid");
     // One recipient: singular wording.
     expect(within(dialog).getByText("Klaar om 1 e-mail te versturen")).toBeInTheDocument();
+  });
+});
+
+describe("D15 - plekhouders: wat de pagina meestuurt en laat zien", () => {
+  it("een opgeslagen sjabloon wordt verstuurd met zijn templateId en categorie", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByTestId("vehicle-card-10"));
+    await user.click(await screen.findByTestId("select-apk-template"));
+    await user.click(await screen.findByRole("option", { name: "APK herinnering" }));
+    await user.click(screen.getByTestId("button-preview-apk"));
+    await user.click(await screen.findByTestId("button-confirm-send-notifications"));
+
+    await waitFor(() => expect(sendBody).not.toBeNull());
+    expect(sendBody).toMatchObject({ template: "custom", templateId: 1, category: "apk" });
+  });
+
+  it("een eigen bericht zonder sjabloon stuurt geen templateId mee", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await customMessageToCustomers(user, "customer-card-1");
+    await user.click(await screen.findByTestId("button-confirm-send-notifications"));
+    await waitFor(() => expect(sendBody).not.toBeNull());
+    expect(sendBody.templateId).toBeUndefined();
+  });
+
+  it("de voorvertoning vult bedrijfsnaam, e-mail, telefoon en de datums van de reservering per ontvanger", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByTestId("tab-custom"));
+    await user.click(await screen.findByTestId("customer-card-2"));
+    await user.click(await screen.findByTestId("vehicle-card-custom-10"));
+    await pasteInto(user, screen.getByTestId("input-custom-subject"), "Bericht van {companyName}");
+    await pasteInto(user, screen.getByTestId("textarea-custom-message"),
+      "Mail {customerEmail}, tel {customerPhone}, van {reservationStart} tot {reservationEnd}, onderhoud {maintenanceDate}.");
+    await user.click(screen.getByTestId("button-preview-custom"));
+
+    const dialog = await screen.findByRole("dialog");
+    await waitFor(() => expect(within(dialog).getByTestId("preview-subject")).toHaveTextContent("Bericht van Garage Voorbeeld"));
+    expect(within(dialog).getByTestId("preview-content")).toHaveTextContent(
+      "Mail audit@e2e.invalid, tel 06-11111111, van 01-10-2026 tot 09-10-2026, onderhoud .",
+    );
+    // The customer who was ticked without a vehicle has no reservation: those come out empty, and the note says so.
+    await user.click(within(dialog).getByTestId("preview-recipient-c2"));
+    expect(within(dialog).getByTestId("preview-content")).toHaveTextContent("Mail tweede@e2e.invalid, tel , van tot , onderhoud .");
+    expect(within(dialog).getByTestId("preview-empty-note")).toHaveTextContent("Telefoon klant");
+    expect(dialog.textContent).not.toContain("onbekende plekhouders");
+  });
+
+  it("de bouwer biedt de onderhoudsdatum alleen aan in een onderhoudssjabloon", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole("tab", { name: "Sjabloonbouwer" }));
+    await screen.findByTestId("template-card-1");
+    // A new template starts as "Aangepast".
+    for (const key of ["customerName", "companyName", "customerEmail", "customerPhone", "reservationStart", "reservationEnd"]) {
+      expect(screen.getByTestId(`button-placeholder-${key}`)).toBeInTheDocument();
+    }
+    expect(screen.queryByTestId("button-placeholder-maintenanceDate")).not.toBeInTheDocument();
+
+    await user.click(screen.getByTestId("button-edit-3"));
+    expect(await screen.findByTestId("button-placeholder-maintenanceDate")).toBeInTheDocument();
+    await user.click(screen.getByTestId("button-edit-4"));
+    await waitFor(() => expect(screen.queryByTestId("button-placeholder-maintenanceDate")).not.toBeInTheDocument());
   });
 });
 
