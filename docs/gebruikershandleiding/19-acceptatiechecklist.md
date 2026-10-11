@@ -114,7 +114,7 @@ paragraaf 15.7.
 ### Het menu
 
 - [ ] **Elk menu-item opent.** [beheerder] Klik alle twaalf de items één voor één aan. Verwacht: elk scherm laadt zonder rode melding. (hfst 2.1)
-- [ ] **Bekeuringen als eigen menu-item.** [kantoor met Boetes beheren, zonder Klantportaal-vinkje] Verwacht: **Bekeuringen** staat in het menu, **Klantenportaal** niet. (hfst 2.1, 2.6)
+- [ ] **Geen menu-item Bekeuringen.** [kantoor met Boetes beheren] Verwacht: **Bekeuringen** staat niet in het menu; de lijst open je met de knop **Bekeuringen** bovenaan **Klantenportaal**. (hfst 2.1, 2.6)
 - [ ] **Instellingen, gebruikers en back-up staan niet in het menu.** Verwacht: ze staan rechtsboven achter je naam onder het kopje **Beheer**, en alleen voor [beheerder]. (hfst 2.1, 2.10)
 - [ ] **Smal scherm.** Maak het browservenster smal. Verwacht: het menu klapt open met het knopje linksboven. (hfst 2.1)
 
@@ -152,7 +152,7 @@ paragraaf 15.7.
 
 ### Klantenportaal en bekeuringen
 
-- [ ] **Scherm Klantenportaal beheren.** Verwacht: **Brieven scannen**, **Account uitnodigen**, acht tegels (**Aanvragen**, **Onderhoud**, **Bekeuringen**, **Klanten**, **Accounts**, **Voertuigen online**, **Blacklist**, **Activiteit**) en vier panelen (**Aandacht nodig**, **Meldingen**, **Aankomende reserveringen**, **Klanten**). (hfst 2.6)
+- [ ] **Scherm Klantenportaal beheren.** Verwacht: **Bekeuringen**, **Brieven scannen**, **Account uitnodigen**, acht tegels (**Aanvragen**, **Onderhoud**, **Bekeuringen**, **Klanten**, **Accounts**, **Voertuigen online**, **Blacklist**, **Activiteit**) en vier panelen (**Aandacht nodig**, **Meldingen**, **Aankomende reserveringen**, **Klanten**). (hfst 2.6)
 - [ ] **Een bekeuring openen.** Tegel **Bekeuringen** → klik een regel. Verwacht: het bedrag, de **Administratiekosten**, het **Totaal**, de klant, de reservering en de bestuurder. (hfst 2.6)
 - [ ] **Administratiekosten wijzigen.** Wijzig het bedrag → **Opslaan** → sluit en open de bekeuring opnieuw. Verwacht: het bedrag is bewaard. (hfst 2.6)
 - [ ] **Opmaak.** Verwacht: bedragen als € 95,00, tijden zonder seconden, kentekens met streepjes. (hfst 2.6)
@@ -958,7 +958,7 @@ Het naslagwerk is een lijst klikpaden. Deze regels controleren dat de klikpaden 
 - [ ] **Alleen antwoorden.** **Beantwoorden en afhandelen**, of **Antwoord sturen (blijft open)**. Botst de gevraagde periode: **Conflict met reservering #…**. (hfst 13.11, 16.3)
 - [ ] **Een klant een portaalaccount geven.** **Klantenportaal** → **Account uitnodigen**. (hfst 13.11)
 - [ ] **Een bekeuring invoeren en inlezen.** Tegel **Bekeuringen** → **Nieuwe bekeuring**; **Brieven scannen**. Verwacht: een geregistreerde bekeuring zonder mail. **(nieuw)** (hfst 13.11)
-- [ ] **De bekeuringen zonder portaalrecht zien.** [kantoor met Boetes bekijken, zonder portaalrecht] **Bekeuringen** in het menu. (hfst 13.11)
+- [ ] **De hele lijst met bekeuringen openen.** [kantoor met Boetes bekijken] **Klantenportaal** → knop **Bekeuringen**. Verwacht: de lijst opent; zonder Boetes-vinkje staat de knop grijs met het ontbrekende vinkje genoemd. (hfst 13.11)
 - [ ] **Een klant voor een auto blokkeren.** **Klantenportaal** → tegel **Blacklist** → **Blokkade toevoegen**. Verwacht: de combinatie verdwijnt stil uit de boekingslijsten; **Geblokkeerde voertuigen** bij de klant toont hem. (hfst 13.11)
 - [ ] **Meldingen op gelezen zetten.** **Klantenportaal** → **Meldingen** → **Alles gelezen**. Verwacht: het rode bolletje verdwijnt. (hfst 13.11)
 - [ ] **13.12 Communicatie en meldingen.** Volg elk pad (belletje, **Nieuwe melding**, APK-herinneringen, **Aangepast bericht**, **E-maillogboek** → **Details**, **Voorvertonen & versturen**, **Sjabloonbouwer**). (hfst 13.12)
@@ -987,7 +987,7 @@ Het naslagwerk is een lijst klikpaden. Deze regels controleren dat de klikpaden 
 - [ ] **Voertuigen, klanten en verhuur: vinkjes.** Controleer per vinkje (**Voertuigen bekijken/beheren**, **Klanten bekijken/beheren**, **Reserveringen bekijken/beheren**, **Kilometerverlaging goedkeuren**, **Overdracht terugdraaien**, **Opgehaalde huur annuleren of verwijderen**) welk menu-item en welke handeling je krijgt. (hfst 15.4)
 - [ ] **Werkplaats, kosten, rapporten: vinkjes.** **Onderhoud beheren**, **Kosten beheren**, **Rapporten bekijken/beheren**. (hfst 15.4)
 - [ ] **Documenten en schadechecks: vinkjes.** **Documenten bekijken**, **Documenten bewerken en genereren**, **PDF-sjablonen beheren**, **Schadecontroles bekijken/beheren**. (hfst 15.4)
-- [ ] **Portaal, boetes, communicatie: vinkjes.** **Klantportaal bekijken/beheren**, **Boetes bekijken/beheren** (menu-item **Bekeuringen**), **Meldingen beheren**, **E-mailsjablonen beheren**. (hfst 15.4)
+- [ ] **Portaal, boetes, communicatie: vinkjes.** **Klantportaal bekijken/beheren**, **Boetes bekijken/beheren** (knop **Bekeuringen** op **Klantenportaal**), **Meldingen beheren**, **E-mailsjablonen beheren**. (hfst 15.4)
 - [ ] **Algemeen: vinkjes.** **Dashboard bekijken**, **Prullenbak beheren** (niet aan de rol Beheerder gebonden). (hfst 15.4)
 - [ ] **Fiscale vinkjes.** Controleer dat de zes fiscale vinkjes bestaan: **Fiscaal bekijken**, **Fiscale beoordelingen en gegevens beheren**, **Fiscale configuratie voorbereiden/goedkeuren/publiceren**, **Fiscale auditlog bekijken**; het fiscale overzicht staat onder **Klantenportaal** → **Fiscale check** en **Rapporten** → **Fiscaal**. (hfst 15.4)
 - [ ] **Documentvinkjes.** [account met Reserveringen beheren, zonder documentrechten] Verwacht: het menu-item **Documenten** ontbreekt, het tabblad **Documenten** op de voertuigkaart is leeg, bij het ophalen wordt het contract wel gemaakt maar je kunt het niet openen. (hfst 15.5)

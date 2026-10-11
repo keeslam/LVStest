@@ -119,7 +119,7 @@ daaronder een raster met alle rechten. Je vinkt aan wat iemand nodig heeft. De b
 | Onderhoud beheren | Onderhoudsblokken plaatsen en afronden |
 | Kosten beheren | Kosten registreren |
 | Rapporten bekijken / beheren | De rapportenmodule |
-| Boetes bekijken / beheren | Bekeuringen |
+| Boetes bekijken / beheren | De bekeuringen (knop **Bekeuringen** op de pagina Klantenportaal) |
 | Klantportaal bekijken / beheren | Het klantenportaal |
 | Meldingen beheren | APK- en onderhoudsherinneringen versturen |
 | E-mailsjablonen beheren | De sjabloonbouwer onder Communicatie |
@@ -257,7 +257,7 @@ activiteit). Wat je niet hebt opgeslagen, is natuurlijk wel weg zodra je de inst
 ingevuld en komt bovenop het boetebedrag. Vul 0 in voor geen kosten.* Een negatief of leeg bedrag
 wordt geweigerd met *Vul een bedrag van 0 of hoger in, bijvoorbeeld 12,50.* Het bedrag blijft nu ook
 echt bewaard: vroeger werd het bij elke keer opslaan van dit formulier op 0 gezet. De bekeuringen zelf
-staan sinds oktober 2026 ook onder een eigen menu-item **Bekeuringen** (hoofdstuk 2, paragraaf 2.6).
+staan achter de knop **Bekeuringen** bovenaan de pagina **Klantenportaal** (hoofdstuk 2, paragraaf 2.6); een eigen menu-item is er niet meer.
 
 **De CJIB-koppeling** (*Het CJIB levert beschikkingen als XML- of CSV-bestand op een beveiligde
 FTPS-server*) staat bij de bekeuringen, achter **CJIB-importen**. De schakelaar **Automatisch ophalen

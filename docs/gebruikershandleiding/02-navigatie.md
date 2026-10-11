@@ -18,7 +18,6 @@ Het menu staat links en blijft altijd staan. Je ziet alleen de items waar je rec
 | **Scannen** | Een sleutellabel scannen en meteen doorwerken | Voertuigen bekijken of beheren |
 | **Klanten** | De klantendatabase | Klanten bekijken of beheren |
 | **Klantenportaal** | Alles wat klanten online doen | Klantportaal bekijken of beheren |
-| **Bekeuringen** | De lijst met bekeuringen, ook voor wie geen portaalrecht heeft | Boetes bekijken of beheren |
 | **Reserveringen** | De verhuurkalender | Reserveringen bekijken of beheren |
 | **Onderhoud** | De werkplaatskalender | Onderhoud beheren |
 | **Kosten** | Kosten per voertuig | Kosten beheren |
@@ -181,7 +180,7 @@ hoofdstuk 3, paragraaf 3.8.
 Het scherm heet **Klantenportaal beheren**: *Aanvragen, accounts, bekeuringen en het aanbod voor
 klanten op één plek. Klik op een tegel om die lijst te openen.*
 
-Bovenaan staan **Brieven scannen** en **Account uitnodigen**. Daaronder acht tegels die je
+Bovenaan staan **Bekeuringen**, **Brieven scannen** en **Account uitnodigen**. Daaronder acht tegels die je
 aanklikt om die lijst te openen:
 
 **Aanvragen** (nieuw) · **Onderhoud** (meldingen en placeholders) · **Bekeuringen** (niet
@@ -205,9 +204,12 @@ lijst.
 panelen eronder tonen de laatste regels.*
 
 In de lijst achter de tegel **Bekeuringen** staat de knop **Prullenbak** voor verwijderde bekeuringen
-(hoofdstuk 10, paragraaf 10.6). Dezelfde lijst staat ook als eigen menu-item **Bekeuringen**, voor wie
-**Boetes bekijken** of **Boetes beheren** heeft maar niet bij het klantenportaal hoeft te komen. Het is
-dezelfde tabel met dezelfde vensters; alleen de toegang is los van het portaal. Heb je het vinkje
+(hoofdstuk 10, paragraaf 10.6). Dezelfde lijst open je ook met de knop **Bekeuringen** bovenaan de pagina
+**Klantenportaal**. Er is geen menu-item **Bekeuringen** meer: bekeuringen worden per klant bewaard en
+ingevoerd via het klantenportaal, dus de lijst staat daar. De knop is voor wie **Boetes bekijken** of
+**Boetes beheren** heeft; zonder dat vinkje staat hij grijs, met de uitleg welk vinkje je mist. Wie alleen
+**Boetes bekijken** of **Boetes beheren** heeft en geen portaalvinkje, kan de lijst dus niet meer openen
+(besluit B-44, de eigenaar vond dat goed). Het is dezelfde tabel met dezelfde vensters. Heb je het vinkje
 **Fiscaal bekijken** maar geen vinkje voor rapporten, dan toont het scherm **Rapporten** voor jou alleen de
 fiscale check, met de knop **Fiscale check** (hoofdstuk 15, paragraaf 15.4).
 

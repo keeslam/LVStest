@@ -135,7 +135,8 @@ er niet, of is hij grijs, dan klik of tik je erop: de app zegt welk vinkje je mi
 
 7. **Bekeuringen worden alleen geregistreerd.** De statussen zijn **Niet gekoppeld**, **Gekoppeld** en
    **Geannuleerd**; **Doorbelast**, **Betaald** en **Betwist** kun je niet meer kiezen (oude bekeuringen
-   houden hun status). Het doorbelasten en betalen regel je buiten de app. Meer in
+   houden hun status). Het doorbelasten en betalen regel je buiten de app. De lijst heeft geen eigen
+   menu-item meer: je opent hem met de knop **Bekeuringen** bovenaan **Klantenportaal**. Meer in
    [hoofdstuk 2, paragraaf 2.6](02-navigatie.md).
 
 8. **Definitief verwijderen neemt fiscale beoordelingen mee.** Verwijder je een reservering, een

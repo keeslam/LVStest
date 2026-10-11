@@ -218,7 +218,7 @@ Zie hoofdstuk 2, paragraaf 2.8.
 | Een klant een portaalaccount geven | **Klantenportaal** → **Account uitnodigen** |
 | Een bekeuring invoeren | **Klantenportaal** → tegel **Bekeuringen** → **Nieuwe bekeuring** |
 | Een bekeuringsbrief inlezen | **Klantenportaal** → **Brieven scannen** |
-| De bekeuringen zien zonder portaalrecht | **Bekeuringen** in het menu (vraagt **Boetes bekijken** of **Boetes beheren**) |
+| De hele lijst met bekeuringen openen | **Klantenportaal** → knop **Bekeuringen** (vraagt **Boetes bekijken** of **Boetes beheren**) |
 | Een bekeuring annuleren | Open de bekeuring → **Bekeuring annuleren** → bevestigen (**Nee, laten staan** als je twijfelt) |
 | De klant over een bekeuring informeren | Open de gekoppelde bekeuring → **Klant informeren** → bevestigen (daarna heet de knop **Opnieuw informeren**) |
 | Een klant voor een auto blokkeren | **Klantenportaal** → tegel **Blacklist** → **Blokkade toevoegen** |
