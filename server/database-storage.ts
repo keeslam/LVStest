@@ -5345,6 +5345,10 @@ export class DatabaseStorage implements IStorage {
     const updateData: any = {
       maintenanceStatus,
       maintenanceNote: maintenanceNote || null,
+      // D6: a plain status write has no block behind it. The writers that do
+      // (check-in with a blockId, mark-needs-service with service dates) call
+      // setMaintenanceStatusBlock() right after.
+      maintenanceStatusBlockId: null,
       updatedAt: new Date()
     };
 
@@ -5372,6 +5376,41 @@ export class DatabaseStorage implements IStorage {
       return fresh || updatedVehicle;
     }
     return undefined;
+  }
+
+  /**
+   * D6 (besluiten B-41): record which maintenance block the car's current
+   * workshop flag (`vehicles.maintenance_status`) came from. Call it right after
+   * the status write; `null` clears it.
+   */
+  async setMaintenanceStatusBlock(vehicleId: number, blockId: number | null, dbExecutor: any = db): Promise<void> {
+    await dbExecutor.update(vehicles).set({ maintenanceStatusBlockId: blockId }).where(eq(vehicles.id, vehicleId));
+  }
+
+  /**
+   * D6 (besluiten B-41): a maintenance block was deleted, cancelled or aborted.
+   * When it is the block that checked the car in (`maintenance_status_block_id`)
+   * and no other block the car is "Binnen" for covers today, the workshop job is
+   * closed: `markVehicleForService('ok')` clears the flag and re-derives the
+   * availability. A flag set by hand, by a transport, or by another block stays.
+   * Returns true when the car was released.
+   */
+  async releaseVehicleFromRemovedBlock(block: { id: number; vehicleId?: number | null; type?: string | null }): Promise<boolean> {
+    if (block.type !== 'maintenance_block' || block.vehicleId == null) return false;
+    const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, block.vehicleId));
+    if (!vehicle || vehicle.maintenanceStatusBlockId !== block.id) return false;
+
+    const today = isoToday();
+    const stillIn = (await this.getReservationsByVehicle(block.vehicleId)).some((r) => {
+      if (r.id === block.id || r.type !== 'maintenance_block' || r.deletedAt) return false;
+      if (CLOSED_RESERVATION_STATUSES.has(normalizeReservationStatus(r.status) ?? '')) return false;
+      if (!isCheckedInBlockMaintenanceStatus(r.maintenanceStatus)) return false;
+      return r.startDate <= today && (!r.endDate || r.endDate === 'undefined' || r.endDate >= today);
+    });
+    if (stillIn) return false;
+
+    await this.markVehicleForService(block.vehicleId, 'ok');
+    return true;
   }
 
   async createMaintenanceBlock(vehicleId: number, startDate: string, endDate?: string, customerId?: number | null): Promise<Reservation> {
@@ -5471,6 +5510,15 @@ export class DatabaseStorage implements IStorage {
     if (!block.vehicleId) {
       return refuse({ ok: false, status: 400, message: 'This maintenance block has no vehicle.' });
     }
+    // D7: Afronden is the only way to finish a block, and only once.
+    if (normalizeReservationStatus(block.status) === 'completed' || String(block.maintenanceStatus ?? '').toLowerCase() === 'out') {
+      return refuse({
+        ok: false,
+        status: 409,
+        code: 'ALREADY_COMPLETED',
+        message: 'This maintenance block has already been completed.',
+      });
+    }
     if (block.endDate && input.completionDate < block.startDate) {
       return refuse({
         ok: false,
@@ -5491,10 +5539,6 @@ export class DatabaseStorage implements IStorage {
       .select({ id: reservations.id, vehicleId: reservations.vehicleId })
       .from(reservations)
       .innerJoin(
-      // D6: a plain status write has no block behind it. The writers that do
-      // (check-in with a blockId, mark-needs-service with service dates) call
-      // setMaintenanceStatusBlock() right after.
-      maintenanceStatusBlockId: null,
         alias(reservations, 'original'),
         eq(reservations.replacementForReservationId, sql`original.id`),
       )
@@ -5524,41 +5568,6 @@ export class DatabaseStorage implements IStorage {
       // check and the write).
       if (Object.keys(vehicleReadings).length > 0) {
         const written = await tx
-  /**
-   * D6 (besluiten B-41): record which maintenance block the car's current
-   * workshop flag (`vehicles.maintenance_status`) came from. Call it right after
-   * the status write; `null` clears it.
-   */
-  async setMaintenanceStatusBlock(vehicleId: number, blockId: number | null, dbExecutor: any = db): Promise<void> {
-    await dbExecutor.update(vehicles).set({ maintenanceStatusBlockId: blockId }).where(eq(vehicles.id, vehicleId));
-  }
-
-  /**
-   * D6 (besluiten B-41): a maintenance block was deleted, cancelled or aborted.
-   * When it is the block that checked the car in (`maintenance_status_block_id`)
-   * and no other block the car is "Binnen" for covers today, the workshop job is
-   * closed: `markVehicleForService('ok')` clears the flag and re-derives the
-   * availability. A flag set by hand, by a transport, or by another block stays.
-   * Returns true when the car was released.
-   */
-  async releaseVehicleFromRemovedBlock(block: { id: number; vehicleId?: number | null; type?: string | null }): Promise<boolean> {
-    if (block.type !== 'maintenance_block' || block.vehicleId == null) return false;
-    const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, block.vehicleId));
-    if (!vehicle || vehicle.maintenanceStatusBlockId !== block.id) return false;
-
-    const today = isoToday();
-    const stillIn = (await this.getReservationsByVehicle(block.vehicleId)).some((r) => {
-      if (r.id === block.id || r.type !== 'maintenance_block' || r.deletedAt) return false;
-      if (CLOSED_RESERVATION_STATUSES.has(normalizeReservationStatus(r.status) ?? '')) return false;
-      if (!isCheckedInBlockMaintenanceStatus(r.maintenanceStatus)) return false;
-      return r.startDate <= today && (!r.endDate || r.endDate === 'undefined' || r.endDate >= today);
-    });
-    if (stillIn) return false;
-
-    await this.markVehicleForService(block.vehicleId, 'ok');
-    return true;
-  }
-
           .update(vehicles)
           .set({ ...vehicleReadings, updatedBy: input.username ?? null, updatedAt: new Date() })
           .where(and(

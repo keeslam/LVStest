@@ -683,7 +683,7 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                               <TableCell>
                                 <div className="flex gap-2">
                                   {isOpenBlock(reservation) && (
-                                    // Same rights as the calendar's "Voltooien": the completion route
+                                    // Same rights as the calendar's "Afronden": the completion route
                                     // accepts manage_maintenance or manage_reservations.
                                     <RequiresPermission anyOf={[UserPermission.MANAGE_MAINTENANCE, UserPermission.MANAGE_RESERVATIONS]}>
                                       <Button

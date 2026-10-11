@@ -11,10 +11,12 @@
  * the scan route all end in `markVehicleForService(id, 'ok')`; these two
  * PATCH routes were the only block-closing writers that did not.
  *
- * Also asserted here, because without them "Uit" is not reachable in one save:
- *   - a still planned block (`booked`) may go straight to `completed`
- *     (`booked -> completed` is not a rental transition, but a block is not a
- *     rental), and a block arriving early is not asked B-16's pickup question;
+ * Sub-project D, D7 (besluiten B-41/B-42) went further: "Uit (onderhoud voltooid)"
+ * is gone from the edit dialogs and both PATCH routes refuse `out`/`completed` for
+ * a block (400 USE_COMPLETE_ROUTE); a block is finished with Afronden
+ * (`POST /:id/complete-maintenance`), which frees the car. What is asserted here:
+ *   - the refusal, in every spelling, and that Afronden then frees the car;
+ *   - a block arriving early is not asked B-16's pickup question;
  *   - (D6, besluiten B-41) deleting or cancelling the block that checked the car in
  *     frees it (the old "does NOT clear the flag" assertion was reversed by the owner).
  */
@@ -83,18 +85,31 @@ async function patchEdit(route: "full" | "basic", id: number, to: "scheduled" | 
 describe.each([
   ["PATCH /api/reservations/:id", "full"],
   ["PATCH /api/reservations/:id/basic", "basic"],
-] as const)("%s - closing a block frees the car", (_label, route) => {
-  it("Binnen then Uit (the audit sequence): block closed AND the car available again", async () => {
+] as const)("%s - a block is finished with Afronden, not with a status save (D7)", (_label, route) => {
+  /** The edit dialog used to send "Uit"; the server now sends the caller to the completion route. */
+  async function expectRefused(id: number, to: "out", expectedCar: { availability: string }) {
+    const before = await blockRow(id);
+    const out = await patchEdit(route, id, to);
+    expect(out.status).toBe(400);
+    expect(out.body.code).toBe("USE_COMPLETE_ROUTE");
+    const after = await blockRow(id);
+    expect(after.status).toBe(before.status);
+    expect(after.maintenanceStatus).toBe(before.maintenanceStatus);
+    expect((await vehicleRow(after.vehicleId!)).availabilityStatus).toBe(expectedCar.availability);
+  }
+
+  it("Binnen then Uit (the audit sequence): Uit is refused, Afronden closes the block AND frees the car", async () => {
     const vehicle = await createFixtureVehicle();
     const id = await planBlock(vehicle.id, today);
 
     expect((await patchEdit(route, id, "in")).status).toBe(200);
-    // The sweep after the first save derives needs_fixing from the open block covering today.
+    // The sweep after the first save derives needs_fixing from the block the car is in.
     expect((await vehicleRow(vehicle.id)).availabilityStatus).toBe("needs_fixing");
 
-    const out = await patchEdit(route, id, "out");
-    expect(out.status).toBe(200);
+    await expectRefused(id, "out", { availability: "needs_fixing" });
 
+    const done = await admin.post(`/api/reservations/${id}/complete-maintenance`).send({ completionDate: today });
+    expect(done.status).toBe(200);
     const closed = await blockRow(id);
     expect(closed.maintenanceStatus).toBe("out");
     expect(closed.status).toBe("completed");
@@ -103,26 +118,42 @@ describe.each([
     expect(car.maintenanceStatus).toBe("ok");
   });
 
-  it("a car that the scan screen put in the workshop (in_service) ends ok and available", async () => {
+  it("Uit straight from Gepland is refused as well, whichever field carries it", async () => {
+    const vehicle = await createFixtureVehicle();
+    const id = await planBlock(vehicle.id, today);
+    const url = route === "full" ? `/api/reservations/${id}` : `/api/reservations/${id}/basic`;
+
+    for (const body of [{ maintenanceStatus: "out" }, { status: "completed" }, { status: "out" }]) {
+      const res = await admin.patch(url).send(body);
+      expect(res.status, JSON.stringify(body)).toBe(400);
+      expect(res.body.code, JSON.stringify(body)).toBe("USE_COMPLETE_ROUTE");
+    }
+    const block = await blockRow(id);
+    expect(block.status).toBe("booked");
+    expect(block.maintenanceStatus).toBe("scheduled");
+  });
+
+  it("a car that the scan screen put in the workshop (in_service): Afronden ends it ok and available", async () => {
     const vehicle = await createFixtureVehicle();
     const id = await planBlock(vehicle.id, today);
     expect((await patchEdit(route, id, "in")).status).toBe(200);
     await db.update(vehicles).set({ maintenanceStatus: "in_service" }).where(eq(vehicles.id, vehicle.id));
 
-    expect((await patchEdit(route, id, "out")).status).toBe(200);
+    await expectRefused(id, "out", { availability: "needs_fixing" });
+    expect((await admin.post(`/api/reservations/${id}/complete-maintenance`).send({ completionDate: today })).status).toBe(200);
 
     const car = await vehicleRow(vehicle.id);
     expect(car.maintenanceStatus).toBe("ok");
     expect(car.availabilityStatus).toBe("available");
   });
 
-  it("closing one of two open blocks, the other still only planned: the car is 'scheduled' (D5)", async () => {
+  it("finishing one of two open blocks, the other still only planned: the car is 'scheduled' (D5)", async () => {
     const vehicle = await createFixtureVehicle();
     const first = await planBlock(vehicle.id, today);
     const second = await planBlock(vehicle.id, today);
     expect((await patchEdit(route, first, "in")).status).toBe(200);
 
-    expect((await patchEdit(route, first, "out")).status).toBe(200);
+    expect((await admin.post(`/api/reservations/${first}/complete-maintenance`).send({ completionDate: today })).status).toBe(200);
 
     expect((await blockRow(first)).maintenanceStatus).toBe("out");
     expect((await blockRow(second)).maintenanceStatus).toBe("scheduled");
@@ -130,30 +161,31 @@ describe.each([
     expect((await vehicleRow(vehicle.id)).availabilityStatus).toBe("scheduled");
   });
 
-  it("closing one of two open blocks, the other one 'Binnen': the car stays needs_fixing", async () => {
+  it("finishing one of two open blocks, the other one 'Binnen': the car stays needs_fixing", async () => {
     const vehicle = await createFixtureVehicle();
     const first = await planBlock(vehicle.id, today);
     const second = await planBlock(vehicle.id, today);
     expect((await patchEdit(route, first, "in")).status).toBe(200);
     expect((await patchEdit(route, second, "in")).status).toBe(200);
 
-    expect((await patchEdit(route, first, "out")).status).toBe(200);
+    expect((await admin.post(`/api/reservations/${first}/complete-maintenance`).send({ completionDate: today })).status).toBe(200);
 
     expect((await blockRow(second)).maintenanceStatus).toBe("in");
     expect((await vehicleRow(vehicle.id)).availabilityStatus).toBe("needs_fixing");
   });
 
-  it("Uit straight from Gepland is accepted (booked -> completed for a block)", async () => {
+  it("an edit of a finished block that repeats its status is not refused (nothing changes status)", async () => {
     const vehicle = await createFixtureVehicle();
     const id = await planBlock(vehicle.id, today);
+    expect((await admin.post(`/api/reservations/${id}/complete-maintenance`).send({ completionDate: today })).status).toBe(200);
+    const block = await blockRow(id);
+    const url = route === "full" ? `/api/reservations/${id}` : `/api/reservations/${id}/basic`;
 
-    const res = await patchEdit(route, id, "out");
+    const res = await admin.patch(url).send({ notes: "FIXT achteraf aangevuld", status: block.status, maintenanceStatus: block.maintenanceStatus });
 
     expect(res.status).toBe(200);
-    const closed = await blockRow(id);
-    expect(closed.status).toBe("completed");
-    expect(closed.maintenanceStatus).toBe("out");
-    expect((await vehicleRow(vehicle.id)).availabilityStatus).toBe("available");
+    expect((await blockRow(id)).notes).toBe("FIXT achteraf aangevuld");
+    expect((await blockRow(id)).status).toBe("completed");
   });
 
   it("saving a still planned future block unchanged keeps it booked/scheduled and the car available", async () => {

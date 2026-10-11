@@ -54,8 +54,12 @@ async function vehicleRow(id: number) {
   return row;
 }
 
-/** A car in the workshop today, with a second repair planned well ahead. */
-async function carInWorkshopWithFutureBlock() {
+/**
+ * A car in the workshop today, with a second repair planned well ahead.
+ * `todayStatus` is what the block covering today says: `in` = the car is "Binnen" for it
+ * (D7: that one is finished with Afronden, not with this route), `scheduled` = still planned.
+ */
+async function carInWorkshopWithFutureBlock(todayStatus: "in" | "scheduled" = "scheduled") {
   const today = isoToday();
   const car: Vehicle = await createFixtureVehicle({
     maintenanceStatus: "in_service",
@@ -67,7 +71,7 @@ async function carInWorkshopWithFutureBlock() {
     startDate: shiftDays(today, -2), endDate: shiftDays(today, 1),
     status: "booked", type: "maintenance_block",
   });
-  await db.update(reservations).set({ maintenanceStatus: "in" }).where(eq(reservations.id, todayBlock.id));
+  await db.update(reservations).set({ maintenanceStatus: todayStatus }).where(eq(reservations.id, todayBlock.id));
 
   const futureBlock = await createFixtureReservation({
     customerId: null, vehicleId: car.id,
@@ -115,6 +119,62 @@ describe("WAVE 13 — 'Terug uit onderhoud' raakt alleen het onderhoud van vanda
 
     expect((await reservationRow(futureBlock.id)).maintenanceStatus).toBe("out");
     // The one covering today was not the one asked for.
+    expect((await reservationRow(todayBlock.id)).maintenanceStatus).toBe("scheduled");
+  });
+});
+
+describe("D7 - 'Terug uit onderhoud' for a car that is Binnen goes through Afronden", () => {
+  it("refuses with 409 USE_COMPLETE_ROUTE and names the block; nothing changes", async () => {
+    const { car, todayBlock, futureBlock } = await carInWorkshopWithFutureBlock("in");
+
+    const res = await admin.patch(`/api/vehicles/${car.id}/maintenance-status`).send({ status: "ok" });
+
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe("USE_COMPLETE_ROUTE");
+    expect(res.body.blockId).toBe(todayBlock.id);
+    expect((await reservationRow(todayBlock.id)).maintenanceStatus).toBe("in");
+    expect((await reservationRow(futureBlock.id)).maintenanceStatus).toBe("scheduled");
+    const row = await vehicleRow(car.id);
+    expect(row.maintenanceStatus).toBe("in_service");
+    expect(row.availabilityStatus).toBe("needs_fixing");
+  });
+
+  it("also refuses when the caller names another block: the car is still Binnen for today's", async () => {
+    const { car, todayBlock, futureBlock } = await carInWorkshopWithFutureBlock("in");
+
+    const res = await admin.patch(`/api/vehicles/${car.id}/maintenance-status`).send({ status: "ok", blockId: futureBlock.id });
+
+    expect(res.status).toBe(409);
+    expect(res.body.blockId).toBe(todayBlock.id);
+  });
+
+  it("the Afronden route then finishes it and frees the car", async () => {
+    const { car, todayBlock } = await carInWorkshopWithFutureBlock("in");
+
+    const done = await admin.post(`/api/reservations/${todayBlock.id}/complete-maintenance`).send({ completionDate: isoToday() });
+
+    expect(done.status).toBe(200);
+    expect((await reservationRow(todayBlock.id)).maintenanceStatus).toBe("out");
+    expect((await vehicleRow(car.id)).availabilityStatus).not.toBe("needs_fixing");
+  });
+
+  it("a car without a block that is Binnen still comes back with the plain route", async () => {
+    const car = await createFixtureVehicle({ maintenanceStatus: "in_service", availabilityStatus: "needs_fixing" });
+
+    const res = await admin.patch(`/api/vehicles/${car.id}/maintenance-status`).send({ status: "ok" });
+
+    expect(res.status).toBe(200);
+    const row = await vehicleRow(car.id);
+    expect(row.maintenanceStatus).toBe("ok");
+    expect(row.availabilityStatus).toBe("available");
+  });
+
+  it("going into the workshop (in_service) is not affected", async () => {
+    const { car, todayBlock } = await carInWorkshopWithFutureBlock("scheduled");
+
+    const res = await admin.patch(`/api/vehicles/${car.id}/maintenance-status`).send({ status: "in_service", blockId: todayBlock.id });
+
+    expect(res.status).toBe(200);
     expect((await reservationRow(todayBlock.id)).maintenanceStatus).toBe("in");
   });
 });

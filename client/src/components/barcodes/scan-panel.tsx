@@ -18,6 +18,8 @@ import { CameraScannerDialog } from "@/components/barcodes/camera-scanner-dialog
 import { ReservationAddDialog } from "@/components/reservations/reservation-add-dialog";
 import { PickupDialog, ReturnDialog } from "@/components/reservations/pickup-return-dialogs";
 import { ScheduleMaintenanceDialog } from "@/components/maintenance/schedule-maintenance-dialog";
+import { CompleteMaintenanceDialog } from "@/components/maintenance/complete-maintenance-dialog";
+import { calculateNextApkDate } from "@/lib/next-apk-date";
 import { ExpenseAddDialog } from "@/components/expenses/expense-add-dialog";
 import { InlineDocumentUpload } from "@/components/documents/inline-document-upload";
 import { FuelStatusUpdateDialog } from "@/components/vehicles/fuel-status-update-dialog";
@@ -116,6 +118,20 @@ export function ScanPanel({ active = true, intent = null, onHandoverActiveChange
   // full block row (the scan payload only carries a projection).
   const [scheduleMaintenanceOpen, setScheduleMaintenanceOpen] = useState(false);
   const [editingMaintenance, setEditingMaintenance] = useState<Reservation | null>(null);
+
+  // D7 (besluiten B-41/B-42): "Terug uit onderhoud" for a car that is Binnen for a block is the
+  // completion of that block (APK date, reading, spare vehicle): the server says so with
+  // 409 USE_COMPLETE_ROUTE + blockId and this card opens the Afronden dialog for it.
+  const [completingBlock, setCompletingBlock] = useState<Reservation | null>(null);
+  const openCompletion = async (blockId: number) => {
+    try {
+      const response = await fetch(`/api/reservations/${blockId}`, { credentials: "include" });
+      if (!response.ok) throw new Error();
+      setCompletingBlock(await response.json());
+    } catch {
+      setError(t("scanPage.lookupError"));
+    }
+  };
 
   const openMaintenanceBlock = async (reservationId: number) => {
     try {
@@ -247,7 +263,13 @@ export function ScanPanel({ active = true, intent = null, onHandoverActiveChange
       // refresh the card
       if (result?.type === "vehicle" && result.vehicle.barcode) lookup(result.vehicle.barcode);
     },
-    onError: (error: Error) => toast({ title: t("scanPage.actions.maintenanceError"), description: describeApiError(error), variant: "destructive" }),
+    onError: (error: Error & { code?: string; blockId?: number }) => {
+      if (error.code === "USE_COMPLETE_ROUTE" && typeof error.blockId === "number") {
+        void openCompletion(error.blockId);
+        return;
+      }
+      toast({ title: t("scanPage.actions.maintenanceError"), description: describeApiError(error), variant: "destructive" });
+    },
   });
 
   const transportMutation = useMutation({
@@ -668,6 +690,21 @@ export function ScanPanel({ active = true, intent = null, onHandoverActiveChange
           open={mileageOpen}
           onOpenChange={setMileageOpen}
           onSuccess={() => { if (result.vehicle.barcode) lookup(result.vehicle.barcode); }}
+        />
+      )}
+
+      {result?.type === "vehicle" && (
+        <CompleteMaintenanceDialog
+          open={completingBlock !== null}
+          onOpenChange={(open) => { if (!open) setCompletingBlock(null); }}
+          block={completingBlock}
+          vehicle={result.vehicle}
+          initialApkDate={result.vehicle.apkDate || calculateNextApkDate(result.vehicle, new Date())}
+          initialMileage={result.vehicle.currentMileage ? String(result.vehicle.currentMileage) : ""}
+          onCompleted={() => {
+            invalidateByPrefix("/api/vehicles");
+            if (result.vehicle.barcode) lookup(result.vehicle.barcode);
+          }}
         />
       )}
 

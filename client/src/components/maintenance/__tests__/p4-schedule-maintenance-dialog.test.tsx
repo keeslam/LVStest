@@ -261,3 +261,40 @@ describe("A-7-1 and A-7-8: the spare vehicle dialog", () => {
     expect(screen.queryByText("Vervangende voertuigen toewijzen")).toBeNull();
   });
 });
+
+describe("D7: edit mode has no 'Uit', it has Afronden", () => {
+  const editing = (maintenanceStatus: string) => ({
+    id: 501, vehicleId: 1, startDate: START, endDate: START, maintenanceStatus,
+    status: maintenanceStatus === "out" ? "completed" : "booked",
+    notes: "breakdown: test", maintenanceDuration: 1,
+  }) as any;
+
+  it("offers Gepland and Binnen only, plus the Afronden button", async () => {
+    const user = userEvent.setup();
+    renderDialog({ editingReservation: editing("in") });
+
+    await user.click(await screen.findByTestId("select-maintenance-status"));
+    const options = (await screen.findAllByRole("option")).map((o) => o.textContent);
+    expect(options).toEqual(["Gepland (voertuig nog niet gearriveerd)", "Binnen (voertuig is in onderhoud)"]);
+    expect(screen.queryByText("Uit (onderhoud voltooid)")).toBeNull();
+    expect(screen.getByTestId("button-schedule-complete-maintenance")).toBeInTheDocument();
+  });
+
+  it("Afronden opens the completion dialog", async () => {
+    const user = userEvent.setup();
+    renderDialog({ editingReservation: editing("scheduled") });
+
+    await user.click(await screen.findByTestId("button-schedule-complete-maintenance"));
+
+    expect(await screen.findByTestId("dialog-complete-maintenance")).toBeInTheDocument();
+  });
+
+  it("a finished block shows 'Afgerond op <datum>' and neither the select nor Afronden", async () => {
+    renderDialog({ editingReservation: editing("out") });
+
+    const text = await screen.findByTestId("text-maintenance-completed");
+    expect(text.textContent).toContain("Afgerond op");
+    expect(screen.queryByTestId("select-maintenance-status")).toBeNull();
+    expect(screen.queryByTestId("button-schedule-complete-maintenance")).toBeNull();
+  });
+});

@@ -296,8 +296,13 @@ describe("FIX-V — the workshop toggle and its block", () => {
       .send({ status: "in_service", note: "binnen" })).status).toBe(200);
     expect((await rowOf(block.id)).maintenanceStatus).toBe("in");
 
-    expect((await admin.patch(`/api/vehicles/${vehicle.id}/maintenance-status`)
-      .send({ status: "ok" })).status).toBe(200);
+    // D7: coming back from a block the car is Binnen for is the completion of that block.
+    const back = await admin.patch(`/api/vehicles/${vehicle.id}/maintenance-status`).send({ status: "ok" });
+    expect(back.status).toBe(409);
+    expect(back.body).toMatchObject({ code: "USE_COMPLETE_ROUTE", blockId: block.id });
+    expect((await rowOf(block.id)).maintenanceStatus).toBe("in");
+
+    expect((await admin.post(`/api/reservations/${block.id}/complete-maintenance`).send({ completionDate: day(0) })).status).toBe(200);
     expect((await rowOf(block.id)).maintenanceStatus).toBe("out");
   });
 });

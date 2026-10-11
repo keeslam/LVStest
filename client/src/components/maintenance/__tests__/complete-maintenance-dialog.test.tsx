@@ -131,7 +131,7 @@ describe("CompleteMaintenanceDialog - one request", () => {
     expect(Object.keys(calls[0].headers).map((h) => h.toLowerCase())).not.toContain("content-type");
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
-    expect(toastSpy).toHaveBeenCalledWith(expect.objectContaining({ title: "Onderhoud voltooid" }));
+    expect(toastSpy).toHaveBeenCalledWith(expect.objectContaining({ title: "Onderhoud afgerond" }));
   });
 
   it("without a file: ONE JSON request with the same fields", async () => {
@@ -198,7 +198,7 @@ describe("CompleteMaintenanceDialog - one request", () => {
     await user.click(screen.getByTestId("button-complete-maintenance"));
 
     await waitFor(() => expect(toastSpy).toHaveBeenCalled());
-    expect(toastSpy.mock.calls[0][0].description).toBe("Onderhoud voltooien mislukt. Probeer het opnieuw.");
+    expect(toastSpy.mock.calls[0][0].description).toBe("Onderhoud afronden mislukt. Probeer het opnieuw.");
     expect(calls).toHaveLength(1);
     expect(onCompleted).not.toHaveBeenCalled();
   });

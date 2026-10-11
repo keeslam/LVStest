@@ -106,6 +106,7 @@ import {
   selectMaintenanceBlocksToClose,
   maintenanceBlockJustClosed,
   maintenanceBlockJustCancelled,
+  assertBlockNotFinishedByPatch,
   isCheckedInBlockMaintenanceStatus,
   type HandoverOverride,
 } from "./services/lifecycle";
@@ -1683,6 +1684,26 @@ export async function registerRoutes(app: Express): Promise<void> {
       const existingVehicle = await storage.getVehicle(id);
       if (!existingVehicle) {
         return res.status(404).json({ message: "Vehicle not found" });
+      }
+
+      // D7 (besluiten B-41/B-42): "Terug uit onderhoud" for a car that is Binnen for a block
+      // covering today is the completion of that block, with its APK date, reading and spare.
+      // Refused before any write; the client opens the Afronden dialog for `blockId`.
+      // A car without such a block (back from service by hand) still comes back with this route.
+      if (status === 'ok') {
+        const today = isoToday();
+        const binnen = (await storage.getReservationsByVehicle(id)).find((r) =>
+          r.type === 'maintenance_block' && !r.deletedAt &&
+          !CLOSED_RESERVATION_STATUSES.has(normalizeReservationStatus(r.status) ?? '') &&
+          isCheckedInBlockMaintenanceStatus(r.maintenanceStatus) &&
+          r.startDate <= today && (!r.endDate || r.endDate === 'undefined' || r.endDate >= today));
+        if (binnen) {
+          return res.status(409).json({
+            message: "This vehicle is in the workshop for a maintenance block; finish that block with the completion route.",
+            code: "USE_COMPLETE_ROUTE",
+            blockId: binnen.id,
+          });
+        }
       }
 
       await storage.markVehicleForService(id, status, note);
@@ -4078,6 +4099,9 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(403).json({ message: "Not authorized. Changing the reservation type requires 'Reserveringen beheren'." });
       }
 
+      // D7: a block is finished with Afronden, never with a status save.
+      assertBlockNotFinishedByPatch(existingBasic, reservationData);
+
       // FIX-H (BUG-016): `/basic` ran the shape validation and then wrote
       // `status` straight through — no enum check, no transition check — so a
       // dialog could jump `booked -> completed` in one step, or persist
@@ -4366,6 +4390,27 @@ export async function registerRoutes(app: Express): Promise<void> {
     before: Parameters<typeof maintenanceBlockJustClosed>[0] & { id?: number; vehicleId?: number | null },
     after: Parameters<typeof maintenanceBlockJustClosed>[1] & { id?: number; vehicleId?: number | null },
   ): Promise<void> {
+    // D6: cancelling the block that checked the car in frees the car (same rule as DELETE).
+    if (maintenanceBlockJustCancelled(before, after) && after?.id != null) {
+      await storage.releaseVehicleFromRemovedBlock({ id: after.id, vehicleId: after.vehicleId ?? before?.vehicleId, type: after.type });
+      return;
+    }
+    // D6: the edit dialog's "Binnen" checks the car in without touching vehicles.maintenance_status.
+    // Record the block as the source of the flag, unless the car already carries a flag of someone
+    // else's (hand-set, transport, another block) - that stays theirs.
+    if (
+      after?.type === "maintenance_block" && after.id != null && after.vehicleId != null &&
+      isCheckedInBlockMaintenanceStatus(after.maintenanceStatus) &&
+      !isCheckedInBlockMaintenanceStatus(before?.maintenanceStatus)
+    ) {
+      const vehicle = await storage.getVehicle(after.vehicleId);
+      if (
+        vehicle && vehicle.maintenanceStatus === "ok" && vehicle.maintenanceStatusBlockId == null &&
+        vehicle.availabilityStatus !== "needs_fixing" && vehicle.availabilityStatus !== "not_for_rental"
+      ) {
+        await storage.setMaintenanceStatusBlock(after.vehicleId, after.id);
+      }
+    }
     if (!maintenanceBlockJustClosed(before, after)) return;
     // markVehicleForService(...,'ok') is the one owner of "the job is closed":
     // it clears the workshop flag and re-derives the availability, which keeps the
@@ -4391,27 +4436,6 @@ export async function registerRoutes(app: Express): Promise<void> {
    * this applies its answer to the patch: the start date moves to today and,
    * per **B-07**, the total follows from the same day count the booking form
    * uses. Throws `PickupBeforeStartError` (409) when nobody answered the
-    // D6: cancelling the block that checked the car in frees the car (same rule as DELETE).
-    if (maintenanceBlockJustCancelled(before, after) && after?.id != null) {
-      await storage.releaseVehicleFromRemovedBlock({ id: after.id, vehicleId: after.vehicleId ?? before?.vehicleId, type: after.type });
-      return;
-    }
-    // D6: the edit dialog's "Binnen" checks the car in without touching vehicles.maintenance_status.
-    // Record the block as the source of the flag, unless the car already carries a flag of someone
-    // else's (hand-set, transport, another block) - that stays theirs.
-    if (
-      after?.type === "maintenance_block" && after.id != null && after.vehicleId != null &&
-      isCheckedInBlockMaintenanceStatus(after.maintenanceStatus) &&
-      !isCheckedInBlockMaintenanceStatus(before?.maintenanceStatus)
-    ) {
-      const vehicle = await storage.getVehicle(after.vehicleId);
-      if (
-        vehicle && vehicle.maintenanceStatus === "ok" && vehicle.maintenanceStatusBlockId == null &&
-        vehicle.availabilityStatus !== "needs_fixing" && vehicle.availabilityStatus !== "not_for_rental"
-      ) {
-        await storage.setMaintenanceStatusBlock(after.vehicleId, after.id);
-      }
-    }
    * question.
    */
   async function applyPickupPeriodRule(
@@ -4652,6 +4676,10 @@ export async function registerRoutes(app: Express): Promise<void> {
       // code leaned on the fleet-wide sync, whose reset branch only touched
       // vehicles with no reservation at all, so a car with a booking 10 days out
       // stayed `rented` for ever after its rental was completed.
+      // D6: cancelling the block that checked the car in frees the car.
+      if (maintenanceBlockJustCancelled(existingReservation, reservation)) {
+        await storage.releaseVehicleFromRemovedBlock(reservation);
+      }
       await storage.recomputeVehicleAvailability(reservation.vehicleId);
       
       // Fetch related data to return enriched reservation
@@ -4677,10 +4705,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       sendRouteError(res, error, "Failed to update reservation status");
     }
   });
-      // D6: cancelling the block that checked the car in frees the car.
-      if (maintenanceBlockJustCancelled(existingReservation, reservation)) {
-        await storage.releaseVehicleFromRemovedBlock(reservation);
-      }
 
   // Update reservation with damage check upload
   app.patch("/api/reservations/:id", hasPermission(UserPermission.MANAGE_RESERVATIONS), damageCheckUpload.single('damageCheckFile'), async (req: Request, res: Response) => {
@@ -4737,6 +4761,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (!existingReservationForDiff) {
         return res.status(404).json({ message: "Reservation not found" });
       }
+
+      // D7: a block is finished with Afronden, never with a status save.
+      assertBlockNotFinishedByPatch(existingReservationForDiff, reservationData);
 
       // FIX-H (BUG-016) — the enum and the transition table, on this path too.
       if ('status' in reservationData) {
@@ -5112,6 +5139,10 @@ export async function registerRoutes(app: Express): Promise<void> {
           reservation.customerId
         );
         void onMaintenanceBlockChanged(null, block);
+        // D6: the block created here is the source of the workshop flag just written.
+        if (maintenanceStatus !== 'ok' && maintenanceStatus !== 'completed') {
+          await storage.setMaintenanceStatusBlock(reservation.vehicleId!, block.id);
+        }
       }
       
       res.json({
@@ -5137,10 +5168,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       
       // Validate required fields
       if (!spareVehicleId || !startDate) {
-        // D6: the block created here is the source of the workshop flag just written.
-        if (maintenanceStatus !== 'ok' && maintenanceStatus !== 'completed') {
-          await storage.setMaintenanceStatusBlock(reservation.vehicleId!, block.id);
-        }
         return res.status(400).json({ 
           message: "spareVehicleId and startDate are required" 
         });
@@ -5579,31 +5606,6 @@ export async function registerRoutes(app: Express): Promise<void> {
 
   // ==================== PICKUP AND RETURN ROUTES ====================
   
-  // Pickup a reservation (enter mileage/fuel, generate contract)
-  app.post("/api/reservations/:id/pickup", hasPermission(UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
-    try {
-      const reservationId = parseInt(req.params.id);
-      if (isNaN(reservationId)) {
-        return res.status(400).json({ message: "Invalid reservation ID" });
-      }
-
-      const { contractNumber, pickupMileage, fuelLevelPickup, pickupDate, pickupNotes, templateId, allowMileageDecrease, overridePassword, overrideContractNumber } = req.body;
-      
-      if (!contractNumber || contractNumber.trim() === '') {
-        return res.status(400).json({
-          message: "Contract number is required"
-        });
-      }
-
-      // BUG-131: pickupDate was destructured and used unvalidated - it lands in
-      // the reservation, in every later date comparison, and in a generated
-      // filename. Only a real yyyy-MM-dd day gets through.
-      if (pickupDate != null && pickupDate !== '' && (typeof pickupDate !== 'string' || !isCalendarDate(pickupDate))) {
-        return res.status(400).json({
-          message: "Invalid pickup date",
-          errors: [{ field: "pickupDate", message: "Use a real yyyy-MM-dd date" }],
-        });
-      }
   /**
    * D5 (besluiten B-41) - what the pickup dialog shows *before* the pickup: the
    * B-03 gate's verdict without throwing, plus the warnings of the handover
@@ -5651,6 +5653,31 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  // Pickup a reservation (enter mileage/fuel, generate contract)
+  app.post("/api/reservations/:id/pickup", hasPermission(UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
+    try {
+      const reservationId = parseInt(req.params.id);
+      if (isNaN(reservationId)) {
+        return res.status(400).json({ message: "Invalid reservation ID" });
+      }
+
+      const { contractNumber, pickupMileage, fuelLevelPickup, pickupDate, pickupNotes, templateId, allowMileageDecrease, overridePassword, overrideContractNumber } = req.body;
+      
+      if (!contractNumber || contractNumber.trim() === '') {
+        return res.status(400).json({
+          message: "Contract number is required"
+        });
+      }
+
+      // BUG-131: pickupDate was destructured and used unvalidated - it lands in
+      // the reservation, in every later date comparison, and in a generated
+      // filename. Only a real yyyy-MM-dd day gets through.
+      if (pickupDate != null && pickupDate !== '' && (typeof pickupDate !== 'string' || !isCalendarDate(pickupDate))) {
+        return res.status(400).json({
+          message: "Invalid pickup date",
+          errors: [{ field: "pickupDate", message: "Use a real yyyy-MM-dd date" }],
+        });
+      }
 
       // BUG-038: PATCH /:id has always pre-checked the contract number; the
       // pickup handler did not, so the second pickup with the same number hit
@@ -6262,31 +6289,6 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
 
-  // Delete reservation (soft delete with user tracking)
-  app.delete("/api/reservations/:id", requireAuth, hasPermission(UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid reservation ID" });
-      }
-      
-      // Check if reservation exists and is not already deleted
-      const reservation = await storage.getReservation(id);
-      if (!reservation) {
-        return res.status(404).json({ message: "Reservation not found" });
-      }
-      
-      // Check if already deleted
-      if (reservation.deletedAt) {
-        return res.status(410).json({ message: "Reservation already deleted" });
-      }
-
-      // Sub-project C (B-33, B-39): deleting a rental that has been picked up needs
-      // `cancel_picked_up_rental` and the confirmed warning (?confirmPickedUp=true).
-      // Before the first write: the spares of a maintenance block are closed below.
-      {
-        const refusal = checkPickedUpCancellation(reservation, req.user, req.query.confirmPickedUp);
-        if (refusal) return res.status(refusal.status).json(refusal.body);
   /**
    * D4 (besluiten B-41/B-42) - "Plannen afbreken". The spare-vehicle dialog opens after the
    * maintenance block was already saved; cancelling it undoes the whole planning. Only a block
@@ -6345,6 +6347,31 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  // Delete reservation (soft delete with user tracking)
+  app.delete("/api/reservations/:id", requireAuth, hasPermission(UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid reservation ID" });
+      }
+      
+      // Check if reservation exists and is not already deleted
+      const reservation = await storage.getReservation(id);
+      if (!reservation) {
+        return res.status(404).json({ message: "Reservation not found" });
+      }
+      
+      // Check if already deleted
+      if (reservation.deletedAt) {
+        return res.status(410).json({ message: "Reservation already deleted" });
+      }
+
+      // Sub-project C (B-33, B-39): deleting a rental that has been picked up needs
+      // `cancel_picked_up_rental` and the confirmed warning (?confirmPickedUp=true).
+      // Before the first write: the spares of a maintenance block are closed below.
+      {
+        const refusal = checkPickedUpCancellation(reservation, req.user, req.query.confirmPickedUp);
+        if (refusal) return res.status(refusal.status).json(refusal.body);
       }
       
       const user = req.user;
@@ -6436,6 +6463,10 @@ export async function registerRoutes(app: Express): Promise<void> {
           console.log(`🔔 Deleted spare assignment notification for placeholder ${id}`);
         }
         
+        // D6 (B-41): deleting the block that checked the car in frees the car -
+        // its "Reparatie nodig" came only from that block.
+        if (reservation.type === 'maintenance_block') await storage.releaseVehicleFromRemovedBlock(reservation);
+
         // FIX-H/FIX-V — recompute the vehicles this delete touched: the one the
         // reservation was on, and every spare it just released (BUG-014).
         await storage.recomputeVehicleAvailability(reservation.vehicleId);
@@ -6460,10 +6491,6 @@ export async function registerRoutes(app: Express): Promise<void> {
 
         // Broadcast real-time update to all connected clients
         realtimeEvents.reservations.deleted({ id });
-
-        // D6 (B-41): deleting the block that checked the car in frees the car -
-        // its "Reparatie nodig" came only from that block.
-        if (reservation.type === 'maintenance_block') await storage.releaseVehicleFromRemovedBlock(reservation);
 
         res.status(200).json({
           message: "Reservation deleted successfully",

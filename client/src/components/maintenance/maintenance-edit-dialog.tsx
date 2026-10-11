@@ -43,6 +43,9 @@ import { Reservation, Vehicle, Customer, Driver } from "@shared/schema";
 import { Loader2, User, Car as CarIcon, Phone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { blockStatusForForm } from "@/lib/maintenance-status";
+import { CompleteMaintenanceDialog } from "@/components/maintenance/complete-maintenance-dialog";
+import { calculateNextApkDate } from "@/lib/next-apk-date";
+import { formatDateNl } from "@/lib/format-date-nl";
 
 // Form schema for maintenance editing - only fields that can be edited
 const maintenanceEditSchema = z.object({
@@ -110,6 +113,13 @@ export function MaintenanceEditDialog({
     queryKey: ["/api/vehicles"],
     enabled: open,
   });
+
+  // D7 (besluiten B-41/B-42): "Uit (onderhoud voltooid)" is no longer a status to pick here.
+  // A block is finished with Afronden (the completion dialog: APK date, reading, spare vehicle);
+  // a block that is already finished shows "Afgerond op <datum>" as text.
+  const [completeOpen, setCompleteOpen] = useState(false);
+  const isFinished = blockStatusForForm(reservation?.maintenanceStatus) === "out";
+  const blockVehicle = vehicles.find((candidate) => candidate.id === reservation?.vehicleId);
 
   // Fetch customers for optional selection
   const { data: customers = [] } = useQuery<any[]>({
@@ -325,18 +335,19 @@ export function MaintenanceEditDialog({
         notesText += `\nContact Phone: ${data.contactPhone}`;
       }
       
-      // Update the maintenance reservation directly (spare vehicle assignments are now managed in the view dialog)
+      // Update the maintenance reservation directly (spare vehicle assignments are now managed in the view dialog).
+      // A finished block keeps the status it has: the server refuses a status save to out/completed (D7).
       const response = await apiRequest("PATCH", `/api/reservations/${reservation.id}`, {
         vehicleId: data.vehicleId,
         customerId: (data.customerId && data.customerId !== "none") ? parseInt(data.customerId) : null,
         startDate: data.startDate,
         endDate: endDate,
-        status: data.maintenanceStatus,
+        ...(isFinished ? {} : { status: data.maintenanceStatus }),
         type: "maintenance_block",
         notes: notesText,
         totalPrice: 0,
         maintenanceDuration: data.maintenanceDuration,
-        maintenanceStatus: data.maintenanceStatus,
+        ...(isFinished ? {} : { maintenanceStatus: data.maintenanceStatus }),
       });
       return await response.json();
     },
@@ -593,7 +604,15 @@ export function MaintenanceEditDialog({
                 )}
               />
 
-              {/* Status */}
+              {/* Status: Gepland / Binnen. Afgerond is shown as text; finishing is the Afronden button. */}
+              {isFinished ? (
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">{t('editDialog.status')}</div>
+                  <div className="text-sm" data-testid="text-maintenance-completed">
+                    {t('editDialog.completedOn', { date: formatDateNl(reservation?.endDate || reservation?.startDate) })}
+                  </div>
+                </div>
+              ) : (
               <FormField
                 control={form.control}
                 name="maintenanceStatus"
@@ -609,7 +628,6 @@ export function MaintenanceEditDialog({
                       <SelectContent>
                         <SelectItem value="scheduled">{t('editDialog.statuses.scheduled')}</SelectItem>
                         <SelectItem value="in">{t('editDialog.statuses.in')}</SelectItem>
-                        <SelectItem value="out">{t('editDialog.statuses.out')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormDescription>
@@ -619,6 +637,7 @@ export function MaintenanceEditDialog({
                   </FormItem>
                 )}
               />
+              )}
 
             </div>
 
@@ -651,6 +670,19 @@ export function MaintenanceEditDialog({
               >
                 {t('common:actions.cancel')}
               </Button>
+              {!isFinished && (
+                <RequiresPermission anyOf={[UserPermission.MANAGE_MAINTENANCE, UserPermission.MANAGE_RESERVATIONS]}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setCompleteOpen(true)}
+                    disabled={updateMutation.isPending}
+                    data-testid="button-edit-complete-maintenance"
+                  >
+                    {t('editDialog.completeButton')}
+                  </Button>
+                </RequiresPermission>
+              )}
               <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
                 <Button
                   type="submit"
@@ -671,6 +703,17 @@ export function MaintenanceEditDialog({
           </form>
         </Form>
       </DialogContent>
+
+      {/* Afronden (B-37): one request; once done, this edit dialog has nothing left to edit. */}
+      <CompleteMaintenanceDialog
+        open={completeOpen}
+        onOpenChange={setCompleteOpen}
+        block={reservation}
+        vehicle={blockVehicle}
+        initialApkDate={blockVehicle ? blockVehicle.apkDate || calculateNextApkDate(blockVehicle, new Date()) : ""}
+        initialMileage={blockVehicle?.currentMileage ? String(blockVehicle.currentMileage) : ""}
+        onCompleted={() => onOpenChange(false)}
+      />
     </Dialog>
   );
 }

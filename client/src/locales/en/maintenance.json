@@ -40,9 +40,10 @@
     "status": "Status",
     "statuses": {
       "scheduled": "Scheduled (vehicle not yet arrived)",
-      "in": "In (vehicle is in maintenance)",
-      "out": "Out (maintenance completed)"
+      "in": "In (vehicle is in maintenance)"
     },
+    "completedOn": "Completed on {{date}}",
+    "completeButton": "Complete",
     "statusHint": "Current status of the maintenance",
     "notes": "Notes",
     "notesPlaceholder": "Additional notes about this maintenance...",
@@ -278,9 +279,10 @@
     "status": "Status",
     "statuses": {
       "scheduled": "Scheduled (vehicle not yet arrived)",
-      "in": "In (vehicle is in maintenance)",
-      "out": "Out (maintenance completed)"
+      "in": "In (vehicle is in maintenance)"
     },
+    "completedOn": "Completed on {{date}}",
+    "completeButton": "Complete",
     "statusHint": "Current status of the maintenance",
     "description": "Description",
     "descriptionPlaceholder": "Brief description of the maintenance",

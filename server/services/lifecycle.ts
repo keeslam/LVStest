@@ -325,6 +325,36 @@ export function maintenanceBlockJustClosed(
 }
 
 /**
+ * D7 (besluiten B-41/B-42): "Uit (onderhoud voltooid)" is gone from the edit
+ * dialogs. A maintenance block is finished with Afronden
+ * (`POST /api/reservations/:id/complete-maintenance`), which also takes the APK
+ * date, the odometer reading and the spare vehicle; a status save through
+ * `PATCH /:id` or `/:id/basic` is refused for `out` / `completed` (400
+ * USE_COMPLETE_ROUTE). A save that repeats the status the block already has is
+ * not a change and passes (editing the notes of a finished block).
+ */
+export function assertBlockNotFinishedByPatch(
+  existing: BlockCloseCheckRow | null | undefined,
+  patch: { status?: unknown; maintenanceStatus?: unknown },
+): void {
+  if (!existing || existing.type !== "maintenance_block") return;
+
+  const asksStatus = patch.status !== undefined && patch.status !== null && patch.status !== "";
+  const asksMaintenance = patch.maintenanceStatus !== undefined && patch.maintenanceStatus !== null && patch.maintenanceStatus !== "";
+  const closesViaStatus = asksStatus && normalizeReservationStatus(patch.status) === "completed" &&
+    normalizeReservationStatus(existing.status) !== "completed";
+  const closesViaMaintenance = asksMaintenance && String(patch.maintenanceStatus).trim().toLowerCase() === "out" &&
+    String(existing.maintenanceStatus ?? "").trim().toLowerCase() !== "out";
+  if (!closesViaStatus && !closesViaMaintenance) return;
+
+  throw new StateTransitionError("A maintenance block is finished with the completion route, not with a status save.", {
+    code: "USE_COMPLETE_ROUTE",
+    field: closesViaStatus ? "status" : "maintenanceStatus",
+    details: { route: "POST /api/reservations/:id/complete-maintenance" },
+  });
+}
+
+/**
  * D6 (besluiten B-41): true when a write cancelled a live maintenance block.
  * A cancelled block no longer keeps the car in the workshop; whether the car is
  * freed depends on `vehicles.maintenance_status_block_id` (see

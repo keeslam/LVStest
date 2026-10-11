@@ -244,6 +244,18 @@ export const DIALOGS: DialogEntry[] = [
     allowedPathNeedsState: "the opener exists only on the row of an open maintenance block in the Gepland tab of the overview (the e2e seed holds no block); the jsdom test p4-maintenance-list-actions.test.tsx plans one and opens the dialog",
     deniedPathNeedsState: "the opener does not exist on a bare load of /maintenance: it only renders for a block, inside the overview's Gepland tab; its disabled-and-explained state per right is proven by p4-maintenance-list-actions.test.tsx",
   },
+  // Sub-project D, D7 (besluiten B-41/B-42): "Uit (onderhoud voltooid)" left the edit dialog of a
+  // maintenance block; the green "Afronden" button next to "Onderhoud bijwerken" replaces it and
+  // opens the same completion dialog (also from the scan screen's schedule dialog in edit mode,
+  // test id `button-schedule-complete-maintenance`, same rights). Same RequiresPermission
+  // anyOf={[MANAGE_MAINTENANCE, MANAGE_RESERVATIONS]} as the calendar's button: the completion
+  // route's own guard.
+  {
+    page: "/maintenance", opener: "button-edit-complete-maintenance", anyOf: [P.MANAGE_MAINTENANCE, P.MANAGE_RESERVATIONS],
+    source: "client/src/components/maintenance/maintenance-edit-dialog.tsx", name: "onderhoud afronden vanuit het bewerkdialoog",
+    allowedPathNeedsState: "the opener exists only inside the edit dialog of an open maintenance block, behind the pencil on its event card (the e2e seed holds no block); the jsdom test maintenance-edit-dialog-status.test.tsx opens the dialog for a block, presses it and completes the block",
+    deniedPathNeedsState: "the opener does not exist on a bare load of /maintenance: it only renders inside the edit dialog of a block; its per-right state is the same RequiresPermission as button-complete-scheduled_maintenance_<reservationId>, proven by complete-maintenance-dialog.test.tsx",
+  },
 
   // --- /documents ----------------------------------------------------------
   // All four dialog roots are inline in documents/index.tsx itself, each

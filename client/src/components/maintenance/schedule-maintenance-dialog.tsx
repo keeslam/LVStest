@@ -42,6 +42,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { CompleteMaintenanceDialog } from "@/components/maintenance/complete-maintenance-dialog";
+import { calculateNextApkDate } from "@/lib/next-apk-date";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox";
 import { Loader2, Calendar, AlertTriangle, Wrench, Clock, Car, Filter } from "lucide-react";
@@ -108,6 +110,9 @@ export function ScheduleMaintenanceDialog({
   // D4 (besluiten B-41): closing the spare dialog any way but the confirm button
   // undoes the planning; ask first.
   const [abortPlanningOpen, setAbortPlanningOpen] = useState(false);
+  // D7 (besluiten B-41/B-42): in edit mode "Uit" is gone; a block is finished with Afronden.
+  const [completeOpen, setCompleteOpen] = useState(false);
+  const isFinishedBlock = Boolean(editingReservation) && blockStatusForForm(editingReservation?.maintenanceStatus) === "out";
   const [conflictingReservations, setConflictingReservations] = useState<any[]>([]);
   const [maintenanceData, setMaintenanceData] = useState<any>(null);
   const [spareVehicleAssignments, setSpareVehicleAssignments] = useState<{[reservationId: number]: number | 'tbd' | 'customer_arranging' | 'selecting'}>({});
@@ -357,14 +362,15 @@ export function ScheduleMaintenanceDialog({
         customerId: (data.customerId && data.customerId !== "none") ? parseInt(data.customerId) : null,
         startDate: startDate,
         endDate: endDate, // Calculated from duration
-        status: data.maintenanceStatus, // Use maintenance status ('in' or 'out')
+        // A finished block keeps the status it has: the server refuses a save to out/completed (D7).
+        ...(isFinishedBlock ? {} : { status: data.maintenanceStatus }),
         type: "maintenance_block",
         notes: `${data.maintenanceType}: ${data.description || ''}\n${data.notes || ''}`.trim(),
         totalPrice: 0, // No price for maintenance
         maintenanceDuration: data.maintenanceDuration,
-        maintenanceStatus: data.maintenanceStatus,
+        ...(isFinishedBlock ? {} : { maintenanceStatus: data.maintenanceStatus }),
       };
-      
+
       console.log('Sending payload:', payload);
       
       // Use PATCH for editing, POST for creating
@@ -1273,7 +1279,15 @@ export function ScheduleMaintenanceDialog({
 
             {/* A-7-9: a new block always starts as planned; the status belongs to a
                 block that exists (the edit mode, and the scan panel's edit flow). */}
-            {editingReservation && (
+            {isFinishedBlock && (
+              <div className="space-y-2">
+                <div className="text-sm font-medium">{t('scheduleDialog.status')}</div>
+                <div className="text-sm" data-testid="text-maintenance-completed">
+                  {t('scheduleDialog.completedOn', { date: formatDateNl(editingReservation?.endDate || editingReservation?.startDate) })}
+                </div>
+              </div>
+            )}
+            {editingReservation && !isFinishedBlock && (
             <FormField
               control={form.control}
               name="maintenanceStatus"
@@ -1289,7 +1303,6 @@ export function ScheduleMaintenanceDialog({
                     <SelectContent>
                       <SelectItem value="scheduled">{t('scheduleDialog.statuses.scheduled')}</SelectItem>
                       <SelectItem value="in">{t('scheduleDialog.statuses.in')}</SelectItem>
-                      <SelectItem value="out">{t('scheduleDialog.statuses.out')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormDescription>
@@ -1363,6 +1376,19 @@ export function ScheduleMaintenanceDialog({
               >
                 {t('common:actions.cancel')}
               </Button>
+              {editingReservation && !isFinishedBlock && (
+                <RequiresPermission anyOf={[UserPermission.MANAGE_MAINTENANCE, UserPermission.MANAGE_RESERVATIONS]}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setCompleteOpen(true)}
+                    disabled={scheduleMaintenanceMutation.isPending}
+                    data-testid="button-schedule-complete-maintenance"
+                  >
+                    {t('scheduleDialog.completeButton')}
+                  </Button>
+                </RequiresPermission>
+              )}
               {/* Task 4 (docs/superpowers/specs/2026-09-21-toegang-design.md, §5):
                   create mode submits POST /api/reservations (MANAGE_RESERVATIONS
                   only — that route is not maintenance-exclusive, so it is not
@@ -1396,6 +1422,28 @@ export function ScheduleMaintenanceDialog({
         </Form>
       </DialogContent>
     </Dialog>
+
+    {/* Afronden (B-37) from the edit mode; once done this dialog has nothing left to edit. */}
+    {editingReservation && (
+      <CompleteMaintenanceDialog
+        open={completeOpen}
+        onOpenChange={setCompleteOpen}
+        block={editingReservation}
+        vehicle={vehicles.find((candidate) => candidate.id === editingReservation.vehicleId)}
+        initialApkDate={(() => {
+          const blockVehicle = vehicles.find((candidate) => candidate.id === editingReservation.vehicleId);
+          return blockVehicle ? blockVehicle.apkDate || calculateNextApkDate(blockVehicle, new Date()) : "";
+        })()}
+        initialMileage={(() => {
+          const blockVehicle = vehicles.find((candidate) => candidate.id === editingReservation.vehicleId);
+          return blockVehicle?.currentMileage ? String(blockVehicle.currentMileage) : "";
+        })()}
+        onCompleted={() => {
+          onOpenChange(false);
+          onSuccess?.();
+        }}
+      />
+    )}
 
     {/* Spare Vehicle Selection Dialog */}
     <Dialog

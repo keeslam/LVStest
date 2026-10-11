@@ -40,9 +40,10 @@
     "status": "Status",
     "statuses": {
       "scheduled": "Gepland (voertuig nog niet gearriveerd)",
-      "in": "Binnen (voertuig is in onderhoud)",
-      "out": "Uit (onderhoud voltooid)"
+      "in": "Binnen (voertuig is in onderhoud)"
     },
+    "completedOn": "Afgerond op {{date}}",
+    "completeButton": "Afronden",
     "statusHint": "Huidige status van het onderhoud",
     "notes": "Notities",
     "notesPlaceholder": "Aanvullende notities over dit onderhoud...",
@@ -278,9 +279,10 @@
     "status": "Status",
     "statuses": {
       "scheduled": "Gepland (voertuig nog niet gearriveerd)",
-      "in": "Binnen (voertuig is in onderhoud)",
-      "out": "Uit (onderhoud voltooid)"
+      "in": "Binnen (voertuig is in onderhoud)"
     },
+    "completedOn": "Afgerond op {{date}}",
+    "completeButton": "Afronden",
     "statusHint": "Huidige status van het onderhoud",
     "description": "Omschrijving",
     "descriptionPlaceholder": "Korte omschrijving van het onderhoud",
@@ -355,8 +357,8 @@
     "legendTitle": "Legenda onderhoudskalender",
     "noEventsForDay": "Geen onderhoudsevenementen gepland voor deze dag",
     "maintenanceTypeFallback": "Onderhoud",
-    "maintenanceCompletedNotesFallback": "Onderhoud voltooid",
-    "completeButton": "Voltooien",
+    "maintenanceCompletedNotesFallback": "Onderhoud afgerond",
+    "completeButton": "Afronden",
     "revertButton": "Terugdraaien",
     "eventTypeLabels": {
       "apk_due": "APK verschuldigd",
@@ -410,17 +412,17 @@
       "description": "Onderhoudsevenementen voor deze dag bekijken en beheren"
     },
     "completeMaintenanceDialog": {
-      "title": "Onderhoud voltooien",
-      "description": "Bekijk en werk de voertuiggegevens bij na het voltooien van het onderhoud",
+      "title": "Onderhoud afronden",
+      "description": "Bekijk en werk de voertuiggegevens bij na het afronden van het onderhoud",
       "vehicleInfoHeading": "Voertuiginformatie",
       "licenseLabel": "Kenteken:",
       "vehicleLabel": "Voertuig:",
       "maintenanceTypeLabel": "Onderhoudstype:",
       "lastKnownMileageLabel": "Laatst bekende kilometerstand:",
       "currentApkLabel": "Huidige APK:",
-      "completionDetailsHeading": "Voltooiingsdetails",
-      "completionDateLabel": "Voltooiingsdatum",
-      "completionDateHint": "Wanneer is het onderhoud voltooid?",
+      "completionDetailsHeading": "Afrondingsdetails",
+      "completionDateLabel": "Afrondingsdatum",
+      "completionDateHint": "Wanneer is het onderhoud afgerond?",
       "apkDateLabel": "APK-datum",
       "apkDateHint": "Vervaldatum APK (indien bijgewerkt)",
       "apkFormLabel": "APK-keuringsformulier (optioneel)",
@@ -452,10 +454,10 @@
       "maintenanceDeletedWithVehicleDescription": "Onderhoud voor {{vehicleInfo}} is succesvol verwijderd.",
       "maintenanceScheduledTitle": "Onderhoud gepland",
       "maintenanceScheduledDescription": "Het onderhoud is gepland en de herinneringen zijn bijgewerkt.",
-      "completeFailedDescription": "Onderhoud voltooien mislukt. Probeer het opnieuw.",
+      "completeFailedDescription": "Onderhoud afronden mislukt. Probeer het opnieuw.",
       "mileageLowerThanCurrent": "De kilometerstand ({{given}} km) is lager dan de huidige stand van het voertuig ({{current}} km). Controleer de stand; er is niets opgeslagen.",
-      "maintenanceCompletedTitle": "Onderhoud voltooid",
-      "maintenanceCompletedWithDetails": "Onderhoud voltooid: {{details}}",
+      "maintenanceCompletedTitle": "Onderhoud afgerond",
+      "maintenanceCompletedWithDetails": "Onderhoud afgerond: {{details}}",
       "maintenanceCompletedNoDetails": "Voertuigonderhoud is bijgewerkt.",
       "maintenanceRevertedTitle": "Onderhoud teruggedraaid",
       "maintenanceRevertedDescription": "Onderhoud is weer gemarkeerd als actief",

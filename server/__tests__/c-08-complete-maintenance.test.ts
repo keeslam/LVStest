@@ -444,6 +444,23 @@ describe("B-37 - one-call maintenance completion", () => {
     expect(listFilesRecursive(TEMP_UPLOADS)).toEqual(filesBefore);
   });
 
+  it("D7: a block that is already completed is refused, 409 ALREADY_COMPLETED, and nothing is written", async () => {
+    const { vehicle, block } = await carInTheWorkshop();
+    const first = await completionRequest(maintenanceOnly, block.id, { completionDate: COMPLETION, currentMileage: "41000" });
+    expect(first.status).toBe(200);
+    const filesBefore = listFilesRecursive(TEMP_UPLOADS);
+    const readingBefore = (await vehicleRow(vehicle.id)).currentMileage;
+
+    const again = await completionRequest(maintenanceOnly, block.id, { completionDate: "2026-11-20", currentMileage: "45000" }, pdfFile("FIXT-c08-again"));
+
+    expect(again.status).toBe(409);
+    expect(again.body.code).toBe("ALREADY_COMPLETED");
+    // The first completion stands: same end date, same reading, no second document or file.
+    expect((await blockRow(block.id)).endDate).toBe(COMPLETION);
+    expect((await vehicleRow(vehicle.id)).currentMileage).toBe(readingBefore);
+    expect(listFilesRecursive(TEMP_UPLOADS)).toEqual(filesBefore);
+  });
+
   it("manage_reservations (without manage_maintenance) is still accepted: the guard is unchanged", async () => {
     const { block } = await carInTheWorkshop();
     const reservationsOnly = await agentFor(["manage_reservations"]);
