@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { chunk, IMPORT_CHUNK_SIZE } from "@/lib/import-chunks";
@@ -223,6 +224,13 @@ interface ParsedVehicle {
   [key: string]: string | boolean | string[] | undefined;
 }
 
+// D2: a row is a success, a warning (skipped or created without RDW data) or a failure.
+interface ImportResults {
+  imported: any[];
+  warnings: any[];
+  failed: any[];
+}
+
 interface VehicleBulkImportDialogProps {
   children?: React.ReactNode;
   onSuccess?: () => void;
@@ -235,10 +243,10 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("manual");
   const [importProgress, setImportProgress] = useState(0);
-  const [importResults, setImportResults] = useState<{
-    imported: any[];
-    failed: any[];
-  } | null>(null);
+  const [importResults, setImportResults] = useState<ImportResults | null>(null);
+  // D2: one checkbox above both tabs; off by default, so a plate the RDW does
+  // not know is skipped (with a warning) unless the employee asks otherwise.
+  const [createUnknown, setCreateUnknown] = useState(false);
   
   // CSV preview state
   const [csvPreviewData, setCsvPreviewData] = useState<ParsedVehicle[] | null>(null);
@@ -599,26 +607,27 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
   // bound now that every row costs an RDW lookup.
   const importMutation = useMutation({
     mutationFn: async (licensePlates: string[]) => {
-      const combined: { imported: any[]; failed: any[] } = { imported: [], failed: [] };
+      const combined: ImportResults = { imported: [], warnings: [], failed: [] };
       const chunks = chunk(licensePlates, IMPORT_CHUNK_SIZE);
       let done = 0;
       setImportProgress(0);
       for (const batch of chunks) {
-        const response = await apiRequest("POST", "/api/vehicles/bulk-import-plates", { licensePlates: batch });
+        const response = await apiRequest("POST", "/api/vehicles/bulk-import-plates", { licensePlates: batch, createUnknown });
         const result = await response.json();
         combined.imported.push(...(result.imported ?? []));
+        combined.warnings.push(...(result.warnings ?? []));
         combined.failed.push(...(result.failed ?? []));
         done += batch.length;
         setImportProgress(Math.round((done / licensePlates.length) * 100));
       }
       return combined;
     },
-    onSuccess: (data: { imported: any[], failed: any[] }) => {
+    onSuccess: (data: ImportResults) => {
       invalidateByPrefix("/api/vehicles");
       setImportResults(data);
       toast({
         title: t('bulkImportDialog.toasts.importCompleteTitle'),
-        description: t('bulkImportDialog.toasts.importCompleteDescription', { importedCount: data.imported.length, failedCount: data.failed.length }),
+        description: t('bulkImportDialog.toasts.importCompleteDescription', { importedCount: data.imported.length, warningCount: data.warnings.length, failedCount: data.failed.length }),
         variant: data.failed.length > 0 ? "destructive" : "default",
       });
 
@@ -638,21 +647,22 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
   // Handle CSV bulk import - same chunking, same real progress (OPT-031).
   const csvImportMutation = useMutation({
     mutationFn: async (vehicles: ParsedVehicle[]) => {
-      const combined: { imported: any[]; failed: any[] } = { imported: [], failed: [] };
+      const combined: ImportResults = { imported: [], warnings: [], failed: [] };
       const chunks = chunk(vehicles, IMPORT_CHUNK_SIZE);
       let done = 0;
       setImportProgress(0);
       for (const batch of chunks) {
-        const response = await apiRequest("POST", "/api/vehicles/bulk-import-csv", { vehicles: batch });
+        const response = await apiRequest("POST", "/api/vehicles/bulk-import-csv", { vehicles: batch, createUnknown });
         const result = await response.json();
         combined.imported.push(...(result.imported ?? []));
+        combined.warnings.push(...(result.warnings ?? []));
         combined.failed.push(...(result.failed ?? []));
         done += batch.length;
         setImportProgress(Math.round((done / vehicles.length) * 100));
       }
       return combined;
     },
-    onSuccess: (data: { imported: any[], failed: any[] }) => {
+    onSuccess: (data: ImportResults) => {
       invalidateByPrefix("/api/vehicles");
       setImportResults(data);
       setCsvPreviewData(null);
@@ -660,7 +670,7 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
       setSelectedFile(null);
       toast({
         title: t('bulkImportDialog.toasts.importCompleteTitle'),
-        description: t('bulkImportDialog.toasts.importCompleteDescription', { importedCount: data.imported.length, failedCount: data.failed.length }),
+        description: t('bulkImportDialog.toasts.importCompleteDescription', { importedCount: data.imported.length, warningCount: data.warnings.length, failedCount: data.failed.length }),
         variant: data.failed.length > 0 ? "destructive" : "default",
       });
 
@@ -760,6 +770,22 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
         </DialogHeader>
 
         <div className="mt-4">
+          {/* D2: the choice counts for both tabs, so it sits above them. */}
+          <div className="mb-4 flex items-start gap-3 rounded-md border p-3">
+            <Checkbox
+              id="import-create-unknown"
+              checked={createUnknown}
+              onCheckedChange={(checked) => setCreateUnknown(checked === true)}
+              disabled={importMutation.isPending || csvImportMutation.isPending}
+              data-testid="checkbox-import-create-unknown"
+            />
+            <div className="space-y-1">
+              <label htmlFor="import-create-unknown" className="text-sm font-medium leading-none cursor-pointer">
+                {t('bulkImportDialog.createUnknown.label')}
+              </label>
+              <p className="text-xs text-muted-foreground">{t('bulkImportDialog.createUnknown.hint')}</p>
+            </div>
+          </div>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="w-full grid grid-cols-2 mb-6">
               <TabsTrigger value="manual">
@@ -992,11 +1018,11 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
           )}
 
           {importResults && (
-            <Card className="mt-6">
+            <Card className="mt-6" data-testid="import-results">
               <CardHeader>
                 <CardTitle>{t('bulkImportDialog.results.title')}</CardTitle>
                 <CardDescription>
-                  {t('bulkImportDialog.results.description', { imported: importResults.imported.length, failed: importResults.failed.length })}
+                  {t('bulkImportDialog.results.description', { imported: importResults.imported.length, warnings: importResults.warnings.length, failed: importResults.failed.length })}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -1014,13 +1040,6 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
                               <Check className="h-4 w-4 mr-2 text-green-500" />
                               {item.licensePlate} - {item.vehicle?.brand || item.brand} {item.vehicle?.model || item.model}
                             </span>
-                            {/* OPT-031 - the screen promised RDW auto-fill; now
-                                it reports what it actually got. */}
-                            {item.enrichmentError && (
-                              <span className="block pl-6 text-xs text-amber-700">
-                                {t('bulkImportDialog.rdwNotFound')}
-                              </span>
-                            )}
                             {Array.isArray(item.differences) && item.differences.length > 0 && (
                               <span className="block pl-6 text-xs text-amber-700">
                                 {t('bulkImportDialog.rdwDifferencesTitle')}:{' '}
@@ -1034,6 +1053,29 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
                                   .join('; ')}
                               </span>
                             )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </>
+                )}
+
+                {importResults.warnings.length > 0 && (
+                  <>
+                    <h3 className="text-md font-medium flex items-center mb-2">
+                      <AlertCircle className="h-5 w-5 mr-2 text-amber-500" />
+                      {t('bulkImportDialog.results.warningTitle', { count: importResults.warnings.length })}
+                    </h3>
+                    <div className="bg-amber-50 p-4 rounded-md mb-6 max-h-40 overflow-y-auto">
+                      <ul className="space-y-1">
+                        {importResults.warnings.map((item, index) => (
+                          <li key={`warning-${index}`} className="text-sm" data-testid={`import-warning-${item.licensePlate}`}>
+                            <span className="font-medium">{item.licensePlate}</span>
+                            {item.vehicle ? ` - ${item.vehicle.brand ?? item.brand ?? ''} ${item.vehicle.model ?? item.model ?? ''}` : ''}
+                            {/* The text follows the code, not the English message: a timeout is not "not found". */}
+                            <span className="block pl-6 text-xs text-amber-700">
+                              {t(`bulkImportDialog.warningCodes.${item.code}`, { defaultValue: String(item.code ?? '') })}
+                            </span>
                           </li>
                         ))}
                       </ul>

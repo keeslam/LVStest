@@ -5,8 +5,19 @@
  * (BUG-017, BUG-030, BUG-031, BUG-038, BUG-039, BUG-049, BUG-123, BUG-124,
  * BUG-131, BUG-133).
  */
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { and, eq, like } from "drizzle-orm";
+
+// D2: the bulk import asks the RDW about every plate and no longer creates a plate the RDW
+// does not know. These tests never reach the real RDW; the fixture plates are "unknown" to it.
+vi.mock("../utils/rdw-api", async () => {
+  const actual = await vi.importActual<Record<string, any>>("../utils/rdw-api");
+  return {
+    ...actual,
+    fetchVehicleInfoByLicensePlate: vi.fn(async (plate: string) => { throw new actual.RDWNotFoundError(plate); }),
+  };
+});
+
 import { db } from "../db";
 import { reservations, vehicles, vehicleCustomerBlacklist, reservationDriverAssignments, drivers } from "../../shared/schema";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
@@ -186,6 +197,7 @@ describe("FIX-AA — route guards", () => {
           { licensePlate: plate, brand: "FIXT-Brand", model: "Model", apkDate: "09-03-2026" },
           { licensePlate: `${plate}X`, brand: "FIXT-Brand", model: "Model", apkDate: "2026-02-30" },
         ],
+        createUnknown: true,
       });
       expect(res.status, bodyText(res.body)).toBe(200);
 

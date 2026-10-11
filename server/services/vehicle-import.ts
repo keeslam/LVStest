@@ -126,3 +126,46 @@ export function diffAgainstRdw(
   }
   return differences;
 }
+
+/**
+ * D2 - what a row becomes when the RDW lookup did not give data.
+ *
+ *   RDW_NOT_FOUND_SKIPPED    the RDW does not know the plate; nothing is created
+ *   RDW_NOT_FOUND_CREATED    same, but "ook onbekende kentekens aanmaken" was on
+ *   RDW_UNAVAILABLE_CREATED  the RDW could not be reached (timeout, upstream
+ *                            error); created without RDW data, as OPT-031 wants
+ *
+ * The client words each code (nl/en); a timeout must never read "not found".
+ */
+export const IMPORT_WARNING_CODES = [
+  "RDW_NOT_FOUND_SKIPPED",
+  "RDW_NOT_FOUND_CREATED",
+  "RDW_UNAVAILABLE_CREATED",
+] as const;
+export type ImportWarningCode = (typeof IMPORT_WARNING_CODES)[number];
+
+/** Only a real boolean `true` switches it on; "true" or 1 from a stray client does not. */
+export function parseCreateUnknown(body: unknown): boolean {
+  return (body as { createUnknown?: unknown } | null | undefined)?.createUnknown === true;
+}
+
+export type RowDecision =
+  | { create: true; warning: null }
+  | { create: true; warning: ImportWarningCode }
+  | { create: false; warning: ImportWarningCode };
+
+/**
+ * One place that decides, for both import routes, whether a row is created and
+ * which warning it carries. An RDW outage keeps the OPT-031 rule (the import
+ * never fails because of it), a plate the RDW does not know is created only on
+ * request.
+ */
+export function decideRowFromRdw(enrichment: EnrichmentOutcome, createUnknown: boolean): RowDecision {
+  if (enrichment.ok) return { create: true, warning: null };
+  if (enrichment.reason === "not_found") {
+    return createUnknown
+      ? { create: true, warning: "RDW_NOT_FOUND_CREATED" }
+      : { create: false, warning: "RDW_NOT_FOUND_SKIPPED" };
+  }
+  return { create: true, warning: "RDW_UNAVAILABLE_CREATED" };
+}

@@ -117,9 +117,10 @@
     "processingVehicleData": "Processing vehicle data...",
     "results": {
       "title": "Import Results",
-      "description": "{{imported}} vehicles imported successfully, {{failed}} failed",
+      "description": "{{imported}} imported, {{warnings}} with a warning, {{failed}} failed",
       "successTitle": "Successfully Imported ({{count}})",
-      "failedTitle": "Failed Imports ({{count}})"
+      "failedTitle": "Failed Imports ({{count}})",
+      "warningTitle": "With a warning ({{count}})"
     },
     "displayNames": {
       "licensePlate": "License Plate",
@@ -152,7 +153,7 @@
       "fileLoadedTitle": "File Loaded",
       "fileLoadedDescription": "Found {{count}} vehicles ready for import.",
       "importCompleteTitle": "Import Complete",
-      "importCompleteDescription": "Successfully imported {{importedCount}} vehicles. {{failedCount}} failed.",
+      "importCompleteDescription": "{{importedCount}} vehicles imported, {{warningCount}} with a warning, {{failedCount}} failed.",
       "importFailedTitle": "Import Failed",
       "importFailedDescription": "An error occurred during the import process. Please try again.",
       "csvImportFailedDescription": "An error occurred during the CSV import process. Please try again.",
@@ -163,9 +164,17 @@
     },
     "processingVehicleDataWithProgress": "Processing vehicle data… {{percent}}%",
     "rdwEnrichedCount": "{{count}} vehicle(s) filled in from the RDW.",
-    "rdwNotFound": "Not found at the RDW; only the license plate was stored.",
     "rdwDifference": "{{field}}: sheet \"{{sheet}}\" / RDW \"{{rdw}}\"",
-    "rdwDifferencesTitle": "Differences from the RDW"
+    "rdwDifferencesTitle": "Differences from the RDW",
+    "createUnknown": {
+      "label": "Also create unknown license plates",
+      "hint": "A license plate the RDW does not know is skipped otherwise. With this box ticked it is created (brand and model \"Unknown\", or the values from the file) and counts as a warning."
+    },
+    "warningCodes": {
+      "RDW_NOT_FOUND_SKIPPED": "Unknown at the RDW: not created.",
+      "RDW_NOT_FOUND_CREATED": "Unknown at the RDW: created anyway, without RDW data.",
+      "RDW_UNAVAILABLE_CREATED": "RDW not reachable: created without RDW data. Check the details later."
+    }
   },
   "addDialog": {
     "addVehicleButton": "Add Vehicle",

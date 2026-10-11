@@ -20,7 +20,7 @@ vi.mock("../utils/rdw-api", async () => {
 
 import { db } from "../db";
 import { vehicles } from "../../shared/schema";
-import { RDWNotFoundError, RDWTimeoutError } from "../utils/rdw-api";
+import { RDWNotFoundError, RDWTimeoutError, RDWUpstreamError } from "../utils/rdw-api";
 import { MAX_IMPORT_BATCH } from "../services/vehicle-import";
 import { countSql, statementsOfKind } from "./helpers/sqlCounter";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
@@ -79,34 +79,89 @@ describe("OPT-031 — de kentekenimport haalt de gegevens echt op", () => {
     expect(row.licensePlate).toBe(plate.toUpperCase());
   });
 
-  it("one failing row does not fail the import", async () => {
+  it("D2: a plate the RDW does not know is skipped with a warning, not created", async () => {
     rdwLookup.mockReset();
     const good = nextPlate();
     const missing = nextPlate();
-    const slow = nextPlate();
     rdwLookup.mockImplementation(async (plate: string) => {
       if (plate === missing) throw new RDWNotFoundError(plate);
-      if (plate === slow) throw new RDWTimeoutError();
       return rdwAnswer();
     });
 
     const res = await admin.post("/api/vehicles/bulk-import-plates")
-      .send({ licensePlates: [good, missing, slow] });
+      .send({ licensePlates: [good, missing] });
 
     expect(res.status).toBe(200);
-    // All three vehicles exist — an RDW outage costs data, never the import.
-    expect(res.body.imported).toHaveLength(3);
+    expect(res.body.imported).toHaveLength(1);
+    expect(res.body.imported[0].licensePlate).toBe(good);
     expect(res.body.failed).toHaveLength(0);
+    expect(res.body.warnings).toHaveLength(1);
+    expect(res.body.warnings[0]).toMatchObject({ licensePlate: missing, code: "RDW_NOT_FOUND_SKIPPED" });
+    expect(res.body.warnings[0].vehicle).toBeUndefined();
+    expect(res.body.maxBatch).toBe(MAX_IMPORT_BATCH);
 
-    const byPlate = Object.fromEntries(res.body.imported.map((row: any) => [row.licensePlate, row]));
-    expect(byPlate[good].enriched).toBe(true);
-    expect(byPlate[missing].enriched).toBe(false);
-    expect(byPlate[missing].enrichmentReason).toBe("not_found");
-    expect(byPlate[slow].enrichmentReason).toBe("timeout");
+    const rows = await db.select().from(vehicles).where(eq(vehicles.licensePlate, missing.toUpperCase()));
+    expect(rows).toHaveLength(0);
+  });
+
+  it("D2: with createUnknown the unknown plate is created as Unknown/Unknown and counts as a warning", async () => {
+    rdwLookup.mockReset();
+    const missing = nextPlate();
+    rdwLookup.mockRejectedValue(new RDWNotFoundError(missing));
+
+    const res = await admin.post("/api/vehicles/bulk-import-plates")
+      .send({ licensePlates: [missing], createUnknown: true });
+
+    expect(res.status).toBe(200);
+    expect(res.body.imported).toHaveLength(0);
+    expect(res.body.warnings).toHaveLength(1);
+    expect(res.body.warnings[0]).toMatchObject({ licensePlate: missing, code: "RDW_NOT_FOUND_CREATED" });
+    expect(res.body.warnings[0].vehicle).toBeTruthy();
 
     const [row] = await db.select().from(vehicles).where(eq(vehicles.licensePlate, missing.toUpperCase()));
     expect(row).toBeTruthy();
     expect(row.brand).toBe("Unknown");
+    expect(row.model).toBe("Unknown");
+  });
+
+  it("D2/OPT-031: an RDW outage still creates the vehicle, with a warning of its own (never 'not found')", async () => {
+    rdwLookup.mockReset();
+    const slow = nextPlate();
+    const broken = nextPlate();
+    rdwLookup.mockImplementation(async (plate: string) => {
+      if (plate === slow) throw new RDWTimeoutError();
+      throw new RDWUpstreamError(503, "down");
+    });
+
+    // createUnknown stays off: an outage creates the row regardless.
+    const res = await admin.post("/api/vehicles/bulk-import-plates")
+      .send({ licensePlates: [slow, broken] });
+
+    expect(res.status).toBe(200);
+    expect(res.body.imported).toHaveLength(0);
+    expect(res.body.failed).toHaveLength(0);
+    expect(res.body.warnings).toHaveLength(2);
+    const byPlate = Object.fromEntries(res.body.warnings.map((row: any) => [row.licensePlate, row]));
+    expect(byPlate[slow].code).toBe("RDW_UNAVAILABLE_CREATED");
+    expect(byPlate[slow].enrichmentReason).toBe("timeout");
+    expect(byPlate[broken].code).toBe("RDW_UNAVAILABLE_CREATED");
+    expect(byPlate[broken].enrichmentReason).toBe("upstream");
+    expect(byPlate[slow].vehicle).toBeTruthy();
+
+    const rows = await db.select().from(vehicles).where(eq(vehicles.licensePlate, slow.toUpperCase()));
+    expect(rows).toHaveLength(1);
+  });
+
+  it("D2: only a real boolean true switches createUnknown on", async () => {
+    rdwLookup.mockReset();
+    const plate = nextPlate();
+    rdwLookup.mockRejectedValue(new RDWNotFoundError(plate));
+
+    const res = await admin.post("/api/vehicles/bulk-import-plates")
+      .send({ licensePlates: [plate], createUnknown: "true" });
+
+    expect(res.body.warnings).toHaveLength(1);
+    expect(res.body.warnings[0].code).toBe("RDW_NOT_FOUND_SKIPPED");
   });
 
   it("loads the fleet once for the whole batch, not once per row", async () => {
@@ -195,7 +250,7 @@ describe("OPT-031 — de CSV-import wordt tegen de RDW gecontroleerd", () => {
     expect(stored.fuel).toBe("Diesel");
   });
 
-  it("a CSV row whose lookup fails is still imported", async () => {
+  it("a CSV row whose lookup fails is still created, as an RDW_UNAVAILABLE_CREATED warning", async () => {
     rdwLookup.mockReset();
     rdwLookup.mockRejectedValue(new RDWTimeoutError());
     const plate = nextPlate();
@@ -205,10 +260,41 @@ describe("OPT-031 — de CSV-import wordt tegen de RDW gecontroleerd", () => {
     });
 
     expect(res.status).toBe(200);
-    expect(res.body.imported).toHaveLength(1);
-    expect(res.body.imported[0].rdwVerified).toBe(false);
+    expect(res.body.imported).toHaveLength(0);
+    expect(res.body.warnings).toHaveLength(1);
+    expect(res.body.warnings[0]).toMatchObject({ licensePlate: plate, code: "RDW_UNAVAILABLE_CREATED", rdwVerified: false });
     const [stored] = await db.select().from(vehicles).where(eq(vehicles.licensePlate, plate.toUpperCase()));
     expect(stored.brand).toBe("DAF");
+  });
+
+  it("D2: a CSV plate the RDW does not know is skipped unless createUnknown is on", async () => {
+    rdwLookup.mockReset();
+    const skipped = nextPlate();
+    const created = nextPlate();
+    rdwLookup.mockImplementation(async (plate: string) => { throw new RDWNotFoundError(plate); });
+
+    const off = await admin.post("/api/vehicles/bulk-import-csv").send({
+      vehicles: [{ licensePlate: skipped, brand: "DAF", model: "LF" }],
+    });
+    expect(off.status).toBe(200);
+    expect(off.body.imported).toHaveLength(0);
+    expect(off.body.warnings).toHaveLength(1);
+    expect(off.body.warnings[0]).toMatchObject({ licensePlate: skipped, code: "RDW_NOT_FOUND_SKIPPED" });
+    expect(off.body.warnings[0].vehicle).toBeUndefined();
+    expect(await db.select().from(vehicles).where(eq(vehicles.licensePlate, skipped.toUpperCase()))).toHaveLength(0);
+
+    const on = await admin.post("/api/vehicles/bulk-import-csv").send({
+      vehicles: [{ licensePlate: created, brand: "DAF", model: "LF" }],
+      createUnknown: true,
+    });
+    expect(on.status).toBe(200);
+    expect(on.body.imported).toHaveLength(0);
+    expect(on.body.warnings[0]).toMatchObject({ licensePlate: created, code: "RDW_NOT_FOUND_CREATED" });
+    expect(on.body.warnings[0].vehicle).toBeTruthy();
+    // The sheet's own values are what the vehicle gets.
+    const [stored] = await db.select().from(vehicles).where(eq(vehicles.licensePlate, created.toUpperCase()));
+    expect(stored.brand).toBe("DAF");
+    expect(stored.model).toBe("LF");
   });
 
   it("still refuses an unreadable date per row (BUG-124 stays fixed)", async () => {

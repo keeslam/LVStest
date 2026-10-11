@@ -69,6 +69,8 @@ import {
   enrichFromRdw,
   applyRdwData,
   diffAgainstRdw,
+  decideRowFromRdw,
+  parseCreateUnknown,
 } from "./services/vehicle-import";
 import multer from "multer";
 import { setupAuth, hashPassword, comparePasswords } from "./auth";
@@ -1164,7 +1166,9 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.post("/api/vehicles/bulk-import-plates", hasPermission(UserPermission.MANAGE_VEHICLES), async (req: Request, res: Response) => {
     try {
       const { licensePlates } = req.body;
-      
+      // D2: unknown plates are created only when the employee asked for it.
+      const createUnknown = parseCreateUnknown(req.body);
+
       if (!Array.isArray(licensePlates) || licensePlates.length === 0) {
         return res.status(400).json({ message: "Please provide an array of license plates" });
       }
@@ -1180,6 +1184,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       const imported: any[] = [];
+      const warnings: any[] = [];
       const failed: any[] = [];
       const user = req.user;
 
@@ -1211,6 +1216,20 @@ export async function registerRoutes(app: Express): Promise<void> {
           // with the reason recorded, so an RDW outage never fails the import.
           const enrichment = await enrichFromRdw(licensePlate);
 
+          // D2: a plate the RDW does not know is not created unless the
+          // checkbox is on; an outage still creates it. Either way the row
+          // is a warning, not a success.
+          const decision = decideRowFromRdw(enrichment, createUnknown);
+          if (!decision.create) {
+            warnings.push({
+              licensePlate,
+              code: decision.warning,
+              enrichmentError: enrichment.ok ? undefined : enrichment.message,
+              enrichmentReason: enrichment.ok ? undefined : enrichment.reason,
+            });
+            continue;
+          }
+
           const vehicleData: Record<string, unknown> = {
             licensePlate: licensePlate.toUpperCase(),
             brand: "Unknown",
@@ -1222,7 +1241,7 @@ export async function registerRoutes(app: Express): Promise<void> {
 
           const vehicle = await storage.createVehicle(vehicleData as any);
           fleetPlates.add(normalizedPlate);
-          imported.push({
+          const importedRow = {
             licensePlate,
             vehicle,
             enriched: enrichment.ok,
@@ -1230,7 +1249,9 @@ export async function registerRoutes(app: Express): Promise<void> {
             ...(enrichment.ok
               ? {}
               : { enrichmentError: enrichment.message, enrichmentReason: enrichment.reason }),
-          });
+          };
+          if (decision.warning) warnings.push({ ...importedRow, code: decision.warning });
+          else imported.push(importedRow);
 
           // Broadcast real-time update
           realtimeEvents.vehicles.created(vehicle);
@@ -1245,7 +1266,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
       }
 
-      res.json({ imported, failed, maxBatch: MAX_IMPORT_BATCH });
+      res.json({ imported, warnings, failed, maxBatch: MAX_IMPORT_BATCH });
     } catch (error) {
       console.error("Error in bulk import:", error);
       res.status(500).json({ message: "Failed to process bulk import" });
@@ -1256,7 +1277,9 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.post("/api/vehicles/bulk-import-csv", hasPermission(UserPermission.MANAGE_VEHICLES), async (req: Request, res: Response) => {
     try {
       const { vehicles } = req.body;
-      
+      // D2: same checkbox as the plate import.
+      const createUnknown = parseCreateUnknown(req.body);
+
       if (!Array.isArray(vehicles) || vehicles.length === 0) {
         return res.status(400).json({ message: "Please provide an array of vehicles" });
       }
@@ -1275,6 +1298,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       const fleetPlates = await loadFleetPlates();
 
       const imported: any[] = [];
+      const warnings: any[] = [];
       const failed: any[] = [];
       const user = req.user;
 
@@ -1417,6 +1441,21 @@ export async function registerRoutes(app: Express): Promise<void> {
           // a field the sheet left empty is filled in from the RDW. A failed
           // lookup never fails the row.
           const enrichment = await enrichFromRdw(licensePlate);
+
+          // D2: see bulk-import-plates. A skipped row creates nothing, so it
+          // leaves before the vehicle is touched.
+          const decision = decideRowFromRdw(enrichment, createUnknown);
+          if (!decision.create) {
+            warnings.push({
+              licensePlate,
+              code: decision.warning,
+              rdwVerified: false,
+              enrichmentError: enrichment.ok ? undefined : enrichment.message,
+              enrichmentReason: enrichment.ok ? undefined : enrichment.reason,
+            });
+            continue;
+          }
+
           let differences: ReturnType<typeof diffAgainstRdw> = [];
           let filledFromRdw: string[] = [];
           if (enrichment.ok) {
@@ -1442,8 +1481,8 @@ export async function registerRoutes(app: Express): Promise<void> {
 
           const vehicle = await storage.createVehicle(vehicleData);
           fleetPlates.add(normalizedPlate);
-          imported.push({ 
-            licensePlate, 
+          const importedRow = {
+            licensePlate,
             brand: vehicle.brand,
             model: vehicle.model,
             vehicle,
@@ -1451,8 +1490,10 @@ export async function registerRoutes(app: Express): Promise<void> {
             differences,
             filledFromRdw,
             ...(enrichment.ok ? {} : { enrichmentError: enrichment.message, enrichmentReason: enrichment.reason }),
-          });
-          
+          };
+          if (decision.warning) warnings.push({ ...importedRow, code: decision.warning });
+          else imported.push(importedRow);
+
           // Broadcast real-time update
           realtimeEvents.vehicles.created(vehicle);
         } catch (error) {
@@ -1466,7 +1507,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
       }
 
-      res.json({ imported, failed, maxBatch: MAX_IMPORT_BATCH });
+      res.json({ imported, warnings, failed, maxBatch: MAX_IMPORT_BATCH });
     } catch (error) {
       console.error("Error in CSV bulk import:", error);
       res.status(500).json({ message: "Failed to process CSV bulk import" });

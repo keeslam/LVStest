@@ -117,9 +117,10 @@
     "processingVehicleData": "Voertuiggegevens verwerken...",
     "results": {
       "title": "Importresultaten",
-      "description": "{{imported}} voertuigen succesvol geïmporteerd, {{failed}} mislukt",
+      "description": "{{imported}} geïmporteerd, {{warnings}} met waarschuwing, {{failed}} mislukt",
       "successTitle": "Succesvol geïmporteerd ({{count}})",
-      "failedTitle": "Mislukte imports ({{count}})"
+      "failedTitle": "Mislukte imports ({{count}})",
+      "warningTitle": "Met waarschuwing ({{count}})"
     },
     "displayNames": {
       "licensePlate": "Kenteken",
@@ -152,7 +153,7 @@
       "fileLoadedTitle": "Bestand geladen",
       "fileLoadedDescription": "{{count}} voertuigen gevonden, klaar voor import.",
       "importCompleteTitle": "Import voltooid",
-      "importCompleteDescription": "{{importedCount}} voertuigen succesvol geïmporteerd. {{failedCount}} mislukt.",
+      "importCompleteDescription": "{{importedCount}} voertuigen geïmporteerd, {{warningCount}} met waarschuwing, {{failedCount}} mislukt.",
       "importFailedTitle": "Import mislukt",
       "importFailedDescription": "Er is een fout opgetreden tijdens het importproces. Probeer het opnieuw.",
       "csvImportFailedDescription": "Er is een fout opgetreden tijdens het CSV-importproces. Probeer het opnieuw.",
@@ -163,9 +164,17 @@
     },
     "processingVehicleDataWithProgress": "Voertuiggegevens verwerken… {{percent}}%",
     "rdwEnrichedCount": "{{count}} voertuig(en) aangevuld met RDW-gegevens.",
-    "rdwNotFound": "Niet gevonden bij de RDW; alleen het kenteken is opgeslagen.",
     "rdwDifference": "{{field}}: blad \"{{sheet}}\" / RDW \"{{rdw}}\"",
-    "rdwDifferencesTitle": "Afwijkingen ten opzichte van de RDW"
+    "rdwDifferencesTitle": "Afwijkingen ten opzichte van de RDW",
+    "createUnknown": {
+      "label": "Ook onbekende kentekens aanmaken",
+      "hint": "Een kenteken dat de RDW niet kent wordt anders overgeslagen. Staat dit vinkje aan, dan wordt het wel aangemaakt (merk en model \"Unknown\", bij een bestand de waarden uit het bestand) en telt het als waarschuwing."
+    },
+    "warningCodes": {
+      "RDW_NOT_FOUND_SKIPPED": "Onbekend bij de RDW: niet aangemaakt.",
+      "RDW_NOT_FOUND_CREATED": "Onbekend bij de RDW: wel aangemaakt, zonder RDW-gegevens.",
+      "RDW_UNAVAILABLE_CREATED": "RDW niet bereikbaar: aangemaakt zonder RDW-gegevens. Controleer de gegevens later."
+    }
   },
   "addDialog": {
     "addVehicleButton": "Voertuig toevoegen",
