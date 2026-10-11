@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -12,6 +12,7 @@ import { Vehicle, BarcodeLabelTemplate } from "@shared/schema";
 import { BarcodeSvg } from "@/components/barcodes/barcode-svg";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { printBarcodeBook, printKeyLabels } from "./key-label-print";
+import { LabelLayoutPicker, useLabelLayout } from "./label-layout-picker";
 
 interface BarcodeBookDialogProps {
   open: boolean;
@@ -31,16 +32,7 @@ export function BarcodeBookDialog({ open, onOpenChange }: BarcodeBookDialogProps
     queryKey: ["/api/barcode-label-templates"],
     enabled: open,
   });
-  const [templateId, setTemplateId] = useState<string>("default");
-
-  // Preselect the template marked as default once the list arrives.
-  useEffect(() => {
-    if (templateId !== "default") return;
-    const preferred = labelTemplates?.find(tpl => tpl.isDefault);
-    if (preferred) setTemplateId(String(preferred.id));
-  }, [labelTemplates]);
-
-  const selectedTemplate = labelTemplates?.find(tpl => String(tpl.id) === templateId) ?? null;
+  const layout = useLabelLayout(labelTemplates);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -78,25 +70,16 @@ export function BarcodeBookDialog({ open, onOpenChange }: BarcodeBookDialogProps
               <DialogDescription>{t("book.description")}</DialogDescription>
             </DialogHeader>
             <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
-              <div className="space-y-1">
-                <Label htmlFor="book-label-template" className="text-xs">{t("templatePicker.label")}</Label>
-                <Select value={templateId} onValueChange={setTemplateId}>
-                  <SelectTrigger id="book-label-template" className="w-48" data-testid="select-book-label-template">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="default">{t("templatePicker.defaultOption")}</SelectItem>
-                    {(labelTemplates ?? []).map(tpl => (
-                      <SelectItem key={tpl.id} value={String(tpl.id)}>
-                        {tpl.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <LabelLayoutPicker
+                id="book-label-template"
+                layout={layout}
+                templates={labelTemplates}
+                selectTestId="select-book-label-template"
+                compact
+              />
               <Button
                 variant="outline"
-                onClick={() => printKeyLabels(printSet, selectedTemplate)}
+                onClick={() => printKeyLabels(printSet, layout.selectedTemplate, layout.printOptions)}
                 disabled={printSet.length === 0}
                 data-testid="button-print-stickers"
               >

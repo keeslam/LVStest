@@ -3,7 +3,7 @@ import i18n from "@/i18n";
 import { toast } from "@/hooks/use-toast";
 import { formatLicensePlate } from "@/lib/format-utils";
 import type { BarcodeLabelTemplate } from "@shared/schema";
-import { BarcodeLabelField, resolveBarcodeLabelSource } from "@shared/barcode";
+import { BarcodeLabelField, parseBarcode, resolveBarcodeLabelSource } from "@shared/barcode";
 
 interface LabelVehicle {
   id: number;
@@ -24,6 +24,48 @@ interface LabelVehicle {
 const DEFAULT_LABEL_WIDTH_MM = 62;
 const DEFAULT_LABEL_HEIGHT_MM = 29;
 const DEFAULT_BARCODE_HEIGHT_MM = 10;
+
+// Continuous tape of a DYMO label maker (LabelManager 420P at the desk). The
+// Windows driver only prints the tape portrait: the page is as wide as the
+// tape and as long as the label. The content is laid out along the tape
+// (lengthMm wide, tapeWidthMm high) and turned a quarter onto that page, so the
+// barcode runs along the tape instead of being cut off at 12 mm.
+export interface TapeLayout {
+  tapeWidthMm: number;
+  lengthMm: number;
+}
+
+export const TAPE_WIDTHS_MM = [9, 12, 19] as const;
+export const DEFAULT_TAPE_LAYOUT: TapeLayout = { tapeWidthMm: 12, lengthMm: 48 };
+export const MIN_TAPE_LENGTH_MM = 30;
+export const MAX_TAPE_LENGTH_MM = 100;
+
+export interface KeyLabelPrintOptions {
+  // When set, the labels are printed for a label maker's tape instead of on
+  // the (template's) die-cut label; the template is then not used.
+  tape?: TapeLayout | null;
+}
+
+export function normalizeTapeLayout(raw: Partial<TapeLayout> | null | undefined): TapeLayout {
+  const width = Number(raw?.tapeWidthMm);
+  const length = Number(raw?.lengthMm);
+  return {
+    tapeWidthMm: (TAPE_WIDTHS_MM as readonly number[]).includes(width) ? width : DEFAULT_TAPE_LAYOUT.tapeWidthMm,
+    lengthMm: Number.isFinite(length)
+      ? Math.min(MAX_TAPE_LENGTH_MM, Math.max(MIN_TAPE_LENGTH_MM, Math.round(length)))
+      : DEFAULT_TAPE_LAYOUT.lengthMm,
+  };
+}
+
+// The print head covers less than the tape: ~9 of 12 mm on a LabelManager.
+// Keeping the content inside that band stops the driver from scaling it down.
+function printableTapeHeightMm(tapeWidthMm: number): number {
+  if (tapeWidthMm <= 9) return 6.5;
+  if (tapeWidthMm <= 12) return 9;
+  return 15;
+}
+
+const TAPE_SIDE_MARGIN_MM = 3;
 
 // Layout used when no template is picked: the original hardcoded 62x29 label.
 const FALLBACK_FIELDS: BarcodeLabelField[] = [
@@ -51,9 +93,18 @@ function readTemplateFields(template: BarcodeLabelTemplate): BarcodeLabelField[]
 // stay vector-sharp at any print scale. Layout targets standard key-label
 // stock (~62x29mm) but prints fine on plain A4 as a grid. With a template, the
 // template's positioned fields (x/y in mm of label space) are drawn instead.
-export function printKeyLabels(vehicles: LabelVehicle[], template?: BarcodeLabelTemplate | null): void {
+export function printKeyLabels(
+  vehicles: LabelVehicle[],
+  template?: BarcodeLabelTemplate | null,
+  options?: KeyLabelPrintOptions,
+): void {
   const printable = vehicles.filter(v => !!(v.barcodeOverride ?? v.barcode));
   if (printable.length === 0) return;
+
+  if (options?.tape) {
+    printTapeLabels(printable, normalizeTapeLayout(options.tape));
+    return;
+  }
 
   const widthMm = template?.labelWidthMm ?? DEFAULT_LABEL_WIDTH_MM;
   const heightMm = template?.labelHeightMm ?? DEFAULT_LABEL_HEIGHT_MM;
@@ -165,6 +216,122 @@ export function printKeyLabels(vehicles: LabelVehicle[], template?: BarcodeLabel
         i18n.t("barcodes:label.printOpenedDescription", {
           count: printable.length,
           plate: formatLicensePlate(printable[0].licensePlate),
+        }),
+      ),
+    });
+    frame.contentWindow!.focus();
+    frame.contentWindow!.print();
+    setTimeout(() => frame.remove(), 2000);
+  }, 250);
+}
+
+// One tape label per page: the page is the tape (portrait, tapeWidthMm x
+// lengthMm) and the content is drawn along the tape and rotated a quarter turn
+// onto it. The barcode keeps the exact VEH-code so the key cabinet scanner reads
+// it; underneath are the plate and "Hoofd"/"Reserve" (derived from the code,
+// a spare-key code ends in -S).
+function printTapeLabels(printable: LabelVehicle[], tape: TapeLayout): void {
+  const { tapeWidthMm, lengthMm } = tape;
+  const bandMm = printableTapeHeightMm(tapeWidthMm);
+  const bandMarginMm = (tapeWidthMm - bandMm) / 2;
+  const barcodeHeightMm = Math.round(bandMm * 0.6 * 10) / 10;
+  // 1 mm = 2.835 pt; the text line takes ~30% of the band, between 6 and 10 pt.
+  const fontPt = Math.min(10, Math.max(6, Math.round(bandMm * 0.3 * 2.835 * 2) / 2));
+  const contentWidthMm = lengthMm - 2 * TAPE_SIDE_MARGIN_MM;
+
+  const frame = document.createElement("iframe");
+  frame.style.position = "fixed";
+  frame.style.right = "0";
+  frame.style.bottom = "0";
+  frame.style.width = "0";
+  frame.style.height = "0";
+  frame.style.border = "0";
+  document.body.appendChild(frame);
+
+  const doc = frame.contentDocument!;
+  doc.open();
+  doc.write(`<!doctype html><html><head><meta charset="utf-8"><style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    @page { size: ${tapeWidthMm}mm ${lengthMm}mm; margin: 0; }
+    html, body { width: ${tapeWidthMm}mm; }
+    body { font-family: Arial, sans-serif; }
+    .tape-page {
+      width: ${tapeWidthMm}mm; height: ${lengthMm}mm; position: relative; overflow: hidden;
+      break-after: page; page-break-after: always;
+    }
+    .tape-page:last-child { break-after: auto; page-break-after: auto; }
+    .tape-content {
+      position: absolute; left: 0; top: 0;
+      width: ${lengthMm}mm; height: ${tapeWidthMm}mm;
+      padding: ${bandMarginMm}mm ${TAPE_SIDE_MARGIN_MM}mm;
+      transform-origin: 0 0; transform: translateX(${tapeWidthMm}mm) rotate(90deg);
+      display: flex; flex-direction: column; align-items: stretch; justify-content: space-between;
+    }
+    .tape-content svg { display: block; width: ${contentWidthMm}mm; height: ${barcodeHeightMm}mm; }
+    .tape-text {
+      display: flex; justify-content: space-between; align-items: baseline; gap: 2mm;
+      font-size: ${fontPt}pt; line-height: 1.05; white-space: nowrap; overflow: hidden;
+    }
+    .tape-plate { font-weight: bold; }
+  </style></head><body></body></html>`);
+  doc.close();
+
+  for (const vehicle of printable) {
+    const code = vehicle.barcodeOverride ?? vehicle.barcode;
+    if (!code) continue;
+    const parsed = parseBarcode(code);
+    const isSpare = parsed.kind === "vehicle" && parsed.spareKey === true;
+
+    const page = doc.createElement("div");
+    page.className = "tape-page";
+    const content = doc.createElement("div");
+    content.className = "tape-content";
+    page.appendChild(content);
+
+    const svg = doc.createElementNS("http://www.w3.org/2000/svg", "svg");
+    content.appendChild(svg);
+    JsBarcode(svg, code, {
+      format: "CODE128",
+      displayValue: false,
+      height: 40,
+      width: 2,
+      margin: 0,
+      background: "transparent",
+    });
+    // Stretch the drawing to the full content width: promote the rendered size
+    // to a viewBox so the CSS size scales the bars instead of cropping them.
+    const w = parseFloat(svg.getAttribute("width") || "0");
+    const h = parseFloat(svg.getAttribute("height") || "0");
+    if (w && h) svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+    svg.setAttribute("preserveAspectRatio", "none");
+    svg.removeAttribute("width");
+    svg.removeAttribute("height");
+
+    const text = doc.createElement("div");
+    text.className = "tape-text";
+    const plate = doc.createElement("span");
+    plate.className = "tape-plate";
+    plate.textContent = formatLicensePlate(vehicle.licensePlate);
+    const kind = doc.createElement("span");
+    kind.className = "tape-kind";
+    kind.textContent = String(i18n.t(isSpare ? "barcodes:tape.spareKey" : "barcodes:tape.mainKey"));
+    text.appendChild(plate);
+    text.appendChild(kind);
+    content.appendChild(text);
+
+    doc.body.appendChild(page);
+  }
+
+  setTimeout(() => {
+    // Same as the die-cut path: only the browser's print window opens; the toast says which
+    // printer settings make the tape come out right.
+    toast({
+      title: String(i18n.t("barcodes:label.printOpenedTitle")),
+      description: String(
+        i18n.t("barcodes:tape.printOpenedDescription", {
+          count: printable.length,
+          plate: formatLicensePlate(printable[0].licensePlate),
+          width: tapeWidthMm,
         }),
       ),
     });

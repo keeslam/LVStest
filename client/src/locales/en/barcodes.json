@@ -179,5 +179,16 @@
     "defaultOption": "Default layout",
     "pickDescription": "Choose the label template for this print.",
     "printButton": "Print"
+  },
+  "tape": {
+    "option": "DYMO tape (label maker, portrait)",
+    "widthLabel": "Tape width",
+    "widthOption": "{{width}} mm",
+    "lengthLabel": "Label length (mm)",
+    "hint": "Each label becomes a page of {{width}} by {{length}} mm. In the print window choose the DYMO printer, paper {{width}} mm, portrait, margins None and scale 100%.",
+    "mainKey": "Main",
+    "spareKey": "Spare",
+    "printOpenedDescription_one": "Your browser's print window is open for the tape label of {{plate}}. Choose the DYMO printer there, paper {{width}} mm, portrait, margins None and scale 100%.",
+    "printOpenedDescription_other": "Your browser's print window is open for {{count}} tape labels. Choose the DYMO printer there, paper {{width}} mm, portrait, margins None and scale 100%."
   }
 }

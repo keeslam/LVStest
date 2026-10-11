@@ -1,17 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Printer } from "lucide-react";
 import { Vehicle, BarcodeLabelTemplate } from "@shared/schema";
 import { formatSpareKeyBarcode } from "@shared/barcode";
 import { BarcodeSvg } from "./barcode-svg";
 import { printKeyLabels } from "./key-label-print";
+import { LabelLayoutPicker, useLabelLayout } from "./label-layout-picker";
 
 interface KeyLabelPrintPanelProps {
   vehicle: Vehicle;
@@ -35,17 +34,8 @@ export function KeyLabelPrintPanel({ vehicle }: KeyLabelPrintPanelProps) {
   const { data: labelTemplates } = useQuery<BarcodeLabelTemplate[]>({
     queryKey: ["/api/barcode-label-templates"],
   });
-  const [templateId, setTemplateId] = useState<string>("default");
+  const layout = useLabelLayout(labelTemplates);
   const [printTarget, setPrintTarget] = useState<PrintTarget | null>(null);
-
-  // Preselect the template marked as default once the list arrives.
-  useEffect(() => {
-    if (templateId !== "default") return;
-    const preferred = labelTemplates?.find(tpl => tpl.isDefault);
-    if (preferred) setTemplateId(String(preferred.id));
-  }, [labelTemplates]);
-
-  const selectedTemplate = labelTemplates?.find(tpl => String(tpl.id) === templateId) ?? null;
 
   const print = () => {
     if (!printTarget) return;
@@ -55,7 +45,8 @@ export function KeyLabelPrintPanel({ vehicle }: KeyLabelPrintPanelProps) {
         // override instead of touching vehicle.barcode.
         ? [{ ...vehicle, barcodeOverride: formatSpareKeyBarcode(vehicle.id) }]
         : [vehicle],
-      selectedTemplate,
+      layout.selectedTemplate,
+      layout.printOptions,
     );
     setPrintTarget(null);
   };
@@ -99,19 +90,13 @@ export function KeyLabelPrintPanel({ vehicle }: KeyLabelPrintPanelProps) {
             <DialogDescription>{t("templatePicker.pickDescription")}</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-2 py-2">
-            <Label htmlFor="key-label-template-picker">{t("templatePicker.label")}</Label>
-            <Select value={templateId} onValueChange={setTemplateId}>
-              <SelectTrigger id="key-label-template-picker" data-testid="select-key-label-template-picker">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="default">{t("templatePicker.defaultOption")}</SelectItem>
-                {(labelTemplates ?? []).map(tpl => (
-                  <SelectItem key={tpl.id} value={String(tpl.id)}>{tpl.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="py-2">
+            <LabelLayoutPicker
+              id="key-label-template-picker"
+              layout={layout}
+              templates={labelTemplates}
+              selectTestId="select-key-label-template-picker"
+            />
           </div>
 
           <DialogFooter>

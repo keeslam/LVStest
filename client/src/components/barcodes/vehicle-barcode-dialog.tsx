@@ -1,5 +1,4 @@
 import { describeApiError } from "@/lib/api-error";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -11,8 +10,6 @@ import {
   AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Printer, RefreshCw } from "lucide-react";
 import { Vehicle, UserRole, UserPermission, BarcodeLabelTemplate } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
@@ -20,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { BarcodeSvg } from "./barcode-svg";
 import { printKeyLabels } from "./key-label-print";
+import { LabelLayoutPicker, useLabelLayout } from "./label-layout-picker";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { formatSpareKeyBarcode } from "@shared/barcode";
 
@@ -39,16 +37,7 @@ export function VehicleBarcodeDialog({ vehicle, open, onOpenChange }: VehicleBar
     queryKey: ["/api/barcode-label-templates"],
     enabled: open,
   });
-  const [templateId, setTemplateId] = useState<string>("default");
-
-  // Preselect the template marked as default once the list arrives.
-  useEffect(() => {
-    if (templateId !== "default") return;
-    const preferred = labelTemplates?.find(tpl => tpl.isDefault);
-    if (preferred) setTemplateId(String(preferred.id));
-  }, [labelTemplates]);
-
-  const selectedTemplate = labelTemplates?.find(tpl => String(tpl.id) === templateId) ?? null;
+  const layout = useLabelLayout(labelTemplates);
 
   const canRegenerate =
     user?.role === UserRole.ADMIN ||
@@ -87,28 +76,16 @@ export function VehicleBarcodeDialog({ vehicle, open, onOpenChange }: VehicleBar
           {vehicle.barcode && <BarcodeSvg value={vehicle.barcode} height={80} className="max-w-full h-auto" />}
         </div>
 
-        {labelTemplates && labelTemplates.length > 0 && (
-          <div className="space-y-2">
-            <Label htmlFor="barcode-label-template">{t("templatePicker.label")}</Label>
-            <Select value={templateId} onValueChange={setTemplateId}>
-              <SelectTrigger id="barcode-label-template" data-testid="select-key-label-template">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="default">{t("templatePicker.defaultOption")}</SelectItem>
-                {labelTemplates.map(tpl => (
-                  <SelectItem key={tpl.id} value={String(tpl.id)}>
-                    {tpl.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+        <LabelLayoutPicker
+          id="barcode-label-template"
+          layout={layout}
+          templates={labelTemplates}
+          selectTestId="select-key-label-template"
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
           <Button
-            onClick={() => printKeyLabels([vehicle], selectedTemplate)}
+            onClick={() => printKeyLabels([vehicle], layout.selectedTemplate, layout.printOptions)}
             disabled={!vehicle.barcode}
             data-testid="button-print-key-label"
           >
@@ -117,7 +94,7 @@ export function VehicleBarcodeDialog({ vehicle, open, onOpenChange }: VehicleBar
           </Button>
           <Button
             variant="outline"
-            onClick={() => printKeyLabels([{ ...vehicle, barcodeOverride: formatSpareKeyBarcode(vehicle.id) }], selectedTemplate)}
+            onClick={() => printKeyLabels([{ ...vehicle, barcodeOverride: formatSpareKeyBarcode(vehicle.id) }], layout.selectedTemplate, layout.printOptions)}
             disabled={!vehicle.barcode}
             data-testid="button-print-spare-key-label"
           >
