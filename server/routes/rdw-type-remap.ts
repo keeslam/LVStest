@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { UserPermission } from "../../shared/schema";
 import { hasPermission, requireAdmin } from "../middleware/permissions";
+import { AuditLogger } from "../utils/security/auditLogger";
 import {
   RemapCheckRunningError,
   RemapPlanMissingError,
@@ -17,13 +18,16 @@ import {
  *   POST /api/vehicles/rdw-type-remap/apply  MANAGE_VEHICLES + role admin  apply that plan
  *
  * Registered before the `/api/vehicles/:id` routes, so "rdw-type-remap" is never read as an id.
- * The apply route writes its own audit lines (one `vehicle.type-remap` per vehicle), so the
- * generic mutation audit skips it (server/middleware/audit.ts).
+ * The apply route writes its own audit lines (one `vehicle.type-remap` per vehicle) and the check
+ * route one `vehicle.type-remap-check` per start, so the generic mutation audit skips both
+ * (server/middleware/audit.ts).
  */
 export function registerRdwTypeRemapRoutes(app: Express): void {
-  app.post("/api/vehicles/rdw-type-remap/check", hasPermission(UserPermission.MANAGE_VEHICLES), (_req: Request, res: Response) => {
+  app.post("/api/vehicles/rdw-type-remap/check", hasPermission(UserPermission.MANAGE_VEHICLES), async (req: Request, res: Response) => {
     try {
       const job = startRemapCheck();
+      // Who started a check is recorded (the check itself changes nothing, so no per-vehicle rows).
+      await AuditLogger.logFromRequest(req, "vehicle.type-remap-check", "vehicle");
       res.status(202).json({ job });
     } catch (error) {
       if (error instanceof RemapCheckRunningError) {

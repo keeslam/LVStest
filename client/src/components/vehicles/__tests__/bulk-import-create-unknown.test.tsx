@@ -85,6 +85,18 @@ describe("D2 - checkbox 'ook onbekende kentekens aanmaken'", () => {
     expect(bodies[0].body.createUnknown).toBe(true);
   });
 
+  it("is unticked again when the dialog is closed and reopened (default off)", async () => {
+    const user = await openDialog();
+    await user.click(screen.getByTestId("checkbox-import-create-unknown"));
+    expect(screen.getByTestId("checkbox-import-create-unknown")).toHaveAttribute("aria-checked", "true");
+
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await user.click(screen.getByTestId("open-import"));
+    await screen.findByRole("dialog");
+    expect(screen.getByTestId("checkbox-import-create-unknown")).toHaveAttribute("aria-checked", "false");
+  });
+
   it("is also there on the CSV tab (same checkbox, same value)", async () => {
     const user = await openDialog();
     await user.click(screen.getByTestId("checkbox-import-create-unknown"));

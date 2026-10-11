@@ -123,6 +123,18 @@ describe("D17 - Controleren maakt een plan", () => {
     expect(row.vehicleType).toBe("SUV");
   });
 
+  it("records who started a check (vehicle.type-remap-check), once per start", async () => {
+    const mine = () => db.select().from(auditLogs)
+      .where(and(eq(auditLogs.action, "vehicle.type-remap-check"), eq(auditLogs.username, manager.username)));
+    const before = (await mine()).length;
+    const start = await manager.post("/api/vehicles/rdw-type-remap/check").send({});
+    expect(start.status).toBe(202);
+    const rows = await mine();
+    expect(rows).toHaveLength(before + 1);
+    expect(rows[rows.length - 1]).toMatchObject({ resourceType: "vehicle", status: "success", userId: manager.userId });
+    await waitForJob(manager);
+  });
+
   it("refuses a second check while one is running, with a code", async () => {
     let release!: () => void;
     const gate = new Promise<void>((resolve) => { release = resolve; });
@@ -181,6 +193,31 @@ describe("D17 - Toepassen past exact dat plan toe", () => {
     expect(stored).toHaveLength(0);
   });
 
+  it("a vehicle without a stored type: applied while still empty (from null), skipped once it got a type", async () => {
+    const empty = await createFixtureVehicle({ vehicleType: null, licensePlate: plate("F") });
+    const filledMeanwhile = await createFixtureVehicle({ vehicleType: null, licensePlate: plate("G") });
+    rdwTypes[empty.licensePlate] = "Van";
+    rdwTypes[filledMeanwhile.licensePlate] = "Van";
+
+    await manager.post("/api/vehicles/rdw-type-remap/check").send({});
+    const status = await waitForJob(manager);
+    const planned = status.plan!.rows.find((row) => row.id === empty.id);
+    expect(planned).toEqual({ id: empty.id, plate: empty.licensePlate, from: null, to: "Van" });
+
+    await db.update(vehicles).set({ vehicleType: "Coupe" }).where(eq(vehicles.id, filledMeanwhile.id));
+    const res = await admin.post("/api/vehicles/rdw-type-remap/apply").send({});
+    expect(res.status).toBe(200);
+
+    const [applied] = await db.select().from(vehicles).where(eq(vehicles.id, empty.id));
+    expect(applied.vehicleType).toBe("Van");
+    const [skipped] = await db.select().from(vehicles).where(eq(vehicles.id, filledMeanwhile.id));
+    expect(skipped.vehicleType).toBe("Coupe");
+    const audit = await db.select().from(auditLogs)
+      .where(and(eq(auditLogs.action, "vehicle.type-remap"), eq(auditLogs.resourceId, String(empty.id))));
+    expect(audit).toHaveLength(1);
+    expect(audit[0].details).toMatchObject({ from: null, to: "Van" });
+  });
+
   it("a second apply does nothing: the plan is gone (409 REMAP_PLAN_MISSING)", async () => {
     await manager.post("/api/vehicles/rdw-type-remap/check").send({});
     await waitForJob(manager);
@@ -227,7 +264,7 @@ describe("D17 - rechten", () => {
     expect(row.vehicleType).toBe("SUV");
   });
 
-  it("the plan row cannot be written through the generic settings routes", () => {
+  it("the plan key is a managed setting (route-level 403s: dg-02-remap-plan-visibility.test.ts)", () => {
     expect(isManagedSettingKey(RDW_TYPE_REMAP_PLAN_KEY)).toBe(true);
   });
 });

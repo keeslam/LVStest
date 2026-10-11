@@ -21,6 +21,7 @@
 import { INVOICE_INBOX_CONFIG_KEY, INVOICE_INBOX_PASSWORD_MASK } from "../../../shared/invoice-inbox";
 import { CJIB_CONFIG_KEY, CJIB_PASSWORD_MASK } from "../../../shared/fines";
 import { RDW_TYPE_REMAP_PLAN_KEY } from "../../../shared/rdw-type-remap";
+import { UserPermission, UserRole } from "../../../shared/schema";
 
 /** Setting key -> the mask its `value.password` is shown as. */
 const MANAGED_PASSWORD_KEYS: Record<string, string> = {
@@ -41,6 +42,28 @@ export const MANAGED_SETTING_MESSAGE = "Deze instelling wordt beheerd via zijn e
 export function isManagedSettingKey(key: unknown): boolean {
   return typeof key === "string"
     && (Object.prototype.hasOwnProperty.call(MANAGED_PASSWORD_KEYS, key) || MANAGED_PLAIN_KEYS.has(key));
+}
+
+/**
+ * Keys that the read routes (which only need a session) may hand out only to an account holding
+ * the given right. D17: the stored RDW type plan lists plates and types of the fleet.
+ */
+const READ_RIGHT_BY_KEY: Record<string, string> = {
+  [RDW_TYPE_REMAP_PLAN_KEY]: UserPermission.MANAGE_VEHICLES,
+};
+
+type ReadingUser = { role?: string; permissions?: string[] } | null | undefined;
+
+/** False when `key` is restricted and `user` neither holds its right nor is an admin. */
+export function canReadAppSettingKey(key: unknown, user: ReadingUser): boolean {
+  if (typeof key !== "string" || !Object.prototype.hasOwnProperty.call(READ_RIGHT_BY_KEY, key)) return true;
+  if (user?.role === UserRole.ADMIN) return true;
+  return (user?.permissions ?? []).includes(READ_RIGHT_BY_KEY[key]);
+}
+
+/** Drops the rows `user` may not read; the list routes call it before redaction. */
+export function readableAppSettings<T extends { key?: unknown }>(settings: T[], user: ReadingUser): T[] {
+  return settings.filter((setting) => canReadAppSettingKey(setting?.key, user));
 }
 
 type SettingLike = { key?: unknown; value?: any } | null | undefined;

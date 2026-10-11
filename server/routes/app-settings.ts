@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { canReadAppSettingKey, readableAppSettings } from "../utils/security/redactAppSetting";
 // FIX-R (BUG-086): multer parses the multipart body inside the route chain,
 // long after app.use(sanitizeInput) ran — so these wrappers sanitize what it
 // parsed.
@@ -97,7 +98,7 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
   app.get("/api/app-settings", requireAuth, async (req: Request, res: Response) => {
     try {
       const settings = await storage.getAllAppSettings();
-      res.json(redactAppSettings(settings));
+      res.json(redactAppSettings(readableAppSettings(settings, req.user)));
     } catch (error) {
       console.error("Error fetching app settings:", error);
       res.status(500).json({ message: "Error fetching app settings" });
@@ -276,6 +277,8 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
   app.get("/api/app-settings/key/:key", requireAuth, async (req: Request, res: Response) => {
     try {
       const { key } = req.params;
+      // D17: the stored RDW type plan is for accounts that manage vehicles only.
+      if (!canReadAppSettingKey(key, req.user)) return res.status(404).json({ message: "Setting not found" });
       const setting = redactAppSetting(await storage.getAppSettingByKey(key));
 
       // Special handling for calendar_settings: auto-calculate Dutch holidays for multiple years
@@ -400,7 +403,7 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
     try {
       const { category } = req.params;
       const settings = await storage.getAppSettingsByCategory(category);
-      res.json(redactAppSettings(settings));
+      res.json(redactAppSettings(readableAppSettings(settings, req.user)));
     } catch (error) {
       console.error("Error fetching app settings by category:", error);
       res.status(500).json({ message: "Error fetching app settings" });

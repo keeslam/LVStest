@@ -273,6 +273,8 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
       setCsvHeaders([]);
       setSelectedFile(null);
       setActiveTab("manual");
+      // D2: "standaard uit" - a reopened dialog must not still create unknown plates.
+      setCreateUnknown(false);
     }
   };
 

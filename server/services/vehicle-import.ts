@@ -137,12 +137,10 @@ export function diffAgainstRdw(
  *
  * The client words each code (nl/en); a timeout must never read "not found".
  */
-export const IMPORT_WARNING_CODES = [
-  "RDW_NOT_FOUND_SKIPPED",
-  "RDW_NOT_FOUND_CREATED",
-  "RDW_UNAVAILABLE_CREATED",
-] as const;
-export type ImportWarningCode = (typeof IMPORT_WARNING_CODES)[number];
+export type ImportWarningCode =
+  | "RDW_NOT_FOUND_SKIPPED"
+  | "RDW_NOT_FOUND_CREATED"
+  | "RDW_UNAVAILABLE_CREATED";
 
 /** Only a real boolean `true` switches it on; "true" or 1 from a stray client does not. */
 export function parseCreateUnknown(body: unknown): boolean {
