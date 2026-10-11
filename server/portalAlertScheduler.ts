@@ -1,5 +1,5 @@
-import * as cron from "node-cron";
 import { scanVehicleAlertsForPortal } from "./services/portal-customer-notifications";
+import { createOfficeCronTask, type OfficeCronTask } from "./services/office-time";
 
 /**
  * Daily at 04:00 (and once a minute after startup): tells portal customers
@@ -7,12 +7,13 @@ import { scanVehicleAlertsForPortal } from "./services/portal-customer-notificat
  * vehicles they have on the road. Same pattern as ServiceDueScheduler.
  */
 export class PortalAlertScheduler {
-  private task: cron.ScheduledTask | null = null;
+  private task: OfficeCronTask | null = null;
   private startupTimer: NodeJS.Timeout | null = null;
 
   start(): void {
     if (this.task) return;
-    this.task = cron.createTask("0 4 * * *", () => this.run("scheduled"), { timezone: "Europe/Amsterdam" });
+    // D11: runs in the office time zone setting and moves with it.
+    this.task = createOfficeCronTask("0 4 * * *", () => this.run("scheduled"));
     this.task.start();
     this.startupTimer = setTimeout(() => this.run("startup"), 60_000);
     console.log("Portal alert scheduler started - daily APK/service scan at 04:00 (+ one run a minute after startup)");

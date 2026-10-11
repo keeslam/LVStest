@@ -20,6 +20,8 @@ import { isManagedSettingKey, MANAGED_SETTING_MESSAGE, redactAppSetting, redactA
 import { getRelativePath, resolveDocumentFilePath, resolveStoredPathForWrite } from "../services/document-paths";
 import type { Express } from "express";
 import type { RouteDeps } from "./deps";
+import { INVALID_OFFICE_TIMEZONE_CODE, OFFICE_TIMEZONE_KEY, isValidTimeZone } from "../../shared/office-timezone";
+import { loadOfficeTimeZone } from "../services/office-time";
 
 // Moved verbatim out of server/routes.ts (registerRoutes) - see git history for context.
 export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
@@ -69,6 +71,26 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
       return { ...value, smtpPassword: stored.smtpPassword };
     }
     return value;
+  }
+
+  /**
+   * D11: keys with a rule of their own. The time zone must be a zone the runtime can format
+   * in (a typo would otherwise silently fall back to Amsterdam and look saved). Answers the
+   * 400 body, or null when the value is fine / the key has no rule. Codes, not English text,
+   * are what the screen translates.
+   */
+  function invalidSettingValue(key: unknown, value: unknown): { message: string; code: string } | null {
+    if (key === OFFICE_TIMEZONE_KEY) {
+      const zone = typeof value === "string" ? value.trim()
+        : value && typeof value === "object" ? (value as { timeZone?: unknown }).timeZone : undefined;
+      if (!isValidTimeZone(zone)) return { message: "That is not a time zone", code: INVALID_OFFICE_TIMEZONE_CODE };
+    }
+    return null;
+  }
+
+  /** D11: a stored key the server keeps in memory is re-read at once, so the cache is empty after a save. */
+  async function afterSettingWritten(key: unknown): Promise<void> {
+    if (key === OFFICE_TIMEZONE_KEY) await loadOfficeTimeZone();
   }
 
   // Get all app settings
@@ -441,6 +463,9 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
       const emailProblem = validateEmailSetting(category, value);
       if (emailProblem) return res.status(400).json(emailProblem);
 
+      const valueProblem = invalidSettingValue(key, value);
+      if (valueProblem) return res.status(400).json(valueProblem);
+
       // Check if setting with this key already exists
       const existing = await storage.getAppSettingByKey(key);
 
@@ -455,6 +480,7 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
         if (updated?.category === 'email') {
           clearEmailConfigCache();
         }
+        await afterSettingWritten(key);
         // C1: the merged value may carry the stored SMTP password again — the
         // answer goes through the same redaction as every read.
         res.json(redactAppSetting(updated));
@@ -471,6 +497,7 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
         if (created.category === 'email') {
           clearEmailConfigCache();
         }
+        await afterSettingWritten(key);
         res.json(redactAppSetting(created));
       }
     } catch (error) {
@@ -492,6 +519,11 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
       const emailProblem = validateEmailSetting(category, value);
       if (emailProblem) return res.status(400).json(emailProblem);
 
+      // The key may be left out of the body; the stored row then says which rule applies.
+      const effectiveKey = key ?? (await storage.getAppSetting(id))?.key;
+      const valueProblem = value === undefined ? null : invalidSettingValue(effectiveKey, value);
+      if (valueProblem) return res.status(400).json(valueProblem);
+
       const updated = await storage.updateAppSetting(id, {
         key,
         value: keepStoredSmtpPassword(category, value, await storage.getAppSetting(id)),
@@ -507,6 +539,7 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
       if (updated.category === 'email') {
         clearEmailConfigCache();
       }
+      await afterSettingWritten(updated.key);
 
       res.json(redactAppSetting(updated));
     } catch (error) {
@@ -530,6 +563,7 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
       if (existing?.category === 'email') {
         clearEmailConfigCache();
       }
+      await afterSettingWritten(existing?.key);
 
       res.json({ success: true });
     } catch (error) {

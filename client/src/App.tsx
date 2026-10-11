@@ -30,6 +30,7 @@ import { GlobalDialogProvider } from "@/contexts/GlobalDialogContext";
 import { GlobalDialogs } from "@/components/global-dialogs";
 import { InactivityPrompt } from "@/components/InactivityPrompt";
 import { ApkDateChangesDialog } from "@/components/vehicles/apk-date-changes-dialog";
+import { OfficeTimeZoneLoader } from "@/components/office-time-zone-loader";
 import { apiRequest } from "@/lib/queryClient";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PageLoading } from "@/components/ui/page-loading";
@@ -56,6 +57,9 @@ function AppRoutes() {
 
       {/* RDW APK date change confirmation - only for authenticated users */}
       {user && <ApkDateChangesDialog />}
+
+      {/* D11: the office time zone (app setting) for every "today" on screen */}
+      {user && <OfficeTimeZoneLoader />}
       
       <Switch>
       {/* Customer portal - own layout, own auth realm, embeddable in the website iframe */}

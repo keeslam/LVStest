@@ -11,6 +11,8 @@ import { db } from "../../db";
 import { customers, fiscalAssessments, fiscalRuleVersions, vehicles, vehicleUsagePeriods, type FiscalAssessment } from "../../../shared/schema";
 import { FISCAL_STATUS_LABELS, MONTH_REASON_LABELS, type FiscalAssessmentStatus, type MonthReason } from "../../../shared/fiscal-types";
 import { scopeCondition, type FiscalScope } from "./portal-storage";
+import { dateInZone } from "../../../shared/office-timezone";
+import { officeTimeZone } from "../office-time";
 
 export interface FiscalReportFilter {
   year: number;
@@ -225,6 +227,16 @@ function csvDate(iso: string | null | undefined): string {
   return m ? `${m[3]}-${m[2]}-${m[1]}` : "";
 }
 
+/**
+ * dd-mm-yyyy of the office-calendar day of a timestamp (D11). `csvDate` takes the
+ * first ten characters, which for a UTC timestamp is the UTC day: an assessment
+ * made at 01:00 Dutch time showed the day before.
+ */
+function csvOfficeDate(iso: string | null | undefined): string {
+  const instant = iso ? new Date(iso) : null;
+  return instant && !Number.isNaN(instant.getTime()) ? csvDate(dateInZone(instant, officeTimeZone())) : "";
+}
+
 /** Amounts with a decimal comma, so a Dutch spreadsheet reads them as numbers. */
 function csvAmount(amount: string | null): string {
   return amount === null ? "" : amount.replace(".", ",");
@@ -252,7 +264,7 @@ export function reportToCsv(report: FiscalReport): string {
         STATE_NL[r.state],
         csvField(r.statusLabel),
         csvField(r.ruleVersionTitle),
-        csvDate(r.assessedAt),
+        csvOfficeDate(r.assessedAt),
       ].join(";"),
     );
   }

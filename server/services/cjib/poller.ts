@@ -1,8 +1,8 @@
-import cron, { type ScheduledTask } from "node-cron";
 import type { CjibConfig, CjibRunSummary } from "../../../shared/fines";
 import { getCjibConfig } from "./config";
 import { ftpsClient, type CjibFtpsClient } from "./ftps-client";
 import { importCjibFile } from "./importer";
+import { createOfficeCronTask, type OfficeCronTask } from "../office-time";
 
 let client: CjibFtpsClient = ftpsClient;
 /** Tests swap the FTPS client for a fake. */
@@ -10,7 +10,7 @@ export function setCjibFtpsClient(c: CjibFtpsClient): void { client = c; }
 
 let running: Promise<CjibRunSummary> | null = null;
 let lastRun: CjibRunSummary | null = null;
-let task: ScheduledTask | null = null;
+let task: OfficeCronTask | null = null;
 let scheduledMinutes: number | null = null;
 
 export function getCjibRunState(): { running: boolean; lastRun: CjibRunSummary | null; scheduledMinutes: number | null } {
@@ -65,7 +65,9 @@ export async function startCjibScheduler(): Promise<void> {
   if (!config.enabled || !config.host) return;
   const minutes = Math.max(5, Math.min(1440, config.pollMinutes));
   const expression = minutes >= 60 ? `0 */${Math.max(1, Math.round(minutes / 60))} * * *` : `*/${minutes} * * * *`;
-  task = cron.schedule(expression, () => { void runCjibImport("scheduler"); });
+  // D11: this poller had no time zone at all (it ran in the process's); it follows the office zone now.
+  task = createOfficeCronTask(expression, () => { void runCjibImport("scheduler"); });
+  task.start();
   scheduledMinutes = minutes;
   console.log(`CJIB import scheduled every ${minutes} minutes (${expression})`);
 }

@@ -131,7 +131,10 @@ describe("portal routes", () => {
   it("per-account permissions take features away below the customer setting", async () => {
     const users = await portalStorage.listPortalUsersByCustomer(a);
     const me0 = await loginAs(app, emailA);
-    expect((await me0.agent.get("/api/portal/me")).body.settings).toMatchObject({ canViewFines: true, canReturn: true });
+    const meBody = (await me0.agent.get("/api/portal/me")).body;
+    expect(meBody.settings).toMatchObject({ canViewFines: true, canReturn: true });
+    // D11: the portal reads "today" on the office calendar the server uses.
+    expect(meBody.officeTimeZone).toBe("Europe/Amsterdam");
     await portalStorage.updatePortalUser(users[0].id, { permissions: { canViewFines: false, canReturn: false } });
     const { agent, csrf } = await loginAs(app, emailA);
     const me = await agent.get("/api/portal/me");

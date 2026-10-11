@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { PortalMe } from "@shared/portal-types";
 import { portalFetch, PortalApiError } from "@/lib/portal-api";
+import { setOfficeTimeZone } from "@/lib/office-timezone";
 
 interface PortalAuthContextValue {
   me: PortalMe | null;
@@ -31,6 +32,11 @@ export function PortalAuthProvider({ children }: { children: ReactNode }) {
     staleTime: 60_000,
     retry: false,
   });
+
+  // D11: the portal reads "today" on the office calendar the server uses.
+  useEffect(() => {
+    if (data?.officeTimeZone) setOfficeTimeZone(data.officeTimeZone);
+  }, [data?.officeTimeZone]);
 
   // The portal follows the customer's preferred language, not the browser's.
   useEffect(() => {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { formatInOfficeZone } from "@/lib/office-timezone";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -217,7 +217,7 @@ export function ActivityLogPanel() {
                     return (
                       <TableRow key={entry.id} data-testid={`activity-row-${entry.id}`}>
                         <TableCell className="whitespace-nowrap text-xs text-muted-foreground align-top">
-                          {format(new Date(entry.createdAt), 'dd-MM-yyyy HH:mm')}
+                          {formatInOfficeZone(entry.createdAt, 'dd-MM-yyyy HH:mm')}
                         </TableCell>
                         <TableCell className="whitespace-nowrap font-medium align-top">
                           {entry.username || t('settingsPage.activityLog.systemUser')}

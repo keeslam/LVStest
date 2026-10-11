@@ -18,6 +18,7 @@
  */
 import { format, parseISO, isValid } from "date-fns";
 import { nl } from "date-fns/locale";
+import { getOfficeTimeZone, isInstantValue, toOfficeWallClock } from "./office-timezone";
 
 /** What a date that cannot be read renders as. Never "Invalid date". */
 export const EMPTY_DATE = "–";
@@ -36,17 +37,24 @@ export const DATE_PATTERNS = {
 
 export type DatePatternKey = keyof typeof DATE_PATTERNS;
 
+/**
+ * D11: a *moment* (an epoch number, or a timestamp string with a `Z`/offset) is
+ * written on the office clock — the `office_timezone` setting — not on the
+ * browser's, so a laptop in another zone prints what the office sees. A bare
+ * `yyyy-MM-dd` names a calendar day and a `Date` object is taken as the
+ * caller built it; neither is shifted.
+ */
 function toDate(value: string | Date | number | null | undefined): Date | null {
   if (value === null || value === undefined || value === "") return null;
   if (value instanceof Date) return isValid(value) ? value : null;
   if (typeof value === "number") {
     const d = new Date(value);
-    return isValid(d) ? d : null;
+    return isValid(d) ? toOfficeWallClock(d, getOfficeTimeZone()) : null;
   }
   // `parseISO` handles the yyyy-MM-dd the API returns; fall back to Date for
   // the timestamps that carry a time zone suffix.
   const parsed = parseISO(value);
-  if (isValid(parsed)) return parsed;
+  if (isValid(parsed)) return isInstantValue(value) ? toOfficeWallClock(parsed, getOfficeTimeZone()) : parsed;
   const loose = new Date(value);
   return isValid(loose) ? loose : null;
 }

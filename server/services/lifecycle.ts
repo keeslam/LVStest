@@ -46,6 +46,8 @@ import {
 } from "../../shared/reservation-status";
 export { RESERVATION_STATUSES, LEGACY_RESERVATION_STATUS_ALIASES, normalizeReservationStatus };
 export type { ReservationStatus };
+import { dateInZone } from "../../shared/office-timezone";
+import { officeTimeZone } from "./office-time";
 
 /* ------------------------------------------------------------------ *
  * Errors
@@ -526,7 +528,7 @@ export interface AvailabilityInput {
 }
 
 /**
- * Today's date on the office calendar (Europe/Amsterdam).
+ * Today's date on the office calendar (the `office_timezone` setting, Europe/Amsterdam unless changed).
  *
  * This used to be `new Date().toISOString().split("T")[0]`, which is the date
  * in UTC. The office runs on Amsterdam time and the container runs on UTC, so
@@ -540,15 +542,9 @@ export function isoToday(): string {
   return officeDate(new Date());
 }
 
-/** The Europe/Amsterdam calendar date of an instant, as `yyyy-MM-dd`. */
+/** The office-zone calendar date of an instant, as `yyyy-MM-dd` (D11: the zone is a setting). */
 export function officeDate(instant: Date): string {
-  // `en-CA` renders as yyyy-MM-dd, which is exactly the shape the API stores.
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Amsterdam",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(instant);
+  return dateInZone(instant, officeTimeZone());
 }
 
 /* ------------------------------------------------------------------ *

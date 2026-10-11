@@ -4,6 +4,8 @@ import { reservations, portalUsers, portalNotifications, type Reservation } from
 import { storage } from "../storage";
 import { customerNotifications } from "./portal-customer-notifications";
 import { sendMaintenanceMail } from "./portal-mail";
+import { officeTimeZone } from "./office-time";
+import { zonedDateTimeToInstant } from "../../shared/office-timezone";
 
 export type MaintenanceEvent = "maintenance_planned" | "maintenance_moved" | "maintenance_in" | "maintenance_out" | "maintenance_cancelled"
   /** besluiten B-13 (BUG-139): the rental moved to another car, so the block is not theirs any more. */
@@ -18,14 +20,11 @@ const TITLE: Record<MaintenanceEvent, string> = {
   maintenance_unlinked: "Onderhoud hoort niet meer bij uw huur",
 };
 
-/** Block start as an instant: startDate + startTime, or 08:00 Amsterdam time when no time is set. */
+/** Block start as an instant: startDate + startTime, or 08:00 office time when no time is set. */
 export function maintenanceStartsAt(block: Pick<Reservation, "startDate" | "startTime">): Date {
   const time = block.startTime && /^\d{2}:\d{2}$/.test(block.startTime) ? block.startTime : "08:00";
-  // Offset for Europe/Amsterdam on that date (+01:00 or +02:00).
-  const probe = new Date(`${block.startDate}T12:00:00Z`);
-  const local = new Intl.DateTimeFormat("nl-NL", { timeZone: "Europe/Amsterdam", hour: "2-digit", hour12: false }).format(probe);
-  const offset = Number(local) - 12; // 1 or 2
-  return new Date(`${block.startDate}T${time}:00${offset === 2 ? "+02:00" : "+01:00"}`);
+  // D11: the wall clock is the office zone's (a setting), whatever its offset or daylight saving rules.
+  return zonedDateTimeToInstant(block.startDate, time, officeTimeZone());
 }
 
 export function canCustomerChangeMaintenance(block: Pick<Reservation, "startDate" | "startTime" | "maintenanceStatus">, now = new Date()): boolean {

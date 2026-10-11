@@ -1,10 +1,10 @@
-import cron, { type ScheduledTask } from "node-cron";
 import { isAllowedSender, type InvoiceInboxConfig, type InvoiceInboxRunSummary } from "../../../shared/invoice-inbox";
 import { getInvoiceInboxConfig } from "./config";
 import { imapClient, type InboxMessageRef, type InvoiceImapClient } from "./imap-client";
 import { importInvoiceMail, recordFailedMail, recordOversizeMail, MAX_MAIL_BYTES } from "./importer";
 import { notifyInvoiceInbox } from "./notify";
 import { inboxRunLog } from "./run-log";
+import { createOfficeCronTask, type OfficeCronTask } from "../office-time";
 
 /** Bounds one run: every mail can cost a Gemini call. The rest waits for the next run. */
 export const MAX_MAILS_PER_RUN = 25;
@@ -25,7 +25,7 @@ export function getInvoiceImapClient(): InvoiceImapClient { return client; }
 
 let running: Promise<InvoiceInboxRunSummary> | null = null;
 let lastRun: InvoiceInboxRunSummary | null = null;
-let task: ScheduledTask | null = null;
+let task: OfficeCronTask | null = null;
 let scheduledMinutes: number | null = null;
 let consecutiveFailures = 0;
 /**
@@ -168,7 +168,8 @@ export async function startInvoiceInboxScheduler(): Promise<void> {
   const config = await getInvoiceInboxConfig();
   if (!config.enabled || !config.host) return;
   const expression = cronExpressionFor(config.pollMinutes);
-  task = cron.schedule(expression, () => { void runInvoiceInboxImport("scheduler"); }, { timezone: "Europe/Amsterdam" });
+  task = createOfficeCronTask(expression, () => { void runInvoiceInboxImport("scheduler"); });
+  task.start();
   scheduledMinutes = Math.max(5, Math.min(1440, config.pollMinutes));
   console.log(`Invoice inbox scheduled every ${scheduledMinutes} minutes (${expression})`);
 }

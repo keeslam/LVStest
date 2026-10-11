@@ -338,7 +338,19 @@
       "streetAddressPlaceholder": "Straatnaam en huisnummer",
       "cityPlaceholder": "Plaats",
       "postalCodePlaceholder": "Postcode",
-      "saveSettingsButton": "Instellingen opslaan"
+      "saveSettingsButton": "Instellingen opslaan",
+      "timeZoneTitle": "Tijdzone van het kantoor",
+      "timeZoneDescription": "De tijdzone waarin de app bepaalt wat 'vandaag' is, hoe laat de nachtelijke taken draaien en welke tijd op documenten en in exports staat. Zomer- en wintertijd gaan vanzelf mee.",
+      "timeZoneSearchLabel": "Zoek een tijdzone",
+      "timeZoneSearchPlaceholder": "Bijvoorbeeld Amsterdam",
+      "timeZoneSelectLabel": "Tijdzone",
+      "timeZoneSummer": "zomertijd is nu actief",
+      "timeZoneWinter": "wintertijd is nu actief (deze zone schakelt over op zomertijd)",
+      "timeZoneNoDst": "geen zomertijd in deze zone",
+      "timeZoneHint": "Standaard Europe/Amsterdam. Na opslaan plannen de nachtelijke taken (back-up, APK-scan, fiscale run, meldingen, postvakken) zichzelf opnieuw in.",
+      "timeZoneSaveButton": "Tijdzone opslaan",
+      "timeZoneSaved": "De app rekent nu met {{zone}}.",
+      "timeZoneSaveFailed": "De tijdzone kon niet worden opgeslagen."
     },
     "notifications": {
       "reminderTimingTitle": "Timing van herinneringen",

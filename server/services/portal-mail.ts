@@ -11,6 +11,7 @@ import { requestsStorage } from "./portal-requests-storage";
 import { fillPlaceholders } from "../../shared/message-placeholders";
 import { formatDateNL, formatNumberNL } from "../utils/dutch-format";
 import { formatLicensePlate } from "../../shared/license-plate";
+import { officeTimeZone } from "./office-time";
 
 export const PORTAL_TEMPLATE = {
   INVITE: "portal_invite",
@@ -227,7 +228,7 @@ export async function sendPortalInvite(user: PortalUser, kind: "invite" | "reset
 /** Warns the account holder about a login from a browser the account has not used before. */
 export async function sendNewDeviceMail(user: PortalUser, info: { ua: string; ip: string; at: string }): Promise<boolean> {
   const template = await getPortalTemplate(PORTAL_TEMPLATE.NEW_DEVICE);
-  const vars = { name: user.fullName, ua: info.ua, ip: info.ip, at: new Date(info.at).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam" }) };
+  const vars = { name: user.fullName, ua: info.ua, ip: info.ip, at: new Date(info.at).toLocaleString("nl-NL", { timeZone: officeTimeZone() }) };
   const html = renderTemplate(template.content, vars);
   return sendEmail({ to: user.email, toName: user.fullName, subject: renderTemplateText(template.subject, vars), html, text: stripHtml(html) }, "custom");
 }

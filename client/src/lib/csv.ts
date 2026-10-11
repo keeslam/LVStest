@@ -14,6 +14,7 @@
  * The server's fiscal CSV follows the same conventions (server/services/fiscal/reports.ts).
  */
 import { officeToday } from "./office-date";
+import { toOfficeWallClock } from "./office-timezone";
 import { notifyFileReady } from "./file-ready";
 
 type Cell = string | number | null | undefined;
@@ -52,11 +53,12 @@ export function csvDate(value: string | null | undefined): string {
   return m ? `${m[3]}-${m[2]}-${m[1]}` : "";
 }
 
-/** "09-10-2026 08:00": date and time without seconds, in the local time of the viewer. */
+/** "09-10-2026 08:00": date and time without seconds, on the office clock (the office_timezone setting). */
 export function csvDateTime(value: string | Date | null | undefined): string {
   if (!value) return "";
-  const d = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(d.getTime())) return "";
+  const instant = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(instant.getTime())) return "";
+  const d = toOfficeWallClock(instant);
   const p = (n: number) => String(n).padStart(2, "0");
   return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }

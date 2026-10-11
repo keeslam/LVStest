@@ -15,6 +15,7 @@ import { ensurePortalEmailTemplates } from "./services/portal-mail";
 import { ensureFiscalDraftVersion } from "./services/fiscal/seed";
 import { backfillUsagePeriods, reconcileUsagePeriods } from "./services/fiscal/usage-periods";
 import { startCjibScheduler } from "./services/cjib/poller";
+import { loadOfficeTimeZone } from "./services/office-time";
 import { startInvoiceInboxScheduler, stopInvoiceInboxScheduler } from "./services/invoice-inbox/poller";
 import { registerPortalRoutes } from "./routes/portal";
 import { getUploadsDir as getPortalUploadsDir } from "../shared/paths";
@@ -500,6 +501,9 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
   });
 });
+
+// D11: the office time zone (app setting) is read before any scheduler creates its task in it.
+await loadOfficeTimeZone();
 
 // Initialize backup scheduler
 backupScheduler = new BackupScheduler();

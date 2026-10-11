@@ -108,7 +108,7 @@ export function NotCollectedDialog({ open, onOpenChange, onViewReservation }: No
               )}
               {visible.map((reservation) => {
                 // task-2-review.md Minor — the office calendar
-                // (Europe/Amsterdam), not the browser's own local zone: a
+                // (the office_timezone setting), not the browser's own local zone: a
                 // staff member outside Amsterdam must count the same number
                 // of days as the office does.
                 const daysSinceStart = reservation.startDate

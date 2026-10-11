@@ -14,6 +14,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { isoToday, officeDate } from "../services/lifecycle";
+import { dateInZone } from "../../shared/office-timezone";
 
 describe("de kantooragenda bepaalt welke dag het is", () => {
   it("leest een instant in Europe/Amsterdam, niet in UTC", () => {
@@ -38,5 +39,19 @@ describe("de kantooragenda bepaalt welke dag het is", () => {
       day: "2-digit",
     }).format(new Date());
     expect(isoToday()).toBe(amsterdam);
+  });
+});
+
+// D11: the zone is a setting, so the same instants are checked in more than one.
+describe.each([
+  ["Europe/Amsterdam", "2026-06-21T23:30:00Z", "2026-06-22"],
+  ["Europe/Amsterdam", "2026-12-21T23:30:00Z", "2026-12-22"],
+  ["Europe/London", "2026-06-21T23:30:00Z", "2026-06-22"],
+  ["Europe/London", "2026-12-21T23:30:00Z", "2026-12-21"],
+  ["America/Curacao", "2026-06-21T23:30:00Z", "2026-06-21"],
+  ["Asia/Tokyo", "2026-06-21T23:30:00Z", "2026-06-22"],
+])("dateInZone in %s", (zone, instant, expected) => {
+  it(`${instant} is ${expected}`, () => {
+    expect(dateInZone(new Date(instant), zone)).toBe(expected);
   });
 });

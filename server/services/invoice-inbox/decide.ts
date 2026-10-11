@@ -12,7 +12,7 @@ export interface DecideInput {
   invoice: InboxParsedInvoice;
   /** Euro. */
   tolerance: number;
-  /** YYYY-MM-DD in Europe/Amsterdam. */
+  /** YYYY-MM-DD on the office calendar (the office_timezone setting). */
   today: string;
 }
 

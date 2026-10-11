@@ -20,6 +20,7 @@ import { getPortalConfig } from "./services/portal-config";
 import { randomBytes } from "crypto";
 import { notifyStaffOfPortalEvent } from "./services/portal-notifications";
 import { hashInviteToken } from "./services/portal-tokens";
+import { officeTimeZone } from "./services/office-time";
 import { PortalUserRole, type PortalUser, type PortalCustomerSettings, type PortalKnownDevice } from "../shared/schema";
 import { PORTAL_ERROR, type PortalErrorCode, type PortalMe, type PortalSettingsFlags, type PortalCompanyEmails } from "../shared/portal-types";
 
@@ -91,6 +92,7 @@ async function buildMe(ctx: PortalRequestContext): Promise<PortalMe> {
     company,
     settings: settingsFlags(ctx.settings, ctx.user),
     info: { pickupAddress: config.pickupAddress, openingHours: config.openingHours, pickupInstructions: config.pickupInstructions, privacyUrl: config.privacyUrl, phone: config.phone },
+    officeTimeZone: officeTimeZone(),
   };
 }
 

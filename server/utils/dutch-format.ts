@@ -14,6 +14,9 @@
  * for it.
  */
 
+import { wallClockInZone } from '../../shared/office-timezone';
+import { officeTimeZone } from '../services/office-time';
+
 const DUTCH_MONTHS = [
   'januari', 'februari', 'maart', 'april', 'mei', 'juni',
   'juli', 'augustus', 'september', 'oktober', 'november', 'december',
@@ -61,22 +64,39 @@ export function formatLongDateNL(value: DateLike): string {
   return `${date.getDate()} ${DUTCH_MONTHS[date.getMonth()]} ${date.getFullYear()}`;
 }
 
+/**
+ * D11: the wall clock of an instant in the office zone, never the zone of the
+ * process (the container runs on UTC, so a document used to print the time two
+ * hours early). A bare `YYYY-MM-DD` has no time of day and no zone: it keeps
+ * the calendar day it names, at 00:00.
+ */
+function officeWallClock(value: DateLike): { date: Date; hh: string; mi: string } | null {
+  const date = toDate(value);
+  if (!date) return null;
+  if (typeof value === 'string' && /^d{4}-d{2}-d{2}$/.test(value.trim())) {
+    return { date, hh: '00', mi: '00' };
+  }
+  const w = wallClockInZone(date, officeTimeZone());
+  // A local date built from the office wall clock, so formatDateNL reads the office calendar day.
+  return {
+    date: new Date(w.year, w.month - 1, w.day),
+    hh: String(w.hour).padStart(2, '0'),
+    mi: String(w.minute).padStart(2, '0'),
+  };
+}
+
 /** `dd-mm-jjjj uu:mm`, 24-hour — never AM/PM. */
 export function formatDateTimeNL(value: DateLike): string {
-  const date = toDate(value);
-  if (!date) return '';
-  const hh = String(date.getHours()).padStart(2, '0');
-  const mi = String(date.getMinutes()).padStart(2, '0');
-  return `${formatDateNL(date)} ${hh}:${mi}`;
+  const clock = officeWallClock(value);
+  if (!clock) return '';
+  return `${formatDateNL(clock.date)} ${clock.hh}:${clock.mi}`;
 }
 
 /** `13 september 2026 14:05` — the long form with a time. */
 export function formatLongDateTimeNL(value: DateLike): string {
-  const date = toDate(value);
-  if (!date) return '';
-  const hh = String(date.getHours()).padStart(2, '0');
-  const mi = String(date.getMinutes()).padStart(2, '0');
-  return `${formatLongDateNL(date)} ${hh}:${mi}`;
+  const clock = officeWallClock(value);
+  if (!clock) return '';
+  return `${formatLongDateNL(clock.date)} ${clock.hh}:${clock.mi}`;
 }
 
 function toNumber(value: unknown): number | null {

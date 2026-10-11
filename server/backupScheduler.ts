@@ -1,5 +1,6 @@
-import * as cron from 'node-cron';
 import { backupService, type BackupService } from './backupService';
+import { createOfficeCronTask, officeTimeZone, type OfficeCronTask } from './services/office-time';
+import { dateInZone, zonedDateTimeToInstant } from '../shared/office-timezone';
 import { cleanupStaleTempFiles, restoreToolsAvailable } from './restoreSafety';
 
 export class BackupScheduler {
@@ -8,7 +9,7 @@ export class BackupScheduler {
   // button and vice versa - otherwise a cron/boot-catchup run and a manual
   // click could run concurrently.
   private backupService: BackupService = backupService;
-  private scheduledTask: cron.ScheduledTask | null = null;
+  private scheduledTask: OfficeCronTask | null = null;
 
   // Start the backup scheduler
   start(): void {
@@ -58,7 +59,8 @@ export class BackupScheduler {
       .catch(() => { /* never block start-up on a probe */ });
 
     // Schedule backup to run at 2:00 AM every day
-    this.scheduledTask = cron.schedule('0 2 * * *', async () => {
+    // D11: 02:00 in the office time zone setting; the task moves with it.
+    this.scheduledTask = createOfficeCronTask('0 2 * * *', async () => {
       console.log('Starting scheduled backup...');
       try {
         await this.backupService.runBackup('scheduled');
@@ -71,8 +73,6 @@ export class BackupScheduler {
       } catch (error) {
         console.error('Scheduled backup failed:', error);
       }
-    }, {
-      timezone: "Europe/Amsterdam" // Adjust to your timezone
     });
 
     this.scheduledTask.start();
@@ -117,7 +117,7 @@ export class BackupScheduler {
   /**
    * BUG-221(b): this added a day unconditionally and then a SECOND day when it
    * was already past 02:00, so it was always at least one day wrong. The
-   * schedule is 02:00 local time daily; the next run is today's 02:00 while
+   * schedule is 02:00 office time daily; the next run is today's 02:00 while
    * that is still ahead, and tomorrow's otherwise.
    */
   getStatus(): { isRunning: boolean; nextRun?: string; nextRunFormatted?: string } {
@@ -125,10 +125,13 @@ export class BackupScheduler {
       return { isRunning: false };
     }
 
-    const nextRun = new Date();
-    nextRun.setHours(2, 0, 0, 0);
-    if (nextRun.getTime() <= Date.now()) {
-      nextRun.setDate(nextRun.getDate() + 1);
+    // D11: 02:00 on the office calendar, not in the zone of the process (UTC in the container).
+    const zone = officeTimeZone();
+    const now = new Date();
+    let nextRun = zonedDateTimeToInstant(dateInZone(now, zone), '02:00', zone);
+    if (nextRun.getTime() <= now.getTime()) {
+      const [y, m, d] = dateInZone(now, zone).split('-').map(Number);
+      nextRun = zonedDateTimeToInstant(dateInZone(new Date(Date.UTC(y, m - 1, d + 1, 12)), 'UTC'), '02:00', zone);
     }
 
     return {

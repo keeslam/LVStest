@@ -338,7 +338,19 @@
       "streetAddressPlaceholder": "Street address",
       "cityPlaceholder": "City",
       "postalCodePlaceholder": "Postal code",
-      "saveSettingsButton": "Save Settings"
+      "saveSettingsButton": "Save Settings",
+      "timeZoneTitle": "Office time zone",
+      "timeZoneDescription": "The time zone the app uses to decide what 'today' is, when the nightly jobs run and which time is printed on documents and exports. Summer and winter time follow automatically.",
+      "timeZoneSearchLabel": "Search for a time zone",
+      "timeZoneSearchPlaceholder": "For example Amsterdam",
+      "timeZoneSelectLabel": "Time zone",
+      "timeZoneSummer": "summer time is active now",
+      "timeZoneWinter": "winter time is active now (this zone switches to summer time)",
+      "timeZoneNoDst": "no daylight saving time in this zone",
+      "timeZoneHint": "Default Europe/Amsterdam. After saving, the nightly jobs (backup, APK scan, fiscal run, notifications, mailboxes) reschedule themselves.",
+      "timeZoneSaveButton": "Save time zone",
+      "timeZoneSaved": "The app now uses {{zone}}.",
+      "timeZoneSaveFailed": "The time zone could not be saved."
     },
     "notifications": {
       "reminderTimingTitle": "Reminder Timing",

@@ -70,6 +70,8 @@ export interface PortalMe {
   settings: PortalSettingsFlags;
   /** Pickup details and privacy link from the portal configuration. */
   info: { pickupAddress: string; openingHours: string; pickupInstructions: string; privacyUrl: string; phone: string };
+  /** D11: the office time zone (app setting); the portal reads "today" on that calendar. Absent on an older server. */
+  officeTimeZone?: string;
 }
 
 export interface PortalCompanyEmails {

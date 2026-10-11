@@ -17,6 +17,8 @@ import { computeInvoiceHash, invoiceTotalCents, normalizeInvoiceNumber, sha256 }
 import { extractPlates } from "./plates";
 import { decideInvoiceBooking } from "./decide";
 import { notifyInvoiceInbox } from "./notify";
+import { dateInZone } from "../../../shared/office-timezone";
+import { officeTimeZone } from "../office-time";
 import type { InboxMessageRef } from "./imap-client";
 
 export type InvoiceScanner = (filePath: string, mimeType: string) => Promise<InboxParsedInvoice>;
@@ -161,7 +163,7 @@ async function createItemOrDiscardFile(
   }
 }
 
-const amsterdamToday = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Amsterdam" }).format(new Date());
+const officeToday = () => dateInZone(new Date(), officeTimeZone());
 
 /**
  * I4 — the model is asked for one of EXPENSE_CATEGORIES but is not bound by it.
@@ -188,9 +190,9 @@ async function isDuplicateInvoice(invoice: InboxParsedInvoice, invoiceHash: stri
 }
 const euro = (amount: number) => new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(amount);
 
-/** Today in Amsterdam, resetting the budget when the day turned. */
+/** Today on the office calendar, resetting the budget when the day turned. */
 function claimUntrustedScan(): boolean {
-  const today = amsterdamToday();
+  const today = officeToday();
   if (untrustedScans.date !== today) untrustedScans = { date: today, used: 0 };
   if (untrustedScans.used >= UNTRUSTED_SCANS_PER_DAY) return false;
   untrustedScans.used += 1;
@@ -338,7 +340,7 @@ async function importAttachment(
   const duplicate = await isDuplicateInvoice(parsed, invoiceHash);
   const fleetMatches = await inboxStorage.findVehiclesByPlates(plates);
   const decision = decideInvoiceBooking({
-    senderAllowed, duplicate, plates, fleetMatches, invoice: parsed, tolerance: config.totalTolerance, today: amsterdamToday(),
+    senderAllowed, duplicate, plates, fleetMatches, invoice: parsed, tolerance: config.totalTolerance, today: officeToday(),
   });
 
   // Written as "review" first: the expenses need the item id, and an item that

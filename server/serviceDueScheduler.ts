@@ -1,12 +1,12 @@
-import * as cron from 'node-cron';
 import { scanVehiclesForServiceDue } from './utils/service-due-scanner';
+import { createOfficeCronTask, type OfficeCronTask } from './services/office-time';
 
 // Keeps the "service due" notifications in sync with the vehicles' odometer
 // readings and last-service dates. Runs nightly (after the backup and the RDW
 // APK scan) and once shortly after startup so a restart never leaves stale
 // notifications behind.
 export class ServiceDueScheduler {
-  private scheduledTask: cron.ScheduledTask | null = null;
+  private scheduledTask: OfficeCronTask | null = null;
   private startupTimer: NodeJS.Timeout | null = null;
 
   start(): void {
@@ -15,9 +15,8 @@ export class ServiceDueScheduler {
       return;
     }
 
-    this.scheduledTask = cron.createTask('0 3 * * *', () => this.run('scheduled'), {
-      timezone: 'Europe/Amsterdam',
-    });
+    // D11: runs in the office time zone setting and moves with it.
+    this.scheduledTask = createOfficeCronTask('0 3 * * *', () => this.run('scheduled'));
     this.scheduledTask.start();
 
     this.startupTimer = setTimeout(() => {
