@@ -65,8 +65,10 @@ er niet, of is hij grijs, dan klik of tik je erop: de app zegt welk vinkje je mi
 11. **Sleutellabels op de DYMO-labelmaker.** Kies bij **Labelsjabloon** de optie **DYMO-tape (labelmaker,
     staand)**, laat **Tapebreedte** op 12 mm en **Labellengte (mm)** op 48 staan en druk af. De app zet de
     barcode over de lengte van de tape, met het kenteken en **Hoofd** of **Reserve** eronder; in het
-    afdrukvenster kies je de DYMO-printer, papier 12 mm, staand, marges Geen, schaal 100%. Meer in
-    [hoofdstuk 18, paragraaf 18.9](18-barcode-en-scannen.md).
+    afdrukvenster kies je de DYMO-printer, papier 12 mm, staand, marges Geen, schaal 100%. Wil je zelf
+    bepalen wat er op de tape staat, maak dan onder **Documenten** → **Barcodelabels** een sjabloon van het
+    soort **DYMO-tape (48 x 12 mm)**. Meer in [hoofdstuk 18, paragraaf 18.9](18-barcode-en-scannen.md) en
+    [hoofdstuk 8, paragraaf 8.5](08-documenten.md).
 
 ---
 

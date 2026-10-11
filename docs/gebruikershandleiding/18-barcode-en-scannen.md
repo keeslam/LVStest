@@ -309,6 +309,12 @@ papier 12 mm, staand, marges Geen en schaal 100%.* De keuze en de maten worden o
 zodat de volgende keer meteen de tape voorstaat. Druk eerst één label af en leg het naast een oud
 label voordat je de hele kast doet.
 
+**Zelf bepalen wat er op de tape staat.** De keuze **DYMO-tape (labelmaker, staand)** heeft een vaste
+indeling. Wil je iets anders op het label (een bedrijfsnaam, een ander lettertype, het merk), maak dan
+onder **Documenten** → **Barcodelabels** een sjabloon van het soort **DYMO-tape (48 x 12 mm)** en kies
+dat sjabloon bij **Labelsjabloon**. Zo'n sjabloon wordt net zo staand en gedraaid afgedrukt; zie
+[hoofdstuk 8, paragraaf 8.5](08-documenten.md).
+
 ### Een nieuw label voor een auto
 
 Is het label onleesbaar of kwijt, dan kun je een nieuwe code laten maken met **Barcode opnieuw

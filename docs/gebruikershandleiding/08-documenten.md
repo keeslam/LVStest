@@ -187,6 +187,19 @@ Een contractsjabloon open je via **Sjablooneditor openen**. In de editor sleep j
 achtergrond. Eén sjabloon is de standaard; die herken je aan het label **Standaard**, en je
 stelt hem in met **Als standaard instellen**.
 
+**Barcodelabels: etiket of DYMO-tape.** Bij **Nieuw sjabloon** kies je naast de naam het **Soort
+label**: **Etiket (62 x 29 mm)** — *Een los etiket of een vel etiketten: barcode boven, kenteken
+eronder.* — of **DYMO-tape (48 x 12 mm)** — *Voor de labelmaker aan de balie: barcode over de lengte,
+kenteken en Hoofd/Reserve eronder, staand afgedrukt.* Een tapesjabloon begint met drie velden (de
+barcode over de lengte, het kenteken linksonder en **Sleutel (Hoofd/Reserve)** rechtsonder) die je
+net als op een etiket verschuift, vergroot of aanvult, bijvoorbeeld met **Vaste tekst**. De maten heten
+dan **Lengte (mm)** (over de tape, standaard 48) en **Tapebreedte (mm)** (standaard 12). De schakelaar
+**DYMO-tape: staand afdrukken, inhoud gedraaid** zet een bestaand sjabloon om naar tape of terug; de
+app draait de inhoud bij het afdrukken zelf een kwartslag en drukt barcodes op tape zonder de code
+eronder. Het veld **Sleutel (Hoofd/Reserve)** leest het uit de code: een reservesleutel-code eindigt
+op -S. Het sjabloon kies je daarna bij **Labelsjabloon** op de voertuigkaart, in **Voertuigbarcode** of
+in het **Barcodeboek**; zie [hoofdstuk 18, paragraaf 18.9](18-barcode-en-scannen.md).
+
 **Dit is de belangrijkste regel over sjablonen:** een sjabloon zonder velden levert een blanco
 contract op, en daarom weigert de app het — liever een duidelijke fout dan een onbruikbaar
 bestand. Je kunt een sjabloon zonder velden dan ook niet op **Als standaard instellen** zetten: er

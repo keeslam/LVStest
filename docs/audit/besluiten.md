@@ -534,6 +534,7 @@ Kees: "de barcodes die gemaakt worden om te printen om aan sleutels te hangen zo
 - De keuze en de maten worden per browser onthouden (localStorage; de printer hangt aan één pc). De melding **Afdrukvenster geopend** noemt de printerinstellingen: *Kies daar de DYMO-printer, papier 12 mm, staand, marges Geen en schaal 100%.*
 - Niet door Claude te testen: de afdruk op de 420P zelf. Kees drukt eerst één label af en vergelijkt het met een oud label (checklist hoofdstuk 19, regel **DYMO-tape**). Als de driver een andere papierlengte afdwingt, past hij **Labellengte (mm)** aan.
 - Handleiding: 4.11, 18.9, Wat is er nieuw (Balie 11) en de acceptatiechecklist volgen dit besluit.
+- **Aanvulling na de eerste proef (Kees: "ik kan hier niet echt aanpassen wat er op het label komt, deze komt niet uit de barcode template editor"):** de sjablooneditor onder Documenten → Barcodelabels kent nu het soort **DYMO-tape (48 x 12 mm)** (nieuwe kolom `barcode_label_templates.tape_print`, standaard onwaar, in schema-columns.json). Een tapesjabloon wordt met zijn eigen velden staand en gedraaid afgedrukt, barcodes zonder code eronder; nieuwe veldbron **Sleutel (Hoofd/Reserve)** leest Hoofd of Reserve uit de code (-S). De schakelaar **DYMO-tape: staand afdrukken, inhoud gedraaid** zet een bestaand sjabloon om. De vaste keuze **DYMO-tape (labelmaker, staand)** blijft bestaan voor wie geen sjabloon wil maken. Handleiding 8.5, 4.11, 18.9, Wat is er nieuw en checklist (regel **Tapesjabloon maken**) bijgewerkt.
 
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
