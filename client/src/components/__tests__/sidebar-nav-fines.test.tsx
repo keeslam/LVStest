@@ -1,5 +1,7 @@
 /**
- * A-R-1: the menu has an item "Bekeuringen" for Boetes bekijken / Boetes beheren.
+ * A-R-1 introduced a menu item "Bekeuringen"; B-44 (11-10-2026) took it out
+ * again: the list is reached from a button on the Klantenportaal page, so the
+ * menu must not show it, whatever the fines rights are.
  */
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -27,14 +29,15 @@ function renderNav(role: string, permissions: string[]) {
   );
 }
 
-describe("sidebar - Bekeuringen (A-R-1)", () => {
-  it("is shown with Boetes bekijken and links to /fines", () => {
+describe("sidebar - Bekeuringen (B-44)", () => {
+  it("has no Bekeuringen item, also not with Boetes bekijken", () => {
     renderNav("user", ["view_fines"]);
-    expect(screen.getByRole("link", { name: /Bekeuringen/ })).toHaveAttribute("href", "/fines");
+    expect(screen.queryByRole("link", { name: /Bekeuringen/ })).toBeNull();
+    expect(document.querySelector('a[href="/fines"]')).toBeNull();
   });
 
-  it("is hidden without a fines right", () => {
-    renderNav("user", ["view_vehicles"]);
+  it("has no Bekeuringen item for an admin either", () => {
+    renderNav("admin", ["view_fines", "manage_fines"]);
     expect(screen.queryByRole("link", { name: /Bekeuringen/ })).toBeNull();
   });
 });

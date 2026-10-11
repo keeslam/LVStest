@@ -23,4 +23,13 @@ describe("sidebar-nav / page-access", () => {
       expect(pageAccessFor(item.href), item.href).toBeDefined();
     }
   });
+
+  // B-44 (11-10-2026): the comparison only runs menu -> table, never the other
+  // way round, so a page may have a row without a menu item. /fines is that
+  // page: it keeps its own rights and is opened by the "Bekeuringen" button on
+  // the Klantenportaal page and by URL, not from the menu.
+  it("allows a page without a menu item: /fines has a row but no menu item (B-44)", () => {
+    expect(pageAccessFor("/fines")).toBeDefined();
+    expect(NAV_ITEMS.map((item) => item.href)).not.toContain("/fines");
+  });
 });

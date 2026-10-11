@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import { useSearch } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { UserPlus, Loader2, ScanSearch, Calculator } from "lucide-react";
+import { UserPlus, Loader2, ScanSearch, Calculator, Receipt } from "lucide-react";
 import type { PortalDashboard } from "@shared/portal-types";
 import { apiRequest } from "@/lib/queryClient";
 import { useGlobalDialog, type PortalListKind } from "@/contexts/GlobalDialogContext";
 import { Button } from "@/components/ui/button";
+import { RequiresPermission } from "@/components/ui/requires-permission";
+import { UserPermission } from "@shared/schema";
 import { AccountDialog } from "@/components/portal-admin/account-dialog";
 import { useCanManagePortal } from "@/components/portal-admin/accounts-table";
 import { useCanViewFines, useCanManageFines } from "@/components/fines/fines-table";
@@ -23,6 +25,8 @@ const LIST_KINDS: PortalListKind[] = ["customers", "accounts", "requests", "fine
  */
 export default function PortalAdminPage() {
   const { t } = useTranslation("portal");
+  const { t: tNav } = useTranslation("nav");
+  const [, navigate] = useLocation();
   const { openFineDialog, openPortalRequestDialog, openPortalListDialog, openFineImportDialog } = useGlobalDialog();
   const canViewFines = useCanViewFines();
   const canManage = useCanManagePortal();
@@ -55,6 +59,10 @@ export default function PortalAdminPage() {
           <p className="text-sm text-muted-foreground">{t("admin.pageSubtitle")}</p>
         </div>
         <div className="grid grid-cols-1 gap-2 sm:flex">
+          {/* B-44 (11-10-2026): the fines list has no menu item any more; it is opened from here. */}
+          <RequiresPermission anyOf={[UserPermission.VIEW_FINES, UserPermission.MANAGE_FINES]}>
+            <Button size="sm" variant="outline" onClick={() => navigate("/fines")} data-testid="button-open-fines"><Receipt className="mr-1.5 h-4 w-4" />{tNav("fines")}</Button>
+          </RequiresPermission>
           {canViewFiscal && (
             <Button size="sm" variant="outline" onClick={() => setFiscalOpen(true)} data-testid="button-fiscal-overview"><Calculator className="mr-1.5 h-4 w-4" />{tFiscal("overviewDialog.button")}</Button>
           )}
