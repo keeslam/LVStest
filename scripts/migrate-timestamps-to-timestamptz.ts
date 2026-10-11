@@ -38,10 +38,11 @@
  *    application wrote **explicitly** (`updatedAt: new Date()` and friends)
  *    went into the tz-less column as **UTC** wall clock, while every row
  *    filled by the column default went in as **Amsterdam** wall clock. The
- *    conversion moves both by the same one or two hours, so the
- *    default-written rows (the overwhelming majority, and the ones BUG-224 is
- *    about) become correct and the explicitly-written ones move an hour or two
- *    into the future. There is no column that records which is which, so no
+ *    conversion reads both as Amsterdam wall clock, so the default-written
+ *    rows (the overwhelming majority, and the ones BUG-224 is about) become
+ *    correct, while an explicitly-written row (a UTC wall clock read as
+ *    Amsterdam) lands one or two hours too EARLY: 10:00 UTC was stored as
+ *    10:00 and becomes 10:00 Amsterdam = 08:00 UTC. There is no column that records which is which, so no
  *    migration can separate them. `--report` prints how far apart
  *    `created_at` and `updated_at` sit on rows that were never edited, which
  *    is the cheapest available estimate of how many rows are in the second
