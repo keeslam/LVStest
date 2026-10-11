@@ -1,7 +1,7 @@
 import { describeApiError } from "@/lib/api-error";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useParams } from "wouter";
+import { useLocation, useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { ReservationForm } from "@/components/reservations/reservation-form";
 import { Reservation } from "@shared/schema";
@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function ReservationEdit() {
   const { t } = useTranslation("reservations");
   const { id } = useParams();
+  const [, navigate] = useLocation();
   const [initialData, setInitialData] = useState<Reservation | null>(null);
   
   // Fetch reservation data
@@ -46,7 +47,15 @@ export default function ReservationEdit() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">{t('editDialog.title')}</h1>
-      {initialData && <ReservationForm editMode={true} initialData={initialData} />}
+      {initialData && (
+        <ReservationForm
+          editMode={true}
+          initialData={initialData}
+          // A save navigates to the reservation by itself; Annuleren (the form's cancel dialog) only calls
+          // this, and a cancelled rental has nothing left to edit.
+          onSuccess={() => navigate(`/reservations/${initialData.id}`)}
+        />
+      )}
     </div>
   );
 }

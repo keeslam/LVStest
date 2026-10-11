@@ -18,7 +18,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
-import { GlobalDialogProvider } from "@/contexts/GlobalDialogContext";
+import { GlobalDialogProvider, useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { Toaster } from "@/components/ui/toaster";
 import { ReservationForm } from "@/components/reservations/reservation-form";
 
@@ -30,12 +30,6 @@ vi.mock("@/components/expenses/expense-add-dialog", () => ({
 }));
 vi.mock("@/components/documents/inline-document-upload", () => ({
   InlineDocumentUpload: ({ children }: any) => <div>{children}</div>,
-}));
-// The real dialog is tested in pickup-return tests; here only "which reservation, opened or not".
-vi.mock("@/components/reservations/pickup-return-dialogs", () => ({
-  PickupDialog: ({ open, reservation }: any) =>
-    open ? <div data-testid="pickup-dialog-stub">{`pickup #${reservation.id}`}</div> : null,
-  ReturnDialog: () => null,
 }));
 vi.mock("@/components/reservations/cancel-reservation-dialog", () => ({
   CancelReservationDialog: ({ open, reservationId }: any) =>
@@ -74,6 +68,12 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+/** The pickup flow lives in the global dialog layer (GlobalDialogs); here only what it was asked for. */
+function PickupFlowProbe() {
+  const { dialogState } = useGlobalDialog();
+  return dialogState.pickup.open ? <div data-testid="pickup-flow-probe">{`pickup #${dialogState.pickup.reservationId}`}</div> : null;
+}
+
 function renderForm(props: Record<string, unknown> = {}) {
   const client = new QueryClient({
     defaultOptions: { queries: { queryFn: getQueryFn({ on401: "throw" }), retry: false, gcTime: 0 } },
@@ -83,6 +83,7 @@ function renderForm(props: Record<string, unknown> = {}) {
       <GlobalDialogProvider>
         <ReservationForm initialVehicleId={String(vehicle.id)} initialCustomerId={String(customer.id)} {...props} />
         <Toaster />
+        <PickupFlowProbe />
       </GlobalDialogProvider>
     </QueryClientProvider>,
   );
@@ -145,6 +146,10 @@ describe("D3 - the reservation form has no status field", () => {
     expect(patch.form!.has("status")).toBe(false);
     // The contract number is edited only in its own dialog: not sent from here either.
     expect(patch.form!.has("contractNumber")).toBe(false);
+    // The return-only fields are no longer part of the form: the loaded values are not echoed.
+    expect(patch.form!.has("fuelCost")).toBe(false);
+    expect(patch.form!.has("fuelLevelReturn")).toBe(false);
+    expect(patch.form!.has("departureMileage")).toBe(false);
   });
 });
 
@@ -158,24 +163,23 @@ describe("D3 - the contract number is not a field of the form", () => {
 });
 
 describe("D3 - Nu ophalen after saving a new reservation", () => {
-  it("the success box offers the button and it opens the pickup dialog for the saved reservation", async () => {
+  it("the success box offers the button and it starts the pickup flow for the saved reservation", async () => {
     const user = userEvent.setup();
     renderForm();
     expect(screen.queryByTestId("button-pickup-now")).toBeNull();
     await submit(user);
 
     const pickupNow = await screen.findByTestId("button-pickup-now");
-    expect(screen.queryByTestId("pickup-dialog-stub")).toBeNull();
+    expect(screen.queryByTestId("pickup-flow-probe")).toBeNull();
     await user.click(pickupNow);
 
-    expect((await screen.findByTestId("pickup-dialog-stub")).textContent).toBe("pickup #999");
+    expect((await screen.findByTestId("pickup-flow-probe")).textContent).toBe("pickup #999");
   });
 
-  it("a parent that hosts the pickup dialog gets the reservation from the toast action", async () => {
+  it("a host that closes on success gets the button as the toast action", async () => {
     const user = userEvent.setup();
     const onSuccess = vi.fn();
-    const onTriggerPickupDialog = vi.fn();
-    renderForm({ onSuccess, onTriggerPickupDialog });
+    renderForm({ onSuccess });
     await submit(user);
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
@@ -185,14 +189,13 @@ describe("D3 - Nu ophalen after saving a new reservation", () => {
     expect(action).toBeTruthy();
     await user.click(action!);
 
-    expect(onTriggerPickupDialog).toHaveBeenCalledTimes(1);
-    expect(onTriggerPickupDialog.mock.calls[0][0]).toMatchObject({ id: 999, status: "booked" });
+    expect((await screen.findByTestId("pickup-flow-probe")).textContent).toBe("pickup #999");
   });
 
   it("editing an existing reservation never offers it", async () => {
     const user = userEvent.setup();
     const onSuccess = vi.fn();
-    renderForm({ editMode: true, initialData: { ...rental, status: "booked" }, onSuccess, onTriggerPickupDialog: vi.fn() });
+    renderForm({ editMode: true, initialData: { ...rental, status: "booked" }, onSuccess });
     await submit(user);
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());

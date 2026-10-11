@@ -263,7 +263,7 @@ e-mailadres in* of *Minimaal 3 tekens*.
 | *"Let op: dit voertuig staat in deze periode ingepland voor onderhoud (… t/m …). Opslaan mag; het onderhoudsblok blijft staan."* | Waarschuwing, geen blokkade | Kan het onderhoud verzet worden? | **Ja** — je mag doorgaan | Nee |
 | *This customer is blacklisted for this vehicle and cannot be booked on it.* | Deze klant mag niet in deze auto | Klopt de zwarte lijst nog? | Alleen door een andere auto te kiezen | Voor het aanpassen van de lijst |
 | *"De einddatum kan niet vóór de begindatum liggen."* | Datums omgedraaid | — | **Ja** | Nee |
-| *Undoing a handover or a cancellation goes through POST /api/reservations/:id/revert.* | Je probeerde een ophaling, inname of annulering via het statuslijstje terug te zetten | — | **Ja** — gebruik **Overdracht terugdraaien** of **Annulering terugdraaien** (5.14) | Alleen als je het vinkje mist |
+| *Undoing a handover or a cancellation goes through POST /api/reservations/:id/revert.* | Een pagina die nog van vóór de wijziging openstond, probeerde een ophaling, inname of annulering met een status terug te zetten (het formulier heeft geen statuslijstje meer) | — | **Ja** — gebruik **Overdracht terugdraaien** of **Annulering terugdraaien** (5.14) | Alleen als je het vinkje mist |
 | *Vehicle not found* / *Customer not found* | Het voertuig of de klant bestaat niet (meer) | Staat het record in de prullenbak? | Nee | **Ja**, om terug te zetten |
 
 ### Bij verwijderen en terugzetten

@@ -180,10 +180,11 @@ lijstjes. Je krijgt geen melding; de auto is er simpelweg niet.
 13. Klik onderaan op **Reservering aanmaken**.
 
 Je krijgt **Reservering succesvol aangemaakt** — *Reservering voor <merk> <model> is aangemaakt.*
-Daarna verandert **Annuleren** in **Sluiten**; documenten uploaden kan nu wel. Naast de melding
-staat de knop **Nu ophalen**: die opent het ophaalvenster (5.7) voor deze reservering, zodat boeken en
-direct meegeven één klik extra is. Sluit het venster zichzelf na het opslaan, dan staat **Nu ophalen** als
-knop in de melding.
+Daarna verandert **Annuleren** in **Sluiten**; documenten uploaden kan nu wel. Met de knop
+**Nu ophalen** open je het ophaalvenster (5.7) voor deze reservering, zodat boeken en direct meegeven één
+klik extra is. De knop staat in de groene melding in het formulier; sluit het venster zichzelf na het
+opslaan (zoals vanaf het Dashboard, de klantenlijst of de voertuigenlijst), dan staat dezelfde knop een
+paar seconden in de melding rechtsonder.
 
 Heb je het venster geopend vanaf het **Dashboard** (**Snelle acties** → **Nieuwe reservering**), dan
 sluit **Annuleren** alleen dat venster en blijf je op het Dashboard. Vroeger sprong de app daarbij

@@ -392,9 +392,9 @@ Het lukt alleen als de auto in die periode nog vrij is. Is hij intussen opnieuw 
 venster *Het voertuig is voor deze periode niet meer vrij, dus de annulering kan niet worden
 teruggedraaid.* Maak dan **een nieuwe reservering** met dezelfde gegevens en zet in de notities
 waarom. Het terugdraaien zet ook niets terug van wat je bij het annuleren meegaf: een transport, een
-vervanger of een chauffeurstoewijzing zet je zelf weer klaar. Zet je een geannuleerde reservering via
-het statuslijstje op **Geboekt**, dan weigert de app met *Undoing a handover or a cancellation goes
-through POST /api/reservations/:id/revert.*: gebruik de knop.
+vervanger of een chauffeurstoewijzing zet je zelf weer klaar. Een statuslijstje
+om een geannuleerde reservering weer op **Geboekt** te zetten bestaat niet meer: gebruik de knop
+**Annulering terugdraaien**.
 
 **Hoe je het voorkomt.** Kijk in het venster **Reservering annuleren** naar het nummer van de
 reservering en naar het lijstje **Hieraan hangt nog:** voordat je bevestigt. Twijfel je, klik dan

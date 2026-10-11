@@ -26,6 +26,10 @@ interface DialogState {
   // OPT-021: the "N" shortcut needs a new-reservation dialog that is not a
   // trigger inside one page's markup.
   newReservation: { open: boolean };
+  // D3: "Nu ophalen" after saving a new reservation. The PickupDialog lives in the global layer so it
+  // outlives the dialog (or page) that hosted the form: the customers list, vehicles list and scan
+  // panel unmount their add dialog on success.
+  pickup: { open: boolean; reservationId: number | null };
 }
 
 interface GlobalDialogContextType {
@@ -64,6 +68,8 @@ interface GlobalDialogContextType {
   closeScanDialog: () => void;
   openNewReservationDialog: () => void;
   closeNewReservationDialog: () => void;
+  startPickupFlow: (reservationId: number) => void;
+  closePickupFlow: () => void;
 }
 
 const GlobalDialogContext = createContext<GlobalDialogContextType | undefined>(undefined);
@@ -87,6 +93,7 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     rdwApkChanges: { open: false },
     scan: { open: false, intent: null },
     newReservation: { open: false },
+    pickup: { open: false, reservationId: null },
   });
 
   const openReservationDialog = (id: number) => {
@@ -250,6 +257,14 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     setDialogState(prev => ({ ...prev, newReservation: { open: false } }));
   };
 
+  const startPickupFlow = (reservationId: number) => {
+    setDialogState(prev => ({ ...prev, pickup: { open: true, reservationId } }));
+  };
+
+  const closePickupFlow = () => {
+    setDialogState(prev => ({ ...prev, pickup: { open: false, reservationId: null } }));
+  };
+
   // BUG-210 — a Radix dialog locks the scroll while it is open and restores
   // the vertical offset on close, but leaves the horizontal one behind. On a
   // 1182 px laptop, where the calendar page already scrolls sideways, that
@@ -303,6 +318,8 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
       closeScanDialog,
       openNewReservationDialog,
       closeNewReservationDialog,
+      startPickupFlow,
+      closePickupFlow,
     }),
     // The callbacks are stable setState wrappers; only the state can change.
     // eslint-disable-next-line react-hooks/exhaustive-deps

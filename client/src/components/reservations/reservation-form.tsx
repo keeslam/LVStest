@@ -78,7 +78,6 @@ import { PlusCircle, FileCheck, Upload, Check, X, Edit, FileText, Eye, Clipboard
 import { ReadonlyVehicleDisplay } from "@/components/ui/readonly-vehicle-display";
 import { DriverDialog } from "@/components/customers/driver-dialog";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
-import { PickupDialog } from "@/components/reservations/pickup-return-dialogs";
 import { VehicleRemarksWarningDialog } from "@/components/vehicles/vehicle-remarks-warning-dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { officeToday } from "@/lib/office-date";
@@ -220,13 +219,6 @@ interface ReservationFormProps {
    * the whole form away.
    */
   onDirtyChange?: (isDirty: boolean) => void;
-  onPickupReturnDialogChange?: (isOpen: boolean) => void;
-  /**
-   * D3 (besluiten B-41): the form has no status field any more, so a handover starts only from
-   * "Nu ophalen" after a new reservation was saved. A parent that hosts its own PickupDialog (the
-   * add dialog) takes the reservation here; without it the form opens the dialog itself.
-   */
-  onTriggerPickupDialog?: (reservation: Reservation) => void;
 }
 
 export function ReservationForm({ 
@@ -239,12 +231,10 @@ export function ReservationForm({
   onCancel,
   onPreviewModeChange,
   onDirtyChange,
-  onPickupReturnDialogChange,
-  onTriggerPickupDialog,
 }: ReservationFormProps) {
   const { t } = useTranslation("reservations");
   const { toast } = useToast();
-  const { openReservationDialog } = useGlobalDialog();
+  const { openReservationDialog, startPickupFlow } = useGlobalDialog();
   const queryClient = useQueryClient();
   const [_, navigate] = useLocation();
   // Every role that may open this form (VIEW_RESERVATIONS/MANAGE_RESERVATIONS)
@@ -288,20 +278,11 @@ export function ReservationForm({
   const [isDragActive, setIsDragActive] = useState(false);
   // D3: the status is shown, never chosen, in this form; it only decides which fields are offered.
   const currentStatus: string = initialData?.status || "booked";
-  const [departureMileage, setDepartureMileage] = useState<number | undefined>(
-    initialData?.vehicle?.departureMileage || undefined
-  );
   const [startMileage, setStartMileage] = useState<number | undefined>(
     initialData?.pickupMileage || undefined
   );
   const [fuelLevelPickup, setFuelLevelPickup] = useState<string | undefined>(
     initialData?.fuelLevelPickup || undefined
-  );
-  const [fuelLevelReturn, setFuelLevelReturn] = useState<string | undefined>(
-    initialData?.fuelLevelReturn || undefined
-  );
-  const [fuelCost, setFuelCost] = useState<string | undefined>(
-    initialData?.fuelCost || undefined
   );
   const [fuelCardNumber, setFuelCardNumber] = useState<string | undefined>(
     initialData?.fuelCardNumber || undefined
@@ -330,11 +311,9 @@ export function ReservationForm({
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const canStartPickup = useHasPermission(UserPermission.MANAGE_RESERVATIONS);
 
-  // "Nu ophalen" after a new reservation was saved: the saved row, and the local PickupDialog
-  // used when no parent hosts one.
-  const [createdReservation, setCreatedReservation] = useState<Reservation | null>(null);
-  const [pickupDialogOpen, setPickupDialogOpen] = useState(false);
-  const [pendingDialogReservation, setPendingDialogReservation] = useState<Reservation | null>(null);
+  // "Nu ophalen" after a new reservation was saved: the id of the saved row. The PickupDialog is
+  // hosted by the global dialog layer (startPickupFlow), so it outlives whatever hosts this form.
+  const [createdReservationForPickup, setCreatedReservationForPickup] = useState<number | null>(null);
   
   // Vehicle remarks warning state - show warning when selecting a vehicle with remarks
   const [vehicleRemarksWarningOpen, setVehicleRemarksWarningOpen] = useState(false);
@@ -518,7 +497,6 @@ export function ReservationForm({
         form.setValue("fuelLevelPickup", "Full");
         form.setValue("fuelLevelReturn", "Full");
         setFuelLevelPickup("Full");
-        setFuelLevelReturn("Full");
       } else if (policy === "prepaid") {
         // Prepaid Full Tank: Pickup is "Full", return level doesn't matter
         form.setValue("fuelLevelPickup", "Full");
@@ -664,25 +642,14 @@ export function ReservationForm({
         setStartMileage(initialData.pickupMileage);
         form.setValue("pickupMileage", initialData.pickupMileage);
       }
-      if (initialData.returnMileage !== undefined && initialData.returnMileage !== departureMileage) {
-        setDepartureMileage(initialData.returnMileage);
-      }
       
       // Update fuel level states
       if (initialData.fuelLevelPickup !== undefined && initialData.fuelLevelPickup !== fuelLevelPickup) {
         setFuelLevelPickup(initialData.fuelLevelPickup);
         form.setValue("fuelLevelPickup", initialData.fuelLevelPickup);
       }
-      if (initialData.fuelLevelReturn !== undefined && initialData.fuelLevelReturn !== fuelLevelReturn) {
-        setFuelLevelReturn(initialData.fuelLevelReturn);
-        form.setValue("fuelLevelReturn", initialData.fuelLevelReturn);
-      }
       
       // Update other fuel-related fields
-      if (initialData.fuelCost !== undefined && initialData.fuelCost !== fuelCost) {
-        setFuelCost(initialData.fuelCost);
-        form.setValue("fuelCost", initialData.fuelCost);
-      }
       if (initialData.fuelCardNumber !== undefined && initialData.fuelCardNumber !== fuelCardNumber) {
         setFuelCardNumber(initialData.fuelCardNumber);
         form.setValue("fuelCardNumber", initialData.fuelCardNumber);
@@ -1097,34 +1064,26 @@ export function ReservationForm({
       
       
       
-      // D3: "Nu ophalen" is the one way into a handover from this form. Where the form stays open
-      // (no onSuccess) the success box below carries the button; a dialog that closes on success
-      // (the add dialog, which hosts its own PickupDialog) gets it as the action of the toast.
-      let reservationForPickup: Reservation | null = null;
-      if (!editMode && data && data.id) {
-        reservationForPickup = {
-          ...data,
-          vehicle: selectedVehicle || undefined,
-          customer: selectedCustomer || undefined,
-        };
-        setCreatedReservation(reservationForPickup);
-      }
-      const pickupNowForToast = reservationForPickup;
+      // D3: "Nu ophalen" is the one way into a handover from this form. The success box below
+      // carries the button while the form stays open; a host that closes (or unmounts) its dialog
+      // on success gets it as the action of the toast. Both start the pickup in the global dialog
+      // layer, which outlives the host.
+      const savedId: number | null = !editMode && data && data.id ? data.id : null;
+      if (savedId !== null) setCreatedReservationForPickup(savedId);
 
-      // Show success message
-      toast({
+      const showSavedToast = () => toast({
         title: editMode ? t('form.toasts.reservationUpdatedTitle') : t('form.toasts.reservationCreatedTitle'),
         description: editMode
           ? t('form.toasts.reservationUpdatedDescription', { brand: selectedVehicle?.brand, model: selectedVehicle?.model })
           : t('form.toasts.reservationCreatedDescription', { brand: selectedVehicle?.brand, model: selectedVehicle?.model }),
-        ...(pickupNowForToast && onSuccess && onTriggerPickupDialog && canStartPickup
+        ...(savedId !== null && onSuccess && canStartPickup
           ? {
               duration: 12000,
               action: (
                 <ToastAction
                   altText={t('form.pickupNowButton')}
                   data-testid="button-pickup-now"
-                  onClick={() => onTriggerPickupDialog(pickupNowForToast)}
+                  onClick={() => startPickupFlow(savedId)}
                 >
                   {t('form.pickupNowButton')}
                 </ToastAction>
@@ -1132,13 +1091,22 @@ export function ReservationForm({
             }
           : {}),
       });
-      
+
       invalidateRelatedQueries('reservations');
-      
+
       // If onSuccess callback is provided, use it instead of navigating
       if (onSuccess) {
-        onSuccess(data);
+        if (savedId !== null) {
+          // The host's own success handler may toast too (the dashboard does) and the toaster shows
+          // one toast at a time: ours, with the Nu ophalen action, goes last.
+          onSuccess(data);
+          showSavedToast();
+        } else {
+          showSavedToast();
+          onSuccess(data);
+        }
       } else {
+        showSavedToast();
         // Default navigation behavior when no callback is provided
         if (editMode && initialData?.id) {
           // Navigate to reservation details page
@@ -1215,6 +1183,12 @@ export function ReservationForm({
       };
       delete submissionData.isOpenEnded;
       delete submissionData.status;
+      // The return-only fields left the form: an edit must not echo the loaded values back.
+      if (editMode) {
+        delete submissionData.departureMileage;
+        delete submissionData.fuelLevelReturn;
+        delete submissionData.fuelCost;
+      }
       // D3: the contract number is assigned at pickup and edited only in the separate
       // edit-contract-number dialog, never from this form (an echo of the loaded value would
       // also bypass that dialog's uniqueness check).
@@ -2561,21 +2535,13 @@ export function ReservationForm({
                       {t('form.reservationCreatedSuccessDescription')}
                     </p>
                     {/* D3: "boeken en direct meegeven" stays one click away. */}
-                    {createdReservation && (
+                    {createdReservationForPickup !== null && (
                       <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
                         <Button
                           type="button"
                           size="sm"
                           className="mt-3"
-                          onClick={() => {
-                            if (onTriggerPickupDialog) {
-                              onTriggerPickupDialog(createdReservation);
-                              return;
-                            }
-                            setPendingDialogReservation(createdReservation);
-                            onPickupReturnDialogChange?.(true);
-                            setPickupDialogOpen(true);
-                          }}
+                          onClick={() => startPickupFlow(createdReservationForPickup)}
                           data-testid="button-pickup-now"
                         >
                           {t('form.pickupNowButton')}
@@ -2863,54 +2829,6 @@ export function ReservationForm({
       />
     ) : null}
 
-    {/* Pickup Dialog - opened by "Nu ophalen" when no parent hosts one */}
-    {pendingDialogReservation && (
-      <PickupDialog
-        open={pickupDialogOpen}
-        onOpenChange={(open) => {
-          setPickupDialogOpen(open);
-          if (!open) {
-            // Dialog was closed/cancelled - reset states
-            setPendingDialogReservation(null);
-            // Notify parent that pickup/return dialog is closed
-            onPickupReturnDialogChange?.(false);
-          }
-        }}
-        reservation={pendingDialogReservation}
-        onSuccess={async () => {
-          // Pickup completed successfully
-          setPickupDialogOpen(false);
-          // Notify parent that pickup/return dialog is closed
-          onPickupReturnDialogChange?.(false);
-          
-          // Show success message
-          toast({
-            title: t('form.toasts.vehiclePickedUpTitle'),
-            description: t('form.toasts.vehiclePickedUpDescription'),
-          });
-          
-          // Invalidate queries
-          await invalidateByPrefix('/api/reservations');
-          await invalidateByPrefix('/api/vehicles');
-          
-          // Fetch updated reservation to pass to callback
-          if (onSuccess && pendingDialogReservation) {
-            try {
-              const response = await fetch(`/api/reservations/${pendingDialogReservation.id}`, { credentials: 'include' });
-              if (response.ok) {
-                const updatedReservation = await response.json();
-                onSuccess(updatedReservation);
-              }
-            } catch (e) {
-              console.error('Failed to fetch updated reservation:', e);
-            }
-          }
-          
-          setPendingDialogReservation(null);
-        }}
-      />
-    )}
-    
     {/* Vehicle Remarks Warning Dialog - shown when selecting a vehicle with remarks */}
     <VehicleRemarksWarningDialog
       open={vehicleRemarksWarningOpen}
