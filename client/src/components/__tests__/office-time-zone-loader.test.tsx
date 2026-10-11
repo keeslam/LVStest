@@ -28,6 +28,42 @@ describe("OfficeTimeZoneLoader", () => {
     expect(officeDate(new Date("2026-06-21T23:30:00Z"))).toBe("2026-06-21");
   });
 
+  it("haalt de instelling één keer op, ook als de lader opnieuw wordt gemount", async () => {
+    const fetchMock = vi.fn(async () => json({ key: "office_timezone", value: "America/Curacao" }));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new QueryClient();
+    const tree = () => (
+      <QueryClientProvider client={client}>
+        <OfficeTimeZoneLoader />
+      </QueryClientProvider>
+    );
+    const first = render(tree());
+    await waitFor(() => expect(getOfficeTimeZone()).toBe("America/Curacao"));
+    first.unmount();
+    render(tree());
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("een mislukte aanvraag geeft geen fout (geen rode melding) en laat Europe/Amsterdam staan", async () => {
+    for (const failing of [
+      vi.fn(async () => new Response("{}", { status: 500 })),
+      vi.fn(async () => { throw new Error("netwerk"); }),
+    ]) {
+      vi.stubGlobal("fetch", failing);
+      const client = new QueryClient();
+      const view = render(
+        <QueryClientProvider client={client}>
+          <OfficeTimeZoneLoader />
+        </QueryClientProvider>,
+      );
+      await waitFor(() => expect(failing).toHaveBeenCalled());
+      await waitFor(() => expect(client.getQueryState(["office-timezone-store"])?.status).toBe("success"));
+      expect(getOfficeTimeZone()).toBe("Europe/Amsterdam");
+      view.unmount();
+    }
+  });
+
   it("blijft op Europe/Amsterdam als er nog niets is opgeslagen", async () => {
     const fetchMock = vi.fn(async () => json(null));
     vi.stubGlobal("fetch", fetchMock);

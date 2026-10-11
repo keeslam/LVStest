@@ -47,9 +47,23 @@ import { request as newApiRequestContext } from "@playwright/test";
  *    (e2e/seed/users.ts), so it never actually 403s in this suite — the
  *    moment a profile without VIEW_VEHICLES/MANAGE_VEHICLES is added, this
  *    would need the same treatment as NotificationCenterDialog got here.
+ *  - /api/access-denied: the no-access page itself (client/src/components/
+ *    no-access-page.tsx) reports the screen it refused with one
+ *    POST /api/access-denied, by design (D14, besluit B-41): that is how an
+ *    administrator hears who tried what. The route is authenticated-only and
+ *    always answers 200 (recorded true or false), so it can neither refuse nor
+ *    open anything, and it is not a request of the page component that was
+ *    kept from mounting - which is what this list proves.
+ *  - /api/app-settings/key/office_timezone: OfficeTimeZoneLoader
+ *    (client/src/App.tsx), mounted once per app load for every logged-in
+ *    user. The office time zone (D11) decides what "today" is on every
+ *    screen, so it is an app-wide setting readable by every logged-in user
+ *    (no permission gate on the route either); a failure is silent and the
+ *    client falls back to Europe/Amsterdam.
  */
 const HEADER_ALLOWED_PATHS = [
   "/api/user",
+  "/api/app-settings/key/office_timezone",
   "/api/apk-date-changes",
   "/api/vehicles",
   "/api/vehicles/apk-expiring",
@@ -61,6 +75,7 @@ const HEADER_ALLOWED_PATHS = [
   "/api/custom-notifications/unread",
   "/api/customers",
   "/api/portal-admin/unread-count",
+  "/api/access-denied",
 ];
 
 function isHeaderAllowed(url: string): boolean {
