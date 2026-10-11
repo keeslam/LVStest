@@ -3,7 +3,7 @@
  *
  *   node scripts/build-manual-pdf.cjs
  *
- * Reads docs/gebruikershandleiding/README.md and the eighteen chapters in the
+ * Reads docs/gebruikershandleiding/README.md and the chapters in the
  * order the README lists them, renders the Markdown to HTML with `marked`,
  * embeds the screenshots so the PDF stands on its own, and prints the result
  * with the Chrome installed on this machine (headless, --print-to-pdf).
