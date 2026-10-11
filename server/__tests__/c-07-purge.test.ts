@@ -547,8 +547,8 @@ describe("C-07 - a reservation: the soft-deleted row goes after its dependants",
     await db.update(reservations).set({
       replacementForReservationId: rental.id, maintenanceBlockId: rental.id, affectedRentalId: rental.id, recurringParentId: rental.id,
     }).where(eq(reservations.id, sibling.id));
-    // A transport pointing at it. (A fiscal assessment that names the reservation would make the
-    // purge refuse: see the fiscal describe below.)
+    // A transport pointing at it. (Fiscal assessments that name the reservation go with it:
+    // see the DH describe below.)
     const [transport] = await db.insert(vehicleTransports).values({
       vehicleId: vehicle.id, transportType: "delivery", scheduledDate: FUTURE.start, status: "scheduled", reservationId: rental.id,
     } as any).returning();
@@ -723,6 +723,8 @@ describe("Sub-project D, DH (B-41, fiscale prullenbak) - fiscal records go with 
       customerId, vehicleId: vehicle.id,
     });
     expect(events[0].details).toMatchObject({ source: "recycle_bin_purge", entity: "reservation", reservationId: rental.id, deletedRecordId: record.id, assessments: 1, reviewCases: 1 });
+    // The trail names exactly which rows existed (the rows themselves are gone).
+    expect(events[0].details).toMatchObject({ assessmentIds: [assessmentId], reviewCaseIds: [caseId], periodIds: [periodId] });
   });
 
   it("a review case alone is no obstacle either: DELETE answers 200 and the case goes", async () => {
@@ -749,11 +751,14 @@ describe("Sub-project D, DH (B-41, fiscale prullenbak) - fiscal records go with 
     let assessmentId = 0;
     let siblingId = 0;
     let siblingPeriodId = 0;
+    let siblingOwnAssessmentId = 0;
     const { rental, record } = await binned(async (r, v) => {
       const sibling = await createFixtureReservation({ customerId, vehicleId: v.id, startDate: "2031-05-01", endDate: "2031-05-03" });
       siblingId = sibling.id;
       const siblingPeriod = await addPeriod(sibling.id, v.id);
       siblingPeriodId = siblingPeriod.id;
+      // The sibling's own assessment (it does not name the purged reservation) must survive.
+      siblingOwnAssessmentId = (await addAssessment(siblingPeriod.id, v.id, sibling.id)).id;
       assessmentId = (await addAssessment(siblingPeriod.id, v.id, r.id)).id;
     });
 
@@ -764,6 +769,10 @@ describe("Sub-project D, DH (B-41, fiscale prullenbak) - fiscal records go with 
     expect(await stillThere(fiscalAssessments, fiscalAssessments.id, assessmentId), "the assessment that names it").toBe(0);
     expect(await stillThere(reservations, reservations.id, siblingId), "the other reservation").toBe(1);
     expect(await stillThere(vehicleUsagePeriods, vehicleUsagePeriods.id, siblingPeriodId), "the other period").toBe(1);
+    // What the other period holds afterwards: only its own assessment (the one that named the purged reservation is gone).
+    const remaining = await db.select({ id: fiscalAssessments.id }).from(fiscalAssessments).where(eq(fiscalAssessments.usagePeriodId, siblingPeriodId));
+    expect(remaining.map((a) => a.id)).toEqual([siblingOwnAssessmentId]);
+    expect((await purgedEvents(rental.id))[0].details).toMatchObject({ assessmentIds: [assessmentId], reviewCaseIds: [], periodIds: [] });
     expect((await auditRows("reservation.purge", rental.id))[0].details).toMatchObject({ removed: { fiscal_assessments: 1 } });
     expect((await purgedEvents(rental.id))[0].details).toMatchObject({ assessments: 1, reviewCases: 0 });
   });
@@ -875,13 +884,13 @@ describe("Sub-project D, DH (B-41, fiscale prullenbak) - fiscal records go with 
     // The period belongs to the new customer (so it cascades with it); the reservation is a fixture one.
     const rental = await createFixtureReservation({ customerId, vehicleId: vehicle.id, startDate: PAST.start, endDate: PAST.end });
     const period = await addPeriod(rental.id, vehicle.id, id);
-    await db.insert(fiscalAssessments).values({
+    const [custAssessment] = await db.insert(fiscalAssessments).values({
       usagePeriodId: period.id, customerId: id, vehicleId: vehicle.id, reservationId: rental.id,
       periodStart: PAST.start, periodEndEffective: PAST.end, calculationDate: PAST.start,
       ruleKey: "test", status: "ok", months: [], dataQuality: "complete", explanation: "test",
       inputs: {}, parameters: [], inputHash: unique("hash"), trigger: "test",
-    });
-    await db.insert(fiscalReviewCases).values({ usagePeriodId: period.id, customerId: id, vehicleId: vehicle.id, reasons: ["test"], status: "open" });
+    }).returning();
+    const [custCase] = await db.insert(fiscalReviewCases).values({ usagePeriodId: period.id, customerId: id, vehicleId: vehicle.id, reasons: ["test"], status: "open" }).returning();
 
     expect((await admin.delete(`/api/customers/${id}`)).status).toBe(204);
     const record = await binRowFor("customer", id);
@@ -901,7 +910,10 @@ describe("Sub-project D, DH (B-41, fiscale prullenbak) - fiscal records go with 
       .where(and(eq(fiscalAuditEvents.action, "purged"), sql`${fiscalAuditEvents.details}->>'customerId' = ${String(id)}`));
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({ entityType: "assessment", customerId: id, username: binKeeper.username });
-    expect(events[0].details).toMatchObject({ source: "recycle_bin_purge", entity: "customer", deletedRecordId: record.id, assessments: 1, reviewCases: 1 });
+    expect(events[0].details).toMatchObject({
+      source: "recycle_bin_purge", entity: "customer", deletedRecordId: record.id, assessments: 1, reviewCases: 1,
+      assessmentIds: [custAssessment.id], reviewCaseIds: [custCase.id], periodIds: [period.id],
+    });
   });
 });
 

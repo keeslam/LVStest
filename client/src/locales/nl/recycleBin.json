@@ -129,6 +129,8 @@
     "filesKept": "Een bestand dat nog door andere gegevens wordt gebruikt, blijft staan.",
     "fiscalCount_one": "Let op: {{count}} fiscale beoordeling wordt ook definitief verwijderd.",
     "fiscalCount_other": "Let op: {{count}} fiscale beoordelingen worden ook definitief verwijderd.",
+    "fiscalCountAtLeast_one": "Let op: minstens {{count}} fiscale beoordeling wordt ook definitief verwijderd.",
+    "fiscalCountAtLeast_other": "Let op: minstens {{count}} fiscale beoordelingen worden ook definitief verwijderd.",
     "irreversible": "Dit kan niet ongedaan worden gemaakt.",
     "confirmButton": "Definitief verwijderen",
     "cancel": "Annuleren",

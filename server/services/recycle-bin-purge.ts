@@ -372,6 +372,16 @@ const bump = (counts: Record<string, number>, table: string, by: number) => {
   if (by > 0) counts[table] = (counts[table] ?? 0) + by;
 };
 
+/** The ids of the fiscal rows a purge deleted; they go into the fiscal trail event. */
+interface FiscalPurgedIds {
+  assessmentIds: number[];
+  reviewCaseIds: number[];
+  periodIds: number[];
+}
+
+/** At most this many ids per list in the fiscal event (the counts stay exact). */
+const FISCAL_EVENT_ID_CAP = 500;
+
 /** What a purge needs to put on the fiscal trail. */
 interface FiscalPurgeContext {
   actor?: PurgeActor;
@@ -387,10 +397,10 @@ interface FiscalPurgeContext {
  * round). Nothing is written when there was nothing fiscal to remove.
  */
 async function recordFiscalPurge(
-  tx: Tx, ctx: FiscalPurgeContext, removedCounts: { assessments: number; reviewCases: number },
+  tx: Tx, ctx: FiscalPurgeContext, removedIds: FiscalPurgedIds,
   subject: { reservationId?: number; customerId?: number | null; vehicleId?: number | null },
 ): Promise<void> {
-  if (removedCounts.assessments === 0 && removedCounts.reviewCases === 0) return;
+  if (removedIds.assessmentIds.length === 0 && removedIds.reviewCaseIds.length === 0) return;
   const actor: FiscalActor = { userId: ctx.actor?.userId ?? null, username: ctx.actor?.username ?? "system", permissionUsed: "manage_recycle_bin" };
   await recordFiscalEvent(actor, {
     action: "purged",
@@ -403,17 +413,29 @@ async function recordFiscalPurge(
       ...(subject.reservationId !== undefined && { reservationId: subject.reservationId }),
       ...(ctx.entity === "customer" && subject.customerId != null && { customerId: subject.customerId }),
       deletedRecordId: ctx.deletedRecordId,
-      assessments: removedCounts.assessments,
-      reviewCases: removedCounts.reviewCases,
+      // The counts are exact; the ids say which rows existed (the rows themselves are gone), capped for a huge customer.
+      assessments: removedIds.assessmentIds.length,
+      reviewCases: removedIds.reviewCaseIds.length,
+      assessmentIds: removedIds.assessmentIds.slice(0, FISCAL_EVENT_ID_CAP),
+      reviewCaseIds: removedIds.reviewCaseIds.slice(0, FISCAL_EVENT_ID_CAP),
+      periodIds: removedIds.periodIds.slice(0, FISCAL_EVENT_ID_CAP),
     },
   }, tx);
 }
 
 /** The fiscal rows a customer delete cascaded into the bin snapshot (they go with the bin row). */
+export function fiscalIdsInSnapshot(payload: unknown): FiscalPurgedIds {
+  const deleted = (payload as { cascade?: { deleted?: Array<{ table?: string; rows?: Array<{ id?: unknown }> }> } } | null)?.cascade?.deleted;
+  const idsOf = (table: string): number[] =>
+    (Array.isArray(deleted) ? deleted : []).filter((d) => d?.table === table)
+      .flatMap((d) => (d.rows ?? []).map((r) => r?.id).filter((id): id is number => typeof id === "number"));
+  return { assessmentIds: idsOf("fiscal_assessments"), reviewCaseIds: idsOf("fiscal_review_cases"), periodIds: idsOf("vehicle_usage_periods") };
+}
+
+/** Counts of the same. */
 export function fiscalCountsInSnapshot(payload: unknown): { assessments: number; reviewCases: number } {
-  const deleted = (payload as { cascade?: { deleted?: Array<{ table?: string; rows?: unknown[] }> } } | null)?.cascade?.deleted;
-  const rowsOf = (table: string) => (Array.isArray(deleted) ? deleted : []).filter((d) => d?.table === table).reduce((n, d) => n + (d.rows?.length ?? 0), 0);
-  return { assessments: rowsOf("fiscal_assessments"), reviewCases: rowsOf("fiscal_review_cases") };
+  const ids = fiscalIdsInSnapshot(payload);
+  return { assessments: ids.assessmentIds.length, reviewCases: ids.reviewCaseIds.length };
 }
 
 /**
@@ -527,7 +549,11 @@ async function purgeReservationRows(
   if (assessmentRows.length > 0) await tx.delete(fiscalAssessments).where(inArray(fiscalAssessments.id, assessmentRows.map((x) => x.id)));
   bump(removed, "fiscal_review_cases", reviewCaseRows.length);
   bump(removed, "fiscal_assessments", assessmentRows.length);
-  await recordFiscalPurge(tx, ctx, { assessments: assessmentRows.length, reviewCases: reviewCaseRows.length }, {
+  await recordFiscalPurge(tx, ctx, {
+    assessmentIds: assessmentRows.map((x) => x.id), reviewCaseIds: reviewCaseRows.map((c) => c.id),
+    // The period only counts as fiscal when it held something; an empty one is just a dependant of the reservation.
+    periodIds: assessmentRows.length > 0 || reviewCaseRows.length > 0 ? periodIds : [],
+  }, {
     reservationId, customerId: row.customerId, vehicleId: row.vehicleId,
   });
 
@@ -641,7 +667,7 @@ async function purgeOne(id: number, actor?: PurgeActor): Promise<OneResult> {
             const fiscal = fiscalCountsInSnapshot(bin.payload);
             bump(removed, "fiscal_assessments", fiscal.assessments);
             bump(removed, "fiscal_review_cases", fiscal.reviewCases);
-            await recordFiscalPurge(tx, { actor, deletedRecordId: id, entity: "customer" }, fiscal, { customerId: bin.entityId });
+            await recordFiscalPurge(tx, { actor, deletedRecordId: id, entity: "customer" }, fiscalIdsInSnapshot(bin.payload), { customerId: bin.entityId });
           }
           collectSnapshotPaths(bin.payload, paths);
         }

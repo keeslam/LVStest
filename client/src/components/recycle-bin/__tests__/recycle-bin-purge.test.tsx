@@ -400,6 +400,23 @@ describe("RecycleBinDialog - one confirmation before anything is deleted", () =>
     expect(within(confirm).getByTestId("text-confirm-purge-fiscal")).toHaveTextContent("4 fiscale beoordelingen");
   });
 
+  it("a bin at the list cap says 'at least' about the fiscal count, because rows beyond the list are purged too", async () => {
+    serverRows = Array.from({ length: 200 }, (_, i) => row({ id: 2000 + i, entityType: "reservation", label: `Reservering ${i}`, relatedCounts: { fiscalAssessments: 1 } }));
+    const user = userEvent.setup();
+    renderBin("reservation");
+    await user.click(await screen.findByTestId("button-purge-all"));
+    const line = await screen.findByTestId("text-confirm-purge-fiscal");
+    expect(line).toHaveTextContent("minstens 200 fiscale beoordelingen");
+    // A single record is exact, whatever the size of the list.
+    await user.click(screen.getByTestId("button-cancel-purge"));
+    await waitFor(() => expect(screen.queryByTestId("dialog-confirm-purge")).toBeNull());
+    await user.click(await screen.findByTestId("button-purge-2000"));
+    expect(await screen.findByTestId("text-confirm-purge-fiscal")).not.toHaveTextContent("minstens");
+    // And English has the sentence.
+    expect((enBin as any).purge.fiscalCountAtLeast_other).toMatch(/at least/);
+    expect((enBin as any).purge.fiscalCountAtLeast_one).toMatch(/at least/);
+  });
+
   it("has the sentence in English too", () => {
     for (const kind of ["reservation", "maintenance_block", "customer"]) {
       expect((enBin as any).kinds[kind].purgeNote, kind).toMatch(/fiscal assessments of this .+ are also deleted permanently/);

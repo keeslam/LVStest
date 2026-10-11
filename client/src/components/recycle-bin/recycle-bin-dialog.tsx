@@ -315,7 +315,8 @@ export function RecycleBinDialog({ kind, customerId, open, onOpenChange, onResto
    * Sub-project D, DH (B-41): a reservation, maintenance block or customer takes its fiscal
    * assessments along when it is purged. How many, for what the confirmation is about, from the
    * list's `relatedCounts.fiscalAssessments` (the server adds it); 0 for the other kinds.
-   * For "all" it is what the list shows: rows beyond the list's cap are not counted.
+   * For "all" it is what the list shows: rows beyond the list's cap are not counted (the text then says
+   * "at least", like `confirmAllCapped`).
    */
   const fiscalCountOf = (target: PurgeTarget): number => {
     const countOf = (r: DeletedRecord) => (r.restoredAt ? 0 : r.relatedCounts?.fiscalAssessments ?? 0);
@@ -516,7 +517,10 @@ export function RecycleBinDialog({ kind, customerId, open, onOpenChange, onResto
                   <span className="mt-2 block">{t(`kinds.${kind}.purgeNote`)}</span>
                   {fiscalCountOf(confirmTarget) > 0 && (
                     <span className="mt-2 block font-medium text-foreground" data-testid="text-confirm-purge-fiscal">
-                      {t("purge.fiscalCount", { count: fiscalCountOf(confirmTarget) })}
+                      {t(
+                        confirmTarget.mode === "all" && (kindRecords?.length ?? 0) >= BIN_LIST_CAP ? "purge.fiscalCountAtLeast" : "purge.fiscalCount",
+                        { count: fiscalCountOf(confirmTarget) },
+                      )}
                     </span>
                   )}
                   <span className="mt-2 block">{t("purge.filesKept")}</span>

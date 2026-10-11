@@ -129,6 +129,8 @@
     "filesKept": "A file that other data still uses is kept.",
     "fiscalCount_one": "Note: {{count}} fiscal assessment is also deleted permanently.",
     "fiscalCount_other": "Note: {{count}} fiscal assessments are also deleted permanently.",
+    "fiscalCountAtLeast_one": "Note: at least {{count}} fiscal assessment is also deleted permanently.",
+    "fiscalCountAtLeast_other": "Note: at least {{count}} fiscal assessments are also deleted permanently.",
     "irreversible": "This cannot be undone.",
     "confirmButton": "Delete permanently",
     "cancel": "Cancel",
