@@ -10,6 +10,8 @@ import { FiscalSettingsSection } from "@/components/fiscal/fiscal-settings-secti
 import { CjibConfigForm } from "@/components/fines/cjib-config-form";
 import { InvoiceInboxConfigForm } from "@/components/expenses/invoice-inbox-config-form";
 import { ActivityLogPanel } from "@/components/settings/activity-log-panel";
+// D17: the RDW vehicle-type check/apply card on the Voertuigen tab.
+import { RdwTypeRemapCard } from "@/components/settings/rdw-type-remap-card";
 // WAVE 15 item 3 — besluit B-24's office address finally has a field.
 import { OfficeNotificationEmail } from "@/components/settings/office-notification-email";
 import { Button } from "@/components/ui/button";
@@ -46,6 +48,7 @@ import {
   Trash2,
   History,
   Globe,
+  Car,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { calculateDutchHolidays } from "@shared/holidays";
@@ -841,7 +844,7 @@ export function SettingsPanel() {
       </div>
 
       <Tabs value={activeTab} onValueChange={selectTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-9 lg:w-auto lg:inline-grid">
           <TabsTrigger value="business" className="gap-2">
             <Building2 className="h-4 w-4" />
             <span className="hidden sm:inline">{t('settingsPage.tabs.business')}</span>
@@ -880,6 +883,10 @@ export function SettingsPanel() {
           <TabsTrigger value="portal" className="gap-2" data-testid="tab-portal">
             <Globe className="h-4 w-4" />
             <span>{t('admin.config.title', { ns: 'portal' })}</span>
+          </TabsTrigger>
+          <TabsTrigger value="vehicles" className="gap-2" data-testid="tab-vehicles">
+            <Car className="h-4 w-4" />
+            <span>{t('rdwTypeRemap.tabLabel', { ns: 'vehicles' })}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -2393,6 +2400,11 @@ export function SettingsPanel() {
         {/* Activity Log Tab */}
         <TabsContent value="activity" {...keepMounted("activity")} className="space-y-6 data-[state=inactive]:hidden">
           <ActivityLogPanel />
+        </TabsContent>
+
+        {/* Vehicles Tab (D17) */}
+        <TabsContent value="vehicles" {...keepMounted("vehicles")} className="space-y-6 data-[state=inactive]:hidden">
+          <RdwTypeRemapCard />
         </TabsContent>
       </Tabs>
 

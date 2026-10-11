@@ -115,6 +115,9 @@ const SELF_LOGGED: Array<{ method: string; pattern: RegExp }> = [
   // Sub-project C: the route writes `reservation.revert` itself, with the plan
   // (what was cleared, which readings went back, which documents went stale).
   { method: 'POST', pattern: /^\/api\/reservations\/\d+\/revert$/ },
+  // D17: applying the RDW type plan writes one `vehicle.type-remap` row per vehicle itself, and
+  // the check only stores a plan. Neither is a `vehicle.create`.
+  { method: 'POST', pattern: /^\/api\/vehicles\/rdw-type-remap\/(check|apply)$/ },
 ];
 
 const isSecret = (field: string) => SECRET_FIELDS.has(field.toLowerCase());

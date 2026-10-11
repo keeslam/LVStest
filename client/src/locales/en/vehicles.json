@@ -1032,5 +1032,39 @@
     "sortOpnaamOption": "Opnaam",
     "sortBvOption": "BV",
     "sortUnspecifiedOption": "Not specified"
+  },
+  "rdwTypeRemap": {
+    "tabLabel": "Vehicles",
+    "title": "RDW vehicle types",
+    "description": "The RDW type mapping was improved (a 9-seat van is no longer an SUV), but existing vehicles keep their old type. Check asks the RDW about each vehicle in the background and shows what would change. Nothing is changed until an administrator presses Apply.",
+    "checkButton": "Check",
+    "applyButton": "Apply",
+    "progress": "Checking… {{checked}} of {{total}} vehicles",
+    "noPlan": "No check has been run yet. Press Check to see which vehicles would get another type.",
+    "summary_one": "{{count}} vehicle gets another type (check of {{date}}: {{checked}} vehicles looked at, {{notFound}} not found at the RDW, {{failed}} failed).",
+    "summary_other": "{{count}} vehicles get another type (check of {{date}}: {{checked}} vehicles looked at, {{notFound}} not found at the RDW, {{failed}} failed).",
+    "nothingToChange": "All checked vehicles already have the type the RDW gives.",
+    "columns": {
+      "plate": "License plate",
+      "change": "Type: old → new"
+    },
+    "noType": "no type",
+    "notFoundList": "Not found at the RDW, type kept: {{plates}}.",
+    "failedList": "Lookup failed, type kept: {{plates}}.",
+    "confirmTitle": "Apply the RDW vehicle types?",
+    "confirmDescription_one": "The type of {{count}} vehicle is changed as the list shows. A vehicle whose type has been changed in the meantime is left alone. This cannot be undone in one go.",
+    "confirmDescription_other": "The type of {{count}} vehicles is changed as the list shows. A vehicle whose type has been changed in the meantime is left alone. This cannot be undone in one go.",
+    "confirmButton": "Apply",
+    "appliedTitle": "RDW vehicle types applied",
+    "appliedDescription_one": "{{applied}} vehicle changed, {{skipped}} skipped (type changed in the meantime).",
+    "appliedDescription_other": "{{applied}} vehicles changed, {{skipped}} skipped (type changed in the meantime).",
+    "checkFailedTitle": "Check failed",
+    "applyFailedTitle": "Apply failed",
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "REMAP_CHECK_RUNNING": "A check is already running. Wait until it has finished.",
+      "REMAP_PLAN_MISSING": "There is no check result left to apply. Run Check first.",
+      "REMAP_CHECK_FAILED": "The check failed. Please try again later."
+    }
   }
 }

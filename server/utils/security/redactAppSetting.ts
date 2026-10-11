@@ -20,6 +20,7 @@
  */
 import { INVOICE_INBOX_CONFIG_KEY, INVOICE_INBOX_PASSWORD_MASK } from "../../../shared/invoice-inbox";
 import { CJIB_CONFIG_KEY, CJIB_PASSWORD_MASK } from "../../../shared/fines";
+import { RDW_TYPE_REMAP_PLAN_KEY } from "../../../shared/rdw-type-remap";
 
 /** Setting key -> the mask its `value.password` is shown as. */
 const MANAGED_PASSWORD_KEYS: Record<string, string> = {
@@ -27,12 +28,19 @@ const MANAGED_PASSWORD_KEYS: Record<string, string> = {
   [CJIB_CONFIG_KEY]: CJIB_PASSWORD_MASK,
 };
 
+/**
+ * Rows with no secret in them that only their own routes may write. D17: the stored RDW type
+ * plan is exactly what "Toepassen" applies, so a generic write could slip a vehicle into it.
+ */
+const MANAGED_PLAIN_KEYS = new Set<string>([RDW_TYPE_REMAP_PLAN_KEY]);
+
 /** The one answer a generic write to a managed key gets. */
 export const MANAGED_SETTING_MESSAGE = "Deze instelling wordt beheerd via zijn eigen scherm.";
 
 /** True for a row that has its own settings screen and must not be written generically. */
 export function isManagedSettingKey(key: unknown): boolean {
-  return typeof key === "string" && Object.prototype.hasOwnProperty.call(MANAGED_PASSWORD_KEYS, key);
+  return typeof key === "string"
+    && (Object.prototype.hasOwnProperty.call(MANAGED_PASSWORD_KEYS, key) || MANAGED_PLAIN_KEYS.has(key));
 }
 
 type SettingLike = { key?: unknown; value?: any } | null | undefined;

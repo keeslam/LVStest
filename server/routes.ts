@@ -168,6 +168,7 @@ import { registerFineRoutes } from "./routes/fines";
 import { registerPortalRequestRoutes } from "./routes/portal-requests";
 import { registerTodayRoutes } from "./routes/today";
 import { registerReservationWorklistRoutes } from "./routes/reservation-worklist";
+import { registerRdwTypeRemapRoutes } from "./routes/rdw-type-remap";
 import { registerExpenseRoutes } from "./routes/expenses";
 import { registerExpenseInboxRoutes } from "./routes/expense-inbox";
 import { registerPdfTemplateRoutes } from "./routes/pdf-templates";
@@ -529,6 +530,8 @@ export async function registerRoutes(app: Express): Promise<void> {
   // B-21: the "Nog buiten" worklist. Before /api/reservations/:id so the
   // literal path wins.
   registerReservationWorklistRoutes(app);
+  // D17: the RDW vehicle-type check/apply. Before /api/vehicles/:id so the literal path wins.
+  registerRdwTypeRemapRoutes(app);
   
   /**
    * besluiten **B-03** — an administrator may force a handover of a vehicle
