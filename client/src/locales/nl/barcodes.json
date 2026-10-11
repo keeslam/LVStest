@@ -123,6 +123,26 @@
     "printOpenedDescription_one": "Het afdrukvenster van je browser is geopend voor het label van {{plate}}. Kies daar de printer.",
     "printOpenedDescription_other": "Het afdrukvenster van je browser is geopend voor {{count}} labels. Kies daar de printer."
   },
+  "dymo": {
+    "outputLabel": "Uitvoer",
+    "outputBrowser": "Afdrukvenster van de browser",
+    "outputPrinter": "{{name}} (rechtstreeks via DYMO Connect)",
+    "outputPrinterOffline": "{{name}} (niet verbonden)",
+    "outputDownload": "Bestand .label (openen in DYMO Connect)",
+    "statusSearching": "DYMO Connect zoeken op deze pc…",
+    "statusNone": "DYMO Connect is niet gevonden op deze pc; rechtstreeks afdrukken kan dan niet.",
+    "statusFound_one": "DYMO Connect gevonden: {{count}} labelmaker.",
+    "statusFound_other": "DYMO Connect gevonden: {{count}} labelmakers.",
+    "jobTitle": "Sleutellabel",
+    "filesReady": "{{count}} .label-bestanden gemaakt; open ze in DYMO Connect.",
+    "notFoundTitle": "DYMO Connect niet gevonden",
+    "notFoundDescription": "De DYMO-webservice op deze pc antwoordt niet. Start DYMO Connect, of kies als uitvoer het bestand .label of het afdrukvenster.",
+    "printedTitle": "Naar de labelmaker gestuurd",
+    "printedDescription_one": "{{count}} label is naar {{printer}} gestuurd.",
+    "printedDescription_other": "{{count}} labels zijn naar {{printer}} gestuurd.",
+    "failedTitle": "Afdrukken op de labelmaker mislukt",
+    "failedDescription": "{{printed}} van {{count}} labels verstuurd. DYMO Connect zegt: {{reason}}"
+  },
   "book": {
     "title": "Barcodeboek",
     "description": "Druk alle voertuigbarcodes af voor in een map of klapper.",

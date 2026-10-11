@@ -4,6 +4,10 @@ import { isPortalPath } from '../../portal-paths';
 import { getPortalConfig } from '../../services/portal-config';
 import { isValidFrameOrigin } from '../../../shared/frame-origins';
 
+// B-45: DYMO Connect's web service on the desk pc; the client (client/src/lib/dymo-label.ts)
+// probes exactly these two origins.
+export const DYMO_SERVICE_ORIGINS = ['https://127.0.0.1:41951', 'https://localhost:41951'] as const;
+
 /**
  * FIX-U (BUG-078). `unsafe-inline` and `unsafe-eval` in script-src are what
  * Vite's dev server needs; shipping them to production means the CSP stops
@@ -38,7 +42,11 @@ export function buildCspDirectives(isProduction: boolean): Record<string, string
     // data: URI (the damage-check diagrams) or a blob: preview.
     imgSrc: ["'self'", 'data:', 'blob:'],
     // `ws:` is Vite's HMR socket and has no business in a deployed build.
-    connectSrc: isProduction ? ["'self'", 'wss:'] : ["'self'", 'ws:', 'wss:'],
+    // B-45: the DYMO web service on the desk pc (DYMO Connect) prints the key
+    // labels on the label maker; the browser talks to it on the pc itself.
+    connectSrc: isProduction
+      ? ["'self'", 'wss:', ...DYMO_SERVICE_ORIGINS]
+      : ["'self'", 'ws:', 'wss:', ...DYMO_SERVICE_ORIGINS],
     frameSrc: [
       "'self'", // In-app document/report preview (Documents page, Delivery dashboard)
       'https://www.google.com', // Route preview embed on the Delivery dashboard

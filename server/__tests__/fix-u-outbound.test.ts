@@ -319,6 +319,16 @@ describe("BUG-078 — the production CSP", () => {
     expect(buildCspDirectives(false).connectSrc).toContain("ws:");
   });
 
+  it("B-45: the browser may talk to the DYMO web service on the desk pc, and to nothing else outside", () => {
+    for (const isProduction of [true, false]) {
+      const connect = buildCspDirectives(isProduction).connectSrc ?? [];
+      expect(connect).toContain("https://127.0.0.1:41951");
+      expect(connect).toContain("https://localhost:41951");
+      const external = connect.filter((s) => /^https?:\/\//.test(s));
+      expect(external).toEqual(["https://127.0.0.1:41951", "https://localhost:41951"]);
+    }
+  });
+
   it("helmet still emits a usable policy with the new directive set", async () => {
     // The in-process harness builds the app without server/index.ts, which is
     // where securityHeaders is mounted — so the middleware is exercised

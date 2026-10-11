@@ -4,6 +4,8 @@ import { toast } from "@/hooks/use-toast";
 import { formatLicensePlate } from "@/lib/format-utils";
 import type { BarcodeLabelTemplate } from "@shared/schema";
 import { BarcodeLabelField, resolveBarcodeLabelSource } from "@shared/barcode";
+import { notifyFileReady } from "@/lib/file-ready";
+import { buildTapeLabelXml, dymoLabelFileName, findDymoService, printDymoLabel, tapeLinesFromFields } from "@/lib/dymo-label";
 
 interface LabelVehicle {
   id: number;
@@ -47,10 +49,19 @@ export const DEFAULT_TAPE_LAYOUT: TapeLayout = { tapeWidthMm: 12, lengthMm: 48 }
 export const MIN_TAPE_LENGTH_MM = 30;
 export const MAX_TAPE_LENGTH_MM = 100;
 
+// Where a tape label goes: the browser's print window (default), straight to a
+// DYMO label maker through the DYMO web service on this pc, or a .label file
+// for DYMO Connect.
+export type DymoOutput =
+  | { mode: "print"; printerName: string }
+  | { mode: "download" };
+
 export interface KeyLabelPrintOptions {
   // When set, the labels are printed with the built-in tape layout instead of
   // on the (template's) die-cut label; the template is then not used.
   tape?: TapeLayout | null;
+  // Only used for a tape layout (built-in or a tape template).
+  dymo?: DymoOutput | null;
 }
 
 export function normalizeTapeLayout(raw: Partial<TapeLayout> | null | undefined): TapeLayout {
@@ -219,17 +230,17 @@ export function printKeyLabels(
   const printable = vehicles.filter(v => !!(v.barcodeOverride ?? v.barcode));
   if (printable.length === 0) return;
 
-  if (options?.tape) {
-    const tape = normalizeTapeLayout(options.tape);
-    printTapeLabels(printable, tape, builtInTapeFields(tape));
-    return;
-  }
-  if (template?.tapePrint) {
-    printTapeLabels(
-      printable,
-      { lengthMm: template.labelWidthMm, tapeWidthMm: template.labelHeightMm },
-      readTemplateFields(template),
-    );
+  const tapeJob = options?.tape
+    ? (() => { const tape = normalizeTapeLayout(options.tape); return { tape, fields: builtInTapeFields(tape) }; })()
+    : template?.tapePrint
+      ? { tape: { lengthMm: template.labelWidthMm, tapeWidthMm: template.labelHeightMm }, fields: readTemplateFields(template) }
+      : null;
+  if (tapeJob) {
+    if (options?.dymo) {
+      void outputDymoLabels(printable, tapeJob.tape, tapeJob.fields, options.dymo);
+    } else {
+      printTapeLabels(printable, tapeJob.tape, tapeJob.fields);
+    }
     return;
   }
 
@@ -332,6 +343,79 @@ function printTapeLabels(printable: LabelVehicle[], tape: TapeLayout, fields: Ba
       }),
     ),
   );
+}
+
+// The tape labels as DYMO .label XML: one file per label, or one print job per
+// label on the chosen DYMO printer through the DYMO web service on this pc.
+async function outputDymoLabels(
+  printable: LabelVehicle[],
+  tape: TapeLayout,
+  fields: BarcodeLabelField[],
+  output: DymoOutput,
+): Promise<void> {
+  const jobs = printable.flatMap(vehicle => {
+    const code = vehicle.barcodeOverride ?? vehicle.barcode;
+    if (!code) return [];
+    const plate = formatLicensePlate(vehicle.licensePlate);
+    const lines = tapeLinesFromFields(fields, { ...vehicle, licensePlate: plate, barcode: code });
+    const xml = buildTapeLabelXml({ tapeWidthMm: tape.tapeWidthMm, lengthMm: tape.lengthMm, code, lines });
+    return [{ plate, code, xml }];
+  });
+  if (jobs.length === 0) return;
+
+  if (output.mode === "download") {
+    for (const job of jobs) {
+      const name = dymoLabelFileName(job.plate, job.code);
+      const blob = new Blob([job.xml], { type: "application/xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      if (jobs.length === 1) notifyFileReady(name, blob.size);
+    }
+    if (jobs.length > 1) {
+      toast({
+        title: String(i18n.t("common:fileReady.title")),
+        description: String(i18n.t("barcodes:dymo.filesReady", { count: jobs.length })),
+      });
+    }
+    return;
+  }
+
+  const origin = await findDymoService();
+  if (!origin) {
+    toast({
+      title: String(i18n.t("barcodes:dymo.notFoundTitle")),
+      description: String(i18n.t("barcodes:dymo.notFoundDescription")),
+      variant: "destructive",
+    });
+    return;
+  }
+  let printed = 0;
+  try {
+    for (const job of jobs) {
+      await printDymoLabel(origin, output.printerName, job.xml, `${i18n.t("barcodes:dymo.jobTitle")} ${job.plate}`);
+      printed += 1;
+    }
+    toast({
+      title: String(i18n.t("barcodes:dymo.printedTitle")),
+      description: String(i18n.t("barcodes:dymo.printedDescription", { count: printed, printer: output.printerName })),
+    });
+  } catch (error) {
+    toast({
+      title: String(i18n.t("barcodes:dymo.failedTitle")),
+      description: String(i18n.t("barcodes:dymo.failedDescription", {
+        printed,
+        count: jobs.length,
+        reason: error instanceof Error ? error.message : String(error),
+      })),
+      variant: "destructive",
+    });
+  }
 }
 
 // Renders the full barcode book into a hidden same-origin iframe and prints

@@ -123,6 +123,26 @@
     "printOpenedDescription_one": "Your browser's print window is open for the label of {{plate}}. Choose the printer there.",
     "printOpenedDescription_other": "Your browser's print window is open for {{count}} labels. Choose the printer there."
   },
+  "dymo": {
+    "outputLabel": "Output",
+    "outputBrowser": "The browser's print window",
+    "outputPrinter": "{{name}} (directly through DYMO Connect)",
+    "outputPrinterOffline": "{{name}} (not connected)",
+    "outputDownload": ".label file (open in DYMO Connect)",
+    "statusSearching": "Looking for DYMO Connect on this pc…",
+    "statusNone": "DYMO Connect was not found on this pc, so direct printing is not possible.",
+    "statusFound_one": "DYMO Connect found: {{count}} label maker.",
+    "statusFound_other": "DYMO Connect found: {{count}} label makers.",
+    "jobTitle": "Key label",
+    "filesReady": "{{count}} .label files made; open them in DYMO Connect.",
+    "notFoundTitle": "DYMO Connect not found",
+    "notFoundDescription": "The DYMO web service on this pc does not answer. Start DYMO Connect, or choose the .label file or the print window as output.",
+    "printedTitle": "Sent to the label maker",
+    "printedDescription_one": "{{count}} label was sent to {{printer}}.",
+    "printedDescription_other": "{{count}} labels were sent to {{printer}}.",
+    "failedTitle": "Printing on the label maker failed",
+    "failedDescription": "{{printed}} of {{count}} labels sent. DYMO Connect says: {{reason}}"
+  },
   "book": {
     "title": "Barcode book",
     "description": "Print all vehicle barcodes for a physical binder.",

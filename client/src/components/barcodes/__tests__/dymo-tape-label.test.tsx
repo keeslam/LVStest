@@ -9,7 +9,7 @@
  * Runs in the jsdom project. jsbarcode is real here (the viewBox stretch depends on its output).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 
@@ -208,7 +208,42 @@ describe("KeyLabelPrintPanel with the tape layout", () => {
 
     // The choice is remembered for this pc.
     const stored = JSON.parse(window.localStorage.getItem("lvs.key-label.tape")!);
-    expect(stored).toEqual({ tapeWidthMm: 12, lengthMm: 40, preferred: true });
+    expect(stored).toEqual({ tapeWidthMm: 12, lengthMm: 40, preferred: true, output: "browser" });
+  });
+
+  it("offers the DYMO label maker as output when DYMO Connect answers, and prints straight to it", async () => {
+    const printersXml = '"<Printers><TapePrinter><Name>DYMO LabelManager 420P</Name><ModelName>DYMO LabelManager 420P</ModelName><IsConnected>True</IsConnected><IsLocal>True</IsLocal><IsAutoCutSupported>True</IsAutoCutSupported></TapePrinter></Printers>"';
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      if (url.endsWith("/StatusConnected")) return new Response("true", { status: 200 });
+      if (url.endsWith("/GetPrinters")) return new Response(printersXml, { status: 200 });
+      return new Response(JSON.stringify([]), { status: 200, headers: { "Content-Type": "application/json" } });
+    }));
+    window.localStorage.setItem("lvs.key-label.tape", JSON.stringify({ tapeWidthMm: 12, lengthMm: 48, preferred: true, output: "browser" }));
+    renderPanel();
+    fireEvent.click(screen.getByTestId("button-inline-print-key-label"));
+    const output = await screen.findByTestId("select-tape-output");
+    await waitFor(() => expect(screen.getByTestId("tape-output-hint").textContent).toContain("DYMO Connect gevonden: 1 labelmaker."));
+
+    fireEvent.keyDown(output, { key: "ArrowDown" });
+    const printerOption = await screen.findByTestId("option-tape-output-printer");
+    expect(printerOption).toHaveTextContent("DYMO LabelManager 420P (rechtstreeks via DYMO Connect)");
+    await act(async () => { fireEvent.click(printerOption); });
+
+    fireEvent.click(screen.getByTestId("button-key-label-print-confirm"));
+    const [, , options] = printSpy.mock.calls[0];
+    expect(options).toEqual({ tape: { tapeWidthMm: 12, lengthMm: 48 }, dymo: { mode: "print", printerName: "DYMO LabelManager 420P" } });
+    expect(JSON.parse(window.localStorage.getItem("lvs.key-label.tape")!).output).toBe("printer:DYMO LabelManager 420P");
+  });
+
+  it("without DYMO Connect the output list still offers the .label file", async () => {
+    window.localStorage.setItem("lvs.key-label.tape", JSON.stringify({ tapeWidthMm: 12, lengthMm: 48, preferred: true, output: "download" }));
+    renderPanel();
+    fireEvent.click(screen.getByTestId("button-inline-print-key-label"));
+    await waitFor(() => expect(screen.getByTestId("tape-output-hint").textContent).toContain("DYMO Connect is niet gevonden op deze pc"));
+    fireEvent.click(screen.getByTestId("button-key-label-print-confirm"));
+    const [, , options] = printSpy.mock.calls[0];
+    expect(options).toEqual({ tape: { tapeWidthMm: 12, lengthMm: 48 }, dymo: { mode: "download" } });
   });
 
   it("starts on the tape when this pc preferred it last time", async () => {
