@@ -133,6 +133,15 @@ export function ScanPanel({ active = true, intent = null, onHandoverActiveChange
     }
   };
 
+  // The block the scanned car is "Binnen" for (the payload's nearest open block, when its
+  // maintenance status says in / in_service): "Terug uit onderhoud" completes that block.
+  const binnenBlockId: number | null =
+    result?.type === "vehicle" &&
+    result.activeMaintenance &&
+    (result.activeMaintenance.maintenanceStatus === "in" || result.activeMaintenance.maintenanceStatus === "in_service")
+      ? result.activeMaintenance.id
+      : null;
+
   const openMaintenanceBlock = async (reservationId: number) => {
     try {
       const response = await fetch(`/api/reservations/${reservationId}`, { credentials: "include" });
@@ -597,14 +606,27 @@ export function ScanPanel({ active = true, intent = null, onHandoverActiveChange
                   </Button>
                 </RequiresPermission>
               ) : (
-                // PATCH /api/vehicles/:id/maintenance-status — MANAGE_VEHICLES only
-                // (server/routes.ts:1574), verified directly.
-                <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
-                  <Button variant="outline" className={ACTION_TILE_CLASS} onClick={() => maintenanceMutation.mutate({ vehicleId: result.vehicle.id, status: "ok" })} disabled={maintenanceMutation.isPending} data-testid="button-scan-maintenance-end">
-                    <Undo2 />
-                    {t("scanPage.actions.endMaintenance")}
-                  </Button>
-                </RequiresPermission>
+                binnenBlockId !== null ? (
+                  // D7: the car is Binnen for a block, so this IS the block's completion (Afronden),
+                  // which needs 'Onderhoud beheren' or 'Reserveringen beheren' - not the vehicle
+                  // status route (and its 'Voertuigen beheren'). An account without either right
+                  // sees the button off, with the reason, instead of a dialog with no submit.
+                  <RequiresPermission anyOf={[UserPermission.MANAGE_MAINTENANCE, UserPermission.MANAGE_RESERVATIONS]}>
+                    <Button variant="outline" className={ACTION_TILE_CLASS} onClick={() => void openCompletion(binnenBlockId)} data-testid="button-scan-maintenance-end">
+                      <Undo2 />
+                      {t("scanPage.actions.endMaintenance")}
+                    </Button>
+                  </RequiresPermission>
+                ) : (
+                  // PATCH /api/vehicles/:id/maintenance-status — MANAGE_VEHICLES only
+                  // (server/routes.ts:1574), verified directly.
+                  <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
+                    <Button variant="outline" className={ACTION_TILE_CLASS} onClick={() => maintenanceMutation.mutate({ vehicleId: result.vehicle.id, status: "ok" })} disabled={maintenanceMutation.isPending} data-testid="button-scan-maintenance-end">
+                      <Undo2 />
+                      {t("scanPage.actions.endMaintenance")}
+                    </Button>
+                  </RequiresPermission>
+                )
               )}
             </div>
           </CardContent>
