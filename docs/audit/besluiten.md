@@ -462,6 +462,10 @@ Kees beantwoordde alle vragen een voor een. Besluiten (te bouwen in een volgend 
 - **"Pech" blijft** (geen "Storing").
 - **D20 niets doen:** geen schakelaar voor de planners in de testserver; regel: geen browsertests draaien tussen 02:00 en 04:00.
 
+### B-42 — Ontwerp deelproject D goedgekeurd (11-10-2026)
+
+Kees keurde het ontwerp docs/superpowers/specs/2026-10-11-besluiten-d-design.md goed ("oke"), met de elf voorstellen: (1) D1 de kostenpost ontstaat bij de brandstofupdate zonder extra recht, de tankbon wordt de bon van de kostenpost, het laatste tankbedrag wordt zichtbaar; (2) D2 het vinkje geldt voor kentekens en CSV; (3) D3 knop "Nu ophalen" na het opslaan, de ingeleverd-velden verdwijnen uit het formulier; (4) D4 plannen afbreken verwijdert een net aangemaakt onderhoud zonder vervanger echt (binnen een uur), anders prullenbak; (5) D5 de auto krijgt de stand "Gepland", boeken blijft een waarschuwing (B-09), ophalen op zo'n auto waarschuwt; (6) D7 de scanknop "Terug uit onderhoud" opent het Afronden-venster als er een onderhoud loopt; (7) D12 eigen wachtwoord alleen via "Wachtwoord wijzigen" met het huidige wachtwoord, beheerder mag resetten; (8) D14 "beheerder" = rol beheerder, melding als balk op het dashboard met lijst; (9) D15 één instelling Bedrijfsnaam voor alle mails; (10) D17 RDW-typecontrole en toepassen in de app (Instellingen), niet via Coolify; (11) fiscale verwijdering ook bij het definitief verwijderen van een klant. Technische noodzaak: 20 koppelingen naar gebruikers krijgen "bij verwijderen leegmaken", anders werkt een beheerder verwijderen niet.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan is een volgend deelproject.
