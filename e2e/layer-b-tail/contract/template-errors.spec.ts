@@ -21,7 +21,9 @@
  * template as default) against ever interleaving with a second spec added to
  * this same file later.
  */
+import pg from "pg";
 import { test, expect, settle } from "../../support/guards";
+import { E2E } from "../../support/env";
 import { authFile } from "../../support/roles";
 import { Story } from "../../support/steps";
 import { officeDay } from "../../seed/data";
@@ -122,17 +124,27 @@ test.describe("Contract: een standaardsjabloon zonder velden geeft een duidelijk
     // second chance, so the restore goes in `finally`, not after the steps.
     try {
       await test.step("1. via the API: a second template, no fields, marked default", async () => {
-        const createdTemplate = await request.post("/api/pdf-templates", {
+        // Since P11 (A-10-2) the API refuses a template without fields as the default, with a stable code:
+        // that refusal IS the B-34 protection now, so it is asserted here.
+        const refused = await request.post("/api/pdf-templates", {
           headers: { "X-CSRF-Token": csrfToken! },
           data: { name: FIELDLESS_TEMPLATE_NAME, isDefault: true, fields: [] },
         });
-        expect(createdTemplate.status(), await createdTemplate.text()).toBe(201);
-        // Note: POST's own response body has a pre-existing, unrelated bug
-        // (server/database-storage.ts createPdfTemplate() returns the raw
-        // `RETURNING *` row uncast to camelCase, so `isDefault` reads back as
-        // `undefined` here even though the row itself is correct) — confirmed
-        // properly below via GET, which does map it.
-        fieldlessTemplateId = (await createdTemplate.json()).id;
+        expect(refused.status(), await refused.text()).toBe(409);
+        expect((await refused.json()).code).toBe("TEMPLATE_DEFAULT_WITHOUT_FIELDS");
+
+        // The contract-generation path still has to refuse cleanly for a state the API can no longer produce but
+        // old data can still hold: a fieldless default template. Seeded straight into lvs_e2e (and only there).
+        if (!E2E.databaseUrl.endsWith("/lvs_e2e")) throw new Error(`Refusing to touch ${E2E.databaseUrl}; this spec only ever touches lvs_e2e.`);
+        const db = new pg.Client({ connectionString: E2E.databaseUrl });
+        await db.connect();
+        try {
+          await db.query("UPDATE pdf_templates SET is_default = false");
+          const inserted = await db.query("INSERT INTO pdf_templates (name, is_default, fields) VALUES ($1, true, '[]'::jsonb) RETURNING id", [FIELDLESS_TEMPLATE_NAME]);
+          fieldlessTemplateId = inserted.rows[0].id;
+        } finally {
+          await db.end();
+        }
 
         // createPdfTemplate() un-defaults every other row itself
         // (server/database-storage.ts) — confirm the seeded template really

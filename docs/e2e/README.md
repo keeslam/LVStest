@@ -84,11 +84,13 @@ test zelf doet — geen eigen database nodig, wel een eigen plek ná de rest.
 De seed zet voortaan één werkend PDF-sjabloon klaar ("E2E contract", standaard, een paar
 echte velden), zodat een ophaling ergens in de rest van de suite ook echt een contract
 oplevert in plaats van steevast `NO_TEMPLATE`. Deze test bewijst de kéérzijde daarvan: een
-tweede sjabloon zonder velden, als standaard ingesteld, moet een nette Nederlandse tekst
+sjabloon zonder velden, als standaard ingesteld, moet een nette Nederlandse tekst
 geven — vertaald op de stabiele foutcode (`TEMPLATE_WITHOUT_FIELDS`), nooit op de Engelse
 servertekst — in plaats van een leeg contract (BUG-028). Ook hier `mode: "serial"`: de test
 verandert tijdelijk wélk sjabloon standaard is, wat een `lvs_e2e`-brede instelling is, en
-zet die aan het eind weer terug.
+zet die aan het eind weer terug. Sinds auditherstel P11 weigert de API zo'n sjabloon als standaard
+(409 `TEMPLATE_DEFAULT_WITHOUT_FIELDS`); de test controleert die weigering en zet de lege standaard
+daarna rechtstreeks in `lvs_e2e` (alleen daar), zoals oude gegevens eruit kunnen zien.
 
 **Terugdraaien en een opgehaalde huur annuleren (deelproject C, taak 4 en 5): vier verhalen in
 `e2e/layer-b/desk/edge-cases.spec.ts`.** De bestaande baliestroom en zijn budgetten zijn niet aangeraakt.
@@ -111,7 +113,8 @@ annuleren*. Het bewijs per recht staat in de verhalen hierboven en in de compone
 **Prullenbakken (deelproject C, taak 7): een derde staarttest, `e2e/layer-b-tail/recycle-bin/bins.spec.ts`.**
 Draait als `manager-b`, de tweeling van `manager` (zie *Het verzoekbudget* hieronder), het profiel dat naast de beheerder het recht *Prullenbak beheren*
 heeft. Drie verhalen, elk met een eigen handelingenbudget: (1) een reservering verwijderen via
-de lijst, zien dat hij alleen in de prullenbak van Reserveringen staat en terugzetten; (2) een
+de lijst, zien dat hij alleen in de prullenbak van Reserveringen staat en terugzetten (sinds P8 verdwijnt de
+teruggezette rij uit de lijst tot *Teruggezette tonen* is aangevinkt: budget 8 handelingen); (2) een
 klant met een debiteurnummer verwijderen, zien dat het nummer gereserveerd blijft, de klant
 definitief verwijderen (één rij, één bevestiging) en daarna hetzelfde nummer aan een nieuwe
 klant geven; (3) twee rijen aanvinken, met één bevestiging die het aantal en de soort noemt

@@ -78,7 +78,7 @@ test.describe("Prullenbakken (B-36, B-38)", () => {
     expect(reservationResponse.status(), await reservationResponse.text()).toBe(201);
     const reservation = await reservationResponse.json();
 
-    const story = new Story("Reservering verwijderen en terugzetten", 7);
+    const story = new Story("Reservering verwijderen en terugzetten", 8);
     await page.goto("/reservations");
     await settle(page);
     await story.click(page.getByTestId("button-list-view"), "Reserveringen als lijst");
@@ -113,6 +113,11 @@ test.describe("Prullenbakken (B-36, B-38)", () => {
     await expect(row.getByTestId(`deleted-record-type-${mine!.id}`)).toHaveText("Reservering");
 
     await story.click(row.getByTestId(`button-restore-${mine!.id}`), "terugzetten");
+    // Since P8 the bin hides restored rows until they are asked for: gone from the default list, and shown
+    // as "Teruggezet" once the checkbox is ticked.
+    await expect(row).toBeHidden();
+    await story.click(bin.getByTestId("checkbox-show-restored"), "teruggezette tonen");
+    await expect(row).toBeVisible();
     await expect(row).toContainText("Teruggezet");
     story.finish();
 
