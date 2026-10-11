@@ -25,8 +25,8 @@ import { AccountDialog } from "@/components/portal-admin/account-dialog";
 import { getQueryFn } from "@/lib/queryClient";
 
 const customers = [
-  { id: 1, name: "Klant 1 B.V.", companyName: "Klant 1 B.V.", debtorNumber: null, email: "klant1@example.com" },
-  { id: 2, name: "Klant 2 B.V.", companyName: "Klant 2 B.V.", debtorNumber: null, email: "klant2@example.com" },
+  { id: 1, name: "Klant 1 B.V.", companyName: "Klant 1 B.V.", debtorNumber: "D-0001", email: "klant1@example.com" },
+  { id: 2, name: "Klant 2 B.V.", companyName: "Klant 2 B.V.", debtorNumber: "D-0002", email: "klant2@example.com" },
 ];
 
 function renderDialog() {
@@ -54,21 +54,30 @@ afterEach(() => {
 describe("portaalaccount uitnodigen — klant kiezen", () => {
   it("shows no customer as chosen before one is picked", async () => {
     renderDialog();
-    const picker = await screen.findByTestId("select-portal-customer") as HTMLSelectElement;
-    await waitFor(() => expect(picker.querySelectorAll("option[value='1']").length).toBe(1));
-
-    const shownAsChosen = Array.from(picker.options).filter((o) => o.selected && o.value !== "");
-    expect(shownAsChosen.map((o) => o.textContent)).toEqual([]);
+    const trigger = await screen.findByTestId("select-portal-customer");
+    // The combobox trigger shows the placeholder, not the first customer.
+    expect(trigger).toHaveTextContent("Kies een klant");
+    expect(trigger).not.toHaveTextContent("Klant 1 B.V.");
   });
 
   it("picking the first customer fills in its e-mail address", async () => {
     const user = userEvent.setup();
     renderDialog();
-    const picker = await screen.findByTestId("select-portal-customer") as HTMLSelectElement;
-    await waitFor(() => expect(picker.querySelectorAll("option[value='1']").length).toBe(1));
-
-    await user.selectOptions(picker, "1");
+    const trigger = await screen.findByTestId("select-portal-customer");
+    await user.click(trigger);
+    await user.click(await screen.findByRole("option", { name: /Klant 1 B.V./ }));
 
     await waitFor(() => expect(screen.getByTestId("input-account-email")).toHaveValue("klant1@example.com"));
+    expect(screen.getByTestId("select-portal-customer")).toHaveTextContent("Klant 1 B.V.");
+  });
+
+  it("finds a customer by debtor number", async () => {
+    const user = userEvent.setup();
+    renderDialog();
+    await user.click(await screen.findByTestId("select-portal-customer"));
+    await user.type(await screen.findByRole("combobox", { name: /Zoek op naam of debiteurnummer/ }), "D-0002");
+    const option = await screen.findByRole("option", { name: /Klant 2 B.V./ });
+    expect(option).toHaveTextContent("Debiteurnr. D-0002");
+    await waitFor(() => expect(screen.queryByRole("option", { name: /Klant 1 B.V./ })).toBeNull());
   });
 });

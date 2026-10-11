@@ -1,7 +1,7 @@
 /**
  * Owner walk-through 11-10-2026: the "Portaalaccount" dialog was max-w-lg and scrolled on a
  * desktop screen. It is now wider (sm:max-w-3xl) and the form is two columns from md up (the
- * customer picker left; e-mail, name, role and rights right), still one column on a phone.
+ * customer combobox full-width on top; below it e-mail, name, role left and the rights right), still one column on a phone.
  *
  * Runs in the jsdom project (no layout engine: this checks the classes, the real height is
  * measured in the browser).
@@ -34,17 +34,21 @@ describe("portaalaccount-venster - indeling", () => {
     expect(content.className).toContain("max-h-[90vh]");
   });
 
-  it("lays the form out in two columns from md up, customer picker on the left and the e-mail field on the right", async () => {
+  it("puts the customer combobox full-width on top and the fields and rights in two columns below it", async () => {
     renderDialog();
     const picker = await screen.findByTestId("select-portal-customer");
     const email = screen.getByTestId("input-account-email");
-    const grid = picker.closest('[class*="md:grid-cols-2"]') as HTMLElement;
+    const rights = screen.getByTestId("checkbox-permission-canBook");
+    const grid = email.closest('[class*="md:grid-cols-2"]') as HTMLElement;
     expect(grid).not.toBeNull();
-    expect(grid.contains(email)).toBe(true);
+    // The combobox is not inside the two-column grid: it spans the dialog.
+    expect(grid.contains(picker)).toBe(false);
     const columns = Array.from(grid.children);
     expect(columns).toHaveLength(2);
-    expect(columns[0].contains(picker)).toBe(true);
-    expect(columns[1].contains(email)).toBe(true);
-    expect(columns[0].contains(email)).toBe(false);
+    expect(columns[0].contains(email)).toBe(true);
+    expect(columns[1].contains(rights)).toBe(true);
+    expect(columns[1].contains(email)).toBe(false);
+    // The rights are a compact two-column grid.
+    expect(rights.closest(".grid-cols-2")).not.toBeNull();
   });
 });

@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PORTAL_FEATURE_KEYS, type PortalAccountPermissions } from "@shared/portal-types";
 import { SearchListPicker } from "@/components/ui/search-list-picker";
+import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox";
 
 export interface PortalAccountRow {
   id: number; customerId: number; email: string; fullName: string; role: "admin" | "driver"; driverId: number | null;
@@ -38,7 +39,6 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children, 
   const open = controlledOpen ?? uncontrolledOpen;
   const setOpen = (o: boolean) => { if (onOpenChange) onOpenChange(o); else setUncontrolledOpen(o); };
   const [customerId, setCustomerId] = useState<number | null>(fixedCustomerId ?? account?.customerId ?? null);
-  const [customerSearch, setCustomerSearch] = useState("");
   const [email, setEmail] = useState(account?.email ?? "");
   const [fullName, setFullName] = useState(account?.fullName ?? "");
   const [role, setRole] = useState<"admin" | "driver">(account?.role ?? "admin");
@@ -73,11 +73,12 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, account, customer, role, driverId, drivers]);
 
-  const customerOptions = useMemo(() => {
-    const q = customerSearch.trim().toLowerCase();
-    const list = q ? customers.filter((c) => `${c.companyName ?? ""} ${c.name} ${c.debtorNumber ?? ""}`.toLowerCase().includes(q)) : customers;
-    return list.slice(0, 50);
-  }, [customers, customerSearch]);
+  // The combobox searches name, debtor number and the description itself, so every customer is an option.
+  const customerOptions = useMemo<ComboboxOption[]>(() => customers.map((c) => ({
+    value: String(c.id),
+    label: c.companyName || c.name,
+    description: [c.debtorNumber ? `${t("admin.dialog.debtorNumber")} ${c.debtorNumber}` : null, c.companyName && c.name !== c.companyName ? c.name : null].filter(Boolean).join(" · ") || undefined,
+  })), [customers, t]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -106,80 +107,66 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children, 
     save.mutate();
   }
 
-  const accountFields = (<>
-          <div>
-            <Label htmlFor="pa-email">{t("admin.dialog.email")}</Label>
-            <Input id="pa-email" type="email" value={email} disabled={Boolean(account)} onChange={(e) => { setEmail(e.target.value); setAutoFilled((a) => ({ ...a, email: false })); }} required data-testid="input-account-email" />
-            {!account && autoFilled.email && prefillSource.email && <p className="mt-1 text-xs text-muted-foreground">{t(`admin.dialog.prefilledFrom.${prefillSource.email}`)}</p>}
-          </div>
-          <div><Label htmlFor="pa-name">{t("admin.dialog.fullName")}</Label><Input id="pa-name" value={fullName} onChange={(e) => { setFullName(e.target.value); setAutoFilled((a) => ({ ...a, fullName: false })); }} required data-testid="input-account-name" /></div>
-          <div>
-            <Label htmlFor="pa-role">{t("admin.dialog.role")}</Label>
-            <select id="pa-role" className="w-full rounded-md border px-3 py-2 text-sm" value={role} onChange={(e) => setRole(e.target.value as "admin" | "driver")}>
-              <option value="admin">{t("admin.accounts.role.admin")}</option>
-              <option value="driver">{t("admin.accounts.role.driver")}</option>
-            </select>
-          </div>
-          {role === "driver" && (
-            <div>
-              <Label htmlFor="pa-driver">{t("admin.dialog.driver")}</Label>
-              <SearchListPicker items={drivers.map((d) => ({ id: d.id, label: d.displayName, sub: d.email ?? null, search: `${d.firstName ?? ""} ${d.lastName ?? ""}` }))}
-                value={driverId ? Number(driverId) : null} onChange={(did) => setDriverId(did ? String(did) : "")}
-                searchPlaceholder={t("admin.fines.dialog.searchDriver")} emptyText={t("admin.fines.dialog.noDriver")} changeLabel={t("admin.fines.dialog.changeCustomer")}
-                hintText={(shown, total) => t("admin.fines.dialog.moreCustomers", { shown, total })} searchFrom={6} testId="account-driver-picker" />
-            </div>
-          )}
-</>);
-  const permissionsBox = (
-          <div className="rounded-md border p-3">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="text-sm font-medium">{t("admin.dialog.permissions")}</span>
-              {Object.values(permissions).some((v) => v === false) && (
-                <button type="button" className="text-xs underline text-muted-foreground" onClick={() => setPermissions({})} data-testid="button-permissions-reset">{t("admin.dialog.permissionsReset")}</button>
-              )}
-            </div>
-            <p className="mb-2 text-xs text-muted-foreground">{t("admin.dialog.permissionsHint")}</p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {PORTAL_FEATURE_KEYS.map((key) => (
-                <label key={key} className="flex items-center gap-2 text-sm">
-                  <Checkbox checked={permissions[key] !== false} onCheckedChange={(v) => setPermissions((p) => ({ ...p, [key]: v === true }))} data-testid={`checkbox-permission-${key}`} />
-                  {t(`admin.settings.${key}`)}
-                </label>
-              ))}
-            </div>
-          </div>
-  );
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto" data-testid="dialog-portal-account">
         <DialogHeader><DialogTitle>{t("admin.dialog.title")}</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-3">
-          {/* Wide screens: the customer picker on the left, the account fields and rights on the right,
-              so the dialog needs no scrolling at 1280x800. Narrow screens keep one column. Without a
-              picker (customer or account fixed) the fields go left and the rights right. */}
-          <div className="grid gap-x-6 gap-y-3 md:grid-cols-2">
-          <div className="space-y-3">
+          {/* The customer is one full-width field on top; below it two columns from md up (the
+              account fields left, the rights right), one column on a phone. Kept compact so the
+              dialog needs no scrolling at 1280x800 or 1366x768. */}
           {needsPicker && (
             <div className="space-y-1">
-              <Label htmlFor="pa-customer-search">{t("admin.dialog.customer")}</Label>
-              <Input id="pa-customer-search" placeholder={t("admin.dialog.customerSearch")} value={customerSearch} onChange={(e) => setCustomerSearch(e.target.value)} />
-              <select id="pa-customer" className="w-full rounded-md border px-3 py-2 text-sm" size={6} value={customerId ?? ""}
-                onChange={(e) => { setCustomerId(e.target.value ? Number(e.target.value) : null); setDriverId(""); }} data-testid="select-portal-customer">
-                {/* Holds the "no customer yet" value. Without it React marks the first customer as chosen,
-                    and clicking that customer changes nothing. */}
-                <option value="" hidden />
-                {customerOptions.map((c) => <option key={c.id} value={c.id}>{c.companyName || c.name}{c.debtorNumber ? ` (${c.debtorNumber})` : ""}</option>)}
-              </select>
+              <Label htmlFor="pa-customer">{t("admin.dialog.customer")}</Label>
+              <SearchableCombobox id="pa-customer" options={customerOptions} value={customerId !== null ? String(customerId) : ""}
+                onChange={(v) => { setCustomerId(v ? Number(v) : null); setDriverId(""); }}
+                placeholder={t("admin.dialog.customerPlaceholder")} searchPlaceholder={t("admin.dialog.customerSearch")} emptyMessage={t("admin.dialog.customerNone")}
+                data-testid="select-portal-customer" />
             </div>
           )}
-          {!needsPicker && accountFields}
-          </div>
-          <div className="space-y-3">
-          {needsPicker && accountFields}
-          {permissionsBox}
-          </div>
+          <div className="grid gap-x-6 gap-y-3 md:grid-cols-2">
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="pa-email">{t("admin.dialog.email")}</Label>
+                <Input id="pa-email" type="email" value={email} disabled={Boolean(account)} onChange={(e) => { setEmail(e.target.value); setAutoFilled((a) => ({ ...a, email: false })); }} required data-testid="input-account-email" />
+                {!account && autoFilled.email && prefillSource.email && <p className="mt-1 text-xs text-muted-foreground">{t(`admin.dialog.prefilledFrom.${prefillSource.email}`)}</p>}
+              </div>
+              <div><Label htmlFor="pa-name">{t("admin.dialog.fullName")}</Label><Input id="pa-name" value={fullName} onChange={(e) => { setFullName(e.target.value); setAutoFilled((a) => ({ ...a, fullName: false })); }} required data-testid="input-account-name" /></div>
+              <div>
+                <Label htmlFor="pa-role">{t("admin.dialog.role")}</Label>
+                <select id="pa-role" className="w-full rounded-md border px-3 py-2 text-sm" value={role} onChange={(e) => setRole(e.target.value as "admin" | "driver")}>
+                  <option value="admin">{t("admin.accounts.role.admin")}</option>
+                  <option value="driver">{t("admin.accounts.role.driver")}</option>
+                </select>
+              </div>
+              {role === "driver" && (
+                <div>
+                  <Label htmlFor="pa-driver">{t("admin.dialog.driver")}</Label>
+                  <SearchListPicker items={drivers.map((d) => ({ id: d.id, label: d.displayName, sub: d.email ?? null, search: `${d.firstName ?? ""} ${d.lastName ?? ""}` }))}
+                    value={driverId ? Number(driverId) : null} onChange={(did) => setDriverId(did ? String(did) : "")}
+                    searchPlaceholder={t("admin.fines.dialog.searchDriver")} emptyText={t("admin.fines.dialog.noDriver")} changeLabel={t("admin.fines.dialog.changeCustomer")}
+                    hintText={(shown, total) => t("admin.fines.dialog.moreCustomers", { shown, total })} searchFrom={6} testId="account-driver-picker" />
+                </div>
+              )}
+              </div>
+            <div className="self-start rounded-md border p-3">
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <span className="text-sm font-medium">{t("admin.dialog.permissions")}</span>
+                {Object.values(permissions).some((v) => v === false) && (
+                  <button type="button" className="text-xs underline text-muted-foreground" onClick={() => setPermissions({})} data-testid="button-permissions-reset">{t("admin.dialog.permissionsReset")}</button>
+                )}
+              </div>
+              <p className="mb-2 text-xs leading-tight text-muted-foreground">{t("admin.dialog.permissionsHint")}</p>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                {PORTAL_FEATURE_KEYS.map((key) => (
+                  <label key={key} className="flex items-center gap-2 text-[13px] leading-tight">
+                    <Checkbox checked={permissions[key] !== false} onCheckedChange={(v) => setPermissions((p) => ({ ...p, [key]: v === true }))} data-testid={`checkbox-permission-${key}`} />
+                    {t(`admin.settings.${key}`)}
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>{t("admin.dialog.cancel")}</Button>
