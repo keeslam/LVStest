@@ -670,6 +670,109 @@ async function nullEmptyCompanyNames() {
   }
 }
 
+// ==================== D19 (B-41): USER FOREIGN KEYS ON DELETE SET NULL ====================
+// 20 foreign keys to users.id (audit_logs.user_id, the created_by/updated_by
+// columns of customers, reservations, expenses ... ) have no ON DELETE rule, so
+// the database refused to delete any account that ever did something - and
+// every login writes an audit row. Deleting a user now has to work (an admin
+// may delete another admin), so these keys are set to ON DELETE SET NULL: the
+// username is already stored as text in the audit and log rows.
+//
+// The keys are discovered at run time from the catalog instead of listed by
+// name: every single-column foreign key to users(id) whose rule is the default
+// "no action" and whose column accepts NULL. A key with a rule of its own
+// (cascade, set null) is left alone; a NOT NULL column is reported and skipped,
+// because SET NULL would fail on it. Idempotent twice over: the app_settings
+// marker stops a second pass, and a key that already has the rule no longer
+// matches the discovery query. Never aborts the boot: a failure is reported
+// and skipped (no marker, so the next start retries).
+const D19_USER_FK_MARKER = 'migration:d19_user_fk_set_null';
+
+async function setUserForeignKeysToSetNull() {
+  try {
+    const tables = await db.execute(sql`
+      SELECT tablename FROM pg_tables
+       WHERE schemaname = 'public' AND tablename IN ('users', 'app_settings')
+    `);
+    if (tables.rows.length < 2) {
+      console.log('⚠️ users or app_settings does not exist yet, skipping the user foreign key rule (D19)');
+      return;
+    }
+
+    const already = await db.execute(sql`SELECT 1 FROM app_settings WHERE key = ${D19_USER_FK_MARKER}`);
+    if (already.rows.length > 0) {
+      console.log('User foreign keys already ON DELETE SET NULL, skipping');
+      return;
+    }
+
+    const found = await db.execute(sql`
+      SELECT c.oid AS oid,
+             c.conname AS constraint_name,
+             c.conrelid::regclass::text AS table_name,
+             a.attname AS column_name,
+             a.attnotnull AS not_null,
+             pg_get_constraintdef(c.oid) AS definition
+        FROM pg_constraint c
+        JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = c.conkey[1]
+       WHERE c.contype = 'f'
+         AND c.confrelid = 'public.users'::regclass
+         AND c.confdeltype = 'a'
+         AND array_length(c.conkey, 1) = 1
+       ORDER BY 3, 2
+    `);
+
+    const quote = (identifier) => '"' + String(identifier).replace(/"/g, '""') + '"';
+    let changed = 0;
+    let skipped = 0;
+    for (const fk of found.rows) {
+      if (fk.not_null) {
+        skipped++;
+        console.warn(`⚠️ D19: ${fk.table_name}.${fk.column_name} is NOT NULL, leaving ${fk.constraint_name} without ON DELETE SET NULL`);
+        continue;
+      }
+      // pg_get_constraintdef prints "FOREIGN KEY (col) REFERENCES users(id)"
+      // plus optional ON UPDATE / DEFERRABLE parts; the rule goes in front of
+      // the DEFERRABLE / NOT VALID tail when there is one.
+      const definition = String(fk.definition);
+      if (/ON DELETE/i.test(definition)) continue;
+      const tail = definition.match(/\s+(NOT\s+DEFERRABLE|DEFERRABLE|NOT\s+VALID)\b.*$/i);
+      const head = tail ? definition.slice(0, tail.index) : definition;
+      const rebuilt = head + ' ON DELETE SET NULL' + (tail ? tail[0] : '');
+      try {
+        await db.transaction(async (tx) => {
+          await tx.execute(sql.raw(`ALTER TABLE ${fk.table_name} DROP CONSTRAINT ${quote(fk.constraint_name)}`));
+          await tx.execute(sql.raw(`ALTER TABLE ${fk.table_name} ADD CONSTRAINT ${quote(fk.constraint_name)} ${rebuilt}`));
+        });
+        changed++;
+      } catch (error) {
+        skipped++;
+        console.warn(`⚠️ D19: could not change ${fk.table_name}.${fk.constraint_name}, skipping it: ${error && error.message ? error.message : error}`);
+      }
+    }
+
+    if (skipped > 0) {
+      // No marker: the next start looks again.
+      console.warn(`⚠️ D19: ${changed} user foreign key(s) set to ON DELETE SET NULL, ${skipped} skipped - will retry on the next start`);
+      return;
+    }
+
+    await db.execute(sql`
+      INSERT INTO app_settings (key, value, category, description)
+      VALUES (
+        ${D19_USER_FK_MARKER},
+        ${JSON.stringify({ appliedAt: new Date().toISOString(), changed })}::jsonb,
+        'general',
+        'D19: foreign keys to users.id are ON DELETE SET NULL, so a user can be deleted'
+      )
+      ON CONFLICT (key) DO NOTHING
+    `);
+    console.log('User foreign keys set to ON DELETE SET NULL: ' + changed + ' key(s) changed');
+  } catch (error) {
+    // Deliberately not rethrown: a failed step must never stop the deploy.
+    console.error('⚠️ User foreign key step skipped, will retry on the next start:', error && error.message ? error.message : error);
+  }
+}
+
 // ==================== B-22: TIMESTAMPS WITH A TIME ZONE (BUG-224) ====================
 // besluiten.md B-22 - "migreren naar tijdzone-bewuste kolommen, met de
 // aanname dat bestaande waarden Amsterdamse tijd zijn".
@@ -2102,6 +2205,10 @@ async function runMigrations() {
 
     // Audit P2 (A-12-2): customers with an empty company name get NULL.
     await nullEmptyCompanyNames();
+
+    // D19 (B-41): foreign keys to users.id become ON DELETE SET NULL, so an
+    // account that ever did something can be deleted.
+    await setUserForeignKeysToSetNull();
 
     // B-22 (BUG-224): report - and, only on the owner's explicit switch,
     // perform - the conversion to time-zone-aware columns.

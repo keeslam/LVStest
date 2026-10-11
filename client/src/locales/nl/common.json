@@ -309,6 +309,7 @@
       "USE_CHANGE_PASSWORD": "Je eigen wachtwoord wijzig je via je profiel, onder Wachtwoord wijzigen.",
       "USERNAME_EXISTS": "Deze gebruikersnaam bestaat al.",
       "CANNOT_DELETE_SELF": "Je kunt je eigen account niet verwijderen.",
+      "LAST_ADMIN": "De laatste actieve beheerder kan niet worden verwijderd, gedeactiveerd of een andere rol krijgen.",
       "NOT_FOUND": "Dit item is niet gevonden. Misschien is het al verwijderd.",
       "STALE_WRITE": "Een ander heeft dit item net gewijzigd. Open het opnieuw en probeer het nog eens.",
       "DUPLICATE_CONTRACT_NUMBER": "Dit contractnummer is al in gebruik.",

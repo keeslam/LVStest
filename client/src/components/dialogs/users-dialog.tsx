@@ -37,6 +37,9 @@ interface UsersDialogProps {
 
 type ViewMode = "list" | "add" | "view" | "edit";
 
+/** A row of GET /api/users; `isLastAdmin` is counted by the server (D19). */
+type ListedUser = Omit<User, "password"> & { isLastAdmin?: boolean };
+
 /**
  * Server messages are English; the client translates by the stable `code` the
  * server sends (apiRequest copies it onto the thrown Error) and never shows the
@@ -54,6 +57,8 @@ function userErrorText(error: unknown, fallbackKey: string, t: (key: string) => 
       return t('usersDialog.usernameExists');
     case "CANNOT_DELETE_SELF":
       return t('usersDialog.cannotDeleteSelf');
+    case "LAST_ADMIN":
+      return t('usersDialog.lastAdmin');
     default:
       return t(fallbackKey);
   }
@@ -72,7 +77,7 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
 
   const isAdmin = currentUser?.role === UserRole.ADMIN;
 
-  const { data: users = [], isLoading } = useQuery<Omit<User, "password">[]>({
+  const { data: users = [], isLoading } = useQuery<ListedUser[]>({
     queryKey: ["/api/users"],
     queryFn: async () => {
       const response = await fetch("/api/users");
@@ -252,12 +257,12 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    disabled={isSelf || user.role === UserRole.ADMIN}
+                    disabled={isSelf || user.isLastAdmin === true}
                     title={
                       isSelf
                         ? t('usersDialog.cannotDeleteSelf')
-                        : user.role === UserRole.ADMIN
-                          ? t('usersDialog.cannotDeleteAdmin')
+                        : user.isLastAdmin === true
+                          ? t('usersDialog.cannotDeleteLastAdmin')
                           : undefined
                     }
                     onClick={() => handleDeleteUser(user)}

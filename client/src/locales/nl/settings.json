@@ -191,7 +191,8 @@
     "userCreatedDescription": "Gebruiker \"{{username}}\" is aangemaakt",
     "userSavedDescription": "Gebruiker \"{{username}}\" is opgeslagen",
     "cannotDeleteSelf": "Je kunt je eigen account niet verwijderen",
-    "cannotDeleteAdmin": "Een beheerdersaccount kan hier niet worden verwijderd; wijzig eerst de rol"
+    "cannotDeleteLastAdmin": "Dit is de laatste actieve beheerder; die kan niet worden verwijderd",
+    "lastAdmin": "De laatste actieve beheerder kan niet worden verwijderd, gedeactiveerd of een andere rol krijgen"
   },
   "backupPage": {
     "title": "Back-up & herstel",

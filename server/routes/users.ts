@@ -3,6 +3,8 @@ import { users, patchUserSchema } from "../../shared/schema";
 import { parsePartialUpdate } from "../middleware/validateBody";
 import { revokeUserSessions } from "../utils/security/sessionManager.js";
 import { z } from "zod";
+import { and, eq } from "drizzle-orm";
+import { db } from "../db";
 import { insertUserSchema, UserRole, UserPermission } from "../../shared/schema";
 import { hashPassword, comparePasswords } from "../auth";
 import { realtimeEvents } from "../realtime-events";
@@ -10,6 +12,31 @@ import { hasPermission } from "../middleware/permissions.js";
 import { passwordPolicyIssues, passwordTooWeakBody } from "../../shared/password-policy";
 import type { Express } from "express";
 import type { RouteDeps } from "./deps";
+
+/**
+ * D19: the ids of the active administrators, locked for the rest of the
+ * transaction. Counting them under FOR UPDATE makes "is this the last one?"
+ * and the delete/update that follows one atomic step: two admins removing each
+ * other at the same moment cannot both pass the check.
+ */
+async function lockActiveAdminIds(tx: Pick<typeof db, "select">): Promise<number[]> {
+  const rows = await tx
+    .select({ id: users.id })
+    .from(users)
+    .where(and(eq(users.role, UserRole.ADMIN), eq(users.active, true)))
+    .orderBy(users.id)
+    .for("update");
+  return rows.map((r) => r.id);
+}
+
+class LastAdminError extends Error {
+  readonly code = "LAST_ADMIN";
+}
+
+const lastAdminBody = () => ({
+  message: "The last active administrator account cannot be removed, demoted or deactivated",
+  code: "LAST_ADMIN",
+});
 
 // Moved verbatim out of server/routes.ts (registerRoutes) - see git history for context.
 export function registerUserRoutes(app: Express, deps: RouteDeps): void {
@@ -116,12 +143,19 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
   // Get all users (requires MANAGE_USERS permission)
   app.get("/api/users", requireAuth, hasPermission(UserPermission.MANAGE_USERS), async (req, res) => {
     try {
-      const users = await storage.getAllUsers();
-      
+      const allUsers = await storage.getAllUsers();
+
+      // D19: the dialog disables the delete button of the last active admin;
+      // the server counts, the client only reads this flag.
+      const activeAdmins = allUsers.filter((u) => u.role === UserRole.ADMIN && u.active);
+
       // Don't send passwords to client
-      const safeUsers = users.map(user => {
+      const safeUsers = allUsers.map(user => {
         const { password, ...userWithoutPassword } = user;
-        return userWithoutPassword;
+        return {
+          ...userWithoutPassword,
+          isLastAdmin: activeAdmins.length === 1 && activeAdmins[0].id === user.id,
+        };
       });
       
       res.json(safeUsers);
@@ -351,6 +385,43 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
         }
       }
       
+      // D19: demoting or deactivating an active administrator is checked against
+      // the other active administrators, under a lock, in the same transaction
+      // as the write. Everything else keeps the unguarded path below.
+      const losesAdminSeat =
+        user.role === UserRole.ADMIN &&
+        user.active &&
+        ((userData.role !== undefined && userData.role !== UserRole.ADMIN) || userData.active === false);
+      if (losesAdminSeat) {
+        try {
+          const { password: newPassword, ...otherData } = userData;
+          const updatedUser = await db.transaction(async (tx) => {
+            const adminIds = await lockActiveAdminIds(tx);
+            if (adminIds.length <= 1 && adminIds.includes(id)) throw new LastAdminError();
+            const [row] = await tx
+              .update(users)
+              .set({ ...otherData, updatedAt: new Date() })
+              .where(eq(users.id, id))
+              .returning();
+            return row;
+          });
+          if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
+          }
+          if (newPassword) {
+            await storage.updateUserPassword(id, await hashPassword(newPassword));
+          }
+          const { password: _hidden, ...safeUser } = updatedUser;
+          realtimeEvents.users.updated(safeUser);
+          return res.json(safeUser);
+        } catch (error) {
+          if (error instanceof LastAdminError) {
+            return res.status(409).json(lastAdminBody());
+          }
+          throw error;
+        }
+      }
+
       // Handle password separately (a blank one was already dropped from `patch`
       // above, and `userData` is built from `patch`).
       if (userData.password) {
@@ -413,9 +484,22 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
         return res.status(400).json({ message: "Cannot delete your own account", code: "CANNOT_DELETE_SELF" });
       }
       
-      const deleted = await storage.deleteUser(id);
-      
-      if (!deleted) {
+      // D19: the last active administrator is refused (409); another admin may
+      // be deleted. Count and delete happen in one transaction, the admins
+      // locked, so two simultaneous deletes cannot empty the table of admins.
+      // (storage.deleteUser swallowed every error as "not found", which hid a
+      // foreign-key refusal behind a 404; here only a missing row is a 404.)
+      const outcome = await db.transaction(async (tx) => {
+        const adminIds = await lockActiveAdminIds(tx);
+        if (adminIds.length <= 1 && adminIds.includes(id)) return "last-admin" as const;
+        const removed = await tx.delete(users).where(eq(users.id, id)).returning({ id: users.id });
+        return removed.length > 0 ? ("deleted" as const) : ("missing" as const);
+      });
+
+      if (outcome === "last-admin") {
+        return res.status(409).json(lastAdminBody());
+      }
+      if (outcome === "missing") {
         return res.status(404).json({ message: "User not found" });
       }
       

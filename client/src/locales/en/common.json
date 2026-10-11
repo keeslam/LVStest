@@ -309,6 +309,7 @@
       "USE_CHANGE_PASSWORD": "Change your own password from your profile, under Change password.",
       "USERNAME_EXISTS": "This username already exists.",
       "CANNOT_DELETE_SELF": "You cannot delete your own account.",
+      "LAST_ADMIN": "The last active administrator cannot be deleted, deactivated or given another role.",
       "NOT_FOUND": "This item was not found. It may already have been deleted.",
       "STALE_WRITE": "Someone else just changed this item. Open it again and retry.",
       "DUPLICATE_CONTRACT_NUMBER": "This contract number is already in use.",

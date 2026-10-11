@@ -27,9 +27,9 @@ vi.mock("@/hooks/use-toast", () => ({
 import { UsersDialog } from "@/components/dialogs/users-dialog";
 
 const USERS = [
-  { id: 1, username: "kees", role: "admin", active: true, fullName: "Kees", email: null, permissions: [] },
-  { id: 2, username: "ike", role: "admin", active: true, fullName: "Ike", email: null, permissions: [] },
-  { id: 6, username: "e2e-user", role: "user", active: true, fullName: "E2E", email: null, permissions: [], hidePrices: false },
+  { id: 1, username: "kees", role: "admin", active: true, fullName: "Kees", email: null, permissions: [], isLastAdmin: false },
+  { id: 2, username: "ike", role: "admin", active: true, fullName: "Ike", email: null, permissions: [], isLastAdmin: false },
+  { id: 6, username: "e2e-user", role: "user", active: true, fullName: "E2E", email: null, permissions: [], hidePrices: false, isLastAdmin: false },
 ];
 
 type Handler = (url: string, init?: RequestInit) => Response | undefined;
@@ -200,22 +200,69 @@ describe("users dialog - feedback after saving (A-17-2, A-17-7)", () => {
   });
 });
 
-describe("users dialog - who can be deleted (A-17-8)", () => {
-  it("your own row and administrator accounts have a disabled delete button that says why", async () => {
+describe("users dialog - who can be deleted (A-17-8, D19)", () => {
+  it("your own row has a disabled delete button that says why", async () => {
     renderDialog();
     const own = await screen.findByTestId("dialog-delete-user-1");
-    const other = screen.getByTestId("dialog-delete-user-2");
     expect(own).toBeDisabled();
-    expect(other).toBeDisabled();
     expect(own).toHaveAttribute("title", "Je kunt je eigen account niet verwijderen");
-    expect(other).toHaveAttribute(
+  });
+
+  it("another administrator can be deleted while there are two active administrators", async () => {
+    renderDialog();
+    const other = await screen.findByTestId("dialog-delete-user-2");
+    expect(other).toBeEnabled();
+    expect(other).not.toHaveAttribute("title");
+  });
+
+  it("the last active administrator has a disabled delete button that says why", async () => {
+    const lastAdminUsers = USERS.map((u) => (u.id === 2 ? { ...u, isLastAdmin: true } : u));
+    extra = (u) => (u.endsWith("/api/users") ? json(lastAdminUsers) : undefined);
+    renderDialog();
+    const last = await screen.findByTestId("dialog-delete-user-2");
+    expect(last).toBeDisabled();
+    expect(last).toHaveAttribute(
       "title",
-      "Een beheerdersaccount kan hier niet worden verwijderd; wijzig eerst de rol",
+      "Dit is de laatste actieve beheerder; die kan niet worden verwijderd",
     );
   });
 
   it("an ordinary user can be deleted", async () => {
     renderDialog();
     expect(await screen.findByTestId("dialog-delete-user-6")).toBeEnabled();
+  });
+
+  it("maps the server code LAST_ADMIN on delete to a Dutch toast", async () => {
+    extra = (u, init) =>
+      /\/api\/users\/2$/.test(u) && init?.method === "DELETE"
+        ? json({ message: "x", code: "LAST_ADMIN" }, 409)
+        : undefined;
+    const user = userEvent.setup();
+    renderDialog();
+    await user.click(await screen.findByTestId("dialog-delete-user-2"));
+    await user.click(await screen.findByTestId("dialog-confirm-delete-user"));
+
+    await vi.waitFor(() => expect(toast).toHaveBeenCalled());
+    expect(toast.mock.calls[0][0]).toMatchObject({
+      variant: "destructive",
+      description: "De laatste actieve beheerder kan niet worden verwijderd, gedeactiveerd of een andere rol krijgen",
+    });
+  });
+
+  it("maps the server code LAST_ADMIN on save to the same toast", async () => {
+    extra = (u, init) =>
+      /\/api\/users\/6$/.test(u) && init?.method === "PATCH"
+        ? json({ message: "x", code: "LAST_ADMIN" }, 409)
+        : undefined;
+    const user = userEvent.setup();
+    renderDialog();
+    await user.click(await screen.findByTestId("dialog-edit-user-6"));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(await within(dialog).findByRole("button", { name: "Gebruiker bijwerken" }));
+
+    await vi.waitFor(() => expect(toast).toHaveBeenCalled());
+    expect(toast.mock.calls[0][0].description).toBe(
+      "De laatste actieve beheerder kan niet worden verwijderd, gedeactiveerd of een andere rol krijgen",
+    );
   });
 });

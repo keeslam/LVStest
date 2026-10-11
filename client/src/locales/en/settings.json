@@ -191,7 +191,8 @@
     "userCreatedDescription": "User \"{{username}}\" has been created",
     "userSavedDescription": "User \"{{username}}\" has been saved",
     "cannotDeleteSelf": "You cannot delete your own account",
-    "cannotDeleteAdmin": "An administrator account cannot be deleted here; change the role first"
+    "cannotDeleteLastAdmin": "This is the last active administrator; it cannot be deleted",
+    "lastAdmin": "The last active administrator cannot be deleted, deactivated or given another role"
   },
   "backupPage": {
     "title": "Backup & Recovery",
