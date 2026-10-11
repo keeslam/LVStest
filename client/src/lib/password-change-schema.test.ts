@@ -15,7 +15,7 @@ const t = (key: string) => key;
 const schema = makePasswordChangeSchema(t);
 
 function issues(values: { currentPassword?: string; newPassword?: string; confirmPassword?: string }) {
-  const res = schema.safeParse({ currentPassword: "old", newPassword: "Abcdefg1", confirmPassword: "Abcdefg1", ...values });
+  const res = schema.safeParse({ currentPassword: "old", newPassword: "Abcdefghi1", confirmPassword: "Abcdefghi1", ...values });
   if (res.success) return {};
   const byPath: Record<string, string> = {};
   for (const i of res.error.issues) byPath[i.path.join(".")] ??= i.message;
@@ -27,12 +27,12 @@ describe("makePasswordChangeSchema", () => {
     expect(issues({})).toEqual({});
   });
 
-  it("mirrors the server's length (8) and character rules", () => {
-    expect(PASSWORD_MIN_LENGTH).toBe(8);
-    expect(issues({ newPassword: "Abc1", confirmPassword: "Abc1" }).newPassword).toBe("profileDialog.passwordErrors.newTooShort");
-    expect(issues({ newPassword: "abcdefg1", confirmPassword: "abcdefg1" }).newPassword).toBe("profileDialog.passwordErrors.newCharacters");
-    expect(issues({ newPassword: "ABCDEFG1", confirmPassword: "ABCDEFG1" }).newPassword).toBe("profileDialog.passwordErrors.newCharacters");
-    expect(issues({ newPassword: "Abcdefgh", confirmPassword: "Abcdefgh" }).newPassword).toBe("profileDialog.passwordErrors.newCharacters");
+  it("mirrors the server's length (10) and character rules", () => {
+    expect(PASSWORD_MIN_LENGTH).toBe(10);
+    expect(issues({ newPassword: "Abcdefgh1", confirmPassword: "Abcdefgh1" }).newPassword).toBe("profileDialog.passwordErrors.newTooShort");
+    expect(issues({ newPassword: "abcdefghi1", confirmPassword: "abcdefghi1" }).newPassword).toBe("profileDialog.passwordErrors.newCharacters");
+    expect(issues({ newPassword: "ABCDEFGHI1", confirmPassword: "ABCDEFGHI1" }).newPassword).toBe("profileDialog.passwordErrors.newCharacters");
+    expect(issues({ newPassword: "Abcdefghij", confirmPassword: "Abcdefghij" }).newPassword).toBe("profileDialog.passwordErrors.newCharacters");
   });
 
   it("a short confirmation is a mismatch, not 'please confirm'", () => {
@@ -55,7 +55,7 @@ describe("makePasswordChangeSchema", () => {
   });
 
   it("the hint states the same rule the form enforces", () => {
-    expect((nl as any).profileDialog.newPasswordHint).toContain("8");
-    expect((en as any).profileDialog.newPasswordHint).toContain("8");
+    expect((nl as any).profileDialog.newPasswordHint).toContain("10");
+    expect((en as any).profileDialog.newPasswordHint).toContain("10");
   });
 });

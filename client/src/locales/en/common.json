@@ -305,6 +305,8 @@
     "network": "No connection to the server. Check your internet connection and try again.",
     "codes": {
       "CURRENT_PASSWORD_INCORRECT": "The current password is incorrect.",
+      "PASSWORD_TOO_WEAK": "The password does not meet the rule: at least 10 characters, with an uppercase letter, a lowercase letter and a number.",
+      "USE_CHANGE_PASSWORD": "Change your own password from your profile, under Change password.",
       "USERNAME_EXISTS": "This username already exists.",
       "CANNOT_DELETE_SELF": "You cannot delete your own account.",
       "NOT_FOUND": "This item was not found. It may already have been deleted.",

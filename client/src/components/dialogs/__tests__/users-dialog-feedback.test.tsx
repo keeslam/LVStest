@@ -88,7 +88,7 @@ describe("users dialog - the new-user form (A-17-6)", () => {
     await user.click(await screen.findByTestId("dialog-add-user-button"));
     const dialog = await screen.findByRole("dialog");
     await user.type(within(dialog).getByPlaceholderText("Voer gebruikersnaam in"), "nieuwe-collega");
-    await user.type(within(dialog).getByPlaceholderText("Voer wachtwoord in"), "een-echt-wachtwoord");
+    await user.type(within(dialog).getByPlaceholderText("Voer wachtwoord in"), "Een-echt-wachtwoord1");
     await user.type(within(dialog).getByPlaceholderText("Voer e-mailadres in"), "geen-adres");
     await user.click(within(dialog).getByRole("button", { name: "Gebruiker aanmaken" }));
     expect(await within(dialog).findByText("Vul een geldig e-mailadres in")).toBeInTheDocument();
@@ -104,7 +104,7 @@ describe("users dialog - the new-user form (A-17-6)", () => {
     await user.click(await screen.findByTestId("dialog-add-user-button"));
     const dialog = await screen.findByRole("dialog");
     await user.type(within(dialog).getByPlaceholderText("Voer gebruikersnaam in"), "e2e-user");
-    await user.type(within(dialog).getByPlaceholderText("Voer wachtwoord in"), "een-echt-wachtwoord");
+    await user.type(within(dialog).getByPlaceholderText("Voer wachtwoord in"), "Een-echt-wachtwoord1");
     await user.click(within(dialog).getByRole("button", { name: "Gebruiker aanmaken" }));
 
     await vi.waitFor(() => expect(toast).toHaveBeenCalled());
@@ -112,6 +112,54 @@ describe("users dialog - the new-user form (A-17-6)", () => {
       variant: "destructive",
       description: "Deze gebruikersnaam is al in gebruik",
     });
+  });
+});
+
+describe("users dialog - password rule codes (D12)", () => {
+  it.each([
+    ["PASSWORD_TOO_WEAK", "Het wachtwoord voldoet niet aan de regel: minimaal 10 tekens, met hoofdletter, kleine letter en cijfer"],
+    ["USE_CHANGE_PASSWORD", "Je eigen wachtwoord wijzig je via je profiel, onder Wachtwoord wijzigen"],
+  ])("maps the server code %s to a Dutch toast", async (code, description) => {
+    extra = (u, init) =>
+      /\/api\/users\/6$/.test(u) && init?.method === "PATCH"
+        ? json({ message: "x", code, field: "password" }, 400)
+        : undefined;
+    const user = userEvent.setup();
+    renderDialog();
+    await user.click(await screen.findByTestId("dialog-edit-user-6"));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(await within(dialog).findByRole("button", { name: "Gebruiker bijwerken" }));
+
+    await vi.waitFor(() => expect(toast).toHaveBeenCalled());
+    expect(toast.mock.calls[0][0]).toMatchObject({ variant: "destructive", description });
+  });
+
+  it("an edit with a new password that breaks the rule is refused before it posts", async () => {
+    const user = userEvent.setup();
+    renderDialog();
+    await user.click(await screen.findByTestId("dialog-edit-user-6"));
+    const dialog = await screen.findByRole("dialog");
+    await user.type(await within(dialog).findByPlaceholderText("Voer wachtwoord in"), "kort");
+    await user.click(within(dialog).getByRole("button", { name: "Gebruiker bijwerken" }));
+
+    expect(
+      await within(dialog).findByText(
+        "Het wachtwoord voldoet niet aan de regel: minimaal 10 tekens, met hoofdletter, kleine letter en cijfer",
+      ),
+    ).toBeInTheDocument();
+    expect(fetchMock.mock.calls.filter(([, init]) => init?.method === "PATCH")).toHaveLength(0);
+  });
+
+  it("an edit with the password left empty still saves", async () => {
+    extra = (u, init) =>
+      /\/api\/users\/6$/.test(u) && init?.method === "PATCH" ? json({ ...USERS[2] }) : undefined;
+    const user = userEvent.setup();
+    renderDialog();
+    await user.click(await screen.findByTestId("dialog-edit-user-6"));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(await within(dialog).findByRole("button", { name: "Gebruiker bijwerken" }));
+    await vi.waitFor(() => expect(toast).toHaveBeenCalled());
+    expect(toast.mock.calls[0][0].variant).toBeUndefined();
   });
 });
 
@@ -124,7 +172,7 @@ describe("users dialog - feedback after saving (A-17-2, A-17-7)", () => {
     await user.click(await screen.findByTestId("dialog-add-user-button"));
     const dialog = await screen.findByRole("dialog");
     await user.type(within(dialog).getByPlaceholderText("Voer gebruikersnaam in"), "nieuwe-collega");
-    await user.type(within(dialog).getByPlaceholderText("Voer wachtwoord in"), "een-echt-wachtwoord");
+    await user.type(within(dialog).getByPlaceholderText("Voer wachtwoord in"), "Een-echt-wachtwoord1");
     await user.click(within(dialog).getByRole("button", { name: "Gebruiker aanmaken" }));
 
     await vi.waitFor(() => expect(toast).toHaveBeenCalled());

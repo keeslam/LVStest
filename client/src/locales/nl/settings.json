@@ -161,6 +161,9 @@
     "newPasswordLeaveEmpty": "Nieuw wachtwoord (leeg laten om te behouden)",
     "passwordPlaceholder": "Voer wachtwoord in",
     "passwordRequired": "Een wachtwoord is verplicht",
+    "passwordHint": "Minimaal 10 tekens, met hoofdletter, kleine letter en cijfer",
+    "passwordTooWeak": "Het wachtwoord voldoet niet aan de regel: minimaal 10 tekens, met hoofdletter, kleine letter en cijfer",
+    "useChangePassword": "Je eigen wachtwoord wijzig je via je profiel, onder Wachtwoord wijzigen",
     "fullNamePlaceholder": "Voer volledige naam in",
     "emailPlaceholder": "Voer e-mailadres in",
     "selectRole": "Selecteer rol",
@@ -181,7 +184,8 @@
     "updateUserFailed": "Gebruiker bijwerken mislukt",
     "formErrors": {
       "usernameTooShort": "De gebruikersnaam moet minstens 3 tekens hebben",
-      "emailInvalid": "Vul een geldig e-mailadres in"
+      "emailInvalid": "Vul een geldig e-mailadres in",
+      "passwordPolicy": "Het wachtwoord voldoet niet aan de regel: minimaal 10 tekens, met hoofdletter, kleine letter en cijfer"
     },
     "usernameExists": "Deze gebruikersnaam is al in gebruik",
     "userCreatedDescription": "Gebruiker \"{{username}}\" is aangemaakt",

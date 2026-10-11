@@ -46,6 +46,10 @@ function userErrorText(error: unknown, fallbackKey: string, t: (key: string) => 
   switch ((error as { code?: string } | null)?.code) {
     case "PASSWORD_REQUIRED":
       return t('usersDialog.passwordRequired');
+    case "PASSWORD_TOO_WEAK":
+      return t('usersDialog.passwordTooWeak');
+    case "USE_CHANGE_PASSWORD":
+      return t('usersDialog.useChangePassword');
     case "USERNAME_EXISTS":
       return t('usersDialog.usernameExists');
     case "CANNOT_DELETE_SELF":
@@ -612,6 +616,7 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
                 <FormControl>
                   <Input type="password" placeholder={t('usersDialog.passwordPlaceholder')} {...field} />
                 </FormControl>
+                <FormDescription className="text-xs">{t('usersDialog.passwordHint')}</FormDescription>
                 <FormMessage />
               </FormItem>
             )}

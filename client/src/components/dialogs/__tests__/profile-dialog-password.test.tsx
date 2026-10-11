@@ -29,7 +29,7 @@ describe("profile dialog - password tab", () => {
 
     await user.click(await screen.findByRole("tab", { name: "Wachtwoord" }));
     await user.type(await screen.findByTestId("input-current-password"), "oud");
-    await user.type(screen.getByTestId("input-new-password"), "Abcdefg1");
+    await user.type(screen.getByTestId("input-new-password"), "Abcdefghi1");
     await user.type(screen.getByTestId("input-confirm-password"), "abc");
     await user.click(screen.getByTestId("button-change-password"));
 

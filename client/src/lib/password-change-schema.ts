@@ -1,11 +1,7 @@
 import { z } from "zod";
+import { PASSWORD_MIN_LENGTH, passwordPolicyIssues } from "@shared/password-policy";
 
-/**
- * Same minimum POST /api/users/change-password enforces (server/routes/users.ts).
- * The policy itself (D12) is the owner's decision; this file only makes the
- * form say, and check, what the server already requires.
- */
-export const PASSWORD_MIN_LENGTH = 8;
+export { PASSWORD_MIN_LENGTH };
 
 type Translate = (key: string) => string;
 
@@ -23,8 +19,9 @@ export function makePasswordChangeSchema(t: Translate) {
       currentPassword: z.string().min(1, m("currentRequired")),
       newPassword: z
         .string()
+        // D12: the shared policy, the same one the server applies.
         .min(PASSWORD_MIN_LENGTH, m("newTooShort"))
-        .refine((v) => /[a-z]/.test(v) && /[A-Z]/.test(v) && /[0-9]/.test(v), m("newCharacters")),
+        .refine((v) => !passwordPolicyIssues(v).some((i) => i !== "tooShort"), m("newCharacters")),
       confirmPassword: z.string().min(1, m("confirmRequired")),
     })
     .refine((data) => data.newPassword === data.confirmPassword, {

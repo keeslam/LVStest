@@ -7,6 +7,7 @@ import { insertUserSchema, UserRole, UserPermission } from "../../shared/schema"
 import { hashPassword, comparePasswords } from "../auth";
 import { realtimeEvents } from "../realtime-events";
 import { hasPermission } from "../middleware/permissions.js";
+import { passwordPolicyIssues, passwordTooWeakBody } from "../../shared/password-policy";
 import type { Express } from "express";
 import type { RouteDeps } from "./deps";
 
@@ -180,6 +181,12 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
         return res.status(403).json({ message: "Only an administrator can create an administrator account" });
       }
 
+      // D12: checked after the 403 above, so rights are judged first.
+      const weakness = passwordPolicyIssues(userData.password);
+      if (weakness.length > 0) {
+        return res.status(400).json(passwordTooWeakBody(weakness));
+      }
+
       // Check if username already exists
       const existingUser = await storage.getUserByUsername(userData.username);
       if (existingUser) {
@@ -270,6 +277,23 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
           message: "Only an administrator can set another account's password",
           field: "password",
         });
+      }
+
+      // D12: nobody sets their own password through PATCH any more - that is
+      // "Wachtwoord wijzigen", which asks for the current password. An admin
+      // may still reset another account (the users dialog), under the rule.
+      if (patch.password !== undefined) {
+        if (isSelfUpdate) {
+          return res.status(400).json({
+            message: "Use change-password to change your own password",
+            code: "USE_CHANGE_PASSWORD",
+            field: "password",
+          });
+        }
+        const weakness = passwordPolicyIssues(patch.password);
+        if (weakness.length > 0) {
+          return res.status(400).json(passwordTooWeakBody(weakness));
+        }
       }
 
       // If updating username, check if new username already exists
@@ -410,12 +434,9 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       // Validate request body with Zod
       const changePasswordSchema = z.object({
         currentPassword: z.string().min(1, "Current password is required"),
-        newPassword: z.string()
-          .min(8, "New password must be at least 8 characters long")
-          .max(100, "New password is too long")
-          .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-          .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-          .regex(/[0-9]/, "Password must contain at least one number"),
+        // The strength rule is the shared D12 policy, applied below so the
+        // answer carries a stable code instead of English text.
+        newPassword: z.string().max(100, "New password is too long"),
       });
 
       const validationResult = changePasswordSchema.safeParse(req.body);
@@ -427,6 +448,11 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       }
 
       const { currentPassword, newPassword } = validationResult.data;
+
+      const weakness = passwordPolicyIssues(newPassword);
+      if (weakness.length > 0) {
+        return res.status(400).json(passwordTooWeakBody(weakness));
+      }
       
       // Get current user
       const user = await storage.getUser(req.user!.id);

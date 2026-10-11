@@ -77,10 +77,33 @@ describe("users dialog - adding a user needs a real password", () => {
   it("a real password is posted", async () => {
     const { user, dialog } = await openAddForm();
 
-    await user.type(within(dialog).getByPlaceholderText("Voer wachtwoord in"), "een-echt-wachtwoord");
+    await user.type(within(dialog).getByPlaceholderText("Voer wachtwoord in"), "Een-echt-wachtwoord1");
     await user.click(within(dialog).getByRole("button", { name: "Gebruiker aanmaken" }));
 
     await vi.waitFor(() => expect(posts()).toHaveLength(1));
-    expect(JSON.parse(String(posts()[0][1]?.body)).password).toBe("een-echt-wachtwoord");
+    expect(JSON.parse(String(posts()[0][1]?.body)).password).toBe("Een-echt-wachtwoord1");
+  });
+
+  it("shows the password rule as a hint under the field", async () => {
+    const { dialog } = await openAddForm();
+    expect(within(dialog).getByText("Minimaal 10 tekens, met hoofdletter, kleine letter en cijfer")).toBeInTheDocument();
+  });
+
+  it.each([
+    ["too short", "Abcdefgh1"],
+    ["no capital", "abcdefghij1"],
+    ["no digit", "Abcdefghijk"],
+  ])("a password that breaks the rule (%s) is refused in Dutch and posts nothing", async (_label, password) => {
+    const { user, dialog } = await openAddForm();
+
+    await user.type(within(dialog).getByPlaceholderText("Voer wachtwoord in"), password);
+    await user.click(within(dialog).getByRole("button", { name: "Gebruiker aanmaken" }));
+
+    expect(
+      await within(dialog).findByText(
+        "Het wachtwoord voldoet niet aan de regel: minimaal 10 tekens, met hoofdletter, kleine letter en cijfer",
+      ),
+    ).toBeInTheDocument();
+    expect(posts()).toHaveLength(0);
   });
 });

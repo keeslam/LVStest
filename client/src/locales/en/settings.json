@@ -161,6 +161,9 @@
     "newPasswordLeaveEmpty": "New Password (leave empty to keep)",
     "passwordPlaceholder": "Enter password",
     "passwordRequired": "A password is required",
+    "passwordHint": "At least 10 characters, with an uppercase letter, a lowercase letter and a number",
+    "passwordTooWeak": "The password does not meet the rule: at least 10 characters, with an uppercase letter, a lowercase letter and a number",
+    "useChangePassword": "Change your own password from your profile, under Change password",
     "fullNamePlaceholder": "Enter full name",
     "emailPlaceholder": "Enter email",
     "selectRole": "Select role",
@@ -181,7 +184,8 @@
     "updateUserFailed": "Failed to update user",
     "formErrors": {
       "usernameTooShort": "The username must be at least 3 characters",
-      "emailInvalid": "Enter a valid email address"
+      "emailInvalid": "Enter a valid email address",
+      "passwordPolicy": "The password does not meet the rule: at least 10 characters, with an uppercase letter, a lowercase letter and a number"
     },
     "usernameExists": "This username is already in use",
     "userCreatedDescription": "User \"{{username}}\" has been created",

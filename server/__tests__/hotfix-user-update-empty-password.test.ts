@@ -83,13 +83,13 @@ describe("PATCH /api/users/:id — an empty password means 'no change'", () => {
 
     const res = await admin
       .patch(`/api/users/${target.userId}`)
-      .send({ fullName: "W", password: "brand-new-password-2" });
+      .send({ fullName: "W", password: "Brand-New-Password-2" });
     expect(res.status).toBe(200);
 
     const after = await storedHash(target.userId);
     expect(after).not.toBe(before);
     expect(after.length).toBeGreaterThan(0);
-    expect(await loginStatus(target.username, "brand-new-password-2")).toBe(200);
+    expect(await loginStatus(target.username, "Brand-New-Password-2")).toBe(200);
     expect(await loginStatus(target.username, target.password)).toBe(401);
   });
 
@@ -227,11 +227,11 @@ describe("POST /api/users — a blank password is refused (final wave, item 4)",
 
   it("a real password still creates the account, and it can log in", async () => {
     const admin = await agentFor("admin");
-    const payload = body("real", "a-real-password-1");
+    const payload = body("real", "A-Real-Password-1");
 
     const res = await admin.post("/api/users").send(payload);
     expect(res.status).toBe(201);
     expect(res.body.password).toBeUndefined();
-    expect(await loginStatus(payload.username, "a-real-password-1")).toBe(200);
+    expect(await loginStatus(payload.username, "A-Real-Password-1")).toBe(200);
   });
 });

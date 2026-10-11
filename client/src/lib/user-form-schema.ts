@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { UserRole } from "@shared/schema";
+import { passwordPolicyIssues } from "@shared/password-policy";
 
 type Translate = (key: string) => string;
 
@@ -28,6 +29,12 @@ export function makeUserFormSchema(t: Translate, isEdit: boolean) {
     .superRefine((data, ctx) => {
       if (!isEdit && (!data.password || data.password.trim() === "")) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["password"], message: t("usersDialog.passwordRequired") });
+        return;
+      }
+      // D12: a non-blank new password (create, or a reset on edit) must follow
+      // the shared rule; a blank one on edit still means "keep the current one".
+      if (data.password && data.password.trim() !== "" && passwordPolicyIssues(data.password).length > 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["password"], message: m("passwordPolicy") });
       }
     });
 }

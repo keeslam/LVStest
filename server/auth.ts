@@ -9,6 +9,7 @@ import { storage } from "./storage";
 import { DatabaseStorage } from "./database-storage";
 import { User, UserRole, insertUserSchema } from "../shared/schema";
 import { pool } from "./db";
+import { passwordPolicyIssues, passwordTooWeakBody } from "../shared/password-policy";
 import connectPg from "connect-pg-simple";
 import createMemoryStore from "memorystore";
 
@@ -312,6 +313,12 @@ export function setupAuth(app: Express) {
     try {
       // Validate request body using Zod schema
       const userData = insertUserSchema.parse(req.body);
+
+      // D12: the same staff password rule as POST /api/users.
+      const weakness = passwordPolicyIssues(userData.password);
+      if (weakness.length > 0) {
+        return res.status(400).json(passwordTooWeakBody(weakness));
+      }
       
       // Check if user already exists
       const existingUser = await storage.getUserByUsername(userData.username);
