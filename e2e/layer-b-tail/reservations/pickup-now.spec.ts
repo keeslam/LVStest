@@ -8,6 +8,9 @@
  * id the server returned with the one the dialog fetched). The pickup is not completed: the spec
  * closes the dialog and cancels its own reservation, so nothing it made stays booked.
  *
+ * Tail project (`layer-b-tail`, runs alone after layer A and B): the spec creates a reservation, and the desk
+ * edge-case "dubbele boeking" compares the number of reservations before and after, so it must not run beside it.
+ *
  * Account: `manager-b`, the twin of `manager` (own request bucket; the manager end-of-run figure is
  * already the highest of the three twins' partners, see docs/e2e/README.md "Het verzoekbudget").
  * Request cost: the spec counts its own `/api/` requests (the page's and its direct calls) and
