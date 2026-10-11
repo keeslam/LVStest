@@ -284,6 +284,13 @@ export const vehicles = pgTable("vehicles", {
   // Maintenance status for spare vehicle management
   maintenanceStatus: text("maintenance_status").default("ok").notNull(), // 'ok' | 'needs_service' | 'in_service'
   maintenanceNote: text("maintenance_note"), // Optional note about maintenance
+  /**
+   * D6 (B-41): the maintenance block that checked the car in, i.e. the one the
+   * current `needs_service`/`in_service` came from. Null when the flag was set by
+   * hand, by a transport, or when the car is ok. Deleting or cancelling that block
+   * (and no other block the car is "Binnen" for) clears "Reparatie nodig". Server-owned.
+   */
+  maintenanceStatusBlockId: integer("maintenance_status_block_id"),
   
   // Mileage tracking for service scheduling
   currentMileage: integer("current_mileage"),
@@ -421,6 +428,8 @@ export const insertVehicleSchema = createInsertSchema(vehicles).omit({
   remarksConfirmedText: true,
   remarksConfirmedAt: true,
   remarksConfirmedBy: true,
+  // D6 - server-owned: written only by the workshop-flag writers, never by a request body.
+  maintenanceStatusBlockId: true,
   // No longer omit these fields so they can be set during insert/update
   // createdBy: true,
   // updatedBy: true,

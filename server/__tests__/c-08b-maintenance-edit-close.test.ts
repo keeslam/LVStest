@@ -15,8 +15,8 @@
  *   - a still planned block (`booked`) may go straight to `completed`
  *     (`booked -> completed` is not a rental transition, but a block is not a
  *     rental), and a block arriving early is not asked B-16's pickup question;
- *   - deleting or cancelling a block does NOT clear the flag (owner question
- *     still open; asserted so nobody "fixes" it here by accident).
+ *   - (D6, besluiten B-41) deleting or cancelling the block that checked the car in
+ *     frees it (the old "does NOT clear the flag" assertion was reversed by the owner).
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { eq } from "drizzle-orm";
@@ -199,6 +199,21 @@ describe("rules that must stay as they are", () => {
       expect(jump.body.code).toBe("INVALID_STATUS_TRANSITION");
     }
     expect((await blockRow(rental.id)).status).toBe("booked");
+  });
+
+  it("DELETE of the block that checked the car in frees it (D6; was: the flag stayed)", async () => {
+    const vehicle = await createFixtureVehicle();
+    const id = await planBlock(vehicle.id, today);
+    const checkIn = await admin.patch(`/api/vehicles/${vehicle.id}/maintenance-status`).send({ status: "in_service", blockId: id });
+    expect(checkIn.status).toBe(200);
+    expect((await vehicleRow(vehicle.id)).availabilityStatus).toBe("needs_fixing");
+
+    const res = await admin.delete(`/api/reservations/${id}`);
+    expect([200, 204]).toContain(res.status);
+
+    const car = await vehicleRow(vehicle.id);
+    expect(car.availabilityStatus).toBe("available");
+    expect(car.maintenanceStatus).toBe("ok");
   });
 
   it("a planned block covering today gives 'scheduled', not needs_fixing (D5), and deleting it frees the car", async () => {

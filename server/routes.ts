@@ -105,6 +105,8 @@ import {
   PickupBeforeStartError,
   selectMaintenanceBlocksToClose,
   maintenanceBlockJustClosed,
+  maintenanceBlockJustCancelled,
+  isCheckedInBlockMaintenanceStatus,
   type HandoverOverride,
 } from "./services/lifecycle";
 import { currentRenterReservation } from "./services/vehicle-notification-recipients";
@@ -1604,6 +1606,15 @@ export async function registerRoutes(app: Express): Promise<void> {
           vehicleData.maintenanceStatus = 'ok';
           vehicleData.maintenanceNote = null;
         }
+        // D6: a flag set (or lifted) by hand belongs to nobody's maintenance block;
+        // deleting a block must never clear it.
+        if (newStatus === 'needs_fixing' || newStatus === 'available') {
+          (vehicleData as Record<string, unknown>).maintenanceStatusBlockId = null;
+        }
+      }
+      // D6: an explicit workshop value in the body is a hand write too.
+      if ('maintenanceStatus' in vehicleData) {
+        (vehicleData as Record<string, unknown>).maintenanceStatusBlockId = null;
       }
       
       // The registration tracking fields no longer need to be "preserved": a
@@ -1703,6 +1714,12 @@ export async function registerRoutes(app: Express): Promise<void> {
           updatedBy: (req.user as any)?.username ?? null,
         } as any);
         if (updatedBlock) void onMaintenanceBlockChanged(block as any, updatedBlock);
+      }
+
+      // D6 (B-41): "Binnen melden" names the block that checked the car in; deleting
+      // or cancelling exactly that block later frees the car again.
+      if (status !== 'ok' && blockId != null && openBlocks.some((b) => b.id === blockId)) {
+        await storage.setMaintenanceStatusBlock(id, blockId);
       }
 
       // WAVE 13 item 5 — and only now is the derivation right. It ran once
@@ -4116,7 +4133,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         void onMaintenanceBlockChanged(maintBefore ?? null, updatedMaintenance);
         // Sub-project C, Task 8: "Uit" must free the car like every other writer
         // that finishes a block. Before the early return below, which skips the sweep.
-        await freeVehicleWhenBlockClosed(maintBefore, updatedMaintenance);
+        await syncVehicleWithBlockChange(maintBefore, updatedMaintenance);
 
         if (customerConflicts.length > 0) {
           return res.status(200).json({
@@ -4319,9 +4336,9 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
-  async function freeVehicleWhenBlockClosed(
-    before: Parameters<typeof maintenanceBlockJustClosed>[0] & { vehicleId?: number | null },
-    after: Parameters<typeof maintenanceBlockJustClosed>[1] & { vehicleId?: number | null },
+  async function syncVehicleWithBlockChange(
+    before: Parameters<typeof maintenanceBlockJustClosed>[0] & { id?: number; vehicleId?: number | null },
+    after: Parameters<typeof maintenanceBlockJustClosed>[1] & { id?: number; vehicleId?: number | null },
   ): Promise<void> {
     if (!maintenanceBlockJustClosed(before, after)) return;
     // markVehicleForService(...,'ok') is the one owner of "the job is closed":
@@ -4348,6 +4365,27 @@ export async function registerRoutes(app: Express): Promise<void> {
    * this applies its answer to the patch: the start date moves to today and,
    * per **B-07**, the total follows from the same day count the booking form
    * uses. Throws `PickupBeforeStartError` (409) when nobody answered the
+    // D6: cancelling the block that checked the car in frees the car (same rule as DELETE).
+    if (maintenanceBlockJustCancelled(before, after) && after?.id != null) {
+      await storage.releaseVehicleFromRemovedBlock({ id: after.id, vehicleId: after.vehicleId ?? before?.vehicleId, type: after.type });
+      return;
+    }
+    // D6: the edit dialog's "Binnen" checks the car in without touching vehicles.maintenance_status.
+    // Record the block as the source of the flag, unless the car already carries a flag of someone
+    // else's (hand-set, transport, another block) - that stays theirs.
+    if (
+      after?.type === "maintenance_block" && after.id != null && after.vehicleId != null &&
+      isCheckedInBlockMaintenanceStatus(after.maintenanceStatus) &&
+      !isCheckedInBlockMaintenanceStatus(before?.maintenanceStatus)
+    ) {
+      const vehicle = await storage.getVehicle(after.vehicleId);
+      if (
+        vehicle && vehicle.maintenanceStatus === "ok" && vehicle.maintenanceStatusBlockId == null &&
+        vehicle.availabilityStatus !== "needs_fixing" && vehicle.availabilityStatus !== "not_for_rental"
+      ) {
+        await storage.setMaintenanceStatusBlock(after.vehicleId, after.id);
+      }
+    }
    * question.
    */
   async function applyPickupPeriodRule(
@@ -4613,6 +4651,10 @@ export async function registerRoutes(app: Express): Promise<void> {
       sendRouteError(res, error, "Failed to update reservation status");
     }
   });
+      // D6: cancelling the block that checked the car in frees the car.
+      if (maintenanceBlockJustCancelled(existingReservation, reservation)) {
+        await storage.releaseVehicleFromRemovedBlock(reservation);
+      }
 
   // Update reservation with damage check upload
   app.patch("/api/reservations/:id", hasPermission(UserPermission.MANAGE_RESERVATIONS), damageCheckUpload.single('damageCheckFile'), async (req: Request, res: Response) => {
@@ -4843,7 +4885,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       void onMaintenanceBlockChanged(existingReservationForDiff, reservation);
       // Sub-project C, Task 8: "Uit" must free the car like every other writer
       // that finishes a block (before the closing sweep, which cannot clear the flag).
-      await freeVehicleWhenBlockClosed(existingReservationForDiff, reservation);
+      await syncVehicleWithBlockChange(existingReservationForDiff, reservation);
 
       // BUG-127 — the vehicle follows the corrected return reading.
       if (mileageSync) {
@@ -5069,6 +5111,10 @@ export async function registerRoutes(app: Express): Promise<void> {
       
       // Validate required fields
       if (!spareVehicleId || !startDate) {
+        // D6: the block created here is the source of the workshop flag just written.
+        if (maintenanceStatus !== 'ok' && maintenanceStatus !== 'completed') {
+          await storage.setMaintenanceStatusBlock(reservation.vehicleId!, block.id);
+        }
         return res.status(400).json({ 
           message: "spareVehicleId and startDate are required" 
         });
@@ -6330,6 +6376,10 @@ export async function registerRoutes(app: Express): Promise<void> {
 
         // Broadcast real-time update to all connected clients
         realtimeEvents.reservations.deleted({ id });
+
+        // D6 (B-41): deleting the block that checked the car in frees the car -
+        // its "Reparatie nodig" came only from that block.
+        if (reservation.type === 'maintenance_block') await storage.releaseVehicleFromRemovedBlock(reservation);
 
         res.status(200).json({
           message: "Reservation deleted successfully",

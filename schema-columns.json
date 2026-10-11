@@ -7194,6 +7194,13 @@
         "default": null
       },
       {
+        "name": "maintenance_status_block_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
         "name": "current_mileage",
         "type": "integer",
         "notNull": false,

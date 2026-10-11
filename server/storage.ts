@@ -187,6 +187,10 @@ export interface IStorage {
   >;
   markVehicleForService(vehicleId: number, maintenanceStatus: string, maintenanceNote?: string): Promise<Vehicle | undefined>;
   createMaintenanceBlock(vehicleId: number, startDate: string, endDate?: string, customerId?: number | null): Promise<Reservation>;
+  /** D6: records which maintenance block the car's workshop flag came from (null clears it). */
+  setMaintenanceStatusBlock(vehicleId: number, blockId: number | null): Promise<void>;
+  /** D6: frees the car when the removed/cancelled block is the one that checked it in and no other block has it "Binnen" today. */
+  releaseVehicleFromRemovedBlock(block: { id: number; vehicleId?: number | null; type?: string | null }): Promise<boolean>;
   // OPT-015 - "de reparatie is klaar" as ONE transactional action.
   // B-37: the same transaction also writes the readings the workshop took (APK date,
   // mileage) and the APK file as a document, so a failure leaves none of it behind.

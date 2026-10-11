@@ -324,6 +324,25 @@ export function maintenanceBlockJustClosed(
   return afterStatus === "completed" || afterStatus === "returned" || !isOpenBlockMaintenanceStatus(after.maintenanceStatus);
 }
 
+/**
+ * D6 (besluiten B-41): true when a write cancelled a live maintenance block.
+ * A cancelled block no longer keeps the car in the workshop; whether the car is
+ * freed depends on `vehicles.maintenance_status_block_id` (see
+ * `DatabaseStorage.releaseVehicleFromRemovedBlock`).
+ */
+export function maintenanceBlockJustCancelled(
+  before: BlockCloseCheckRow | null | undefined,
+  after: BlockCloseCheckRow | null | undefined,
+): boolean {
+  if (!before || !after) return false;
+  if (before.type !== "maintenance_block" || after.type !== "maintenance_block") return false;
+  if (before.deletedAt) return false;
+  return (
+    normalizeReservationStatus(before.status) !== "cancelled" &&
+    normalizeReservationStatus(after.status) === "cancelled"
+  );
+}
+
 /** The shape both "terug uit onderhoud" paths hand to `selectMaintenanceBlocksToClose`. */
 export interface ClosableMaintenanceBlock {
   id: number;
