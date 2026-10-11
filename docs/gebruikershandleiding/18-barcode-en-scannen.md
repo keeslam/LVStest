@@ -301,13 +301,28 @@ klik je op **Afdrukken**.
 12 mm) drukt via Windows alleen staand af; een gewoon sleutellabel van 62 bij 29 mm kwam daardoor
 afgesneden uit de printer. Kies daarom bij **Labelsjabloon** de optie **DYMO-tape (labelmaker,
 staand)**. Er verschijnen dan **Tapebreedte** (9, 12 of 19 mm; standaard 12) en **Labellengte (mm)**
-(standaard 48, de lengte van het sleutellabel). De app maakt per label één pagina van 12 bij 48 mm
-en draait de inhoud zelf een kwartslag: de barcode loopt over de lengte van de tape, met daaronder
-het kenteken en **Hoofd** of **Reserve**. Kies in het afdrukvenster de DYMO-printer, papier 12 mm,
-staand, marges **Geen** en schaal **100%**; de melding zegt dat ook: *Kies daar de DYMO-printer,
-papier 12 mm, staand, marges Geen en schaal 100%.* De keuze en de maten worden op die pc onthouden,
-zodat de volgende keer meteen de tape voorstaat. Druk eerst één label af en leg het naast een oud
-label voordat je de hele kast doet.
+(standaard 48, de lengte van het sleutellabel), en daaronder **Uitvoer**. Daar kies je waar het
+label heen gaat:
+
+- **<naam van de labelmaker> (rechtstreeks via DYMO Connect)**, bijvoorbeeld *DYMO LabelManager
+  420P*: de app stuurt het label zelf naar de labelmaker, zonder afdrukvenster. Dat kan als op de pc
+  DYMO Connect draait; de regel eronder zegt *DYMO Connect gevonden: 1 labelmaker.* De labelmaker
+  snijdt elk label af. Na het sturen meldt de app **Naar de labelmaker gestuurd** — *1 label is naar
+  DYMO LabelManager 420P gestuurd.* Dit is de bedoelde weg aan de balie.
+- **Bestand .label (openen in DYMO Connect)**: de app maakt per label een bestand in het formaat van
+  DYMO (**Bestand gemaakt** — *sleutellabel-<kenteken>-<code>.label*). Open het in DYMO Connect en
+  druk daar af; handig op een pc zonder aangesloten labelmaker.
+- **Afdrukvenster van de browser**: de app maakt per label één pagina van 12 bij 48 mm en draait de
+  inhoud zelf een kwartslag. Kies in het afdrukvenster de DYMO-printer, papier 12 mm, staand, marges
+  **Geen** en schaal **100%**. Let op: de Windows-printer van de LabelManager 420P heeft als poort
+  *FILE:* en levert dan een .prn-bestand op in plaats van een label; gebruik voor de 420P daarom een van
+  de twee keuzes hierboven.
+
+Op het label staat de barcode over de lengte van de tape, met daarnaast het kenteken en **Hoofd** of
+**Reserve**. Staat er *DYMO Connect is niet gevonden op deze pc*, start dan DYMO Connect (of kies het
+bestand). De keuzes en de maten worden op die pc onthouden, zodat de volgende keer meteen de tape en
+de labelmaker voorstaan. Druk eerst één label af en leg het naast een oud label voordat je de hele
+kast doet.
 
 **Zelf bepalen wat er op de tape staat.** De keuze **DYMO-tape (labelmaker, staand)** heeft een vaste
 indeling. Wil je iets anders op het label (een bedrijfsnaam, een ander lettertype, het merk), maak dan
