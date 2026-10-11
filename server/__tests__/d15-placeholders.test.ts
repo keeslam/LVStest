@@ -135,6 +135,24 @@ describe("D15 - plekhouders per ontvanger", () => {
     expect(body).toContain(`Onderhoud=[${dutch(day(-1))}]`);
   }, 60_000);
 
+  it("klantgegevens komen in de html-versie ge-escaped en in de tekstversie letterlijk", async () => {
+    const c = await customerWith("D15html", "06-<b>7</b>");
+    await db.update(customers).set({ name: "Jan <i>&</i> Co" }).where(eq(customers.id, c.id));
+    const { body } = await withSmtpStub("ok", async (stub) => {
+      const res = await admin.post("/api/notifications/send").send({
+        template: "custom", customerIds: [c.id], customSubject: `${PREFIX} html ${Date.now()}`,
+        customMessage: "Naam=[{customerName}] Tel=[{customerPhone}]",
+      });
+      expect(res.status, JSON.stringify(res.body)).toBe(200);
+      return { body: decodeBody(stub.state.messages[0].raw) };
+    });
+    // html part: escaped, in the greeting and in the message
+    expect(body).toContain("Beste Jan &lt;i&gt;&amp;&lt;/i&gt; Co");
+    expect(body).toContain("Naam=[Jan &lt;i&gt;&amp;&lt;/i&gt; Co] Tel=[06-&lt;b&gt;7&lt;/b&gt;]");
+    // text part: as typed
+    expect(body).toContain("Naam=[Jan <i>&</i> Co] Tel=[06-<b>7</b>]");
+  }, 60_000);
+
   it("zonder reservering en zonder datum blijft alles leeg", async () => {
     const c = await customerWith("D15leeg", null);
     const { body } = await send({ customerIds: [c.id], category: "maintenance" });

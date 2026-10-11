@@ -24,10 +24,10 @@ import { getCompanyName } from '../services/company-name.js';
 // (no reservation, no phone, not a maintenance template), and a {{key}} nobody knows is dropped:
 // the customer never receives a placeholder as code.
 type PlaceholderData = Partial<Record<(typeof MESSAGE_PLACEHOLDER_KEYS)[number], string>>;
-function replacePlaceholders(text: string, data: PlaceholderData): string {
+function replacePlaceholders(text: string, data: PlaceholderData, transform?: (value: string) => string): string {
   const values: Record<string, string> = {};
   for (const key of MESSAGE_PLACEHOLDER_KEYS) values[key] = data[key] ?? '';
-  return fillPlaceholders(text, values, { unknown: 'blank' });
+  return fillPlaceholders(text, values, { unknown: 'blank', transform });
 }
 
 /** A yyyy-MM-dd (or timestamp) date as dd-mm-jjjj; empty when there is none. */
@@ -353,6 +353,8 @@ router.post('/send', async (req, res) => {
             // Replace placeholders in both subject and message
             const processedSubject = replacePlaceholders(customSubject, placeholderData);
             const processedMessage = replacePlaceholders(customMessage, placeholderData);
+            // The HTML half gets the values escaped: customer data (name, e-mail, phone) is typed by people.
+            const processedMessageHtml = replacePlaceholders(customMessage, placeholderData, escapeHtmlText);
             
             emailContent = getCustomMessageTemplate(
               placeholderData.customerName,
@@ -360,7 +362,8 @@ router.post('/send', async (req, res) => {
               processedMessage,
               customerLanguage,
               processedSubject,  // Pass the custom subject
-              senderName
+              senderName,
+              processedMessageHtml
             );
             break;
           default:

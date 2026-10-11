@@ -359,7 +359,8 @@
       "companyNameSaveButton": "Save company name",
       "companyNameSaved": "The company name has been saved.",
       "companyNameInvalid": "Enter a name of at most 100 characters, without line breaks.",
-      "companyNameSaveFailed": "The company name could not be saved."
+      "companyNameSaveFailed": "The company name could not be saved.",
+      "timeZoneInvalid": "That is not a time zone the app knows."
     },
     "notifications": {
       "reminderTimingTitle": "Reminder Timing",

@@ -31,12 +31,16 @@ import { GlobalDialogs } from "@/components/global-dialogs";
 import { InactivityPrompt } from "@/components/InactivityPrompt";
 import { ApkDateChangesDialog } from "@/components/vehicles/apk-date-changes-dialog";
 import { OfficeTimeZoneLoader } from "@/components/office-time-zone-loader";
+import { useOfficeTimeZone } from "@/lib/office-timezone";
 import { apiRequest } from "@/lib/queryClient";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PageLoading } from "@/components/ui/page-loading";
 
 function AppRoutes() {
   const { user, logoutMutation } = useAuth();
+  // D11: the routes render again when the office time zone is loaded or changed, so a screen that was
+  // drawn before the answer arrived does not stay on Europe/Amsterdam dates.
+  useOfficeTimeZone();
   // FIX-Q (BUG-201): the boundary sits inside the layout, so a page that
   // throws while rendering loses the page and keeps the shell. Navigating
   // away clears it — the location is the reset key.

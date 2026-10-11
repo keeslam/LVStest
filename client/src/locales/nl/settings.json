@@ -359,7 +359,8 @@
       "companyNameSaveButton": "Bedrijfsnaam opslaan",
       "companyNameSaved": "De bedrijfsnaam is opgeslagen.",
       "companyNameInvalid": "Vul een naam in van maximaal 100 tekens, zonder regeleinden.",
-      "companyNameSaveFailed": "De bedrijfsnaam kon niet worden opgeslagen."
+      "companyNameSaveFailed": "De bedrijfsnaam kon niet worden opgeslagen.",
+      "timeZoneInvalid": "Dit is geen tijdzone die de app kent."
     },
     "notifications": {
       "reminderTimingTitle": "Timing van herinneringen",

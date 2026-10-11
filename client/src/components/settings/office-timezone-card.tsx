@@ -18,9 +18,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
-import { describeApiError } from "@/lib/api-error";
+import { describeApiError, parseApiError } from "@/lib/api-error";
 import { setOfficeTimeZone, useOfficeTimeZone } from "@/lib/office-timezone";
 import {
+  INVALID_OFFICE_TIMEZONE_CODE,
   OFFICE_TIMEZONE_KEY,
   europeanTimeZones,
   isDaylightSavingTime,
@@ -84,9 +85,13 @@ export function OfficeTimeZoneCard() {
       });
     },
     onError: (error) => {
+      // By code, never by the server's English text.
+      const { code } = parseApiError(error);
       toast({
         title: t("common:status.error"),
-        description: describeApiError(error, undefined, t("settingsPage.business.timeZoneSaveFailed")),
+        description: code === INVALID_OFFICE_TIMEZONE_CODE
+          ? t("settingsPage.business.timeZoneInvalid")
+          : describeApiError(error, undefined, t("settingsPage.business.timeZoneSaveFailed")),
         variant: "destructive",
       });
     },

@@ -78,6 +78,21 @@ describe("OfficeTimeZoneCard", () => {
     await waitFor(() => expect(getOfficeTimeZone()).toBe("Europe/London"));
   });
 
+  it("vertaalt de foutcode INVALID_OFFICE_TIMEZONE in een Nederlandse zin (niet de Engelse servertekst)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/api/app-settings") && (init?.method ?? "GET") === "POST") {
+        return new Response(JSON.stringify({ message: "That is not a time zone", code: "INVALID_OFFICE_TIMEZONE" }), { status: 400, headers: { "Content-Type": "application/json" } });
+      }
+      return json(null);
+    }));
+    mount();
+    await userEvent.selectOptions(await screen.findByTestId("select-office-timezone"), "Europe/London");
+    await userEvent.click(screen.getByTestId("button-save-office-timezone"));
+    expect(await screen.findByText("Dit is geen tijdzone die de app kent.")).toBeInTheDocument();
+    expect(screen.queryByText(/That is not a time zone/)).not.toBeInTheDocument();
+  });
+
   it("houdt een opgeslagen zone buiten Europa in de lijst en selecteert hem", async () => {
     stored = "America/Curacao";
     mount();

@@ -12,6 +12,7 @@ const CACHE_TTL_MS = 60_000;
 let name = DEFAULT_COMPANY_NAME;
 let loadedAt = 0;
 let loading: Promise<string> | null = null;
+let reloadRequested = false;
 
 /** The company name; cheap and synchronous. */
 export function companyName(): string {
@@ -21,15 +22,23 @@ export function companyName(): string {
 
 /** Reads the setting now, replacing the cached value. Never rejects. */
 export function loadCompanyName(): Promise<string> {
-  if (loading) return loading;
+  // A call made while a read is running (a background reload that started just before a save)
+  // asks for one more read and resolves after it, so a save never gets the value from before it.
+  if (loading) {
+    reloadRequested = true;
+    return loading;
+  }
   loading = (async () => {
-    try {
-      const { storage } = await import("../storage");
-      name = companyNameFromSetting((await storage.getAppSettingByKey(COMPANY_NAME_KEY))?.value);
-    } catch (error) {
-      console.warn("company_name could not be read, keeping", name, error);
-    }
-    loadedAt = Date.now();
+    do {
+      reloadRequested = false;
+      try {
+        const { storage } = await import("../storage");
+        name = companyNameFromSetting((await storage.getAppSettingByKey(COMPANY_NAME_KEY))?.value);
+      } catch (error) {
+        console.warn("company_name could not be read, keeping", name, error);
+      }
+      loadedAt = Date.now();
+    } while (reloadRequested);
     return name;
   })().finally(() => { loading = null; });
   return loading;

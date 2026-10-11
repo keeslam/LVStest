@@ -13,6 +13,7 @@ import { formatDateNL, formatNumberNL } from "../utils/dutch-format";
 import { formatLicensePlate } from "../../shared/license-plate";
 import { officeTimeZone } from "./office-time";
 import { companyName } from "./company-name";
+import { COMPANY_NAME_KEY } from "../../shared/company-name";
 
 export const PORTAL_TEMPLATE = {
   INVITE: "portal_invite",
@@ -144,20 +145,34 @@ const legacyText = (text: string): string => text.split("{{companyName}}").join(
 
 export async function ensurePortalEmailTemplates(): Promise<void> {
   for (const t of DEFAULT_TEMPLATES) {
+    const [existing] = await db.select({ id: emailTemplates.id }).from(emailTemplates).where(eq(emailTemplates.name, t.name));
+    if (!existing) await db.insert(emailTemplates).values({ ...t, category: "portal", createdAt: new Date().toISOString() });
+  }
+  // D15: stored rows only follow the company name once somebody has set it. Until then the portal
+  // mails keep saying "Lam Groep"; the first save of the setting runs the same step (app-settings route).
+  if (await storage.getAppSettingByKey(COMPANY_NAME_KEY)) await migratePortalTemplatesToCompanyName();
+}
+
+/**
+ * D15: a stored portal template that still reads exactly like the old default (the literal
+ * "Lam Groep") is rewritten to `{{companyName}}`, so it follows the company name setting; a row
+ * staff edited is theirs and stays as it is. Idempotent. Returns (and logs) the number of rewritten rows.
+ */
+export async function migratePortalTemplatesToCompanyName(): Promise<number> {
+  let rewritten = 0;
+  for (const t of DEFAULT_TEMPLATES) {
     const [existing] = await db.select().from(emailTemplates).where(eq(emailTemplates.name, t.name));
-    if (!existing) {
-      await db.insert(emailTemplates).values({ ...t, category: "portal", createdAt: new Date().toISOString() });
-      continue;
-    }
-    // D15: a row that still reads exactly like the old default (the literal "Lam Groep") follows the
-    // company name setting from now on; a row staff edited is theirs and stays as it is.
+    if (!existing) continue;
     const patch: { subject?: string; content?: string } = {};
     if (t.subject.includes("{{companyName}}") && existing.subject === legacyText(t.subject)) patch.subject = t.subject;
     if (t.content.includes("{{companyName}}") && existing.content === legacyText(t.content)) patch.content = t.content;
     if (patch.subject !== undefined || patch.content !== undefined) {
       await db.update(emailTemplates).set(patch).where(eq(emailTemplates.id, existing.id));
+      rewritten += 1;
     }
   }
+  if (rewritten > 0) console.log(`📧 portal e-mail templates: ${rewritten} unedited template(s) now follow the company name setting`);
+  return rewritten;
 }
 
 /**

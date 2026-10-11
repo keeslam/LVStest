@@ -25,6 +25,7 @@ import { INVALID_OFFICE_TIMEZONE_CODE, OFFICE_TIMEZONE_KEY, isValidTimeZone } fr
 import { loadOfficeTimeZone } from "../services/office-time";
 import { COMPANY_NAME_KEY, INVALID_COMPANY_NAME_CODE, validCompanyName } from "../../shared/company-name";
 import { loadCompanyName } from "../services/company-name";
+import { migratePortalTemplatesToCompanyName } from "../services/portal-mail";
 
 // Moved verbatim out of server/routes.ts (registerRoutes) - see git history for context.
 export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
@@ -98,7 +99,13 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
   /** D11: a stored key the server keeps in memory is re-read at once, so the cache is empty after a save. */
   async function afterSettingWritten(key: unknown): Promise<void> {
     if (key === OFFICE_TIMEZONE_KEY) await loadOfficeTimeZone();
-    if (key === COMPANY_NAME_KEY) await loadCompanyName();
+    if (key === COMPANY_NAME_KEY) {
+      await loadCompanyName();
+      // The default sender name is built from it and cached with the e-mail configuration.
+      clearEmailConfigCache();
+      // First save of the name: unedited portal templates start to follow it (idempotent afterwards).
+      try { await migratePortalTemplatesToCompanyName(); } catch (error) { console.error("portal e-mail templates:", error); }
+    }
   }
 
   // Get all app settings

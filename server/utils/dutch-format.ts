@@ -73,7 +73,7 @@ export function formatLongDateNL(value: DateLike): string {
 function officeWallClock(value: DateLike): { date: Date; hh: string; mi: string } | null {
   const date = toDate(value);
   if (!date) return null;
-  if (typeof value === 'string' && /^d{4}-d{2}-d{2}$/.test(value.trim())) {
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
     return { date, hh: '00', mi: '00' };
   }
   const w = wallClockInZone(date, officeTimeZone());

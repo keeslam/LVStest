@@ -7,7 +7,7 @@
  * zomertijd) is het om 23:30 UTC nog dezelfde dag, terwijl Amsterdam dan al op
  * de volgende dag zit.
  */
-import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { appSettings } from "../../shared/schema";
@@ -140,5 +140,64 @@ describe("de fiscale CSV schrijft de beoordelingsdatum op de kantoorkalender", (
     expect(reportToCsv(report)).toContain(";22-06-2026\r\n");
     await save("America/Curacao");
     expect(reportToCsv(report)).toContain(";21-06-2026\r\n");
+  });
+});
+
+describe("fix round 1 - bare dates, expiry of the cache and a save during a reload", () => {
+  const withProcessZone = async (tz: string, fn: () => Promise<void> | void) => {
+    const previous = process.env.TZ;
+    process.env.TZ = tz;
+    try { await fn(); } finally {
+      if (previous === undefined) delete process.env.TZ; else process.env.TZ = previous;
+    }
+  };
+
+  it.each(["UTC", "Pacific/Auckland", "America/Los_Angeles"])(
+    "een kale datum houdt zijn dag en staat op 00:00, in elke kantoorzone en bij procestijdzone %s",
+    async (processZone) => {
+      await withProcessZone(processZone, async () => {
+        expect(formatDateTimeNL("2026-07-15")).toBe("15-07-2026 00:00");
+        expect(formatLongDateTimeNL("2026-07-15")).toBe("15 juli 2026 00:00");
+        await save("America/Curacao");
+        expect(formatDateTimeNL("2026-07-15")).toBe("15-07-2026 00:00");
+        expect(formatLongDateTimeNL("2026-07-15")).toBe("15 juli 2026 00:00");
+        await save("Europe/Amsterdam");
+        expect(formatDateTimeNL("2026-07-15")).toBe("15-07-2026 00:00");
+      });
+    },
+  );
+
+  it("na 60 seconden leest officeTimeZone() de instelling opnieuw (fake Date)", async () => {
+    await save("America/Curacao");
+    const row = await storage.getAppSettingByKey(KEY);
+    await storage.updateAppSetting(row!.id, { value: "Europe/London" as any });
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      vi.setSystemTime(Date.now() + 59_000);
+      expect(officeTimeZone()).toBe("America/Curacao"); // still inside the cache
+      vi.setSystemTime(Date.now() + 2_000); // 61 s after the load
+      expect(officeTimeZone()).toBe("America/Curacao"); // the stale value answers, the reload starts
+      expect(await loadOfficeTimeZone()).toBe("Europe/London"); // joins the reload
+      expect(officeTimeZone()).toBe("Europe/London");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("een opslag tijdens een lopende herlezing laat de cache niet op de oude waarde staan", async () => {
+    await save("Europe/Lisbon");
+    const row = await storage.getAppSettingByKey(KEY);
+    // The reload that is already running reads the old value slowly ...
+    const slowOld = vi.spyOn(storage, "getAppSettingByKey").mockImplementationOnce(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      return { ...row!, value: "Europe/Lisbon" as any };
+    });
+    const running = loadOfficeTimeZone();
+    // ... while the save has already stored the new one.
+    await db.update(appSettings).set({ value: "America/Curacao" as any }).where(eq(appSettings.key, KEY));
+    expect(await loadOfficeTimeZone()).toBe("America/Curacao");
+    await running;
+    expect(officeTimeZone()).toBe("America/Curacao");
+    slowOld.mockRestore();
   });
 });

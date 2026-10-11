@@ -32,6 +32,7 @@ let zone = DEFAULT_OFFICE_TIMEZONE;
 /** 0 = never loaded; the database is only consulted after the first explicit load. */
 let loadedAt = 0;
 let loading: Promise<string> | null = null;
+let reloadRequested = false;
 const events = new EventEmitter();
 // Six schedulers plus the pollers listen; the default of 10 is close enough to warn on a seventh.
 events.setMaxListeners(50);
@@ -42,24 +43,39 @@ export function officeTimeZone(): string {
   return zone;
 }
 
-/** Reads the setting from the database now, replacing the cached value. Never rejects. */
+async function readOnce(): Promise<void> {
+  let next = zone;
+  try {
+    // Imported here: storage pulls in the database, which this module must not need to be imported.
+    const { storage } = await import("../storage");
+    const row = await storage.getAppSettingByKey(OFFICE_TIMEZONE_KEY);
+    next = officeTimeZoneFromSetting(row?.value);
+  } catch (error) {
+    console.warn("office_timezone could not be read, keeping", zone, error);
+  }
+  loadedAt = Date.now();
+  if (next !== zone) {
+    zone = next;
+    events.emit(CHANGE_EVENT, zone);
+  }
+}
+
+/**
+ * Reads the setting from the database now, replacing the cached value. Never rejects.
+ * A call made while a read is already running (a background reload that started just before a
+ * save) asks for one more read after it, and resolves only after that one: the save's own
+ * `await` therefore never gets the value from before the save.
+ */
 export function loadOfficeTimeZone(): Promise<string> {
-  if (loading) return loading;
+  if (loading) {
+    reloadRequested = true;
+    return loading;
+  }
   loading = (async () => {
-    let next = zone;
-    try {
-      // Imported here: storage pulls in the database, which this module must not need to be imported.
-      const { storage } = await import("../storage");
-      const row = await storage.getAppSettingByKey(OFFICE_TIMEZONE_KEY);
-      next = officeTimeZoneFromSetting(row?.value);
-    } catch (error) {
-      console.warn("office_timezone could not be read, keeping", zone, error);
-    }
-    loadedAt = Date.now();
-    if (next !== zone) {
-      zone = next;
-      events.emit(CHANGE_EVENT, zone);
-    }
+    do {
+      reloadRequested = false;
+      await readOnce();
+    } while (reloadRequested);
     return zone;
   })().finally(() => { loading = null; });
   return loading;
