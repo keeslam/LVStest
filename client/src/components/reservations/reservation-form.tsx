@@ -10,11 +10,12 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest, invalidateByPrefix, invalidateRelatedQueries } from "@/lib/queryClient";
 import { RequiresPermission } from "@/components/ui/requires-permission";
 import { ConfirmDeleteReservationDialog } from "@/components/reservations/delete-reservation-confirm";
+import { CancelReservationDialog } from "@/components/reservations/cancel-reservation-dialog";
 import {
-  cancelRightFor, isPickedUpRightRefusal, pickedUpRefusalOf, type PickedUpFacts,
+  cancelRightFor, isPickedUpRightRefusal, pickedUpRefusalOf,
 } from "@/components/reservations/picked-up-cancellation";
-import { PICKED_UP_CODES } from "@shared/picked-up-cancellation";
 import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import { useLocation } from "wouter";
 import { insertReservationSchemaBase } from "@shared/schema";
 import type { BookingWarning } from "@shared/booking-warnings";
@@ -73,11 +74,11 @@ import { format, parseISO, differenceInDays } from "date-fns";
 import { suggestEndDate } from "@/lib/suggest-end-date";
 import { Customer, Vehicle, Reservation, Document, Driver, UserPermission, type InteractiveDamageCheck } from "@shared/schema";
 import { useHasPermission } from "@/hooks/use-has-permission";
-import { PlusCircle, FileCheck, Upload, Check, X, Edit, FileText, Eye, ClipboardCheck, AlertTriangle } from "lucide-react";
+import { PlusCircle, FileCheck, Upload, Check, X, Edit, FileText, Eye, ClipboardCheck, AlertTriangle, XCircle } from "lucide-react";
 import { ReadonlyVehicleDisplay } from "@/components/ui/readonly-vehicle-display";
 import { DriverDialog } from "@/components/customers/driver-dialog";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
-import { PickupDialog, ReturnDialog } from "@/components/reservations/pickup-return-dialogs";
+import { PickupDialog } from "@/components/reservations/pickup-return-dialogs";
 import { VehicleRemarksWarningDialog } from "@/components/vehicles/vehicle-remarks-warning-dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { officeToday } from "@/lib/office-date";
@@ -220,8 +221,12 @@ interface ReservationFormProps {
    */
   onDirtyChange?: (isDirty: boolean) => void;
   onPickupReturnDialogChange?: (isOpen: boolean) => void;
+  /**
+   * D3 (besluiten B-41): the form has no status field any more, so a handover starts only from
+   * "Nu ophalen" after a new reservation was saved. A parent that hosts its own PickupDialog (the
+   * add dialog) takes the reservation here; without it the form opens the dialog itself.
+   */
   onTriggerPickupDialog?: (reservation: Reservation) => void;
-  onTriggerReturnDialog?: (reservation: Reservation) => void;
 }
 
 export function ReservationForm({ 
@@ -236,7 +241,6 @@ export function ReservationForm({
   onDirtyChange,
   onPickupReturnDialogChange,
   onTriggerPickupDialog,
-  onTriggerReturnDialog
 }: ReservationFormProps) {
   const { t } = useTranslation("reservations");
   const { toast } = useToast();
@@ -282,7 +286,8 @@ export function ReservationForm({
   const [customerEditDialogOpen, setCustomerEditDialogOpen] = useState(false);
   const [damageFile, setDamageFile] = useState<File | null>(null);
   const [isDragActive, setIsDragActive] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState<string>(initialData?.status || "booked");
+  // D3: the status is shown, never chosen, in this form; it only decides which fields are offered.
+  const currentStatus: string = initialData?.status || "booked";
   const [departureMileage, setDepartureMileage] = useState<number | undefined>(
     initialData?.vehicle?.departureMileage || undefined
   );
@@ -320,17 +325,15 @@ export function ReservationForm({
   const [processingOverdue, setProcessingOverdue] = useState<number | null>(null);
   // B-33: the overdue (picked-up) rental whose delete confirmation is open.
   const [overdueToDelete, setOverdueToDelete] = useState<Reservation | null>(null);
-  // B-33: the edit form's "Geannuleerd" on a picked-up rental - the server asked for the
-  // warning first (409); what the person saw and the data to send again once they tick.
-  const [pickedUpCancel, setPickedUpCancel] = useState<{ facts: PickedUpFacts; data: z.infer<typeof formSchema> } | null>(null);
-  
-  // Pickup/Return dialog workflow states - when user sets status to picked_up/returned, 
-  // we save the reservation first and then open the appropriate dialog
-  // NOTE: Using ref instead of state to avoid race condition where mutation's onSuccess
-  // runs before React applies the state update
-  const pendingStatusChangeRef = useRef<"picked_up" | "returned" | null>(null);
+  // D3: cancelling from the edit form opens the cascade-aware cancel dialog (PATCH /:id/status,
+  // with the picked-up warning of B-33); the form itself never writes a status.
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const canStartPickup = useHasPermission(UserPermission.MANAGE_RESERVATIONS);
+
+  // "Nu ophalen" after a new reservation was saved: the saved row, and the local PickupDialog
+  // used when no parent hosts one.
+  const [createdReservation, setCreatedReservation] = useState<Reservation | null>(null);
   const [pickupDialogOpen, setPickupDialogOpen] = useState(false);
-  const [returnDialogOpen, setReturnDialogOpen] = useState(false);
   const [pendingDialogReservation, setPendingDialogReservation] = useState<Reservation | null>(null);
   
   // Vehicle remarks warning state - show warning when selecting a vehicle with remarks
@@ -466,7 +469,6 @@ export function ReservationForm({
   const vehicleIdWatch = form.watch("vehicleId");
   const customerIdWatch = form.watch("customerId");
   const driverIdWatch = form.watch("driverId");
-  const statusWatch = form.watch("status");
   
   // Fetch drivers for the selected customer (after watches are declared)
   const { data: drivers, isLoading: isLoadingDrivers, refetch: refetchDrivers } = useQuery<Driver[]>({
@@ -648,14 +650,6 @@ export function ReservationForm({
   // the message, before the employee saves.
   const [maintenanceWarnings, setMaintenanceWarnings] = useState<BookingWarning[]>([]);
   
-  // Watch for status changes
-  useEffect(() => {
-    // Update currentStatus when status changes in the form
-    if (statusWatch) {
-      setCurrentStatus(statusWatch);
-    }
-  }, [statusWatch]);
-
   // Sync pickup/return data when initialData changes (e.g., after pickup dialog)
   useEffect(() => {
     if (initialData) {
@@ -1059,25 +1053,13 @@ export function ReservationForm({
               throw error;
             }
             
-            // Sub-project C (B-33): cancelling a picked-up rental from the edit form. The
-            // server asks for the warning first (409) or refuses outright (403); carry the
-            // stable code so onError can branch on it.
-            if (errorData.code === PICKED_UP_CODES.CONFIRMATION_REQUIRED || errorData.code === PICKED_UP_CODES.RIGHT_REQUIRED) {
-              const refusal = new Error(errorData.message || errorMessage) as any;
-              refusal.code = errorData.code;
-              refusal.actualPickupDate = errorData.actualPickupDate;
-              refusal.contractNumber = errorData.contractNumber;
-              refusal.isPickedUpRefusal = true;
-              throw refusal;
-            }
-
             errorMessage = errorData.message || errorMessage;
           } else {
             errorMessage = `${errorMessage}: ${response.status} ${response.statusText}`;
           }
         } catch (parseError: any) {
           // If this is our overdue error, rethrow it
-          if (parseError.isOverdueError || parseError.isPickedUpRefusal) {
+          if (parseError.isOverdueError) {
             throw parseError;
           }
           // If we can't parse the error response, use the status text
@@ -1115,77 +1097,40 @@ export function ReservationForm({
       
       
       
-      // Check if we need to trigger pickup/return dialog (using ref for immediate access)
-      const pendingStatusChange = pendingStatusChangeRef.current;
-      console.log('🔍 Checking pendingStatusChange:', pendingStatusChange, 'data.id:', data?.id);
-      if (pendingStatusChange && data && data.id) {
-        // Prepare the reservation data for the dialog
-        const reservationForDialog: Reservation = {
+      // D3: "Nu ophalen" is the one way into a handover from this form. Where the form stays open
+      // (no onSuccess) the success box below carries the button; a dialog that closes on success
+      // (the add dialog, which hosts its own PickupDialog) gets it as the action of the toast.
+      let reservationForPickup: Reservation | null = null;
+      if (!editMode && data && data.id) {
+        reservationForPickup = {
           ...data,
           vehicle: selectedVehicle || undefined,
           customer: selectedCustomer || undefined,
         };
-        
-        // Reset the pending status change ref first
-        pendingStatusChangeRef.current = null;
-        
-        if (pendingStatusChange === "picked_up") {
-          // Check if parent wants to handle pickup dialog (for nested dialog cases)
-          if (onTriggerPickupDialog) {
-            console.log('🔓 Delegating pickup dialog to parent');
-            toast({
-              title: t('form.toasts.openingPickupDialogTitle'),
-              description: t('form.toasts.openingPickupDialogDescription'),
-            });
-            onTriggerPickupDialog(reservationForDialog);
-            return; // Parent will handle the dialog
-          }
-
-          // Fallback to local dialog management
-          setPendingDialogReservation(reservationForDialog);
-          console.log('🔓 Notifying parent: pickup dialog opening');
-          onPickupReturnDialogChange?.(true);
-
-          toast({
-            title: t('form.toasts.openingPickupDialogTitle'),
-            description: t('form.toasts.openingPickupDialogDescription'),
-          });
-          setPickupDialogOpen(true);
-          console.log('✅ pickupDialogOpen set to true');
-        } else if (pendingStatusChange === "returned") {
-          // Check if parent wants to handle return dialog
-          if (onTriggerReturnDialog) {
-            console.log('🔓 Delegating return dialog to parent');
-            toast({
-              title: t('form.toasts.openingReturnDialogTitle'),
-              description: t('form.toasts.openingReturnDialogDescription'),
-            });
-            onTriggerReturnDialog(reservationForDialog);
-            return; // Parent will handle the dialog
-          }
-
-          // Fallback to local dialog management
-          setPendingDialogReservation(reservationForDialog);
-          console.log('🔓 Notifying parent: return dialog opening');
-          onPickupReturnDialogChange?.(true);
-
-          toast({
-            title: t('form.toasts.openingReturnDialogTitle'),
-            description: t('form.toasts.openingReturnDialogDescription'),
-          });
-          setReturnDialogOpen(true);
-          console.log('✅ returnDialogOpen set to true');
-        }
-
-        return; // Don't run the onSuccess callback or navigate yet - dialog will handle it
+        setCreatedReservation(reservationForPickup);
       }
+      const pickupNowForToast = reservationForPickup;
 
-      // Show success message (only if no dialog was triggered)
+      // Show success message
       toast({
         title: editMode ? t('form.toasts.reservationUpdatedTitle') : t('form.toasts.reservationCreatedTitle'),
         description: editMode
           ? t('form.toasts.reservationUpdatedDescription', { brand: selectedVehicle?.brand, model: selectedVehicle?.model })
           : t('form.toasts.reservationCreatedDescription', { brand: selectedVehicle?.brand, model: selectedVehicle?.model }),
+        ...(pickupNowForToast && onSuccess && onTriggerPickupDialog && canStartPickup
+          ? {
+              duration: 12000,
+              action: (
+                <ToastAction
+                  altText={t('form.pickupNowButton')}
+                  data-testid="button-pickup-now"
+                  onClick={() => onTriggerPickupDialog(pickupNowForToast)}
+                >
+                  {t('form.pickupNowButton')}
+                </ToastAction>
+              ),
+            }
+          : {}),
       });
       
       invalidateRelatedQueries('reservations');
@@ -1206,22 +1151,7 @@ export function ReservationForm({
         }
       }
     },
-    onError: (error: any, variables) => {
-      // B-33: 409 is a question, not a failure - show the warning with the server's facts.
-      const pickedUpFacts = pickedUpRefusalOf(error);
-      if (pickedUpFacts) {
-        setPickedUpCancel({ facts: pickedUpFacts, data: variables });
-        return;
-      }
-      if (isPickedUpRightRefusal(error)) {
-        toast({
-          title: t('form.errors.genericTitle'),
-          description: t('pickedUpWarning.rightRequired'),
-          variant: "destructive",
-        });
-        return;
-      }
-
+    onError: (error: any) => {
       // Check if this is an overdue error from the backend
       if (error.isOverdueError && error.overdueReservations) {
         setOverdueReservations(error.overdueReservations);
@@ -1272,40 +1202,21 @@ export function ReservationForm({
       // Store the form data in case backend returns an overdue error
       setPendingFormData(data);
       
-      // Check if user wants to set status to picked_up or returned
-      // These require the proper dialogs for data entry (contract number, mileage, fuel, damage check)
-      const intendedStatus = data.status || "booked";
+      // D3 (besluiten B-41): the status is never sent from this form. A new reservation is
+      // always Geboekt (the server forces it) and an existing one changes only through
+      // Ophalen, Inleveren, Annuleren and Terugdraaien. A legacy value kept in the loaded row
+      // would be refused by PATCH /:id as a status change.
       const currentReservationStatus = initialData?.status || "booked";
-      
-      // Determine if we need to trigger a pickup/return dialog after save
-      let statusForSave = intendedStatus;
-      let triggerDialog: "picked_up" | "returned" | null = null;
-      
-      if (intendedStatus === "picked_up" && currentReservationStatus !== "picked_up") {
-        // User wants picked_up but current status is not picked_up
-        // Save as "booked" first, then trigger pickup dialog
-        statusForSave = editMode ? currentReservationStatus : "booked";
-        triggerDialog = "picked_up";
-      } else if (intendedStatus === "returned" && currentReservationStatus !== "returned" && currentReservationStatus !== "completed") {
-        // User wants returned but current status is not returned or completed
-        // Save current status first, then trigger return dialog
-        statusForSave = editMode ? currentReservationStatus : "booked";
-        triggerDialog = "returned";
-      }
-      
-      // Store the pending status change for onSuccess to handle (using ref for immediate access)
-      console.log('🔧 Setting pendingStatusChangeRef to:', triggerDialog);
-      pendingStatusChangeRef.current = triggerDialog;
-      
+
       // Prepare submission data for both edit and create modes
       // IMPORTANT: Use null (not undefined) for open-ended rentals
       // undefined values are omitted from JSON, so backend wouldn't receive the update
       const submissionData: any = {
         ...data,
         endDate: data.isOpenEnded ? null : (data.endDate || null),
-        status: statusForSave,
       };
       delete submissionData.isOpenEnded;
+      delete submissionData.status;
       // Contract number is normally assigned during pickup; it's only editable
       // in this form when editing an already picked-up/completed reservation.
       const allowContractEdit =
@@ -2196,43 +2107,6 @@ export function ReservationForm({
             <div className="space-y-6">
               <div className="text-lg font-medium">{t('form.section3Title')}</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Status - Made more prominent */}
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-medium">{t('form.reservationStatusLabel')}</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="h-12 text-base">
-                            <SelectValue placeholder={t('form.selectStatusPlaceholder')} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="booked">{t('form.statuses.booked')}</SelectItem>
-                          <SelectItem value="picked_up">{t('form.statuses.pickedUp')}</SelectItem>
-                          {editMode && (
-                            <>
-                              <SelectItem value="returned">{t('form.statuses.returned')}</SelectItem>
-                              <SelectItem value="completed">{t('form.statuses.completed')}</SelectItem>
-                              <SelectItem value="cancelled">{t('form.statuses.cancelled')}</SelectItem>
-                            </>
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        {t('form.statusUpdateHint')}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
                 {/* Contract Number - editable when reservation has been picked up */}
                 {editMode && (currentStatus === "picked_up" || currentStatus === "completed") && (
                   <FormField
@@ -2255,98 +2129,6 @@ export function ReservationForm({
                           {t('form.contractNumberHint')}
                         </FormDescription>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-
-                {/* Mileage When Returned - only when status is completed */}
-                {currentStatus === "completed" && (
-                  <div className="col-span-1">
-                    <div className="flex flex-col space-y-1.5">
-                      <label htmlFor="departureMileage" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                        {t('form.mileageWhenReturnedLabel')}
-                      </label>
-                      <input
-                        id="departureMileage"
-                        type="number"
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        placeholder={t('form.mileageWhenReturnedPlaceholder')}
-                        value={departureMileage || ""}
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value) || undefined;
-                          setDepartureMileage(value);
-                          form.setValue("departureMileage", value as any);
-                        }}
-                      />
-                      <p className="text-[0.8rem] text-muted-foreground">
-                        {t('form.mileageWhenReturnedHint')}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                
-                {currentStatus === "completed" && (
-                  <FormField
-                    control={form.control}
-                    name="fuelLevelReturn"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('form.fuelLevelAtReturnLabel')}</FormLabel>
-                        <Select
-                          onValueChange={(value) => {
-                            const newValue = value === "not_recorded" ? undefined : value;
-                            field.onChange(newValue);
-                            setFuelLevelReturn(newValue);
-                          }}
-                          value={field.value || "not_recorded"}
-                        >
-                          <FormControl>
-                            <SelectTrigger data-testid="select-fuel-level-return">
-                              <SelectValue placeholder={t('form.selectFuelLevelPlaceholder')} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="not_recorded">{t('form.notRecordedOption')}</SelectItem>
-                            <SelectItem value="Empty">{t('pickupReturn.common.fuelEmpty')}</SelectItem>
-                            <SelectItem value="1/4">1/4</SelectItem>
-                            <SelectItem value="1/2">1/2</SelectItem>
-                            <SelectItem value="3/4">3/4</SelectItem>
-                            <SelectItem value="Full">{t('pickupReturn.common.fuelFull')}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          {t('form.fuelLevelReturnHint')}
-                        </FormDescription>
-                      </FormItem>
-                    )}
-                  />
-                )}
-
-                {currentStatus === "completed" && (
-                  <FormField
-                    control={form.control}
-                    name="fuelCost"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('form.fuelCostLabel')}</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            {...field}
-                            value={field.value || ""}
-                            onChange={(e) => {
-                              field.onChange(e.target.value === "" ? undefined : e.target.value);
-                              setFuelCost(e.target.value || undefined);
-                            }}
-                            data-testid="input-fuel-cost"
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          {t('form.fuelCostHint')}
-                        </FormDescription>
                       </FormItem>
                     )}
                   />
@@ -2814,6 +2596,28 @@ export function ReservationForm({
                     <p className="text-sm text-green-700 mt-1">
                       {t('form.reservationCreatedSuccessDescription')}
                     </p>
+                    {/* D3: "boeken en direct meegeven" stays one click away. */}
+                    {createdReservation && (
+                      <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="mt-3"
+                          onClick={() => {
+                            if (onTriggerPickupDialog) {
+                              onTriggerPickupDialog(createdReservation);
+                              return;
+                            }
+                            setPendingDialogReservation(createdReservation);
+                            onPickupReturnDialogChange?.(true);
+                            setPickupDialogOpen(true);
+                          }}
+                          data-testid="button-pickup-now"
+                        >
+                          {t('form.pickupNowButton')}
+                        </Button>
+                      </RequiresPermission>
+                    )}
                   </div>
                 </div>
               </div>
@@ -2823,6 +2627,21 @@ export function ReservationForm({
             <div className="flex flex-col gap-4">
 
               <div className="flex justify-end gap-4">
+                {/* D3: cancelling is its own action (cascade questions, picked-up warning), not a status choice. */}
+                {editMode && initialData?.id && currentStatus !== "cancelled" && currentStatus !== "completed" && (
+                  <RequiresPermission allOf={cancelRightFor(initialData)}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mr-auto text-red-600 border-red-300 hover:bg-red-50"
+                      onClick={() => setCancelDialogOpen(true)}
+                      data-testid="button-cancel-reservation-form"
+                    >
+                      <XCircle className="mr-2 h-4 w-4" />
+                      {t('cancelDialog.title')}
+                    </Button>
+                  </RequiresPermission>
+                )}
                 <Button
                   type="button"
                   variant="outline"
@@ -3070,20 +2889,17 @@ export function ReservationForm({
       }}
     />
 
-    {/* B-33: the edit form cancels a picked-up rental: the same warning and tick as the cancel dialog */}
-    <ConfirmDeleteReservationDialog
-      open={pickedUpCancel !== null}
-      onOpenChange={(next) => { if (!next) setPickedUpCancel(null); }}
-      reservation={pickedUpCancel ? { status: 'picked_up', type: 'standard', ...pickedUpCancel.facts } : null}
-      title={t('cancelDialog.title')}
-      description={t('cancelDialog.description', { id: initialData?.id })}
-      confirmLabel={t('cancelDialog.confirmButton')}
-      onConfirm={({ confirmPickedUp }) => {
-        if (pickedUpCancel && confirmPickedUp) createReservationMutation.mutate({ ...pickedUpCancel.data, confirmPickedUp: true } as any);
-      }}
-    />
+    {/* D3: the edit form's Annuleren - the same cascade-aware dialog as the reservation view */}
+    {editMode && initialData?.id ? (
+      <CancelReservationDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        reservationId={initialData.id}
+        onSuccess={() => { onSuccess?.({ ...initialData, status: "cancelled" } as Reservation); }}
+      />
+    ) : null}
 
-    {/* Pickup Dialog - triggered when status is set to picked_up */}
+    {/* Pickup Dialog - opened by "Nu ophalen" when no parent hosts one */}
     {pendingDialogReservation && (
       <PickupDialog
         open={pickupDialogOpen}
@@ -3092,9 +2908,6 @@ export function ReservationForm({
           if (!open) {
             // Dialog was closed/cancelled - reset states
             setPendingDialogReservation(null);
-            // Update form status back to booked since pickup was cancelled
-            form.setValue("status", initialData?.status || "booked");
-            setCurrentStatus(initialData?.status || "booked");
             // Notify parent that pickup/return dialog is closed
             onPickupReturnDialogChange?.(false);
           }
@@ -3106,69 +2919,10 @@ export function ReservationForm({
           // Notify parent that pickup/return dialog is closed
           onPickupReturnDialogChange?.(false);
           
-          // Update form status to picked_up
-          form.setValue("status", "picked_up");
-          setCurrentStatus("picked_up");
-          
           // Show success message
           toast({
             title: t('form.toasts.vehiclePickedUpTitle'),
             description: t('form.toasts.vehiclePickedUpDescription'),
-          });
-          
-          // Invalidate queries
-          await invalidateByPrefix('/api/reservations');
-          await invalidateByPrefix('/api/vehicles');
-          
-          // Fetch updated reservation to pass to callback
-          if (onSuccess && pendingDialogReservation) {
-            try {
-              const response = await fetch(`/api/reservations/${pendingDialogReservation.id}`, { credentials: 'include' });
-              if (response.ok) {
-                const updatedReservation = await response.json();
-                onSuccess(updatedReservation);
-              }
-            } catch (e) {
-              console.error('Failed to fetch updated reservation:', e);
-            }
-          }
-          
-          setPendingDialogReservation(null);
-        }}
-      />
-    )}
-    
-    {/* Return Dialog - triggered when status is set to returned */}
-    {pendingDialogReservation && (
-      <ReturnDialog
-        open={returnDialogOpen}
-        onOpenChange={(open) => {
-          setReturnDialogOpen(open);
-          if (!open) {
-            // Dialog was closed/cancelled - reset states
-            setPendingDialogReservation(null);
-            // Update form status back to picked_up since return was cancelled
-            form.setValue("status", initialData?.status || "picked_up");
-            setCurrentStatus(initialData?.status || "picked_up");
-            // Notify parent that pickup/return dialog is closed
-            onPickupReturnDialogChange?.(false);
-          }
-        }}
-        reservation={pendingDialogReservation}
-        onSuccess={async () => {
-          // Return completed successfully
-          setReturnDialogOpen(false);
-          // Notify parent that pickup/return dialog is closed
-          onPickupReturnDialogChange?.(false);
-          
-          // Update form status to returned
-          form.setValue("status", "returned");
-          setCurrentStatus("returned");
-          
-          // Show success message
-          toast({
-            title: t('form.toasts.vehicleReturnedTitle'),
-            description: t('form.toasts.vehicleReturnedDescription'),
           });
           
           // Invalidate queries
