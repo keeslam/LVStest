@@ -41,6 +41,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox";
 import { Loader2, Calendar, AlertTriangle, Wrench, Clock, Car, Filter } from "lucide-react";
@@ -104,6 +105,9 @@ export function ScheduleMaintenanceDialog({
   
   // State for spare vehicle selection
   const [showSpareDialog, setShowSpareDialog] = useState(false);
+  // D4 (besluiten B-41): closing the spare dialog any way but the confirm button
+  // undoes the planning; ask first.
+  const [abortPlanningOpen, setAbortPlanningOpen] = useState(false);
   const [conflictingReservations, setConflictingReservations] = useState<any[]>([]);
   const [maintenanceData, setMaintenanceData] = useState<any>(null);
   const [spareVehicleAssignments, setSpareVehicleAssignments] = useState<{[reservationId: number]: number | 'tbd' | 'customer_arranging' | 'selecting'}>({});
@@ -668,6 +672,48 @@ export function ScheduleMaintenanceDialog({
       });
     },
   });
+
+  // D4: the block exists already (the spare dialog opens after it was saved), so
+  // cancelling the spare dialog has to take it away again. Server first
+  // (POST abort-planning removes a fresh, empty planning for good); when it says
+  // PLANNING_NOT_ABORTABLE the normal delete (recycle bin) is the fallback.
+  const abortPlanningMutation = useMutation({
+    mutationFn: async (): Promise<"aborted" | "deleted"> => {
+      const blockId = maintenanceData?.maintenanceId;
+      if (!blockId) throw new Error(t('scheduleDialog.abortPlanningFailed'));
+      try {
+        await apiRequest("POST", `/api/reservations/${blockId}/abort-planning`, {});
+        return "aborted";
+      } catch (error: any) {
+        if (error?.code !== "PLANNING_NOT_ABORTABLE") throw error;
+        await apiRequest("DELETE", `/api/reservations/${blockId}`);
+        return "deleted";
+      }
+    },
+    onSuccess: (outcome) => {
+      toast(outcome === "aborted"
+        ? { title: t('scheduleDialog.planningAbortedTitle'), description: t('scheduleDialog.planningAbortedDescription') }
+        : { title: t('scheduleDialog.planningRemovedTitle'), description: t('scheduleDialog.planningRemovedDescription') });
+      // The conflict list stays until the next open (A-7-1).
+      setShowSpareDialog(false);
+      invalidateRelatedQueries('reservations');
+      invalidateRelatedQueries('vehicles');
+      invalidateByPrefix('/api/placeholder-reservations');
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('scheduleDialog.errorTitle'),
+        description: describeApiError(error, undefined, t('scheduleDialog.abortPlanningFailed')),
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Annuleren, Escape, the cross and a click outside all land here.
+  const requestAbortPlanning = () => {
+    if (createMaintenanceWithSpareMutation.isPending || abortPlanningMutation.isPending) return;
+    setAbortPlanningOpen(true);
+  };
 
   const handleSubmit = (data: ScheduleMaintenanceFormData) => {
     console.log('Form data:', data);
@@ -1352,7 +1398,10 @@ export function ScheduleMaintenanceDialog({
     </Dialog>
 
     {/* Spare Vehicle Selection Dialog */}
-    <Dialog open={showSpareDialog && conflictingReservations.length > 0} onOpenChange={setShowSpareDialog}>
+    <Dialog
+      open={showSpareDialog && conflictingReservations.length > 0}
+      onOpenChange={(next) => { if (!next) requestAbortPlanning(); }}
+    >
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -1537,11 +1586,9 @@ export function ScheduleMaintenanceDialog({
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={() => {
-              // See onSuccess: the list stays until the next open (A-7-1).
-              setShowSpareDialog(false);
-            }}
-            disabled={createMaintenanceWithSpareMutation.isPending}
+            onClick={requestAbortPlanning}
+            disabled={createMaintenanceWithSpareMutation.isPending || abortPlanningMutation.isPending}
+            data-testid="button-cancel-spare-dialog"
           >
             {t('common:actions.cancel')}
           </Button>
@@ -1562,6 +1609,18 @@ export function ScheduleMaintenanceDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <ConfirmDialog
+      open={abortPlanningOpen}
+      onOpenChange={setAbortPlanningOpen}
+      title={t('scheduleDialog.abortPlanningTitle')}
+      description={t('scheduleDialog.abortPlanningDescription')}
+      confirmLabel={t('scheduleDialog.abortPlanningConfirm')}
+      cancelLabel={t('scheduleDialog.abortPlanningKeep')}
+      variant="warning"
+      confirmTestId="button-confirm-abort-planning"
+      onConfirm={() => abortPlanningMutation.mutate()}
+    />
 
     {/* Spare Vehicle Duration Selection Dialog */}
     <Dialog open={showDurationDialog} onOpenChange={(open) => {

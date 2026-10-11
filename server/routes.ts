@@ -110,6 +110,7 @@ import {
   type HandoverOverride,
 } from "./services/lifecycle";
 import { currentRenterReservation } from "./services/vehicle-notification-recipients";
+import { abortPlanningRefusal, loadReplacementsHangingOn } from "./services/abort-planning";
 import { recalculateTotalPrice } from "../shared/rental-pricing";
 import { calculateDutchHolidays, mergeHolidaysWithOverrides } from "../shared/holidays";
 import { geocodeAddress, haversineDistanceKm, nearestNeighborOrder, getRoadRouteDistances } from "./geocoding";
@@ -176,7 +177,7 @@ import { registerReportRoutes } from "./routes/reports";
 import { registerDamageCheckTemplateRoutes } from "./routes/damage-check-templates";
 import { registerVehicleDiagramTemplateRoutes } from "./routes/vehicle-diagram-templates";
 import { registerReportAndLabelTemplateRoutes } from "./routes/report-and-label-templates";
-import { onMaintenanceBlockChanged, onReplacementAssigned, onRentalVehicleChanged } from "./services/portal-maintenance-events";
+import { onMaintenanceBlockChanged, onReplacementAssigned, onRentalVehicleChanged, plannedNoticeWasSent } from "./services/portal-maintenance-events";
 // besluiten B-06 (BUG-134): the other three events of the decision.
 import { onReservationChangedByStaff } from "./services/portal-reservation-events";
 import { previewRevert, applyRevert } from "./services/reservation-revert";
@@ -6261,6 +6262,64 @@ export async function registerRoutes(app: Express): Promise<void> {
       {
         const refusal = checkPickedUpCancellation(reservation, req.user, req.query.confirmPickedUp);
         if (refusal) return res.status(refusal.status).json(refusal.body);
+  /**
+   * D4 (besluiten B-41/B-42) - "Plannen afbreken". The spare-vehicle dialog opens after the
+   * maintenance block was already saved; cancelling it undoes the whole planning. Only a block
+   * that has not lived yet is removed for good (still planned, no spare or placeholder on it,
+   * made less than an hour ago by this user); anything else is 409 PLANNING_NOT_ABORTABLE and
+   * the client falls back to the normal delete (recycle bin). The audit line
+   * `reservation.abort-planning` is written by the audit middleware.
+   */
+  app.post("/api/reservations/:id/abort-planning", hasPermission(UserPermission.MANAGE_RESERVATIONS, UserPermission.MANAGE_MAINTENANCE), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid reservation ID" });
+      }
+      const block = await storage.getReservation(id);
+      if (!block || block.deletedAt) {
+        return res.status(404).json({ message: "Reservation not found" });
+      }
+
+      const replacements = block.type === "maintenance_block" ? await loadReplacementsHangingOn(block) : [];
+      const reason = abortPlanningRefusal(block, { username: (req.user as any)?.username ?? null, replacements });
+      if (reason) {
+        return res.status(409).json({
+          message: "This planning can no longer be aborted; delete the maintenance instead.",
+          code: "PLANNING_NOT_ABORTABLE",
+          reason,
+        });
+      }
+
+      // Asked before the delete: it looks at the block's notifications.
+      const customerWasTold = await plannedNoticeWasSent(block);
+      try {
+        await storage.deleteReservation(id);
+      } catch (error: any) {
+        // Something unexpected still references the row (foreign key): not abortable after all.
+        if (error?.code === "23503") {
+          return res.status(409).json({
+            message: "This planning can no longer be aborted; delete the maintenance instead.",
+            code: "PLANNING_NOT_ABORTABLE",
+            reason: "HAS_REPLACEMENTS",
+          });
+        }
+        throw error;
+      }
+
+      // D6: the removed block may be the one that checked the car in (not for a planned block, but one rule).
+      await storage.releaseVehicleFromRemovedBlock(block);
+      if (block.vehicleId != null) await storage.recomputeVehicleAvailability(block.vehicleId);
+      // The customer hears "vervalt" only when a "gepland" notice had gone out.
+      if (customerWasTold) void onMaintenanceBlockChanged(block, null);
+      realtimeEvents.reservations.deleted({ id });
+
+      res.json({ aborted: true, id });
+    } catch (error) {
+      sendRouteError(res, error, "Failed to abort the planning");
+    }
+  });
+
       }
       
       const user = req.user;

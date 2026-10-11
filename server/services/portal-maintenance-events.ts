@@ -1,6 +1,6 @@
 import { and, eq, isNull, or, sql } from "drizzle-orm";
 import { db } from "../db";
-import { reservations, portalUsers, type Reservation } from "../../shared/schema";
+import { reservations, portalUsers, portalNotifications, type Reservation } from "../../shared/schema";
 import { storage } from "../storage";
 import { customerNotifications } from "./portal-customer-notifications";
 import { sendMaintenanceMail } from "./portal-mail";
@@ -236,6 +236,27 @@ export async function onReplacementAssigned(replacement: Reservation): Promise<b
     return true;
   } catch (e) {
     console.error("onReplacementAssigned failed:", e);
+    return false;
+  }
+}
+
+/**
+ * D4 (besluiten B-41): has the portal customer who has this car on the road
+ * already been told "Onderhoud gepland" for this block? "Plannen afbreken" only
+ * sends the "vervalt" notice when so - nobody needs to hear that something they
+ * were never told about is off. Never throws.
+ */
+export async function plannedNoticeWasSent(block: Pick<Reservation, "id" | "vehicleId" | "startDate" | "endDate">): Promise<boolean> {
+  try {
+    const target = await findPortalCustomerForBlock(block);
+    if (!target) return false;
+    const [row] = await db.select({ id: portalNotifications.id }).from(portalNotifications).where(and(
+      eq(portalNotifications.customerId, target.customerId),
+      sql`${portalNotifications.dedupeTag} LIKE ${`maint:${block.id}:planned%`}`,
+    )).limit(1);
+    return Boolean(row);
+  } catch (e) {
+    console.error("plannedNoticeWasSent failed:", e);
     return false;
   }
 }
