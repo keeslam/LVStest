@@ -244,8 +244,8 @@ Vier instellingen komen vaak terug:
   opslaat**; tot dan blijven die mails *Lam Groep* zeggen. Wil je dus dat de portaalmails ook *Autolease
   Lam* (of een andere naam) zeggen, sla dan één keer de bedrijfsnaam op. Een portaalsjabloon dat je zelf
   hebt aangepast, houdt altijd zijn eigen tekst. De meldingen die de klant in het portaal zelf ziet (het belletje),
-  noemen voortaan ook de bedrijfsnaam uit deze instelling; een melding die al was aangemaakt, houdt zijn
-  oude tekst.
+  volgen dezelfde regel: *Lam Groep* totdat je de bedrijfsnaam voor het eerst opslaat, daarna deze
+  instelling; een melding die al was aangemaakt, houdt zijn oude tekst.
 
 **Wat je typt, blijft staan.** Wissel je tijdens het invullen van tabblad, dan raak je niets kwijt:
 een tabblad dat je eenmaal hebt geopend, houdt wat je erin hebt ingevuld, ook de onderdelen met een
