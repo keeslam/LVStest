@@ -186,9 +186,10 @@ ook de klantnaam gebruiken.
 > staat. De app markeert het document als **Verouderd**, maar hij mailt de klant niets. Genereer
 > het contract opnieuw en stuur de nieuwe versie. Zie hoofdstuk 8.
 
-> **Waarom je zelf belt of mailt.** De klant krijgt géén automatisch bericht als je zijn datums of
-> voertuig wijzigt, als je zijn reservering annuleert, of als er een nieuw document voor hem
-> klaarstaat. Doe dat dus zelf (hoofdstuk 12, paragraaf 12.11).
+> **Waarom je soms zelf belt of mailt.** Alleen een klant **met een portaalaccount** krijgt automatisch
+> bericht als je zijn datums of voertuig wijzigt, als je zijn reservering annuleert, of als er een nieuw
+> document voor hem klaarstaat (hoofdstuk 9, paragraaf 9.8). Een klant zonder account hoort niets: bel of
+> mail die zelf (hoofdstuk 12, paragraaf 12.11).
 
 ### Een auto moet naar de werkplaats
 

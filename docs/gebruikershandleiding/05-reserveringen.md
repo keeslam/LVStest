@@ -553,7 +553,7 @@ reservering.*) en annuleer je alleen de reservering zelf.
 > **Is de huur al opgehaald?** Dan vraagt het annuleren een eigen vinkje en een bevestigde
 > waarschuwing; zie 5.15.
 
-De klant krijgt géén automatisch bericht van een annulering. Bel of mail zelf.
+Heeft de klant een portaalaccount, dan krijgt hij van een annulering automatisch een melding in het portaal en een e-mail (*Uw reservering is geannuleerd*, hoofdstuk 9, paragraaf 9.8). Heeft hij geen account, bel of mail dan zelf.
 
 ---
 

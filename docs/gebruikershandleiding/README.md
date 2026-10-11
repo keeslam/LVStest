@@ -32,6 +32,7 @@ woord ook hier — dan weet je zeker dat je het goede knopje hebt.
 
 ## Hoe je deze handleiding gebruikt
 
+- Wil je weten wat er sinds de laatste uitrol anders werkt? Hoofdstuk 0.
 - Ben je vandaag begonnen? Lees hoofdstuk 1 en 2, en werk daarna hoofdstuk 17 af.
 - Zoek je één handeling? Kijk in hoofdstuk 13, het snel naslagwerk.
 - Wil je weten hoe een werkdag hoort te lopen? Hoofdstuk 16.
@@ -43,6 +44,7 @@ woord ook hier — dan weet je zeker dat je het goede knopje hebt.
 
 | # | Hoofdstuk | Waarover |
 |---|---|---|
+| 0 | [Wat is er nieuw](00-wat-is-nieuw.md) | Wat er sinds de uitrol van 12 oktober 2026 anders werkt, per rol: balie, werkplaats en beheerder |
 | 1 | [Snel aan de slag](01-snel-aan-de-slag.md) | Inloggen, het hoofdscherm, iets opzoeken, de meest voorkomende taken, uitloggen |
 | 2 | [Navigatie](02-navigatie.md) | Het menu, het dashboard, zoeken, snelle acties, sneltoetsen |
 | 3 | [Klanten](03-klanten.md) | Klanten opzoeken, aanmaken en bijwerken, chauffeurs en portaalaccounts |
@@ -62,7 +64,7 @@ woord ook hier — dan weet je zeker dat je het goede knopje hebt.
 | 17 | [Inwerkpad](17-inwerkpad.md) | In welke volgorde je dit leert, met oefeningen |
 | 18 | [Barcode en scannen](18-barcode-en-scannen.md) | Sleutellabels scannen, doorwerken vanaf het scanscherm, de sleutelkast-audit |
 
-Alle achttien hoofdstukken zijn af. De schermafbeeldingen staan in de map `afbeeldingen/` en
+Alle achttien hoofdstukken zijn af, met daarbij een overzicht van wat nieuw is (hoofdstuk 0). De schermafbeeldingen staan in de map `afbeeldingen/` en
 worden vanuit de hoofdstukken zelf getoond.
 
 **Bijgewerkt op 12 oktober 2026.** De tekst volgt de reparaties na de fysieke audit (10 oktober) en
@@ -72,10 +74,9 @@ afbreken, een tankbedrag wordt ook een kostenpost, de bulkimport maakt onbekende
 verzoek, chauffeurs en kostenposten hebben een prullenbak, bekeuringen worden alleen geregistreerd en de
 klant hoort er pas van na **Klant informeren**, er is een wachtwoordregel voor medewerkers, een
 tijdzone- en een bedrijfsnaaminstelling, een melding van geweigerde pogingen voor de beheerder en een
-RDW-typecontrole in de instellingen. Deze wijzigingen staan op de branch `feat/besluiten-d` en zijn pas in
-de app te zien nadat die is uitgerold. De schermafbeeldingen en het PDF-bestand
-(`Gebruikershandleiding-Car-Rental-Manager-v1.0.pdf`) zijn nog niet opnieuw gemaakt; de tekst in de
-hoofdstukken is leidend.
+RDW-typecontrole in de instellingen. Deze wijzigingen zijn uitgerold op 12-10-2026. De schermafbeeldingen zijn nog niet opnieuw gemaakt; de tekst in de
+hoofdstukken is leidend. Het PDF-bestand (`Gebruikershandleiding-Car-Rental-Manager-v1.0.pdf`) maak je
+opnieuw met `node scripts/build-manual-pdf.cjs`.
 
 ---
 

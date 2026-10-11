@@ -29,7 +29,7 @@ De app zegt bewust niet welke van de twee fout is; controleer ze allebei, en let
 
 **Je eigen wachtwoord wijzigen.** Klik rechtsboven op je naam → **Profiel** → tabblad
 **Wachtwoord**. Vul **Huidig wachtwoord**, **Nieuw wachtwoord** en **Bevestig nieuw wachtwoord**
-in en klik op **Wachtwoord wijzigen**. Onder het veld staat wat het wachtwoord moet hebben: *Minimaal 8
+in en klik op **Wachtwoord wijzigen**. Onder het veld staat wat het wachtwoord moet hebben: *Minimaal 10
 tekens, met een kleine letter, een hoofdletter en een cijfer.* Vergeet je het bevestigingsveld, dan
 staat er *Bevestig je nieuwe wachtwoord.*; typ je twee verschillende wachtwoorden, dan staat er *De
 wachtwoorden komen niet overeen.* Wijzig je het nieuwe wachtwoord nadat je een fout kreeg, dan
