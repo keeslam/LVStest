@@ -655,7 +655,7 @@
       },
       "dialog": {
         "title": "Fine #{{id}}",
-        "description": "View and handle this fine: linking it to a customer, charging it on and the letter.",
+        "description": "View and handle this fine: linking it to a customer, informing the customer and the letter.",
         "newTitle": "New fine",
         "newTooltip": "Fill in one fine, optionally with its letter",
         "newIntro": "For one fine: fill in the fields, or choose the letter and let it be read, which fills the fields for you. You check them before saving. For a stack of letters use Scan letters.",
@@ -667,7 +667,6 @@
         "chooseDriver": "Driver (optional)",
         "link": "Link",
         "unlink": "Unlink",
-        "dispute": "Disputed",
         "cancelFine": "Cancel fine",
         "cancelTitle": "Cancel fine?",
         "cancelConfirmNamed": "Cancel fine {{plate}} of {{amount}}? You can reactivate it afterwards.",

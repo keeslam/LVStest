@@ -65,12 +65,17 @@ describe("fines routes", () => {
     expect((await request(viewer).post(`/api/fines/${fineId}/status`).send({ status: "charged" })).status).toBe(403);
   });
 
-  it("enforces transitions; charged and paid are no longer reachable", async () => {
-    const bad = await request(manager).post(`/api/fines/${fineId}/status`).send({ status: "paid" });
-    expect(bad.status).toBe(400);
-    expect(bad.body.allowed).toEqual(["cancelled", "new"]);
-    expect((await request(manager).post(`/api/fines/${fineId}/status`).send({ status: "charged" })).status).toBe(400);
-    expect((await request(manager).post(`/api/fines/${fineId}/status`).send({ status: "disputed" })).status).toBe(400);
+  it("enforces transitions; charged, paid and disputed answer STATUS_NOT_SUPPORTED (B-41 D9)", async () => {
+    for (const legacy of ["paid", "charged", "disputed"]) {
+      const bad = await request(manager).post(`/api/fines/${fineId}/status`).send({ status: legacy });
+      expect(bad.status).toBe(400);
+      expect(bad.body.code).toBe("STATUS_NOT_SUPPORTED");
+    }
+    // A value that is no status at all is still an invalid transition, not "not supported".
+    const nonsense = await request(manager).post(`/api/fines/${fineId}/status`).send({ status: "bogus" });
+    expect(nonsense.status).toBe(400);
+    expect(nonsense.body.code).toBeUndefined();
+    expect(nonsense.body.allowed).toEqual(["cancelled", "new"]);
     const cancelled = await request(manager).post(`/api/fines/${fineId}/status`).send({ status: "cancelled" });
     expect(cancelled.body.status).toBe("cancelled");
     const back = await request(manager).post(`/api/fines/${fineId}/status`).send({ status: "linked" });
@@ -220,6 +225,32 @@ describe("fines routes", () => {
     expect(again.status).toBe(200);
     expect(again.body).toMatchObject({ status: "linked", customerId, description: "Annuleertest" });
     expect((await storage.restoreDeletedRecord!(bin!.id)).reason).toBe("already_restored");
+  });
+
+  it("a legacy paid row can still be edited; only a cancelled fine is closed (B-41 D9)", async () => {
+    const legacy = await finesStorage.createFine({
+      licensePlate: plate, offenceAt: new Date("2026-09-05T10:00:00Z"), description: "Oude boete", amount: "50.00", adminFee: "0.00", totalAmount: "50.00",
+      status: "paid", customerId,
+    } as any);
+    const edited = await request(manager).patch(`/api/fines/${legacy.id}`).send({ internalNotes: "nagekeken" });
+    expect(edited.status).toBe(200);
+    expect(edited.body.internalNotes).toBe("nagekeken");
+    const cancelled = await finesStorage.createFine({
+      licensePlate: plate, offenceAt: new Date("2026-09-06T10:00:00Z"), description: "Geannuleerd", amount: "50.00", adminFee: "0.00", totalAmount: "50.00",
+      status: "cancelled", customerId,
+    } as any);
+    expect((await request(manager).patch(`/api/fines/${cancelled.id}`).send({ internalNotes: "x" })).status).toBe(400);
+  });
+
+  it("the list reports legacy status counts in a header and keeps the body an array (B-41 D9)", async () => {
+    const res = await request(viewer).get(`/api/fines?licensePlate=${plate}`);
+    expect(Array.isArray(res.body)).toBe(true);
+    const counts = JSON.parse(res.headers["x-legacy-fine-status-counts"]);
+    expect(counts.paid).toBeGreaterThanOrEqual(1);
+    expect(counts.charged ?? 0).toBe(0);
+    // A plate nobody has legacy rows for reports an empty object.
+    const none = await request(viewer).get("/api/fines?licensePlate=ZZ0000");
+    expect(JSON.parse(none.headers["x-legacy-fine-status-counts"])).toEqual({});
   });
 
   it("recomputes the total on patch", async () => {

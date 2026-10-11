@@ -10,7 +10,7 @@ import { z } from "zod";
 import { OutboundBlockedError, OUTBOUND_BLOCKED_MESSAGE } from "../utils/security/outboundGuard";
 import { hasPermission } from "../middleware/permissions.js";
 import { UserPermission, insertFineSchema } from "../../shared/schema";
-import { isValidFineTransition, FINE_TRANSITIONS, normalizeLicensePlate, type FineStatusValue } from "../../shared/fines";
+import { isValidFineTransition, isLegacyFineStatus, FINE_TRANSITIONS, LEGACY_FINE_STATUS_COUNTS_HEADER, normalizeLicensePlate, type FineStatusValue } from "../../shared/fines";
 import { finesStorage } from "../services/fines-storage";
 import { findCandidates, linkFineManually, unlinkFine } from "../services/fine-attribution";
 import { createFineWithAttribution } from "../services/fine-create";
@@ -216,14 +216,18 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
 
   app.get("/api/fines", canView, async (req, res) => {
     const q = req.query;
-    res.json(await finesStorage.listFines({
+    const filters = {
       status: q.status ? String(q.status) : undefined,
       customerId: q.customerId ? parseInt(String(q.customerId), 10) : undefined,
       licensePlate: q.licensePlate ? normalizeLicensePlate(String(q.licensePlate)) : undefined,
       from: q.from ? String(q.from) : undefined,
       to: q.to ? String(q.to) : undefined,
       importFileId: q.importFileId ? parseInt(String(q.importFileId), 10) : undefined,
-    }));
+    };
+    // B-41 D9: the status filter offers Doorbelast/Betaald/Betwist only while rows with such a status exist.
+    // The body stays an array (every list consumer expects one); the counts travel in a header.
+    res.setHeader(LEGACY_FINE_STATUS_COUNTS_HEADER, JSON.stringify(await finesStorage.legacyStatusCounts(filters)));
+    res.json(await finesStorage.listFines(filters));
   });
 
   app.get("/api/fines/count", canView, async (req, res) => {
@@ -260,7 +264,8 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
     const id = idParam(req, res); if (id === null) return;
     const existing = await finesStorage.getFine(id);
     if (!existing) return res.status(404).json({ message: "Fine not found" });
-    if (existing.status === "paid" || existing.status === "cancelled") return res.status(400).json({ message: "Fine is closed" });
+    // B-41 D9: only a cancelled fine is closed; a legacy paid row stays editable.
+    if (existing.status === "cancelled") return res.status(400).json({ message: "Fine is closed" });
     const parsed = insertFineSchema.partial().safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ message: parsed.error.errors[0]?.message ?? "Invalid input" });
     const amount = parsed.data.amount ?? Number(existing.amount);
@@ -368,18 +373,19 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
     const id = idParam(req, res); if (id === null) return;
     const fine = await finesStorage.getFine(id);
     if (!fine) return res.status(404).json({ message: "Fine not found" });
-    const parsed = z.object({ status: z.string(), invoiceReference: z.string().trim().max(100).optional() }).safeParse(req.body);
+    const parsed = z.object({ status: z.string() }).safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ message: "status is required" });
     const next = parsed.data.status as FineStatusValue;
+    // B-41 D9: the app only records; nothing moves into the legacy statuses any more.
+    if (isLegacyFineStatus(next)) {
+      return res.status(400).json({ message: `Status ${next} is not supported`, code: "STATUS_NOT_SUPPORTED", allowed: FINE_TRANSITIONS[fine.status as FineStatusValue] ?? [] });
+    }
     if (!isValidFineTransition(fine.status, next)) {
       return res.status(400).json({ message: `Cannot go from ${fine.status} to ${next}`, allowed: FINE_TRANSITIONS[fine.status as FineStatusValue] ?? [] });
     }
     if (next === "new" && fine.status !== "cancelled") { res.json(await unlinkFine(id, actor(req))); return; }
     if (next === "linked" && fine.status === "cancelled" && !fine.customerId) return res.status(400).json({ message: "Link the fine to a customer first" });
-    const patch: Record<string, unknown> = { status: next, updatedBy: actor(req) };
-    if (next === "charged") { patch.chargedAt = new Date(); if (parsed.data.invoiceReference) patch.invoiceReference = parsed.data.invoiceReference; }
-    if (next === "paid") patch.paidAt = new Date();
-    const updated = await finesStorage.updateFine(id, patch);
+    const updated = await finesStorage.updateFine(id, { status: next, updatedBy: actor(req) });
     await AuditLogger.logFromRequest(req, "fine.status", "fine", id, { from: fine.status, to: next });
     res.json(updated);
   });

@@ -655,7 +655,7 @@
       },
       "dialog": {
         "title": "Bekeuring #{{id}}",
-        "description": "Bekijk en behandel deze bekeuring: koppeling aan een klant, doorbelasten en de brief.",
+        "description": "Bekijk en behandel deze bekeuring: koppeling aan een klant, het informeren van de klant en de brief.",
         "newTitle": "Nieuwe bekeuring",
         "newTooltip": "Eén bekeuring invullen, eventueel met de brief erbij",
         "newIntro": "Voor één bekeuring: vul de velden in, of kies de brief en laat hem inlezen, dan worden de velden voor je ingevuld. Jij controleert ze voordat je opslaat. Voor een stapel brieven gebruik je Brieven scannen.",
@@ -667,7 +667,6 @@
         "chooseDriver": "Bestuurder (optioneel)",
         "link": "Koppelen",
         "unlink": "Ontkoppelen",
-        "dispute": "Betwist",
         "cancelFine": "Bekeuring annuleren",
         "cancelTitle": "Bekeuring annuleren?",
         "cancelConfirmNamed": "Bekeuring {{plate}} van {{amount}} annuleren? Je kunt hem daarna weer heractiveren.",
@@ -973,10 +972,10 @@
       "paid": "Betaald",
       "disputed": "Betwist"
     },
-    "openSummary_one": "{{count}} bekeuring, {{amount}}. Doorbelasten aan de bestuurder regelt u zelf.",
-    "openSummary_other": "{{count}} bekeuringen, samen {{amount}}. Doorbelasten aan de bestuurder regelt u zelf.",
+    "openSummary_one": "{{count}} bekeuring, {{amount}}. Het doorbelasten aan uw bestuurder regelt u zelf.",
+    "openSummary_other": "{{count}} bekeuringen, samen {{amount}}. Het doorbelasten aan uw bestuurder regelt u zelf.",
     "noneOpen": "Geen bekeuringen.",
-    "subtitle": "Bekeuringen die op naam van uw bedrijf zijn verwerkt. Doorbelasten aan de bestuurder regelt u zelf."
+    "subtitle": "Bekeuringen die op naam van uw bedrijf zijn verwerkt. Het doorbelasten aan uw bestuurder regelt u zelf."
   },
   "requests": {
     "title": "Aanvragen",

@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { fines, customers, drivers, vehicles, deletedRecords, type Fine } from "../../shared/schema";
 import { and, desc, eq, gte, inArray, lte, sql, type SQL } from "drizzle-orm";
-import { CUSTOMER_VISIBLE_FINE_STATUSES } from "../../shared/fines";
+import { CUSTOMER_VISIBLE_FINE_STATUSES, LEGACY_FINE_STATUSES, type LegacyFineStatusCounts, type FineStatusValue } from "../../shared/fines";
 import type { PortalScope } from "./portal-storage";
 import { customerDisplayName } from "./customer-display-name";
 
@@ -24,6 +24,16 @@ async function select(where: SQL | undefined): Promise<FineListRow[]> {
   return rows.map((r) => ({ ...r.fine, customerName: r.customerName, driverName: r.driverName }));
 }
 
+function filterConditions(f: FineFilters): Array<SQL | undefined> {
+  return [
+    f.customerId ? eq(fines.customerId, f.customerId) : undefined,
+    f.licensePlate ? eq(fines.licensePlate, f.licensePlate) : undefined,
+    f.from ? gte(fines.offenceAt, new Date(f.from)) : undefined,
+    f.to ? lte(fines.offenceAt, new Date(`${f.to}T23:59:59`)) : undefined,
+    f.importFileId ? eq(fines.importFileId, f.importFileId) : undefined,
+  ];
+}
+
 /** All fine reads/writes. Customer-facing methods always take the customerId. */
 export const finesStorage = {
   async createFine(data: InsertFineRow): Promise<Fine> {
@@ -43,14 +53,15 @@ export const finesStorage = {
     return row;
   },
   async listFines(f: FineFilters): Promise<FineListRow[]> {
-    return select(and(
-      f.status ? eq(fines.status, f.status) : undefined,
-      f.customerId ? eq(fines.customerId, f.customerId) : undefined,
-      f.licensePlate ? eq(fines.licensePlate, f.licensePlate) : undefined,
-      f.from ? gte(fines.offenceAt, new Date(f.from)) : undefined,
-      f.to ? lte(fines.offenceAt, new Date(`${f.to}T23:59:59`)) : undefined,
-      f.importFileId ? eq(fines.importFileId, f.importFileId) : undefined,
-    ));
+    return select(and(f.status ? eq(fines.status, f.status) : undefined, ...filterConditions(f)));
+  },
+  /** B-41 D9: how many rows still have a legacy status, under the same filters as the list except the status itself. */
+  async legacyStatusCounts(f: FineFilters): Promise<LegacyFineStatusCounts> {
+    const rows = await db.select({ status: fines.status, n: sql<number>`count(*)::int` }).from(fines)
+      .where(and(inArray(fines.status, LEGACY_FINE_STATUSES), ...filterConditions(f))).groupBy(fines.status);
+    const counts: LegacyFineStatusCounts = {};
+    for (const r of rows) counts[r.status as FineStatusValue] = r.n;
+    return counts;
   },
   async listFinesForCustomer(customerId: number, scope: PortalScope): Promise<FineListRow[]> {
     return select(and(

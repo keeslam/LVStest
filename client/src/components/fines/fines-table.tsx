@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { apiRequest } from "@/lib/queryClient";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { UserPermission, UserRole } from "@shared/schema";
-import { FineStatus } from "@shared/fines";
+import { ACTIVE_FINE_STATUSES, LEGACY_FINE_STATUSES, LEGACY_FINE_STATUS_COUNTS_HEADER, type FineStatusValue, type LegacyFineStatusCounts } from "@shared/fines";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,13 +50,23 @@ export function FinesTable({ customerId, initialPlate, importFileId, preview }: 
   const [to, setTo] = useState("");
   const [search, setSearch] = useState("");
   const filters = { status: status || undefined, customerId, licensePlate: plate.trim() || undefined, from: from || undefined, to: to || undefined, importFileId };
+  // B-41 D9: the list answers with an array; the per-status counts of legacy rows travel in a header.
+  const [legacyCounts, setLegacyCounts] = useState<LegacyFineStatusCounts>({});
   const { data = [] } = useQuery<FineRow[]>({
     queryKey: ["/api/fines", filters],
     queryFn: async () => {
       const q = new URLSearchParams(Object.entries(filters).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]));
-      return (await apiRequest("GET", `/api/fines?${q}`)).json();
+      const res = await apiRequest("GET", `/api/fines?${q}`);
+      try { setLegacyCounts(JSON.parse(res.headers.get(LEGACY_FINE_STATUS_COUNTS_HEADER) ?? "{}")); } catch { setLegacyCounts({}); }
+      return res.json();
     },
   });
+  // The filter offers what a fine can still become; Doorbelast/Betaald/Betwist only while old rows with them exist
+  // (and the one currently chosen, so a selection never silently disappears).
+  const statusOptions: FineStatusValue[] = [
+    ...ACTIVE_FINE_STATUSES,
+    ...LEGACY_FINE_STATUSES.filter((s) => (legacyCounts[s] ?? 0) > 0 || s === status),
+  ];
 
   const filtered = data.filter((f) => textMatches(search, f.licensePlate, f.description, f.driverName, f.customerName, f.totalAmount, t(`admin.fines.status.${f.status}`)));
   const rows = preview ? filtered.slice(0, preview.limit) : filtered;
@@ -66,7 +76,7 @@ export function FinesTable({ customerId, initialPlate, importFileId, preview }: 
         <TableSearch value={search} onChange={setSearch} testId="fines-search" />
         <select className="rounded-md border px-3 py-2 text-sm" value={status} onChange={(e) => setStatus(e.target.value)} data-testid="select-fine-status">
           <option value="">{t("admin.fines.filters.allStatuses")}</option>
-          {Object.values(FineStatus).map((s) => <option key={s} value={s}>{t(`admin.fines.status.${s}`)}</option>)}
+          {statusOptions.map((s) => <option key={s} value={s}>{t(`admin.fines.status.${s}`)}</option>)}
         </select>
         {!customerId && <Input placeholder={t("admin.fines.filters.plate")} value={plate} onChange={(e) => setPlate(e.target.value)} className="w-40" />}
         <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" aria-label={t("admin.fines.filters.from")} />

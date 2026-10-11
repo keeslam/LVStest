@@ -21,6 +21,27 @@ export function isValidFineTransition(from: string, to: string): boolean {
   return (FINE_TRANSITIONS[from as FineStatusValue] ?? []).includes(to as FineStatusValue);
 }
 
+/**
+ * B-41 D9 ("alleen registreren"): the app only records fines. These are the
+ * statuses a fine can still get, so filters and choices offer only these.
+ */
+export const ACTIVE_FINE_STATUSES: FineStatusValue[] = ['new', 'linked', 'cancelled'];
+/**
+ * Values that remain in the data for rows from before that decision. They are
+ * shown as a badge on a fine that has one and appear in the filter only while
+ * such rows exist; nothing moves into them any more.
+ */
+export const LEGACY_FINE_STATUSES: FineStatusValue[] = ['charged', 'paid', 'disputed'];
+
+export function isLegacyFineStatus(status: string): boolean {
+  return (LEGACY_FINE_STATUSES as string[]).includes(status);
+}
+
+/** Row counts per legacy status, as the fines list reports them (only statuses that have rows). */
+export type LegacyFineStatusCounts = Partial<Record<FineStatusValue, number>>;
+/** Response header of GET /api/fines carrying the JSON of LegacyFineStatusCounts; the body stays an array. */
+export const LEGACY_FINE_STATUS_COUNTS_HEADER = 'x-legacy-fine-status-counts';
+
 export const CUSTOMER_VISIBLE_FINE_STATUSES: FineStatusValue[] = ['linked', 'charged', 'paid', 'disputed'];
 
 /** "94-xt-184" -> "94XT184" so lookups on vehicles.license_plate match. */

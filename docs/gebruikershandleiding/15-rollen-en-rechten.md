@@ -132,7 +132,7 @@ fiscale mobiliteitscheck staan onderaan in een eigen tabel.
 | **Klantportaal bekijken** | Het portaalbeheer lezen: aanvragen, accounts, activiteit | **Klantenportaal** |
 | **Klantportaal beheren** | Alles hierboven, plus aanvragen afhandelen, accounts uitnodigen, auto's online zetten, blokkades beheren | **Klantenportaal** |
 | **Boetes bekijken** | Bekeuringen inzien | **Bekeuringen** (en binnen **Klantenportaal**) |
-| **Boetes beheren** | Bekeuringen invoeren, toewijzen, doorbelasten en verwijderen | **Bekeuringen** (en binnen **Klantenportaal**) |
+| **Boetes beheren** | Bekeuringen invoeren, aan een klant koppelen, de klant erover informeren en verwijderen | **Bekeuringen** (en binnen **Klantenportaal**) |
 | **Meldingen beheren** | APK-, garantie- en onderhoudsherinneringen versturen | **Communicatie** |
 | **E-mailsjablonen beheren** | De sjabloonbouwer onder **Communicatie** | **Communicatie** |
 
