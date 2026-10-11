@@ -175,6 +175,17 @@ describe("de bedrijfsnaam staat in de mails", () => {
       expect((await row()).content).not.toContain("Lam Groep");
     });
 
+    it("het verwijderen van de naam herschrijft niets: de portaalmails blijven dan Lam Groep zeggen", async () => {
+      await save("Garage Voorbeeld");
+      await seedLegacyRow();
+      const stored = await storage.getAppSettingByKey(KEY);
+      const res = await admin.delete(`/api/app-settings/${stored!.id}`);
+      expect(res.status, JSON.stringify(res.body)).toBe(200);
+      expect(await storage.getAppSettingByKey(KEY)).toBeUndefined();
+      expect((await row()).content).toContain("Lam Groep");
+      expect((await row()).content).not.toContain("{{companyName}}");
+    });
+
     it("een door medewerkers aangepast sjabloon blijft staan", async () => {
       await save("Garage Voorbeeld");
       await seedLegacyRow();

@@ -56,7 +56,8 @@ async function readOnce(): Promise<void> {
   loadedAt = Date.now();
   if (next !== zone) {
     zone = next;
-    events.emit(CHANGE_EVENT, zone);
+    // A listener that throws must not make the load (and the save that awaits it) fail.
+    try { events.emit(CHANGE_EVENT, zone); } catch (error) { console.error("office_timezone change listener failed:", error); }
   }
 }
 
@@ -72,12 +73,18 @@ export function loadOfficeTimeZone(): Promise<string> {
     return loading;
   }
   loading = (async () => {
-    do {
-      reloadRequested = false;
-      await readOnce();
-    } while (reloadRequested);
+    try {
+      do {
+        reloadRequested = false;
+        await readOnce();
+      } while (reloadRequested);
+    } finally {
+      // Cleared in the same tick as the last check of the flag: a call that comes after this
+      // starts a read of its own instead of joining a promise that has already finished.
+      loading = null;
+    }
     return zone;
-  })().finally(() => { loading = null; });
+  })();
   return loading;
 }
 

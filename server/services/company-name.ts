@@ -29,18 +29,23 @@ export function loadCompanyName(): Promise<string> {
     return loading;
   }
   loading = (async () => {
-    do {
-      reloadRequested = false;
-      try {
-        const { storage } = await import("../storage");
-        name = companyNameFromSetting((await storage.getAppSettingByKey(COMPANY_NAME_KEY))?.value);
-      } catch (error) {
-        console.warn("company_name could not be read, keeping", name, error);
-      }
-      loadedAt = Date.now();
-    } while (reloadRequested);
+    try {
+      do {
+        reloadRequested = false;
+        try {
+          const { storage } = await import("../storage");
+          name = companyNameFromSetting((await storage.getAppSettingByKey(COMPANY_NAME_KEY))?.value);
+        } catch (error) {
+          console.warn("company_name could not be read, keeping", name, error);
+        }
+        loadedAt = Date.now();
+      } while (reloadRequested);
+    } finally {
+      // Cleared in the same tick as the last check of the flag (see office-time.ts).
+      loading = null;
+    }
     return name;
-  })().finally(() => { loading = null; });
+  })();
   return loading;
 }
 

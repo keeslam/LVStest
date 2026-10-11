@@ -103,8 +103,11 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
       await loadCompanyName();
       // The default sender name is built from it and cached with the e-mail configuration.
       clearEmailConfigCache();
-      // First save of the name: unedited portal templates start to follow it (idempotent afterwards).
-      try { await migratePortalTemplatesToCompanyName(); } catch (error) { console.error("portal e-mail templates:", error); }
+      // Unedited portal templates follow the name once one is stored (the first save; idempotent
+      // afterwards). Not after a DELETE: with no name stored they keep saying "Lam Groep".
+      try {
+        if (await storage.getAppSettingByKey(COMPANY_NAME_KEY)) await migratePortalTemplatesToCompanyName();
+      } catch (error) { console.error("portal e-mail templates:", error); }
     }
   }
 

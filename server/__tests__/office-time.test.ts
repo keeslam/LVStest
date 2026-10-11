@@ -145,12 +145,33 @@ describe("de fiscale CSV schrijft de beoordelingsdatum op de kantoorkalender", (
 
 describe("fix round 1 - bare dates, expiry of the cache and a save during a reload", () => {
   const withProcessZone = async (tz: string, fn: () => Promise<void> | void) => {
+    // Deleting TZ does not bring the zone back in Node; assign the zone the process had.
     const previous = process.env.TZ;
+    const resolved = Intl.DateTimeFormat().resolvedOptions().timeZone;
     process.env.TZ = tz;
     try { await fn(); } finally {
-      if (previous === undefined) delete process.env.TZ; else process.env.TZ = previous;
+      process.env.TZ = previous ?? resolved;
+      if (previous === undefined) delete process.env.TZ;
     }
   };
+
+  it("de procestijdzone is na de kale-datumtests weer zoals ervoor", async () => {
+    const before = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    await withProcessZone("America/Los_Angeles", () => {
+      expect(Intl.DateTimeFormat().resolvedOptions().timeZone).toBe("America/Los_Angeles");
+    });
+    expect(Intl.DateTimeFormat().resolvedOptions().timeZone).toBe(before);
+  });
+
+  it("een luisteraar die een fout gooit laat loadOfficeTimeZone() niet falen", async () => {
+    const off = onOfficeTimeZoneChange(() => { throw new Error("kapotte luisteraar"); });
+    try {
+      expect((await save("America/Curacao")).status).toBe(200); // the save is not turned into a 500
+      expect(officeTimeZone()).toBe("America/Curacao");
+    } finally {
+      off();
+    }
+  });
 
   it.each(["UTC", "Pacific/Auckland", "America/Los_Angeles"])(
     "een kale datum houdt zijn dag en staat op 00:00, in elke kantoorzone en bij procestijdzone %s",
