@@ -1204,7 +1204,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                     </p>
                     {vehicle.mileageDecreasedAt && (
                       <p className="opacity-80">
-                        {formatDate(new Date(vehicle.mileageDecreasedAt).toISOString().split('T')[0])}
+                        {formatDate(vehicle.mileageDecreasedAt)}
                       </p>
                     )}
                   </TooltipContent>

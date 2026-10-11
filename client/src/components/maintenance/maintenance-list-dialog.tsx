@@ -671,7 +671,7 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                                 <div className="text-sm">
                                   <div className="font-medium">{reservation.createdBy || t('listDialog.systemLabel')}</div>
                                   <div className="text-xs text-gray-500">
-                                    {reservation.createdAt ? format(new Date(reservation.createdAt), "dd MMM yyyy") : ''}
+                                    {reservation.createdAt ? format(reservation.createdAt, "dd MMM yyyy") : ''}
                                   </div>
                                   {reservation.updatedBy && reservation.updatedBy !== reservation.createdBy && (
                                     <div className="text-xs text-gray-400 mt-1">

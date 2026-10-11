@@ -2,7 +2,7 @@
  * A-2-9 (fysieke E2E-audit 2026-10-09, module 2) — "Recente scans" listed only
  * a time ("23:34"); an older scan could not be placed. It shows date and time.
  */
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -13,10 +13,12 @@ vi.mock("@/hooks/use-auth", () => ({
 
 import { GlobalDialogProvider } from "@/contexts/GlobalDialogContext";
 import { ScanPanel } from "@/components/barcodes/scan-panel";
+import { setOfficeTimeZone } from "@/lib/office-timezone";
 
-describe("scan panel — recent scans", () => {
-  it("shows the date as well as the time of each scan", async () => {
-    const createdAt = new Date(2026, 9, 9, 23, 34).toISOString(); // 9 Oct 2026, local time
+afterEach(() => setOfficeTimeZone(null));
+
+async function showHistory(createdAt: string) {
+  {
     const client = new QueryClient({
       defaultOptions: {
         queries: {
@@ -37,6 +39,18 @@ describe("scan panel — recent scans", () => {
     );
 
     await user.click(await screen.findByText("Recente scans"));
+  }
+}
+
+describe("scan panel — recent scans", () => {
+  it("shows the date as well as the time of each scan, on the office clock", async () => {
+    await showHistory("2026-10-09T21:34:00.000Z"); // 23:34 in Amsterdam (CEST)
     expect(await screen.findByText("09-10-2026 23:34")).toBeInTheDocument();
+  });
+
+  it("follows the office time zone setting, not the browser's (D11)", async () => {
+    setOfficeTimeZone("America/Curacao"); // UTC-4 all year
+    await showHistory("2026-10-09T21:34:00.000Z");
+    expect(await screen.findByText("09-10-2026 17:34")).toBeInTheDocument();
   });
 });

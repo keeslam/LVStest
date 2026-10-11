@@ -688,7 +688,7 @@ function ReportResultsDialog({
   const printResults = () => {
     printReportTable({
       title: reportName || t('reportBuilderPage.untitledReport'),
-      subtitle: t('reportBuilderPage.printSubtitle', { date: formatDateTime(new Date()), count: results.length }),
+      subtitle: t('reportBuilderPage.printSubtitle', { date: formatDateTime(Date.now()), count: results.length }),
       header,
       rows: results.map((row) => columns.map((col) => displayCell(t, col, row[col.field]))),
     });

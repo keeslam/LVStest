@@ -5,6 +5,7 @@ import { addDays, subDays, addWeeks, isSameDay, parseISO, startOfMonth, endOfMon
 // BUG-223: Dutch dates on a Dutch screen — formatNl is date-fns' format
 // with the nl locale applied, so every call below writes "11 sep 2026".
 import { formatNl as format } from "@/lib/format-date-nl";
+import { officeToday } from "@/lib/office-date";
 import { calculateNextApkDate } from "@/lib/next-apk-date";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1550,7 +1551,7 @@ export default function MaintenanceCalendar() {
                                         const isWarranty = notes.includes('warranty') || notes.includes('garantie');
 
                                         if (isWarranty) {
-                                          setWarrantyDateInput(format(new Date(), 'yyyy-MM-dd'));
+                                          setWarrantyDateInput(officeToday());
                                         } else {
                                           setWarrantyDateInput(''); // Leave empty for non-warranty maintenance
                                         }

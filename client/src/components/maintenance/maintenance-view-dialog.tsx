@@ -426,13 +426,13 @@ export function MaintenanceViewDialog({
               <div>
                 <label className="text-xs font-medium text-muted-foreground">{t('viewDialog.startDate')}</label>
                 <div className="text-sm font-medium mt-1">
-                  {format(new Date(reservation.startDate), 'd MMM yyyy')}
+                  {format(reservation.startDate, 'd MMM yyyy')}
                 </div>
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">{t('viewDialog.endDate')}</label>
                 <div className="text-sm font-medium mt-1">
-                  {reservation.endDate ? format(new Date(reservation.endDate), 'd MMM yyyy') : t('viewDialog.notSet')}
+                  {reservation.endDate ? format(reservation.endDate, 'd MMM yyyy') : t('viewDialog.notSet')}
                 </div>
               </div>
               <div>
@@ -562,8 +562,8 @@ export function MaintenanceViewDialog({
                           </div>
                           <div className="text-xs text-blue-700 dark:text-blue-300 mt-1">
                             {t('viewDialog.rentalRange', {
-                              start: format(new Date(rental.startDate), 'd MMM yyyy'),
-                              end: rental.endDate ? format(new Date(rental.endDate), 'd MMM yyyy') : t('viewDialog.open')
+                              start: format(rental.startDate, 'd MMM yyyy'),
+                              end: rental.endDate ? format(rental.endDate, 'd MMM yyyy') : t('viewDialog.open')
                             })}
                           </div>
                           {rentalCustomer?.phone && (

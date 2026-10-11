@@ -682,7 +682,7 @@ export function ScanPanel({ active = true, intent = null, onHandoverActiveChange
               recentScans.map((scan) => (
                 <div key={scan.id} className="flex items-center gap-3 py-1 text-sm border-t first:border-t-0">
                   <span className="text-muted-foreground tabular-nums">
-                    {scan.createdAt ? formatNl(new Date(scan.createdAt), "dd-MM-yyyy HH:mm") : "—"}
+                    {scan.createdAt ? formatNl(scan.createdAt, "dd-MM-yyyy HH:mm") : "—"}
                   </span>
                   <span className="font-mono">{scan.code}</span>
                   <span className="text-muted-foreground">

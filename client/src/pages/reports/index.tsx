@@ -894,7 +894,7 @@ function FullReportsPage() {
           // APK expiration report
           content = `
             <div class="company-info">
-              <h2>${t('reportsPage.printReport.reportGenerated', { date: formatDateTime(new Date()) })}</h2>
+              <h2>${t('reportsPage.printReport.reportGenerated', { date: formatDateTime(Date.now()) })}</h2>
             </div>
             <h1>${t('reportsPage.printReport.reportTitles.apk')}</h1>
             <div class="report-meta">
@@ -937,7 +937,7 @@ function FullReportsPage() {
           // Vehicle utilization report
           content = `
             <div class="company-info">
-              <h2>${t('reportsPage.printReport.reportGenerated', { date: formatDateTime(new Date()) })}</h2>
+              <h2>${t('reportsPage.printReport.reportGenerated', { date: formatDateTime(Date.now()) })}</h2>
             </div>
             <h1>${t('reportsPage.printReport.reportTitles.utilization')}</h1>
             <div class="report-meta">
@@ -1008,7 +1008,7 @@ function FullReportsPage() {
           // Expense report
           content = `
             <div class="company-info">
-              <h2>${t('reportsPage.printReport.reportGenerated', { date: formatDateTime(new Date()) })}</h2>
+              <h2>${t('reportsPage.printReport.reportGenerated', { date: formatDateTime(Date.now()) })}</h2>
             </div>
             <h1>${t('reportsPage.printReport.reportTitles.expenses')}</h1>
             <div class="report-meta">
@@ -1176,7 +1176,7 @@ function FullReportsPage() {
 
           content = `
             <div class="company-info">
-              <h2>${t('reportsPage.printReport.reportGenerated', { date: formatDateTime(new Date()) })}</h2>
+              <h2>${t('reportsPage.printReport.reportGenerated', { date: formatDateTime(Date.now()) })}</h2>
             </div>
             <h1>${t('reportsPage.printReport.reportTitles.warranty')}</h1>
 
@@ -1222,7 +1222,7 @@ function FullReportsPage() {
           // Customer Impact Report
           content = `
             <div class="company-info">
-              <h2>${t('reportsPage.printReport.reportGenerated', { date: formatDateTime(new Date()) })}</h2>
+              <h2>${t('reportsPage.printReport.reportGenerated', { date: formatDateTime(Date.now()) })}</h2>
             </div>
             <h1>${t('reportsPage.printReport.reportTitles.customerImpact')}</h1>
             <div class="report-meta">
@@ -1298,7 +1298,7 @@ function FullReportsPage() {
 
           content = `
             <div class="company-info">
-              <h2>${t('reportsPage.printReport.reportGenerated', { date: formatDateTime(new Date()) })}</h2>
+              <h2>${t('reportsPage.printReport.reportGenerated', { date: formatDateTime(Date.now()) })}</h2>
             </div>
             <h1>${t('reportsPage.printReport.reportTitles.transports')}</h1>
             <div class="report-meta">
