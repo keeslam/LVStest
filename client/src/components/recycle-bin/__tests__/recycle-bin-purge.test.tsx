@@ -63,6 +63,8 @@ const SEED_ROWS = (): Row[] => [
   row({ id: 4, entityType: "customer", label: "Oud Bedrijf", restoredAt: "2026-09-05T10:00:00.000Z", restoredBy: "anna" }),
   row({ id: 5, entityType: "reservation", label: "Reservering #3387 — AB-123-C 2030-02-01" }),
   row({ id: 6, entityType: "maintenance_block", label: "Onderhoud #3390 — AB-123-C 2030-03-01" }),
+  row({ id: 7, entityType: "driver", label: "Chauffeur Piet Pieters — Jansen Verhuur BV" }),
+  row({ id: 8, entityType: "expense", label: "Kostenpost #12 — AB-123-C fuel € 45,50 2026-10-01" }),
 ];
 
 interface Call { method: string; url: string; body: any }
@@ -284,9 +286,10 @@ describe("RecycleBinDialog - one confirmation before anything is deleted", () =>
     const nouns: Record<DeletedRecordKind, string> = {
       vehicle: "voertuigen", customer: "klanten", reservation: "reserveringen",
       maintenance_block: "onderhoudsplanningen", transport: "transporten", fine: "boetes",
+      driver: "chauffeurs", expense: "kostenposten",
     };
     const user = userEvent.setup();
-    for (const kind of ["vehicle", "reservation", "maintenance_block"] as DeletedRecordKind[]) {
+    for (const kind of ["vehicle", "reservation", "maintenance_block", "driver", "expense"] as DeletedRecordKind[]) {
       serverRows = SEED_ROWS();
       queryClient.clear();
       const view = renderBin(kind);

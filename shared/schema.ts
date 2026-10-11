@@ -2348,6 +2348,8 @@ export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 // (marker migration:c_bin_maintenance_label).
 export const DELETED_RECORD_KINDS = [
   "vehicle", "customer", "reservation", "maintenance_block", "transport", "fine",
+  // Sub-project D (B-41 D8): a driver and an expense each have a bin of their own.
+  "driver", "expense",
 ] as const;
 export type DeletedRecordKind = (typeof DELETED_RECORD_KINDS)[number];
 

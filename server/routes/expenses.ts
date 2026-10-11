@@ -274,7 +274,11 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
       }
       
       // Delete the expense
-      const success = await storage.deleteExpense(id);
+      // Sub-project D (B-41 D8): goes to the recycle bin; the actor is recorded on the bin row.
+      const success = await storage.deleteExpense(id, {
+        username: req.user?.username ?? null,
+        userId: req.user?.id ?? null,
+      });
       
       if (success) {
         // Broadcast real-time update to all connected clients

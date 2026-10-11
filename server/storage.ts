@@ -113,9 +113,10 @@ export interface IStorage {
     actor?: { username?: string | null; userId?: number | null },
   ): Promise<{ deleted: boolean; reason?: 'not_found' | 'has_live_reservations'; blockingReservations?: Reservation[] }>;
   getVehicleDeleteImpact?(id: number): Promise<{ vehicle: Vehicle; counts: Record<string, number> } | undefined>;
-  getDeletedRecords?(limit?: number, entityType?: string): Promise<any[]>;
+  // `filter.customerId` (driver bin only): the drivers of one customer.
+  getDeletedRecords?(limit?: number, entityType?: string, filter?: { customerId?: number }): Promise<any[]>;
   getDeletedRecord?(id: number): Promise<any | undefined>;
-  restoreDeletedRecord?(id: number, actor?: { username?: string | null }): Promise<{ restored: boolean; reason?: string; record?: any; conflicts?: number[]; conflictingCustomerName?: string }>;
+  restoreDeletedRecord?(id: number, actor?: { username?: string | null }): Promise<{ restored: boolean; reason?: string; record?: any; conflicts?: number[]; conflictingCustomerName?: string; warnings?: string[] }>;
   getAvailableVehicles(): Promise<Vehicle[]>;
   getVehiclesWithApkExpiringSoon(): Promise<Vehicle[]>;
   getVehiclesWithWarrantyExpiringSoon(): Promise<Vehicle[]>;
@@ -223,7 +224,7 @@ export interface IStorage {
   updateExpense(id: number, expenseData: Partial<InsertExpense>): Promise<Expense | undefined>;
   getExpensesByVehicle(vehicleId: number): Promise<Expense[]>;
   getRecentExpenses(limit: number): Promise<Expense[]>;
-  deleteExpense(id: number): Promise<boolean>;
+  deleteExpense(id: number, actor?: { username?: string | null; userId?: number | null }): Promise<boolean>;
 
   // Vehicle transport methods (swap/tow/repossession/delivery jobs)
   getAllTransports(): Promise<VehicleTransport[]>;
@@ -338,7 +339,7 @@ export interface IStorage {
   getPrimaryDriverByCustomer(customerId: number): Promise<Driver | undefined>;
   createDriver(driver: InsertDriver): Promise<Driver>;
   updateDriver(id: number, driverData: Partial<InsertDriver>): Promise<Driver | undefined>;
-  deleteDriver(id: number): Promise<boolean>;
+  deleteDriver(id: number, actor?: { username?: string | null; userId?: number | null }): Promise<boolean>;
   getDriverCountryUsageStats(): Promise<{ country: string; count: number }[]>;
   
   // Saved Reports methods

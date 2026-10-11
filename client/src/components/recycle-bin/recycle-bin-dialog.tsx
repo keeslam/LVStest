@@ -64,6 +64,11 @@ export interface DeletedRecord {
 export interface RecycleBinDialogProps {
   /** Which bin: decides the server filter and every text in the dialog. */
   kind: DeletedRecordKind;
+  /**
+   * Driver bin only (besluit B-41 D8): show the drivers of this one customer. "Prullenbak
+   * leegmaken" then removes exactly the rows shown, never another customer's drivers.
+   */
+  customerId?: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Called after a record has been put back (the screen refreshes its own list). */
@@ -100,6 +105,10 @@ const BIN_CHANGE_PREFIXES = [
   "/api/fines",
   "/api/transports",
   "/api/customers",
+  // Sub-project D (B-41 D8): an expense comes back in the cost lists; a driver in the customer's drivers
+  // (`/api/customers/:id/drivers` is covered above, `/api/drivers` is its own prefix).
+  "/api/expenses",
+  "/api/drivers",
   "/api/documents",
   "/api/deleted-records",
 ];
@@ -153,9 +162,14 @@ const RESTORE_ERROR_CODES = new Set([
   "BARCODE_TAKEN",
   "RESERVATION_CONFLICT",
   "DEBTOR_NUMBER_TAKEN",
+  // Sub-project D (B-41 D8): the customer of a deleted driver is gone (or in the customer bin).
+  "CUSTOMER_MISSING",
 ]);
 
-export function RecycleBinDialog({ kind, open, onOpenChange, onRestored, onPurged }: RecycleBinDialogProps) {
+/** Warnings a successful restore carries (besluit B-41 D8); anything else is ignored. */
+const RESTORE_WARNING_CODES = new Set(["VEHICLE_MISSING"]);
+
+export function RecycleBinDialog({ kind, customerId, open, onOpenChange, onRestored, onPurged }: RecycleBinDialogProps) {
   const { t } = useTranslation("recycleBin");
   const { toast } = useToast();
   const [restoringId, setRestoringId] = useState<number | null>(null);
@@ -167,7 +181,7 @@ export function RecycleBinDialog({ kind, open, onOpenChange, onRestored, onPurge
   const [showRestored, setShowRestored] = useState(false);
 
   const { data: allRecords, isLoading, isError } = useQuery<DeletedRecord[]>({
-    queryKey: ["/api/deleted-records", { type: kind }],
+    queryKey: ["/api/deleted-records", { type: kind, ...(customerId != null ? { customerId } : {}) }],
     enabled: open,
   });
   const q = search.trim().toLowerCase();
@@ -183,13 +197,23 @@ export function RecycleBinDialog({ kind, open, onOpenChange, onRestored, onPurge
   const restoreMutation = useMutation({
     mutationFn: async (record: DeletedRecord) => {
       const response = await apiRequest("POST", `/api/deleted-records/${record.id}/restore`);
-      await response.json().catch(() => null);
-      return record;
+      const body = await response.json().catch(() => null);
+      const warnings: string[] = Array.isArray(body?.warnings)
+        ? body.warnings.filter((w: unknown): w is string => typeof w === "string" && RESTORE_WARNING_CODES.has(w))
+        : [];
+      return { record, warnings };
     },
-    onSuccess: async (record) => {
+    onSuccess: async ({ record, warnings }) => {
       toast({
         title: t("toasts.restoredTitle"),
-        description: t("toasts.restoredDescription", { label: record.label }),
+        description: (
+          <>
+            <span className="block">{t("toasts.restoredDescription", { label: record.label })}</span>
+            {warnings.map((code) => (
+              <span key={code} className="block" data-testid={`text-restore-warning-${code}`}>{t(`toasts.warnings.${code}`)}</span>
+            ))}
+          </>
+        ),
       });
       await invalidateBinScreens();
       onRestored?.();
@@ -354,7 +378,11 @@ export function RecycleBinDialog({ kind, open, onOpenChange, onRestored, onPurge
                 variant="destructive"
                 size="sm"
                 disabled={!kindRecords || kindRecords.length === 0 || purgeMutation.isPending}
-                onClick={() => setConfirmTarget({ mode: "all" })}
+                onClick={() =>
+                  // A bin filtered to one customer never empties "everything of the kind" on the server.
+                  setConfirmTarget(customerId != null
+                    ? { mode: "selected", ids: (kindRecords ?? []).map((r) => r.id) }
+                    : { mode: "all" })}
                 data-testid="button-purge-all"
               >
                 <Trash2 className="mr-2 h-4 w-4" />

@@ -104,7 +104,7 @@
     "deleteReservationTitle": "Reservering verwijderen",
     "deleteReservationConfirm": "Weet je zeker dat je deze reservering wilt verwijderen? Ze wordt naar de prullenbak verplaatst; terugzetten kan via Prullenbak.",
     "deleteDriverTitle": "Chauffeur verwijderen",
-    "deleteDriverConfirm": "Weet je zeker dat je {{name}} wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+    "deleteDriverConfirm": "Weet je zeker dat je {{name}} wilt verwijderen? De chauffeur gaat naar de prullenbak van deze klant; terugzetten kan via Prullenbak.",
     "customerNotFoundTitle": "Klant niet gevonden",
     "customerNotFoundDescription": "De klant die je zoekt bestaat niet meer of is verwijderd.",
     "backToCustomers": "Terug naar klanten",

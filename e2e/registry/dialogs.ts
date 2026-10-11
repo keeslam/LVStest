@@ -294,6 +294,15 @@ export const DIALOGS: DialogEntry[] = [
   // POST /api/customers (routes.ts:2469).
   { page: "/customers", opener: "button-add-customer", anyOf: [P.MANAGE_CUSTOMERS], source: "client/src/components/customers/customer-add-dialog.tsx", name: "klant toevoegen" },
   { page: "/customers", opener: "button-open-recycle-bin-customers", anyOf: [P.MANAGE_RECYCLE_BIN], source: "client/src/components/recycle-bin/recycle-bin-dialog.tsx", name: "prullenbak klanten" },
+  // Sub-project D (B-41 D8): the bin of deleted drivers of ONE customer. The opener is in the Chauffeurs tab
+  // of the customer details (`/customers/<id>`, wrapped in RequiresPermission anyOf={[MANAGE_RECYCLE_BIN]}),
+  // which opens from a row of the list: a bare load of /customers has no such control to find.
+  {
+    page: "/customers", opener: "button-drivers-bin", anyOf: [P.MANAGE_RECYCLE_BIN],
+    source: "client/src/components/recycle-bin/recycle-bin-dialog.tsx", name: "prullenbak chauffeurs (klantdetails)",
+    allowedPathNeedsState: "the opener sits in the Chauffeurs tab of the customer details, which opens from a row of the list; the dialog is the same RecycleBinDialog with kind=driver, covered by recycle-bin-dialog.test.tsx and the server tests dc-02",
+    deniedPathNeedsState: "the opener does not exist on a bare load of /customers: it renders inside the customer details, so there is nothing to find until a customer is opened",
+  },
   // Sub-project C, Task 7 (B-38): the confirmation behind "Prullenbak leegmaken" - the
   // same dialog file, an AlertDialog of its own (`dialog-confirm-purge`). Its opener only
   // exists inside the bin dialog and only while that bin holds a row (the button is off on
@@ -322,6 +331,10 @@ export const DIALOGS: DialogEntry[] = [
   // and manager reach this page, and both hold manage_recycle_bin.
   { page: "/portal-admin", opener: "button-fines-bin", via: "tile-fines", anyOf: [P.MANAGE_RECYCLE_BIN], source: "client/src/components/recycle-bin/recycle-bin-dialog.tsx", name: "prullenbak boetes" },
 
+  // Sub-project D (B-41 D8): the bin of deleted expenses, wrapped in RequiresPermission
+  // anyOf={[MANAGE_RECYCLE_BIN]} next to "Ontvangen facturen". The dialog opens empty on the e2e seed,
+  // which is a complete state of it (restore and purge are proven by the unit tests and the server tests).
+  { page: "/expenses", opener: "button-expenses-bin", anyOf: [P.MANAGE_RECYCLE_BIN], source: "client/src/components/recycle-bin/recycle-bin-dialog.tsx", name: "prullenbak kostenposten" },
   { page: "/expenses", opener: "button-invoice-inbox", anyOf: [P.MANAGE_EXPENSES], source: "client/src/components/expenses/invoice-inbox-dialog.tsx", name: "ontvangen facturen" },
   // Audit P1 (A-9-7): the Kosten page opens the same dialog as the dashboard (ExpenseAddDialog)
   // instead of navigating to /expenses/add.

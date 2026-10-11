@@ -357,7 +357,7 @@
       "printReceiptTitle": "Print receipt",
       "deleteExpenseTitle": "Delete expense",
       "confirmDeleteExpenseTitle": "Delete expense?",
-      "confirmDeleteExpenseDescription": "This will permanently delete this expense. This action cannot be undone.",
+      "confirmDeleteExpenseDescription": "This expense moves to the recycle bin; you can restore it from the Recycle bin on the Expenses page.",
       "expenseDeletedTitle": "Expense deleted",
       "expenseDeletedDescription": "The expense has been deleted successfully.",
       "expenseDeleteErrorTitle": "Failed to delete expense"

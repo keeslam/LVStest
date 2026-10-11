@@ -104,7 +104,7 @@
     "deleteReservationTitle": "Delete Reservation",
     "deleteReservationConfirm": "Are you sure you want to delete this reservation? It is moved to the recycle bin; you can restore it from the recycle bin.",
     "deleteDriverTitle": "Delete Driver",
-    "deleteDriverConfirm": "Are you sure you want to delete {{name}}? This action cannot be undone.",
+    "deleteDriverConfirm": "Are you sure you want to delete {{name}}? The driver moves to this customer's recycle bin; you can restore it from the Recycle bin.",
     "customerNotFoundTitle": "Customer not found",
     "customerNotFoundDescription": "The customer you're looking for doesn't exist or has been removed.",
     "backToCustomers": "Back to Customers",

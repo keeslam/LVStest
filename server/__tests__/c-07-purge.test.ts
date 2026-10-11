@@ -46,7 +46,7 @@ const OUTSIDE = fs.mkdtempSync(path.join(os.tmpdir(), "lvs-c07-outside-"));
 const { db } = await import("../db");
 const schema = await import("../../shared/schema");
 const {
-  auditLogs, customers, damageCheckTemplateBackgrounds, damageCheckTemplates, deletedRecords, deliveryTasks,
+  invoiceInboxItems, auditLogs, customers, damageCheckTemplateBackgrounds, damageCheckTemplates, deletedRecords, deliveryTasks,
   documents, drivers, expenses, fines, fiscalAssessments, fiscalReviewCases, interactiveDamageChecks,
   pdfTemplates, portalDocumentAcks, portalRequestAttachments, portalRequests, reservationDriverAssignments,
   reservations, scanEvents, templateBackgrounds, transportReportTemplateBackgrounds, transportReportTemplates,
@@ -222,7 +222,7 @@ describe("C-07 - the purge routes: who may call them and what they accept", () =
     ["a kind without all", { entityType: "fine" }],
     ["all: false", { entityType: "fine", all: false }],
     ["all as a string", { entityType: "fine", all: "true" }],
-    ["an unknown kind", { entityType: "expense", all: true }],
+    ["an unknown kind", { entityType: "invoice", all: true }],
     ["an unknown extra field", { ids: [1], everything: true }],
   ])("refuses %s with 400 INVALID_PURGE_REQUEST before touching anything", async (_label, body) => {
     const witness = await insertBinRow("transport");
@@ -466,6 +466,56 @@ describe("C-07 - a fine and a transport", () => {
     expect((await auditRows("transport.purge", transport.id))).toHaveLength(1);
     // Vehicles and the rest are untouched.
     expect((await db.select().from(vehicles).where(eq(vehicles.id, vehicle.id))).length).toBe(1);
+  });
+});
+
+describe("C-07 (sub-project D, D8) - a driver and an expense", () => {
+  it("a driver: the licence copy goes with the bin row, unless a live row shares it", async () => {
+    const lone = put(`drivers/licence-${unique("d")}.pdf`);
+    const shared = put(`drivers/shared-${unique("e")}.pdf`);
+    const make = async (file: string) => {
+      const [d] = await db.insert(drivers).values({ customerId, displayName: `${ROW_PREFIX}driver-${unique("n")}`, licenseFilePath: file }).returning();
+      return d;
+    };
+    const gone = await make(lone);
+    const first = await make(shared);
+    const second = await make(shared);
+    expect((await admin.delete(`/api/drivers/${gone.id}`)).status).toBe(200);
+    expect((await admin.delete(`/api/drivers/${first.id}`)).status).toBe(200);
+    const goneRecord = await binRowFor("driver", gone.id);
+    const firstRecord = await binRowFor("driver", first.id);
+
+    const res = await binKeeper.post("/api/deleted-records/purge").send({ ids: [goneRecord.id, firstRecord.id] });
+    expect(res.body).toEqual({ purged: 2, failed: [] });
+    expect(onDisk(lone)).toBe(false);
+    // `second` is still a live driver with the same licence copy.
+    expect(onDisk(shared)).toBe(true);
+    expect((await auditRows("driver.purge", gone.id))).toHaveLength(1);
+    await db.delete(drivers).where(eq(drivers.id, second.id));
+  });
+
+  it("an expense: the receipt goes with the bin row, unless the inbox attachment is the same file", async () => {
+    const vehicle = await createFixtureVehicle();
+    const lone = put(`expenses/bon-${unique("f")}.pdf`);
+    const shared = put(`expenses/inbox-${unique("g")}.pdf`);
+    const [item] = await db.insert(invoiceInboxItems).values({ attachmentHash: `${ROW_PREFIX}${unique("h")}`, attachmentPath: shared, status: "booked" }).returning();
+    const make = async (file: string) => {
+      const [e] = await db.insert(expenses).values({ vehicleId: vehicle.id, category: "fuel", amount: "12.00", date: "2031-01-01", receiptFilePath: file }).returning();
+      return e;
+    };
+    const a = await make(lone);
+    const b = await make(shared);
+    expect((await admin.delete(`/api/expenses/${a.id}`)).status).toBe(200);
+    expect((await admin.delete(`/api/expenses/${b.id}`)).status).toBe(200);
+    const recordA = await binRowFor("expense", a.id);
+    const recordB = await binRowFor("expense", b.id);
+
+    const res = await binKeeper.post("/api/deleted-records/purge").send({ ids: [recordA.id, recordB.id] });
+    expect(res.body).toEqual({ purged: 2, failed: [] });
+    expect(onDisk(lone)).toBe(false);
+    expect(onDisk(shared)).toBe(true);
+    expect((await auditRows("expense.purge", a.id))).toHaveLength(1);
+    await db.delete(invoiceInboxItems).where(eq(invoiceInboxItems.id, item.id));
   });
 });
 

@@ -30,7 +30,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Expense } from "@shared/schema";
+import { Expense, UserPermission } from "@shared/schema";
+import { RequiresPermission } from "@/components/ui/requires-permission";
+import { RecycleBinDialog } from "@/components/recycle-bin/recycle-bin-dialog";
 import { EXPENSE_CATEGORIES } from "@shared/expense-categories";
 import { formatDate, plateMatches, formatExpenseCategory, formatLicensePlate, sumMoney } from "@/lib/format-utils";
 import { Price, useHidePrices } from "@/components/ui/price";
@@ -38,7 +40,7 @@ import { downloadCsv, csvDate, csvNumber } from "@/lib/csv";
 import { apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
-import { Download, Eye, PlusCircle, Trash2 } from "lucide-react";
+import { Archive, Download, Eye, PlusCircle, Trash2 } from "lucide-react";
 
 const ALL = "all";
 /** The list shows this many rows at first; "Meer tonen" adds another page. The total always counts every row. */
@@ -66,6 +68,7 @@ export default function ExpensesIndex() {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
+  const [binOpen, setBinOpen] = useState(false);
   const { toast } = useToast();
   const { openExpenseDialog } = useGlobalDialog();
 
@@ -215,6 +218,14 @@ export default function ExpensesIndex() {
       <div className="flex flex-wrap justify-between items-center gap-2">
         <h1 className="text-2xl font-bold">{t('indexPage.pageTitle')}</h1>
         <div className="flex flex-wrap gap-2">
+          {/* Sub-project D (B-41 D8): this screen's own bin; greyed out with the reason
+              unless the account holds "Prullenbak beheren". */}
+          <RequiresPermission anyOf={[UserPermission.MANAGE_RECYCLE_BIN]}>
+            <Button variant="outline" onClick={() => setBinOpen(true)} data-testid="button-expenses-bin">
+              <Archive className="mr-2 h-4 w-4" />
+              {t('recycleBin:kinds.expense.openButton')}
+            </Button>
+          </RequiresPermission>
           <InvoiceInboxButton />
           <InvoiceScanner
             onExpensesCreated={() => {
@@ -412,6 +423,8 @@ export default function ExpensesIndex() {
           </CardContent>
         </Card>
       </div>
+
+      <RecycleBinDialog kind="expense" open={binOpen} onOpenChange={setBinOpen} />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

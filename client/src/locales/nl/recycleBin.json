@@ -14,7 +14,10 @@
     "restoredTitle": "Teruggezet",
     "restoredDescription": "{{label}} is teruggezet.",
     "restoreFailedTitle": "Terugzetten mislukt",
-    "restoreFailedDescription": "Dit record kon niet worden teruggezet."
+    "restoreFailedDescription": "Dit record kon niet worden teruggezet.",
+    "warnings": {
+      "VEHICLE_MISSING": "Let op: het voertuig van deze kostenpost bestaat niet meer. De kostenpost staat er weer, maar hoort bij een voertuig dat ontbreekt."
+    }
   },
   "restoreErrors": {
     "NOT_FOUND": "Dit record staat niet meer in de prullenbak.",
@@ -26,7 +29,8 @@
     "BARCODE_TAKEN": "Een ander voertuig gebruikt dezelfde barcode. Maak die daar eerst leeg.",
     "RESERVATION_CONFLICT": "Deze reservering kan niet terug: het voertuig is in de tussentijd geboekt voor die periode.",
     "DEBTOR_NUMBER_TAKEN": "Dit debiteurnummer is al in gebruik bij klant {{name}}.",
-    "DEBTOR_NUMBER_TAKEN_UNNAMED": "Een andere klant gebruikt dit debiteurnummer al."
+    "DEBTOR_NUMBER_TAKEN_UNNAMED": "Een andere klant gebruikt dit debiteurnummer al.",
+    "CUSTOMER_MISSING": "De klant van deze chauffeur bestaat niet meer. Zet eerst de klant terug (Klanten, Verwijderde klanten) en daarna de chauffeur."
   },
   "kinds": {
     "vehicle": {
@@ -88,6 +92,26 @@
       "noun_one": "boete",
       "noun_other": "boetes",
       "purgeNote": "De boete verdwijnt voorgoed, samen met de bijgevoegde brief."
+    },
+    "driver": {
+      "openButton": "Verwijderde chauffeurs",
+      "title": "Verwijderde chauffeurs",
+      "description": "Een verwijderde chauffeur wordt hier bewaard, met de koppelingen aan reserveringen en boetes. Terugzetten kan zolang de klant nog bestaat.",
+      "empty": "Geen verwijderde chauffeurs.",
+      "badge": "Chauffeur",
+      "noun_one": "chauffeur",
+      "noun_other": "chauffeurs",
+      "purgeNote": "De chauffeur verdwijnt voorgoed, samen met de kopie van het rijbewijs. Reserveringen en boetes die naar de chauffeur verwezen, houden die koppeling niet terug."
+    },
+    "expense": {
+      "openButton": "Verwijderde kostenposten",
+      "title": "Verwijderde kostenposten",
+      "description": "Een verwijderde kostenpost wordt hier bewaard met zijn bon en kan worden teruggezet. Hoort de kostenpost bij een factuur uit het postvak, dan komt die koppeling mee terug.",
+      "empty": "Geen verwijderde kostenposten.",
+      "badge": "Kostenpost",
+      "noun_one": "kostenpost",
+      "noun_other": "kostenposten",
+      "purgeNote": "De kostenpost verdwijnt voorgoed, samen met de bon. Een bon die ook de bijlage van een factuur in het postvak is, blijft staan."
     }
   },
   "purge": {
@@ -179,7 +203,9 @@
     "vehicle_fiscal_profiles_one": "{{count}} fiscaal profiel",
     "vehicle_fiscal_profiles_other": "{{count}} fiscale profielen",
     "apk_date_changes_one": "{{count}} wijziging van de APK-datum",
-    "apk_date_changes_other": "{{count}} wijzigingen van de APK-datum"
+    "apk_date_changes_other": "{{count}} wijzigingen van de APK-datum",
+    "invoice_inbox_items_one": "{{count}} factuur uit het postvak",
+    "invoice_inbox_items_other": "{{count}} facturen uit het postvak"
   },
   "showRestored": "Teruggezette items ook tonen ({{count}})"
 }

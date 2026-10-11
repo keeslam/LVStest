@@ -13,7 +13,7 @@
  * Runs in the jsdom project (plan §8.8), real i18n (setup-jsdom.ts).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import i18n from "i18next";
@@ -54,6 +54,8 @@ const ALL_ROWS: Row[] = [
   row({ id: 5, entityType: "transport", label: "Transport #44 — AB-123-C 2030-02-01", relatedCounts: { spareReservations: 1 } }),
   row({ id: 6, entityType: "fine", label: "Boete AB-123-C", relatedCounts: { requests: 0 } }),
   row({ id: 7, entityType: "customer", label: "Oud Bedrijf", restoredAt: "2026-09-05T10:00:00.000Z", restoredBy: "anna" }),
+  row({ id: 8, entityType: "driver", label: "Chauffeur Piet Pieters — Jansen Verhuur BV", relatedCounts: { "reservations.driver_id": 2 } }),
+  row({ id: 9, entityType: "expense", label: "Kostenpost #12 — AB-123-C fuel € 45,50 2026-10-01", relatedCounts: { invoice_inbox_items: 1 } }),
 ];
 
 let requestedUrls: string[];
@@ -93,7 +95,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function renderBin(kind: DeletedRecordKind, props: { onRestored?: () => void; rows?: Row[] } = {}) {
+function renderBin(kind: DeletedRecordKind, props: { onRestored?: () => void; rows?: Row[]; customerId?: number } = {}) {
   const client = new QueryClient({
     defaultOptions: {
       queries: {
@@ -106,7 +108,7 @@ function renderBin(kind: DeletedRecordKind, props: { onRestored?: () => void; ro
   });
   return render(
     <QueryClientProvider client={client}>
-      <RecycleBinDialog kind={kind} open onOpenChange={() => {}} onRestored={props.onRestored} />
+      <RecycleBinDialog kind={kind} customerId={props.customerId} open onOpenChange={() => {}} onRestored={props.onRestored} />
       <Toaster />
     </QueryClientProvider>,
   );
@@ -119,6 +121,8 @@ const KIND_FACTS: Record<DeletedRecordKind, { title: string; empty: string; badg
   maintenance_block: { title: "Verwijderd onderhoud", empty: "Geen verwijderd onderhoud.", badge: "Onderhoud", rowId: 4, label: "Onderhoud #3390" },
   transport: { title: "Verwijderde transporten", empty: "Geen verwijderde transporten.", badge: "Transport", rowId: 5, label: "Transport #44" },
   fine: { title: "Verwijderde bekeuringen", empty: "Geen verwijderde bekeuringen.", badge: "Boete", rowId: 6, label: "Boete AB-123-C" },
+  driver: { title: "Verwijderde chauffeurs", empty: "Geen verwijderde chauffeurs.", badge: "Chauffeur", rowId: 8, label: "Chauffeur Piet Pieters" },
+  expense: { title: "Verwijderde kostenposten", empty: "Geen verwijderde kostenposten.", badge: "Kostenpost", rowId: 9, label: "Kostenpost #12" },
 };
 
 describe("RecycleBinDialog - one dialog, one kind per screen", () => {
@@ -146,6 +150,21 @@ describe("RecycleBinDialog - one dialog, one kind per screen", () => {
     renderBin(kind);
 
     expect(await screen.findByTestId("text-recycle-bin-empty")).toHaveTextContent(KIND_FACTS[kind].empty);
+  });
+
+  it("a driver bin for one customer asks the server for that customer's drivers only (?customerId=)", async () => {
+    renderBin("driver", { customerId: 41 });
+
+    expect(await screen.findByTestId("deleted-record-8")).toBeInTheDocument();
+    expect(requestedUrls).toContain("/api/deleted-records?type=driver&customerId=41");
+  });
+
+  it("prints the cleared links of a driver and the inbox item of an expense as words", async () => {
+    renderBin("driver");
+    expect(await screen.findByTestId("deleted-record-8")).toHaveTextContent("Bevat: 2 verwijzingen in andere gegevens losgekoppeld");
+    cleanup();
+    renderBin("expense");
+    expect(await screen.findByTestId("deleted-record-9")).toHaveTextContent("Bevat: 1 factuur uit het postvak");
   });
 
   it("the maintenance bin is called Onderhoud, not Reservering", async () => {
@@ -233,6 +252,50 @@ describe("RecycleBinDialog - restoring", () => {
     ).toBeInTheDocument();
     expect(screen.queryByText(/the vehicle was booked/)).toBeNull();
     expect(screen.getByText("Terugzetten mislukt")).toBeInTheDocument();
+  });
+
+  it("a driver whose customer is gone is refused by code, with the hint to restore the customer first", async () => {
+    const user = userEvent.setup();
+    restoreResponse = () => jsonResponse({ code: "CUSTOMER_MISSING", message: "The customer of this driver no longer exists." }, 409);
+    renderBin("driver");
+
+    await user.click(await screen.findByTestId("button-restore-8"));
+
+    expect(await screen.findByText(/Zet eerst de klant terug/)).toBeInTheDocument();
+    expect(screen.queryByText(/no longer exists/)).toBeNull();
+  });
+
+  it("an expense restored without its vehicle says so (VEHICLE_MISSING warning), still as a success", async () => {
+    const user = userEvent.setup();
+    restoreResponse = () => jsonResponse({ success: true, message: "x", warnings: ["VEHICLE_MISSING"] });
+    renderBin("expense");
+
+    await user.click(await screen.findByTestId("button-restore-9"));
+
+    expect(await screen.findByText(/het voertuig van deze kostenpost bestaat niet meer/)).toBeInTheDocument();
+    expect(screen.getByText("Teruggezet")).toBeInTheDocument();
+  });
+
+  it("emptying a customer's driver bin removes exactly the rows shown - never another customer's drivers", async () => {
+    const user = userEvent.setup();
+    const purgeBodies: unknown[] = [];
+    const baseFetch = globalThis.fetch;
+    vi.stubGlobal("fetch", vi.fn(async (input: any, init?: any) => {
+      const url = typeof input === "string" ? input : input?.url ?? "";
+      if ((init?.method ?? "GET").toUpperCase() === "POST" && url === "/api/deleted-records/purge") {
+        purgeBodies.push(JSON.parse(init.body));
+        return jsonResponse({ purged: 1, failed: [] });
+      }
+      return baseFetch(input, init);
+    }));
+    renderBin("driver", { customerId: 41 });
+    await screen.findByTestId("deleted-record-8");
+
+    await user.click(screen.getByTestId("button-purge-all"));
+    await user.click(await screen.findByTestId("button-confirm-purge"));
+
+    await waitFor(() => expect(purgeBodies).toHaveLength(1));
+    expect(purgeBodies[0]).toEqual({ ids: [8] });
   });
 
   it("a refused debtor number names the customer who holds it, from the structured field", async () => {
@@ -333,7 +396,7 @@ describe("recycleBin locales", () => {
   it("every code the restore route can answer has a Dutch sentence and an English one", () => {
     const codes = [
       "NOT_FOUND", "ALREADY_RESTORED", "UNSUPPORTED_TYPE", "EMPTY_SNAPSHOT", "ID_TAKEN",
-      "LICENSE_PLATE_TAKEN", "BARCODE_TAKEN", "RESERVATION_CONFLICT", "DEBTOR_NUMBER_TAKEN",
+      "LICENSE_PLATE_TAKEN", "BARCODE_TAKEN", "RESERVATION_CONFLICT", "DEBTOR_NUMBER_TAKEN", "CUSTOMER_MISSING",
     ];
     for (const bin of [nlBin, enBin] as Array<typeof nlBin>) {
       for (const code of codes) expect((bin.restoreErrors as Record<string, string>)[code], code).toBeTruthy();

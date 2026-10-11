@@ -191,9 +191,9 @@ import { sendRouteError, HttpError } from "./utils/route-errors";
 import { isDeliberateStorageRefusal } from "./utils/storage-refusals";
 import { UploadRejectedError } from "./utils/security/fileUploadSecurity";
 import { db } from "./db";
+import { FUEL_REFILL_SOURCE, parseFuelCost, fuelSourceRef, fuelExpenseDescription, findRecentFuelExpense } from "./services/expenses/fuel-refill";
 import { sql, eq, desc } from "drizzle-orm";
 
-import { FUEL_REFILL_SOURCE, parseFuelCost, fuelSourceRef, fuelExpenseDescription, findRecentFuelExpense } from "./services/expenses/fuel-refill";
 /**
  * The fields that move a booking in time or onto another vehicle. A PATCH that
  * touches none of them cannot create a double booking, so the (expensive)
@@ -2300,7 +2300,20 @@ export async function registerRoutes(app: Express): Promise<void> {
           message: `Unknown recycle bin kind. Use one of: ${DELETED_RECORD_KINDS.join(", ")}.`,
         });
       }
-      const records = (await storage.getDeletedRecords?.(type ? 200 : 100, type)) || [];
+      // Sub-project D (B-41 D8): the driver bin on a customer's details screen shows that
+      // customer's drivers only. The filter belongs to the driver kind; on any other it is a mistake.
+      let customerId: number | undefined;
+      if (req.query.customerId !== undefined) {
+        const raw = typeof req.query.customerId === "string" ? req.query.customerId : "";
+        if (type !== "driver") {
+          return res.status(400).json({ code: "INVALID_BIN_FILTER", message: "customerId only applies to type=driver." });
+        }
+        if (!/^\d{1,9}$/.test(raw)) {
+          return res.status(400).json({ code: "INVALID_BIN_FILTER", message: "customerId must be a whole number." });
+        }
+        customerId = Number(raw);
+      }
+      const records = (await storage.getDeletedRecords?.(type ? 200 : 100, type, customerId !== undefined ? { customerId } : undefined)) || [];
       // The full snapshot can be megabytes; the list only needs the headline.
       res.json(records.map((record: any) => ({
         id: record.id,
@@ -2346,6 +2359,8 @@ export async function registerRoutes(app: Express): Promise<void> {
           // besluiten B-35 (BUG-045) — fallback text; overridden below with
           // the name of whoever holds the number now, when we have it.
           debtor_number_taken: "Another customer already uses this debtor number.",
+          // Sub-project D (B-41 D8): a driver cannot come back before its customer does.
+          customer_missing: "The customer of this driver no longer exists. Restore the customer first.",
         };
         const reason = result?.reason || 'not_found';
         let message = reasons[reason] || "Could not restore this record.";
@@ -2374,6 +2389,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       );
 
       if (entityType === 'vehicle') realtimeEvents.vehicles.created({ id: result.record?.entityId });
+      // Sub-project D (B-41 D8): the restored expense has to show up in the cost lists at once.
+      if (entityType === 'expense' && result.record?.entityId != null) {
+        const restoredExpense = await storage.getExpense(result.record.entityId);
+        if (restoredExpense) realtimeEvents.expenses.created(restoredExpense);
+      }
       // besluiten B-15 — the calendar has to see a restored reservation at once,
       // otherwise the row is back but the screen still shows the free slot.
       if ((entityType === 'reservation' || entityType === 'maintenance_block') && result.record?.entityId != null) {
@@ -2385,7 +2405,12 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       // WAVE 13 item 7 — the desk reads Dutch (B-18).
-      res.json({ success: true, message: `${result.record?.label ?? 'De regel'} is teruggezet.` });
+      res.json({
+        success: true,
+        message: `${result.record?.label ?? 'De regel'} is teruggezet.`,
+        // Restored, but something the client should say (e.g. an expense whose vehicle is gone).
+        warnings: (result.warnings ?? []).map((w) => w.toUpperCase()),
+      });
     } catch (error) {
       console.error("Error restoring deleted record:", error);
       res.status(500).json({
@@ -8072,7 +8097,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (isNaN(id)) {
         return res.status(400).json({ error: "Invalid driver ID" });
       }
-      const success = await storage.deleteDriver(id);
+      // Sub-project D (B-41 D8): goes to the recycle bin; the actor is recorded on the bin row.
+      const success = await storage.deleteDriver(id, {
+        username: req.user?.username ?? null,
+        userId: req.user?.id ?? null,
+      });
       if (!success) {
         return res.status(404).json({ error: "Driver not found" });
       }

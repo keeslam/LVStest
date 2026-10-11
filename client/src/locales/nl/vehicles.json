@@ -357,7 +357,7 @@
       "printReceiptTitle": "Bon afdrukken",
       "deleteExpenseTitle": "Kosten verwijderen",
       "confirmDeleteExpenseTitle": "Kosten verwijderen?",
-      "confirmDeleteExpenseDescription": "Deze kostenpost wordt permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.",
+      "confirmDeleteExpenseDescription": "Deze kostenpost gaat naar de prullenbak; terugzetten kan via Prullenbak op de pagina Kosten.",
       "expenseDeletedTitle": "Kosten verwijderd",
       "expenseDeletedDescription": "De kostenpost is succesvol verwijderd.",
       "expenseDeleteErrorTitle": "Verwijderen van kosten mislukt"

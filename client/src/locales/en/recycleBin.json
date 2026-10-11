@@ -14,7 +14,10 @@
     "restoredTitle": "Restored",
     "restoredDescription": "{{label}} has been restored.",
     "restoreFailedTitle": "Restore failed",
-    "restoreFailedDescription": "Could not restore this record."
+    "restoreFailedDescription": "Could not restore this record.",
+    "warnings": {
+      "VEHICLE_MISSING": "Note: the vehicle of this expense no longer exists. The expense is back, but it belongs to a vehicle that is missing."
+    }
   },
   "restoreErrors": {
     "NOT_FOUND": "This record is no longer in the recycle bin.",
@@ -26,7 +29,8 @@
     "BARCODE_TAKEN": "Another vehicle already uses the same barcode. Clear it there first.",
     "RESERVATION_CONFLICT": "This reservation cannot come back: the vehicle has been booked for that period in the meantime.",
     "DEBTOR_NUMBER_TAKEN": "This debtor number is already in use by customer {{name}}.",
-    "DEBTOR_NUMBER_TAKEN_UNNAMED": "Another customer already uses this debtor number."
+    "DEBTOR_NUMBER_TAKEN_UNNAMED": "Another customer already uses this debtor number.",
+    "CUSTOMER_MISSING": "The customer of this driver no longer exists. Restore the customer first (Customers, Deleted customers) and then the driver."
   },
   "kinds": {
     "vehicle": {
@@ -88,6 +92,26 @@
       "noun_one": "fine",
       "noun_other": "fines",
       "purgeNote": "The fine disappears for good, together with its attached letter."
+    },
+    "driver": {
+      "openButton": "Deleted drivers",
+      "title": "Deleted drivers",
+      "description": "A deleted driver is kept here, with its links to reservations and fines. It can be restored as long as the customer still exists.",
+      "empty": "No deleted drivers.",
+      "badge": "Driver",
+      "noun_one": "driver",
+      "noun_other": "drivers",
+      "purgeNote": "The driver disappears for good, together with the copy of the driving licence. Reservations and fines that referred to the driver do not get that link back."
+    },
+    "expense": {
+      "openButton": "Deleted expenses",
+      "title": "Deleted expenses",
+      "description": "A deleted expense is kept here with its receipt and can be restored. If the expense belongs to an invoice from the mailbox, that link comes back with it.",
+      "empty": "No deleted expenses.",
+      "badge": "Expense",
+      "noun_one": "expense",
+      "noun_other": "expenses",
+      "purgeNote": "The expense disappears for good, together with the receipt. A receipt that is also the attachment of a mailbox invoice stays."
     }
   },
   "purge": {
@@ -179,7 +203,9 @@
     "vehicle_fiscal_profiles_one": "{{count}} fiscal profile",
     "vehicle_fiscal_profiles_other": "{{count}} fiscal profiles",
     "apk_date_changes_one": "{{count}} APK date change",
-    "apk_date_changes_other": "{{count}} APK date changes"
+    "apk_date_changes_other": "{{count}} APK date changes",
+    "invoice_inbox_items_one": "{{count}} invoice from the mailbox",
+    "invoice_inbox_items_other": "{{count}} invoices from the mailbox"
   },
   "showRestored": "Also show restored items ({{count}})"
 }

@@ -29,7 +29,8 @@ import { Price } from "@/components/ui/price";
 import { displayLicensePlate } from "@/lib/utils";
 import { Customer, Reservation, Driver } from "@shared/schema";
 import { apiRequest, queryClient, invalidateRelatedQueries, invalidateByPrefix } from "@/lib/queryClient";
-import { Calendar, Car, Check, FileWarning } from "lucide-react";
+import { Archive, Calendar, Car, Check, FileWarning } from "lucide-react";
+import { RecycleBinDialog } from "@/components/recycle-bin/recycle-bin-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -79,6 +80,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
   // Driver search and pagination state
   const [driverSearch, setDriverSearch] = useState<string>("");
   const [driverPage, setDriverPage] = useState(1);
+  const [driversBinOpen, setDriversBinOpen] = useState(false);
   const driversPerPage = 10;
   
   // Define query keys for easier reference
@@ -912,6 +914,15 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
                   <CardTitle>{t('details.authorizedDriversTitle')}</CardTitle>
                   <CardDescription>{t('details.authorizedDriversDescription')}</CardDescription>
                 </div>
+                <div className="flex flex-wrap items-center gap-2">
+                {/* Sub-project D (B-41 D8): the drivers of THIS customer that were deleted; greyed out
+                    with the reason unless the account holds "Prullenbak beheren". */}
+                <RequiresPermission anyOf={[UserPermission.MANAGE_RECYCLE_BIN]}>
+                  <Button size="sm" variant="outline" onClick={() => setDriversBinOpen(true)} data-testid="button-drivers-bin">
+                    <Archive className="mr-2 h-4 w-4" />
+                    {t('recycleBin:kinds.driver.openButton')}
+                  </Button>
+                </RequiresPermission>
                 <DriverDialog customerId={customerId} onSuccess={() => refetchDrivers()}>
                   <RequiresPermission anyOf={[UserPermission.MANAGE_CUSTOMERS]}>
                     <Button size="sm" data-testid="button-add-driver">
@@ -925,7 +936,15 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
                     </Button>
                   </RequiresPermission>
                 </DriverDialog>
+                </div>
               </div>
+              <RecycleBinDialog
+                kind="driver"
+                customerId={customerId}
+                open={driversBinOpen}
+                onOpenChange={setDriversBinOpen}
+                onRestored={() => { refetchDrivers(); }}
+              />
             </CardHeader>
             <CardContent>
               {/* Driver Search Input */}

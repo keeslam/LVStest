@@ -41,6 +41,12 @@ const TRACKED_RESOURCES: Record<string, {
     load: (id) => storage.getExpense(id),
     label: (row) => row?.description || row?.category || null,
   },
+  // Sub-project D (B-41 D8): `driver.delete` names the driver (its snapshot is in the bin).
+  drivers: {
+    type: 'driver',
+    load: (id) => storage.getDriver(id),
+    label: (row) => row?.displayName || null,
+  },
   documents: {
     type: 'document',
     load: (id) => storage.getDocument(id),
@@ -227,7 +233,9 @@ export function auditMutations(req: Request, res: Response, next: NextFunction) 
       if (!user) return;
 
       const changes = diffRows(before, responseBody);
-      const label = tracked?.label(responseBody && typeof responseBody === 'object' ? responseBody : before) || null;
+      // A delete answers with a message, not the row: name what it removed from the row as it was before.
+      const labelSource = method === 'DELETE' ? (before ?? responseBody) : (responseBody && typeof responseBody === 'object' ? responseBody : before);
+      const label = tracked?.label(labelSource) || null;
 
       const details: Record<string, any> = {};
       if (label) details.label = label;

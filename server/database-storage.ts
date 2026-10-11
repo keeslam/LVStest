@@ -796,11 +796,16 @@ export class DatabaseStorage implements IStorage {
    * that kind alone (a bin full of fines no longer pushes the one vehicle out
    * of the list); without it the list is mixed, as before.
    */
-  async getDeletedRecords(limit = 100, entityType?: string): Promise<DeletedRecord[]> {
+  async getDeletedRecords(limit = 100, entityType?: string, filter?: { customerId?: number }): Promise<DeletedRecord[]> {
+    // Sub-project D (B-41 D8): the driver bin of one customer's details screen. The customer
+    // id lives in the snapshot (the driver row is gone), so the filter reads the payload.
+    const ofCustomer = filter?.customerId != null
+      ? sql`(${deletedRecords.payload}->'driver'->>'customerId')::int = ${filter.customerId}`
+      : undefined;
     return await db
       .select()
       .from(deletedRecords)
-      .where(entityType ? eq(deletedRecords.entityType, entityType) : undefined)
+      .where(and(entityType ? eq(deletedRecords.entityType, entityType) : undefined, ofCustomer))
       .orderBy(desc(deletedRecords.deletedAt), desc(deletedRecords.id))
       .limit(limit);
   }
@@ -817,7 +822,7 @@ export class DatabaseStorage implements IStorage {
   async restoreDeletedRecord(
     id: number,
     actor?: { username?: string | null }
-  ): Promise<{ restored: boolean; reason?: string; record?: DeletedRecord; conflicts?: number[]; conflictingCustomerName?: string }> {
+  ): Promise<{ restored: boolean; reason?: string; record?: DeletedRecord; conflicts?: number[]; conflictingCustomerName?: string; warnings?: string[] }> {
     const record = await this.getDeletedRecord(id);
     if (!record) return { restored: false, reason: 'not_found' };
     if (record.restoredAt) return { restored: false, reason: 'already_restored', record };
@@ -833,6 +838,9 @@ export class DatabaseStorage implements IStorage {
       return this.restoreDeletedReservation(record, actor);
     }
     if (record.entityType === 'transport') return this.restoreDeletedTransport(record, actor);
+    // Sub-project D (B-41 D8): a driver and an expense have their own bins.
+    if (record.entityType === 'driver') return this.restoreDeletedDriver(record, actor);
+    if (record.entityType === 'expense') return this.restoreDeletedExpense(record, actor);
     if (record.entityType !== 'vehicle') return { restored: false, reason: 'unsupported_type', record };
 
     const payload = record.payload as any;
@@ -1250,6 +1258,114 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
     return { restored: true, record };
+  }
+
+  /** Timestamp columns of a table come back from the JSON snapshot as ISO strings; make them Dates again. */
+  private reviveDates(table: any, row: Record<string, any>): Record<string, any> {
+    const revived: Record<string, any> = { ...row };
+    for (const [key, column] of Object.entries(getTableColumns(table)) as Array<[string, any]>) {
+      if (column?.dataType === 'date' && (typeof revived[key] === 'string' || typeof revived[key] === 'number')) {
+        revived[key] = new Date(revived[key]);
+      }
+    }
+    return revived;
+  }
+
+  /**
+   * Sub-project D (B-41 D8) — puts a deleted driver back with its original id. The customer
+   * must exist (the foreign key; `customer_missing` tells the client to restore the customer
+   * first). The links the delete blanked (`cascade.nulled`) are put back only where the other row
+   * still exists and the column is still empty, so a reservation that got another driver in the
+   * meantime keeps it. A licence document that is gone is dropped from the row.
+   */
+  private async restoreDeletedDriver(
+    record: DeletedRecord,
+    actor?: { username?: string | null }
+  ): Promise<{ restored: boolean; reason?: string; record?: DeletedRecord }> {
+    const payload = record.payload as any;
+    const driver = payload?.driver;
+    if (!driver) return { restored: false, reason: 'empty_snapshot', record };
+    const [idTaken] = await db.select({ id: drivers.id }).from(drivers).where(eq(drivers.id, driver.id));
+    if (idTaken) return { restored: false, reason: 'id_taken', record };
+    const [customer] = await db.select({ id: customers.id }).from(customers).where(eq(customers.id, driver.customerId));
+    if (!customer) return { restored: false, reason: 'customer_missing', record };
+
+    const revived = this.reviveDates(drivers, driver);
+    if (revived.licenseDocumentId != null
+      && !(await db.select({ id: documents.id }).from(documents).where(eq(documents.id, revived.licenseDocumentId)))[0]) {
+      revived.licenseDocumentId = null;
+    }
+
+    try {
+      await db.transaction(async (tx) => {
+        // FIX-G (BUG-043): same claim-first rule as the other kinds.
+        const [claimed] = await tx.update(deletedRecords)
+          .set({ restoredAt: new Date(), restoredBy: actor?.username || null })
+          .where(and(eq(deletedRecords.id, record.id), isNull(deletedRecords.restoredAt)))
+          .returning();
+        if (!claimed) throw new RestoreAbort('already_restored');
+        await tx.insert(drivers).values(revived as any);
+        await tx.execute(sql`SELECT setval(pg_get_serial_sequence('drivers', 'id'), GREATEST((SELECT COALESCE(MAX(id), 1) FROM "drivers"), 1))`);
+        // Only the blanked links: a driver has no cascaded rows of its own.
+        await restoreCascadeSnapshot(tx, { deleted: [], nulled: payload?.cascade?.nulled ?? [] });
+      });
+    } catch (error) {
+      if (error instanceof RestoreAbort) return { restored: false, reason: error.reason, record };
+      throw error;
+    }
+    return { restored: true, record };
+  }
+
+  /**
+   * Sub-project D (B-41 D8) — puts a deleted expense back with its original id. There is no
+   * foreign key from `expenses.vehicle_id`, so an expense whose vehicle is gone still comes back,
+   * with the warning `vehicle_missing`. `inbox_item_id` returns only when that inbox item still
+   * exists (otherwise it is dropped), and the id goes back into `invoice_inbox_items.expense_ids`
+   * of the items that listed it.
+   */
+  private async restoreDeletedExpense(
+    record: DeletedRecord,
+    actor?: { username?: string | null }
+  ): Promise<{ restored: boolean; reason?: string; record?: DeletedRecord; warnings?: string[] }> {
+    const payload = record.payload as any;
+    const expense = payload?.expense;
+    if (!expense) return { restored: false, reason: 'empty_snapshot', record };
+    const [idTaken] = await db.select({ id: expenses.id }).from(expenses).where(eq(expenses.id, expense.id));
+    if (idTaken) return { restored: false, reason: 'id_taken', record };
+
+    const warnings: string[] = [];
+    const [vehicle] = await db.select({ id: vehicles.id }).from(vehicles).where(eq(vehicles.id, expense.vehicleId));
+    if (!vehicle) warnings.push('vehicle_missing');
+
+    const revived = this.reviveDates(expenses, expense);
+    const listedBy: number[] = Array.isArray(payload?.inboxItemIds) ? payload.inboxItemIds.map(Number) : [];
+    const candidates = [...new Set([...listedBy, ...(revived.inboxItemId != null ? [Number(revived.inboxItemId)] : [])])];
+
+    try {
+      await db.transaction(async (tx) => {
+        const [claimed] = await tx.update(deletedRecords)
+          .set({ restoredAt: new Date(), restoredBy: actor?.username || null })
+          .where(and(eq(deletedRecords.id, record.id), isNull(deletedRecords.restoredAt)))
+          .returning();
+        if (!claimed) throw new RestoreAbort('already_restored');
+
+        // Which of the inbox items the expense belonged to still exist.
+        const present = new Set<number>(candidates.length === 0 ? [] : (await tx.execute(
+          sql`SELECT id FROM invoice_inbox_items WHERE id IN (${sql.join(candidates.map((i) => sql`${i}`), sql`, `)})`,
+        )).rows.map((r: any) => Number(r.id)));
+        if (revived.inboxItemId != null && !present.has(Number(revived.inboxItemId))) revived.inboxItemId = null;
+
+        await tx.insert(expenses).values(revived as any);
+        await tx.execute(sql`SELECT setval(pg_get_serial_sequence('expenses', 'id'), GREATEST((SELECT COALESCE(MAX(id), 1) FROM "expenses"), 1))`);
+        for (const itemId of listedBy.filter((i) => present.has(i))) {
+          await tx.execute(sql`UPDATE invoice_inbox_items SET expense_ids = array_append(expense_ids, ${expense.id}) WHERE id = ${itemId} AND NOT (${expense.id} = ANY(expense_ids))`);
+        }
+      });
+    } catch (error) {
+      if (error instanceof RestoreAbort) return { restored: false, reason: error.reason, record };
+      throw error;
+    }
+    return { restored: true, record, ...(warnings.length > 0 ? { warnings } : {}) };
   }
 
   async getAvailableVehicles(): Promise<Vehicle[]> {
@@ -3290,14 +3406,44 @@ export class DatabaseStorage implements IStorage {
     }));
   }
   
-  async deleteExpense(id: number): Promise<boolean> {
+  /**
+   * Sub-project D (B-41 D8) — an expense goes to the recycle bin: the row and the inbox items
+   * that listed it in `expense_ids` are snapshotted in the same transaction as the delete, so a
+   * restore can relink them. The receipt file stays on disk until the bin is emptied.
+   */
+  async deleteExpense(
+    id: number,
+    actor?: { username?: string | null; userId?: number | null },
+  ): Promise<boolean> {
     try {
-      const result = await db
-        .delete(expenses)
-        .where(eq(expenses.id, id));
+      return await db.transaction(async (tx) => {
+        const [expense] = await tx.select().from(expenses).where(eq(expenses.id, id)).for('update');
+        if (!expense) return false;
+        const [vehicle] = await tx.select({ licensePlate: vehicles.licensePlate }).from(vehicles).where(eq(vehicles.id, expense.vehicleId));
 
-      // Check if any rows were affected by the deletion
-      return result.rowCount !== null && result.rowCount > 0;
+        // The inbox items that list this expense (the array is a cache next to expenses.inbox_item_id).
+        const listed = await tx.execute(sql`
+          UPDATE invoice_inbox_items SET expense_ids = array_remove(expense_ids, ${id})
+          WHERE ${id} = ANY(expense_ids)
+          RETURNING id
+        `);
+        const inboxItemIds = listed.rows.map((r: any) => Number(r.id));
+
+        const amount = Number(expense.amount);
+        const shownAmount = Number.isFinite(amount) ? amount.toFixed(2).replace('.', ',') : expense.amount;
+        await tx.insert(deletedRecords).values({
+          entityType: 'expense',
+          entityId: id,
+          label: `Kostenpost #${id} — ${vehicle?.licensePlate ?? `voertuig ${expense.vehicleId}`} ${expense.category} € ${shownAmount} ${expense.date}`,
+          payload: { expense, inboxItemIds },
+          relatedCounts: inboxItemIds.length > 0 ? { invoice_inbox_items: inboxItemIds.length } : {},
+          deletedBy: actor?.username || null,
+          deletedByUserId: actor?.userId ?? null,
+        });
+
+        const result = await tx.delete(expenses).where(eq(expenses.id, id));
+        return result.rowCount !== null && result.rowCount > 0;
+      });
     } catch (error) {
       console.error("Error deleting expense:", error);
       return false;
@@ -5992,9 +6138,38 @@ export class DatabaseStorage implements IStorage {
     return updatedDriver || undefined;
   }
 
-  async deleteDriver(id: number): Promise<boolean> {
-    const result = await db.delete(drivers).where(eq(drivers.id, id));
-    return (result.rowCount ?? 0) > 0;
+  /**
+   * Sub-project D (B-41 D8) — a driver goes to the recycle bin: the row and the links the
+   * foreign keys are about to blank (reservations, fines, portal users, assignments, usage
+   * periods) are snapshotted in the same transaction as the delete, so a restore can put
+   * them back.
+   */
+  async deleteDriver(
+    id: number,
+    actor?: { username?: string | null; userId?: number | null },
+  ): Promise<boolean> {
+    return db.transaction(async (tx) => {
+      const [driver] = await tx.select().from(drivers).where(eq(drivers.id, id)).for('update');
+      if (!driver) return false;
+      const [customer] = await tx.select({ name: customers.name, companyName: customers.companyName })
+        .from(customers).where(eq(customers.id, driver.customerId));
+      const owner = customer ? (customer.companyName || customer.name) : null;
+
+      const cascade = await collectCascadeSnapshot(tx, "drivers", id);
+
+      await tx.insert(deletedRecords).values({
+        entityType: 'driver',
+        entityId: id,
+        label: `Chauffeur ${driver.displayName}${owner ? ` — ${owner}` : ''}`,
+        payload: { driver, cascade },
+        relatedCounts: snapshotCounts(cascade),
+        deletedBy: actor?.username || null,
+        deletedByUserId: actor?.userId ?? null,
+      });
+
+      const result = await tx.delete(drivers).where(eq(drivers.id, id));
+      return (result.rowCount ?? 0) > 0;
+    });
   }
 
   async getDriverCountryUsageStats(): Promise<{ country: string; count: number }[]> {

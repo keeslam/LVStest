@@ -121,7 +121,7 @@ describe("fines table - the bin opener follows the right, not the role", () => {
   });
 });
 
-describe("the six openers are gated by the right, never by role admin", () => {
+describe("the eight openers are gated by the right, never by role admin", () => {
   const SOURCES: Array<{ file: string; opener: string; kind: string }> = [
     { file: "client/src/pages/vehicles/index.tsx", opener: "button-open-recycle-bin", kind: "vehicle" },
     { file: "client/src/pages/customers/index.tsx", opener: "button-open-recycle-bin-customers", kind: "customer" },
@@ -129,6 +129,9 @@ describe("the six openers are gated by the right, never by role admin", () => {
     { file: "client/src/pages/maintenance/calendar.tsx", opener: "button-open-recycle-bin-maintenance", kind: "maintenance_block" },
     { file: "client/src/pages/delivery/dashboard.tsx", opener: "button-open-recycle-bin-transports", kind: "transport" },
     { file: "client/src/components/fines/fines-table.tsx", opener: "button-fines-bin", kind: "fine" },
+    // Sub-project D (B-41 D8): the Kosten page and the Chauffeurs section of the customer details.
+    { file: "client/src/pages/expenses/index.tsx", opener: "button-expenses-bin", kind: "expense" },
+    { file: "client/src/components/customers/customer-details.tsx", opener: "button-drivers-bin", kind: "driver" },
   ];
 
   for (const { file, opener, kind } of SOURCES) {
