@@ -3,6 +3,7 @@ import { portalNotifications, reservations, vehicles, customers, portalUsers, ty
 import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { getServiceDueVehicles } from "../utils/service-due-scanner";
 import { customerDisplayName } from "./customer-display-name";
+import { companyName } from "./company-name";
 
 /** How far ahead the customer hears about an APK that is about to expire. */
 export const APK_WARNING_DAYS = 30;
@@ -116,8 +117,8 @@ export async function scanVehicleAlertsForPortal(): Promise<{ apk: number; servi
         customerId: r.customerId, type: expired ? "apk_expired" : "apk_due",
         title: expired ? `APK verlopen: ${r.plate}` : `APK verloopt binnenkort: ${r.plate}`,
         description: expired
-          ? `De APK van ${car} is verlopen op ${r.apkDate}. Neem contact op met Lam Groep om een keuring in te plannen.`
-          : `De APK van ${car} verloopt op ${r.apkDate}. Lam Groep plant de keuring; houd rekening met een moment zonder de auto.`,
+          ? `De APK van ${car} is verlopen op ${r.apkDate}. Neem contact op met ${companyName()} om een keuring in te plannen.`
+          : `De APK van ${car} verloopt op ${r.apkDate}. ${companyName()} plant de keuring; houd rekening met een moment zonder de auto.`,
         link: `/reserveringen/${r.reservationId}`, dedupeTag: `apk:${r.vehicleId}:${r.apkDate}`, dedupeDays: 30,
       });
       if (created) apk += 1;
@@ -127,7 +128,7 @@ export async function scanVehicleAlertsForPortal(): Promise<{ apk: number; servi
       const created = await customerNotifications.notify({
         customerId: r.customerId, type: due.serviceDue.isServiceDue ? "service_due" : "service_due_soon",
         title: due.serviceDue.isServiceDue ? `Onderhoud nodig: ${r.plate}` : `Onderhoud komt eraan: ${r.plate}`,
-        description: `${car} is ${due.serviceDue.isServiceDue ? "toe aan" : "bijna toe aan"} een onderhoudsbeurt. Lam Groep neemt contact op om dit in te plannen; u kunt ook zelf een onderhoudsmelding doen via een aanvraag.`,
+        description: `${car} is ${due.serviceDue.isServiceDue ? "toe aan" : "bijna toe aan"} een onderhoudsbeurt. ${companyName()} neemt contact op om dit in te plannen; u kunt ook zelf een onderhoudsmelding doen via een aanvraag.`,
         link: `/reserveringen/${r.reservationId}`, dedupeTag: `service:${r.vehicleId}:${due.serviceDue.isServiceDue ? "due" : "soon"}`, dedupeDays: 30,
       });
       if (created) service += 1;
