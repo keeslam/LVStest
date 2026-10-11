@@ -8,6 +8,8 @@
 export const COMPANY_NAME_KEY = "company_name";
 /** The name the mails carried before it became a setting. */
 export const DEFAULT_COMPANY_NAME = "Autolease Lam";
+/** The name the portal texts carried before it became a setting; they keep it until a name is saved. */
+export const LEGACY_COMPANY_NAME = "Lam Groep";
 /** Stable error code of the settings route for a name that is not acceptable. */
 export const INVALID_COMPANY_NAME_CODE = "INVALID_COMPANY_NAME";
 export const COMPANY_NAME_MAX_LENGTH = 100;

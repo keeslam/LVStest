@@ -6,10 +6,12 @@
  * background when older than 60 s. Before the first load nothing touches the
  * database and the default answers.
  */
-import { COMPANY_NAME_KEY, DEFAULT_COMPANY_NAME, companyNameFromSetting } from "../../shared/company-name";
+import { COMPANY_NAME_KEY, DEFAULT_COMPANY_NAME, LEGACY_COMPANY_NAME, companyNameFromSetting, validCompanyName } from "../../shared/company-name";
 
 const CACHE_TTL_MS = 60_000;
 let name = DEFAULT_COMPANY_NAME;
+/** True when a usable `company_name` value is stored (not just the default answering). */
+let saved = false;
 let loadedAt = 0;
 let loading: Promise<string> | null = null;
 let reloadRequested = false;
@@ -18,6 +20,16 @@ let reloadRequested = false;
 export function companyName(): string {
   if (loadedAt !== 0 && Date.now() - loadedAt >= CACHE_TTL_MS) void loadCompanyName();
   return name;
+}
+
+/**
+ * The name for the customer-facing portal texts (the bell notifications). Like the portal mail
+ * templates (portal-mail.ts), they keep saying "Lam Groep" until somebody has saved a company name, so
+ * a customer never sees two names; after the first save they follow the setting.
+ */
+export function portalCompanyName(): string {
+  const current = companyName();
+  return saved ? current : LEGACY_COMPANY_NAME;
 }
 
 /** Reads the setting now, replacing the cached value. Never rejects. */
@@ -34,7 +46,9 @@ export function loadCompanyName(): Promise<string> {
         reloadRequested = false;
         try {
           const { storage } = await import("../storage");
-          name = companyNameFromSetting((await storage.getAppSettingByKey(COMPANY_NAME_KEY))?.value);
+          const stored = (await storage.getAppSettingByKey(COMPANY_NAME_KEY))?.value;
+          name = companyNameFromSetting(stored);
+          saved = validCompanyName(stored) !== null;
         } catch (error) {
           console.warn("company_name could not be read, keeping", name, error);
         }

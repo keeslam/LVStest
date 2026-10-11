@@ -24,7 +24,7 @@ import { registerPortalRequestRoutes } from "../routes/portal-requests";
 import { requestsStorage } from "../services/portal-requests-storage";
 import { portalStorage } from "../services/portal-storage";
 import { storage } from "../storage";
-import { loadCompanyName } from "../services/company-name";
+import { loadCompanyName, portalCompanyName } from "../services/company-name";
 import { db } from "../db";
 import { appSettings, reservations, vehicles, UserPermission, type Reservation } from "../../shared/schema";
 import { getUploadsDir } from "../../shared/paths";
@@ -36,14 +36,18 @@ const manager = buildStaffTestApp([UserPermission.MANAGE_PORTAL], (app) => regis
 
 let customerId: number, userId: number, rentalId: number, vehicleId: number;
 
+/** Stores (or removes) the company name setting and reloads the cache. */
+async function setName(value: string | null) {
+  await db.delete(appSettings).where(eq(appSettings.key, "company_name"));
+  if (value !== null) await db.insert(appSettings).values({ key: "company_name", value, category: "business", description: "Bedrijfsnaam" } as any);
+  await loadCompanyName();
+}
 const bell = async (type: string) => (await customerNotifications.listForUser(customerId, userId)).filter((n) => n.type === type);
 const noOldName = (text: string) => expect(text).not.toContain("Lam Groep");
 
 beforeAll(async () => {
   await cleanupPortalTestData();
-  await db.delete(appSettings).where(eq(appSettings.key, "company_name"));
-  await db.insert(appSettings).values({ key: "company_name", value: NAME, category: "business", description: "Bedrijfsnaam" } as any);
-  await loadCompanyName();
+  await setName(null);
   customerId = (await createTestCustomer("CN")).id;
   userId = (await portalStorage.createPortalUser({ customerId, email: `cn@${TEST_EMAIL_DOMAIN}`, fullName: "Melder", role: "admin" }, "t")).id;
   vehicleId = (await createTestVehicle()).id;
@@ -51,11 +55,36 @@ beforeAll(async () => {
 });
 afterAll(async () => {
   await cleanupPortalTestData();
-  await db.delete(appSettings).where(eq(appSettings.key, "company_name"));
-  await loadCompanyName();
+  await setName(null);
+});
+
+describe("until a company name is saved, the bell keeps the old name (like the portal mails)", () => {
+  it("portalCompanyName() is Lam Groep without a stored name, and follows the setting once saved", async () => {
+    await setName(null);
+    expect(portalCompanyName()).toBe("Lam Groep");
+    await setName("   ");
+    expect(portalCompanyName()).toBe("Lam Groep"); // an unusable stored value is not a saved name
+    await setName(NAME);
+    expect(portalCompanyName()).toBe(NAME);
+  });
+
+  it("a staff change of a reservation says Lam Groep while unsaved, the saved name afterwards", async () => {
+    await setName(null);
+    const rental = await createTestReservation({ customerId, vehicleId: (await createTestVehicle()).id, startDate: "2026-12-01", endDate: "2026-12-05" });
+    expect(await onReservationChangedByStaff(rental, { ...rental, startDate: "2026-12-02", endDate: "2026-12-06" } as Reservation)).toBe("reservation_changed");
+    const [unsavedNote] = (await bell("reservation_changed")).filter((x) => x.link === `/reserveringen/${rental.id}`);
+    expect(unsavedNote.description).toContain("Lam Groep heeft uw reservering aangepast.");
+
+    await setName(NAME);
+    const other = await createTestReservation({ customerId, vehicleId: (await createTestVehicle()).id, startDate: "2026-12-10", endDate: "2026-12-12" });
+    expect(await onReservationChangedByStaff(other, { ...other, startDate: "2026-12-11", endDate: "2026-12-13" } as Reservation)).toBe("reservation_changed");
+    const [savedNote] = (await bell("reservation_changed")).filter((x) => x.link === `/reserveringen/${other.id}`);
+    expect(savedNote.description).toContain(`${NAME} heeft uw reservering aangepast.`);
+  });
 });
 
 describe("portal notifications carry the company name from the setting", () => {
+  beforeAll(() => setName(NAME));
   it("maintenance planned, in and cancelled", async () => {
     const block = await storage.createMaintenanceBlock(vehicleId, "2026-10-10", "2026-10-11");
     expect(await onMaintenanceBlockChanged(null, block)).toBe("maintenance_planned");

@@ -25,7 +25,7 @@ import { reservations } from "../../shared/schema";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { isoToday, normalizeReservationStatus } from "../services/lifecycle";
 import type { RouteDeps } from "./deps";
-import { companyName } from "../services/company-name";
+import { portalCompanyName } from "../services/company-name";
 
 const canView = hasPermission(UserPermission.VIEW_PORTAL, UserPermission.MANAGE_PORTAL);
 const canManage = hasPermission(UserPermission.MANAGE_PORTAL);
@@ -53,7 +53,7 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     await customerNotifications.notify({
       customerId, type: `request_${status}`,
       title: `Aanvraag #${id} ${STATUS_LABEL[status] ?? status}`,
-      description: reply ? reply.slice(0, 300) : `${companyName()} heeft uw aanvraag #${id} ${STATUS_LABEL[status] ?? status}.`,
+      description: reply ? reply.slice(0, 300) : `${portalCompanyName()} heeft uw aanvraag #${id} ${STATUS_LABEL[status] ?? status}.`,
       link: `/aanvragen/${id}`,
     });
     // BUG-155: whether the customer actually got the mail is part of the

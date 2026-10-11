@@ -6,7 +6,7 @@ import { customerNotifications } from "./portal-customer-notifications";
 import { sendMaintenanceMail } from "./portal-mail";
 import { officeTimeZone } from "./office-time";
 import { zonedDateTimeToInstant } from "../../shared/office-timezone";
-import { companyName } from "./company-name";
+import { portalCompanyName } from "./company-name";
 
 export type MaintenanceEvent = "maintenance_planned" | "maintenance_moved" | "maintenance_in" | "maintenance_out" | "maintenance_cancelled"
   /** besluiten B-13 (BUG-139): the rental moved to another car, so the block is not theirs any more. */
@@ -81,11 +81,11 @@ export async function onMaintenanceBlockChanged(before: Reservation | null, afte
     const date = block.startDate, endDate = block.endDate ?? null;
     const tag = event === "maintenance_moved" ? `maint:${block.id}:moved:${date}:${endDate ?? ""}` : event === "maintenance_planned" ? `maint:${block.id}:planned:${date}` : `maint:${block.id}:${event.replace("maintenance_", "")}`;
     const description = {
-      maintenance_planned: `${car} (${vehicle.licensePlate}) staat ingepland voor onderhoud op ${date}${endDate && endDate !== date ? ` tot en met ${endDate}` : ""}. Breng de auto op de afgesproken dag naar ${companyName()}.`,
+      maintenance_planned: `${car} (${vehicle.licensePlate}) staat ingepland voor onderhoud op ${date}${endDate && endDate !== date ? ` tot en met ${endDate}` : ""}. Breng de auto op de afgesproken dag naar ${portalCompanyName()}.`,
       maintenance_moved: `Het onderhoud van ${car} (${vehicle.licensePlate}) is verplaatst naar ${date}${endDate && endDate !== date ? ` tot en met ${endDate}` : ""}.`,
-      maintenance_in: `${car} (${vehicle.licensePlate}) is bij ${companyName()} in onderhoud.`,
+      maintenance_in: `${car} (${vehicle.licensePlate}) is bij ${portalCompanyName()} in onderhoud.`,
       maintenance_out: `${car} (${vehicle.licensePlate}) is klaar en kan worden opgehaald.`,
-      maintenance_cancelled: `Het geplande onderhoud van ${car} (${vehicle.licensePlate}) op ${date} gaat niet door. ${companyName()} neemt contact op voor een nieuwe datum.`,
+      maintenance_cancelled: `Het geplande onderhoud van ${car} (${vehicle.licensePlate}) op ${date} gaat niet door. ${portalCompanyName()} neemt contact op voor een nieuwe datum.`,
       maintenance_unlinked: unlinkedDescription(car, vehicle.licensePlate, date),
     }[event];
     const created = await customerNotifications.notify({
@@ -102,7 +102,7 @@ export async function onMaintenanceBlockChanged(before: Reservation | null, afte
 }
 
 function unlinkedDescription(car: string, plate: string, date: string): string {
-  return `Het onderhoud van ${car} (${plate}) op ${date} hoort niet meer bij uw huur: u rijdt inmiddels in een andere auto. Het eventueel gereserveerde vervangend vervoer vervalt daarmee. ${companyName()} neemt contact op als er voor uw huidige auto onderhoud nodig is.`;
+  return `Het onderhoud van ${car} (${plate}) op ${date} hoort niet meer bij uw huur: u rijdt inmiddels in een andere auto. Het eventueel gereserveerde vervangend vervoer vervalt daarmee. ${portalCompanyName()} neemt contact op als er voor uw huidige auto onderhoud nodig is.`;
 }
 
 /**

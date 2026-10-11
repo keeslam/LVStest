@@ -25,7 +25,7 @@ import { portalStorage } from "./portal-storage";
 import { PORTAL_TEMPLATE, sendPortalCustomerMail } from "./portal-mail";
 import { formatDateNL } from "../utils/dutch-format";
 import { isContractDocument, isDamageCheckDocument } from "../../shared/document-types";
-import { companyName } from "./company-name";
+import { portalCompanyName } from "./company-name";
 
 export type ReservationCustomerEvent = "reservation_changed" | "reservation_cancelled";
 
@@ -103,7 +103,7 @@ export async function onReservationChangedByStaff(
         customerId,
         type: "reservation_cancelled",
         title: `Reservering geannuleerd: ${car.plate ?? `#${row.id}`}`,
-        description: `${companyName()} heeft uw reservering voor ${car.text}${when ? ` van ${when}` : ""} geannuleerd. Neem contact op met ${companyName()} als dit niet klopt.`,
+        description: `${portalCompanyName()} heeft uw reservering voor ${car.text}${when ? ` van ${when}` : ""} geannuleerd. Neem contact op met ${portalCompanyName()} als dit niet klopt.`,
         link,
         // One tag for the whole reservation: cancel-then-delete is one message.
         dedupeTag: `res:${row.id}:cancelled`,
@@ -132,7 +132,7 @@ export async function onReservationChangedByStaff(
       customerId,
       type: "reservation_changed",
       title: `Reservering gewijzigd: ${newCar.plate ?? `#${row.id}`}`,
-      description: `${companyName()} heeft uw reservering aangepast. ${changes.join(" ")}`,
+      description: `${portalCompanyName()} heeft uw reservering aangepast. ${changes.join(" ")}`,
       link,
       // The new values are part of the tag: saving the same edit again is the
       // same news, moving the rental once more is not.

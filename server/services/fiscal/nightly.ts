@@ -28,7 +28,7 @@ import { resolveForDate, resolveForPeriod } from "./resolve";
 import { notifyCustomerFiscal, notifyStaffFiscal } from "./fiscal-notifications";
 import type { Actor } from "./audit";
 import { isoToday } from "../lifecycle";
-import { companyName } from "../company-name";
+import { portalCompanyName } from "../company-name";
 
 const RULE: FiscalRuleKey = "pseudo_eindheffing_fossiel";
 const LOOKBACK_DAYS = 45;
@@ -130,10 +130,10 @@ async function notifyForAssessment(period: VehicleUsagePeriod, assessment: Fisca
 
   if (assessment.status === "DATA_INSUFFICIENT") {
     if (await notifyStaffFiscal({ type: "fiscal_data_missing", title: `Fiscaal: gegevens ontbreken (${plate})`, description: `${periodText}: ${missingText(assessment.missingData)}.`, link: staffLink, today })) staff += 1;
-    if (await notifyCustomerFiscal(period.customerId, { type: "fiscal_data_missing", title: `Fiscale check: gegevens ontbreken (${plate})`, description: `Voor de periode ${periodText} ontbreekt: ${missingText(assessment.missingData)}. Vul het gebruik aan of neem contact op met ${companyName()}.`, dedupeTag: `fiscal:${period.id}:missing` })) customer += 1;
+    if (await notifyCustomerFiscal(period.customerId, { type: "fiscal_data_missing", title: `Fiscale check: gegevens ontbreken (${plate})`, description: `Voor de periode ${periodText} ontbreekt: ${missingText(assessment.missingData)}. Vul het gebruik aan of neem contact op met ${portalCompanyName()}.`, dedupeTag: `fiscal:${period.id}:missing` })) customer += 1;
   } else if (assessment.status === "MANUAL_REVIEW_REQUIRED") {
     if (await notifyStaffFiscal({ type: "fiscal_review_required", title: `Fiscaal: beoordeling nodig (${plate})`, description: `${periodText}: ${FISCAL_STATUS_LABELS[assessment.status]}.`, link: staffLink, today })) staff += 1;
-    if (await notifyCustomerFiscal(period.customerId, { type: "fiscal_review_by_lam", title: `Fiscale check: beoordeling door ${companyName()} (${plate})`, description: `De periode ${periodText} wordt door ${companyName()} beoordeeld. U hoeft niets te doen tenzij wij contact opnemen.`, dedupeTag: `fiscal:${period.id}:review` })) customer += 1;
+    if (await notifyCustomerFiscal(period.customerId, { type: "fiscal_review_by_lam", title: `Fiscale check: beoordeling door ${portalCompanyName()} (${plate})`, description: `De periode ${periodText} wordt door ${portalCompanyName()} beoordeeld. U hoeft niets te doen tenzij wij contact opnemen.`, dedupeTag: `fiscal:${period.id}:review` })) customer += 1;
   }
   return { staff, customer };
 }
