@@ -66,7 +66,7 @@ vier:
 | Oorzaak | Hoe je het ziet | Wat je doet |
 |---|---|---|
 | Er ligt een reservering overheen | De auto staat op de kalender in die periode | Kies andere datums of een andere auto |
-| De auto staat in de werkplaats | Onderhoudsstatus **Onderhoud nodig** of **Momenteel in onderhoud** | Is hij klaar? Gebruik **Terug van onderhoud** of **Terug uit onderhoud** |
+| De auto staat in de werkplaats | Onderhoudsstatus **Onderhoud nodig** of **Momenteel in onderhoud**, of beschikbaarheid **Reparatie nodig** doordat een onderhoud op **Binnen** staat | Is hij klaar? Rond het onderhoud af met **Afronden**, of gebruik **Terug van onderhoud** of **Terug uit onderhoud** (hoofdstuk 7) |
 | De auto staat op "niet voor verhuur" | Beschikbaarheidsstatus op de voertuigkaart | Zet de status om als dat klopt |
 | Een oude huur is nooit afgesloten | De auto staat bij **Reserveringen** achter **… achterstallig** | Neem de huur alsnog in (hoofdstuk 11, paragraaf 11.6) |
 
@@ -74,7 +74,9 @@ De laatste is de sluipende. Staat een auto op je terrein maar niet in de lijst m
 auto's, kijk dan altijd eerst bij **Reserveringen** achter **… achterstallig**.
 
 Een auto met een **onderhoudsblok** in de gevraagde periode is een apart geval: die telt niet mee
-als beschikbaar, maar je mág hem wel bewust boeken. Zie 12.3.
+als beschikbaar, maar je mág hem wel bewust boeken. Zie 12.3. Zolang dat onderhoud nog op *gepland* staat,
+heet de auto **Gepland** en niet **Reparatie nodig**; pas als het onderhoud op **Binnen** staat, wordt
+hij **Reparatie nodig** (hoofdstuk 7, paragraaf 7.3).
 
 ---
 
@@ -264,7 +266,21 @@ e-mailadres in* of *Minimaal 3 tekens*.
 | *This customer is blacklisted for this vehicle and cannot be booked on it.* | Deze klant mag niet in deze auto | Klopt de zwarte lijst nog? | Alleen door een andere auto te kiezen | Voor het aanpassen van de lijst |
 | *"De einddatum kan niet vóór de begindatum liggen."* | Datums omgedraaid | — | **Ja** | Nee |
 | *Undoing a handover or a cancellation goes through POST /api/reservations/:id/revert.* | Een pagina die nog van vóór de wijziging openstond, probeerde een ophaling, inname of annulering met een status terug te zetten (het formulier heeft geen statuslijstje meer) | — | **Ja** — gebruik **Overdracht terugdraaien** of **Annulering terugdraaien** (5.14) | Alleen als je het vinkje mist |
+| *A reservation's status changes with the pickup, return, cancel and revert actions, not with an edit.* (`USE_STATUS_ROUTE`) | Iets probeerde de status van een reservering te zetten met een gewone wijziging. Het formulier doet dat niet meer; je ziet dit alleen op een pagina die nog van vóór de wijziging openstond. Er is geen eigen Nederlandse zin voor: het scherm toont de algemene regel *De invoer klopt niet. Controleer de velden en probeer het opnieuw.* | Welke handeling je bedoelde | **Ja** — vernieuw de pagina en gebruik **Ophalen**, **Inleveren**, **Annuleren** of **Terugdraaien** | Nee |
+| **"Een onderhoud rond je af met de knop Afronden, niet met de status."** (`USE_COMPLETE_ROUTE`) | Je probeerde een onderhoud af te sluiten door de status te wijzigen, of een auto die in een lopend onderhoud staat terug te melden zonder dat onderhoud af te ronden | Welk onderhoud er voor deze auto loopt | **Ja** — klik op **Afronden** (hoofdstuk 7, paragraaf 7.6); vanaf het scanscherm opent **Terug uit onderhoud** dat venster zelf | Alleen als je het vinkje **Onderhoud beheren** of **Reserveringen beheren** mist |
+| **"Dit onderhoud is al afgerond."** (`ALREADY_COMPLETED`) | Iemand anders was je voor, of je klikte twee keer | Staat het onderhoud onder **Voltooide bekijken (…)**? | **Ja** — er is niets meer te doen. Is het toch niet klaar, gebruik dan **Terugdraaien** (7.8) | Nee |
 | *Vehicle not found* / *Customer not found* | Het voertuig of de klant bestaat niet (meer) | Staat het record in de prullenbak? | Nee | **Ja**, om terug te zetten |
+
+### Bij tanken en bekeuringen
+
+| Melding | Wat het betekent | Wat je controleert | Zelf oplossen? | Beheerder nodig? |
+|---|---|---|---|---|
+| **"Het tankbedrag moet een positief bedrag zijn van ten hoogste € 1.000.000."** (`FUEL_COST_INVALID`) | Het bedrag bij **Tankkosten (€)** is nul, negatief of onzinnig groot | Het bedrag op de bon | **Ja** — typ een bedrag zoals 45,50 (hoofdstuk 4, paragraaf 4.9) | Nee |
+| **"De kostenpost voor de tankbeurt kon niet worden geboekt; er is niets opgeslagen. Probeer het opnieuw."** (`FUEL_EXPENSE_FAILED`) | Het tanken en de kostenpost horen bij elkaar; de kostenpost lukte niet, dus is ook het brandstofniveau niet bewaard | — | **Ja** — probeer het opnieuw | **Ja**, als het blijft misgaan |
+| *Status … is not supported* (`STATUS_NOT_SUPPORTED`) | Een bekeuring op **Doorbelast**, **Betaald** of **Betwist** zetten kan niet meer. Geen enkel scherm biedt dat nog aan, dus je ziet dit alleen op een pagina van vóór de wijziging; er is geen eigen Nederlandse zin | — | **Ja** — vernieuw de pagina | Nee |
+| *Er is geen klant aan deze bekeuring gekoppeld, dus er is niets verstuurd.* en *Deze klant heeft geen e-mailadres, dus er is niets verstuurd.* | **Klant informeren** kon niet versturen | Is de bekeuring gekoppeld? Heeft de klant een e-mailadres? | **Ja** — koppel de klant of vul het adres in | Nee |
+| *Het portaal staat uit voor deze klant, dus er is niets verstuurd.* | Het portaal van deze klant staat uit | **Portaal actief** op het tabblad **Portaal** van de klant | **Ja**, als jij de klant beheert | Nee |
+| *De mail kon niet worden verstuurd. Controleer de e-mailinstellingen en probeer het opnieuw.* | De mailserver weigerde | De mailinstellingen (hoofdstuk 9, paragraaf 9.6) | Soms | **Ja** |
 
 ### Bij verwijderen en terugzetten
 
@@ -278,7 +294,8 @@ e-mailadres in* of *Minimaal 3 tekens*.
 | *Not authorized. One of these permissions required: manage_recycle_bin* | Je mist het vinkje **Prullenbak beheren** voor de prullenbak | — | Nee | **Ja** — vinkje aanzetten |
 | *Not authorized. One of these permissions required: revert_handover* | Je mist het vinkje **Overdracht terugdraaien** | — | Nee | **Ja** — vinkje aanzetten |
 | **"Voor een opgehaalde huur is het recht 'Opgehaalde huur annuleren of verwijderen' nodig."** | Je probeerde een opgehaalde huur te annuleren of te verwijderen zonder dat vinkje | — | Nee | **Ja** — vinkje aanzetten |
-| **"Deze reservering heeft fiscale beoordelingen; die blijven bewaard, dus kan ze niet definitief worden verwijderd."** | Je probeerde een reservering met fiscale beoordelingen definitief uit de prullenbak te halen | — | Nee — laat hem in de prullenbak staan | Nee |
+| **"De klant van deze chauffeur bestaat niet meer. Zet eerst de klant terug (Klanten, Verwijderde klanten) en daarna de chauffeur."** (`CUSTOMER_MISSING`) | Je zet een verwijderde chauffeur terug, maar zijn klant staat in de prullenbak | **Klanten** → **Verwijderde klanten** | **Ja** — zet eerst de klant terug (hoofdstuk 3, paragraaf 3.8) | Alleen met het vinkje **Prullenbak beheren** |
+| **"Let op: het voertuig van deze kostenpost bestaat niet meer. De kostenpost staat er weer, maar hoort bij een voertuig dat ontbreekt."** | Waarschuwing bij het terugzetten van een kostenpost | Is het voertuig definitief verwijderd? | Nee — zet zo nodig het voertuig terug | Alleen met het vinkje **Prullenbak beheren** |
 | *Not authorized. Admin access required.* | Alleen een beheerder mag dit (bijvoorbeeld de beheerschermen). Voor de prullenbak geldt sinds oktober 2026 een eigen vinkje | — | Nee | **Ja** |
 
 ### Bij documenten
@@ -303,6 +320,9 @@ e-mailadres in* of *Minimaal 3 tekens*.
 | *403: Account has been disabled* | Je account staat op inactief | — | Nee | **Ja** |
 | *429: Too many requests, please try again later.* | Je hebt in een kwartier heel veel gedaan (of heel veel tabbladen openstaan) | Sluit overbodige tabbladen | **Ja** — wacht een paar minuten | Nee |
 | *Not authorized. One of these permissions required: …* | Je mist een recht; achter de dubbele punt staat welk | — | Nee | **Ja** |
+| **"Het wachtwoord voldoet niet aan de regel: minimaal 10 tekens, met hoofdletter, kleine letter en cijfer."** (`PASSWORD_TOO_WEAK`) | Het nieuwe wachtwoord is te zwak | Lengte en tekens | **Ja** — kies een sterker wachtwoord (hoofdstuk 10, paragraaf 10.2) | Nee |
+| **"Je eigen wachtwoord wijzig je via je profiel, onder Wachtwoord wijzigen."** (`USE_CHANGE_PASSWORD`) | Je probeerde je eigen wachtwoord te zetten via Gebruikersbeheer | — | **Ja** — gebruik **Profiel** → **Wachtwoord wijzigen** | Nee |
+| **"De laatste actieve beheerder kan niet worden verwijderd, gedeactiveerd of een andere rol krijgen."** (`LAST_ADMIN`) | Er moet altijd één actieve beheerder blijven | Hoeveel actieve beheerders er zijn | **Ja** — maak eerst een tweede beheerder aan | Nee |
 | *CSRF token missing* of *403* na lang openstaan | Het tabblad stond te lang open | — | **Ja** — vernieuw de pagina en log opnieuw in | Nee |
 | **"Sessie verlopen"** — *"Je bent uitgelogd wegens inactiviteit"* | Een kwartier niets gedaan | — | **Ja** — opnieuw inloggen | Nee |
 
@@ -351,12 +371,13 @@ dat niet later alsnog op. **Lees dat lijstje dus voordat je bevestigt** (hoofdst
 
 ### 12.11 De klant krijgt niet overal bericht van
 
-De klant krijgt automatisch bericht bij onderhoud, bij een bekeuring, bij een reactie op zijn
-portaalaanvraag en rond zijn portaalaccount. De klant krijgt **geen** automatisch bericht als:
+De klant met een portaalaccount krijgt automatisch bericht bij onderhoud, bij een wijziging of annulering
+van zijn reservering, bij een nieuw document voor hem, bij een reactie op zijn portaalaanvraag en rond zijn
+portaalaccount (hoofdstuk 9, paragraaf 9.8). De klant krijgt **geen** automatisch bericht:
 
-- je de datums of het voertuig van zijn huur wijzigt;
-- je zijn reservering annuleert;
-- er een nieuw document voor hem klaarstaat.
+- over een bekeuring: dat krijgt hij pas als jij in het venster van de bekeuring op **Klant informeren**
+  klikt (hoofdstuk 2, paragraaf 2.6);
+- als hij geen portaalaccount heeft, of het portaal voor hem uitstaat.
 
 Bel of mail in die gevallen zelf. Een document stuur je met **E-mailen** of **Mail naar klant**.
 
@@ -391,9 +412,11 @@ geüploade bestanden. Wil je die bestanden op je eigen computer, gebruik dan de 
 
 Sinds oktober 2026 kun je elke prullenbak leegmaken (hoofdstuk 10, paragraaf 10.6), per regel, per
 selectie of alles van die soort; een verwijderde klant kan dus echt uit het systeem verdwijnen, en
-zijn debiteurnummer komt dan weer vrij. Twee beperkingen om te kennen. Een **reservering met fiscale
-beoordelingen** kan niet definitief worden verwijderd: ze wordt overgeslagen en blijft in de
-prullenbak staan. En de lijst toont per soort de nieuwste 200 regels; **Prullenbak leegmaken**
+zijn debiteurnummer komt dan weer vrij. Drie dingen om te kennen. Een **reservering, een onderhoud of een
+klant met fiscale beoordelingen** kan wél definitief worden verwijderd: de fiscale beoordelingen gaan
+dan mee, en alleen het fiscale auditlog onthoudt dat ze er waren (hoofdstuk 10, paragraaf 10.6). De
+gegevens van een **verwijderde chauffeur** blijven in de prullenbak tot die is geleegd; wie om wissen
+vraagt, heeft dus ook **Definitief verwijderen** nodig. En de lijst toont per soort de nieuwste 200 regels; **Prullenbak leegmaken**
 haalt wel alles van die soort weg, ook wat niet in de lijst staat. Wat je definitief verwijdert, kun je niet terugzetten.
 
 ### 12.15 Een klein deel van de meldingen is nog Engels
@@ -402,7 +425,10 @@ De vensters, knoppen en foutmeldingen zijn Nederlands. Een enkele melding die re
 server komt, is nog Engels: bijvoorbeeld *Reservation conflicts with existing bookings*, *This
 customer is blacklisted for this vehicle and cannot be booked on it.*, *Not authorized. One of these
 permissions required: …* en de weigeringen bij het terugzetten van een back-up. De tabellen in deel 2
-vertalen de meldingen die je het vaakst ziet.
+vertalen de meldingen die je het vaakst ziet. Twee nieuwe weigeringen hebben nog geen eigen Nederlandse
+zin: de status van een reservering zetten met een gewone wijziging, en een bekeuring op **Doorbelast**,
+**Betaald** of **Betwist** zetten. Geen scherm laat dat nog toe, dus je komt ze alleen tegen op een pagina
+die nog van vóór de wijziging openstond; vernieuw die dan.
 
 De **labels in de schermen** zijn wél overal Nederlands: de kostencategorieën heten in het
 **Kostenoverzicht** en in de rapporten hetzelfde — **Onderhoud**, **Banden**, **Remmen**,

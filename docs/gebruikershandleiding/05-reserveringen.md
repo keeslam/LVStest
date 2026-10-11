@@ -381,7 +381,7 @@ staan, klaar voor de volgende scan.
 > brandstof, het contractnummer en de ophaaldatum vast. Maak je het contract eerder, dan staan
 > die velden er leeg op en klopt het papier niet met de auto die wegrijdt.
 
-### Vijf dingen die de app kan vragen of weigeren
+### Zes dingen die de app kan vragen, melden of weigeren
 
 **1. Voertuigopmerkingen.** Staan er opmerkingen bij de auto, dan verschijnt eerst
 **Voertuigopmerkingen - Ophaalwaarschuwing** met de tekst *BELANGRIJK: Bekijk deze opmerkingen
@@ -433,6 +433,12 @@ Er wordt dan **niets** opgeslagen — ook de startdatum schuift niet.
 
 Vergelijkbare weigeringen, in hetzelfde venster: *Dit voertuig staat op "reparatie nodig"…*
 (status **Reparatie nodig**) en *Dit voertuig staat op "niet voor verhuur"…*
+
+**6. De auto is ingepland voor onderhoud, maar nog niet binnen gemeld.** Dat is een waarschuwing, geen
+weigering. In het ophaalvenster staat een gele regel: *Let op: dit voertuig staat ingepland voor
+onderhoud (<periode>) en is nog niet binnengemeld. Ophalen mag; de balie beslist.* Je kunt gewoon
+doorgaan; er wordt niets uitgeschakeld. Zo'n auto heeft de status **Gepland**, niet **Reparatie nodig**
+(hoofdstuk 7, paragraaf 7.3). Zet de werkplaats het onderhoud op **Binnen**, dan geldt wél punt 5.
 
 ### Het contractnummer en een gat in de reeks
 

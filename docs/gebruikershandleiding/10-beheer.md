@@ -37,7 +37,7 @@ Klik op **Gebruiker toevoegen**. Je krijgt het formulier **Nieuwe gebruiker toev
 | Veld | Toelichting |
 |---|---|
 | **Gebruikersnaam** | De inlognaam. Kan later niet meer gewijzigd worden. |
-| **Wachtwoord** | Bij een nieuwe gebruiker verplicht; laat je het leeg, dan staat er *Een wachtwoord is verplicht*. Het formulier controleert de lengte niet, maar kies hier hetzelfde als bij je eigen wachtwoord: minimaal 8 tekens, met een kleine letter, een hoofdletter en een cijfer (de minimale lengte is nog een open vraag aan de eigenaar). Bij het bewerken van een bestaande gebruiker: leeg laten om het huidige wachtwoord te behouden. |
+| **Wachtwoord** | Bij een nieuwe gebruiker verplicht; laat je het leeg, dan staat er *Een wachtwoord is verplicht*. Het moet voldoen aan de wachtwoordregel hieronder. Bij het bewerken van een bestaande gebruiker: leeg laten om het huidige wachtwoord te behouden. |
 | **Volledige naam** | De naam die overal in de app bij wijzigingen komt te staan. |
 | **E-mail** | Het adres van de medewerker. |
 | **Rol** | Zie hieronder. |
@@ -52,6 +52,20 @@ gebruikersnaam is te kort en het wachtwoord ontbreekt), dan staan alle meldingen
 veld, zoals *De gebruikersnaam moet minstens 3 tekens hebben* en *Vul een geldig e-mailadres in*. Je
 hoeft ze niet één voor één af te werken.
 
+**De wachtwoordregel.** Elk wachtwoord van een medewerker heeft minimaal 10 tekens, met een hoofdletter, een
+kleine letter en een cijfer. Onder het wachtwoordveld staat de hint *Minimaal 10 tekens, met hoofdletter,
+kleine letter en cijfer*. Voldoet het wachtwoord niet, dan weigert de app met *Het wachtwoord voldoet niet
+aan de regel: minimaal 10 tekens, met hoofdletter, kleine letter en cijfer*. Dezelfde regel geldt overal
+waar een wachtwoord wordt gekozen: een nieuwe gebruiker, een wachtwoord dat een beheerder voor een ander
+instelt, het wijzigen van je eigen wachtwoord in je **Profiel** (10.1). Een
+wachtwoord dat al bestond, blijft gewoon werken; de regel geldt alleen voor een nieuw wachtwoord.
+Portaalaccounts van klanten hebben een eigen, kortere regel (hoofdstuk 3, paragraaf 3.7).
+
+**Je eigen wachtwoord zet je niet in Gebruikersbeheer.** Je eigen wachtwoord wijzig je in je **Profiel**,
+onder **Wachtwoord wijzigen**, met je huidige wachtwoord erbij. Probeer je het via het formulier van je
+eigen account, dan weigert de app met *Je eigen wachtwoord wijzig je via je profiel, onder Wachtwoord
+wijzigen*. Een nieuw wachtwoord voor een ander account (een reset) zet een beheerder wel hier.
+
 **Een leeg wachtwoordveld verandert nooit iets.** Sinds oktober 2026 geldt bij het bijwerken van een
 gebruiker: staat het veld leeg (of staan er alleen spaties), dan blijft het wachtwoord zoals het was.
 Tot dan kon een leeg veld het wachtwoord van het account leegmaken, of vervangen door spaties; dat is
@@ -60,11 +74,21 @@ ander account dat het probeert, krijgt *Only an administrator can set another ac
 
 **Een medewerker die weggaat, zet je op inactief.** Verwijderen kan ook, maar dan is de link
 tussen zijn naam en zijn wijzigingen minder duidelijk. Het verwijderknopje achter je **eigen** regel
-en achter elke **beheerder** is grijs en kan niet worden aangeklikt; houd je de muis erboven, dan staat
-er *Je kunt je eigen account niet verwijderen* of *Een beheerdersaccount kan hier niet worden
-verwijderd; wijzig eerst de rol*. Je kunt dus niet per ongeluk de eigenaar uit de app verwijderen.
-Moet er toch een beheerder weg, zet zijn rol dan eerst om. De bevestiging is: *"Weet je zeker dat je
-gebruiker "…" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."*
+en achter de **laatste actieve beheerder** is grijs en kan niet worden aangeklikt; houd je de muis
+erboven, dan staat er *Je kunt je eigen account niet verwijderen* of *Dit is de laatste actieve beheerder;
+die kan niet worden verwijderd*. Een andere beheerder kun je wél verwijderen, zolang er daarna nog een
+actieve beheerder overblijft. De bevestiging is: *Weet je zeker dat je gebruiker "…" wilt verwijderen?
+Deze actie kan niet ongedaan worden gemaakt.*
+
+**De laatste beheerder blijft beschermd.** Er moet altijd minstens één actieve beheerder zijn. De app
+weigert daarom met *De laatste actieve beheerder kan niet worden verwijderd, gedeactiveerd of een andere
+rol krijgen* als je probeert de laatste actieve beheerder te verwijderen, op inactief te zetten of een
+andere rol te geven. Wil je een nieuwe beheerder in plaats van de oude, maak dan eerst de nieuwe aan en
+verwijder of degradeer daarna de oude.
+
+**Verwijderen werkt nu ook bij wie ooit ingelogd of iets gedaan heeft.** Vroeger antwoordde de app *niet
+gevonden* als je een account verwijderde dat al eens was gebruikt. Nu verdwijnt het account echt en
+blijven de wijzigingen die het deed in de geschiedenis staan, met de gebruikersnaam als tekst erbij.
 
 ### Rollen
 
@@ -123,20 +147,65 @@ Met de knop **Bekijken** bij een gebruiker zie je in één oogopslag onder **Rec
 en niet mag. Bij een beheerder staat alles aangevinkt. Ook in je eigen **Profiel** staan je rechten
 met dezelfde Nederlandse namen als hier, en niet meer met de interne naam van het vinkje.
 
+**Bij elk vinkje staat wat het nodig heeft.** Een recht werkt vaak pas als een ander recht ook aanstaat:
+wie **Reserveringen beheren** heeft maar niet **Voertuigen bekijken** en **Klanten bekijken**, ziet op het
+reserveringsscherm een lege lijst of een melding dat de gegevens ontbreken. Daarom staat onder elk vinkje
+een regel *Heeft nodig: Voertuigen bekijken, Klanten bekijken* (de rechten die het scherm nodig heeft).
+
+- Staan de benodigde rechten al aan, dan is de regel grijs.
+- Mist er een, dan is de regel oranje, met een waarschuwingsteken.
+- Rechten die het scherm prettiger maken maar niet nodig zijn, staan in de tekstballon als *Handig erbij: …*.
+- Boven het raster staat de knop **Benodigde rechten ook aanzetten**. Die vinkt in één keer de ontbrekende
+  benodigde rechten aan van alles wat je al hebt aangevinkt. De knop is grijs als er niets ontbreekt. Er
+  gebeurt niets vanzelf bij het opslaan: jij beslist, en je kunt een recht daarna gewoon weer uitzetten.
+- Een paar rechten zijn alleen voor beheerders: **Gebruikers beheren**, **Instellingen beheren** en **Back-ups
+  beheren**. Bij een medewerker die geen beheerder is, staat daar *alleen voor beheerders* en kun je ze niet
+  aanvinken. Stond zo'n vinkje al aan, dan kun je het wel uitzetten. De server zelf blijft dezelfde
+  controle doen; dit is een hulp bij het kiezen, geen nieuwe beveiliging.
+- Met de knop **Bekijken** zie je dezelfde regels, alleen bij de rechten die het account heeft.
+
 **Een wijziging van rechten werkt meteen.** De app leest de rechten bij elke handeling opnieuw. Heb je
 zojuist iemands vinkjes aangepast terwijl hij ingelogd is, dan ziet zijn scherm dat vanzelf; hij hoeft
 niet uit en weer in te loggen.
+
+### Geweigerde pogingen: de balk op het dashboard
+
+Probeert een medewerker iets te doen waarvoor hij geen recht heeft, dan weigert de app dat en schrijft hij
+het op. Als **beheerder** (de rol Beheerder, niet iedereen met het vinkje **Gebruikers beheren**) zie je
+dat bij het inloggen: bovenaan het **Dashboard** staat een balk met *Sinds je vorige inlog (<datum>)
+probeerden 3 medewerkers iets waarvoor ze geen recht hebben* (bij één medewerker: *probeerde 1 medewerker
+iets waarvoor die geen recht heeft*).
+
+- Klik op **Bekijken**. Het venster **Geweigerde pogingen** laat zien *Wat medewerkers probeerden sinds je
+  vorige inlog (<datum>) en niet mochten.* Per regel staan **Wie**, **Wat** (een scherm, gegevens ophalen
+  of wijzigen), het **Recht dat ontbrak** en **Wanneer**.
+- Met het kruisje sluit je de balk voor de rest van die sessie. Er is geen balk als er niets te melden is,
+  en ook niet bij je allereerste inlog (er is dan geen vorige inlog om mee te vergelijken).
+- Dezelfde pogingen staan in het activiteitenlog (10.5) onder de actie *access.denied*, met de status
+  *mislukt*. Er gaat geen e-mail uit.
+- Dezelfde poging van dezelfde medewerker op dezelfde plek binnen vijf minuten telt als één. Ook één
+  medewerker die een storm van pogingen veroorzaakt, vult het log niet: na 50 pogingen in een kwartier
+  schrijft de app één regel *Meer geweigerde pogingen zijn niet apart vastgelegd* en daarna niets meer tot
+  het kwartier om is. Zijn er meer regels dan het venster toont, dan staat er *Alleen de nieuwste … van …
+  pogingen worden getoond.*
+
+**Wat als "poging" telt.** Een poging is ook een onderdeel van een scherm dat een medewerker wel mag
+openen, maar waarvan hij één stukje niet mag zien (bijvoorbeeld een tegel op het scherm waarvoor het
+bijbehorende recht ontbreekt). De medewerker deed dan niets bewusts, en toch staat het erbij. Een rij
+pogingen van één persoon die steeds hetzelfde onderdeel raakt, wijst dus eerder op een recht dat je
+vergat aan te vinken (zie *Bij elk vinkje staat wat het nodig heeft*) dan op iemand die ergens
+rondsnuffelt.
 
 ---
 
 ## 10.3 App-instellingen
 
 Kies **App-instellingen**. Het scherm heet **Applicatie-instellingen** — *"Beheer de
-configuratie van je verhuursysteem"*. Het heeft acht tabbladen:
+configuratie van je verhuursysteem"*. Het heeft negen tabbladen:
 
 | Tabblad | Wat je er instelt |
 |---|---|
-| **Bedrijfsregels** | Standaardwaarden voor een verhuring, het brandstofbeleid, het toltarief per kilometer en het depotadres |
+| **Bedrijfsregels** | Standaardwaarden voor een verhuring, het brandstofbeleid, het toltarief per kilometer, het depotadres, de tijdzone van het kantoor en de bedrijfsnaam voor alle mails |
 | **Meldingen** | Hoeveel dagen van tevoren een APK-, garantie- of onderhoudsherinnering verschijnt |
 | **Documenten** | Factuur- en contractinstellingen, en het **Startcontractnummer** |
 | **Doc-e-mails** | De teksten van de mails waarmee je documenten verstuurt |
@@ -144,8 +213,9 @@ configuratie van je verhuursysteem"*. Het heeft acht tabbladen:
 | **E-mail & GPS** | De mailservers en de GPS-instellingen — zie hoofdstuk 9 |
 | **Activiteit** | Het **Activiteitenlog**: wie heeft wat gewijzigd, en wanneer |
 | **Klantenportaal** | De instellingen van het portaal |
+| **Voertuigen** | De kaart **RDW-voertuigtypes**: het wagenpark laten nalopen door de RDW (hoofdstuk 4, paragraaf 4.13) |
 
-Twee instellingen komen vaak terug:
+Vier instellingen komen vaak terug:
 
 - **Startcontractnummer** — *"Dit vormt de basis voor automatisch gegenereerde
   contractnummers"*. Daaronder staat **Volgend contractnummer**. Opslaan met
@@ -154,6 +224,24 @@ Twee instellingen komen vaak terug:
   weigert de app: *"Must be a whole number between 1 and 2147483647"*.
 - **Toltarief (€ per km)** — *"Wordt gebruikt om een tolkost voor te stellen op basis van de
   ingevoerde afstand bij een transport"*.
+- **Tijdzone van het kantoor** (tabblad **Bedrijfsregels**) — de tijdzone waarin de app bepaalt wat
+  "vandaag" is, hoe laat de nachtelijke taken draaien en welke tijd op documenten en in exports staat.
+  Zomer- en wintertijd gaan vanzelf mee. Standaard staat hij op *Europe/Amsterdam*, en dat is voor een
+  kantoor in Nederland goed. Zoek een andere zone met **Zoek een tijdzone**, kies hem bij **Tijdzone**
+  (de kaart zegt erbij of de zomer- of wintertijd nu actief is) en klik op **Tijdzone opslaan**. Je krijgt
+  *De app rekent nu met <zone>.* Na het opslaan plannen de nachtelijke taken (back-up, APK-scan, fiscale
+  run, meldingen en postvakken) zichzelf opnieuw in de nieuwe zone. Zet de tijdzone alleen om als het
+  kantoor echt verhuist; kies je per ongeluk een andere, dan lopen datums en tijden een of meer uren
+  verkeerd. Lukt het opslaan niet, dan staat er *De tijdzone kon niet worden opgeslagen.*
+- **Bedrijfsnaam** (tabblad **Bedrijfsregels**) — de naam waaronder de app mailt: onderaan de
+  herinneringen, als standaard afzendernaam, in de portaalmails en in de plekhouder `{companyName}` van
+  berichtsjablonen (hoofdstuk 9). Eén naam voor alle mails. Zolang je niets opslaat, is dit *Autolease
+  Lam*. Klik na het invullen op **Bedrijfsnaam opslaan**; je krijgt *De bedrijfsnaam is opgeslagen.*
+  Een naam van meer dan 100 tekens, of met een regeleinde, wordt geweigerd met *Vul een naam in van
+  maximaal 100 tekens, zonder regeleinden.* Een afzendernaam die je bij de e-mailinstellingen hebt
+  ingevuld, gaat voor op de bedrijfsnaam. Mails aan portaalklanten zeiden vroeger *Lam Groep*; ze volgen
+  nu deze instelling. Een portaalsjabloon dat je zelf hebt aangepast, houdt zijn eigen tekst. Alleen de
+  meldingen die de klant in het portaal zelf ziet, zeggen nog *Lam Groep*.
 
 **Wat je typt, blijft staan.** Wissel je tijdens het invullen van tabblad, dan raak je niets kwijt:
 een tabblad dat je eenmaal hebt geopend, houdt wat je erin hebt ingevuld, ook de onderdelen met een
@@ -347,7 +435,7 @@ actie), **Gebruiker**, **Actie**, **Vanaf** en **Tot en met**, en wist alles met
 Wat je verwijdert is niet weg. Het gaat naar de prullenbak van het scherm waar je het verwijderde, en
 is daar terug te halen — of voorgoed te verwijderen.
 
-**Zes prullenbakken, één per scherm.** Sinds oktober 2026 is er niet meer één gedeeld venster met
+**Acht prullenbakken, één per scherm.** Sinds oktober 2026 is er niet meer één gedeeld venster met
 alles door elkaar. Elk scherm heeft zijn eigen prullenbak, met alleen zijn eigen soort:
 
 | Scherm | De knop | Wat erin staat |
@@ -358,6 +446,8 @@ alles door elkaar. Elk scherm heeft zijn eigen prullenbak, met alleen zijn eigen
 | **Onderhoud** | **Verwijderd onderhoud** | Onderhoudsplanningen (**Onderhoud**) |
 | **Transporten** | **Verwijderde transporten** | Transporten (**Transport**) |
 | **Klantenportaal** → **Bekeuringen** | **Prullenbak** | Bekeuringen (**Boete**); het venster heet **Verwijderde bekeuringen** |
+| **Kosten** | **Verwijderde kostenposten** | Kostenposten (**Kostenpost**), met hun bon |
+| **Klanten** → een klant openen → tabblad **Chauffeurs** | **Verwijderde chauffeurs** | De verwijderde chauffeurs van die ene klant (**Chauffeur**) |
 
 Onderhoud heeft zijn eigen soort. Een verwijderd onderhoudsblok stond vroeger met het label
 **Reservering** tussen de rest; bij de eerste start na de uitrol zijn die oude regels verhuisd naar
@@ -401,6 +491,13 @@ Per soort goed om te weten:
   niet vanzelf terug.
 - Een **transport** komt terug met zijn vervangend voertuig, als dat nog vrij is.
 - Een **klant** behield zijn debiteurnummer zolang hij in de prullenbak stond (3.9).
+- Een **chauffeur** komt terug zolang zijn klant nog bestaat, met de koppelingen aan reserveringen,
+  bekeuringen en portaalaccounts waar die nog bestaan en nog leeg zijn. Bestaat de klant niet meer, dan
+  moet je eerst de klant terugzetten.
+- Een **kostenpost** komt terug met zijn bon. Hing hij aan een factuur uit het postvak, dan komt die
+  koppeling mee terug als de factuur er nog is. Bestaat het voertuig van de kostenpost niet meer, dan
+  komt de kostenpost toch terug en zegt de app *Let op: het voertuig van deze kostenpost bestaat niet
+  meer. De kostenpost staat er weer, maar hoort bij een voertuig dat ontbreekt.*
 
 De app weigert het terugzetten als dat niet meer kan. De meldingen:
 
@@ -413,6 +510,7 @@ De app weigert het terugzetten als dat niet meer kan. De meldingen:
 | *Een ander voertuig gebruikt dezelfde barcode. Maak die daar eerst leeg.* | De barcode zit nu op een andere auto |
 | **Deze reservering kan niet terug: het voertuig is in de tussentijd geboekt voor die periode.** | De auto is inmiddels opnieuw verhuurd in die periode |
 | *Dit debiteurnummer is al in gebruik bij klant &lt;naam&gt;.* | Een andere klant heeft het nummer intussen gekregen |
+| *De klant van deze chauffeur bestaat niet meer. Zet eerst de klant terug (Klanten, Verwijderde klanten) en daarna de chauffeur.* | Je zet een chauffeur terug terwijl zijn klant in de prullenbak staat of definitief weg is |
 | *De bewaarde gegevens zijn leeg, er is niets om terug te zetten.* en *Dit soort record kan nog niet worden teruggezet.* | Zeldzaam; meld het aan wie de app beheert |
 
 ### Definitief verwijderen (de prullenbak legen)
@@ -455,6 +553,14 @@ Dit kan voorkomen:
 | **Onderhoud** | De onderhoudsplanning, met eventuele contracten en schadechecks, en hun bestanden. Eventuele **fiscale beoordelingen** gaan mee | Documenten van het voertuig, zoals een **APK-bewijs**, blijven staan |
 | **Transport** | Het transport | — |
 | **Boete** | De boete, met de bijgevoegde brief | — |
+| **Chauffeur** | De chauffeur, met de kopie van het rijbewijs. Reserveringen en bekeuringen die naar hem verwezen, krijgen die koppeling niet meer terug | — |
+| **Kostenpost** | De kostenpost, met de bon | Een bon die ook de bijlage van een factuur in het postvak is, blijft staan |
+
+**Een chauffeur verwijderen is niet hetzelfde als zijn gegevens wissen.** Een verwijderde chauffeur blijft met
+naam, contactgegevens, rijbewijsnummer en de kopie van het rijbewijs in de prullenbak staan tot die is
+geleegd. Vraagt iemand om zijn gegevens te laten wissen, kies dan ook **Definitief verwijderen** in
+**Verwijderde chauffeurs**. In de prullenbak van de chauffeurs van een klant verwijdert **Prullenbak
+leegmaken** precies de regels die je op dat moment ziet, niet de chauffeurs van andere klanten.
 
 **Bestanden gaan alleen weg als niets ze nog gebruikt.** De app haalt een bestand pas van de schijf
 nadat de regel definitief is verwijderd, en alleen een bestand in de uploadmap van de app waar geen
@@ -469,7 +575,11 @@ fiscale beoordelingen het zijn, en de bevestiging **Definitief verwijderen?** no
 keer. Het activiteitenlog (10.5) telt ze mee in de regel *&lt;soort&gt;.purge*, en het fiscale auditlog
 (app-instellingen, Klantenportaal) krijgt de actie *Definitief verwijderd (prullenbak)* met wie het
 deed en hoeveel het er waren. Dat auditlog kan niemand in de app wissen: het blijft het bewijs dat er iets is
-weggehaald.
+weggehaald. Eén kanttekening: ook een beoordeling van een *andere* periode die naar de verwijderde reservering
+verwees, gaat weg. De reeks beoordelingen van die andere periode kan daardoor een gat krijgen: een
+volgnummer ontbreekt, een verwijzing naar de beoordeling die ze vervangt is leeg, en de laatste beoordeling
+van die periode kan een oudere zijn. Er blijft niets hangen dat naar niets wijst, maar kijk bij twijfel
+eerst in het fiscale overzicht van die andere periode.
 
 > **Let op: bewaarplicht.** Fiscale gegevens vallen onder de wettelijke bewaarplicht. Dat de
 > beoordelingen met de reservering meegaan, is een bewuste keuze van de eigenaar (besluit B-41), niet

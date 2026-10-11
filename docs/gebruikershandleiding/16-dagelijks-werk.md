@@ -206,7 +206,7 @@ Dit is de werkstroom waarin de volgorde het meest uitmaakt.
 3. **Regel het transport** als de auto gehaald of gebracht moet worden: **Transporten** →
    **Nieuw transport**.
 4. **Rond het onderhoud af met één knop.** Gebruik **Terug van onderhoud** bij de reservering (of
-   **Terug uit onderhoud** op het scanscherm), met de inleverdatum en de kilometerstand. Dat
+   **Terug uit onderhoud** op het scanscherm, dat bij een lopend onderhoud het venster **Onderhoud afronden** opent), met de inleverdatum en de kilometerstand. Dat
    venster zet de auto terug én sluit de vervangende reservering in één keer.
 
 > **Waarom de auto éérst op onderhoud gaat en de vervanger daarna.** Zodra een auto op onderhoud
@@ -223,8 +223,8 @@ Dit is de werkstroom waarin de volgorde het meest uitmaakt.
 > tegenhoudt en ontdek je pas op de dag zelf dat er een klant zonder auto staat.
 
 > **Waarom je afrondt met Terug van onderhoud.** De werkplaatsstatus verdwijnt **niet** vanzelf als
-> je de auto inneemt of een transport afrondt, en ook niet als je het onderhoudsblok op
-> **Voltooien** zet. Dat is met opzet: een auto die kapot naar binnen ging, mag er niet stilletjes
+> je de auto inneemt of een transport afrondt, en ook niet vanzelf als de einddatum van het
+> onderhoud voorbij is. Dat is met opzet: een auto die kapot naar binnen ging, mag er niet stilletjes
 > weer uitkomen. Je moet hem dus zelf vrijgeven — en dat gaat het makkelijkst met de knop die
 > tegelijk de vervangende reservering afsluit, de werkplaatsstatus weghaalt en de auto meteen weer
 > op **Beschikbaar** zet.

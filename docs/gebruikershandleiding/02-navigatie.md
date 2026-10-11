@@ -44,6 +44,10 @@ Van boven naar beneden:
 
 1. **De back-upbalk.** Staat er *Geen geverifieerde back-up bekend* of *Geen geverifieerde
    back-up in … uur*, meld dat dan bij de beheerder. Zelf oplossen hoeft niet.
+
+   Ben je zelf **beheerder**, dan kan hier ook een balk staan met *Sinds je vorige inlog … probeerden …
+   medewerkers iets waarvoor ze geen recht hebben*. Met **Bekijken** zie je wie wat probeerde (hoofdstuk 10,
+   paragraaf 10.2).
 2. **Snelle acties** — zie 2.9.
 3. **Vier signaalblokken:**
    - **Beschikbare voertuigen** — auto's die nu klaarstaan om te verhuren, met daaronder de
@@ -111,11 +115,12 @@ wie het wanneer verwijderde en wat er aan hing; met **Terugzetten** komt het voe
 eraan weer terug, en met **Definitief verwijderen** gaat het er voorgoed uit. De knop is er voor
 iedereen met het vinkje **Prullenbak beheren**; zonder dat vinkje staat hij er grijs.
 
-**Alle prullenbakken.** De zes prullenbakken staan op hun eigen scherm: **Verwijderde voertuigen**
+**Alle prullenbakken.** De acht prullenbakken staan op hun eigen scherm: **Verwijderde voertuigen**
 (Voertuigen, 2.3), **Verwijderde klanten** (Klanten, 2.5), **Verwijderde reserveringen**
 (Reserveringen, 2.7), **Verwijderd onderhoud** (Onderhoud, 2.8), **Verwijderde transporten**
-(Transporten, 2.8) en de knop **Prullenbak** bij de bekeuringen (Klantenportaal → **Bekeuringen**,
-2.6).
+(Transporten, 2.8), **Verwijderde kostenposten** (Kosten, 2.8), de knop **Prullenbak** bij de
+bekeuringen (Klantenportaal → **Bekeuringen**, 2.6) en **Verwijderde chauffeurs** op het tabblad
+**Chauffeurs** van een klant (2.5).
 
 ---
 
@@ -157,7 +162,8 @@ Het scherm heet **Klanten**, met daaronder de **Klantendatabase**.
 **Een klant openen.** Klik op **Bekijken**. Je krijgt **Klantgegevens** met bovenaan het aantal
 verhuringen, de actieve verhuringen en het totaal aantal gereden kilometers, de knoppen
 **Terug**, **Bewerken** en **Nieuwe reservering**, en de tabbladen **Persoonlijke gegevens**,
-**Chauffeurs**, **Actieve verhuringen**, **Geschiedenis** en **Portaal**. Onderaan staat
+**Chauffeurs** (met de prullenbak **Verwijderde chauffeurs** voor de chauffeurs van deze klant),
+**Actieve verhuringen**, **Geschiedenis** en **Portaal**. Onderaan staat
 **Geblokkeerde voertuigen**: auto's die deze klant niet mag huren.
 
 **Verwijderen.** Klik je op **Verwijderen**, dan opent het venster **Klant verwijderen**. Dat
@@ -220,6 +226,22 @@ sluit je het venster, dan vraagt de app **Wijzigingen verwerpen?**
 je opslaat. **Brieven scannen** is voor een stapel brieven tegelijk: elke brief wordt gelezen, je loopt
 de lijst na en daarna maakt de app er in één keer bekeuringen van. Beide knoppen hebben een uitleg
 bij het venster en een tekstje als je er met de muis op gaat staan.
+
+**Een bekeuring alleen registreren.** De app registreert bekeuringen; het doorbelasten en betalen
+regel je buiten de app om. De statussen zijn daarom **Niet gekoppeld**, **Gekoppeld** en **Geannuleerd**.
+**Doorbelast**, **Betaald** en **Betwist** staan niet meer in het filter **Alle statussen** en kun je niet meer
+kiezen. Een oude bekeuring die zo'n status al had, houdt hem als label; zijn er zulke bekeuringen, dan
+staat die status ook in het filter, anders niet. Probeert een oude pagina een bekeuring toch op
+doorbelast, betaald of betwist te zetten, dan weigert de app dat.
+
+**De klant informeren is een eigen handeling.** Een bekeuring invoeren, inlezen, importeren of aan een
+klant koppelen stuurt de klant niets. Wil je dat de klant het weet, open dan de gekoppelde bekeuring en klik
+op **Klant informeren**. De app vraagt **Klant informeren?** en noemt het adres: *Een e-mail over bekeuring
+PT-99-ZY van € 95,00 gaat naar jan@voorbeeld.nl, en de klant krijgt een melding in het portaal.* Met **Nee, niet sturen** laat je het zoals het was. Klik je in dat venster op
+**Klant informeren**, dan krijg je **Klant geïnformeerd.** en staat in het venster *Klant geïnformeerd op <datum>*;
+de knop heet daarna **Opnieuw informeren** en vraagt eerst *De klant is al geïnformeerd op <datum>. Opnieuw
+een e-mail … sturen naar …?* De knop is er voor wie **Boetes beheren** heeft, en alleen bij een gekoppelde
+bekeuring met een klant. Zie hoofdstuk 9, paragraaf 9.1 voor wat er misgaat als het versturen niet lukt.
 
 **Een bekeuring zonder naam van het bedrijf.** Is bij een klant het veld **Bedrijfsnaam** leeg, dan staat in de
 bekeuringen en in het portaal de naam van de klant zelf, en niet meer een lege regel.
@@ -287,6 +309,11 @@ paragraaf 13.10, en vastleggen met de auto in je hand staat in hoofdstuk 18. Wat
   De **Kostensamenvatting** rekent precies over wat je ziet (*Totaal van de gekozen filters*), met een
   totaal per categorie. De lijst toont er 100 tegelijk; klik op **Meer tonen** voor de volgende. De
   uitklapbare lijst per categorie is vervangen door deze lijst met een filter.
+- **De prullenbak van Kosten.** Rechtsboven staat de knop **Verwijderde kostenposten**, de prullenbak van
+  dit scherm, voor wie het vinkje **Prullenbak beheren** heeft. Een verwijderde kostenpost staat daar met
+  zijn bon en kan worden teruggezet (hoofdstuk 10, paragraaf 10.6). Een kostenpost die ontstond doordat je
+  bij **Brandstofstatus bijwerken** een tankbedrag invulde, staat hier gewoon tussen de rest, in de
+  categorie **Brandstof** (hoofdstuk 4, paragraaf 4.9).
 - **Exporteren (CSV).** Die knop bewaart precies de gefilterde regels voor Excel (puntkomma's,
   decimale komma, datums dd-mm-jjjj; zie hoofdstuk 12). De app meldt **Bestand gemaakt**. Heb je
   **Prijzen verbergen**, dan staat de knop er niet.

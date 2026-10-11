@@ -194,9 +194,27 @@ dat een rijbewijs afloopt.
 **Bekijken**, **Bewerken** en **Verwijderen**. De hoofdchauffeur heeft het label **Hoofd**; een
 chauffeur met een eigen portaallogin het label **Portaalaccount**.
 
-Bij **Verwijderen** vraagt de app: *"Weet je zeker dat je <naam> wilt verwijderen? Deze actie kan
-niet ongedaan worden gemaakt."* Een chauffeur gaat **niet** naar de prullenbak — die is dus echt
-weg. Twijfel je, zet hem dan op **Inactief** in plaats van hem te verwijderen.
+Bij **Verwijderen** vraagt de app: *Weet je zeker dat je <naam> wilt verwijderen? De chauffeur gaat naar
+de prullenbak van deze klant; terugzetten kan via Prullenbak.* Een verwijderde chauffeur is dus niet weg:
+hij staat in de prullenbak van deze klant en je kunt hem terugzetten. Twijfel
+je of je hem ooit nog nodig hebt, zet hem dan op **Inactief** in plaats van hem te verwijderen.
+
+**De prullenbak van de chauffeurs.** In de kop van het kaartje **Bevoegde chauffeurs** staat de knop
+**Verwijderde chauffeurs**. Hij laat alleen de verwijderde chauffeurs van déze klant zien. De knop staat er
+grijs als je het vinkje **Prullenbak beheren** niet hebt (hoofdstuk 15, paragraaf 15.16). Per regel kun je:
+
+- **Terugzetten** — de chauffeur komt terug, met de koppelingen aan reserveringen en bekeuringen waar die
+  reserveringen en bekeuringen nog bestaan. Bestaat de klant zelf niet meer, dan weigert de app met *De
+  klant van deze chauffeur bestaat niet meer. Zet eerst de klant terug (Klanten, Verwijderde klanten) en
+  daarna de chauffeur.* Zet de klant dan eerst terug (3.8).
+- **Definitief verwijderen** — de chauffeur is dan echt weg, samen met de kopie van het rijbewijs.
+  Reserveringen en bekeuringen die naar hem verwezen, krijgen die koppeling nooit meer terug.
+
+> **Let op bij een verzoek om gegevens te wissen.** De persoonsgegevens van een verwijderde chauffeur
+> (naam, contactgegevens, rijbewijsnummer en de kopie van het rijbewijs) blijven in de prullenbak staan
+> tot die geleegd is. Vraagt iemand om zijn gegevens te laten wissen, verwijder de chauffeur dan niet
+> alleen, maar kies ook **Definitief verwijderen** in **Verwijderde chauffeurs**. Alles over de
+> prullenbakken staat in hoofdstuk 10, paragraaf 10.6.
 
 Staan er veel chauffeurs, gebruik dan het zoekveld *Zoek chauffeurs op naam, e-mail, telefoon of
 rijbewijs...* boven de lijst. Onder de lijst staat bijvoorbeeld *Pagina 1 van 2 (12 chauffeurs)*
@@ -249,6 +267,12 @@ geactiveerd is), **Blokkeren** / **Deblokkeren** en **Verwijderen** (alleen bij 
 niet-geactiveerd account).
 
 Met **Alles bekijken en zoeken** open je de volledige accountlijst van alle klanten.
+
+> **Wachtwoorden van portaalaccounts.** De wachtwoordregel van hoofdstuk 10 (10 tekens met hoofdletter,
+> kleine letter en cijfer) geldt voor medewerkers van het kantoor, niet voor portaalaccounts. De klant
+> kiest zelf een wachtwoord via de uitnodiging; daarvoor geldt een eigen, kortere regel (minimaal 10
+> tekens, zonder eisen aan hoofdletters of cijfers). Jij zet dat wachtwoord nooit; je stuurt alleen een
+> uitnodiging of een reset.
 
 **De melding klopt nu met wat er gebeurde.** Stuur je een uitnodiging of een wachtwoord-reset en komt de
 mail niet uit de mailserver, dan staat er in het rood *De e-mail is niet verstuurd. Controleer de
@@ -387,6 +411,7 @@ een invult, moet het uniek zijn.
 | Een klant wijzigen | **Bekijken** → **Bewerken** |
 | Meteen boeken voor deze klant | **Nieuwe reservering** in de lijst of in het klantvenster |
 | Een chauffeur toevoegen | **Bekijken** → **Chauffeurs** → **Chauffeur toevoegen** |
+| Een verwijderde chauffeur terughalen | **Bekijken** → **Chauffeurs** → **Verwijderde chauffeurs** → **Terugzetten** (vraagt het vinkje **Prullenbak beheren**) |
 | Een portaallogin regelen | **Bekijken** → **Portaal** → **Uitnodigen** |
 | Zien wat een klant online mag | **Bekijken** → **Portaal** → **Instellingen voor deze klant** |
 | Een klant verwijderen | **Verwijderen** in de lijst (lukt niet bij een lopende huur) |

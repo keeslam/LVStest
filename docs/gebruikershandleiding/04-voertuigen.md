@@ -112,7 +112,8 @@ Wat je in het formulier wél kunt gebruiken, is het opzoeken bij de RDW:
    personenauto, en zo kwamen ze vroeger onterecht als **SUV** binnen. Een gewone gezinsauto of
    MPV met minder zitplaatsen blijft **SUV**. Dit geldt voor nieuwe opzoekingen; auto's die er al
    stonden, veranderen niet vanzelf. Klopt het type van een bestaande auto niet, zet het dan met
-   **Bewerken** goed.
+   **Bewerken** goed. Voor het hele wagenpark in één keer kan een beheerder in **Instellingen** op het
+   tabblad **Voertuigen** de kaart **RDW-voertuigtypes** gebruiken (zie 4.13 en hoofdstuk 10).
 4. Wordt de auto niet gevonden, dan staat er **Voertuig niet gevonden** — *Geen voertuig gevonden
    met dit kenteken in de RDW-database. Controleer het kenteken en probeer het opnieuw.*
    Controleer dan de schrijfwijze van het kenteken.
@@ -142,6 +143,14 @@ Dit is de snelste manier, ook voor één auto.
 3. Klik op **Import starten**. De knop verandert in *Import verwerken...*
 4. De app zoekt elk kenteken op bij de RDW en legt het voertuig aan.
 
+**Het vinkje "Ook onbekende kentekens aanmaken".** Boven de twee tabbladen staat het vinkje **Ook
+onbekende kentekens aanmaken**, standaard uit. Er staat bij: *Een kenteken dat de RDW niet kent wordt
+anders overgeslagen. Staat dit vinkje aan, dan wordt het wel aangemaakt (merk en model "Unknown", bij
+een bestand de waarden uit het bestand) en telt het als waarschuwing.* Het vinkje geldt voor beide
+tabbladen. Laat je het uit, dan maak je dus niet per ongeluk een auto aan op een typefout in het
+kenteken; zet je het aan, dan maak je bewust ook een auto aan die de RDW niet kent (bijvoorbeeld een
+nieuw kenteken dat nog niet in de RDW staat) en vul je de rest zelf aan met **Bewerken**.
+
 Laat je het veld leeg, dan meldt de app **Geen kentekens gevonden** — *Voer minstens één geldig
 kenteken in.*
 
@@ -161,15 +170,23 @@ Heb je een lijst van de leverancier, gebruik dan dit tabblad.
 
 ### Het resultaat lezen
 
-Na de import zie je het kaartje **Importresultaten** met de regel *<aantal> voertuigen succesvol
-geïmporteerd, <aantal> mislukt.* Daaronder staan twee blokken:
+Na de import zie je het kaartje **Importresultaten** met de regel *<aantal> geïmporteerd, <aantal> met
+waarschuwing, <aantal> mislukt*. Er zijn dus drie uitkomsten per regel, en daaronder staan drie blokken:
 
-- **Succesvol geïmporteerd (n)** — per regel `KENTEKEN - Merk Model`. Kon de RDW het kenteken
-  niet vinden, dan staat er als extra regel: *Niet gevonden bij de RDW; alleen het kenteken is
-  opgeslagen.* De auto is dan wél aangelegd, maar met merk en model op *Unknown*. Werk hem
-  daarna bij met **Bewerken**.
+- **Succesvol geïmporteerd (n)** — per regel `KENTEKEN - Merk Model`. De RDW kende het kenteken en
+  de auto is aangelegd.
   Wijken jouw kolommen af van wat de RDW zegt, dan staat er *Afwijkingen ten opzichte van de
   RDW:* met per veld wat er in het blad stond en wat de RDW weet. De RDW-waarde wordt gebruikt.
+- **Met waarschuwing (n)** — de regels die je even moet nakijken. Er staan er drie soorten:
+
+| Melding | Betekenis | Is de auto aangemaakt? |
+|---|---|---|
+| *Onbekend bij de RDW: niet aangemaakt.* | De RDW kent het kenteken niet en het vinkje **Ook onbekende kentekens aanmaken** stond uit | Nee |
+| *Onbekend bij de RDW: wel aangemaakt, zonder RDW-gegevens.* | De RDW kent het kenteken niet, het vinkje stond aan | Ja, met merk en model *Unknown* (bij een bestand de waarden uit het bestand). Werk hem bij met **Bewerken** |
+| *RDW niet bereikbaar: aangemaakt zonder RDW-gegevens. Controleer de gegevens later.* | De RDW gaf geen antwoord (te langzaam of een storing); het kenteken kan best kloppen | Ja, zonder RDW-gegevens. Controleer de auto later, of importeer het kenteken opnieuw als hij nog niet bestaat |
+
+  Een storing van de RDW staat dus niet meer onder *niet gevonden*: die melding zegt alleen wat er
+  echt gebeurde. Een waarschuwing telt niet als geslaagd en ook niet als mislukt.
 - **Mislukte imports (n)** — per regel `KENTEKEN - reden`. De redenen zijn Nederlands:
 
 | Melding | Betekenis |
@@ -179,11 +196,10 @@ geïmporteerd, <aantal> mislukt.* Daaronder staan twee blokken:
 | *Een datum kon niet worden gelezen (gebruik dd-mm-jjjj).* | Een datum in die regel is onleesbaar |
 | *Dit voertuig kon niet worden geïmporteerd.* | Onbekende fout; probeer die regel los opnieuw |
 
-Een afgekeurde regel houdt de rest niet tegen: de andere rijen worden gewoon geïmporteerd. Er is
-geen categorie "overgeslagen" — een regel lukt of hij lukt niet.
+Een afgekeurde regel houdt de rest niet tegen: de andere rijen worden gewoon geïmporteerd.
 
-Je krijgt ook de melding **Import voltooid** — *<aantal> voertuigen succesvol geïmporteerd.
-<aantal> mislukt.*
+Je krijgt ook de melding **Import voltooid** — *<aantal> voertuigen geïmporteerd, <aantal> met
+waarschuwing, <aantal> mislukt.*
 
 ---
 
@@ -234,9 +250,9 @@ Dit is de status die je in de lijst ziet en die je op het tabblad **Algemeen** i
 | Status | Wat het betekent | Kun je hem verhuren? |
 |---|---|---|
 | **Beschikbaar** | De auto staat klaar | Ja |
-| **Gepland** | Er ligt een reservering op | Ja, buiten die periode |
+| **Gepland** | Er ligt een reservering op, of er is onderhoud voor ingepland dat de auto nog niet binnen is gemeld | Ja, buiten die periode (bij gepland onderhoud krijg je een waarschuwing, zie hoofdstuk 7, paragraaf 7.3) |
 | **Verhuurd** | De auto is opgehaald en staat bij een klant | Nee |
-| **Reparatie nodig** (in het formulier: **Moet gerepareerd worden**) | Er is iets kapot | Nee |
+| **Reparatie nodig** (in het formulier: **Moet gerepareerd worden**) | Er is iets kapot, of de auto staat binnen voor onderhoud (**Binnen**) | Nee |
 | **Niet voor verhuur** | De auto is bewust uit de verhuur gehaald | Nee |
 
 In de lijst kom je ook combinaties tegen: **Vervangend voertuig**, **Vervangend voertuig
@@ -251,7 +267,13 @@ De status wijzigen doe je met **Bewerken** → tabblad **Algemeen**, of op de vo
 knop **Wijzigen** bij het blok **Beschikbaarheidsstatus**. In dat lijstje kun je vier waarden
 kiezen: **Beschikbaar**, **Moet gerepareerd worden**, **Niet voor verhuur** en **Verhuurd**.
 **Gepland** staat er niet bij: die status zet de app zelf zodra er een reservering op de auto
-ligt.
+ligt of er onderhoud voor is ingepland.
+
+**Gepland onderhoud maakt van een auto geen "Reparatie nodig".** Plan je onderhoud, dan blijft de auto
+**Gepland** zolang hij er nog niet is. Pas als je het onderhoud op **Binnen** zet, wordt het **Reparatie
+nodig**. Haal je dat onderhoud daarna weg (verwijderen of annuleren) en was het de enige reden, dan gaat
+**Reparatie nodig** er weer af. Een stand die je zelf met de hand zette, blijft staan. Zie hoofdstuk 7,
+paragrafen 7.3 en 7.8.
 
 Zet een auto **nooit** met de hand op **Verhuurd**: dat doet het ophaalproces voor je, samen met
 het contractnummer en de kilometerstand. De app waarschuwt daar ook voor met **Geen actieve
@@ -375,11 +397,35 @@ scanscherm. In het venster **Brandstofstatus bijwerken** vul je in:
 - **Tankkosten (€)** — je mag een komma of een punt typen: *45,50* en *45.50* zijn allebei goed,
   en ook *1.234,50* wordt gelezen als duizend tweehonderdvierendertig euro vijftig. Staat er iets
   anders, bijvoorbeeld letters of een bedrag met meer dan twee decimalen, dan verschijnt onder het
-  veld *Vul een geldig bedrag in, bijvoorbeeld 45,50.* en wordt er niets opgeslagen.
+  veld *Vul een geldig bedrag in, bijvoorbeeld 45,50.* en wordt er niets opgeslagen. Het bedrag moet
+  positief zijn en ten hoogste € 1.000.000; anders weigert de app met *Het tankbedrag moet een positief
+  bedrag zijn van ten hoogste € 1.000.000.*
 - **Bon (optioneel)** — met **Bon uploaden**.
 - **Notities (optioneel)**.
 
 Vul je niets in, dan meldt de app *Geef minstens één veld op om bij te werken.*
+
+**Een tankbedrag wordt ook een kostenpost.** Vul je bij **Tankkosten (€)** een bedrag in, dan boekt de app
+in dezelfde handeling een kostenpost op deze auto, in de categorie **Brandstof**. Je krijgt
+**Brandstofstatus bijgewerkt; kostenpost van € 45,50 geboekt** (met je eigen bedrag). Je hoeft het
+bedrag dus niet nog eens op het scherm **Kosten** in te typen; doe je dat wel, dan staat het er twee keer.
+
+- De omschrijving van de kostenpost is *Tankbeurt <niveau> <datum>*, met de datum van vandaag.
+- Heb je een **Bon** meegegeven, dan is dat ook de bon van de kostenpost.
+- Je hebt hiervoor het vinkje **Voertuigen beheren** nodig, niet **Kosten beheren**: de kostenpost is een
+  gevolg van het tanken. Wijzigen of verwijderen kun je de kostenpost daarna alleen met **Kosten
+  beheren**. Een verwijderde kostenpost staat in de prullenbak van het scherm **Kosten** (hoofdstuk 10,
+  paragraaf 10.6).
+- Klik je per ongeluk twee keer (of verstuur je hetzelfde nog eens binnen twee minuten), dan boekt de app
+  het bedrag maar één keer. Een nieuwe tankbeurt later op de dag, of met een ander bedrag, wordt wel een
+  nieuwe kostenpost.
+- Lukt het boeken van de kostenpost niet, dan wordt er niets opgeslagen en staat er *De kostenpost voor
+  de tankbeurt kon niet worden geboekt; er is niets opgeslagen. Probeer het opnieuw.*
+- Vul je alleen het niveau in en geen bedrag, dan komt er geen kostenpost.
+
+**Het laatste tankbedrag.** Op de voertuigkaart staat op de tegel **Huidig brandstofniveau** ook de
+regel *Laatste tankbedrag: € 45,50 (9 okt. 2026)*, met het bedrag en de datum van de laatste tankbeurt
+waarbij je een bedrag invulde. Die regel blijft staan, ook als je de kostenpost later verwijdert.
 
 ---
 
@@ -497,7 +543,44 @@ Twee dingen om te weten:
 
 ---
 
-## 4.13 Snel naslaan
+## 4.13 De voertuigtypes controleren met de RDW
+
+De typering van de RDW is verbeterd: een bus met negen zitplaatsen is geen **SUV** meer maar een **Van**
+(zie 4.3). Auto's die al in het wagenpark staan, houden hun oude type. Wil je die in één keer laten
+nalopen, dan doet een beheerder dat in de app, niet op de server.
+
+1. Klik op het tandwiel (**Instellingen**) en ga naar het tabblad **Voertuigen**. Je ziet de kaart
+   **RDW-voertuigtypes**. Er staat bij: *Er wordt niets aangepast voordat een beheerder op Toepassen
+   drukt.*
+2. Klik op **Controleren**. De app vraagt de RDW per voertuig, op de achtergrond, en laat zien hoe ver
+   hij is: *Controleren… 12 van 99 voertuigen*. Voor ongeveer honderd auto's duurt dat anderhalve
+   minuut of meer; je kunt het scherm laten staan of er later terugkomen. Er loopt maar één controle
+   tegelijk (*Er loopt al een controle. Wacht tot die klaar is.*).
+3. Als hij klaar is, staat er een lijst met per kenteken **Type: oud → nieuw**, en een regel als *7
+   voertuigen krijgen een ander type (controle van <datum>: 99 voertuigen bekeken, 2 niet gevonden bij de
+   RDW, 1 mislukt).* Auto's die de RDW niet kent of waar het opzoeken mislukte, staan onderaan met hun
+   kenteken (*Niet gevonden bij de RDW, type blijft: …* en *Opzoeken mislukt, type blijft: …*) en
+   veranderen niet. Is er niets te veranderen, dan staat er *Alle gecontroleerde voertuigen hebben al het
+   type dat de RDW geeft.*
+4. **Bekijk de lijst goed.** De controle markeert elk verschil tussen het type in de app en het type van de
+   RDW, ook een type dat iemand bewust met de hand zette. Toepassen doet alles of niets: je kunt geen
+   regels uitzetten. Hoort een auto zijn handmatige type te houden, zet hem dan na het toepassen met
+   **Bewerken** terug.
+5. Alleen een **beheerder** ziet de knop **Toepassen**. De app vraagt eerst **RDW-voertuigtypes
+   toepassen?** en noemt het aantal: *Het type van 7 voertuigen wordt aangepast zoals in de lijst staat.
+   Een voertuig waarvan het type intussen is gewijzigd, blijft ongemoeid. Dit kan niet in één keer
+   ongedaan worden gemaakt.* Kies **Toepassen**.
+
+Je krijgt **RDW-voertuigtypes toegepast** — *7 voertuigen aangepast, 0 overgeslagen (type intussen
+gewijzigd).* Een auto waarvan het type tussen de controle en het toepassen is veranderd, wordt
+overgeslagen en telt mee bij *overgeslagen*. Elke aangepaste auto krijgt een regel in het activiteitenlog
+(10.5) met het oude en het nieuwe type, en de lijst is daarna weg: voor een volgende ronde druk je opnieuw
+op **Controleren**. Is de lijst verdwenen voordat je toepast, dan meldt de app *Er is geen
+controle-uitkomst meer om toe te passen. Draai eerst Controleren.*
+
+---
+
+## 4.14 Snel naslaan
 
 | Wat je wilt | Waar |
 |---|---|
@@ -507,9 +590,11 @@ Twee dingen om te weten:
 | Gegevens aanvullen | **Bewerken** |
 | APK-datum invullen | **Bewerken** → **Datums** → **APK-vervaldatum** |
 | Kilometerstand bijwerken | **Km-stand bijwerken** (of via **Scannen**) |
-| Tanken vastleggen | **Brandstofstatus bijwerken** |
+| Tanken vastleggen (met bedrag: ook een kostenpost) | **Brandstofstatus bijwerken** |
 | Sleutellabel afdrukken | **Bekijken** → **Barcode bekijken** → **Sleutellabel afdrukken** |
 | Alle labels afdrukken | **Barcodeboek** |
 | Een auto uit de verhuur halen | **Bewerken** → **Beschikbaarheidsstatus** → **Niet voor verhuur** |
 | Een auto verwijderen | Prullenbakje in de lijst; kenteken overtypen |
 | Een verwijderd voertuig terugzetten | **Verwijderde voertuigen** → **Terugzetten** (vraagt het vinkje **Prullenbak beheren**) |
+| Onbekende kentekens toch aanmaken bij het importeren | **Bulk importeren** → vinkje **Ook onbekende kentekens aanmaken** |
+| De voertuigtypes van het park laten nalopen door de RDW | **Instellingen** → **Voertuigen** → **RDW-voertuigtypes** → **Controleren**, daarna (beheerder) **Toepassen** |

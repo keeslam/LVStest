@@ -28,8 +28,10 @@ erbij, via **App-instellingen → Activiteit**. *(Hoofdstuk 10)*
 
 ## Afgerond
 
-Geen status. De app noemt een afgesloten verhuring overal **Voltooid**, ook op het scanscherm.
-Zie **Voltooid**. *(Hoofdstuk 5, 18)*
+Bij een verhuring geen status: de app noemt een afgesloten verhuring overal **Voltooid**, ook op het
+scanscherm. Zie **Voltooid**. Bij **onderhoud** is **Afronden** juist de knop waarmee je een onderhoudsblok
+afsluit, met APK-datum, formulier en kilometerstand; het blok staat daarna als *Afgerond op <datum>* onder
+**Voltooide bekijken (…)**. *(Hoofdstuk 5, 7, 18)*
 
 ## APK
 
@@ -47,17 +49,26 @@ De nachtelijke kopie van alle gegevens en van de geüploade bestanden. Staat er 
 
 Zie **Sleutellabel**.
 
+## Bedrijfsnaam
+
+De ene naam waaronder de app mailt: in de herinneringen, de portaalmails, als standaard afzendernaam en
+in de placeholder `{companyName}`. Je stelt hem in bij **App-instellingen → Bedrijfsregels**. Zolang je
+niets opslaat, is het *Autolease Lam*. Niet te verwarren met het veld **Bedrijfsnaam** bij een klant.
+*(Hoofdstuk 9, 10)*
+
 ## Beheerder
 
 De rol die alles mag. Alleen een beheerder heeft het kopje **Beheer** onder zijn eigen naam
-rechtsboven. Niet iedereen is beheerder, en dat hoort ook niet zo te zijn. De prullenbak is sinds
-oktober 2026 niet meer aan de rol gebonden; die heeft zijn eigen vinkje. *(Hoofdstuk 15)*
+rechtsboven. Niet iedereen is beheerder, en dat hoort ook niet zo te zijn. Er blijft altijd minstens één
+actieve beheerder: de laatste kun je niet verwijderen of degraderen. De prullenbak is sinds
+oktober 2026 niet meer aan de rol gebonden; die heeft zijn eigen vinkje. *(Hoofdstuk 10, 15)*
 
 ## Bekeuring
 
 Een verkeersboete op een van je auto's. Je beheert ze via **Klantenportaal → Bekeuringen**, waar je
 ze handmatig invoert (**Nieuwe bekeuring**) of een brief laat inlezen (**Brieven scannen**), en aan
-de juiste huurder koppelt. *(Hoofdstuk 2)*
+de juiste huurder koppelt. De app registreert alleen (**Niet gekoppeld**, **Gekoppeld**,
+**Geannuleerd**); de klant hoort er pas van als je op **Klant informeren** klikt. *(Hoofdstuk 2, 9)*
 
 ## Beschikbaar
 
@@ -190,9 +201,11 @@ De werkplaatsstatus voor een auto die nog niet binnen is maar wel iets mankeert.
 ## Onderhoudsblok
 
 De periode in de kalender waarin een auto voor de werkplaats is gereserveerd. Een blok blokkeert
-het boeken niet — de app waarschuwt wel dat er onderhoud gepland staat — maar zolang een blok
-loopt, telt de auto niet mee als beschikbaar en lukt meegeven niet. Het blok blijft bij de
-fysieke auto, ook als de huur naar een andere auto verhuist. *(Hoofdstuk 7)*
+het boeken niet — de app waarschuwt wel dat er onderhoud gepland staat — en zolang een blok loopt, telt
+de auto niet mee als beschikbaar. Staat het blok op *gepland*, dan heet de auto **Gepland** en mag je hem
+nog meegeven (met een waarschuwing); staat het op **Binnen**, dan is de auto **Reparatie nodig** en lukt
+meegeven niet. Het blok blijft bij de fysieke auto, ook als de huur naar een andere auto verhuist.
+*(Hoofdstuk 7)*
 
 ## Ophalen
 
@@ -231,10 +244,11 @@ bedrag staan dan drie puntjes: **•••**. *(Hoofdstuk 15)*
 
 ## Prullenbak
 
-De plek waar alles heen gaat wat je verwijdert. Er zijn er zes, één per scherm: voertuigen, klanten,
-reserveringen, onderhoud, transporten en bekeuringen, elk met een eigen knop op dat scherm (**Verwijderde
-voertuigen**, **Verwijderde klanten**, **Verwijderde reserveringen**, **Verwijderd onderhoud**,
-**Verwijderde transporten** en **Prullenbak** bij de bekeuringen). Wat erin staat, kun je terugzetten of
+De plek waar alles heen gaat wat je verwijdert. Er zijn er acht, één per scherm: voertuigen, klanten,
+reserveringen, onderhoud, transporten, kosten, bekeuringen en de chauffeurs van een klant, elk met een
+eigen knop op dat scherm (**Verwijderde voertuigen**, **Verwijderde klanten**, **Verwijderde
+reserveringen**, **Verwijderd onderhoud**, **Verwijderde transporten**, **Verwijderde kostenposten**,
+**Prullenbak** bij de bekeuringen en **Verwijderde chauffeurs** bij een klant). Wat erin staat, kun je terugzetten of
 definitief verwijderen, per regel, per selectie of alles van die soort. Je hebt het vinkje
 **Prullenbak beheren** nodig. *(Hoofdstuk 10, 11, 15)*
 
@@ -282,6 +296,12 @@ De handeling waarmee je de sleutelkast nalangs loopt en aftekent. Te vinden op h
 Het barcodelabel aan de sleutel. Scan je het, dan opent de app meteen de juiste auto met de acties
 die op dat moment zinvol zijn. Dit is het snelste pad in de app en het kan nooit de verkeerde auto
 opleveren. Ook wel: de barcode. *(Hoofdstuk 2, 4)*
+
+## Tijdzone van het kantoor
+
+De tijdzone waarin de app bepaalt wat "vandaag" is en hoe laat de nachtelijke taken draaien. Standaard
+*Europe/Amsterdam*; zomer- en wintertijd gaan vanzelf mee. Je stelt hem in bij **App-instellingen →
+Bedrijfsregels**. *(Hoofdstuk 10)*
 
 ## Transport
 

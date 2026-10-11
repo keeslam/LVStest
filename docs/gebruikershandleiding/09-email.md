@@ -269,6 +269,12 @@ alleen in op de mailserver. Onder de knop verschijnt het antwoord, groen of rood
 
 Is er nog niets ingevuld, dan staat er **Geen e-mailconfiguratie ingesteld**.
 
+**De naam onder je mails.** De naam van het bedrijf in de mails (onderaan de herinneringen, in de portaalmails
+en als standaard afzendernaam) stel je niet hier in, maar bij **App-instellingen → tabblad Bedrijfsregels →
+Bedrijfsnaam** (hoofdstuk 10, paragraaf 10.3). Eén naam voor alle mails; zolang je niets opslaat, is het
+*Autolease Lam*. Een **Afzendernaam** die je hierboven bij een mailinstelling invult, gaat voor op de
+bedrijfsnaam.
+
 Het opgeslagen wachtwoord wordt nooit teruggetoond: het veld is leeg als je de instelling later
 weer opent. Dat is met opzet.
 
@@ -309,11 +315,36 @@ blijft zoals hij is.
 pagina naar de sjabloonbouwer en staat de cursor in de naam. Een gedupliceerd sjabloon heet *<naam>
 (kopie)*. Na opslaan of verwijderen klopt de lijst direct.
 
-**Placeholders die nergens worden ingevuld.** De bouwer biedt een paar velden aan die de app bij het
-versturen niet invult: de naam van het bedrijf, de onderhoudsdatum, het e-mailadres en telefoonnummer van de
-klant, en de begin- en einddatum van de reservering. De voorvertoning waarschuwt daarvoor (*Deze
-placeholders worden nergens ingevuld en gaan zo naar de klant: …*). Gebruik ze dus niet, tot de
-eigenaar heeft besloten of de app ze moet invullen.
+**Welke placeholders de app invult.** De bouwer biedt elf velden aan, en de app vult ze bij het versturen
+allemaal in, per ontvanger:
+
+| Placeholder | Wat erin komt |
+|---|---|
+| `{customerName}` (**Klantnaam**) | De volledige naam van de klant |
+| `{vehiclePlate}`, `{vehicleBrand}`, `{vehicleModel}` | Het kenteken, het merk en het model van het voertuig |
+| `{apkDate}` (**APK-datum**) | De vervaldatum van de APK |
+| `{companyName}` (**Bedrijfsnaam**) | De bedrijfsnaam uit de app-instellingen (10.3) |
+| `{customerEmail}` (**E-mail klant**) | Het e-mailadres waarnaar dit bericht gaat |
+| `{customerPhone}` (**Telefoon klant**) | Het telefoonnummer van de klant |
+| `{reservationStart}`, `{reservationEnd}` (**Startdatum reservering**, **Einddatum reservering**) | De begin- en einddatum van de reservering waar het voertuig nu bij hoort, als dd-mm-jjjj |
+| `{maintenanceDate}` (**Onderhoudsdatum**) | Alleen bij de categorie **Onderhoud**: de laatste onderhoudsdatum van het voertuig, of anders de datum van het onderhoud dat de auto dekt of als eerste volgt |
+
+Twee dingen om te weten:
+
+- **Wat er niet is, blijft leeg.** Heeft een voertuig geen huurder en dus geen reservering, dan zijn
+  `{reservationStart}` en `{reservationEnd}` leeg. Een placeholder waarvoor de app niets weet, wordt
+  leeg verstuurd, nooit als code in de tekst. De voorvertoning zegt per ontvanger wat
+  leeg blijft (*Leeg voor deze ontvanger: …*).
+- **`{maintenanceDate}` hoort bij Onderhoud.** Bij de categorieën **APK-herinneringen** en **Aangepast**
+  biedt de bouwer deze placeholder niet aan, en de app vult hem daar ook niet in. De voorvertoning kent
+  alleen de laatste onderhoudsdatum van het voertuig; vindt de app de datum pas bij het versturen via een
+  gepland onderhoud, dan kan de voorvertoning *blijft leeg* tonen terwijl de verstuurde mail wel een datum
+  heeft.
+
+Een placeholder met een typefout, of een veld dat niet in de tabel staat, vult de app niet in: er komt een
+lege plek in de tekst. De voorvertoning waarschuwt daarvoor met *Deze placeholders worden nergens ingevuld en
+gaan zo naar de klant: …*. Lees dat als: dit veld blijft leeg. Een zin met een gat erin leest slecht, dus
+verbeter het veld voordat je verstuurt.
 
 ---
 

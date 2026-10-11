@@ -65,9 +65,15 @@ woord ook hier — dan weet je zeker dat je het goede knopje hebt.
 Alle achttien hoofdstukken zijn af. De schermafbeeldingen staan in de map `afbeeldingen/` en
 worden vanuit de hoofdstukken zelf getoond.
 
-**Bijgewerkt op 10 oktober 2026.** De tekst volgt de reparaties na de fysieke audit: de Nederlandse
-foutmeldingen, de kostenlijst met filters, de rapporten, de bekeuringen, de documenteneditors en de
-kleine verbeteringen in elk hoofdstuk. De schermafbeeldingen en het PDF-bestand
+**Bijgewerkt op 12 oktober 2026.** De tekst volgt de reparaties na de fysieke audit (10 oktober) en
+deelproject D (de besluiten B-41): de status van een reservering verandert alleen nog via handelingen
+en na het boeken staat er **Nu ophalen**, onderhoud wordt met **Afronden** afgesloten en plannen kun je
+afbreken, een tankbedrag wordt ook een kostenpost, de bulkimport maakt onbekende kentekens alleen aan op
+verzoek, chauffeurs en kostenposten hebben een prullenbak, bekeuringen worden alleen geregistreerd en de
+klant hoort er pas van na **Klant informeren**, er is een wachtwoordregel voor medewerkers, een
+tijdzone- en een bedrijfsnaaminstelling, een melding van geweigerde pogingen voor de beheerder en een
+RDW-typecontrole in de instellingen. Deze wijzigingen staan op de branch `feat/besluiten-d` en zijn pas in
+de app te zien nadat die is uitgerold. De schermafbeeldingen en het PDF-bestand
 (`Gebruikershandleiding-Car-Rental-Manager-v1.0.pdf`) zijn nog niet opnieuw gemaakt; de tekst in de
 hoofdstukken is leidend.
 

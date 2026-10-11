@@ -141,6 +141,10 @@ hetzelfde bedrijf mogen wél hetzelfde telefoonnummer hebben — daarom blokkeer
 
 Een klant met een lopende of toekomstige huur kun je niet verwijderen — zet eerst de huren over.
 
+Een chauffeur die je dubbel aanmaakte, verwijder je met **Verwijderen** op het tabblad **Chauffeurs**. Hij
+gaat naar de prullenbak van die klant (**Verwijderde chauffeurs**) en je kunt hem terugzetten (hoofdstuk 3,
+paragraaf 3.6).
+
 ---
 
 ## 11.6 Een huur die nooit is afgesloten
@@ -301,10 +305,17 @@ Er wordt dan niets opgeslagen.
 - Terug uit de werkplaats: **Terug van onderhoud** bij de reservering, met de inleverdatum en de
   kilometerstand, of **Terug uit onderhoud** op het scanscherm.
 
-**Hoe je het herstelt.** Is de auto klaar maar staat de vlag nog aan, gebruik dan **Terug van
-onderhoud** of **Terug uit onderhoud**. Die knoppen halen de vlag eraf, sluiten het
-onderhoudsblok van vandaag en zetten de auto meteen weer op een verhuurbare status. Daarna kan
-het ophalen gewoon door.
+**Hoe je het herstelt.** Is de auto klaar maar staat de vlag nog aan, rond dan het onderhoud af met
+**Afronden** (hoofdstuk 7, paragraaf 7.6), of gebruik **Terug van onderhoud** of **Terug uit onderhoud**.
+Die handelingen halen de vlag eraf, sluiten het onderhoudsblok van vandaag en zetten de auto meteen weer
+op een verhuurbare status. **Terug uit onderhoud** op het scanscherm opent daarbij zelf het venster
+**Onderhoud afronden** als de auto in een lopend onderhoud staat. Daarna kan het ophalen gewoon door.
+
+Staat de auto op **Reparatie nodig** omdat je een onderhoud op **Binnen** zette, en blijkt dat onderhoud
+niet te kloppen? Verwijder of annuleer dat onderhoud dan: staat er geen ander onderhoud op **Binnen**, dan
+gaat de auto vanzelf weer van **Reparatie nodig** af. Een onderhoud dat je net hebt ingepland en waarvan je
+je in het venster **Vervangende voertuigen toewijzen** bedenkt, haal je weg met **Annuleren** en **Plannen
+afbreken** (hoofdstuk 7, paragraaf 7.2).
 
 > **Let op:** de werkplaatsstatus verdwijnt **niet** vanzelf als je een auto inneemt of een
 > transport afrondt. Dat is bewust: een auto die kapot naar binnen ging, mag er niet stilletjes
@@ -407,7 +418,8 @@ reserveringsnummer...*) de veiligste weg naar de goede.
 
 ## 11.15 Per ongeluk verwijderd
 
-**Wat er misgaat.** Je verwijdert een voertuig, een klant, een reservering of een transport.
+**Wat er misgaat.** Je verwijdert een voertuig, een klant, een reservering, een transport, een
+chauffeur of een kostenpost.
 
 **Hoe je het merkt.** Het record is uit de lijsten verdwenen.
 
@@ -426,6 +438,9 @@ reserveringsnummer...*) de veiligste weg naar de goede.
   reserveringen erbij. De knop blijft grijs, ook als je de naam correct overtypt.
 - Een reservering die al is **opgehaald** verwijder je niet zomaar: dat vraagt een eigen vinkje en een
   waarschuwing die je bevestigt (hoofdstuk 5, paragraaf 5.15).
+- Een **chauffeur** en een **kostenpost** vragen minder: ze gaan naar de prullenbak (**Verwijderde
+  chauffeurs** bij de klant, **Verwijderde kostenposten** op het scherm **Kosten**) en komen met één klik
+  terug.
 
 **Hoe je het herstelt.** Alles wat je verwijdert gaat naar de **prullenbak van het scherm waar je
 het verwijderde** en is terug te zetten, met alles wat eraan hing. Zie hoofdstuk 10, paragraaf 10.6.

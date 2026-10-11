@@ -74,11 +74,18 @@ beheerder.
 | De app-instellingen wijzigen | **App-instellingen** |
 | Een nieuw beheerdersaccount aanmaken | **Gebruikers** |
 | De uitgifte van een auto uit de werkplaats forceren, met opgaaf van reden | Het venster **Uitgifte geblokkeerd** bij het ophalen |
+| De meldingen van geweigerde pogingen zien | De balk op het **Dashboard** (hoofdstuk 10, paragraaf 10.2) |
+| De RDW-voertuigtypes van het wagenpark toepassen | **App-instellingen → Voertuigen → RDW-voertuigtypes → Toepassen** |
+| Een andere beheerder verwijderen | **Gebruikers**; de laatste actieve beheerder blijft altijd beschermd |
 
 Let op: die drie beheerschermen zitten aan de **rol** Beheerder vast, niet aan de vinkjes. Vink je
 bij een gewone medewerker **Gebruikers beheren**, **Back-ups beheren** of **Instellingen beheren**
 aan, dan verschijnt het kopje **Beheer** bij hem nog steeds niet. Wil je dat iemand die schermen
 kan openen, dan moet zijn rol op **Beheerder** staan.
+
+Het scherm **Gebruikers** zegt dat nu ook zelf. Bij **Gebruikers beheren**, **Instellingen beheren** en
+**Back-ups beheren** staat bij een medewerker die geen beheerder is *alleen voor beheerders* en kun je
+het vinkje niet aanzetten (een vinkje dat al aanstond, kun je wel uitzetten). Zie 15.17.
 
 **Iemand die geen beheerder is, is dat niet.** Dat klinkt flauw, maar het is de meestgestelde
 vraag aan de balie: "bij mij staat die knop er niet". Dat is meestal geen storing en ook niet iets
@@ -97,7 +104,7 @@ fiscale mobiliteitscheck staan onderaan in een eigen tabel.
 | Vinkje | Wat het toestaat | Welk menu-item je ermee krijgt |
 |---|---|---|
 | **Voertuigen bekijken** | Het wagenpark inzien, een voertuigkaart openen, de barcode bekijken | **Voertuigen**, **Scannen** |
-| **Voertuigen beheren** | Alles hierboven, plus toevoegen, wijzigen, verwijderen, kilometerstand en brandstof bijwerken, bulkimport, de zwarte lijst, en een auto in de werkplaats **Binnen melden** (hoofdstuk 7, paragraaf 7.8) | **Voertuigen**, **Scannen** |
+| **Voertuigen beheren** | Alles hierboven, plus toevoegen, wijzigen, verwijderen, kilometerstand en brandstof bijwerken (een ingevuld tankbedrag wordt daarbij ook een kostenpost, zonder dat je **Kosten beheren** nodig hebt, hoofdstuk 4, paragraaf 4.9), bulkimport, de zwarte lijst, en een auto in de werkplaats **Binnen melden** (hoofdstuk 7, paragraaf 7.8) | **Voertuigen**, **Scannen** |
 | **Klanten bekijken** | De klantendatabase en klantkaarten inzien | **Klanten** |
 | **Klanten beheren** | Alles hierboven, plus klanten en chauffeurs aanmaken, wijzigen en verwijderen | **Klanten** |
 | **Reserveringen bekijken** | De kalender, de lijst en de details van een verhuring lezen | **Reserveringen**, **Transporten** |
@@ -144,7 +151,7 @@ fiscale mobiliteitscheck staan onderaan in een eigen tabel.
 | **Gebruikers beheren** | Accounts en rechten wijzigen en het activiteitenlog lezen — **maar alleen als de rol Beheerder is** | — |
 | **Instellingen beheren** | De app-instellingen opslaan — idem | — |
 | **Back-ups beheren** | Back-ups maken en terugzetten — idem | — |
-| **Prullenbak beheren** | De prullenbakken van Voertuigen, Klanten, Reserveringen, Onderhoud, Transporten en Boetes openen, er iets uit terugzetten en er iets definitief uit verwijderen (hoofdstuk 10, paragraaf 10.6). Dit vinkje is **niet** aan de rol Beheerder gebonden | — (een knop op elk van die schermen) |
+| **Prullenbak beheren** | De prullenbakken van Voertuigen, Klanten (met de chauffeurs van een klant), Reserveringen, Onderhoud, Transporten, Kosten en Boetes openen, er iets uit terugzetten en er iets definitief uit verwijderen (hoofdstuk 10, paragraaf 10.6). Dit vinkje is **niet** aan de rol Beheerder gebonden | — (een knop op elk van die schermen) |
 
 ### Fiscale mobiliteitscheck
 
@@ -403,6 +410,8 @@ boeking, en die vraagt **Reserveringen beheren**.
 | Een bestaand onderhoudsblok bewerken (datum, type, notities) | Reserveringen beheren | Nee |
 | Onderhoud **afronden**: het blok sluiten, de werkplaats-vlag wissen, de vervanger terugzetten | Onderhoud beheren **of** Reserveringen beheren | Ja |
 | Vanuit het onderhoudsoverzicht (**Lijstweergave** → **Gepland**): **Afronden** | Onderhoud beheren **of** Reserveringen beheren | Ja |
+| Vanuit het bewerkvenster van een blok: **Afronden** | Onderhoud beheren **of** Reserveringen beheren (het bewerkvenster zelf openen vraagt Reserveringen beheren) | Nee: het venster opent niet zonder Reserveringen beheren |
+| Vanaf het scanscherm: **Terug uit onderhoud** bij een auto die in een lopend onderhoud (**Binnen**) staat. De knop opent dan het venster **Onderhoud afronden** | Onderhoud beheren **of** Reserveringen beheren | Ja. **Alleen Voertuigen beheren is niet genoeg**: een scanaccount met alleen dat vinkje kan het onderhoud niet vanaf het scanscherm afronden |
 | Vanuit het onderhoudsoverzicht: **Binnen melden** (blok op *Binnen*, auto in onderhoud) | Voertuigen beheren | Nee: dit loopt via de route waarmee een auto in onderhoud wordt gezet, en die vraagt dit vinkje. Een werkplaatsprofiel (Voertuigen beheren, Onderhoud beheren, Kosten beheren) heeft het |
 | Bij het afronden ook de APK-datum, kilometerstand of laatste-onderhoud-datum van het voertuig bijwerken (zelfde formulier, dezelfde handeling) | Onderhoud beheren **of** Reserveringen beheren | Ja — sinds oktober 2026; vroeger had je hier ook Voertuigen beheren voor nodig |
 | Bij het afronden een APK-formulier uploaden (zelfde formulier, dezelfde handeling) | Onderhoud beheren **of** Reserveringen beheren | Ja — sinds oktober 2026; vroeger had je hier ook Documenten bewerken en genereren voor nodig |
@@ -431,6 +440,14 @@ Eén uitzondering: vanaf het scanscherm (**Voertuigen → Scannen**) kan iemand 
 **Onderhoud beheren** een bestaand onderhoudsblok van het gescande voertuig wél bewerken via de
 knop "Onderhoud openen" — die ene route accepteert sinds deze doorlichting **Onderhoud beheren**
 naast **Reserveringen beheren**, omdat hij nergens anders vandaan te bereiken is.
+
+**Het scanscherm en een auto die in een lopend onderhoud staat.** Sinds de wijziging van oktober 2026 rond
+je een onderhoud altijd af met de knop **Afronden**, ook vanaf het scanscherm. De knop **Terug uit onderhoud**
+opent daar het venster **Onderhoud afronden** als de auto op **Binnen** staat in een blok dat vandaag loopt.
+Een account dat op het scanscherm wel **Voertuigen beheren** heeft, maar niet **Onderhoud beheren** of
+**Reserveringen beheren**, kan dat venster niet gebruiken en dus het onderhoud niet vanaf het scanscherm
+afronden. De knop zegt welk vinkje hij mist (15.9). Een auto die in de werkplaats staat zonder lopend
+onderhoud, geeft zo iemand wel nog met één klik vrij.
 
 ## 15.12 Etiketsjablonen: bekijken kan iedereen, wijzigen niet
 
@@ -505,7 +522,7 @@ Beheerder. Sinds oktober 2026 heeft elk een eigen vinkje:
 |---|---|---|
 | **Overdracht terugdraaien** | Een ophaling, een inname of een annulering ongedaan maken | Hoofdstuk 5, paragraaf 5.14 |
 | **Opgehaalde huur annuleren of verwijderen** | Een huur annuleren of verwijderen die al is opgehaald | Hoofdstuk 5, paragraaf 5.15 |
-| **Prullenbak beheren** | De prullenbakken openen, iets terugzetten en definitief verwijderen | Hoofdstuk 10, paragraaf 10.6 |
+| **Prullenbak beheren** | De prullenbakken openen (ook die van Kosten en van de chauffeurs van een klant), iets terugzetten en definitief verwijderen | Hoofdstuk 10, paragraaf 10.6 |
 
 **Wie ze heeft.**
 
@@ -531,3 +548,24 @@ these permissions required: …*; de Engelse namen daarin zijn `revert_handover`
 doordat je een overdracht terugdraait, dan vraagt de app geen wachtwoord, maar een vinkje in het
 venster zelf (5.14). Het wachtwoordvenster uit 15.6 hoort bij het invoeren van een lagere stand bij
 het ophalen of innemen.
+
+---
+
+## 15.17 Welk recht werkt pas met welk ander recht (sinds oktober 2026)
+
+Een vinkje alleen is vaak niet genoeg. Wie **Reserveringen beheren** heeft maar niet **Voertuigen
+bekijken** en **Klanten bekijken**, kan wel boeken, maar de lijsten waaruit je een auto of klant kiest
+blijven leeg of melden *Geen toegang tot deze gegevens*. Het scherm **Gebruikers** (hoofdstuk 10,
+paragraaf 10.2) helpt daarbij:
+
+- Onder elk vinkje staat *Heeft nodig: …* met de rechten die het scherm nodig heeft. Staan die aan, dan is de
+  regel grijs; mist er een, dan is hij oranje met een waarschuwingsteken.
+- De knop **Benodigde rechten ook aanzetten** vinkt de ontbrekende benodigde rechten van alles wat je
+  aanvinkte in één keer aan. Hij is grijs als er niets ontbreekt. Bij het opslaan gebeurt niets vanzelf.
+- Rechten die het werk prettiger maken maar niet nodig zijn, staan in de tekstballon als *Handig erbij: …*.
+- **Gebruikers beheren**, **Instellingen beheren** en **Back-ups beheren** zijn *alleen voor beheerders*
+  (15.3). Bij een andere rol zijn ze uitgeschakeld in de lijst. De server controleert zelf nog steeds
+  hetzelfde als voorheen; dit is een hulp bij het kiezen, geen nieuwe beveiliging.
+
+De regels volgen de schermen: voor elk scherm dat een recht opent en voor elk stukje van een scherm dat
+gegevens uit een ander recht toont (15.9), staat vast welke rechten erbij horen.

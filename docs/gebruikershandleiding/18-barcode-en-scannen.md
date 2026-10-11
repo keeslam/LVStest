@@ -132,12 +132,22 @@ Wat elke tegel doet:
 - **Inleveren starten** opent **Inleverproces starten**. Zie hoofdstuk 5, paragraaf 5.8.
 - **Onderhoud inplannen** opent het venster **Onderhoud plannen** met deze auto al ingevuld. Zie
   hoofdstuk 7, paragraaf 7.2.
-- **Terug uit onderhoud** zet de werkplaatsstatus meteen om, zonder tussenvenster. Je krijgt
-  **Voertuig is terug uit onderhoud**.
+- **Terug uit onderhoud** werkt op twee manieren.
+  - Staat de auto op **Binnen** in een onderhoudsblok dat vandaag loopt, dan opent de knop het venster
+    **Onderhoud afronden** voor dat blok (hoofdstuk 7, paragraaf 7.6). Vul het in en klik op **Afronden**;
+    je krijgt **Onderhoud afgerond**. Een onderhoud rond je dus ook vanaf het scanscherm niet af met één
+    klik. Daarvoor heb je het vinkje **Onderhoud beheren** of **Reserveringen beheren** nodig; met alleen
+    **Voertuigen beheren** kun je het onderhoud hier niet afronden (hoofdstuk 15, paragraaf 15.11).
+  - Staat de auto in de werkplaats zonder zo'n lopend blok, dan zet de knop de werkplaatsstatus meteen om,
+    zonder tussenvenster. Je krijgt **Voertuig is terug uit onderhoud**.
   > De knop sluit alleen het onderhoudsblok af dat vandaag loopt; onderhoud dat verderop in de
   > kalender staat blijft gewoon staan. De **Beschikbaarheidsstatus** komt meteen in een
   > verhuurbare staat, dus je hoeft niets meer met de hand terug te zetten. Zie hoofdstuk 7,
   > paragraaf 7.5.
+  >
+  > De tegel staat er alleen als de auto een werkplaatsstatus heeft. Zette je een onderhoud via het
+  > bewerkvenster op **Binnen**, dan heeft de auto die status niet en ontbreekt de tegel; rond het
+  > onderhoud dan af via **Onderhoudsblok openen** en **Afronden**.
 - **Transport starten** zet het transport op **Onderweg**; je krijgt **Transport gestart**. De
   knop heet daarna **Transport afronden**; die zet hem op voltooid met de melding **Transport
   afgerond**. Zie hoofdstuk 6, paragraaf 6.5.
@@ -326,7 +336,7 @@ pop-ups toe voor deze site en probeer het opnieuw.
 | Een reservering opzoeken | Scan of typ `RES-…` |
 | Meteen ophalen of innemen | Scannen → **Ophalen starten** / **Inleveren starten** |
 | Een transport starten of afronden | Scannen → **Transport starten** / **Transport afronden** |
-| Een auto uit de werkplaats halen | Scannen → **Terug uit onderhoud** |
+| Een auto uit de werkplaats halen | Scannen → **Terug uit onderhoud** (bij een lopend onderhoud opent dat het venster **Onderhoud afronden**) |
 | Zien wat je net gescand hebt | **Recente scans** |
 | De sleutelkast nalopen | **Voertuigen** → **Sleutelkast-audit** |
 | De reservesleutels nalopen | **Voertuigen** → **Reservesleutelkast-audit** |
