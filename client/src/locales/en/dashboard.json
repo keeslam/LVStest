@@ -78,7 +78,6 @@
     "rdwScanFailedDescription": "The RDW scan could not be run.",
     "title": "Quick Actions",
     "newReservationDescription": "Create a new reservation by selecting a vehicle and customer.",
-    "reservationCreated": "Reservation created successfully",
     "addVehicleTitle": "Add New Vehicle",
     "addVehicleDescription": "Add a new vehicle to your fleet.",
     "vehicleAdded": "Vehicle added successfully",

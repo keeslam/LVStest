@@ -1,5 +1,5 @@
 import { invalidateByPrefix } from "@/lib/queryClient";
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useGlobalDialog } from '@/contexts/GlobalDialogContext';
 import { ReservationViewDialog } from '@/components/reservations/reservation-view-dialog';
@@ -19,7 +19,8 @@ import { PortalListDialog } from '@/components/portal-admin/portal-list-dialog';
 import { ScanDialog } from '@/components/barcodes/scan-dialog';
 import { ReservationAddDialog } from '@/components/reservations/reservation-add-dialog';
 import { PickupDialog } from '@/components/reservations/pickup-return-dialogs';
-import { Vehicle, Reservation } from '@shared/schema';
+import { Vehicle, Reservation, UserPermission } from '@shared/schema';
+import { useHasPermission } from '@/hooks/use-has-permission';
 
 export function GlobalDialogs() {
   const queryClient = useQueryClient();
@@ -30,6 +31,9 @@ export function GlobalDialogs() {
   // the dialog's own mutation closes over the props of the render it started in.
   const pickupDoneRef = useRef(false);
   const [pickupDone, setPickupDone] = useState(false);
+  // The pickup route needs MANAGE_RESERVATIONS: without it the flow neither fetches nor renders
+  // (a refused GET would show the "Kon de gegevens niet laden" toast).
+  const mayPickUp = useHasPermission(UserPermission.MANAGE_RESERVATIONS);
   
   const {
     dialogState,
@@ -62,8 +66,12 @@ export function GlobalDialogs() {
   // D3: the reservation "Nu ophalen" was pressed for (read fresh: the host may be long gone).
   const { data: pickupReservation } = useQuery<Reservation>({
     queryKey: [`/api/reservations/${dialogState.pickup.reservationId}`],
-    enabled: dialogState.pickup.open && !!dialogState.pickup.reservationId,
+    enabled: mayPickUp && dialogState.pickup.open && !!dialogState.pickup.reservationId,
   });
+  // startPickupFlow is a no-op for a profile without the right: drop a request that slipped in.
+  useEffect(() => {
+    if (dialogState.pickup.open && !mayPickUp) closePickupFlow();
+  }, [dialogState.pickup.open, mayPickUp, closePickupFlow]);
 
   // Fetch placeholder reservation data for spare assignment
   const { data: placeholderReservation } = useQuery<Reservation>({
@@ -190,7 +198,7 @@ export function GlobalDialogs() {
       />
 
       {/* D3 - "Nu ophalen" after saving a new reservation, from any host of the form. */}
-      {pickupReservation && dialogState.pickup.open && (
+      {mayPickUp && pickupReservation && dialogState.pickup.open && (
         <PickupDialog
           open={!pickupDone}
           onOpenChange={(open) => { if (!open && !pickupDoneRef.current) closePickupFlow(); }}

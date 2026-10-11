@@ -17,7 +17,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { GlobalDialogProvider } from "@/contexts/GlobalDialogContext";
 import { Toaster } from "@/components/ui/toaster";
-import { UserRole } from "@shared/schema";
+import { UserPermission, UserRole } from "@shared/schema";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 
 // The global layer's other dialogs are heavy and irrelevant here.
 const nothing = vi.hoisted(() => () => null);
@@ -44,9 +45,19 @@ vi.mock("@/components/reservations/pickup-return-dialogs", () => ({
     open ? <div data-testid="pickup-dialog-stub">{`pickup #${reservation.id}`}</div> : null,
   ReturnDialog: () => null,
 }));
+const auth = vi.hoisted(() => ({ role: "admin", permissions: [] as string[] }));
 vi.mock("@/hooks/use-auth", () => ({
-  useAuth: () => ({ user: { id: 1, username: "tester", role: UserRole.ADMIN, permissions: [], hidePrices: false }, isLoading: false }),
+  useAuth: () => ({ user: { id: 1, username: "tester", role: auth.role, permissions: auth.permissions, hidePrices: false }, isLoading: false }),
 }));
+// Every toast the screen asks for, to see that a host does not add one of its own on top of the form's.
+const toastCalls = vi.hoisted(() => [] as any[]);
+vi.mock("@/hooks/use-toast", async (importOriginal) => {
+  const actual = await importOriginal<any>();
+  return {
+    ...actual,
+    useToast: () => ({ ...actual.useToast(), toast: (p: any) => { toastCalls.push(p); return actual.toast(p); } }),
+  };
+});
 
 import { GlobalDialogs } from "@/components/global-dialogs";
 import { ReservationAddDialog } from "@/components/reservations/reservation-add-dialog";
@@ -60,11 +71,18 @@ function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
 
+let fetched: string[];
+
 beforeEach(() => {
+  auth.role = UserRole.ADMIN;
+  auth.permissions = [];
+  toastCalls.length = 0;
+  fetched = [];
   window.history.replaceState(null, "", `/?vehicleId=${vehicle.id}&customerId=${customer.id}`);
   vi.stubGlobal("fetch", vi.fn(async (input: any, init?: any) => {
     const url = typeof input === "string" ? input : input?.url ?? String(input);
     const method = (init?.method ?? "GET").toUpperCase();
+    fetched.push(`${method} ${url}`);
     if (url === "/api/vehicles" && method === "GET") return json([vehicle]);
     if (url === `/api/vehicles/${vehicle.id}` && method === "GET") return json(vehicle);
     if (url === "/api/customers" && method === "GET") return json([customer]);
@@ -143,5 +161,45 @@ describe("D3 fix round 1 - Nu ophalen from every host", () => {
     renderHost(<QuickActions />);
     await user.click(await screen.findByTestId("button-quick-new-reservation"));
     await saveAndPickUpNow(user);
+  });
+
+  it("the dashboard adds no toast of its own: the form's (with Nu ophalen) is the only one", async () => {
+    const user = userEvent.setup();
+    renderHost(<QuickActions />);
+    await user.click(await screen.findByTestId("button-quick-new-reservation"));
+    await saveAndPickUpNow(user);
+
+    const created = toastCalls.filter((p) => !p.variant);
+    expect(created).toHaveLength(1);
+    expect(created[0].title).toBe("Reservering succesvol aangemaakt");
+    expect(created[0].action).toBeTruthy();
+  });
+});
+
+function StartPickup() {
+  const { startPickupFlow } = useGlobalDialog();
+  return <button data-testid="start-pickup" onClick={() => startPickupFlow(999)}>start</button>;
+}
+
+describe("D3 fix round 2 - the global pickup host respects the right", () => {
+  it("without manage_reservations the flow neither fetches nor renders", async () => {
+    auth.role = "user";
+    auth.permissions = [UserPermission.VIEW_RESERVATIONS];
+    const user = userEvent.setup();
+    renderHost(<StartPickup />);
+    await user.click(await screen.findByTestId("start-pickup"));
+
+    await new Promise((r) => setTimeout(r, 300));
+    expect(screen.queryByTestId("pickup-dialog-stub")).toBeNull();
+    expect(fetched).not.toContain("GET /api/reservations/999");
+  });
+
+  it("with manage_reservations it does (control)", async () => {
+    auth.role = "user";
+    auth.permissions = [UserPermission.MANAGE_RESERVATIONS];
+    const user = userEvent.setup();
+    renderHost(<StartPickup />);
+    await user.click(await screen.findByTestId("start-pickup"));
+    expect((await screen.findByTestId("pickup-dialog-stub")).textContent).toBe("pickup #999");
   });
 });

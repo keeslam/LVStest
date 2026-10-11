@@ -32,7 +32,6 @@ import { isTrueValue } from "@/lib/utils";
 import { getDaysUntil } from "@/lib/date-utils";
 import { Search, SlidersHorizontal, Edit, Trash2, Archive, BookOpen, KeyRound } from "lucide-react";
 import { UserPermission } from "@shared/schema";
-import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/use-has-permission";
 
 // Feature-based filter options. Each maps a user-facing label to the boolean
@@ -84,7 +83,6 @@ export default function VehiclesIndex() {
   const [pendingViewVehicle, setPendingViewVehicle] = useState<Vehicle | null>(null);
   
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   // Debounce search query to prevent excessive filtering on every keystroke
   useEffect(() => {
@@ -569,10 +567,7 @@ export default function VehiclesIndex() {
             handleDialogSuccess();
             setReserveDialogVehicleId(null);
             if (reservation.status !== 'picked_up') {
-              toast({
-                title: t('indexPage.toasts.reservationCreatedTitle'),
-                description: t('indexPage.toasts.openingReservationDetails'),
-              });
+              // The form's own "Reservering succesvol aangemaakt" toast (with Nu ophalen) stays visible.
               setSelectedReservationId(reservation.id);
               setReservationViewDialogOpen(true);
             }

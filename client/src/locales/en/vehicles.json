@@ -1004,8 +1004,6 @@
     "daysRemaining_one": "{{count}} day",
     "daysRemaining_other": "{{count}} days",
     "toasts": {
-      "reservationCreatedTitle": "Reservation created",
-      "openingReservationDetails": "Opening reservation details..."
     },
     "pageTitle": "Vehicle Management",
     "fleetCardTitle": "Vehicle Fleet",

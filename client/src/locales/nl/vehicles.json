@@ -1004,8 +1004,6 @@
     "daysRemaining_one": "{{count}} dag",
     "daysRemaining_other": "{{count}} dagen",
     "toasts": {
-      "reservationCreatedTitle": "Reservering aangemaakt",
-      "openingReservationDetails": "Reserveringsdetails openen..."
     },
     "pageTitle": "Voertuigbeheer",
     "fleetCardTitle": "Voertuigenpark",

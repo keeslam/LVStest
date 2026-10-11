@@ -1058,7 +1058,8 @@ export function QuickActions() {
                           setReservationDialogOpen(false);
                           invalidateByPrefix("/api/reservations");
                           invalidateByPrefix("/api/reservations/upcoming");
-                          toast({ title: t('common:status.success'), description: t('quickActions.reservationCreated') });
+                          // No toast of our own: the form's "Reservering succesvol aangemaakt" (with Nu ophalen)
+                          // is the one the toaster keeps, and a second one here would replace it.
                         }}
                       />
                     </div>
