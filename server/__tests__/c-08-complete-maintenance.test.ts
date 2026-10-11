@@ -461,6 +461,37 @@ describe("B-37 - one-call maintenance completion", () => {
     expect(listFilesRecursive(TEMP_UPLOADS)).toEqual(filesBefore);
   });
 
+  it("D7 fix round 1: a block reverted from the history (status completed, maintenance in) can be finished again", async () => {
+    const { vehicle, block } = await carInTheWorkshop();
+    expect((await completionRequest(maintenanceOnly, block.id, { completionDate: COMPLETION })).status).toBe(200);
+    // The history dialog's "Terugdraaien": PATCH { maintenanceStatus: 'in' }, the status stays completed.
+    const revert = await admin.patch(`/api/reservations/${block.id}`).send({ maintenanceStatus: "in" });
+    expect(revert.status).toBe(200);
+    const reverted = await blockRow(block.id);
+    expect(reverted.maintenanceStatus).toBe("in");
+    expect(normalizeReservationStatus(reverted.status)).toBe("completed");
+
+    const again = await completionRequest(maintenanceOnly, block.id, { completionDate: "2026-11-12" });
+
+    expect(again.status).toBe(200);
+    const done = await blockRow(block.id);
+    expect(done.maintenanceStatus).toBe("out");
+    expect(done.endDate).toBe("2026-11-12");
+    expect((await vehicleRow(vehicle.id)).maintenanceStatus).toBe("ok");
+  });
+
+  it("D7 fix round 1: two simultaneous submits complete the block once (the loser gets 409 ALREADY_COMPLETED, one APK document)", async () => {
+    const { block } = await carInTheWorkshop();
+    const send = () => completionRequest(maintenanceOnly, block.id, { completionDate: COMPLETION, apkDate: APK_DATE }, pdfFile("FIXT-c08-double"));
+
+    const [first, second] = await Promise.all([send(), send()]);
+
+    expect([first.status, second.status].sort()).toEqual([200, 409]);
+    const loser = first.status === 409 ? first : second;
+    expect(loser.body.code).toBe("ALREADY_COMPLETED");
+    expect((await documentsOf(block.id)).filter((d) => d.documentType === "APK Inspection")).toHaveLength(1);
+  });
+
   it("manage_reservations (without manage_maintenance) is still accepted: the guard is unchanged", async () => {
     const { block } = await carInTheWorkshop();
     const reservationsOnly = await agentFor(["manage_reservations"]);

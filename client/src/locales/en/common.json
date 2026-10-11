@@ -318,6 +318,8 @@
       "CUSTOMER_HAS_LIVE_RESERVATIONS": "This customer still has current or upcoming reservations.",
       "VEHICLE_HAS_LIVE_RESERVATIONS": "This vehicle still has current or upcoming reservations.",
       "MILEAGE_LOWER_THAN_CURRENT": "The mileage is lower than the current reading.",
+      "ALREADY_COMPLETED": "This maintenance has already been completed.",
+      "USE_COMPLETE_ROUTE": "Finish maintenance with the Complete button, not with the status.",
       "ALREADY_PICKED_UP": "This reservation has already been picked up.",
       "ALREADY_RETURNED": "This reservation has already been returned.",
       "RESERVATION_NOT_FOUND": "This reservation was not found.",

@@ -318,6 +318,8 @@
       "CUSTOMER_HAS_LIVE_RESERVATIONS": "Deze klant heeft nog lopende of komende reserveringen.",
       "VEHICLE_HAS_LIVE_RESERVATIONS": "Dit voertuig heeft nog lopende of komende reserveringen.",
       "MILEAGE_LOWER_THAN_CURRENT": "De kilometerstand is lager dan de huidige stand.",
+      "ALREADY_COMPLETED": "Dit onderhoud is al afgerond.",
+      "USE_COMPLETE_ROUTE": "Een onderhoud rond je af met de knop Afronden, niet met de status.",
       "ALREADY_PICKED_UP": "Deze reservering is al opgehaald.",
       "ALREADY_RETURNED": "Deze reservering is al ingeleverd.",
       "RESERVATION_NOT_FOUND": "Deze reservering is niet gevonden.",

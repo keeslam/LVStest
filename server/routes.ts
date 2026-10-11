@@ -99,6 +99,7 @@ import {
   isReservationRevert,
   decideHandover,
   handoverRefusal,
+  handoverWarnings,
   scheduledMaintenanceOnDay,
   StateTransitionError,
   WorkshopBlockedError,
@@ -5700,13 +5701,10 @@ export async function registerRoutes(app: Express): Promise<void> {
         storage.getReservationsByVehicle(reservation.vehicleId),
       ]);
       const refusal = handoverRefusal(vehicle);
-      // The warnings come from the same decision the pickup makes; a forced decision
-      // never throws, so this stays a read-only look at the verdict.
-      const decision = decideHandover(vehicle, { force: true, isAdmin: true, reason: "check" }, { day, reservations: vehicleReservations });
       res.json({
         canHandOver: refusal === null,
         refusal,
-        warnings: decision.warnings,
+        warnings: handoverWarnings({ day, reservations: vehicleReservations }),
         maintenanceBlocks: scheduledMaintenanceOnDay(vehicleReservations, day).map((b) => ({
           id: b.id, startDate: b.startDate, endDate: b.endDate ?? null,
         })),

@@ -39,7 +39,8 @@ beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
     requested.push(url);
-    const body = url.includes("/handover-check") ? handoverCheck : [];
+    // next-contract-number answers an object: an array made the contract field uncontrolled.
+    const body = url.includes("/handover-check") ? handoverCheck : url.includes("next-contract-number") ? { contractNumber: "FIXT-1" } : [];
     return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
   }));
 });
@@ -51,7 +52,7 @@ afterEach(async () => {
 });
 
 function renderDialog() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0, queryFn: async () => [] } } });
   return render(
     <QueryClientProvider client={client}>
       <PickupDialog open onOpenChange={() => {}} reservation={reservation} />

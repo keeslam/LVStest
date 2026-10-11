@@ -127,6 +127,9 @@ import { syncUsagePeriodSafely } from "./services/fiscal/usage-periods";
 import * as fs from "fs";
 import * as path from "path";
 
+/** Thrown inside the completion transaction when another completion got there first (rolls it back). */
+class AlreadyCompletedSignal extends Error {}
+
 // Helper function for NOT IN array since drizzle-orm doesn't have a direct equivalent
 function notInArray(column: any, values: any[]) {
   if (values.length === 0) return sql`1=1`; // Always true if no values
@@ -5510,14 +5513,17 @@ export class DatabaseStorage implements IStorage {
     if (!block.vehicleId) {
       return refuse({ ok: false, status: 400, message: 'This maintenance block has no vehicle.' });
     }
-    // D7: Afronden is the only way to finish a block, and only once.
-    if (normalizeReservationStatus(block.status) === 'completed' || String(block.maintenanceStatus ?? '').toLowerCase() === 'out') {
-      return refuse({
-        ok: false,
-        status: 409,
-        code: 'ALREADY_COMPLETED',
-        message: 'This maintenance block has already been completed.',
-      });
+    // D7: Afronden is the only way to finish a block, and only once. "Finished" is the
+    // block's maintenance status `out`: the history's "Terugdraaien" puts a finished block back
+    // to `in` and leaves its status `completed`, and that block has to be finishable again.
+    const alreadyCompleted = {
+      ok: false as const,
+      status: 409,
+      code: 'ALREADY_COMPLETED',
+      message: 'This maintenance block has already been completed.',
+    };
+    if (String(block.maintenanceStatus ?? '').toLowerCase() === 'out') {
+      return refuse(alreadyCompleted);
     }
     if (block.endDate && input.completionDate < block.startDate) {
       return refuse({
@@ -5608,8 +5614,15 @@ export class DatabaseStorage implements IStorage {
           updatedBy: input.username ?? null,
           updatedAt: new Date(),
         })
-        .where(and(eq(reservations.id, blockId), isNull(reservations.deletedAt)))
+        // The guard travels with the write: a double submit loses here, after waiting for the
+        // first one's row lock, and its whole transaction (readings included) rolls back.
+        .where(and(
+          eq(reservations.id, blockId),
+          isNull(reservations.deletedAt),
+          sql`${reservations.maintenanceStatus} IS DISTINCT FROM 'out'`,
+        ))
         .returning();
+      if (!closedBlock) throw new AlreadyCompletedSignal();
 
       // The APK file: tied to the vehicle AND to this block. Written before the
       // commit; the catch below unlinks the file when this transaction fails.
@@ -5661,6 +5674,7 @@ export class DatabaseStorage implements IStorage {
     }).catch((error) => {
       // The file was written before this transaction; nothing references it now.
       discardFile();
+      if (error instanceof AlreadyCompletedSignal) return { refusal: alreadyCompleted };
       throw error;
     });
     if (result.refusal) {

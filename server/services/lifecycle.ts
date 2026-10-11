@@ -817,6 +817,13 @@ export function scheduledMaintenanceOnDay<T extends AvailabilityReservation>(res
   );
 }
 
+/** The hints for a handover that may proceed (D5); empty without a context. Never throws. */
+export function handoverWarnings(context: HandoverContext = {}): HandoverWarningCode[] {
+  return context.reservations && scheduledMaintenanceOnDay(context.reservations, context.day ?? isoToday()).length > 0
+    ? [HANDOVER_WARNING_MAINTENANCE_SCHEDULED]
+    : [];
+}
+
 /**
  * Applies B-03 to one handover. Throws `WorkshopBlockedError` (409) when the
  * vehicle is blocked and the request carries no valid administrator override;
@@ -828,10 +835,7 @@ export function decideHandover(
   override: HandoverOverride = {},
   context: HandoverContext = {},
 ): HandoverDecision {
-  const warnings: HandoverWarningCode[] =
-    context.reservations && scheduledMaintenanceOnDay(context.reservations, context.day ?? isoToday()).length > 0
-      ? [HANDOVER_WARNING_MAINTENANCE_SCHEDULED]
-      : [];
+  const warnings = handoverWarnings(context);
   const refusal = handoverRefusal(vehicle);
   if (!refusal) return { allowed: true, refusal: null, overrideNote: null, warnings };
 

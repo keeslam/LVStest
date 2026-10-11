@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { invalidateRelatedQueries } from "@/lib/queryClient";
 import { submitMaintenanceCompletion, type CompleteMaintenanceFields } from "@/lib/complete-maintenance";
 import { displayLicensePlate } from "@/lib/utils";
+import { describeApiError } from "@/lib/api-error";
 import { formatMaintenanceType } from "@/lib/format-utils";
 
 interface CompleteMaintenanceDialogProps {
@@ -131,7 +132,7 @@ export function CompleteMaintenanceDialog({
                 given: error.given?.toLocaleString() ?? "?",
                 current: error.current?.toLocaleString() ?? "?",
               })
-            : t("calendarPage.toasts.completeFailedDescription"),
+            : describeApiError(error, undefined, t("calendarPage.toasts.completeFailedDescription")),
         variant: "destructive",
       });
     },

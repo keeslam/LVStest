@@ -11,7 +11,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { reservations, vehicles } from "../../shared/schema";
-import { decideHandover, isoToday, scheduledMaintenanceOnDay } from "../services/lifecycle";
+import { decideHandover, handoverWarnings, isoToday, scheduledMaintenanceOnDay } from "../services/lifecycle";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureCustomer, createFixtureReservation, createFixtureVehicle, cleanupFixtures } from "./helpers/fixtures";
 
@@ -43,6 +43,12 @@ describe("decideHandover - the MAINTENANCE_SCHEDULED hint", () => {
     expect(decideHandover(car, {}, { day: today, reservations: [block("out", { status: "completed" })] }).warnings).toEqual([]);
     // A car that is "Binnen" is refused by the gate (needs_fixing), it is not a warning.
     expect(decideHandover(car, {}, { day: today, reservations: [block("in", { status: "picked_up" })] }).warnings).toEqual([]);
+  });
+
+  it("handoverWarnings is the same answer without a decision, and empty without a context", () => {
+    expect(handoverWarnings({ day: today, reservations: [block("scheduled")] })).toEqual(["MAINTENANCE_SCHEDULED"]);
+    expect(handoverWarnings({ day: today, reservations: [block("in", { status: "picked_up" })] })).toEqual([]);
+    expect(handoverWarnings()).toEqual([]);
   });
 
   it("lists the blocks it warns about", () => {

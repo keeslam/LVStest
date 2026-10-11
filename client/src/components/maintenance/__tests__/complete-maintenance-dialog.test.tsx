@@ -190,6 +190,18 @@ describe("CompleteMaintenanceDialog - one request", () => {
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
   });
 
+  it("D7: a block that was finished a moment ago is named as such (by code), not the generic failure", async () => {
+    const user = userEvent.setup();
+    answer = () => json({ message: "This maintenance block has already been completed.", code: "ALREADY_COMPLETED" }, 409);
+    const { onCompleted } = renderDialog();
+
+    await user.click(screen.getByTestId("button-complete-maintenance"));
+
+    await waitFor(() => expect(toastSpy).toHaveBeenCalled());
+    expect(toastSpy.mock.calls[0][0].description).toBe("Dit onderhoud is al afgerond.");
+    expect(onCompleted).not.toHaveBeenCalled();
+  });
+
   it("any other failure is the one generic message; nothing else was called", async () => {
     const user = userEvent.setup();
     answer = () => json({ message: "Failed to finish the maintenance" }, 500);

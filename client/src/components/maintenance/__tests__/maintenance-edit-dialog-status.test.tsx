@@ -27,6 +27,11 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { UserRole } from "@shared/schema";
 
+const { toastSpy } = vi.hoisted(() => ({ toastSpy: vi.fn() }));
+vi.mock("@/hooks/use-toast", () => ({
+  useToast: () => ({ toast: toastSpy, toasts: [], dismiss: vi.fn() }),
+  toast: toastSpy,
+}));
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({
     user: { id: 1, username: "tester", role: UserRole.ADMIN, permissions: [], hidePrices: false },
@@ -72,12 +77,17 @@ function renderDialog(maintenanceStatus: string | null, onOpenChange: (open: boo
   );
 }
 
-let calls: Array<{ method: string; url: string }>;
+let calls: Array<{ method: string; url: string; body?: any }>;
+let patchAnswer: () => Response;
 beforeEach(() => {
   calls = [];
+  toastSpy.mockClear();
+  patchAnswer = () => json({ id: 501 });
   vi.stubGlobal("fetch", vi.fn(async (input: any, init?: any) => {
-    calls.push({ method: String(init?.method ?? "GET").toUpperCase(), url: String(typeof input === "string" ? input : input.url) });
+    const method = String(init?.method ?? "GET").toUpperCase();
+    calls.push({ method, url: String(typeof input === "string" ? input : input.url), body: init?.body ? JSON.parse(init.body) : undefined });
     if (String(input).includes("/complete-maintenance")) return json({ block: { id: 501 }, vehicle: VEHICLE });
+    if (method === "PATCH") return patchAnswer();
     return json([]);
   }));
 });
@@ -127,6 +137,42 @@ describe("MaintenanceEditDialog - a finished block (D7)", () => {
     expect(text.textContent).toContain("19 oktober 2026");
     expect(screen.queryByTestId("select-maintenance-status")).toBeNull();
     expect(screen.queryByTestId("button-edit-complete-maintenance")).toBeNull();
+  });
+});
+
+describe("MaintenanceEditDialog - saving (D7)", () => {
+  it("a finished block is saved without a status, so the server's USE_COMPLETE_ROUTE refusal cannot trip", async () => {
+    const user = userEvent.setup();
+    renderDialog("out");
+
+    await user.click(await screen.findByTestId("button-update-maintenance"));
+
+    await waitFor(() => expect(calls.some((c) => c.method === "PATCH")).toBe(true));
+    const patch = calls.find((c) => c.method === "PATCH")!;
+    expect(patch.url).toBe("/api/reservations/501");
+    expect(patch.body).not.toHaveProperty("status");
+    expect(patch.body).not.toHaveProperty("maintenanceStatus");
+  });
+
+  it("an open block is saved with the chosen status", async () => {
+    const user = userEvent.setup();
+    renderDialog("in");
+
+    await user.click(await screen.findByTestId("button-update-maintenance"));
+
+    await waitFor(() => expect(calls.some((c) => c.method === "PATCH")).toBe(true));
+    expect(calls.find((c) => c.method === "PATCH")!.body).toMatchObject({ status: "in", maintenanceStatus: "in" });
+  });
+
+  it("USE_COMPLETE_ROUTE is worded by code and points at Afronden", async () => {
+    const user = userEvent.setup();
+    patchAnswer = () => json({ message: "finish with the completion route", code: "USE_COMPLETE_ROUTE" }, 400);
+    renderDialog("in");
+
+    await user.click(await screen.findByTestId("button-update-maintenance"));
+
+    await waitFor(() => expect(toastSpy).toHaveBeenCalled());
+    expect(toastSpy.mock.calls[0][0].description).toBe("Een onderhoud rond je af met de knop Afronden, niet met de status.");
   });
 });
 

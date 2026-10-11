@@ -8,7 +8,8 @@
  * afbreken?"; confirming removes the block for good - no row, no recycle-bin line - and the
  * rental is untouched. Nothing is left behind, so the seeded state of the other specs holds.
  *
- * Request cost as `manager`: counted by the first run (see docs/e2e/README.md, "Het verzoekbudget").
+ * Request cost as `manager`: the spec counts its own `/api/` requests (the page's and its direct
+ * reads) and prints them as "[verzoeken]"; the number is in docs/e2e/README.md, "Het verzoekbudget".
  */
 import { test, expect, settle } from "../../support/guards";
 import { authFile } from "../../support/roles";
@@ -19,11 +20,15 @@ test.use({ storageState: authFile("manager"), viewport: { width: 1280, height: 1
 test("onderhoud plannen afbreken in het vervangersvenster: het blok verdwijnt echt, de huur blijft", async ({ page, health, request }) => {
   test.setTimeout(180_000);
 
-  const vehicles = await (await request.get("/api/vehicles")).json();
+  let apiRequests = 0;
+  page.on("request", (r) => { if (new URL(r.url()).pathname.startsWith("/api/")) apiRequests += 1; });
+  const read = async (path: string) => { apiRequests += 1; return (await request.get(path)).json(); };
+
+  const vehicles = await read("/api/vehicles");
   const vehicle = vehicles.find((v: { licensePlate: string }) => v.licensePlate === "E2E-03-C");
   expect(vehicle, "seeded vehicle E2E-03-C (e2e/seed/data.ts)").toBeTruthy();
   const blocksOf = async () => {
-    const rows: Array<{ id: number; type: string; deletedAt: string | null }> = await (await request.get(`/api/reservations/vehicle/${vehicle.id}`)).json();
+    const rows: Array<{ id: number; type: string; deletedAt: string | null }> = await read(`/api/reservations/vehicle/${vehicle.id}`);
     return rows.filter((r) => r.type === "maintenance_block" && !r.deletedAt);
   };
   const before = await blocksOf();
@@ -51,7 +56,8 @@ test("onderhoud plannen afbreken in het vervangersvenster: het blok verdwijnt ec
 
   // Not counted: the block is gone for good and the rental still stands.
   expect((await blocksOf()).map((b) => b.id)).toEqual(before.map((b) => b.id));
-  const bin = await (await request.get("/api/deleted-records?type=maintenance_block")).json();
+  const bin = await read("/api/deleted-records?type=maintenance_block");
   expect(JSON.stringify(bin)).not.toContain(`"entityId":${(await blocksOf())[0]?.id ?? -1}`);
+  console.log(`[verzoeken] Onderhoud plannen afbreken (manager): ${apiRequests} /api/-verzoeken`);
   expect(health.violations).toEqual([]);
 });
