@@ -8,9 +8,10 @@ De levensloop van een verhuring is kort:
 
 **Geboekt** → *ophalen* → **Opgehaald** → *innemen* → **Voltooid**
 
-Je zet die stappen met de knoppen **Ophalen starten** en **Inleveren starten**, nooit met het
-statuslijstje. De knoppen leggen namelijk ook de kilometerstand, de brandstof en het
-contractnummer vast, en maken het contract en de schadecheck aan.
+Je zet die stappen met de knoppen **Ophalen starten** en **Inleveren starten**. Het
+reserveringsformulier heeft geen statusveld meer: de status verandert alleen door **Ophalen**,
+**Inleveren**, **Annuleren** en **Terugdraaien**. De knoppen leggen namelijk ook de kilometerstand,
+de brandstof en het contractnummer vast, en maken het contract en de schadecheck aan.
 
 ---
 
@@ -167,7 +168,8 @@ lijstjes. Je krijgt geen melding; de auto is er simpelweg niet.
 
 ### Stap 3 — de details
 
-9. Onder **3. Reserveringsdetails** laat je **Reserveringsstatus** op **Geboekt** staan.
+9. Een nieuwe reservering is altijd **Geboekt**; het formulier heeft geen statusveld. Wil je de auto
+   meteen meegeven, dan klik je na het opslaan op **Nu ophalen** (zie hieronder).
 10. **Totaalprijs (€) (optioneel)** vult de app zelf in op basis van de dagprijs van de auto maal
     het aantal dagen; er staat dan bij *Automatisch ingevuld op basis van het dagtarief van €…
     voor … dagen — bewerk om te overschrijven*. Heeft de auto geen dagprijs, dan blijft er € 0,00
@@ -178,7 +180,10 @@ lijstjes. Je krijgt geen melding; de auto is er simpelweg niet.
 13. Klik onderaan op **Reservering aanmaken**.
 
 Je krijgt **Reservering succesvol aangemaakt** — *Reservering voor <merk> <model> is aangemaakt.*
-Daarna verandert **Annuleren** in **Sluiten**; documenten uploaden kan nu wel.
+Daarna verandert **Annuleren** in **Sluiten**; documenten uploaden kan nu wel. Naast de melding
+staat de knop **Nu ophalen**: die opent het ophaalvenster (5.7) voor deze reservering, zodat boeken en
+direct meegeven één klik extra is. Sluit het venster zichzelf na het opslaan, dan staat **Nu ophalen** als
+knop in de melding.
 
 Heb je het venster geopend vanaf het **Dashboard** (**Snelle acties** → **Nieuwe reservering**), dan
 sluit **Annuleren** alleen dat venster en blijf je op het Dashboard. Vroeger sprong de app daarbij
@@ -299,11 +304,13 @@ Kies een ander nummer.*
 
 Klik op **Bewerken** in het venster van de reservering. Je krijgt hetzelfde formulier als bij het
 aanmaken, met dezelfde drie genummerde stappen. Onder **3. Reserveringsdetails** staan hier extra
-velden: **Contractnummer**, **Kilometerstand bij inleveren**, **Brandstofniveau bij inleveren**
-en **Brandstofkosten (€)**.
+veld: **Contractnummer** (alleen bij een opgehaalde of voltooide huur). De velden **Kilometerstand bij
+inleveren**, **Brandstofniveau bij inleveren** en **Brandstofkosten (€)** staan niet meer in het
+formulier: **Inleveren** legt ze vast en je ziet ze in het venster van de reservering.
 
-**Reserveringsstatus** biedt hier alle vijf de statussen: **Geboekt**, **Opgehaald**,
-**Ingeleverd**, **Voltooid** en **Geannuleerd**. In het aanmaakvenster zie je er maar twee.
+Een **Reserveringsstatus** kies je hier niet. Onderaan staat bij een lopende reservering de knop
+**Reservering annuleren**; die opent hetzelfde annuleervenster als in het venster van de reservering (5.9),
+met de waarschuwing voor een al opgehaalde huur.
 
 Klik onderaan op **Reservering bijwerken**. Je krijgt **Reservering succesvol bijgewerkt**. Heb je iets
 gewijzigd en sluit je het venster zonder te bewaren (Escape, het kruisje, naast het venster klikken of
@@ -532,9 +539,8 @@ reservering.*) en annuleer je alleen de reservering zelf.
 > **Een annulering kun je terugdraaien (5.14).** Open de geannuleerde reservering in de kalender of
 > in de lijst en klik op **Annulering terugdraaien**. Dat lukt alleen als de auto in die periode nog
 > vrij is, en wat je bij het annuleren hebt meegenomen (transport, vervanger, chauffeurstoewijzing)
-> komt niet vanzelf terug. Zet je een geannuleerde reservering via het statuslijstje weer op
-> **Geboekt**, dan weigert de app met *Undoing a handover or a cancellation goes through POST
-> /api/reservations/:id/revert.* — gebruik dan de knop.
+> komt niet vanzelf terug. Een statuslijstje om haar weer op
+> **Geboekt** te zetten bestaat niet meer; gebruik de knop.
 
 > **Is de huur al opgehaald?** Dan vraagt het annuleren een eigen vinkje en een bevestigde
 > waarschuwing; zie 5.15.
@@ -645,9 +651,12 @@ Is de lijst leeg, dan staat er *Geen niet opgehaalde reserveringen.* Sluit het v
 |---|---|---|
 | **Geboekt** | De auto is gereserveerd, maar staat nog bij ons | Standaard bij **Reservering aanmaken**; ook na het terugdraaien van een ophaling of een annulering (5.14) |
 | **Opgehaald** | De auto is meegegeven en staat bij de klant | Door **Ophalen voltooien & contract genereren**; ook na het terugdraaien van een inname of van de annulering van een opgehaalde huur (5.14) |
-| **Ingeleverd** | De auto is terug, maar de huur is nog niet afgerond | Alleen door de status met de hand te kiezen — het inleverproces gebruikt hem niet |
-| **Voltooid** | De huur is afgesloten, de auto is weer vrij | Door **Inleveren voltooien & schadecheck genereren**; ook met de hand |
-| **Geannuleerd** | De boeking gaat niet door | Door **Reservering annuleren** in het volledige venster (5.9); ook met de hand |
+| **Ingeleverd** | De auto is terug, maar de huur is nog niet afgerond | Komt in de app niet meer voor als stap: het inleverproces gebruikt hem niet en het formulier biedt hem niet aan |
+| **Voltooid** | De huur is afgesloten, de auto is weer vrij | Door **Inleveren voltooien & schadecheck genereren** |
+| **Geannuleerd** | De boeking gaat niet door | Door **Reservering annuleren** (5.9), ook vanuit het bewerkformulier |
+
+De status verandert alleen door **Ophalen**, **Inleveren**, **Annuleren** en **Terugdraaien**; in het
+reserveringsformulier kun je hem niet kiezen.
 
 Elke stand heeft één naam, in elk scherm: **Geboekt**, **Opgehaald**, **Ingeleverd**,
 **Voltooid** en **Geannuleerd**. Ook het scanscherm gebruikt deze woorden.
@@ -661,7 +670,7 @@ geannuleerd, dan draai je dat terug met **één venster**: **Overdracht terugdra
 annulering heet het **Annulering terugdraaien**). Het venster laat eerst zien wat er gaat gebeuren
 en doet pas iets nadat jij bevestigt. Een andere weg is er niet meer: de oude knoppen
 **Terugzetten naar geboekt** en **Terugzetten** achter **Voltooid bekijken (…)** zijn erdoor
-vervangen, en een terugdraaiing via het statuslijstje wordt geweigerd.
+vervangen; een statuslijstje voor het terugdraaien bestaat niet meer.
 
 **Wie het mag.** Iedereen met het vinkje **Overdracht terugdraaien**: een beheerder altijd, een
 manager sinds oktober 2026 eenmalig vanzelf, een ander account alleen als je het vinkje aanzet

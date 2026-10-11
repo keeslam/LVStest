@@ -180,10 +180,11 @@ de werkelijke inleverdatum wordt apart vastgelegd.
    alleen voertuigen die in die periode vrij zijn.
 3. **2. Selecteer voertuig en klant** — kies het **Voertuig** en de **Klant**. Beide velden
    zoeken mee terwijl je typt. Eventueel kies je een **Gemachtigde chauffeur**.
-4. **3. Reserveringsdetails** — laat **Reserveringsstatus** op **Geboekt** staan. De
+4. **3. Reserveringsdetails** — een nieuwe reservering is altijd **Geboekt**; een statusveld is er niet
+   (de status verandert alleen met **Ophalen**, **Inleveren**, **Annuleren** en **Terugdraaien**). De
    **Totaalprijs (€)** vult de app zelf in op basis van het dagtarief maal het aantal dagen; typ
    je er zelf iets in, dan blijft jouw bedrag staan.
-5. Klik op **Reservering aanmaken**.
+5. Klik op **Reservering aanmaken**. Wil je de auto meteen meegeven, klik dan op **Nu ophalen**.
 
 Twee dingen die je kunt tegenkomen:
 
