@@ -165,6 +165,7 @@
     "pickup": {
       "startPickupProcess": "Start Pickup Process",
       "pickupDialogDescription": "Enter the vehicle's current mileage and fuel level at pickup. A contract will be generated automatically.",
+      "maintenanceScheduledWarning": "Note: this vehicle is scheduled for maintenance ({{period}}) and has not been checked in yet. You can still hand it over; the desk decides.",
       "tbdSpareSelectVehicle": "TBD Spare Vehicle - Select Vehicle",
       "placeholderSpareHint": "This is a placeholder spare reservation. Please select the actual vehicle for pickup.",
       "selectVehicle": "Select Vehicle",

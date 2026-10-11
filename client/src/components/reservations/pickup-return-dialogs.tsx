@@ -18,7 +18,7 @@ import type { Reservation, Vehicle } from "@shared/schema";
 import { formatReservationStatus, formatDate } from "@/lib/format-utils";
 import { defaultReturnFuelLevel } from "@/lib/handover-fuel";
 import { officeToday } from "@/lib/office-date";
-import { formatDutchDate } from "@shared/booking-warnings";
+import { formatDutchDate, formatMaintenancePeriod } from "@shared/booking-warnings";
 import { needsRemarkConfirmation, hasRemarks } from "@shared/remark-confirmation";
 import { Car, Fuel, Calendar, FileText, ClipboardCheck, ExternalLink, CheckCircle2, Edit, Trash2, Upload, AlertTriangle } from "lucide-react";
 import { MileageOverridePasswordDialog } from "@/components/mileage-override-password-dialog";
@@ -169,6 +169,27 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
     },
     enabled: open && !!reservation.id,
   });
+
+  // D5 (besluiten B-41): a planned maintenance block that covers the pickup day
+  // is a warning for the desk, never a block. The server's handover decision
+  // names it (`MAINTENANCE_SCHEDULED`); the wording is ours (nl/en).
+  const { data: handoverCheck } = useQuery<any>({
+    queryKey: ['/api/reservations', reservation.id, 'handover-check', pickupDate],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/reservations/${reservation.id}/handover-check?pickupDate=${encodeURIComponent(pickupDate)}`,
+        { credentials: 'include' },
+      );
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: open && !!reservation.id && !!reservation.vehicleId && /^\d{4}-\d{2}-\d{2}$/.test(pickupDate),
+  });
+  const plannedMaintenance: Array<{ id: number; startDate: string; endDate: string | null }> =
+    Array.isArray(handoverCheck?.warnings) && handoverCheck.warnings.includes('MAINTENANCE_SCHEDULED') &&
+    Array.isArray(handoverCheck.maintenanceBlocks)
+      ? handoverCheck.maintenanceBlocks
+      : [];
 
   const pickupDamageChecks = damageChecks?.filter((check: any) => check.checkType === 'pickup') || [];
   const pickupPaperDamageChecks = reservationDocuments?.filter((doc: any) => doc.documentType === 'Damage Check (Pickup - Paper)') || [];
@@ -561,6 +582,20 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
         </DialogHeader>
 
         <div className="space-y-4">
+          {plannedMaintenance.length > 0 && (
+            <div
+              className="p-3 bg-amber-50 border border-amber-400 rounded-md flex items-start gap-2 text-amber-900 text-sm"
+              data-testid="warning-pickup-maintenance-scheduled"
+              role="status"
+            >
+              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
+              <span>
+                {t('pickupReturn.pickup.maintenanceScheduledWarning', {
+                  period: plannedMaintenance.map((b) => formatMaintenancePeriod(b)).join(', '),
+                })}
+              </span>
+            </div>
+          )}
           {/* TBD Spare Vehicle Selection */}
           {isTBDSpare ? (
             <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">

@@ -116,7 +116,7 @@ describe.each([
     expect(car.availabilityStatus).toBe("available");
   });
 
-  it("closing one of two open blocks covering today leaves the car in the workshop", async () => {
+  it("closing one of two open blocks, the other still only planned: the car is 'scheduled' (D5)", async () => {
     const vehicle = await createFixtureVehicle();
     const first = await planBlock(vehicle.id, today);
     const second = await planBlock(vehicle.id, today);
@@ -126,6 +126,20 @@ describe.each([
 
     expect((await blockRow(first)).maintenanceStatus).toBe("out");
     expect((await blockRow(second)).maintenanceStatus).toBe("scheduled");
+    // D5: a planned block alone does not put the car in the workshop; it is just not available (B-01).
+    expect((await vehicleRow(vehicle.id)).availabilityStatus).toBe("scheduled");
+  });
+
+  it("closing one of two open blocks, the other one 'Binnen': the car stays needs_fixing", async () => {
+    const vehicle = await createFixtureVehicle();
+    const first = await planBlock(vehicle.id, today);
+    const second = await planBlock(vehicle.id, today);
+    expect((await patchEdit(route, first, "in")).status).toBe(200);
+    expect((await patchEdit(route, second, "in")).status).toBe(200);
+
+    expect((await patchEdit(route, first, "out")).status).toBe(200);
+
+    expect((await blockRow(second)).maintenanceStatus).toBe("in");
     expect((await vehicleRow(vehicle.id)).availabilityStatus).toBe("needs_fixing");
   });
 
@@ -187,16 +201,16 @@ describe("rules that must stay as they are", () => {
     expect((await blockRow(rental.id)).status).toBe("booked");
   });
 
-  it("deleting a block does not clear the car's flag (owner question still open)", async () => {
+  it("a planned block covering today gives 'scheduled', not needs_fixing (D5), and deleting it frees the car", async () => {
     const vehicle = await createFixtureVehicle();
     const id = await planBlock(vehicle.id, today);
-    // A sweep turns the open block into needs_fixing.
+    // A sweep turns the planned block into 'scheduled' (B-01: not available), no longer needs_fixing.
     expect((await patchEdit("full", id, "scheduled")).status).toBe(200);
-    expect((await vehicleRow(vehicle.id)).availabilityStatus).toBe("needs_fixing");
+    expect((await vehicleRow(vehicle.id)).availabilityStatus).toBe("scheduled");
 
     const res = await admin.delete(`/api/reservations/${id}`);
     expect([200, 204]).toContain(res.status);
 
-    expect((await vehicleRow(vehicle.id)).availabilityStatus).toBe("needs_fixing");
+    expect((await vehicleRow(vehicle.id)).availabilityStatus).toBe("available");
   });
 });

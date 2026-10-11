@@ -96,6 +96,8 @@ import {
   isReservationTransitionAllowed,
   isReservationRevert,
   decideHandover,
+  handoverRefusal,
+  scheduledMaintenanceOnDay,
   StateTransitionError,
   WorkshopBlockedError,
   isoToday,
@@ -5530,6 +5532,53 @@ export async function registerRoutes(app: Express): Promise<void> {
           errors: [{ field: "pickupDate", message: "Use a real yyyy-MM-dd date" }],
         });
       }
+  /**
+   * D5 (besluiten B-41) - what the pickup dialog shows *before* the pickup: the
+   * B-03 gate's verdict without throwing, plus the warnings of the handover
+   * decision (`MAINTENANCE_SCHEDULED` when a planned maintenance block covers
+   * the pickup day). Read-only; the pickup route itself is unchanged.
+   */
+  app.get("/api/reservations/:id/handover-check", hasPermission(UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
+    try {
+      const reservationId = parseInt(req.params.id);
+      if (isNaN(reservationId)) {
+        return res.status(400).json({ message: "Invalid reservation ID" });
+      }
+      const rawDay = typeof req.query.pickupDate === "string" ? req.query.pickupDate : "";
+      if (rawDay && !isCalendarDate(rawDay)) {
+        return res.status(400).json({ message: "Invalid pickup date" });
+      }
+      const reservation = await storage.getReservation(reservationId);
+      if (!reservation) {
+        return res.status(404).json({ message: "Reservation not found" });
+      }
+      if (!reservation.vehicleId) {
+        return res.json({ canHandOver: true, refusal: null, warnings: [], maintenanceBlocks: [] });
+      }
+
+      const day = rawDay || isoToday();
+      const [vehicle, vehicleReservations] = await Promise.all([
+        storage.getVehicle(reservation.vehicleId),
+        storage.getReservationsByVehicle(reservation.vehicleId),
+      ]);
+      const refusal = handoverRefusal(vehicle);
+      // The warnings come from the same decision the pickup makes; a forced decision
+      // never throws, so this stays a read-only look at the verdict.
+      const decision = decideHandover(vehicle, { force: true, isAdmin: true, reason: "check" }, { day, reservations: vehicleReservations });
+      res.json({
+        canHandOver: refusal === null,
+        refusal,
+        warnings: decision.warnings,
+        maintenanceBlocks: scheduledMaintenanceOnDay(vehicleReservations, day).map((b) => ({
+          id: b.id, startDate: b.startDate, endDate: b.endDate ?? null,
+        })),
+      });
+    } catch (error) {
+      console.error("Error running the handover check:", error);
+      res.status(500).json({ message: "Failed to check this handover" });
+    }
+  });
+
 
       // BUG-038: PATCH /:id has always pre-checked the contract number; the
       // pickup handler did not, so the second pickup with the same number hit

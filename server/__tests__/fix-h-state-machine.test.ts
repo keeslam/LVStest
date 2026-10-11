@@ -197,6 +197,64 @@ describe("FIX-H — derived vehicle availability (one writer)", () => {
   });
 });
 
+describe("D5 — a planned maintenance block is 'scheduled', only 'Binnen' is needs_fixing (besluiten B-41)", () => {
+  const today = "2026-06-15";
+  const block = (maintenanceStatus: string | null, extra: Record<string, unknown> = {}) =>
+    ({ type: "maintenance_block", status: "booked", startDate: today, endDate: "2026-06-17", maintenanceStatus, ...extra }) as any;
+
+  it("a scheduled block covering today gives 'scheduled', not needs_fixing", () => {
+    expect(deriveVehicleAvailability({ currentStatus: "available", maintenanceStatus: "ok", today, reservations: [block("scheduled")] }))
+      .toBe("scheduled");
+  });
+
+  it("an older block without the field counts as scheduled", () => {
+    expect(deriveVehicleAvailability({ currentStatus: "available", maintenanceStatus: "ok", today, reservations: [block(null)] }))
+      .toBe("scheduled");
+  });
+
+  it("a block the car is in (in / in_service) gives needs_fixing", () => {
+    for (const ms of ["in", "in_service"]) {
+      expect(deriveVehicleAvailability({
+        currentStatus: "available", maintenanceStatus: "ok", today, reservations: [block(ms, { status: "picked_up" })],
+      }), ms).toBe("needs_fixing");
+    }
+  });
+
+  it("a scheduled block next to an 'in' block still gives needs_fixing", () => {
+    expect(deriveVehicleAvailability({
+      currentStatus: "available", maintenanceStatus: "ok", today,
+      reservations: [block("scheduled"), block("in", { status: "picked_up" })],
+    })).toBe("needs_fixing");
+  });
+
+  it("a scheduled block that has not started yet, or has ended, does not touch the car", () => {
+    expect(deriveVehicleAvailability({
+      currentStatus: "available", maintenanceStatus: "ok", today,
+      reservations: [block("scheduled", { startDate: "2026-07-20", endDate: "2026-07-21" })],
+    })).toBe("available");
+    expect(deriveVehicleAvailability({
+      currentStatus: "available", maintenanceStatus: "ok", today,
+      reservations: [block("scheduled", { startDate: "2026-06-01", endDate: "2026-06-02" })],
+    })).toBe("available");
+  });
+
+  it("a stored needs_fixing and the workshop flag still win over a scheduled block", () => {
+    expect(deriveVehicleAvailability({ currentStatus: "needs_fixing", maintenanceStatus: "ok", today, reservations: [block("scheduled")] }))
+      .toBe("needs_fixing");
+    expect(deriveVehicleAvailability({ currentStatus: "needs_fixing", maintenanceStatus: "ok", today, clearWorkshopFlag: true, reservations: [block("scheduled")] }))
+      .toBe("scheduled");
+    expect(deriveVehicleAvailability({ currentStatus: "available", maintenanceStatus: "needs_service", today, reservations: [block("scheduled")] }))
+      .toBe("needs_fixing");
+  });
+
+  it("a car out with a customer stays rented while a planned block covers today", () => {
+    expect(deriveVehicleAvailability({
+      currentStatus: "rented", maintenanceStatus: "ok", today,
+      reservations: [block("scheduled"), { status: "picked_up", type: "standard", startDate: "2026-06-10", endDate: "2026-06-20" }],
+    })).toBe("rented");
+  });
+});
+
 describe("FIX-H — the handover gate (besluiten B-03)", () => {
   it("refuses a vehicle in the workshop", () => {
     expect(() => decideHandover({ availabilityStatus: "available", maintenanceStatus: "in_service" }))

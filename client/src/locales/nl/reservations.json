@@ -165,6 +165,7 @@
     "pickup": {
       "startPickupProcess": "Ophaalproces starten",
       "pickupDialogDescription": "Voer de huidige kilometerstand en het brandstofniveau van het voertuig bij ophalen in. Er wordt automatisch een contract gegenereerd.",
+      "maintenanceScheduledWarning": "Let op: dit voertuig staat ingepland voor onderhoud ({{period}}) en is nog niet binnengemeld. Ophalen mag; de balie beslist.",
       "tbdSpareSelectVehicle": "Nog te bepalen vervanger - Selecteer voertuig",
       "placeholderSpareHint": "Dit is een tijdelijke vervangingsreservering. Selecteer het daadwerkelijke voertuig voor ophalen.",
       "selectVehicle": "Selecteer voertuig",

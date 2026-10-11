@@ -272,6 +272,18 @@ export function isOpenBlockMaintenanceStatus(raw: unknown): boolean {
   return value === "scheduled" || value === "in" || value === "in_service";
 }
 
+/**
+ * True while the car is "Binnen" for this block (`in`, or the legacy
+ * `in_service`); false for `scheduled`, an older row without the field, and
+ * a finished block. Only `deriveVehicleAvailability` splits on this (D5);
+ * every other caller keeps `isOpenBlockMaintenanceStatus`.
+ */
+export function isCheckedInBlockMaintenanceStatus(raw: unknown): boolean {
+  if (raw == null) return false;
+  const value = String(raw).trim().toLowerCase();
+  return value === "in" || value === "in_service";
+}
+
 /** The columns `maintenanceBlockJustClosed` reads. */
 export interface BlockCloseCheckRow {
   type?: string | null;
@@ -571,13 +583,15 @@ function endOf(r: AvailabilityReservation): string | null {
  *  1. `not_for_rental` — a deliberate decision by staff; nothing derived may
  *     overwrite it (BUG-109). Only staff clear it.
  *  2. `needs_fixing` — the workshop flag, i.e. `maintenance_status` is
- *     `needs_service`/`in_service`, an open maintenance block covers today, or
- *     staff set `needs_fixing` by hand. B-03: it survives a return and a
+ *     `needs_service`/`in_service`, a maintenance block covering today has the
+ *     car "Binnen" (D5: a merely planned block does not count), or staff set
+ *     `needs_fixing` by hand. B-03: it survives a return and a
  *     completed transport.
  *  3. `rented` — someone has the car. BUG-211: a `picked_up` rental counts
  *     **whatever its dates say**; the old rule only looked at "today is inside
  *     the period", so a rental picked up early left the car advertised as free.
- *  4. `scheduled` — a booking starts within 30 days. BUG-130: this is now
+ *  4. `scheduled` — a booking starts within 30 days, or a planned maintenance
+ *     block covers today (D5). BUG-130: this is now
  *     reachable *from* `rented`, which the old set-based sync never allowed —
  *     so a completed rental left the car "out" forever.
  *  5. `available`.
@@ -597,13 +611,19 @@ export function deriveVehicleAvailability(input: AvailabilityInput): VehicleAvai
     return r.startDate <= today && (end === null || end >= today);
   });
   const hasUpcoming = rentals.some((r) => r.startDate > today && r.startDate <= horizon);
-  const hasOpenBlock = live.some(
+  // D5 (besluiten B-41): a block covering today only puts the car in the workshop
+  // once the car is "Binnen" (in / in_service). A block that is merely planned
+  // (scheduled, or an older row without the field) makes the car 'scheduled':
+  // not available (B-01), but not "Reparatie nodig" either.
+  const blocksCoveringToday = live.filter(
     (r) =>
       r.type === "maintenance_block" &&
       r.startDate <= today &&
       (endOf(r) === null || endOf(r)! >= today) &&
       isOpenBlockMaintenanceStatus(r.maintenanceStatus),
   );
+  const hasOpenBlock = blocksCoveringToday.some((r) => isCheckedInBlockMaintenanceStatus(r.maintenanceStatus));
+  const hasPlannedBlock = blocksCoveringToday.length > 0 && !hasOpenBlock;
 
   const current = typeof input.currentStatus === "string" ? input.currentStatus.trim().toLowerCase() : "";
   if (current === "not_for_rental") return "not_for_rental";
@@ -613,7 +633,7 @@ export function deriveVehicleAvailability(input: AvailabilityInput): VehicleAvai
   if (workshopFlag || hasOpenBlock || stickyNeedsFixing) return "needs_fixing";
 
   if (hasPickedUp || hasCurrent) return "rented";
-  if (hasUpcoming) return "scheduled";
+  if (hasUpcoming || hasPlannedBlock) return "scheduled";
   return "available";
 }
 
@@ -682,11 +702,44 @@ export interface HandoverOverride {
   username?: string | null;
 }
 
+/** D5: a hint on a handover that is allowed. Never a reason to refuse. */
+export const HANDOVER_WARNING_MAINTENANCE_SCHEDULED = "MAINTENANCE_SCHEDULED" as const;
+export type HandoverWarningCode = typeof HANDOVER_WARNING_MAINTENANCE_SCHEDULED;
+
 export interface HandoverDecision {
   allowed: boolean;
   refusal: HandoverRefusal | null;
   /** Filled when an administrator forced it — goes into the reservation note. */
   overrideNote: string | null;
+  /** D5: hints for the desk, e.g. a planned maintenance block covers the pickup day. */
+  warnings: HandoverWarningCode[];
+}
+
+/** What `decideHandover` needs to look for a planned maintenance block. */
+export interface HandoverContext {
+  /** The pickup day (yyyy-MM-dd); defaults to today. */
+  day?: string;
+  /** The vehicle's reservations, blocks included (closed and deleted rows are ignored). */
+  reservations?: AvailabilityReservation[];
+}
+
+/**
+ * D5 (besluiten B-41): the live maintenance blocks that cover `day` while the
+ * car is not "Binnen" yet, i.e. status scheduled (or an older row without the
+ * field). Such a block makes the car 'scheduled', and the pickup dialog warns
+ * about it; a block the car is in is refused by `handoverRefusal` instead.
+ */
+export function scheduledMaintenanceOnDay<T extends AvailabilityReservation>(reservations: readonly T[], day: string): T[] {
+  return reservations.filter(
+    (r) =>
+      r.type === "maintenance_block" &&
+      !r.deletedAt &&
+      !CLOSED_RESERVATION_STATUSES.has(normalizeReservationStatus(r.status) ?? "") &&
+      isOpenBlockMaintenanceStatus(r.maintenanceStatus) &&
+      !isCheckedInBlockMaintenanceStatus(r.maintenanceStatus) &&
+      r.startDate <= day &&
+      (endOf(r) === null || endOf(r)! >= day),
+  );
 }
 
 /**
@@ -698,9 +751,14 @@ export interface HandoverDecision {
 export function decideHandover(
   vehicle: HandoverVehicleState | null | undefined,
   override: HandoverOverride = {},
+  context: HandoverContext = {},
 ): HandoverDecision {
+  const warnings: HandoverWarningCode[] =
+    context.reservations && scheduledMaintenanceOnDay(context.reservations, context.day ?? isoToday()).length > 0
+      ? [HANDOVER_WARNING_MAINTENANCE_SCHEDULED]
+      : [];
   const refusal = handoverRefusal(vehicle);
-  if (!refusal) return { allowed: true, refusal: null, overrideNote: null };
+  if (!refusal) return { allowed: true, refusal: null, overrideNote: null, warnings };
 
   if (!override.force) {
     throw new WorkshopBlockedError(refusal.message, refusal.reasonCode);
@@ -722,6 +780,7 @@ export function decideHandover(
   return {
     allowed: true,
     refusal,
+    warnings,
     overrideNote: `[WORKSHOP OVERRIDE ${isoToday()}] ${refusal.reasonCode} forced by ${override.username ?? "administrator"}: ${reason}`,
   };
 }
