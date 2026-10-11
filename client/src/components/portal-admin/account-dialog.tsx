@@ -26,14 +26,21 @@ export interface PortalAccountRow {
 const NO_CUSTOMERS: Customer[] = [];
 const NO_DRIVERS: Driver[] = [];
 
+/** The person behind a customer: first + last name, else contact person, primary contact, driver. Empty when none is filled. */
+function customerPerson(c: Customer): string {
+  return [c.firstName, c.lastName].map((p) => p?.trim()).filter(Boolean).join(" ") || c.contactPerson || c.primaryContactName || c.driverName || "";
+}
+
 /** Compact card under the customer field: which name is the company and which the person, and the main contact details. */
 function CustomerSummary({ customer: c, driverCount }: { customer: Customer; driverCount: number | null }) {
   const { t } = useTranslation("portal");
-  const person = c.contactPerson || c.driverName || "";
+  const person = customerPerson(c);
   const place = [c.postalCode, c.city].filter(Boolean).join(" ");
   const items: Array<[string, string | null | undefined]> = [
-    [c.companyName ? "company" : "name", c.companyName || c.name],
-    ["contact", person && person !== (c.companyName || c.name) ? person : null],
+    // The `name` column is only shown when there is neither a company nor a person name.
+    ["company", c.companyName],
+    ["contact", person],
+    ["name", !c.companyName && !person ? c.name : null],
     ["debtor", c.debtorNumber],
     ["phone", c.phone],
     ["email", c.email],
@@ -92,7 +99,7 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children, 
     const driver = role === "driver" && driverId ? drivers.find((d) => String(d.id) === driverId) : undefined;
     // A driver without an e-mail address falls back to the customer address.
     const suggestedEmail = driver?.email || customer?.email || "";
-    const suggestedName = driver ? driver.displayName : customer?.contactPerson || customer?.driverName || customer?.companyName || customer?.name || "";
+    const suggestedName = driver ? driver.displayName : (customer ? customerPerson(customer) || customer.companyName || customer.name : "");
     setPrefillSource({ email: driver?.email ? "driver" : customer?.email ? "customer" : null, name: driver ? "driver" : customer ? "customer" : null });
     if (suggestedEmail && (email === "" || autoFilled.email)) { setEmail(suggestedEmail); setAutoFilled((a) => ({ ...a, email: true })); }
     if (suggestedName && (fullName === "" || autoFilled.fullName)) { setFullName(suggestedName); setAutoFilled((a) => ({ ...a, fullName: true })); }
@@ -102,10 +109,10 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children, 
   // The combobox searches name, debtor number and the description itself, so every customer is an option.
   // "Bedrijf — contactpersoon" when both exist, so it is clear which name is the company and which the person.
   const customerOptions = useMemo<ComboboxOption[]>(() => customers.map((c) => {
-    const person = c.contactPerson || c.driverName || "";
+    const person = customerPerson(c);
     return {
       value: String(c.id),
-      label: c.companyName && person && person !== c.companyName ? `${c.companyName} — ${person}` : c.companyName || c.name,
+      label: c.companyName && person ? `${c.companyName} — ${person}` : c.companyName || person || c.name,
       description: c.debtorNumber ? `${t("admin.dialog.debtorNumber")} ${c.debtorNumber}` : undefined,
     };
   }), [customers, t]);

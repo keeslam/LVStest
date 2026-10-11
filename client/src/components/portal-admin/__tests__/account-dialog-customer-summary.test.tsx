@@ -22,6 +22,16 @@ const customers = [
     id: 4, name: "Vervoer Smit B.V.", companyName: "Vervoer Smit B.V.", contactPerson: null, driverName: null, debtorNumber: "D-0004",
     email: "smit@example.com", phone: null, postalCode: null, city: null,
   },
+  {
+    // A private person: first and last name, no company; the `name` column holds a generic label.
+    id: 5, name: "Klant 5 B.V.", companyName: null, firstName: "Pjoter", lastName: "Mecjentef", contactPerson: "Iemand Anders", driverName: null, debtorNumber: "D-0005",
+    email: "pjoter@example.com", phone: null, postalCode: null, city: null,
+  },
+  {
+    // A company whose person is only in first/last name: it wins over the contact person.
+    id: 6, name: "Hoek B.V.", companyName: "Hoek B.V.", firstName: "Anna", lastName: "Hoek", contactPerson: "Iemand Anders", driverName: null, debtorNumber: "D-0006",
+    email: "hoek@example.com", phone: null, postalCode: null, city: null,
+  },
 ];
 const drivers = [{ id: 1, displayName: "Chauffeur A" }, { id: 2, displayName: "Chauffeur B" }];
 
@@ -64,6 +74,35 @@ describe("portaalaccount - klant gekozen", () => {
     await choose(user, /Bouw B\.V\./);
     await waitFor(() => expect(screen.getByTestId("input-account-name")).toHaveValue("Piet Jansen"));
     expect(screen.getAllByText("Vooraf ingevuld vanuit de klantgegevens; aanpassen mag.")).toHaveLength(2); // e-mail and name
+  });
+
+  it("prefills first and last name, not the name column, for a customer without a company", async () => {
+    const user = userEvent.setup();
+    renderDialog();
+    await choose(user, /Pjoter Mecjentef/);
+    await waitFor(() => expect(screen.getByTestId("input-account-name")).toHaveValue("Pjoter Mecjentef"));
+  });
+
+  it("puts first and last name before the contact person, and shows 'Bedrijf — Voornaam Achternaam'", async () => {
+    const user = userEvent.setup();
+    renderDialog();
+    await user.click(await screen.findByTestId("select-portal-customer"));
+    expect(await screen.findByRole("option", { name: /Hoek B.V. — Anna Hoek/ })).toBeInTheDocument();
+    // No company: the option is the person, never the `name` column.
+    expect(screen.getByRole("option", { name: /Pjoter Mecjentef/ })).not.toHaveTextContent("Klant 5");
+    await user.click(screen.getByRole("option", { name: /Hoek B.V. — Anna Hoek/ }));
+    await waitFor(() => expect(screen.getByTestId("input-account-name")).toHaveValue("Anna Hoek"));
+  });
+
+  it("shows the person as Contactpersoon and no Bedrijf row for a customer without a company", async () => {
+    const user = userEvent.setup();
+    renderDialog();
+    await choose(user, /Pjoter Mecjentef/);
+    const card = await screen.findByTestId("portal-customer-summary");
+    expect(within(card).getByTestId("summary-contact")).toHaveTextContent("Pjoter Mecjentef");
+    expect(within(card).queryByTestId("summary-company")).toBeNull();
+    expect(within(card).queryByTestId("summary-name")).toBeNull();
+    expect(card.textContent).not.toContain("Klant 5 B.V.");
   });
 
   it("falls back to the company name when there is no contact person", async () => {
