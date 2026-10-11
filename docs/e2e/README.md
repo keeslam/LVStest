@@ -440,6 +440,10 @@ dan zet je het getal één lager. Andersom nooit.
    tegenkomen aan omslachtig werk gaat als voorstel naar de eigenaar in
    `docs/e2e/werkstromen/`. Technische fouten mogen wel meteen gerepareerd worden, elk
    met een eigen test en een eigen commit.
+5. **Geen browsertests tussen 02:00 en 04:00 lokale tijd (D20).** De webserver van de
+   browsertests draait dezelfde geplande taken als productie, en die lopen 's nachts: de
+   APK-scan om 02:30 blokkeerde op 11 oktober 2026 een run. Start een run vóór 02:00 of
+   na 04:00, en een lange run die in dat venster zou vallen pas daarna.
 
 ## Verder lezen
 
