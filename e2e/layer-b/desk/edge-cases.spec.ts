@@ -133,7 +133,12 @@ test("ophalen voor de startdatum vraagt eerst (B-16); bij nee blijft de reserver
 });
 
 test("dubbele boeking op een opgehaald voertuig wordt geweigerd, er wordt niets aangemaakt", async ({ page, health, request }) => {
-  const before = await (await request.get("/api/reservations")).json();
+  // "Nothing was created" is a statement about the car the booking was attempted on: other layer-B
+  // stories run beside this one and create reservations of their own, so the whole list can change.
+  const vehicles = await (await request.get("/api/vehicles")).json();
+  const target = vehicles.find((v: { licensePlate: string }) => v.licensePlate === "E2E-03-C");
+  expect(target, "seeded vehicle E2E-03-C").toBeTruthy();
+  const before = await (await request.get(`/api/reservations/vehicle/${target.id}`)).json();
 
   const story = new Story("Dubbele boeking", 7);
   await page.goto("/");
@@ -174,8 +179,8 @@ test("dubbele boeking op een opgehaald voertuig wordt geweigerd, er wordt niets 
   await story.click(dialog.getByRole("button", { name: "Annuleren" }), "Annuleren");
   story.finish();
 
-  const after = await (await request.get("/api/reservations")).json();
-  expect(after.length).toBe(before.length);
+  const after = await (await request.get(`/api/reservations/vehicle/${target.id}`)).json();
+  expect(after.map((r: { id: number }) => r.id).sort()).toEqual(before.map((r: { id: number }) => r.id).sort());
 
   expect(health.violations).toEqual([]);
 });

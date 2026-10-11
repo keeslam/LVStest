@@ -42,8 +42,8 @@
  *    rows (the overwhelming majority, and the ones BUG-224 is about) become
  *    correct, while an explicitly-written row (a UTC wall clock read as
  *    Amsterdam) lands one or two hours too EARLY: 10:00 UTC was stored as
- *    10:00 and becomes 10:00 Amsterdam = 08:00 UTC. There is no column that records which is which, so no
- *    migration can separate them. `--report` prints how far apart
+ *    10:00 and becomes 10:00 Amsterdam = 08:00 UTC. There is no column that
+ *    records which is which, so no migration can separate them. `--report` prints how far apart
  *    `created_at` and `updated_at` sit on rows that were never edited, which
  *    is the cheapest available estimate of how many rows are in the second
  *    group.

@@ -251,7 +251,7 @@ export function ReservationForm({
   
   // Form states
   const [selectedStartDate, setSelectedStartDate] = useState<string>(
-    initialStartDate || preSelectedStartDate || format(new Date(), "yyyy-MM-dd")
+    initialStartDate || preSelectedStartDate || officeToday()
   );
   /**
    * PHASE 57 / WAVE 13 item 7 — "Huur zonder einddatum" was on by default in
@@ -406,7 +406,7 @@ export function ReservationForm({
   });
   
   // Get today's date in YYYY-MM-DD format
-  const today = format(new Date(), "yyyy-MM-dd");
+  const today = officeToday();
   // Default end date is 3 days from start date (unless open-ended).
   // This runs on every render, and `selectedStartDate` is "" the moment someone
   // empties the date field — `suggestEndDate` answers "" for that instead of

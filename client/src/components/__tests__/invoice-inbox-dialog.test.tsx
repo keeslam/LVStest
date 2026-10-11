@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 // The dialog header shows the Logboek button to a profile that may read the log (A-9-4), which asks who is signed in.
 vi.mock("@/hooks/use-auth", () => ({ useAuth: () => ({ user: { id: 1, username: "kees", role: "admin", permissions: [] } }) }));
 
-import { InvoiceInboxButton, inboxStatusRefetchInterval } from "@/components/expenses/invoice-inbox-dialog";
+import { InvoiceInboxButton, inboxStatusRefetchInterval, dateTime } from "@/components/expenses/invoice-inbox-dialog";
 
 const item = (over: Record<string, unknown> = {}) => ({
   id: 12, messageId: "<a@b>", fromAddress: "facturen@garage.nl", subject: "Factuur 2026-0412", mailDate: "2026-09-10T08:00:00.000Z",
@@ -159,5 +159,18 @@ describe("InvoiceInboxButton", () => {
     await waitFor(() => expect(book).toBeEnabled());
     await userEvent.click(book);
     expect(await screen.findByText("Boeken mislukt")).toBeInTheDocument();
+  });
+});
+
+describe("InvoiceInboxButton - moments on the office clock (D11)", () => {
+  it("writes a received-at moment in the office zone, not the browser's", async () => {
+    const { setOfficeTimeZone } = await import("@/lib/office-timezone");
+    expect(dateTime("2026-10-09T21:34:00.000Z")).toBe("09-10-2026 23:34"); // Amsterdam (CEST)
+    setOfficeTimeZone("America/Curacao");
+    try {
+      expect(dateTime("2026-10-09T21:34:00.000Z")).toBe("09-10-2026 17:34");
+    } finally {
+      setOfficeTimeZone(null);
+    }
   });
 });

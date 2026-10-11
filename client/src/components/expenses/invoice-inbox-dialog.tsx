@@ -6,6 +6,7 @@ import { UserPermission, type Vehicle } from "@shared/schema";
 import type { InboxStatus, InvoiceInboxRunSummary, ReviewReason } from "@shared/invoice-inbox";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/format-utils";
+import { formatDateNl } from "@/lib/format-date-nl";
 import { displayLicensePlate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,7 +36,8 @@ const TABS: InboxStatus[] = ["review", "booked", "dismissed"];
  */
 export const inboxStatusRefetchInterval = (query: { state: { status: string } }): number | false =>
   (query.state.status === "error" ? false : 60_000);
-const dateTime = (iso: string) => new Intl.DateTimeFormat("nl-NL", { dateStyle: "short", timeStyle: "short" }).format(new Date(iso));
+// A moment, written on the office clock (D11), not the browser's.
+export const dateTime = (iso: string) => formatDateNl(iso, "dd-MM-yyyy HH:mm");
 
 /**
  * Kosten page header: a button with a badge (number of items to review) that

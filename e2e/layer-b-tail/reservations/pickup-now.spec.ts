@@ -4,8 +4,8 @@
  *
  * The quick action's dialog closes when the reservation is saved, so "Nu ophalen" is the action of
  * the success toast (12 s). It starts the pickup in the global dialog layer, which outlives the
- * dialog: the pickup dialog opens for the reservation that was just created (the spec compares the
- * id the server returned with the one the dialog fetched). The pickup is not completed: the spec
+ * dialog: the pickup dialog opens for the reservation that was just created (the global host fetches
+ * `GET /api/reservations/<id>` with the id the server returned, and the dialog shows the plate and customer). The pickup is not completed: the spec
  * closes the dialog and cancels its own reservation, so nothing it made stays booked.
  *
  * Tail project (`layer-b-tail`, runs alone after layer A and B): the spec creates a reservation, and the desk
@@ -43,6 +43,11 @@ test("Nu ophalen in de toast na een reservering vanaf het dashboard opent het op
   });
   expect(vehicleResponse.ok(), await vehicleResponse.text()).toBeTruthy();
 
+  const fetchedReservationIds: number[] = [];
+  page.on("request", (r) => {
+    const match = r.method() === "GET" ? /^\/api\/reservations\/(\d+)$/.exec(new URL(r.url()).pathname) : null;
+    if (match) fetchedReservationIds.push(Number(match[1]));
+  });
   let createdId: number | null = null;
   page.on("response", async (r) => {
     if (r.request().method() === "POST" && new URL(r.url()).pathname === "/api/reservations" && r.status() === 201) {
@@ -76,6 +81,7 @@ test("Nu ophalen in de toast na een reservering vanaf het dashboard opent het op
 
   // The dialog belongs to the reservation that was just created.
   expect(createdId, "the id the server returned for the new reservation").not.toBeNull();
+  await expect.poll(() => fetchedReservationIds, { message: "the pickup host reads the reservation that was just created" }).toContain(createdId!);
   await expect(pickupDialog).toContainText(PLATE);
   await expect(pickupDialog).toContainText(CUSTOMER_NAME);
   const stored = await (async () => { apiRequests += 1; return (await request.get(`/api/reservations/${createdId}`)).json(); })();

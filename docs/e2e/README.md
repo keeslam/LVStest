@@ -80,6 +80,13 @@ een rij annuleren). Een andere test die op dat moment tegelijk in dezelfde datab
 (`lvs_e2e`) rijen aanmaakt of annuleert, is dan niet meer te onderscheiden van wat deze
 test zelf doet — geen eigen database nodig, wel een eigen plek ná de rest.
 
+**Regel: een verhaal dat reserveringen aanmaakt hoort in de staart.** Een laag-B-verhaal dat een
+reservering aanmaakt, verandert het aantal reserveringen voor wie er tegelijk naar kijkt: het baliegeval
+*dubbele boeking* (`e2e/layer-b/desk/edge-cases.spec.ts`) telt de reserveringen voor en na en werd rood toen
+*Nu ophalen* (`pickup-now.spec.ts`) ernaast draaide (dat geval telt nu alleen de reserveringen van zijn eigen
+voertuig, maar andere tellingen en kalenders kunnen hetzelfde verschil zien). De staart draait alleen, na laag A en B, dus zulke
+verhalen komen daar (`e2e/layer-b-tail/`).
+
 **B-34 (taak 6): een tweede staarttest, `e2e/layer-b-tail/contract/template-errors.spec.ts`.**
 De seed zet voortaan één werkend PDF-sjabloon klaar ("E2E contract", standaard, een paar
 echte velden), zodat een ophaling ergens in de rest van de suite ook echt een contract
@@ -207,7 +214,8 @@ andere test of browserrun die dan als beheerder inlogt falen. Het bestand slaat 
 bewust aanzet met `DE02_ALLOW_ADMIN_TOGGLE=1`:
 
 ```
-DE02_ALLOW_ADMIN_TOGGLE=1 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/lvs_fixtest DATABASE_SSL=false   npx vitest run --project server server/__tests__/de-02-last-admin.test.ts --no-file-parallelism
+DE02_ALLOW_ADMIN_TOGGLE=1 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/lvs_fixtest DATABASE_SSL=false \
+  npx vitest run --project server server/__tests__/de-02-last-admin.test.ts --no-file-parallelism
 ```
 
 Draai het **alleen en op een rustige database**: geen andere vitest-run, geen Playwright-run en geen app op dezelfde database
@@ -242,8 +250,8 @@ meer verzoeken kosten.
   Elk ander profiel houdt zijn ene sessie. `pages.spec.ts` en `forbidden.spec.ts` blijven
   ongewijzigd.
 - **De staart (`layer-b-tail`).** Die draait als laatste, op de resten van hetzelfde venster. De
-  drie specs zijn verdeeld: `template-errors` als `manager` (ongeveer 60 verzoeken), `bins` en
-  `past-reservation` als `manager-b` (ongeveer 125 en 105), omdat de tweeling aan het begin van
+  vier specs zijn verdeeld: `template-errors` als `manager` (ongeveer 60 verzoeken), `bins`, `past-reservation`
+  en `pickup-now` als `manager-b` (ongeveer 125, 105 en 66), omdat de tweeling aan het begin van
   de staart de meeste ruimte heeft.
 - **De baliewerkstroom en de andere laag-B-verhalen** houden hun rol (`user`, `manager`,
   `maintenance`, `admin`); zij horen bij hun verhaal, niet bij het budget.
