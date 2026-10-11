@@ -54,7 +54,7 @@ describe("startup-migration.js: user foreign keys become ON DELETE SET NULL (mar
     const [row] = await db
       .insert(users)
       .values({
-        username: `FIXT-user-d19-${label}-${Date.now().toString(36)}`,
+        username: `D19-probe-${label}-${Date.now().toString(36)}`,
         password: await hashPassword("fixture-password-1"),
         role: "user",
         permissions: [],
@@ -112,7 +112,7 @@ describe("startup-migration.js: user foreign keys become ON DELETE SET NULL (mar
     const setNullBefore = Object.entries(before).filter(([, rule]) => rule === "n").map(([name]) => name).sort();
 
     const userId = await makeUser("a");
-    await db.insert(auditLogs).values({ userId, username: "FIXT-user-d19-a", action: "user.login", status: "success" } as any);
+    await db.insert(auditLogs).values({ userId, username: "D19-probe-a", action: "user.login", status: "success" } as any);
     const [customer] = await db
       .insert(customers)
       .values({ name: "D19 klant", createdByUser: userId } as any)
@@ -139,11 +139,11 @@ describe("startup-migration.js: user foreign keys become ON DELETE SET NULL (mar
 
     await db.delete(users).where(eq(users.id, userId));
     expect(await db.select().from(users).where(eq(users.id, userId))).toHaveLength(0);
-    const [auditRow] = await db.select().from(auditLogs).where(eq(auditLogs.username, "FIXT-user-d19-a"));
+    const [auditRow] = await db.select().from(auditLogs).where(eq(auditLogs.username, "D19-probe-a"));
     expect(auditRow.userId).toBeNull();
     const [customerRow] = await db.select().from(customers).where(eq(customers.id, customer.id));
     expect(customerRow.createdByUser).toBeNull();
-    await db.delete(auditLogs).where(eq(auditLogs.username, "FIXT-user-d19-a"));
+    await db.delete(auditLogs).where(eq(auditLogs.username, "D19-probe-a"));
   }, 120_000);
 
   it("runs once: the marker stops a second pass, and without the marker the step changes nothing and does not fail", async () => {
