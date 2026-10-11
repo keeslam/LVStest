@@ -20,12 +20,17 @@ import { FineStatusBadge } from "@/components/fines/fine-status-badge";
 const ROW = { id: 7, licensePlate: "AB123C", offenceAt: "2026-10-01T10:00:30Z", description: "Te hard", amount: "100.00", adminFee: "0.00", totalAmount: "100.00", status: "disputed", customerId: 3, customerName: "Jansen BV", driverName: null, reservationId: 9 };
 
 let legacyHeader: string | null = null;
+let fetches = 0;
 beforeEach(() => {
   queryClient.clear();
-  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify([ROW]), {
-    status: 200,
-    headers: { "Content-Type": "application/json", ...(legacyHeader ? { "X-Legacy-Fine-Status-Counts": legacyHeader } : {}) },
-  })));
+  fetches = 0;
+  vi.stubGlobal("fetch", vi.fn(async () => {
+    fetches += 1;
+    return new Response(JSON.stringify([ROW]), {
+      status: 200,
+      headers: { "Content-Type": "application/json", ...(legacyHeader ? { "X-Legacy-Fine-Status-Counts": legacyHeader } : {}) },
+    });
+  }));
 });
 afterEach(() => { vi.unstubAllGlobals(); queryClient.clear(); legacyHeader = null; });
 
@@ -44,6 +49,28 @@ describe("fines status filter (D9)", () => {
     renderTable();
     await screen.findByTestId("row-fine-7");
     await vi.waitFor(() => expect(optionValues()).toEqual(["", "new", "linked", "cancelled", "disputed"]));
+  });
+
+  it("keeps the legacy options when the list comes from the query cache (header only on the first fetch)", async () => {
+    legacyHeader = JSON.stringify({ disputed: 1 });
+    const first = renderTable();
+    await screen.findByTestId("row-fine-7");
+    await vi.waitFor(() => expect(optionValues()).toContain("disputed"));
+    first.unmount();
+    // Back on the screen within the cache's fresh time: the list is not fetched again, and the response would carry no header.
+    legacyHeader = null;
+    const before = fetches;
+    renderTable();
+    await screen.findByTestId("row-fine-7");
+    expect(fetches).toBe(before);
+    expect(optionValues()).toEqual(["", "new", "linked", "cancelled", "disputed"]);
+  });
+
+  it("a header that is not an object is ignored", async () => {
+    legacyHeader = "null";
+    renderTable();
+    await screen.findByTestId("row-fine-7");
+    expect(optionValues()).toEqual(["", "new", "linked", "cancelled"]);
   });
 
   it("the badge keeps the legacy labels", () => {

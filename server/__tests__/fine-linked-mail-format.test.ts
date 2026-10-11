@@ -12,9 +12,9 @@ import { customers, fines } from "../../shared/schema";
 import { eq, like } from "drizzle-orm";
 import { cleanupPortalTestData, createTestCustomer } from "./portal-helpers";
 import { finesStorage } from "../services/fines-storage";
-import { sendFineLinkedMail } from "../services/portal-mail";
+import { sendFineLinkedMailDetailed } from "../services/portal-mail";
 
-describe("sendFineLinkedMail: Dutch amounts and dates", () => {
+describe("sendFineLinkedMailDetailed: Dutch amounts and dates", () => {
   let fineId: number;
   // A "PT" plate: cleanupPortalTestData removes fines by that prefix only, so any other plate would be left behind.
   const plate = `PT${Date.now().toString().slice(-6)}`;
@@ -31,7 +31,7 @@ describe("sendFineLinkedMail: Dutch amounts and dates", () => {
   afterAll(cleanupPortalTestData);
 
   it("writes the amount with a decimal comma and the date as dd-mm-jjjj", async () => {
-    await sendFineLinkedMail(fineId);
+    expect(await sendFineLinkedMailDetailed(fineId)).toMatchObject({ sent: true });
     expect(sendEmail).toHaveBeenCalledTimes(1);
     const mail = sendEmail.mock.calls[0][0] as { html: string; subject: string };
     expect(mail.html).toContain("€ 95,00");

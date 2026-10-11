@@ -51,16 +51,22 @@ export function FinesTable({ customerId, initialPlate, importFileId, preview }: 
   const [search, setSearch] = useState("");
   const filters = { status: status || undefined, customerId, licensePlate: plate.trim() || undefined, from: from || undefined, to: to || undefined, importFileId };
   // B-41 D9: the list answers with an array; the per-status counts of legacy rows travel in a header.
-  const [legacyCounts, setLegacyCounts] = useState<LegacyFineStatusCounts>({});
-  const { data = [] } = useQuery<FineRow[]>({
+  // They live in the query data, so a list served from the cache keeps them.
+  const { data: list } = useQuery<{ rows: FineRow[]; legacyCounts: LegacyFineStatusCounts }>({
     queryKey: ["/api/fines", filters],
     queryFn: async () => {
       const q = new URLSearchParams(Object.entries(filters).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]));
       const res = await apiRequest("GET", `/api/fines?${q}`);
-      try { setLegacyCounts(JSON.parse(res.headers.get(LEGACY_FINE_STATUS_COUNTS_HEADER) ?? "{}")); } catch { setLegacyCounts({}); }
-      return res.json();
+      let legacyCounts: LegacyFineStatusCounts = {};
+      try {
+        const parsed = JSON.parse(res.headers.get(LEGACY_FINE_STATUS_COUNTS_HEADER) ?? "{}");
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) legacyCounts = parsed;
+      } catch { /* an unreadable header means no legacy rows are announced */ }
+      return { rows: (await res.json()) as FineRow[], legacyCounts };
     },
   });
+  const data = list?.rows ?? [];
+  const legacyCounts = list?.legacyCounts ?? {};
   // The filter offers what a fine can still become; Doorbelast/Betaald/Betwist only while old rows with them exist
   // (and the one currently chosen, so a selection never silently disappears).
   const statusOptions: FineStatusValue[] = [

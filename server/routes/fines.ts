@@ -34,6 +34,8 @@ import type { RouteDeps } from "./deps";
 const canView = hasPermission(UserPermission.VIEW_FINES, UserPermission.MANAGE_FINES);
 const canManage = hasPermission(UserPermission.MANAGE_FINES);
 const money = (n: number) => n.toFixed(2);
+/** The same rule as `canManage` for code that decides inside a handler: role admin always passes. */
+const mayManageFines = (req: Request) => req.user?.role === UserRole.ADMIN || (req.user?.permissions ?? []).includes(UserPermission.MANAGE_FINES);
 
 function idParam(req: Request, res: Response): number | null {
   const id = parseInt(req.params.id, 10);
@@ -230,8 +232,7 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
     const candidates = fine.status === "new" ? await findCandidates(fine.licensePlate, fine.offenceAt) : undefined;
     // B-41 D10: the "Klant informeren" confirmation names the address. Only a manager sees it (a viewer gets no
     // customer address from this screen); null = there is nobody to mail.
-    const mayManage = req.user?.role === UserRole.ADMIN || (req.user?.permissions ?? []).includes(UserPermission.MANAGE_FINES);
-    const notifyAddress = mayManage && fine.status === "linked"
+    const notifyAddress = mayManageFines(req) && fine.status === "linked"
       ? fineMailAddress(fine.customerId ? await storage.getCustomer(fine.customerId) : null)
       : undefined;
     res.json({ ...fine, candidates, ...(notifyAddress !== undefined ? { notifyAddress } : {}) });
@@ -337,7 +338,10 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
           description: `${fine.description} · € ${fine.amount}`, link: `/bekeuringen/${id}`, dedupeTag: `fine:${id}`, dedupeDays: 365,
         });
       } catch (e) { console.error("fine linked notification failed:", e); }
-      await finesStorage.updateFine(id, { customerNotifiedAt: new Date(), updatedBy: actor(req) });
+      // The mail is out: a failing date stamp must not turn the answer into a 500 or skip the audit line.
+      try { await finesStorage.updateFine(id, { customerNotifiedAt: new Date(), updatedBy: actor(req) }); } catch (e) {
+        console.error("fine customer_notified_at could not be stored:", e);
+      }
     }
     await AuditLogger.logFromRequest(req, "fine.notify-customer", "fine", id, result.sent ? { sent: true } : { sent: false, reason: result.reason });
     res.json(result.sent ? { sent: true } : { sent: false, reason: result.reason });

@@ -335,6 +335,32 @@ describe("fines routes", () => {
       const res = await request(manager).post(`/api/fines/${fine.id}/notify-customer`);
       expect(res.body).toEqual({ sent: false, reason: "PORTAL_DISABLED" });
       expect(sendEmail).not.toHaveBeenCalled();
+      expect((await finesStorage.getFine(fine.id))!.customerNotifiedAt).toBeNull();
+    });
+
+    it("a refusal is audited too", async () => {
+      const fine = await linkedFine({ customerId: null });
+      const audit = vi.spyOn(AuditLogger, "logFromRequest");
+      try {
+        await request(manager).post(`/api/fines/${fine.id}/notify-customer`);
+        expect(audit).toHaveBeenCalledWith(expect.anything(), "fine.notify-customer", "fine", fine.id, { sent: false, reason: "NO_CUSTOMER" });
+      } finally { audit.mockRestore(); }
+    });
+
+    it("a failing date stamp after a mail that went out still answers sent:true, is audited and logged", async () => {
+      const fine = await linkedFine();
+      sendEmail.mockClear();
+      const update = vi.spyOn(finesStorage, "updateFine").mockRejectedValueOnce(new Error("stamp failed"));
+      const log = vi.spyOn(console, "error").mockImplementation(() => {});
+      const audit = vi.spyOn(AuditLogger, "logFromRequest");
+      try {
+        const res = await request(manager).post(`/api/fines/${fine.id}/notify-customer`);
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({ sent: true });
+        expect(sendEmail).toHaveBeenCalledTimes(1);
+        expect(audit).toHaveBeenCalledWith(expect.anything(), "fine.notify-customer", "fine", fine.id, { sent: true });
+        expect(log).toHaveBeenCalledWith(expect.stringContaining("customer_notified_at"), expect.any(Error));
+      } finally { update.mockRestore(); log.mockRestore(); audit.mockRestore(); }
     });
 
     it("MAIL_FAILED: the mail server refuses; nothing is stamped", async () => {

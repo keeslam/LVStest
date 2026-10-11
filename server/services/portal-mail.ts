@@ -283,11 +283,6 @@ export async function sendFineLinkedMailDetailed(fineId: number): Promise<FineMa
   return sent ? { sent: true, to } : { sent: false, reason: "MAIL_FAILED" };
 }
 
-/** Boolean wrapper for callers that only need to know whether the mail went out. */
-export async function sendFineLinkedMail(fineId: number): Promise<boolean> {
-  return (await sendFineLinkedMailDetailed(fineId)).sent;
-}
-
 /** Maintenance news for a customer: planned, moved, car in, car ready, cancelled, replacement ready. */
 export async function sendMaintenanceMail(customerId: number, vars: { plate: string; car: string; event: string; date: string; endDate: string | null }): Promise<boolean> {
   const [customer, settings, config] = await Promise.all([
