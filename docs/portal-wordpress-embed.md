@@ -70,7 +70,7 @@ In de teksten van de portaalsjablonen staat de naam van het bedrijf als `{{compa
 instelling voor alle mails van de app: App-instellingen > Bedrijfsregels > Bedrijfsnaam (standaard
 "Autolease Lam"). Portaalsjablonen die nog de oude standaardtekst met "Lam Groep" hebben, gaan de naam
 volgen zodra hij voor het eerst is opgeslagen; een sjabloon die kantoor zelf heeft aangepast, houdt zijn
-eigen tekst. De meldingen die de klant in het portaal zelf ziet (het belletje), zeggen nog "Lam Groep".
+eigen tekst. De meldingen die de klant in het portaal zelf ziet (het belletje) noemen dezelfde bedrijfsnaam.
 
 Beide vereisen werkende SMTP-instellingen onder Instellingen > E-mail; zonder
 SMTP wordt de actie wel uitgevoerd maar blijft de mail achterwege (zie serverlog).

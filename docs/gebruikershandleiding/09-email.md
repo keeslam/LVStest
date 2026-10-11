@@ -336,10 +336,9 @@ Twee dingen om te weten:
   leeg verstuurd, nooit als code in de tekst. De voorvertoning zegt per ontvanger wat
   leeg blijft (*Leeg voor deze ontvanger: …*).
 - **`{maintenanceDate}` hoort bij Onderhoud.** Bij de categorieën **APK-herinneringen** en **Aangepast**
-  biedt de bouwer deze placeholder niet aan, en de app vult hem daar ook niet in. De voorvertoning kent
-  alleen de laatste onderhoudsdatum van het voertuig; vindt de app de datum pas bij het versturen via een
-  gepland onderhoud, dan kan de voorvertoning *blijft leeg* tonen terwijl de verstuurde mail wel een datum
-  heeft.
+  biedt de bouwer deze placeholder niet aan, en de app vult hem daar ook niet in. De app gebruikt de laatste
+  onderhoudsdatum van het voertuig, anders het onderhoud dat vandaag loopt, anders het eerstvolgende; de
+  voorvertoning toont dezelfde datum als de mail.
 
 Een placeholder met een typefout, of een veld dat niet in de tabel staat, vult de app niet in: er komt een
 lege plek in de tekst. De voorvertoning waarschuwt daarvoor met *Deze placeholders worden nergens ingevuld en
