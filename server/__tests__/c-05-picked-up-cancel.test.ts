@@ -6,7 +6,8 @@
  * status normalises to `picked_up` (legacy spellings included):
  *
  *   PATCH  /api/reservations/:id/status   { status: "cancelled", confirmPickedUp }
- *   PATCH  /api/reservations/:id          { status: "cancelled", confirmPickedUp }   (the edit form)
+ *   PATCH  /api/reservations/:id/status   (the edit form's cancel button too since D3: the form no
+ *                                          longer has a status field and PATCH /:id refuses one)
  *   DELETE /api/reservations/:id?confirmPickedUp=true
  *
  * need the right `cancel_picked_up_rental` (403 naming it, role admin passes) AND
@@ -15,9 +16,9 @@
  * status behave as before. The right is checked first: someone who may not do it
  * is not asked to confirm.
  *
- * `PATCH /:id/basic` (a fourth writer that can write `cancelled`) follows the same
- * rule, and a maintenance block is not a rental, so it is exempt even when a
- * legacy `active` status normalises to picked_up.
+ * `PATCH /:id` and `/:id/basic` refuse a status change on a rental (400 USE_STATUS_ROUTE, D3),
+ * so they cannot cancel one either. A maintenance block is not a rental, so it is exempt
+ * even when a legacy `active` status normalises to picked_up.
  *
  * Spec: docs/superpowers/specs/2026-10-09-terugdraaien-prullenbak-design.md section 3.
  */
@@ -96,8 +97,9 @@ async function pickedUpRental() {
 
 const cancelViaStatus = (agent: TestAgent, id: number, extra: Record<string, unknown> = {}) =>
   agent.patch(`/api/reservations/${id}/status`).send({ status: "cancelled", ...extra });
+// D3 (besluiten B-41): the edit form has no status field; its cancel button calls /status.
 const cancelViaForm = (agent: TestAgent, id: number, extra: Record<string, unknown> = {}) =>
-  agent.patch(`/api/reservations/${id}`).send({ status: "cancelled", ...extra });
+  agent.patch(`/api/reservations/${id}/status`).send({ status: "cancelled", ...extra });
 const deleteIt = (agent: TestAgent, id: number, query = "") =>
   agent.delete(`/api/reservations/${id}${query}`);
 
@@ -232,7 +234,7 @@ describe("C-05 - PATCH /api/reservations/:id/status {status:'cancelled'}", () =>
   });
 });
 
-describe("C-05 - PATCH /api/reservations/:id {status:'cancelled'} (the edit form)", () => {
+describe("C-05 - the edit form's cancellation (D3: through /:id/status)", () => {
   it("a booked rental cancels as today", async () => {
     const { rental } = await bookedRental();
     expect((await cancelViaForm(desk, rental.id)).status).toBe(200);
@@ -258,10 +260,19 @@ describe("C-05 - PATCH /api/reservations/:id {status:'cancelled'} (the edit form
     expect((await rowOf(rental.id)).status).toBe("cancelled");
   });
 
-  it("the multipart form (damage check upload) sends the flag as the string 'true'", async () => {
+  it("the multipart form (damage check upload) can no longer carry a status: 400 USE_STATUS_ROUTE", async () => {
     const { rental } = await pickedUpRental();
     const res = await cancelRight.patch(`/api/reservations/${rental.id}`)
       .field("status", "cancelled").field("confirmPickedUp", "true");
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe("USE_STATUS_ROUTE");
+    expect((await rowOf(rental.id)).status).toBe("picked_up");
+  });
+
+  it("the status route also accepts the flag as the string 'true'", async () => {
+    const { rental } = await pickedUpRental();
+    const res = await cancelRight.patch(`/api/reservations/${rental.id}/status`)
+      .send({ status: "cancelled", confirmPickedUp: "true" });
     expect(res.status).toBe(200);
     expect((await rowOf(rental.id)).status).toBe("cancelled");
   });
@@ -289,23 +300,25 @@ describe("C-05 - PATCH /api/reservations/:id {status:'cancelled'} (the edit form
   });
 });
 
-describe("C-05 - PATCH /api/reservations/:id/basic {status:'cancelled'}", () => {
-  it("is held to the same rule: 403 without the right, 409 without the flag, 200 with both", async () => {
+describe("C-05 - PATCH /api/reservations/:id/basic {status:'cancelled'} (D3)", () => {
+  it("is refused for a rental with USE_STATUS_ROUTE, picked up or not, and changes nothing", async () => {
     const { rental } = await pickedUpRental();
     const basic = (agent: TestAgent, extra: Record<string, unknown> = {}) =>
       agent.patch(`/api/reservations/${rental.id}/basic`).send({ status: "cancelled", ...extra });
 
-    expect((await basic(desk, { confirmPickedUp: true })).status).toBe(403);
-    expect((await basic(cancelRight)).status).toBe(409);
+    for (const res of [await basic(desk, { confirmPickedUp: true }), await basic(cancelRight, { confirmPickedUp: true }), await basic(admin)]) {
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe("USE_STATUS_ROUTE");
+    }
     await expectUntouched(rental.id, rental);
-    expect((await basic(cancelRight, { confirmPickedUp: true })).status).toBe(200);
-    expect((await rowOf(rental.id)).status).toBe("cancelled");
   });
 
-  it("a booked rental still cancels through it without the right", async () => {
+  it("a booked rental is refused too: the cancel button uses the status route", async () => {
     const { rental } = await bookedRental();
     const res = await desk.patch(`/api/reservations/${rental.id}/basic`).send({ status: "cancelled" });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe("USE_STATUS_ROUTE");
+    expect((await rowOf(rental.id)).status).toBe("booked");
   });
 });
 

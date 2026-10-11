@@ -286,31 +286,77 @@ describe("FIX-H — the handover gate (besluiten B-03)", () => {
  * ================================================================== */
 
 describe("FIX-H — every status write path is gated", () => {
-  it("PATCH /:id refuses a value outside the enum and changes nothing (BUG-016)", async () => {
+  // D3 (besluiten B-41): a rental's status changes only through the action routes, so the
+  // generic edit routes refuse any status that differs from the stored one before the enum
+  // and the transition table are even asked (400 USE_STATUS_ROUTE). /status still enforces both.
+  it("PATCH /:id refuses a value outside the enum and changes nothing (BUG-016, D3)", async () => {
     const vehicle = await createFixtureVehicle();
     const r = await createFixtureReservation({ customerId, vehicleId: vehicle.id });
 
     const res = await admin.patch(`/api/reservations/${r.id}`).send({ status: "garbage" });
     expect(res.status).toBe(400);
+    expect(res.body.code).toBe("USE_STATUS_ROUTE");
     expect((await rowOf(r.id)).status).toBe("booked");
   });
 
-  it("PATCH /:id refuses an illegal jump (BUG-016)", async () => {
+  it("PATCH /:id refuses an illegal jump (BUG-016, D3)", async () => {
     const vehicle = await createFixtureVehicle();
     const r = await createFixtureReservation({ customerId, vehicleId: vehicle.id });
 
     const res = await admin.patch(`/api/reservations/${r.id}`).send({ status: "completed" });
     expect(res.status).toBe(400);
+    expect(res.body.code).toBe("USE_STATUS_ROUTE");
     expect((await rowOf(r.id)).status).toBe("booked");
   });
 
-  it("PATCH /:id/basic refuses both, and changes nothing (BUG-016)", async () => {
+  it("PATCH /:id/basic refuses both, and changes nothing (BUG-016, D3)", async () => {
     const vehicle = await createFixtureVehicle();
     const r = await createFixtureReservation({ customerId, vehicleId: vehicle.id });
 
-    expect((await admin.patch(`/api/reservations/${r.id}/basic`).send({ status: "garbage" })).status).toBe(400);
-    expect((await admin.patch(`/api/reservations/${r.id}/basic`).send({ status: "completed" })).status).toBe(400);
+    for (const status of ["garbage", "completed"]) {
+      const res = await admin.patch(`/api/reservations/${r.id}/basic`).send({ status });
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe("USE_STATUS_ROUTE");
+    }
     expect((await rowOf(r.id)).status).toBe("booked");
+  });
+
+  it("PATCH /:id and /basic accept the status the rental already has (idempotent, D3)", async () => {
+    const vehicle = await createFixtureVehicle();
+    const r = await createFixtureReservation({ customerId, vehicleId: vehicle.id });
+
+    expect((await admin.patch(`/api/reservations/${r.id}`).send({ status: "booked", notes: "D3 same" })).status).toBe(200);
+    expect((await admin.patch(`/api/reservations/${r.id}/basic`).send({ status: "booked", notes: "D3 same again" })).status).toBe(200);
+    expect((await rowOf(r.id)).status).toBe("booked");
+  });
+
+  it("POST /api/reservations creates every rental as booked, whatever the client sends (D3)", async () => {
+    for (const [i, status] of ["picked_up", "completed", "cancelled", "garbage"].entries()) {
+      const vehicle = await createFixtureVehicle();
+      const res = await admin.post("/api/reservations").send({
+        vehicleId: vehicle.id, customerId, type: "standard", status,
+        startDate: day(40 + i), endDate: day(41 + i), totalPrice: 0,
+      });
+      expect(res.status, JSON.stringify(res.body)).toBe(201);
+      expect(res.body.status, status).toBe("booked");
+      expect((await rowOf(res.body.id)).status, status).toBe("booked");
+    }
+  });
+
+  it("POST /api/reservations without a status still gives booked, and a maintenance block keeps its own (D3)", async () => {
+    const vehicle = await createFixtureVehicle();
+    const rental = await admin.post("/api/reservations").send({
+      vehicleId: vehicle.id, customerId, type: "standard", startDate: day(60), endDate: day(61), totalPrice: 0,
+    });
+    expect(rental.status, JSON.stringify(rental.body)).toBe(201);
+    expect(rental.body.status).toBe("booked");
+
+    const block = await admin.post("/api/reservations").send({
+      vehicleId: vehicle.id, type: "maintenance_block", status: "picked_up", maintenanceStatus: "in",
+      startDate: day(70), endDate: day(71), maintenanceDuration: 2, totalPrice: 0,
+    });
+    expect(block.status, JSON.stringify(block.body)).toBe(201);
+    expect(block.body.status).toBe("picked_up");
   });
 
   it("PATCH /:id/status still accepts a legal transition", async () => {

@@ -357,6 +357,36 @@ export function assertBlockNotFinishedByPatch(
 }
 
 /**
+ * D3 (besluiten B-41/B-42): the status of a rental changes only through Ophalen,
+ * Inleveren, Annuleren and Terugdraaien (`/pickup`, `/return`, `/status`,
+ * `/revert`), never through a generic edit. `PATCH /:id` and `/:id/basic`
+ * refuse a `status` that differs from the stored one (400 USE_STATUS_ROUTE); a
+ * save that repeats the current status is not a change and passes (a client that
+ * sends the whole row back). Legacy spellings count as the same status.
+ *
+ * A maintenance block is not a rental: its status follows the maintenance dialogs
+ * and D7's completion route (`assertBlockNotFinishedByPatch`), so it is exempt.
+ */
+export function assertStatusNotSetByPatch(
+  existing: BlockCloseCheckRow | null | undefined,
+  patch: { status?: unknown },
+): void {
+  if (!existing || existing.type === "maintenance_block") return;
+
+  const asksStatus = patch.status !== undefined && patch.status !== null && patch.status !== "";
+  if (!asksStatus) return;
+
+  const requested = normalizeReservationStatus(patch.status);
+  if (requested !== null && requested === normalizeReservationStatus(existing.status)) return;
+
+  throw new StateTransitionError("A reservation's status changes with the pickup, return, cancel and revert actions, not with an edit.", {
+    code: "USE_STATUS_ROUTE",
+    field: "status",
+    details: { route: "PATCH /api/reservations/:id/status", currentStatus: existing.status ?? null, requestedStatus: patch.status },
+  });
+}
+
+/**
  * D6 (besluiten B-41): true when a write cancelled a live maintenance block.
  * A cancelled block no longer keeps the car in the workshop; whether the car is
  * freed depends on `vehicles.maintenance_status_block_id` (see

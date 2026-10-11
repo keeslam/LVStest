@@ -219,7 +219,7 @@ describe.each([
 });
 
 describe("rules that must stay as they are", () => {
-  it("a rental still cannot jump from booked to completed through PATCH /:id or /basic", async () => {
+  it("a rental still cannot jump from booked to completed: the edit routes refuse any status (D3), /status the jump", async () => {
     const vehicle = await createFixtureVehicle();
     const customer = await createFixtureCustomer("C08b");
     const rental = await createFixtureReservation({
@@ -228,8 +228,11 @@ describe("rules that must stay as they are", () => {
     for (const url of [`/api/reservations/${rental.id}`, `/api/reservations/${rental.id}/basic`]) {
       const jump = await admin.patch(url).send({ status: "completed" });
       expect(jump.status).toBe(400);
-      expect(jump.body.code).toBe("INVALID_STATUS_TRANSITION");
+      expect(jump.body.code).toBe("USE_STATUS_ROUTE");
     }
+    const viaStatus = await admin.patch(`/api/reservations/${rental.id}/status`).send({ status: "completed" });
+    expect(viaStatus.status).toBe(400);
+    expect(viaStatus.body.code).toBe("INVALID_STATUS_TRANSITION");
     expect((await blockRow(rental.id)).status).toBe("booked");
   });
 

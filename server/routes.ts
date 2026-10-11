@@ -109,6 +109,7 @@ import {
   maintenanceBlockJustClosed,
   maintenanceBlockJustCancelled,
   assertBlockNotFinishedByPatch,
+  assertStatusNotSetByPatch,
   isCheckedInBlockMaintenanceStatus,
   type HandoverOverride,
 } from "./services/lifecycle";
@@ -3504,6 +3505,17 @@ export async function registerRoutes(app: Express): Promise<void> {
       
       const reservationData = insertReservationSchema.parse(bodyData);
 
+      // D3 (besluiten B-41): a new rental is always Geboekt. Handing it over is Ophalen,
+      // which asks for the contract, the mileage and the fuel level; a client that still
+      // sends another status (an old tab, a script) is not refused, but not obeyed either.
+      // A maintenance block keeps its own status (scheduled / out ...).
+      if (reservationData.type !== 'maintenance_block') {
+        if (reservationData.status != null && reservationData.status !== 'booked') {
+          console.warn(`[reservations] POST ignored client status "${reservationData.status}" for a new ${reservationData.type ?? 'standard'} reservation; created as booked.`);
+        }
+        reservationData.status = 'booked';
+      }
+
       // BUG-039: reservations.vehicle_id / customer_id carry no foreign key, so
       // a booking on an id that does not exist was accepted and became an orphan
       // row nobody could explain. The maintenance_block branch below skipped even
@@ -4149,6 +4161,8 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       // D7: a block is finished with Afronden, never with a status save.
       assertBlockNotFinishedByPatch(existingBasic, reservationData);
+      // D3: a rental's status changes only through its action routes.
+      assertStatusNotSetByPatch(existingBasic, reservationData);
 
       // FIX-H (BUG-016): `/basic` ran the shape validation and then wrote
       // `status` straight through — no enum check, no transition check — so a
@@ -4812,6 +4826,8 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       // D7: a block is finished with Afronden, never with a status save.
       assertBlockNotFinishedByPatch(existingReservationForDiff, reservationData);
+      // D3: a rental's status changes only through its action routes.
+      assertStatusNotSetByPatch(existingReservationForDiff, reservationData);
 
       // FIX-H (BUG-016) — the enum and the transition table, on this path too.
       if ('status' in reservationData) {

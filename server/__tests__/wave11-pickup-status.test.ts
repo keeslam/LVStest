@@ -76,19 +76,21 @@ describe("BUG-144 — every status writer asks the same question", () => {
     expect((await statusOf(rental.id)).status).toBe("booked");
   });
 
-  it("PATCH /:id refuses it too", async () => {
+  // D3 (besluiten B-41): the generic edit routes no longer move a rental's status at all,
+  // so the period question is asked only where the pickup happens (/status, /pickup).
+  it("PATCH /:id refuses it too (USE_STATUS_ROUTE, D3)", async () => {
     const rental = await futureRental();
     const res = await admin.patch(`/api/reservations/${rental.id}`).send({ status: "picked_up" });
-    expect(res.status).toBe(409);
-    expect(res.body.code).toBe("PICKUP_BEFORE_START_DATE");
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe("USE_STATUS_ROUTE");
     expect((await statusOf(rental.id)).status).toBe("booked");
   });
 
-  it("PATCH /:id/basic refuses it too", async () => {
+  it("PATCH /:id/basic refuses it too (USE_STATUS_ROUTE, D3)", async () => {
     const rental = await futureRental();
     const res = await admin.patch(`/api/reservations/${rental.id}/basic`).send({ status: "picked_up" });
-    expect(res.status).toBe(409);
-    expect(res.body.code).toBe("PICKUP_BEFORE_START_DATE");
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe("USE_STATUS_ROUTE");
     expect((await statusOf(rental.id)).status).toBe("booked");
   });
 
