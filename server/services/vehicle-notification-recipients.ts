@@ -125,13 +125,28 @@ export async function maintenanceDateForVehicle(
   vehicle: { id: number; lastServiceDate?: string | null },
   today: string = isoToday(),
 ): Promise<string | null> {
-  if (vehicle.lastServiceDate) return vehicle.lastServiceDate;
+  return (await maintenanceDatesForVehicles([vehicle], today)).get(vehicle.id) ?? null;
+}
+
+/**
+ * The same answer for many vehicles with one query. The vehicle lists of the communication page
+ * (`/api/vehicles/with-reservations`, `/filtered`) attach it to every row as `maintenanceDate`, so the
+ * preview shows the date the mail will carry (df-review Minor 1) instead of guessing from the vehicle row.
+ */
+export async function maintenanceDatesForVehicles(
+  list: Array<{ id: number; lastServiceDate?: string | null }>,
+  today: string = isoToday(),
+): Promise<Map<number, string | null>> {
+  const result = new Map<number, string | null>();
+  const needBlocks = list.filter((v) => !v.lastServiceDate);
+  for (const v of list) if (v.lastServiceDate) result.set(v.id, v.lastServiceDate);
+  if (needBlocks.length === 0) return result;
   const blocks = await db
-    .select({ startDate: reservations.startDate, endDate: reservations.endDate })
+    .select({ vehicleId: reservations.vehicleId, startDate: reservations.startDate, endDate: reservations.endDate })
     .from(reservations)
     .where(
       and(
-        eq(reservations.vehicleId, vehicle.id),
+        inArray(reservations.vehicleId, needBlocks.map((v) => v.id)),
         eq(reservations.type, "maintenance_block"),
         isNull(reservations.deletedAt),
         ne(sql`lower(${reservations.status})`, "cancelled"),
@@ -139,6 +154,10 @@ export async function maintenanceDateForVehicle(
       ),
     )
     .orderBy(asc(reservations.startDate), asc(reservations.id));
-  const covering = blocks.find((b) => b.startDate <= today);
-  return (covering ?? blocks[0])?.startDate ?? null;
+  for (const v of needBlocks) {
+    const mine = blocks.filter((b) => b.vehicleId === v.id);
+    const covering = mine.find((b) => b.startDate <= today);
+    result.set(v.id, (covering ?? mine[0])?.startDate ?? null);
+  }
+  return result;
 }

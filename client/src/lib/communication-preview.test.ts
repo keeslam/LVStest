@@ -94,6 +94,28 @@ describe("recipients carry the reservation of their vehicle (D15)", () => {
   });
 });
 
+describe("the preview shows the maintenance date the server sends (df-review Minor 1)", () => {
+  const noServiceDate = { ...vehicle1, lastServiceDate: null };
+
+  it("takes the row's maintenanceDate (a maintenance block) when the vehicle has no service date", () => {
+    const rows: any[] = [{ vehicle: noServiceDate, customer: customerA, maintenanceDate: "2026-10-12" }];
+    const [row] = buildRecipients({ mode: "custom", selectedVehicles: [noServiceDate], selectedCustomers: [], vehicleItems: rows, category: "maintenance" });
+    expect(row.values.maintenanceDate).toBe("12-10-2026");
+  });
+
+  it("the row's answer wins over the vehicle row, and null means the placeholder is empty, as in the mail", () => {
+    const withBoth: any[] = [{ vehicle: vehicle1, customer: customerA, maintenanceDate: "2026-10-12" }];
+    expect(buildRecipients({ mode: "custom", selectedVehicles: [vehicle1], selectedCustomers: [], vehicleItems: withBoth, category: "maintenance" })[0].values.maintenanceDate).toBe("12-10-2026");
+    const none: any[] = [{ vehicle: noServiceDate, customer: customerA, maintenanceDate: null }];
+    expect(buildRecipients({ mode: "custom", selectedVehicles: [noServiceDate], selectedCustomers: [], vehicleItems: none, category: "maintenance" })[0].values.maintenanceDate).toBe("");
+  });
+
+  it("is empty for other categories whatever the row says", () => {
+    const rows: any[] = [{ vehicle: noServiceDate, customer: customerA, maintenanceDate: "2026-10-12" }];
+    expect(buildRecipients({ mode: "custom", selectedVehicles: [noServiceDate], selectedCustomers: [], vehicleItems: rows, category: "custom" })[0].values.maintenanceDate).toBe("");
+  });
+});
+
 describe("recipients", () => {
   it("APK/Onderhoud: one per ticked vehicle, with its renter, and a vehicle without a renter goes to the office", () => {
     const rows = buildRecipients({ mode: "apk", selectedVehicles: [vehicle1, vehicle2], selectedCustomers: [], vehicleItems: items });

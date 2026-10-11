@@ -31,6 +31,8 @@ export interface PlaceholderContext {
   reservation?: { startDate?: string | null; endDate?: string | null } | null;
   /** Category of the template; only "maintenance" fills maintenanceDate. */
   category?: string | null;
+  /** The server's answer for {maintenanceDate} on the vehicle list row (null: none; undefined: not sent). */
+  maintenanceDate?: string | null;
 }
 
 /** yyyy-MM-dd as dd-mm-jjjj, like the route (formatDateNL); empty when there is none. */
@@ -90,9 +92,11 @@ export function placeholderValuesFor(vehicle: any | null, customer: any | null, 
     customerPhone: customer?.phone ?? "",
     reservationStart: dutchDate(context.reservation?.startDate),
     reservationEnd: dutchDate(context.reservation?.endDate),
-    // The server falls back to the date of a maintenance block when the vehicle has no service date
-    // (it knows the blocks); the preview only knows the vehicle row.
-    maintenanceDate: context.category === "maintenance" ? dutchDate(vehicle?.lastServiceDate) : "",
+    // The server decides (last service date, else the block covering today, else the next one) and
+    // sends its answer on the vehicle list rows; a row without the field falls back to the vehicle row.
+    maintenanceDate: context.category === "maintenance"
+      ? dutchDate(context.maintenanceDate !== undefined ? context.maintenanceDate : vehicle?.lastServiceDate)
+      : "",
   };
 }
 
@@ -118,7 +122,7 @@ export function buildRecipients(input: {
   selectedVehicles: any[];
   selectedCustomers: any[];
   /** Rows of GET /api/vehicles/with-reservations or /filtered: `{ vehicle, customer }`. */
-  vehicleItems: Array<{ vehicle: any; customer: any | null; reservation?: PlaceholderContext["reservation"] }>;
+  vehicleItems: Array<{ vehicle: any; customer: any | null; reservation?: PlaceholderContext["reservation"]; maintenanceDate?: string | null }>;
   /** D15: the company name setting and the category of the chosen template. */
   companyName?: string;
   category?: string | null;
@@ -127,7 +131,7 @@ export function buildRecipients(input: {
   const base: PlaceholderContext = { companyName: input.companyName, category: input.category };
   for (const selected of input.selectedVehicles) {
     const item = input.vehicleItems.find((candidate) => candidate.vehicle?.id === selected.id);
-    rows.push(recipientFor(item?.vehicle ?? selected, item?.customer ?? null, { ...base, reservation: item?.customer ? item?.reservation ?? null : null }));
+    rows.push(recipientFor(item?.vehicle ?? selected, item?.customer ?? null, { ...base, reservation: item?.customer ? item?.reservation ?? null : null, maintenanceDate: item?.maintenanceDate }));
   }
   if (input.mode === "custom") {
     const reached = new Set(rows.map((row) => row.customerId).filter((id) => id !== null));

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { installIdParamValidation } from '../middleware/parseIntParam';
+import { maintenanceDatesForVehicles } from '../services/vehicle-notification-recipients.js';
 import { db } from '../db.js';
 import { vehicles, customers, reservations } from '../../shared/schema.js';
 import { eq, isNotNull, and, gte, lte } from 'drizzle-orm';
@@ -41,7 +42,9 @@ router.get('/', async (req, res) => {
     }, [] as typeof vehiclesWithReservations);
 
     console.log(`Found ${uniqueVehicles.length} vehicles with active reservations`);
-    res.json(uniqueVehicles);
+    // D15: the date `{maintenanceDate}` gets in a maintenance mail, so the preview shows what is sent.
+    const maintenanceDates = await maintenanceDatesForVehicles(uniqueVehicles.map((item) => item.vehicle));
+    res.json(uniqueVehicles.map((item) => ({ ...item, maintenanceDate: maintenanceDates.get(item.vehicle.id) ?? null })));
   } catch (error) {
     console.error('Error fetching vehicles with reservations:', error);
     res.status(500).json({ 

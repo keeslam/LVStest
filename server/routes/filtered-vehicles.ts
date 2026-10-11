@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { installIdParamValidation } from '../middleware/parseIntParam';
+import { maintenanceDatesForVehicles } from '../services/vehicle-notification-recipients.js';
 import { db } from '../db.js';
 import { vehicles, customers, reservations, expenses } from '../../shared/schema.js';
 import { eq, isNotNull, and, gte, lte, sql, desc, like, or } from 'drizzle-orm';
@@ -187,7 +188,9 @@ router.get('/', async (req, res) => {
     });
 
     console.log(`Found ${filteredVehicles.length} vehicles matching filter: ${filterType || 'none'}`);
-    res.json(responseData);
+    // D15: the date `{maintenanceDate}` gets in a maintenance mail, so the preview shows what is sent.
+    const maintenanceDates = await maintenanceDatesForVehicles(responseData.map((item) => item.vehicle));
+    res.json(responseData.map((item) => ({ ...item, maintenanceDate: maintenanceDates.get(item.vehicle.id) ?? null })));
 
   } catch (error) {
     console.error('Error fetching filtered vehicles:', error);
