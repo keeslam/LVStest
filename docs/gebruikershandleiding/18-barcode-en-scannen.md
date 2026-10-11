@@ -284,7 +284,8 @@ die sleutel terecht niet in de kast hangt.
 1. Open de auto met **Bekijken**.
 2. Klik op **Barcode bekijken**. Het venster **Voertuigbarcode** opent.
 3. Kies bij **Labelsjabloon** de indeling die bij jullie labelprinter hoort — *Kies het
-   labelsjabloon voor deze afdruk.*
+   labelsjabloon voor deze afdruk.* Voor de labelmaker aan de balie kies je **DYMO-tape
+   (labelmaker, staand)**; zie *Op de DYMO-labelmaker* hieronder.
 4. Klik op **Sleutellabel afdrukken** of op **Reservesleutel-label afdrukken**. De app meldt dat er
    een afdrukvenster van je browser is geopend (**Afdrukvenster geopend** — *Het afdrukvenster van je
    browser is geopend voor het label van <kenteken>. Kies daar de printer.*). De app maakt hier geen
@@ -293,6 +294,20 @@ die sleutel terecht niet in de kast hangt.
 Op de voertuigkaart staan bovenin ook de knoppen **Sleutellabel** en **Reservesleutel-label**,
 direct naast de barcode. Die doen hetzelfde: ze vragen eerst om het **Labelsjabloon** en dan
 klik je op **Afdrukken**.
+
+### Op de DYMO-labelmaker
+
+**Op de DYMO-labelmaker (tape).** De labelmaker aan de balie (LabelManager 420P, tape van
+12 mm) drukt via Windows alleen staand af; een gewoon sleutellabel van 62 bij 29 mm kwam daardoor
+afgesneden uit de printer. Kies daarom bij **Labelsjabloon** de optie **DYMO-tape (labelmaker,
+staand)**. Er verschijnen dan **Tapebreedte** (9, 12 of 19 mm; standaard 12) en **Labellengte (mm)**
+(standaard 48, de lengte van het sleutellabel). De app maakt per label één pagina van 12 bij 48 mm
+en draait de inhoud zelf een kwartslag: de barcode loopt over de lengte van de tape, met daaronder
+het kenteken en **Hoofd** of **Reserve**. Kies in het afdrukvenster de DYMO-printer, papier 12 mm,
+staand, marges **Geen** en schaal **100%**; de melding zegt dat ook: *Kies daar de DYMO-printer,
+papier 12 mm, staand, marges Geen en schaal 100%.* De keuze en de maten worden op die pc onthouden,
+zodat de volgende keer meteen de tape voorstaat. Druk eerst één label af en leg het naast een oud
+label voordat je de hele kast doet.
 
 ### Een nieuw label voor een auto
 
@@ -310,7 +325,8 @@ daarna niet meer. Na afloop krijg je **Nieuwe barcode: <code>**. Druk meteen een
 
 1. Klik op **Voertuigen** → **Barcodeboek**. Je krijgt **Barcodeboek** — *Druk alle
    voertuigbarcodes af voor in een map of klapper.*
-2. Kies een **Labelsjabloon**.
+2. Kies een **Labelsjabloon**. Met **DYMO-tape (labelmaker, staand)** maakt **Stickers afdrukken**
+   één tapelabel per auto.
 3. Filter eventueel met het zoekveld *Zoeken op kenteken, merk of model...* of met het
    statuslijstje **Alle statussen**.
 4. Selecteer wat je wilt met **Alles selecteren** of door regels aan te vinken; **Selectie

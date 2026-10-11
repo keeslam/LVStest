@@ -457,11 +457,25 @@ verkeerde auto mee pakken.
 
 1. Open de auto met **Bekijken**.
 2. Klik op **Barcode bekijken**. Het venster **Voertuigbarcode** opent.
-3. Kies bij **Labelsjabloon** de indeling die bij jullie labelprinter hoort.
+3. Kies bij **Labelsjabloon** de indeling die bij jullie labelprinter hoort: de
+   **Standaardindeling** (62 bij 29 mm), een eigen sjabloon uit **Documenten**, of **DYMO-tape
+   (labelmaker, staand)** voor de labelmaker aan de balie (zie hieronder).
 4. Klik op **Sleutellabel afdrukken** of op **Reservesleutel-label afdrukken**. Er opent een
    afdrukvenster van je browser en de app meldt dat met **Afdrukvenster geopend** — *Het
    afdrukvenster van je browser is geopend voor het label van <kenteken>. Kies daar de printer.*
    Je kiest daar zelf de printer; de app maakt geen bestand.
+
+**Op de DYMO-labelmaker (tape).** De labelmaker aan de balie (LabelManager 420P, tape van
+12 mm) drukt via Windows alleen staand af; een gewoon sleutellabel van 62 bij 29 mm kwam daardoor
+afgesneden uit de printer. Kies daarom bij **Labelsjabloon** de optie **DYMO-tape (labelmaker,
+staand)**. Er verschijnen dan **Tapebreedte** (9, 12 of 19 mm; standaard 12) en **Labellengte (mm)**
+(standaard 48, de lengte van het sleutellabel). De app maakt per label één pagina van 12 bij 48 mm
+en draait de inhoud zelf een kwartslag: de barcode loopt over de lengte van de tape, met daaronder
+het kenteken en **Hoofd** of **Reserve**. Kies in het afdrukvenster de DYMO-printer, papier 12 mm,
+staand, marges **Geen** en schaal **100%**; de melding zegt dat ook: *Kies daar de DYMO-printer,
+papier 12 mm, staand, marges Geen en schaal 100%.* De keuze en de maten worden op die pc onthouden,
+zodat de volgende keer meteen de tape voorstaat. Druk eerst één label af en leg het naast een oud
+label voordat je de hele kast doet.
 
 De reservesleutel krijgt een eigen label; de code eindigt dan op **-S**. Zo weet de sleutelkast
 het verschil tussen de hoofdsleutel en de reserve.
@@ -473,7 +487,9 @@ opnieuw worden afgedrukt. Deze actie kan niet ongedaan worden gemaakt."*
 **Alle labels tegelijk** (de app meldt dan **Afdrukvenster geopend** — *Het afdrukvenster van je browser is geopend voor het barcodeboek (12 voertuigen). Kies daar de printer.*) druk je af met de knop **Barcodeboek** rechtsboven op het scherm
 **Voertuigbeheer** — *Druk alle voertuigbarcodes af voor in een map of klapper.* Je kiest een
 **Labelsjabloon**, filtert eventueel op status, en klikt op **Alles afdrukken (…)**,
-**Gefilterde afdrukken (…)**, **Selectie afdrukken** of **Stickers afdrukken**.
+**Gefilterde afdrukken (…)**, **Selectie afdrukken** of **Stickers afdrukken**. Staat het
+**Labelsjabloon** op **DYMO-tape (labelmaker, staand)**, dan maakt **Stickers afdrukken** één
+tapelabel per auto; de labelmaker snijdt ze na elkaar af.
 
 **De sleutelkast nalopen** doe je met **Sleutelkast-audit** en **Reservesleutelkast-audit**.
 Tijdens het scannen zie je welke sleutels al gescand zijn en welke nog niet. Uitgebreid in

@@ -525,6 +525,16 @@ Kees: "bekeuringen hoeft geen aparte tab te zijn, ze worden toch per klant opges
 - **Gevolg, door Kees aanvaard:** een medewerker die alleen Boetes bekijken of Boetes beheren heeft en geen vinkje voor het klantenportaal, kan de lijst niet meer openen, ook niet vanuit het menu, want de pagina Klantenportaal is voor hem dicht.
 - Handleiding: 2.1, 2.6, 10, 13.11, 15.4, Wat is er nieuw en de acceptatiechecklist volgen dit besluit.
 
+### B-45 — Sleutellabels op de DYMO-labelmaker (11-10-2026)
+
+Kees: "de barcodes die gemaakt worden om te printen om aan sleutels te hangen zoals de hoofd en reserve sleutels zijn niet met de .label output compatible dus ik kan ze niet met mijn dymo labelprinter uitprinten zonder een hele omweg dit moet geintegreerd worden"; de printer is een DYMO LabelManager 420P met tape van 12 mm, het sleutellabel is maximaal 48 bij 22 mm. Na een eerste test: "hij kan via het print menu maar hij wil niet liggend printen alleen staand en dan past de barcode niet op het label".
+
+- Geen apart .label-bestand en geen DYMO-webservice: de Windows-driver van de 420P staat op de balie-pc en het afdrukvenster van de browser bereikt hem al. Het probleem was alleen de richting: de driver drukt de tape staand af (pagina zo breed als de tape), en het liggende sleutellabel van 62 bij 29 mm werd afgesneden.
+- Nieuwe keuze **DYMO-tape (labelmaker, staand)** in het **Labelsjabloon** op de voertuigkaart, in het venster Voertuigbarcode en in het Barcodeboek (Stickers afdrukken), met **Tapebreedte** (9, 12 of 19 mm; standaard 12) en **Labellengte (mm)** (30 tot 100; standaard 48). Per label één pagina van tapebreedte bij labellengte, marges 0; de inhoud (barcode over de lengte, kenteken vet, **Hoofd** of **Reserve** uit de code zelf: -S is reserve) wordt een kwartslag gedraaid op die pagina gezet. De barcode blijft exact dezelfde VEH-code, zonder leesbare tekst eronder, zodat de sleutelkast-scanner hem leest.
+- De keuze en de maten worden per browser onthouden (localStorage; de printer hangt aan één pc). De melding **Afdrukvenster geopend** noemt de printerinstellingen: *Kies daar de DYMO-printer, papier 12 mm, staand, marges Geen en schaal 100%.*
+- Niet door Claude te testen: de afdruk op de 420P zelf. Kees drukt eerst één label af en vergelijkt het met een oud label (checklist hoofdstuk 19, regel **DYMO-tape**). Als de driver een andere papierlengte afdwingt, past hij **Labellengte (mm)** aan.
+- Handleiding: 4.11, 18.9, Wat is er nieuw (Balie 11) en de acceptatiechecklist volgen dit besluit.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).
