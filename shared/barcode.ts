@@ -92,8 +92,19 @@ export const BARCODE_LABEL_SOURCES = [
   "apkDate",
   "company",
   "fleetNumber",
+  "keyKind",
   "staticText",
 ] as const;
+
+// What a key label says about the key itself: a spare-key code ends in -S.
+// Label text, not UI text: the labels at the desk are Dutch.
+export const KEY_KIND_LABELS = { main: "Hoofd", spare: "Reserve" } as const;
+
+export function keyKindLabel(barcode: string | null | undefined): string {
+  if (!barcode) return KEY_KIND_LABELS.main;
+  const parsed = parseBarcode(barcode);
+  return parsed.kind === "vehicle" && parsed.spareKey === true ? KEY_KIND_LABELS.spare : KEY_KIND_LABELS.main;
+}
 
 // Minimal vehicle shape a label needs. Callers that want a formatted plate
 // (formatLicensePlate lives client-side and can't be imported here) pass the
@@ -125,6 +136,7 @@ export function resolveBarcodeLabelSource(
     case "apkDate": return vehicle.apkDate ?? "";
     case "company": return vehicle.company ?? "";
     case "fleetNumber": return String(vehicle.id);
+    case "keyKind": return keyKindLabel(vehicle.barcode);
     case "staticText": return fieldName;
     default: return "";
   }

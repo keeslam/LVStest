@@ -1562,6 +1562,10 @@ export const barcodeLabelTemplates = pgTable("barcode_label_templates", {
   isDefault: boolean("is_default").default(false),
   labelWidthMm: integer("label_width_mm").default(62).notNull(),
   labelHeightMm: integer("label_height_mm").default(29).notNull(),
+  // B-45: a label maker's tape. The Windows driver prints the tape portrait,
+  // so a tape template (width = length along the tape, height = tape width)
+  // is turned a quarter onto a portrait page at print time.
+  tapePrint: boolean("tape_print").default(false).notNull(),
   fields: jsonb("fields").default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),

@@ -85,8 +85,8 @@ describe("printKeyLabels with a tape layout", () => {
     expect(svg.hasAttribute("width")).toBe(false);
     // No human-readable code under the bars: the plate is what the desk reads.
     expect(svg.textContent ?? "").not.toContain("VEH-000004");
-    expect(doc.querySelector(".tape-plate")!.textContent).toBe("12-XT-102");
-    expect(doc.querySelector(".tape-kind")!.textContent).toBe("Hoofd");
+    const texts = Array.from(doc.querySelectorAll(".tape-content .field")).map(f => f.textContent);
+    expect(texts).toEqual(["", "12-XT-102", "Hoofd"]);
   });
 
   it("a spare-key code (-S) says Reserve; several vehicles give one page each", () => {
@@ -96,7 +96,9 @@ describe("printKeyLabels with a tape layout", () => {
       { tape: { tapeWidthMm: 12, lengthMm: 48 } },
     );
     const doc = lastFrameDoc();
-    const kinds = Array.from(doc.querySelectorAll(".tape-kind")).map(el => el.textContent);
+    const kinds = Array.from(doc.querySelectorAll(".tape-page")).map(
+      page => page.querySelectorAll(".field")[2].textContent,
+    );
     expect(kinds).toEqual(["Reserve", "Hoofd"]);
     expect(doc.querySelectorAll(".tape-page")).toHaveLength(2);
   });
@@ -109,6 +111,38 @@ describe("printKeyLabels with a tape layout", () => {
     expect(lastFrameDoc().querySelector(".label")).toBeNull();
     expect(normalizeTapeLayout({ tapeWidthMm: 19, lengthMm: 10 })).toEqual({ tapeWidthMm: 19, lengthMm: 30 });
     expect(normalizeTapeLayout(null)).toEqual({ tapeWidthMm: 12, lengthMm: 48 });
+  });
+
+  it("a template marked as tape prints its own fields turned a quarter, Hoofd/Reserve from the code", () => {
+    const template = {
+      id: 9, name: "Sleutelkast-tape", labelWidthMm: 48, labelHeightMm: 12, tapePrint: true,
+      fields: [
+        { id: "b", name: "Barcode", x: 3, y: 1.5, fontSize: 10, isBold: false, source: "barcode", textAlign: "left", barcodeHeightMm: 5, barcodeWidthMm: 42 },
+        { id: "p", name: "Kenteken", x: 3, y: 8, fontSize: 7, isBold: true, source: "licensePlate", textAlign: "left" },
+        { id: "k", name: "Sleutel", x: 3, y: 8, fontSize: 7, isBold: false, source: "keyKind", textAlign: "right" },
+        { id: "t", name: "Auto Lease LAM", x: 20, y: 8, fontSize: 6, isBold: false, source: "staticText", textAlign: "center" },
+      ],
+    } as any;
+    realPrint([{ ...vehicle, barcodeOverride: "VEH-000004-S" }], template);
+    const doc = lastFrameDoc();
+    const css = doc.querySelector("style")!.textContent!;
+    expect(css).toContain("@page { size: 12mm 48mm; margin: 0; }");
+    expect(css).toMatch(/transform: translateX\(12mm\) rotate\(90deg\)/);
+    expect(doc.querySelector(".label")).toBeNull();
+    const fields = Array.from(doc.querySelectorAll(".tape-content .field"));
+    expect(fields).toHaveLength(4);
+    expect(fields.map(f => f.textContent)).toEqual(["", "12-XT-102", "Reserve", "Auto Lease LAM"]);
+    expect((fields[1] as HTMLElement).style.top).toBe("8mm");
+    const svg = fields[0].querySelector("svg")!;
+    expect(svg.style.width).toBe("42mm");
+    expect(svg.textContent ?? "").not.toContain("VEH-000004");
+  });
+
+  it("a template without the tape mark still prints the die-cut label", () => {
+    const template = { id: 9, name: "x", labelWidthMm: 62, labelHeightMm: 29, tapePrint: false, fields: [] } as any;
+    realPrint([vehicle], template);
+    expect(lastFrameDoc().querySelector(".label")).not.toBeNull();
+    expect(lastFrameDoc().querySelector(".tape-page")).toBeNull();
   });
 
   it("toasts the printer settings for the tape once the print window opens", () => {

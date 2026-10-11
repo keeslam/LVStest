@@ -41,6 +41,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { BarcodeSvg } from "@/components/barcodes/barcode-svg";
 import { comparableTemplate } from "./comparable-template";
 import { BARCODE_LABEL_SOURCES, BarcodeLabelField, resolveBarcodeLabelSource } from "@shared/barcode";
+import { DEFAULT_TAPE_LAYOUT, builtInTapeFields } from "@/components/barcodes/key-label-print";
 
 // Same positioned-field editor as the transport report template editor, but the
 // canvas is a small sticker (millimetres) instead of A4 (points): field x/y are
@@ -53,6 +54,8 @@ interface Template {
   isDefault: boolean;
   labelWidthMm: number;
   labelHeightMm: number;
+  // B-45: printed a quarter turned on a label maker's tape (width = length along the tape, height = tape width).
+  tapePrint: boolean;
   fields: TemplateField[];
 }
 
@@ -120,7 +123,7 @@ interface BarcodeLabelTemplateEditorProps {
 }
 
 /** The label's size and the bar sizes are edited here too, on top of what every template editor compares. */
-const COMPARE = { templateKeys: ["labelWidthMm", "labelHeightMm"], fieldKeys: ["barcodeHeightMm", "barcodeWidthMm"] } as const;
+const COMPARE = { templateKeys: ["labelWidthMm", "labelHeightMm", "tapePrint"], fieldKeys: ["barcodeHeightMm", "barcodeWidthMm"] } as const;
 const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemplateEditorProps = {}) => {
   const { t } = useTranslation(["documents", "common"]);
   const DATA_SOURCE_KEYS: string[] = [...BARCODE_LABEL_SOURCES];
@@ -130,6 +133,7 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
   const [isMoving, setIsMoving] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [newTemplateKind, setNewTemplateKind] = useState<'sheet' | 'tape'>('sheet');
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [renameValue, setRenameValue] = useState('');
   const [newFieldName, setNewFieldName] = useState('');
@@ -240,6 +244,7 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
           labelWidthMm: template.labelWidthMm ?? DEFAULT_LABEL_WIDTH_MM,
           labelHeightMm: template.labelHeightMm ?? DEFAULT_LABEL_HEIGHT_MM,
           isDefault: !!template.isDefault,
+          tapePrint: !!template.tapePrint,
           fields: Array.isArray(fields) ? fields : []
         };
       });
@@ -377,19 +382,26 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
 
     // Starter layout: a barcode near the top and the plate underneath it, so a
     // brand-new template already prints something scannable.
-    const starterFields: TemplateField[] = [
-      { id: crypto.randomUUID(), name: 'Barcode', x: 4, y: 4, fontSize: 10, isBold: false, source: 'barcode', textAlign: 'center', barcodeHeightMm: 12 },
-      { id: crypto.randomUUID(), name: 'Kenteken', x: 4, y: 20, fontSize: 10, isBold: true, source: 'licensePlate', textAlign: 'center' },
-    ];
+    // A tape template (B-45) starts as the built-in DYMO layout (12 mm tape, 48 mm long):
+    // barcode over the length, plate bottom-left, Hoofd/Reserve bottom-right.
+    const tape = newTemplateKind === 'tape';
+    const starterFields: TemplateField[] = tape
+      ? builtInTapeFields(DEFAULT_TAPE_LAYOUT).map(f => ({ ...f, id: crypto.randomUUID() }))
+      : [
+          { id: crypto.randomUUID(), name: 'Barcode', x: 4, y: 4, fontSize: 10, isBold: false, source: 'barcode', textAlign: 'center', barcodeHeightMm: 12 },
+          { id: crypto.randomUUID(), name: 'Kenteken', x: 4, y: 20, fontSize: 10, isBold: true, source: 'licensePlate', textAlign: 'center' },
+        ];
 
     saveTemplateMutation.mutate({
       name: newTemplateName,
       isDefault: templates.length === 0,
-      labelWidthMm: DEFAULT_LABEL_WIDTH_MM,
-      labelHeightMm: DEFAULT_LABEL_HEIGHT_MM,
+      labelWidthMm: tape ? DEFAULT_TAPE_LAYOUT.lengthMm : DEFAULT_LABEL_WIDTH_MM,
+      labelHeightMm: tape ? DEFAULT_TAPE_LAYOUT.tapeWidthMm : DEFAULT_LABEL_HEIGHT_MM,
+      tapePrint: tape,
       fields: starterFields,
     });
     setNewTemplateName('');
+    setNewTemplateKind('sheet');
     setIsCreateDialogOpen(false);
   };
 
@@ -850,6 +862,7 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
       isDefault: currentTemplate.isDefault,
       labelWidthMm: currentTemplate.labelWidthMm,
       labelHeightMm: currentTemplate.labelHeightMm,
+      tapePrint: currentTemplate.tapePrint,
       ...overrides,
       fields: currentTemplate.fields.map(field => ({
         id: field.id,
@@ -1067,6 +1080,21 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
                       <Label htmlFor="new-template-name">{t('templateEditor.templateNameLabel')}</Label>
                       <Input id="new-template-name" value={newTemplateName} onChange={(e) => setNewTemplateName(e.target.value)} placeholder={t('templateEditor.templateNamePlaceholder')} data-testid="input-new-template-name" />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-template-kind">{t('barcodeLabelEditor.kindLabel')}</Label>
+                      <Select value={newTemplateKind} onValueChange={(v) => setNewTemplateKind(v as 'sheet' | 'tape')}>
+                        <SelectTrigger id="new-template-kind" data-testid="select-new-template-kind">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sheet">{t('barcodeLabelEditor.kindSheet')}</SelectItem>
+                          <SelectItem value="tape">{t('barcodeLabelEditor.kindTape')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        {t(newTemplateKind === 'tape' ? 'barcodeLabelEditor.kindTapeHint' : 'barcodeLabelEditor.kindSheetHint')}
+                      </p>
+                    </div>
                     <DialogFooter>
                       <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>{t('common:actions.cancel')}</Button>
                       <Button onClick={handleCreateTemplate} disabled={saveTemplateMutation.isPending} data-testid="button-create-template-confirm">
@@ -1116,7 +1144,7 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-4">
                   <div className="flex h-6 items-center">
-                    <Label className="text-xs">{t('barcodeLabelEditor.labelWidthLabel')}</Label>
+                    <Label className="text-xs">{t(currentTemplate?.tapePrint ? 'barcodeLabelEditor.tapeLengthLabel' : 'barcodeLabelEditor.labelWidthLabel')}</Label>
                   </div>
                   <Input
                     type="number"
@@ -1129,7 +1157,7 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
                 </div>
                 <div className="space-y-4">
                   <div className="flex h-6 items-center">
-                    <Label className="text-xs">{t('barcodeLabelEditor.labelHeightLabel')}</Label>
+                    <Label className="text-xs">{t(currentTemplate?.tapePrint ? 'barcodeLabelEditor.tapeWidthLabel' : 'barcodeLabelEditor.labelHeightLabel')}</Label>
                   </div>
                   <Input
                     type="number"
@@ -1141,6 +1169,20 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
                   />
                 </div>
               </div>
+              {currentTemplate && (
+                <div className="flex items-start gap-2 rounded-md border p-2" data-testid="tape-print-row">
+                  <Switch
+                    id="tape-print"
+                    checked={currentTemplate.tapePrint}
+                    onCheckedChange={(checked) => setCurrentTemplate({ ...currentTemplate, tapePrint: checked })}
+                    data-testid="switch-tape-print"
+                  />
+                  <div className="space-y-0.5">
+                    <Label htmlFor="tape-print" className="text-xs">{t('barcodeLabelEditor.tapePrintLabel')}</Label>
+                    <p className="text-[11px] leading-snug text-muted-foreground">{t('barcodeLabelEditor.tapePrintHint')}</p>
+                  </div>
+                </div>
+              )}
               {currentTemplate && !currentTemplate.isDefault && (
                 <div className="space-y-4">
                   <div className="flex h-6 items-center">

@@ -488,6 +488,13 @@
         "default": "29"
       },
       {
+        "name": "tape_print",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "false"
+      },
+      {
         "name": "fields",
         "type": "jsonb",
         "notNull": false,

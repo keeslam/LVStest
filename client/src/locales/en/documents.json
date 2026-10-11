@@ -683,6 +683,15 @@
     "createFirstTemplateDescription": "Create a first label template to print key labels with a barcode.",
     "templateNamePlaceholder": "E.g. Key label 62x29",
     "labelSizeLabel": "Label size",
+    "tapeLengthLabel": "Length (mm)",
+    "tapeWidthLabel": "Tape width (mm)",
+    "tapePrintLabel": "DYMO tape: print portrait, content turned",
+    "tapePrintHint": "For a label maker. Width is the length along the tape, height the tape width (12 mm). Each label becomes a portrait page; barcodes without the code underneath.",
+    "kindLabel": "Label kind",
+    "kindSheet": "Sticker (62 x 29 mm)",
+    "kindTape": "DYMO tape (48 x 12 mm)",
+    "kindSheetHint": "A single sticker or a sheet of stickers: barcode on top, plate underneath.",
+    "kindTapeHint": "For the label maker at the desk: barcode along the length, plate and Hoofd/Reserve underneath, printed portrait.",
     "labelWidthLabel": "Width (mm)",
     "labelHeightLabel": "Height (mm)",
     "barcodeHeightLabel": "Barcode height (mm)",
@@ -701,6 +710,7 @@
       "apkDate": "MOT date",
       "company": "Company",
       "fleetNumber": "Fleet number",
+      "keyKind": "Key (Hoofd/Reserve)",
       "staticText": "Static text"
     }
   },

@@ -683,6 +683,15 @@
     "createFirstTemplateDescription": "Maak een eerste labelsjabloon om sleutellabels met barcode af te drukken.",
     "templateNamePlaceholder": "Bijv. Sleutellabel 62x29",
     "labelSizeLabel": "Labelformaat",
+    "tapeLengthLabel": "Lengte (mm)",
+    "tapeWidthLabel": "Tapebreedte (mm)",
+    "tapePrintLabel": "DYMO-tape: staand afdrukken, inhoud gedraaid",
+    "tapePrintHint": "Voor een labelmaker. Breedte is de lengte over de tape, hoogte de tapebreedte (12 mm). Elk label wordt een staande pagina; barcodes zonder tekst eronder.",
+    "kindLabel": "Soort label",
+    "kindSheet": "Etiket (62 x 29 mm)",
+    "kindTape": "DYMO-tape (48 x 12 mm)",
+    "kindSheetHint": "Een los etiket of een vel etiketten: barcode boven, kenteken eronder.",
+    "kindTapeHint": "Voor de labelmaker aan de balie: barcode over de lengte, kenteken en Hoofd/Reserve eronder, staand afgedrukt.",
     "labelWidthLabel": "Breedte (mm)",
     "labelHeightLabel": "Hoogte (mm)",
     "barcodeHeightLabel": "Barcodehoogte (mm)",
@@ -701,6 +710,7 @@
       "apkDate": "APK-datum",
       "company": "Bedrijf",
       "fleetNumber": "Vlootnummer",
+      "keyKind": "Sleutel (Hoofd/Reserve)",
       "staticText": "Vaste tekst"
     }
   },

@@ -3,7 +3,7 @@ import i18n from "@/i18n";
 import { toast } from "@/hooks/use-toast";
 import { formatLicensePlate } from "@/lib/format-utils";
 import type { BarcodeLabelTemplate } from "@shared/schema";
-import { BarcodeLabelField, parseBarcode, resolveBarcodeLabelSource } from "@shared/barcode";
+import { BarcodeLabelField, resolveBarcodeLabelSource } from "@shared/barcode";
 
 interface LabelVehicle {
   id: number;
@@ -25,6 +25,13 @@ const DEFAULT_LABEL_WIDTH_MM = 62;
 const DEFAULT_LABEL_HEIGHT_MM = 29;
 const DEFAULT_BARCODE_HEIGHT_MM = 10;
 
+// Layout used when no template is picked: the original hardcoded 62x29 label.
+const FALLBACK_FIELDS: BarcodeLabelField[] = [
+  { id: "b", name: "Barcode", x: 2, y: 3, fontSize: 10, isBold: false, source: "barcode", textAlign: "left", barcodeHeightMm: 12 },
+  { id: "p", name: "Kenteken", x: 2, y: 20, fontSize: 10, isBold: true, source: "licensePlate", textAlign: "left" },
+  { id: "m", name: "Merk/model", x: 2, y: 25, fontSize: 8, isBold: false, source: "vehicleFull", textAlign: "left" },
+];
+
 // Continuous tape of a DYMO label maker (LabelManager 420P at the desk). The
 // Windows driver only prints the tape portrait: the page is as wide as the
 // tape and as long as the label. The content is laid out along the tape
@@ -41,8 +48,8 @@ export const MIN_TAPE_LENGTH_MM = 30;
 export const MAX_TAPE_LENGTH_MM = 100;
 
 export interface KeyLabelPrintOptions {
-  // When set, the labels are printed for a label maker's tape instead of on
-  // the (template's) die-cut label; the template is then not used.
+  // When set, the labels are printed with the built-in tape layout instead of
+  // on the (template's) die-cut label; the template is then not used.
   tape?: TapeLayout | null;
 }
 
@@ -67,12 +74,23 @@ function printableTapeHeightMm(tapeWidthMm: number): number {
 
 const TAPE_SIDE_MARGIN_MM = 3;
 
-// Layout used when no template is picked: the original hardcoded 62x29 label.
-const FALLBACK_FIELDS: BarcodeLabelField[] = [
-  { id: "b", name: "Barcode", x: 2, y: 3, fontSize: 10, isBold: false, source: "barcode", textAlign: "left", barcodeHeightMm: 12 },
-  { id: "p", name: "Kenteken", x: 2, y: 20, fontSize: 10, isBold: true, source: "licensePlate", textAlign: "left" },
-  { id: "m", name: "Merk/model", x: 2, y: 25, fontSize: 8, isBold: false, source: "vehicleFull", textAlign: "left" },
-];
+// The built-in tape layout as template fields, so the tape path and the
+// template path draw labels the same way. Barcode over the full length,
+// plate bottom-left, Hoofd/Reserve bottom-right.
+export function builtInTapeFields(tape: TapeLayout): BarcodeLabelField[] {
+  const bandMm = printableTapeHeightMm(tape.tapeWidthMm);
+  const topMm = (tape.tapeWidthMm - bandMm) / 2;
+  const barcodeHeightMm = Math.round(bandMm * 0.6 * 10) / 10;
+  // 1 mm = 2.835 pt; the text line takes ~30% of the band, between 6 and 10 pt.
+  const fontSize = Math.min(10, Math.max(6, Math.round(bandMm * 0.3 * 2.835 * 2) / 2));
+  const textY = Math.round((topMm + barcodeHeightMm + 0.4) * 10) / 10;
+  const contentWidthMm = tape.lengthMm - 2 * TAPE_SIDE_MARGIN_MM;
+  return [
+    { id: "b", name: "Barcode", x: TAPE_SIDE_MARGIN_MM, y: topMm, fontSize: 10, isBold: false, source: "barcode", textAlign: "left", barcodeHeightMm, barcodeWidthMm: contentWidthMm },
+    { id: "p", name: "Kenteken", x: TAPE_SIDE_MARGIN_MM, y: textY, fontSize, isBold: true, source: "licensePlate", textAlign: "left" },
+    { id: "k", name: "Sleutel", x: TAPE_SIDE_MARGIN_MM, y: textY, fontSize, isBold: false, source: "keyKind", textAlign: "right" },
+  ];
+}
 
 // A template's fields column is jsonb and older rows may hold a JSON string.
 function readTemplateFields(template: BarcodeLabelTemplate): BarcodeLabelField[] {
@@ -89,10 +107,110 @@ function readTemplateFields(template: BarcodeLabelTemplate): BarcodeLabelField[]
   return [];
 }
 
+function makePrintFrame(): HTMLIFrameElement {
+  const frame = document.createElement("iframe");
+  frame.style.position = "fixed";
+  frame.style.right = "0";
+  frame.style.bottom = "0";
+  frame.style.width = "0";
+  frame.style.height = "0";
+  frame.style.border = "0";
+  document.body.appendChild(frame);
+  return frame;
+}
+
+// Draws one label's positioned fields (x/y in mm of label space) into `label`.
+// `showBarcodeValue` prints the code under the bars; a tape has no room for it.
+function appendLabelFields(
+  doc: Document,
+  label: HTMLElement,
+  fields: BarcodeLabelField[],
+  vehicle: LabelVehicle,
+  code: string,
+  widthMm: number,
+  showBarcodeValue: boolean,
+): void {
+  // Dutch plates print grouped (12-XT-102); every other source is raw. The
+  // printed code goes in as `barcode` so "keyKind" can tell Hoofd from Reserve.
+  const formatted = { ...vehicle, licensePlate: formatLicensePlate(vehicle.licensePlate), barcode: code };
+
+  for (const field of fields) {
+    const holder = doc.createElement("div");
+    holder.className = "field";
+    holder.style.left = `${field.x}mm`;
+    holder.style.top = `${field.y}mm`;
+
+    if (field.source === "barcode") {
+      const barcodeHeightMm = field.barcodeHeightMm ?? DEFAULT_BARCODE_HEIGHT_MM;
+      // Constrain by both width and height (not height alone) so a long
+      // code like VEH-000123 can't scale wider than what's left of the
+      // label and clip the barcode's stop pattern at the right edge.
+      const maxWidthMm = widthMm - field.x - 2;
+      const svg = doc.createElementNS("http://www.w3.org/2000/svg", "svg");
+      holder.appendChild(svg);
+      holder.style.height = `${barcodeHeightMm}mm`;
+      holder.style.maxWidth = `${maxWidthMm}mm`;
+      JsBarcode(svg, code, {
+        format: "CODE128",
+        displayValue: showBarcodeValue,
+        fontSize: 10,
+        height: barcodeHeightMm * 3, // px; the svg is scaled to mm below
+        margin: showBarcodeValue ? 4 : 0,
+        background: "transparent",
+      });
+      const explicitWidthMm = field.barcodeWidthMm
+        ? Math.min(field.barcodeWidthMm, maxWidthMm)
+        : null;
+      if (explicitWidthMm) {
+        // Stretch to the template's exact width: promote the rendered size
+        // to a viewBox so CSS sizing scales the drawing instead of cropping.
+        const w = parseFloat(svg.getAttribute("width") || "0");
+        const h = parseFloat(svg.getAttribute("height") || "0");
+        if (w && h) svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+        svg.setAttribute("preserveAspectRatio", "none");
+        svg.removeAttribute("width");
+        svg.removeAttribute("height");
+        svg.style.width = `${explicitWidthMm}mm`;
+        svg.style.height = `${barcodeHeightMm}mm`;
+      } else {
+        svg.style.width = "auto";
+        svg.style.maxWidth = `${maxWidthMm}mm`;
+        svg.style.maxHeight = `${barcodeHeightMm}mm`;
+      }
+    } else {
+      holder.textContent = resolveBarcodeLabelSource(field.source, formatted, field.name);
+      holder.style.fontSize = `${field.fontSize}pt`;
+      holder.style.fontWeight = field.isBold ? "bold" : "normal";
+      holder.style.textAlign = field.textAlign;
+      // Non-barcode fields are absolutely positioned with an auto (shrink
+      // to content) width, which makes textAlign a no-op. Give the holder
+      // the remaining label width so left/center/right actually differ.
+      holder.style.width = `${widthMm - field.x - 1}mm`;
+      holder.style.whiteSpace = "normal";
+    }
+
+    label.appendChild(holder);
+  }
+}
+
+function openPrintWindow(frame: HTMLIFrameElement, title: string, description: string): void {
+  // Give layout a tick, print, then remove the frame.
+  setTimeout(() => {
+    // A-3-13: this only opens the browser's own print window; whether anything reaches a printer
+    // is decided there. The toast says so instead of the dialog just closing without a word.
+    toast({ title, description });
+    frame.contentWindow!.focus();
+    frame.contentWindow!.print();
+    setTimeout(() => frame.remove(), 2000);
+  }, 250);
+}
+
 // Renders labels into a hidden same-origin iframe and prints it. SVG barcodes
 // stay vector-sharp at any print scale. Layout targets standard key-label
 // stock (~62x29mm) but prints fine on plain A4 as a grid. With a template, the
 // template's positioned fields (x/y in mm of label space) are drawn instead.
+// A tape template (tapePrint) or the built-in tape option prints one portrait
+// page per label with the content turned a quarter (see TapeLayout).
 export function printKeyLabels(
   vehicles: LabelVehicle[],
   template?: BarcodeLabelTemplate | null,
@@ -102,7 +220,16 @@ export function printKeyLabels(
   if (printable.length === 0) return;
 
   if (options?.tape) {
-    printTapeLabels(printable, normalizeTapeLayout(options.tape));
+    const tape = normalizeTapeLayout(options.tape);
+    printTapeLabels(printable, tape, builtInTapeFields(tape));
+    return;
+  }
+  if (template?.tapePrint) {
+    printTapeLabels(
+      printable,
+      { lengthMm: template.labelWidthMm, tapeWidthMm: template.labelHeightMm },
+      readTemplateFields(template),
+    );
     return;
   }
 
@@ -110,15 +237,7 @@ export function printKeyLabels(
   const heightMm = template?.labelHeightMm ?? DEFAULT_LABEL_HEIGHT_MM;
   const fields = template ? readTemplateFields(template) : FALLBACK_FIELDS;
 
-  const frame = document.createElement("iframe");
-  frame.style.position = "fixed";
-  frame.style.right = "0";
-  frame.style.bottom = "0";
-  frame.style.width = "0";
-  frame.style.height = "0";
-  frame.style.border = "0";
-  document.body.appendChild(frame);
-
+  const frame = makePrintFrame();
   const doc = frame.contentDocument!;
   doc.open();
   doc.write(`<!doctype html><html><head><meta charset="utf-8"><style>
@@ -137,117 +256,35 @@ export function printKeyLabels(
   doc.close();
 
   for (const vehicle of printable) {
-    // Dutch plates print grouped (12-XT-102); every other source is raw.
-    const formatted = { ...vehicle, licensePlate: formatLicensePlate(vehicle.licensePlate) };
     const code = vehicle.barcodeOverride ?? vehicle.barcode;
     if (!code) continue;
-
     const label = doc.createElement("div");
     label.className = "label";
-
-    for (const field of fields) {
-      const holder = doc.createElement("div");
-      holder.className = "field";
-      holder.style.left = `${field.x}mm`;
-      holder.style.top = `${field.y}mm`;
-
-      if (field.source === "barcode") {
-        const barcodeHeightMm = field.barcodeHeightMm ?? DEFAULT_BARCODE_HEIGHT_MM;
-        // Constrain by both width and height (not height alone) so a long
-        // code like VEH-000123 can't scale wider than what's left of the
-        // label and clip the barcode's stop pattern at the right edge.
-        const maxWidthMm = widthMm - field.x - 2;
-        const svg = doc.createElementNS("http://www.w3.org/2000/svg", "svg");
-        holder.appendChild(svg);
-        holder.style.height = `${barcodeHeightMm}mm`;
-        holder.style.maxWidth = `${maxWidthMm}mm`;
-        JsBarcode(svg, code, {
-          format: "CODE128",
-          displayValue: true,
-          fontSize: 10,
-          height: barcodeHeightMm * 3, // px; the svg is scaled to mm below
-          margin: 4,
-          background: "transparent",
-        });
-        const explicitWidthMm = field.barcodeWidthMm
-          ? Math.min(field.barcodeWidthMm, maxWidthMm)
-          : null;
-        if (explicitWidthMm) {
-          // Stretch to the template's exact width: promote the rendered size
-          // to a viewBox so CSS sizing scales the drawing instead of cropping.
-          const w = parseFloat(svg.getAttribute("width") || "0");
-          const h = parseFloat(svg.getAttribute("height") || "0");
-          if (w && h) svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
-          svg.setAttribute("preserveAspectRatio", "none");
-          svg.removeAttribute("width");
-          svg.removeAttribute("height");
-          svg.style.width = `${explicitWidthMm}mm`;
-          svg.style.height = `${barcodeHeightMm}mm`;
-        } else {
-          svg.style.width = "auto";
-          svg.style.maxWidth = `${maxWidthMm}mm`;
-          svg.style.maxHeight = `${barcodeHeightMm}mm`;
-        }
-      } else {
-        holder.textContent = resolveBarcodeLabelSource(field.source, formatted, field.name);
-        holder.style.fontSize = `${field.fontSize}pt`;
-        holder.style.fontWeight = field.isBold ? "bold" : "normal";
-        holder.style.textAlign = field.textAlign;
-        // Non-barcode fields are absolutely positioned with an auto (shrink
-        // to content) width, which makes textAlign a no-op. Give the holder
-        // the remaining label width so left/center/right actually differ.
-        holder.style.width = `${widthMm - field.x - 1}mm`;
-        holder.style.whiteSpace = "normal";
-      }
-
-      label.appendChild(holder);
-    }
-
+    appendLabelFields(doc, label, fields, vehicle, code, widthMm, true);
     doc.body.appendChild(label);
   }
 
-  // Give layout a tick, print, then remove the frame.
-  setTimeout(() => {
-    // A-3-13: this only opens the browser's own print window; whether anything reaches a printer
-    // is decided there. The toast says so instead of the dialog just closing without a word.
-    toast({
-      title: String(i18n.t("barcodes:label.printOpenedTitle")),
-      description: String(
-        i18n.t("barcodes:label.printOpenedDescription", {
-          count: printable.length,
-          plate: formatLicensePlate(printable[0].licensePlate),
-        }),
-      ),
-    });
-    frame.contentWindow!.focus();
-    frame.contentWindow!.print();
-    setTimeout(() => frame.remove(), 2000);
-  }, 250);
+  openPrintWindow(
+    frame,
+    String(i18n.t("barcodes:label.printOpenedTitle")),
+    String(
+      i18n.t("barcodes:label.printOpenedDescription", {
+        count: printable.length,
+        plate: formatLicensePlate(printable[0].licensePlate),
+      }),
+    ),
+  );
 }
 
 // One tape label per page: the page is the tape (portrait, tapeWidthMm x
-// lengthMm) and the content is drawn along the tape and rotated a quarter turn
-// onto it. The barcode keeps the exact VEH-code so the key cabinet scanner reads
-// it; underneath are the plate and "Hoofd"/"Reserve" (derived from the code,
-// a spare-key code ends in -S).
-function printTapeLabels(printable: LabelVehicle[], tape: TapeLayout): void {
+// lengthMm) and the content (lengthMm x tapeWidthMm, fields in mm of that
+// landscape space) is turned a quarter onto it. Barcodes print without the
+// code under the bars: the plate is what the desk reads, and a 12 mm tape has
+// no room for both.
+function printTapeLabels(printable: LabelVehicle[], tape: TapeLayout, fields: BarcodeLabelField[]): void {
   const { tapeWidthMm, lengthMm } = tape;
-  const bandMm = printableTapeHeightMm(tapeWidthMm);
-  const bandMarginMm = (tapeWidthMm - bandMm) / 2;
-  const barcodeHeightMm = Math.round(bandMm * 0.6 * 10) / 10;
-  // 1 mm = 2.835 pt; the text line takes ~30% of the band, between 6 and 10 pt.
-  const fontPt = Math.min(10, Math.max(6, Math.round(bandMm * 0.3 * 2.835 * 2) / 2));
-  const contentWidthMm = lengthMm - 2 * TAPE_SIDE_MARGIN_MM;
 
-  const frame = document.createElement("iframe");
-  frame.style.position = "fixed";
-  frame.style.right = "0";
-  frame.style.bottom = "0";
-  frame.style.width = "0";
-  frame.style.height = "0";
-  frame.style.border = "0";
-  document.body.appendChild(frame);
-
+  const frame = makePrintFrame();
   const doc = frame.contentDocument!;
   doc.open();
   doc.write(`<!doctype html><html><head><meta charset="utf-8"><style>
@@ -262,83 +299,39 @@ function printTapeLabels(printable: LabelVehicle[], tape: TapeLayout): void {
     .tape-page:last-child { break-after: auto; page-break-after: auto; }
     .tape-content {
       position: absolute; left: 0; top: 0;
-      width: ${lengthMm}mm; height: ${tapeWidthMm}mm;
-      padding: ${bandMarginMm}mm ${TAPE_SIDE_MARGIN_MM}mm;
+      width: ${lengthMm}mm; height: ${tapeWidthMm}mm; overflow: hidden;
       transform-origin: 0 0; transform: translateX(${tapeWidthMm}mm) rotate(90deg);
-      display: flex; flex-direction: column; align-items: stretch; justify-content: space-between;
     }
-    .tape-content svg { display: block; width: ${contentWidthMm}mm; height: ${barcodeHeightMm}mm; }
-    .tape-text {
-      display: flex; justify-content: space-between; align-items: baseline; gap: 2mm;
-      font-size: ${fontPt}pt; line-height: 1.05; white-space: nowrap; overflow: hidden;
-    }
-    .tape-plate { font-weight: bold; }
+    .field { position: absolute; white-space: nowrap; line-height: 1; }
+    .field svg { height: 100%; width: auto; display: block; }
   </style></head><body></body></html>`);
   doc.close();
 
   for (const vehicle of printable) {
     const code = vehicle.barcodeOverride ?? vehicle.barcode;
     if (!code) continue;
-    const parsed = parseBarcode(code);
-    const isSpare = parsed.kind === "vehicle" && parsed.spareKey === true;
-
     const page = doc.createElement("div");
     page.className = "tape-page";
     const content = doc.createElement("div");
     content.className = "tape-content";
     page.appendChild(content);
-
-    const svg = doc.createElementNS("http://www.w3.org/2000/svg", "svg");
-    content.appendChild(svg);
-    JsBarcode(svg, code, {
-      format: "CODE128",
-      displayValue: false,
-      height: 40,
-      width: 2,
-      margin: 0,
-      background: "transparent",
-    });
-    // Stretch the drawing to the full content width: promote the rendered size
-    // to a viewBox so the CSS size scales the bars instead of cropping them.
-    const w = parseFloat(svg.getAttribute("width") || "0");
-    const h = parseFloat(svg.getAttribute("height") || "0");
-    if (w && h) svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
-    svg.setAttribute("preserveAspectRatio", "none");
-    svg.removeAttribute("width");
-    svg.removeAttribute("height");
-
-    const text = doc.createElement("div");
-    text.className = "tape-text";
-    const plate = doc.createElement("span");
-    plate.className = "tape-plate";
-    plate.textContent = formatLicensePlate(vehicle.licensePlate);
-    const kind = doc.createElement("span");
-    kind.className = "tape-kind";
-    kind.textContent = String(i18n.t(isSpare ? "barcodes:tape.spareKey" : "barcodes:tape.mainKey"));
-    text.appendChild(plate);
-    text.appendChild(kind);
-    content.appendChild(text);
-
+    appendLabelFields(doc, content, fields, vehicle, code, lengthMm, false);
     doc.body.appendChild(page);
   }
 
-  setTimeout(() => {
-    // Same as the die-cut path: only the browser's print window opens; the toast says which
-    // printer settings make the tape come out right.
-    toast({
-      title: String(i18n.t("barcodes:label.printOpenedTitle")),
-      description: String(
-        i18n.t("barcodes:tape.printOpenedDescription", {
-          count: printable.length,
-          plate: formatLicensePlate(printable[0].licensePlate),
-          width: tapeWidthMm,
-        }),
-      ),
-    });
-    frame.contentWindow!.focus();
-    frame.contentWindow!.print();
-    setTimeout(() => frame.remove(), 2000);
-  }, 250);
+  // Same as the die-cut path: only the browser's print window opens; the toast says which
+  // printer settings make the tape come out right.
+  openPrintWindow(
+    frame,
+    String(i18n.t("barcodes:label.printOpenedTitle")),
+    String(
+      i18n.t("barcodes:tape.printOpenedDescription", {
+        count: printable.length,
+        plate: formatLicensePlate(printable[0].licensePlate),
+        width: tapeWidthMm,
+      }),
+    ),
+  );
 }
 
 // Renders the full barcode book into a hidden same-origin iframe and prints
@@ -351,15 +344,7 @@ export function printBarcodeBook(vehicles: LabelVehicle[], pageHeader: string): 
   const printable = vehicles.filter((v): v is LabelVehicle & { barcode: string } => !!v.barcode);
   if (printable.length === 0) return;
 
-  const frame = document.createElement("iframe");
-  frame.style.position = "fixed";
-  frame.style.right = "0";
-  frame.style.bottom = "0";
-  frame.style.width = "0";
-  frame.style.height = "0";
-  frame.style.border = "0";
-  document.body.appendChild(frame);
-
+  const frame = makePrintFrame();
   const doc = frame.contentDocument!;
   doc.open();
   doc.write(`<!doctype html><html><head><meta charset="utf-8"><style>
@@ -413,15 +398,10 @@ export function printBarcodeBook(vehicles: LabelVehicle[], pageHeader: string): 
     });
   }
 
-  // Give layout a tick, print, then remove the frame.
-  setTimeout(() => {
-    // Same as printKeyLabels: this only opens the browser's print window, and the toast says so.
-    toast({
-      title: String(i18n.t("barcodes:book.printOpenedTitle")),
-      description: String(i18n.t("barcodes:book.printOpenedDescription", { count: printable.length })),
-    });
-    frame.contentWindow!.focus();
-    frame.contentWindow!.print();
-    setTimeout(() => frame.remove(), 2000);
-  }, 250);
+  // Same as printKeyLabels: this only opens the browser's print window, and the toast says so.
+  openPrintWindow(
+    frame,
+    String(i18n.t("barcodes:book.printOpenedTitle")),
+    String(i18n.t("barcodes:book.printOpenedDescription", { count: printable.length })),
+  );
 }
