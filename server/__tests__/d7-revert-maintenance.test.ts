@@ -86,6 +86,8 @@ describe.each([
     // "Binnen" again: the car carries the workshop flag.
     const car = await vehicleRow(vehicle.id);
     expect(car.availabilityStatus).toBe("needs_fixing");
+    // The block is recorded as the source of the flag, so a later cancel or delete of it releases the car (D6).
+    expect(car.maintenanceStatusBlockId).toBe(id);
 
     const again = await admin.post(`/api/reservations/${id}/complete-maintenance`).send({ completionDate: today });
     expect(again.status).toBe(200);

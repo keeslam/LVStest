@@ -61,7 +61,7 @@ type ScanMaintenance = {
 };
 
 type LookupResult =
-  | { type: "vehicle"; vehicle: Vehicle; activeReservation: ScanReservation | null; upcomingReservation: ScanReservation | null; activeTransport: ScanTransport | null; activeMaintenance: ScanMaintenance | null; scannedSpareKey?: boolean }
+  | { type: "vehicle"; vehicle: Vehicle; activeReservation: ScanReservation | null; upcomingReservation: ScanReservation | null; activeTransport: ScanTransport | null; activeMaintenance: ScanMaintenance | null; binnenBlockId?: number | null; scannedSpareKey?: boolean }
   | { type: "reservation"; reservation: ScanReservation; vehicle: Vehicle | null };
 
 // Square, touch-friendly tiles for the scan card's action row: icon above
@@ -133,14 +133,10 @@ export function ScanPanel({ active = true, intent = null, onHandoverActiveChange
     }
   };
 
-  // The block the scanned car is "Binnen" for (the payload's nearest open block, when its
-  // maintenance status says in / in_service): "Terug uit onderhoud" completes that block.
-  const binnenBlockId: number | null =
-    result?.type === "vehicle" &&
-    result.activeMaintenance &&
-    (result.activeMaintenance.maintenanceStatus === "in" || result.activeMaintenance.maintenanceStatus === "in_service")
-      ? result.activeMaintenance.id
-      : null;
+  // The block "Terug uit onderhoud" completes, as the server names it (Binnen, covering today, not
+  // closed: the same rule as its 409 USE_COMPLETE_ROUTE). Not the payload's `activeMaintenance`, which
+  // is merely the earliest open block.
+  const binnenBlockId: number | null = result?.type === "vehicle" ? result.binnenBlockId ?? null : null;
 
   const openMaintenanceBlock = async (reservationId: number) => {
     try {

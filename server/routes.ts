@@ -90,7 +90,6 @@ import {
 } from "./vehicle-status-helper";
 import {
   assertReservationTransition,
-  patchPutsBlockInside,
   assertReservationStatusValue,
   BLOCK_TO_VEHICLE_MAINTENANCE,
   assertVehicleMaintenanceStatus,
@@ -113,6 +112,7 @@ import {
   assertBlockNotFinishedByPatch,
   assertStatusNotSetByPatch,
   isCheckedInBlockMaintenanceStatus,
+  findBinnenBlockCoveringToday,
   type HandoverOverride,
 } from "./services/lifecycle";
 import { currentRenterReservation } from "./services/vehicle-notification-recipients";
@@ -908,6 +908,9 @@ export async function registerRoutes(app: Express): Promise<void> {
         upcomingReservation: projectReservationForScan(upcomingReservation),
         activeTransport,
         activeMaintenance,
+        // The block "Terug uit onderhoud" completes: the same rule as the 409 USE_COMPLETE_ROUTE of the
+        // vehicle maintenance-status route (Binnen, covering today, not closed).
+        binnenBlockId: findBinnenBlockCoveringToday(allReservations, today)?.id ?? null,
         ...(scannedSpareKey ? { scannedSpareKey: true } : {}),
       });
     } catch (error) {
@@ -1739,11 +1742,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // A car without such a block (back from service by hand) still comes back with this route.
       if (status === 'ok') {
         const today = isoToday();
-        const binnen = (await storage.getReservationsByVehicle(id)).find((r) =>
-          r.type === 'maintenance_block' && !r.deletedAt &&
-          !CLOSED_RESERVATION_STATUSES.has(normalizeReservationStatus(r.status) ?? '') &&
-          isCheckedInBlockMaintenanceStatus(r.maintenanceStatus) &&
-          r.startDate <= today && (!r.endDate || r.endDate === 'undefined' || r.endDate >= today));
+        const binnen = findBinnenBlockCoveringToday(await storage.getReservationsByVehicle(id), today);
         if (binnen) {
           return res.status(409).json({
             message: "This vehicle is in the workshop for a maintenance block; finish that block with the completion route.",
@@ -4178,7 +4177,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           (reservationData.type ?? existingBasic.type) === "maintenance_block";
         reservationData.status = assertReservationTransition(existingBasic.status, reservationData.status, {
           maintenanceBlock: basicIsBlockEdit,
-          reopenBlock: basicIsBlockEdit && patchPutsBlockInside(reservationData.maintenanceStatus),
+          reopenBlock: basicIsBlockEdit && isCheckedInBlockMaintenanceStatus(reservationData.maintenanceStatus),
         });
         // Sub-project C (B-33, B-39): no client sends a cancellation through here,
         // but the route can write `cancelled`, so a picked-up rental is held to the
@@ -4840,7 +4839,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         reservationData.status = assertReservationTransition(
           existingReservationForDiff.status,
           reservationData.status,
-          { maintenanceBlock: patchIsBlockEdit, reopenBlock: patchIsBlockEdit && patchPutsBlockInside(reservationData.maintenanceStatus) },
+          { maintenanceBlock: patchIsBlockEdit, reopenBlock: patchIsBlockEdit && isCheckedInBlockMaintenanceStatus(reservationData.maintenanceStatus) },
         );
         // Sub-project C (B-33, B-39): the edit form's "Geannuleerd" is the same
         // cancellation as the cancel dialog's; a multipart submit sends the flag

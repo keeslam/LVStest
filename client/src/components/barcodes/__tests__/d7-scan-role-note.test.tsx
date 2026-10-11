@@ -51,16 +51,18 @@ function json(body: unknown, status = 200) {
 
 let calls: Array<{ method: string; url: string }>;
 let activeMaintenance: Record<string, unknown> | null;
+let binnenBlockId: number | null;
 
 beforeEach(() => {
   calls = [];
   activeMaintenance = { id: block.id, startDate: block.startDate, endDate: block.endDate, maintenanceStatus: "in" };
+  binnenBlockId = block.id;
   vi.stubGlobal("fetch", vi.fn(async (input: any, init?: any) => {
     const url = String(typeof input === "string" ? input : input.url);
     const method = String(init?.method ?? "GET").toUpperCase();
     calls.push({ method, url });
     if (url.startsWith("/api/barcodes/")) {
-      return json({ type: "vehicle", vehicle, activeReservation: null, upcomingReservation: null, activeTransport: null, activeMaintenance });
+      return json({ type: "vehicle", vehicle, activeReservation: null, upcomingReservation: null, activeTransport: null, activeMaintenance, binnenBlockId });
     }
     if (method === "PATCH" && url === `/api/vehicles/${vehicle.id}/maintenance-status`) return json({ ...vehicle, maintenanceStatus: "ok" });
     if (method === "GET" && url === `/api/reservations/${block.id}`) return json(block);
@@ -111,10 +113,25 @@ describe("scan card: 'Terug uit onderhoud' for a car that is Binnen for a block 
     expect(calls.some((c) => c.method === "PATCH")).toBe(false);
   });
 
+  it("an open block that is not the Binnen one (the server names none) keeps the old rule, whatever the block's own status says", async () => {
+    auth.role = "user";
+    auth.permissions = ["manage_vehicles"];
+    // The earliest open block says "in" but does not cover today: the server's binnenBlockId is null.
+    binnenBlockId = null;
+    const user = userEvent.setup();
+
+    const button = await scan(user);
+    expect(button).toBeEnabled();
+    await user.click(button);
+
+    await waitFor(() => expect(calls.some((c) => c.method === "PATCH" && c.url === `/api/vehicles/${vehicle.id}/maintenance-status`)).toBe(true));
+  });
+
   it("a car in the workshop without a Binnen block keeps the old rule: 'Voertuigen beheren' is enough", async () => {
     auth.role = "user";
     auth.permissions = ["manage_vehicles"];
     activeMaintenance = null;
+    binnenBlockId = null;
     const user = userEvent.setup();
 
     const button = await scan(user);

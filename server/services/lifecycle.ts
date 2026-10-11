@@ -189,7 +189,7 @@ export interface TransitionOptions {
   maintenanceBlock?: boolean;
   /**
    * Only with `maintenanceBlock`: the same save puts the car back "Binnen"
-   * (`maintenanceStatus: 'in'`). That is the history dialog's "Terugdraaien" and
+   * (`maintenanceStatus: 'in'`, see `isCheckedInBlockMaintenanceStatus`). That is the history dialog's "Terugdraaien" and
    * the edit dialog of a block that was reverted before: a finished block
    * (`completed`) may become `picked_up` again, so the list, the calendar and
    * Afronden agree on it. A customer rental never comes back from `completed`.
@@ -210,13 +210,6 @@ export function isReservationTransitionAllowed(
   if (opts.maintenanceBlock && current === "booked" && to === "completed") return true;
   if (opts.maintenanceBlock && opts.reopenBlock && current === "completed" && to === "picked_up") return true;
   return false;
-}
-
-/** True when a block save asks the car to be "Binnen" (`in`, or the legacy `in_service`). */
-export function patchPutsBlockInside(maintenanceStatus: unknown): boolean {
-  if (typeof maintenanceStatus !== "string") return false;
-  const value = maintenanceStatus.trim().toLowerCase();
-  return value === "in" || value === "in_service";
 }
 
 /** Throws `StateTransitionError` (400) for an illegal jump. */
@@ -300,6 +293,21 @@ export function isCheckedInBlockMaintenanceStatus(raw: unknown): boolean {
   if (raw == null) return false;
   const value = String(raw).trim().toLowerCase();
   return value === "in" || value === "in_service";
+}
+
+/**
+ * The maintenance block Afronden finishes for a car: Binnen (`in` / `in_service`), covering `today`,
+ * not closed, not deleted. One rule for the 409 USE_COMPLETE_ROUTE of the vehicle maintenance-status
+ * route and for the `binnenBlockId` of the barcode lookup, so the scan card and the server agree.
+ */
+export function findBinnenBlockCoveringToday<
+  T extends BlockCloseCheckRow & { startDate: string; endDate?: string | null },
+>(rows: readonly T[], today: string): T | undefined {
+  return rows.find((r) =>
+    r.type === "maintenance_block" && !r.deletedAt &&
+    !CLOSED_RESERVATION_STATUSES.has(normalizeReservationStatus(r.status) ?? "") &&
+    isCheckedInBlockMaintenanceStatus(r.maintenanceStatus) &&
+    r.startDate <= today && (!r.endDate || r.endDate === "undefined" || r.endDate >= today));
 }
 
 /** The columns `maintenanceBlockJustClosed` reads. */
