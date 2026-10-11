@@ -10,7 +10,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { User, UserRole, UserPermission } from "@shared/schema";
 import { permissionLabel } from "@shared/permission-labels";
-import { Shield, ShieldCheck, User as UserIcon, UserX, Trash2, Plus, Edit, Mail, Calendar, Check, X, Loader2, ArrowLeft } from "lucide-react";
+import {
+  PERMISSION_DEPENDENCIES,
+  enableRequiredRights,
+  isAdminOnlyRight,
+  missingOptional,
+  missingRequired,
+} from "@shared/permission-dependencies";
+import { Shield, ShieldCheck, User as UserIcon, UserX, Trash2, Plus, Edit, Mail, Calendar, Check, X, Loader2, ArrowLeft, AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -62,6 +69,39 @@ function userErrorText(error: unknown, fallbackKey: string, t: (key: string) => 
     default:
       return t(fallbackKey);
   }
+}
+
+/**
+ * D13: the rights that account holds, for judging dependencies. Role admin
+ * passes every check on the server, so for an admin every need is met.
+ */
+function effectiveRights(role: string | undefined, permissions: readonly string[] | undefined): string[] {
+  return role === UserRole.ADMIN ? Object.values(UserPermission) : [...(permissions ?? [])];
+}
+
+/**
+ * D13: one line under a right, "Heeft nodig: Voertuigen bekijken, ...". Grey
+ * when the needed rights are on, amber with a warning icon when not. The rights
+ * that only make part of a screen better ("optional") sit in the tooltip.
+ */
+function PermissionNeeds({ permission, held }: { permission: string; held: readonly string[] }) {
+  const { t } = useTranslation(["settings"]);
+  const dependency = PERMISSION_DEPENDENCIES[permission];
+  if (!dependency || dependency.required.length === 0) return null;
+
+  const satisfied = missingRequired(permission, held).length === 0;
+  const optional = missingOptional(permission, held);
+  return (
+    <p
+      className={`flex items-start gap-1 text-[11px] leading-tight ${satisfied ? "text-muted-foreground" : "text-amber-700"}`}
+      data-testid={`permission-needs-${permission}`}
+      data-satisfied={String(satisfied)}
+      title={optional.length > 0 ? t('usersDialog.permissionOptional', { rights: optional.map(permissionLabel).join(", ") }) : undefined}
+    >
+      {!satisfied && <AlertTriangle className="mt-px h-3 w-3 flex-shrink-0" aria-hidden="true" />}
+      <span>{t('usersDialog.permissionNeeds', { rights: dependency.required.map(permissionLabel).join(", ") })}</span>
+    </p>
+  );
 }
 
 export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
@@ -388,16 +428,30 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
                   return (
                     <div
                       key={permission}
-                      className={`flex items-center gap-2 p-1.5 rounded-md ${hasPermission ? "bg-muted/50" : ""}`}
+                      className={`flex items-start gap-2 p-1.5 rounded-md ${hasPermission ? "bg-muted/50" : ""}`}
                     >
                       {hasPermission ? (
-                        <Check className="h-3 w-3 text-primary" />
+                        <Check className="mt-0.5 h-3 w-3 text-primary" />
                       ) : (
-                        <X className="h-3 w-3 text-muted-foreground" />
+                        <X className="mt-0.5 h-3 w-3 text-muted-foreground" />
                       )}
-                      <span className={`text-xs ${hasPermission ? "font-medium" : "text-muted-foreground"}`}>
-                        {permissionLabel(permission)}
-                      </span>
+                      <div className="space-y-0.5">
+                        <span className={`text-xs ${hasPermission ? "font-medium" : "text-muted-foreground"}`}>
+                          {permissionLabel(permission)}
+                        </span>
+                        {isAdminOnlyRight(permission) && (
+                          <p className="text-[11px] leading-tight text-muted-foreground" data-testid={`permission-admin-only-${permission}`}>
+                            {t('usersDialog.adminOnlyRight')}
+                          </p>
+                        )}
+                        {/* A right the account does not hold has nothing to depend on. */}
+                        {hasPermission && selectedUser.role !== UserRole.ADMIN && (
+                          <PermissionNeeds
+                            permission={permission}
+                            held={effectiveRights(selectedUser.role, selectedUser.permissions)}
+                          />
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -540,6 +594,13 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
       hidePrices: (user as any)?.hidePrices || false,
     },
   });
+
+  // D13: the rights as they are ticked right now, and the role they would apply to.
+  const tickedRole = form.watch("role");
+  const tickedRights = form.watch("permissions") ?? [];
+  const heldRights = effectiveRights(tickedRole, tickedRights);
+  const isAdminTarget = tickedRole === UserRole.ADMIN;
+  const anyRequiredMissing = !isAdminTarget && tickedRights.some((right) => missingRequired(right, tickedRights).length > 0);
 
   const createMutation = useMutation({
     mutationFn: async (userData: UserFormValues) => {
@@ -728,6 +789,19 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
               <FormDescription className="text-xs">
                 {t('usersDialog.selectAdditionalPermissions')}
               </FormDescription>
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={!anyRequiredMissing}
+                  onClick={() => form.setValue("permissions", enableRequiredRights(form.getValues("permissions") ?? []), { shouldDirty: true })}
+                  data-testid="button-enable-required-rights"
+                >
+                  {t('usersDialog.enableRequiredRights')}
+                </Button>
+                <span className="text-xs text-muted-foreground">{t('usersDialog.enableRequiredRightsHint')}</span>
+              </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
                 {Object.values(UserPermission).map((permission) => (
                   <FormField
@@ -739,6 +813,9 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
                         <FormControl>
                           <Checkbox
                             checked={field.value?.includes(permission)}
+                            // D13: a right only an administrator can use stays off for a
+                            // non-admin account (an already ticked one can still be removed).
+                            disabled={isAdminOnlyRight(permission) && !isAdminTarget && !field.value?.includes(permission)}
                             onCheckedChange={(checked) => {
                               const current = field.value || [];
                               if (checked) {
@@ -749,9 +826,17 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
                             }}
                           />
                         </FormControl>
-                        <FormLabel className="text-xs font-normal cursor-pointer">
-                          {permissionLabel(permission)}
-                        </FormLabel>
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-xs font-normal cursor-pointer">
+                            {permissionLabel(permission)}
+                          </FormLabel>
+                          {isAdminOnlyRight(permission) && (
+                            <p className="text-[11px] leading-tight text-muted-foreground" data-testid={`permission-admin-only-${permission}`}>
+                              {t('usersDialog.adminOnlyRight')}
+                            </p>
+                          )}
+                          <PermissionNeeds permission={permission} held={heldRights} />
+                        </div>
                       </FormItem>
                     )}
                   />
