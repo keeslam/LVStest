@@ -1,4 +1,12 @@
-// Multi-language email templates
+// Multi-language email templates. D15: the closing name is the company name setting; callers pass it
+// (services/company-name.ts), the default keeps a call without it the way it always read.
+import { DEFAULT_COMPANY_NAME } from '../../shared/company-name';
+
+/** The name goes into HTML; it is admin-typed text, so it is escaped there. */
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 type Language = 'nl' | 'en';
 
 interface EmailTemplate {
@@ -12,7 +20,8 @@ export function getApkReminderTemplate(
   customerName: string,
   vehiclePlate: string,
   expiryDate: string,
-  language: Language = 'nl'
+  language: Language = 'nl',
+  companyName: string = DEFAULT_COMPANY_NAME
 ): EmailTemplate {
   if (language === 'en') {
     return {
@@ -27,7 +36,7 @@ export function getApkReminderTemplate(
           </div>
           <p>Please schedule your APK inspection as soon as possible to ensure your vehicle remains roadworthy and legal.</p>
           <p>If you have any questions, please don't hesitate to contact us.</p>
-          <p>Best regards,<br>Autolease Lam</p>
+          <p>Best regards,<br>${escapeHtml(companyName)}</p>
         </div>
       `,
       text: `Dear ${customerName},
@@ -41,7 +50,7 @@ Please schedule your APK inspection as soon as possible to ensure your vehicle r
 If you have any questions, please don't hesitate to contact us.
 
 Best regards,
-Autolease Lam`
+${companyName}`
     };
   }
 
@@ -58,7 +67,7 @@ Autolease Lam`
         </div>
         <p>Plan uw APK-keuring zo snel mogelijk in om ervoor te zorgen dat uw voertuig veilig en legaal blijft.</p>
         <p>Als u vragen heeft, aarzel dan niet om contact met ons op te nemen.</p>
-        <p>Met vriendelijke groet,<br>Autolease Lam</p>
+        <p>Met vriendelijke groet,<br>${escapeHtml(companyName)}</p>
       </div>
     `,
     text: `Beste ${customerName},
@@ -72,7 +81,7 @@ Plan uw APK-keuring zo snel mogelijk in om ervoor te zorgen dat uw voertuig veil
 Als u vragen heeft, aarzel dan niet om contact met ons op te nemen.
 
 Met vriendelijke groet,
-Autolease Lam`
+${companyName}`
   };
 }
 
@@ -81,7 +90,8 @@ export function getMaintenanceReminderTemplate(
   customerName: string,
   vehiclePlate: string,
   maintenanceType: string,
-  language: Language = 'nl'
+  language: Language = 'nl',
+  companyName: string = DEFAULT_COMPANY_NAME
 ): EmailTemplate {
   if (language === 'en') {
     return {
@@ -95,7 +105,7 @@ export function getMaintenanceReminderTemplate(
             <p style="margin: 0;"><strong>Maintenance Type:</strong> ${maintenanceType}</p>
           </div>
           <p>Please contact us to schedule an appointment at your earliest convenience.</p>
-          <p>Best regards,<br>Autolease Lam</p>
+          <p>Best regards,<br>${escapeHtml(companyName)}</p>
         </div>
       `,
       text: `Dear ${customerName},
@@ -107,7 +117,7 @@ Maintenance Type: ${maintenanceType}
 Please contact us to schedule an appointment at your earliest convenience.
 
 Best regards,
-Autolease Lam`
+${companyName}`
     };
   }
 
@@ -123,7 +133,7 @@ Autolease Lam`
           <p style="margin: 0;"><strong>Type Onderhoud:</strong> ${maintenanceType}</p>
         </div>
         <p>Neem contact met ons op om zo spoedig mogelijk een afspraak in te plannen.</p>
-        <p>Met vriendelijke groet,<br>Autolease Lam</p>
+        <p>Met vriendelijke groet,<br>${escapeHtml(companyName)}</p>
       </div>
     `,
     text: `Beste ${customerName},
@@ -135,7 +145,7 @@ Type Onderhoud: ${maintenanceType}
 Neem contact met ons op om zo spoedig mogelijk een afspraak in te plannen.
 
 Met vriendelijke groet,
-Autolease Lam`
+${companyName}`
   };
 }
 
@@ -146,7 +156,8 @@ export function getCustomMessageTemplate(
   vehiclePlate: string,
   message: string,
   language: Language = 'nl',
-  customSubject?: string
+  customSubject?: string,
+  companyName: string = DEFAULT_COMPANY_NAME
 ): EmailTemplate {
   if (language === 'en') {
     return {
@@ -160,7 +171,7 @@ export function getCustomMessageTemplate(
             <p style="margin: 0;">${message}</p>
           </div>
           <p>If you have any questions, please don't hesitate to contact us.</p>
-          <p>Best regards,<br>Autolease Lam</p>
+          <p>Best regards,<br>${escapeHtml(companyName)}</p>
         </div>
       `,
       text: `Dear ${customerName},
@@ -172,7 +183,7 @@ ${message}
 If you have any questions, please don't hesitate to contact us.
 
 Best regards,
-Autolease Lam`
+${companyName}`
     };
   }
 
@@ -188,7 +199,7 @@ Autolease Lam`
           <p style="margin: 0;">${message}</p>
         </div>
         <p>Als u vragen heeft, aarzel dan niet om contact met ons op te nemen.</p>
-        <p>Met vriendelijke groet,<br>Autolease Lam</p>
+        <p>Met vriendelijke groet,<br>${escapeHtml(companyName)}</p>
       </div>
     `,
     text: `Beste ${customerName},
@@ -200,6 +211,6 @@ ${message}
 Als u vragen heeft, aarzel dan niet om contact met ons op te nemen.
 
 Met vriendelijke groet,
-Autolease Lam`
+${companyName}`
   };
 }

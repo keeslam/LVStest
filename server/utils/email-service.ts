@@ -3,6 +3,11 @@ import nodemailer from "nodemailer";
 import { db } from "../db";
 import { emailLogs } from "../../shared/schema";
 import { EMAIL_FAILURE_CODES, withFailureCode } from "../../shared/email-failure";
+import { companyName } from "../services/company-name";
+
+/** The company name is admin-typed text; in the HTML half of a mail it is escaped. */
+const escapeHtmlText = (value: string): string =>
+  value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 export interface EmailAttachment {
   filename: string;
@@ -188,7 +193,8 @@ async function getEmailConfig(purpose?: 'apk' | 'maintenance' | 'gps' | 'documen
 
     const config: EmailConfig = {
       fromEmail: value.fromEmail,
-      fromName: value.fromName || 'Autolease Lam',
+      // D15: the company name setting, unless this configuration names a sender itself.
+      fromName: value.fromName || companyName(),
       smtpHost: value.smtpHost,
       smtpPort,
       smtpUser: value.smtpUser,
@@ -511,7 +517,7 @@ export const EmailTemplates = {
           <p style="margin: 0;"><strong>APK Expiry Date:</strong> ${expiryDate}</p>
         </div>
         <p>Please schedule your APK inspection as soon as possible to ensure your vehicle remains roadworthy and legal.</p>
-        <p>Best regards,<br>Autolease Lam</p>
+        <p>Best regards,<br>${escapeHtmlText(companyName())}</p>
       </div>
     `,
     text: `Dear ${customerName},
@@ -523,7 +529,7 @@ APK Expiry Date: ${expiryDate}
 Please schedule your APK inspection as soon as possible to ensure your vehicle remains roadworthy and legal.
 
 Best regards,
-Autolease Lam`
+${companyName()}`
   }),
   
   maintenanceReminder: (customerName: string, vehiclePlate: string, maintenanceType: string) => ({
@@ -537,7 +543,7 @@ Autolease Lam`
           <p style="margin: 0;"><strong>Maintenance Type:</strong> ${maintenanceType}</p>
         </div>
         <p>Please contact us to schedule your maintenance appointment.</p>
-        <p>Best regards,<br>Autolease Lam</p>
+        <p>Best regards,<br>${escapeHtmlText(companyName())}</p>
       </div>
     `,
     text: `Dear ${customerName},
@@ -549,7 +555,7 @@ Maintenance Type: ${maintenanceType}
 Please contact us to schedule your maintenance appointment.
 
 Best regards,
-Autolease Lam`
+${companyName()}`
   }),
   
   customMessage: (customerName: string, vehiclePlate: string, message: string) => ({
@@ -563,7 +569,7 @@ Autolease Lam`
           <p style="margin: 0;">${message}</p>
         </div>
         <p>If you have any questions, please don't hesitate to contact us.</p>
-        <p>Best regards,<br>Autolease Lam</p>
+        <p>Best regards,<br>${escapeHtmlText(companyName())}</p>
       </div>
     `,
     text: `Dear ${customerName},
@@ -575,6 +581,6 @@ ${message}
 If you have any questions, please don't hesitate to contact us.
 
 Best regards,
-Autolease Lam`
+${companyName()}`
   })
 };

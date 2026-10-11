@@ -350,7 +350,15 @@
       "timeZoneHint": "Default Europe/Amsterdam. After saving, the nightly jobs (backup, APK scan, fiscal run, notifications, mailboxes) reschedule themselves.",
       "timeZoneSaveButton": "Save time zone",
       "timeZoneSaved": "The app now uses {{zone}}.",
-      "timeZoneSaveFailed": "The time zone could not be saved."
+      "timeZoneSaveFailed": "The time zone could not be saved.",
+      "companyNameTitle": "Company name",
+      "companyNameDescription": "The name the app mails under: at the bottom of the reminders, as the default sender name, in the portal mails and in the {companyName} placeholder of message templates.",
+      "companyNameLabel": "Company name",
+      "companyNameHelp": "One name for all mails. Until you save one, this is Autolease Lam. A sender name filled in under the e-mail settings still takes precedence.",
+      "companyNameSaveButton": "Save company name",
+      "companyNameSaved": "The company name has been saved.",
+      "companyNameInvalid": "Enter a name of at most 100 characters, without line breaks.",
+      "companyNameSaveFailed": "The company name could not be saved."
     },
     "notifications": {
       "reminderTimingTitle": "Reminder Timing",

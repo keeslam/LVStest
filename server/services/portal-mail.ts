@@ -12,6 +12,7 @@ import { fillPlaceholders } from "../../shared/message-placeholders";
 import { formatDateNL, formatNumberNL } from "../utils/dutch-format";
 import { formatLicensePlate } from "../../shared/license-plate";
 import { officeTimeZone } from "./office-time";
+import { companyName } from "./company-name";
 
 export const PORTAL_TEMPLATE = {
   INVITE: "portal_invite",
@@ -34,40 +35,40 @@ export const PORTAL_TEMPLATE = {
 const DEFAULT_TEMPLATES: Array<{ name: string; subject: string; content: string }> = [
   {
     name: PORTAL_TEMPLATE.INVITE,
-    subject: "Uw account voor het klantenportaal van Lam Groep",
+    subject: "Uw account voor het klantenportaal van {{companyName}}",
     content: `<p>Beste {{name}},</p>
-<p>Er is een account voor u aangemaakt in het klantenportaal van Lam Groep voor {{company}}.</p>
+<p>Er is een account voor u aangemaakt in het klantenportaal van {{companyName}} voor {{company}}.</p>
 <p>Kies uw wachtwoord via deze link (72 uur geldig):</p>
 <p><a href="{{link}}">{{link}}</a></p>
-<p>Met vriendelijke groet,<br>Lam Groep</p>`,
+<p>Met vriendelijke groet,<br>{{companyName}}</p>`,
   },
   {
     name: PORTAL_TEMPLATE.EMAIL_CHANGE,
-    subject: "Bevestig uw nieuwe e-mailadres - klantenportaal Lam Groep",
+    subject: "Bevestig uw nieuwe e-mailadres - klantenportaal {{companyName}}",
     content: `<p>Beste {{name}},</p>
-<p>U heeft gevraagd om het e-mailadres van uw account in het klantenportaal van Lam Groep te wijzigen naar {{newEmail}}.</p>
+<p>U heeft gevraagd om het e-mailadres van uw account in het klantenportaal van {{companyName}} te wijzigen naar {{newEmail}}.</p>
 <p>Bevestig dit via deze link (72 uur geldig):</p>
 <p><a href="{{link}}">{{link}}</a></p>
 <p>Heeft u dit niet aangevraagd, dan kunt u deze e-mail negeren; uw huidige adres blijft dan in gebruik.</p>
-<p>Met vriendelijke groet,<br>Lam Groep</p>`,
+<p>Met vriendelijke groet,<br>{{companyName}}</p>`,
   },
   {
     name: PORTAL_TEMPLATE.NEW_DEVICE,
     subject: "Nieuwe aanmelding op uw klantenportaal-account",
     content: `<p>Beste {{name}},</p>
-<p>Er is zojuist ingelogd op uw account van het klantenportaal van Lam Groep vanaf een browser of apparaat dat we nog niet kenden.</p>
+<p>Er is zojuist ingelogd op uw account van het klantenportaal van {{companyName}} vanaf een browser of apparaat dat we nog niet kenden.</p>
 <p>Tijdstip: {{at}}<br>Browser: {{ua}}<br>IP-adres: {{ip}}</p>
-<p>Was u dit zelf? Dan hoeft u niets te doen. Herkent u dit niet, wijzig dan direct uw wachtwoord in het portaal en neem contact op met Lam Groep.</p>
-<p>Met vriendelijke groet,<br>Lam Groep</p>`,
+<p>Was u dit zelf? Dan hoeft u niets te doen. Herkent u dit niet, wijzig dan direct uw wachtwoord in het portaal en neem contact op met {{companyName}}.</p>
+<p>Met vriendelijke groet,<br>{{companyName}}</p>`,
   },
   {
     name: PORTAL_TEMPLATE.RESET,
-    subject: "Wachtwoord opnieuw instellen - klantenportaal Lam Groep",
+    subject: "Wachtwoord opnieuw instellen - klantenportaal {{companyName}}",
     content: `<p>Beste {{name}},</p>
 <p>Via deze link stelt u een nieuw wachtwoord in (72 uur geldig):</p>
 <p><a href="{{link}}">{{link}}</a></p>
 <p>Heeft u dit niet aangevraagd, dan kunt u deze e-mail negeren.</p>
-<p>Met vriendelijke groet,<br>Lam Groep</p>`,
+<p>Met vriendelijke groet,<br>{{companyName}}</p>`,
   },
   {
     name: PORTAL_TEMPLATE.STAFF,
@@ -84,7 +85,7 @@ const DEFAULT_TEMPLATES: Array<{ name: string; subject: string; content: string 
 <p>Er is een bekeuring op naam van {{company}} verwerkt:</p>
 <p>Kenteken {{plate}}, {{date}}<br>{{description}}<br>Bedrag <strong>€ {{amount}}</strong></p>
 <p>Bekijk de bekeuring in het klantenportaal: <a href="{{link}}">{{link}}</a></p>
-<p>Met vriendelijke groet,<br>Lam Groep</p>`,
+<p>Met vriendelijke groet,<br>{{companyName}}</p>`,
   },
   {
     name: PORTAL_TEMPLATE.REQUEST_REPLIED,
@@ -93,7 +94,7 @@ const DEFAULT_TEMPLATES: Array<{ name: string; subject: string; content: string 
 <p>Wij hebben uw aanvraag ({{type}}) beantwoord:</p>
 <blockquote>{{reply}}</blockquote>
 <p>Status: {{status}}. Bekijk de aanvraag in het klantenportaal: <a href="{{link}}">{{link}}</a></p>
-<p>Met vriendelijke groet,<br>Lam Groep</p>`,
+<p>Met vriendelijke groet,<br>{{companyName}}</p>`,
   },
   {
     name: PORTAL_TEMPLATE.MAINTENANCE,
@@ -103,28 +104,28 @@ const DEFAULT_TEMPLATES: Array<{ name: string; subject: string; content: string 
 <p>Datum: {{date}}{{endDate}}</p>
 <p>Adres: {{pickupAddress}}<br>Openingstijden: {{openingHours}}</p>
 <p>In het klantenportaal ziet u de actuele status: <a href="{{link}}">{{link}}</a></p>
-<p>Met vriendelijke groet,<br>Lam Groep</p>`,
+<p>Met vriendelijke groet,<br>{{companyName}}</p>`,
   },
   {
     name: PORTAL_TEMPLATE.RESERVATION_CHANGED,
     subject: "Uw reservering is gewijzigd ({{plate}})",
     content: `<p>Beste {{name}},</p>
-<p>Lam Groep heeft uw reservering aangepast.</p>
+<p>{{companyName}} heeft uw reservering aangepast.</p>
 <p>{{changes}}</p>
 <p>Auto: {{car}}<br>Periode: {{period}}</p>
 <p>In het klantenportaal ziet u de actuele gegevens: <a href="{{link}}">{{link}}</a></p>
-<p>Klopt er iets niet? Neem dan contact op met Lam Groep.</p>
-<p>Met vriendelijke groet,<br>Lam Groep</p>`,
+<p>Klopt er iets niet? Neem dan contact op met {{companyName}}.</p>
+<p>Met vriendelijke groet,<br>{{companyName}}</p>`,
   },
   {
     name: PORTAL_TEMPLATE.RESERVATION_CANCELLED,
     subject: "Uw reservering is geannuleerd ({{plate}})",
     content: `<p>Beste {{name}},</p>
-<p>Lam Groep heeft uw reservering geannuleerd.</p>
+<p>{{companyName}} heeft uw reservering geannuleerd.</p>
 <p>Auto: {{car}}<br>Periode: {{period}}</p>
 <p>In het klantenportaal ziet u uw overige reserveringen: <a href="{{link}}">{{link}}</a></p>
-<p>Klopt dit niet? Neem dan contact op met Lam Groep.</p>
-<p>Met vriendelijke groet,<br>Lam Groep</p>`,
+<p>Klopt dit niet? Neem dan contact op met {{companyName}}.</p>
+<p>Met vriendelijke groet,<br>{{companyName}}</p>`,
   },
   {
     name: PORTAL_TEMPLATE.DOCUMENT_AVAILABLE,
@@ -133,15 +134,29 @@ const DEFAULT_TEMPLATES: Array<{ name: string; subject: string; content: string 
 <p>Er staat een nieuw document voor u klaar in het klantenportaal: {{document}} ({{fileName}}).</p>
 <p>Auto: {{car}}<br>Periode: {{period}}</p>
 <p>Bekijk en download het document hier: <a href="{{link}}">{{link}}</a></p>
-<p>Met vriendelijke groet,<br>Lam Groep</p>`,
+<p>Met vriendelijke groet,<br>{{companyName}}</p>`,
   },
 ];
 
+/** The text of a default template as earlier releases seeded it, before the name became {{companyName}}. */
+const LEGACY_COMPANY_NAME = "Lam Groep";
+const legacyText = (text: string): string => text.split("{{companyName}}").join(LEGACY_COMPANY_NAME);
+
 export async function ensurePortalEmailTemplates(): Promise<void> {
   for (const t of DEFAULT_TEMPLATES) {
-    const [existing] = await db.select({ id: emailTemplates.id }).from(emailTemplates).where(eq(emailTemplates.name, t.name));
-    if (existing) continue;
-    await db.insert(emailTemplates).values({ ...t, category: "portal", createdAt: new Date().toISOString() });
+    const [existing] = await db.select().from(emailTemplates).where(eq(emailTemplates.name, t.name));
+    if (!existing) {
+      await db.insert(emailTemplates).values({ ...t, category: "portal", createdAt: new Date().toISOString() });
+      continue;
+    }
+    // D15: a row that still reads exactly like the old default (the literal "Lam Groep") follows the
+    // company name setting from now on; a row staff edited is theirs and stays as it is.
+    const patch: { subject?: string; content?: string } = {};
+    if (t.subject.includes("{{companyName}}") && existing.subject === legacyText(t.subject)) patch.subject = t.subject;
+    if (t.content.includes("{{companyName}}") && existing.content === legacyText(t.content)) patch.content = t.content;
+    if (patch.subject !== undefined || patch.content !== undefined) {
+      await db.update(emailTemplates).set(patch).where(eq(emailTemplates.id, existing.id));
+    }
   }
 }
 
@@ -167,7 +182,8 @@ export function escapeHtml(value: string): string {
 // written with {name} (the template builder's style) is filled in as well as
 // one written with {{name}}. Unknown {{keys}} stay blank, as they always did.
 export function renderTemplate(content: string, vars: Record<string, string>): string {
-  return fillPlaceholders(content, vars, { unknown: "blank", transform: (value) => escapeHtml(value) });
+  // D15: {{companyName}} is the company name setting in every template; a caller's own value wins.
+  return fillPlaceholders(content, { companyName: companyName(), ...vars }, { unknown: "blank", transform: (value) => escapeHtml(value) });
 }
 
 /**
@@ -175,7 +191,7 @@ export function renderTemplate(content: string, vars: Record<string, string>): s
  * `&amp;` would be read literally by every mail client.
  */
 export function renderTemplateText(content: string, vars: Record<string, string>): string {
-  return fillPlaceholders(content, vars, { unknown: "blank" });
+  return fillPlaceholders(content, { companyName: companyName(), ...vars }, { unknown: "blank" });
 }
 
 export async function getPortalTemplate(name: string): Promise<{ subject: string; content: string }> {

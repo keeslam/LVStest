@@ -13,6 +13,7 @@ import {
   getMaintenanceReminderTemplate,
   getCustomMessageTemplate 
 } from '../utils/email-templates-i18n.js';
+import { getCompanyName } from '../services/company-name.js';
 
 // Helper function to replace placeholders in template strings. Audit A-13-6:
 // both styles ({customerName} from the template builder, {{customerName}} as
@@ -230,6 +231,9 @@ router.post('/send', async (req, res) => {
       errors: [] as string[]
     };
 
+    // D15: the company name setting closes every reminder.
+    const senderName = await getCompanyName();
+
     // Send emails
     for (const data of vehicleData) {
       const vehicle = data.vehicle;
@@ -314,7 +318,8 @@ router.post('/send', async (req, res) => {
               placeholderData.customerName,
               formattedPlate,
               placeholderData.apkDate || 'Unknown',
-              customerLanguage
+              customerLanguage,
+              senderName
             );
             break;
           case 'maintenance':
@@ -322,7 +327,8 @@ router.post('/send', async (req, res) => {
               placeholderData.customerName,
               formattedPlate,
               'Regular Service', // You could make this dynamic based on vehicle data
-              customerLanguage
+              customerLanguage,
+              senderName
             );
             break;
           case 'custom':
@@ -335,7 +341,8 @@ router.post('/send', async (req, res) => {
               formattedPlate,
               processedMessage,
               customerLanguage,
-              processedSubject  // Pass the custom subject
+              processedSubject,  // Pass the custom subject
+              senderName
             );
             break;
           default:

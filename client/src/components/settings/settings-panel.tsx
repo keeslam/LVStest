@@ -15,6 +15,7 @@ import { RdwTypeRemapCard } from "@/components/settings/rdw-type-remap-card";
 // WAVE 15 item 3 — besluit B-24's office address finally has a field.
 import { OfficeNotificationEmail } from "@/components/settings/office-notification-email";
 import { OfficeTimeZoneCard } from "@/components/settings/office-timezone-card";
+import { CompanyNameCard } from "@/components/settings/company-name-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -1048,6 +1049,9 @@ export function SettingsPanel() {
 
           {/* D11: the office time zone (app setting office_timezone) */}
           <OfficeTimeZoneCard />
+
+          {/* D15: the company name for every mail (app setting company_name) */}
+          <CompanyNameCard />
         </TabsContent>
 
         {/* Notifications Tab */}

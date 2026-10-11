@@ -350,7 +350,15 @@
       "timeZoneHint": "Standaard Europe/Amsterdam. Na opslaan plannen de nachtelijke taken (back-up, APK-scan, fiscale run, meldingen, postvakken) zichzelf opnieuw in.",
       "timeZoneSaveButton": "Tijdzone opslaan",
       "timeZoneSaved": "De app rekent nu met {{zone}}.",
-      "timeZoneSaveFailed": "De tijdzone kon niet worden opgeslagen."
+      "timeZoneSaveFailed": "De tijdzone kon niet worden opgeslagen.",
+      "companyNameTitle": "Bedrijfsnaam",
+      "companyNameDescription": "De naam waaronder de app mailt: onderaan de herinneringen, als standaard afzendernaam, in de portaalmails en in de plekhouder {companyName} van berichtsjablonen.",
+      "companyNameLabel": "Bedrijfsnaam",
+      "companyNameHelp": "Eén naam voor alle mails. Zolang je niets opslaat, is dit Autolease Lam. Een afzendernaam die bij de e-mailinstellingen is ingevuld, blijft voorgaan.",
+      "companyNameSaveButton": "Bedrijfsnaam opslaan",
+      "companyNameSaved": "De bedrijfsnaam is opgeslagen.",
+      "companyNameInvalid": "Vul een naam in van maximaal 100 tekens, zonder regeleinden.",
+      "companyNameSaveFailed": "De bedrijfsnaam kon niet worden opgeslagen."
     },
     "notifications": {
       "reminderTimingTitle": "Timing van herinneringen",

@@ -16,6 +16,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { customers, reservations, type Reservation } from "../../shared/schema";
 import { storage } from "../storage";
+import { loadCompanyName } from "../services/company-name";
 import { portalStorage } from "../services/portal-storage";
 import { onReservationChangedByStaff, onDocumentAvailable } from "../services/portal-reservation-events";
 import { withSmtpStub, decodeBody, type CapturedMessage } from "./helpers/smtpStub";
@@ -25,9 +26,15 @@ import {
 } from "./portal-helpers";
 
 let customerId: number, vehicleId: number, otherVehicleId: number, customerEmail: string;
+let previousCompanyName: Awaited<ReturnType<typeof storage.getAppSettingByKey>>;
 
 beforeAll(async () => {
   await cleanupPortalTestData();
+  // D15: the mails name the company from the company_name setting; these assertions are about "Lam Groep".
+  previousCompanyName = await storage.getAppSettingByKey("company_name");
+  if (previousCompanyName) await storage.updateAppSetting(previousCompanyName.id, { value: "Lam Groep" as any });
+  else await storage.createAppSetting({ key: "company_name", value: "Lam Groep", category: "business", description: "FIXT" } as any);
+  await loadCompanyName();
   customerId = (await createTestCustomer("B06Mail")).id;
   customerEmail = `b06mail-${customerId}@${TEST_EMAIL_DOMAIN}`;
   await db.update(customers).set({ email: customerEmail }).where(eq(customers.id, customerId));
@@ -38,7 +45,13 @@ beforeAll(async () => {
   otherVehicleId = (await createTestVehicle()).id;
 }, 60_000);
 
-afterAll(cleanupPortalTestData);
+afterAll(async () => {
+  const row = await storage.getAppSettingByKey("company_name");
+  if (row && previousCompanyName) await storage.updateAppSetting(row.id, { value: previousCompanyName.value as any });
+  else if (row) await storage.deleteAppSetting(row.id);
+  await loadCompanyName();
+  await cleanupPortalTestData();
+});
 
 const rental = async (patch: Partial<Reservation> = {}): Promise<Reservation> => {
   const row = await createTestReservation({

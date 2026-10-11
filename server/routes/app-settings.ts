@@ -23,6 +23,8 @@ import type { Express } from "express";
 import type { RouteDeps } from "./deps";
 import { INVALID_OFFICE_TIMEZONE_CODE, OFFICE_TIMEZONE_KEY, isValidTimeZone } from "../../shared/office-timezone";
 import { loadOfficeTimeZone } from "../services/office-time";
+import { COMPANY_NAME_KEY, INVALID_COMPANY_NAME_CODE, validCompanyName } from "../../shared/company-name";
+import { loadCompanyName } from "../services/company-name";
 
 // Moved verbatim out of server/routes.ts (registerRoutes) - see git history for context.
 export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
@@ -86,12 +88,17 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
         : value && typeof value === "object" ? (value as { timeZone?: unknown }).timeZone : undefined;
       if (!isValidTimeZone(zone)) return { message: "That is not a time zone", code: INVALID_OFFICE_TIMEZONE_CODE };
     }
+    // D15: the name goes into mail headers and subjects.
+    if (key === COMPANY_NAME_KEY && validCompanyName(value) === null) {
+      return { message: "That is not an acceptable company name", code: INVALID_COMPANY_NAME_CODE };
+    }
     return null;
   }
 
   /** D11: a stored key the server keeps in memory is re-read at once, so the cache is empty after a save. */
   async function afterSettingWritten(key: unknown): Promise<void> {
     if (key === OFFICE_TIMEZONE_KEY) await loadOfficeTimeZone();
+    if (key === COMPANY_NAME_KEY) await loadCompanyName();
   }
 
   // Get all app settings

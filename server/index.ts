@@ -16,6 +16,7 @@ import { ensureFiscalDraftVersion } from "./services/fiscal/seed";
 import { backfillUsagePeriods, reconcileUsagePeriods } from "./services/fiscal/usage-periods";
 import { startCjibScheduler } from "./services/cjib/poller";
 import { loadOfficeTimeZone } from "./services/office-time";
+import { loadCompanyName } from "./services/company-name";
 import { startInvoiceInboxScheduler, stopInvoiceInboxScheduler } from "./services/invoice-inbox/poller";
 import { registerPortalRoutes } from "./routes/portal";
 import { getUploadsDir as getPortalUploadsDir } from "../shared/paths";
@@ -504,6 +505,8 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 
 // D11: the office time zone (app setting) is read before any scheduler creates its task in it.
 await loadOfficeTimeZone();
+// D15: and the company name that every mail carries.
+await loadCompanyName();
 
 // Initialize backup scheduler
 backupScheduler = new BackupScheduler();
