@@ -516,6 +516,15 @@ Per besluit wat er is gebouwd:
 - App-instellingen → Voertuigen → RDW-voertuigtypes: "Controleren" draaien en de lijst bekijken **vóór** "Toepassen".
 - De B-22-stappen uit docs/superpowers/specs/2026-10-11-timestamptz-kolommen.md (back-up, kopie, rapport, onderhoudsvenster, `TIMESTAMPTZ_MIGRATION=apply` één keer, drie bekende tijden controleren). Dat blijft een aparte actie met Kees erbij.
 
+### B-44 — Bekeuringen zonder eigen menu-item (11-10-2026)
+
+Kees: "bekeuringen hoeft geen aparte tab te zijn, ze worden toch per klant opgeslagen en ingevoerd via het klantenportaal. De pagina moet bereikbaar blijven, maar alleen op de pagina van het klantenportaal onder een knop."
+
+- Het menu-item **Bekeuringen** (A-R-1) verdwijnt. De pagina /fines blijft bestaan, met dezelfde rechten (Boetes bekijken of Boetes beheren) in shared/page-access.ts, en blijft per adres bereikbaar.
+- Op de pagina **Klantenportaal** komt bovenaan een knop **Bekeuringen** (`button-open-fines`) die naar /fines gaat. Zonder een boetevinkje staat de knop grijs met het ontbrekende recht genoemd (B-27). De tegel en het venster Bekeuringen op het portaaldashboard blijven zoals ze zijn.
+- **Gevolg, door Kees aanvaard:** een medewerker die alleen Boetes bekijken of Boetes beheren heeft en geen vinkje voor het klantenportaal, kan de lijst niet meer openen, ook niet vanuit het menu, want de pagina Klantenportaal is voor hem dicht.
+- Handleiding: 2.1, 2.6, 10, 13.11, 15.4, Wat is er nieuw en de acceptatiechecklist volgen dit besluit.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).
