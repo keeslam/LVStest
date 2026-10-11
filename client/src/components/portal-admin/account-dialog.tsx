@@ -106,25 +106,7 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children, 
     save.mutate();
   }
 
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
-      <DialogContent>
-        <DialogHeader><DialogTitle>{t("admin.dialog.title")}</DialogTitle></DialogHeader>
-        <form onSubmit={submit} className="space-y-3">
-          {needsPicker && (
-            <div className="space-y-1">
-              <Label htmlFor="pa-customer-search">{t("admin.dialog.customer")}</Label>
-              <Input id="pa-customer-search" placeholder={t("admin.dialog.customerSearch")} value={customerSearch} onChange={(e) => setCustomerSearch(e.target.value)} />
-              <select id="pa-customer" className="w-full rounded-md border px-3 py-2 text-sm" size={6} value={customerId ?? ""}
-                onChange={(e) => { setCustomerId(e.target.value ? Number(e.target.value) : null); setDriverId(""); }} data-testid="select-portal-customer">
-                {/* Holds the "no customer yet" value. Without it React marks the first customer as chosen,
-                    and clicking that customer changes nothing. */}
-                <option value="" hidden />
-                {customerOptions.map((c) => <option key={c.id} value={c.id}>{c.companyName || c.name}{c.debtorNumber ? ` (${c.debtorNumber})` : ""}</option>)}
-              </select>
-            </div>
-          )}
+  const accountFields = (<>
           <div>
             <Label htmlFor="pa-email">{t("admin.dialog.email")}</Label>
             <Input id="pa-email" type="email" value={email} disabled={Boolean(account)} onChange={(e) => { setEmail(e.target.value); setAutoFilled((a) => ({ ...a, email: false })); }} required data-testid="input-account-email" />
@@ -147,6 +129,8 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children, 
                 hintText={(shown, total) => t("admin.fines.dialog.moreCustomers", { shown, total })} searchFrom={6} testId="account-driver-picker" />
             </div>
           )}
+</>);
+  const permissionsBox = (
           <div className="rounded-md border p-3">
             <div className="mb-2 flex items-center justify-between gap-2">
               <span className="text-sm font-medium">{t("admin.dialog.permissions")}</span>
@@ -163,6 +147,39 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children, 
                 </label>
               ))}
             </div>
+          </div>
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto" data-testid="dialog-portal-account">
+        <DialogHeader><DialogTitle>{t("admin.dialog.title")}</DialogTitle></DialogHeader>
+        <form onSubmit={submit} className="space-y-3">
+          {/* Wide screens: the customer picker on the left, the account fields and rights on the right,
+              so the dialog needs no scrolling at 1280x800. Narrow screens keep one column. Without a
+              picker (customer or account fixed) the fields go left and the rights right. */}
+          <div className="grid gap-x-6 gap-y-3 md:grid-cols-2">
+          <div className="space-y-3">
+          {needsPicker && (
+            <div className="space-y-1">
+              <Label htmlFor="pa-customer-search">{t("admin.dialog.customer")}</Label>
+              <Input id="pa-customer-search" placeholder={t("admin.dialog.customerSearch")} value={customerSearch} onChange={(e) => setCustomerSearch(e.target.value)} />
+              <select id="pa-customer" className="w-full rounded-md border px-3 py-2 text-sm" size={6} value={customerId ?? ""}
+                onChange={(e) => { setCustomerId(e.target.value ? Number(e.target.value) : null); setDriverId(""); }} data-testid="select-portal-customer">
+                {/* Holds the "no customer yet" value. Without it React marks the first customer as chosen,
+                    and clicking that customer changes nothing. */}
+                <option value="" hidden />
+                {customerOptions.map((c) => <option key={c.id} value={c.id}>{c.companyName || c.name}{c.debtorNumber ? ` (${c.debtorNumber})` : ""}</option>)}
+              </select>
+            </div>
+          )}
+          {!needsPicker && accountFields}
+          </div>
+          <div className="space-y-3">
+          {needsPicker && accountFields}
+          {permissionsBox}
+          </div>
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>{t("admin.dialog.cancel")}</Button>
