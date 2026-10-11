@@ -254,11 +254,13 @@ meer verzoeken kosten.
 | Account | begin staart | einde run |
 |---|---|---|
 | `admin` / `admin-b` | 781 / 360 (berekend) | 784 / 363 (berekend) |
-| `manager` / `manager-b` | 652 / 285 | 752 / 515 |
+| `manager` / `manager-b` | 652 / 285 | 752 / 581 (berekend) |
 | `user` / `user-b` | 761 / 158 | 764 / 161 |
 | `cleaner`, `viewer`, `accountant`, `maintenance` | 466, 542, 536, 544 | 469, 545, 539, 547 |
 
 Het verhaal *Onderhoud plannen afbreken* (`e2e/layer-b/maintenance/abort-planning.spec.ts`, deelproject D, 7 handelingen) draait als `manager` en kostte 35 `/api/`-verzoeken (gemeten op 11 oktober; de spec telt ze zelf en print `[verzoeken]`); het `manager`-getal van het einde van de run is daarmee van 717 naar 752 gegaan, nog onder de grens van 1000.
+
+Het verhaal *Nu ophalen na een reservering vanaf het dashboard* (`e2e/layer-b/reservations/pickup-now.spec.ts`, deelproject D, D3, 8 handelingen) draait als `manager-b`, de tweeling met de meeste ruimte, en kostte 66 `/api/`-verzoeken (gemeten op 11 oktober; de spec telt ze zelf en print `[verzoeken]`; het dashboard zelf is het grootste deel). Het maakt een eigen voertuig (E2E-PN-1) en een reservering aan via de snelle actie, klikt *Nu ophalen* in de melding en bewijst dat het ophaalvenster opent voor die reservering (kenteken en klant staan erin, de reservering is nog geboekt); daarna annuleert de spec zijn eigen reservering. Het `manager-b`-getal van het einde van de run gaat daarmee van 515 naar 581: een optelling van het gemeten aantal, geen nieuwe meting van een hele run; ruim onder de 800.
 
 De `admin-b`-getallen (313 / 316 gemeten op 9 oktober) zijn bijgewerkt met de 47 `/api/`-verzoeken van het documentenverhaal
 (`e2e/layer-b/documents/documents.spec.ts`, auditherstel P11), dat als `admin-b` draait: 360 / 363. Dat is een optelling van het
