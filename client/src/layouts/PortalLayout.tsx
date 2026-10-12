@@ -12,6 +12,17 @@ import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { LanguageToggle } from "@/components/portal/language-toggle";
 import { NotificationsBell } from "@/components/portal/notifications-bell";
 
+/** The document says which language it is in, and what it is, for screen readers, translation tools and the browser tab. */
+export function usePortalDocumentMeta() {
+  const { t, i18n } = useTranslation("portal");
+  useEffect(() => {
+    const previous = { lang: document.documentElement.lang, title: document.title };
+    document.documentElement.lang = (i18n.language || "nl").slice(0, 2);
+    document.title = t("pageTitle");
+    return () => { document.documentElement.lang = previous.lang; document.title = previous.title; };
+  }, [i18n.language, t]);
+}
+
 /** Tells the embedding website how tall the document is, so the iframe can grow. */
 export function usePortalHeightReporter(routeKey?: string) {
   useEffect(() => {
@@ -166,6 +177,7 @@ export function PortalLayout({ children }: { children: ReactNode }) {
   const [location, navigate] = useLocation();
   const greeting = useGreeting();
   usePortalHeightReporter(location);
+  usePortalDocumentMeta();
   const embedded = isEmbedded();
 
   const isPublicPage = location.startsWith("/login") || location.startsWith("/activeren") || location.startsWith("/email-bevestigen");

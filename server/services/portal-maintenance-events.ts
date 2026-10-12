@@ -7,6 +7,7 @@ import { sendMaintenanceMail } from "./portal-mail";
 import { officeTimeZone } from "./office-time";
 import { zonedDateTimeToInstant } from "../../shared/office-timezone";
 import { portalCompanyName } from "./company-name";
+import { vehicleName } from "../../shared/vehicle-name";
 
 export type MaintenanceEvent = "maintenance_planned" | "maintenance_moved" | "maintenance_in" | "maintenance_out" | "maintenance_cancelled"
   /** besluiten B-13 (BUG-139): the rental moved to another car, so the block is not theirs any more. */
@@ -77,7 +78,7 @@ export async function onMaintenanceBlockChanged(before: Reservation | null, afte
     if (!target) return null;
     const vehicle = block.vehicleId ? await storage.getVehicle(block.vehicleId) : undefined;
     if (!vehicle) return null;
-    const car = `${vehicle.brand} ${vehicle.model}`;
+    const car = `${vehicleName(vehicle.brand, vehicle.model)}`;
     const date = block.startDate, endDate = block.endDate ?? null;
     const tag = event === "maintenance_moved" ? `maint:${block.id}:moved:${date}:${endDate ?? ""}` : event === "maintenance_planned" ? `maint:${block.id}:planned:${date}` : `maint:${block.id}:${event.replace("maintenance_", "")}`;
     const description = {
@@ -184,7 +185,7 @@ export async function onRentalVehicleChanged(
         if (account) {
           const vehicle = block.vehicleId ? await storage.getVehicle(block.vehicleId) : undefined;
           if (vehicle) {
-            const car = `${vehicle.brand} ${vehicle.model}`;
+            const car = `${vehicleName(vehicle.brand, vehicle.model)}`;
             const created = await customerNotifications.notify({
               customerId: before.customerId,
               type: "maintenance_unlinked",
@@ -225,7 +226,7 @@ export async function onReplacementAssigned(replacement: Reservation): Promise<b
     if (!account) return false;
     const spare = await storage.getVehicle(replacement.vehicleId);
     if (!spare) return false;
-    const car = `${spare.brand} ${spare.model}`;
+    const car = `${vehicleName(spare.brand, spare.model)}`;
     const created = await customerNotifications.notify({
       customerId: rental.customerId, type: "replacement_ready", title: `Vervangend vervoer: ${spare.licensePlate}`,
       description: `${car} (${spare.licensePlate}) staat voor u klaar als vervangend vervoer vanaf ${replacement.startDate}${replacement.endDate ? ` tot en met ${replacement.endDate}` : ""}. Neem uw rijbewijs mee bij het ophalen.`,

@@ -57,7 +57,8 @@
     "forgotSubmit": "Herstel-link sturen",
     "forgotSent": "Als dit e-mailadres bekend is, is er een e-mail met een herstel-link verstuurd.",
     "backToLogin": "Terug naar inloggen",
-    "privacyNote": "Door in te loggen gaat u akkoord met het gebruik van uw gegevens zoals beschreven in onze"
+    "privacyNote": "Door in te loggen gaat u akkoord met het gebruik van uw gegevens zoals beschreven in onze",
+    "sessionExpired": "Uw sessie is verlopen omdat u een tijd niets heeft gedaan. Log opnieuw in om verder te gaan."
   },
   "activate": {
     "title": "Wachtwoord instellen",
@@ -139,7 +140,10 @@
     "ack": "Gezien en akkoord",
     "ackConfirm": "Bevestig dat u dit contract heeft gelezen en akkoord gaat. Uw naam en het tijdstip worden vastgelegd.",
     "ackDone": "Vastgelegd: gezien en akkoord.",
-    "ackedBy": "Akkoord door {{name}} op {{date}}"
+    "ackedBy": "Akkoord door {{name}} op {{date}}",
+    "ackConfirmTitle": "Akkoord geven?",
+    "ackConfirmAction": "Gezien en akkoord",
+    "contractNo": "contract {{nr}}"
   },
   "drivers": {
     "title": "Bestuurders",
@@ -269,7 +273,9 @@
       "billingAddress": "Straat",
       "billingPostalCode": "Postcode",
       "billingCity": "Plaats"
-    }
+    },
+    "confirmPassword": "Uw wachtwoord ter bevestiging",
+    "confirmPasswordHint": "Nodig omdat deze adressen bepalen waar facturen, bekeuringen en APK-berichten naartoe gaan."
   },
   "errors": {
     "PORTAL_NOT_AUTHENTICATED": "U bent niet ingelogd.",
@@ -292,7 +298,9 @@
     "PORTAL_DUPLICATE_REQUEST": "Er staat al een aanvraag open voor dit voertuig in deze periode.",
     "PORTAL_EMAIL_IN_USE": "Dit e-mailadres is al in gebruik bij een ander account.",
     "PORTAL_MAINTENANCE_TOO_LATE": "Dit onderhoud start binnen 48 uur en kan via het portaal niet meer worden gewijzigd. Bel Lam Groep.",
-    "PORTAL_MAINTENANCE_WEEKEND": "Kies een doordeweekse dag: de werkplaats is in het weekend gesloten."
+    "PORTAL_MAINTENANCE_WEEKEND": "Kies een doordeweekse dag: de werkplaats is in het weekend gesloten.",
+    "PORTAL_RATE_LIMITED": "Te veel verzoeken in korte tijd. Probeer het over een kwartier opnieuw.",
+    "PORTAL_TOO_MANY_OPEN": "U heeft al veel openstaande aanvragen. Wacht tot een aantal is afgehandeld of trek er een in."
   },
   "admin": {
     "navLabel": "Klantenportaal",
@@ -1254,7 +1262,9 @@
     "title": "Meldingen",
     "markAll": "Alles gelezen",
     "search": "Zoek in meldingen…",
-    "empty": "Geen meldingen. Hier ziet u antwoorden op aanvragen, nieuwe bekeuringen en waarschuwingen over APK en onderhoud."
+    "empty": "Geen meldingen. Hier ziet u antwoorden op aanvragen, nieuwe bekeuringen en waarschuwingen over APK en onderhoud.",
+    "titleUnread": "Meldingen, {{count}} ongelezen",
+    "unread": "Ongelezen"
   },
   "thread": {
     "title": "Berichten",
@@ -1321,5 +1331,17 @@
     "disclaimer": "Berekening op basis van de geconfigureerde fiscale regels en de beschikbare gegevens. Dit is geen fiscaal advies en geen aangifte; uw eigen adviseur of de Belastingdienst is leidend.",
     "pdf": "PDF",
     "csv": "CSV van dit jaar downloaden"
+  },
+  "pageTitle": "Klantenportaal",
+  "notFound": {
+    "title": "Deze pagina bestaat niet",
+    "body": "Het adres klopt niet of de pagina is verplaatst. Ga terug naar het overzicht om verder te gaan.",
+    "back": "Naar het overzicht"
+  },
+  "loading": "Laden…",
+  "loadError": {
+    "title": "De gegevens konden niet worden geladen.",
+    "body": "Dit is geen lege lijst: er ging iets mis bij het ophalen. Controleer uw verbinding en probeer het opnieuw.",
+    "retry": "Opnieuw proberen"
   }
 }

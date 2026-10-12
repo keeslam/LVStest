@@ -4,6 +4,8 @@ import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { getServiceDueVehicles } from "../utils/service-due-scanner";
 import { customerDisplayName } from "./customer-display-name";
 import { portalCompanyName } from "./company-name";
+import { formatDateNL } from "../utils/dutch-format";
+import { vehicleName } from "../../shared/vehicle-name";
 
 /** How far ahead the customer hears about an APK that is about to expire. */
 export const APK_WARNING_DAYS = 30;
@@ -61,26 +63,66 @@ export const customerNotifications = {
     return removed.length;
   },
 
-  async listForUser(customerId: number, portalUserId: number, limit = 100): Promise<PortalNotification[]> {
-    return db.select().from(portalNotifications)
+  /**
+   * What this account may see. An admin account sees all notifications of the customer, except the kinds whose
+   * feature is switched off for it (`allowType`). A driver account (`driverReservationIds` given) sees what was
+   * addressed to it personally and the company-wide notices that are about one of its own rentals; everything
+   * else (other drivers' cars, fines, requests, maintenance) is not for it.
+   */
+  async listForUser(customerId: number, portalUserId: number, limit = 100, viewer: NotificationViewer = {}): Promise<PortalNotification[]> {
+    const filtered = Boolean(viewer.driverReservationIds || viewer.allowType);
+    const rows = await db.select().from(portalNotifications)
       .where(and(eq(portalNotifications.customerId, customerId), or(isNull(portalNotifications.portalUserId), eq(portalNotifications.portalUserId, portalUserId))))
       .orderBy(desc(portalNotifications.createdAt), desc(portalNotifications.id))
-      .limit(limit);
+      .limit(filtered ? Math.max(limit, 500) : limit);
+    return filtered ? rows.filter((n) => visibleTo(n, portalUserId, viewer)).slice(0, limit) : rows;
   },
 
-  async countUnread(customerId: number, portalUserId: number): Promise<number> {
+  async countUnread(customerId: number, portalUserId: number, viewer: NotificationViewer = {}): Promise<number> {
+    if (viewer.driverReservationIds || viewer.allowType) return (await customerNotifications.listForUser(customerId, portalUserId, 500, viewer)).filter((n) => !n.isRead).length;
     const [row] = await db.select({ n: sql<number>`count(*)::int` }).from(portalNotifications)
       .where(and(eq(portalNotifications.customerId, customerId), eq(portalNotifications.isRead, false),
         or(isNull(portalNotifications.portalUserId), eq(portalNotifications.portalUserId, portalUserId))));
     return row?.n ?? 0;
   },
 
-  async markRead(customerId: number, ids: number[] | "all", portalUserId: number): Promise<void> {
+  async markRead(customerId: number, ids: number[] | "all", portalUserId: number, viewer: NotificationViewer = {}): Promise<void> {
+    if (viewer.driverReservationIds || viewer.allowType) {
+      // Only what this account may see can be marked, so ids of someone else's notices do nothing.
+      const mine = (await customerNotifications.listForUser(customerId, portalUserId, 500, viewer)).map((n) => n.id);
+      const target = ids === "all" ? mine : mine.filter((id) => ids.includes(id));
+      if (target.length) await db.update(portalNotifications).set({ isRead: true }).where(and(eq(portalNotifications.customerId, customerId), inArray(portalNotifications.id, target)));
+      return;
+    }
     const scope = and(eq(portalNotifications.customerId, customerId), or(isNull(portalNotifications.portalUserId), eq(portalNotifications.portalUserId, portalUserId)));
     await db.update(portalNotifications).set({ isRead: true })
       .where(ids === "all" ? scope : and(scope, inArray(portalNotifications.id, ids)));
   },
 };
+
+/** The reservation a notification points at (`/reserveringen/12`), or null for any other link. */
+function reservationOfLink(link: string | null): number | null {
+  const m = /^\/reserveringen\/(\d+)$/.exec(link ?? "");
+  return m ? Number(m[1]) : null;
+}
+
+/** What an account may see: see `customerNotifications.listForUser`. */
+export interface NotificationViewer {
+  /** Set for a driver account: the reservations it drives. Null/undefined = an admin account. */
+  driverReservationIds?: Set<number> | null;
+  /** False for a kind of notification whose feature is off for this account (fines, documents, requests). */
+  allowType?: (type: string) => boolean;
+}
+
+function visibleTo(n: PortalNotification, portalUserId: number, viewer: NotificationViewer): boolean {
+  if (viewer.allowType && !viewer.allowType(n.type)) return false;
+  const mine = viewer.driverReservationIds;
+  if (!mine) return true;
+  if (n.portalUserId === portalUserId) return true;
+  if (n.portalUserId !== null) return false;
+  const reservationId = reservationOfLink(n.link);
+  return reservationId !== null && mine.has(reservationId);
+}
 
 /** Customers that have a portal account: only they get vehicle alerts. */
 async function portalCustomerIds(): Promise<Set<number>> {
@@ -110,15 +152,15 @@ export async function scanVehicleAlertsForPortal(): Promise<{ apk: number; servi
 
   for (const r of onRoad) {
     if (!r.customerId || !customersWithPortal.has(r.customerId)) continue;
-    const car = `${r.brand} ${r.model} (${r.plate})`;
+    const car = `${vehicleName(r.brand, r.model)} (${r.plate})`;
     if (r.apkDate && r.apkDate <= horizon) {
       const expired = r.apkDate < today;
       const created = await customerNotifications.notify({
         customerId: r.customerId, type: expired ? "apk_expired" : "apk_due",
         title: expired ? `APK verlopen: ${r.plate}` : `APK verloopt binnenkort: ${r.plate}`,
         description: expired
-          ? `De APK van ${car} is verlopen op ${r.apkDate}. Neem contact op met ${portalCompanyName()} om een keuring in te plannen.`
-          : `De APK van ${car} verloopt op ${r.apkDate}. ${portalCompanyName()} plant de keuring; houd rekening met een moment zonder de auto.`,
+          ? `De APK van ${car} is verlopen op ${formatDateNL(r.apkDate)}. Neem contact op met ${portalCompanyName()} om een keuring in te plannen.`
+          : `De APK van ${car} verloopt op ${formatDateNL(r.apkDate)}. ${portalCompanyName()} plant de keuring; houd rekening met een moment zonder de auto.`,
         link: `/reserveringen/${r.reservationId}`, dedupeTag: `apk:${r.vehicleId}:${r.apkDate}`, dedupeDays: 30,
       });
       if (created) apk += 1;

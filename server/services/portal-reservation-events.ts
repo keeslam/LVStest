@@ -26,6 +26,7 @@ import { PORTAL_TEMPLATE, sendPortalCustomerMail } from "./portal-mail";
 import { formatDateNL } from "../utils/dutch-format";
 import { isContractDocument, isDamageCheckDocument } from "../../shared/document-types";
 import { portalCompanyName } from "./company-name";
+import { vehicleName } from "../../shared/vehicle-name";
 
 export type ReservationCustomerEvent = "reservation_changed" | "reservation_cancelled";
 
@@ -53,7 +54,7 @@ async function describeVehicle(vehicleId: number | null | undefined): Promise<{ 
   if (vehicleId == null) return { text: "nog geen auto toegewezen", plate: null };
   const vehicle = await storage.getVehicle(vehicleId);
   if (!vehicle) return { text: "nog geen auto toegewezen", plate: null };
-  return { text: `${vehicle.brand} ${vehicle.model} (${vehicle.licensePlate})`, plate: vehicle.licensePlate };
+  return { text: `${vehicleName(vehicle.brand, vehicle.model)} (${vehicle.licensePlate})`, plate: vehicle.licensePlate };
 }
 
 function classify(before: Reservation | null, after: Reservation | null): ReservationCustomerEvent | null {

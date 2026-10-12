@@ -9,6 +9,8 @@ import { portalFetch, portalQueryFn } from "@/lib/portal-api";
 import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { EmptyState, PageHeader, Plate, Section, btnPrimary } from "@/components/portal/ui";
 import { Button } from "@/components/ui/button";
+import { vehicleName } from "@shared/vehicle-name";
+import { formatDateNl } from "@/lib/format-date-nl";
 
 const KEY = ["portal", "/api/portal/fiscal/vehicles"] as const;
 
@@ -82,8 +84,8 @@ function UsageQuestions({ period, isAdmin }: { period: PortalFiscalPeriodDto; is
     period.confirmedByKind === "none"
       ? t("fiscal.notConfirmed")
       : period.confirmedByKind === "staff"
-        ? t("fiscal.confirmedByLam", { date: period.confirmedAt ? new Date(period.confirmedAt).toLocaleDateString("nl-NL") : "" })
-        : t("fiscal.confirmed", { name: t("fiscal.questions").toLowerCase() === "" ? "" : "u", date: period.confirmedAt ? new Date(period.confirmedAt).toLocaleDateString("nl-NL") : "" });
+        ? t("fiscal.confirmedByLam", { date: period.confirmedAt ? formatDateNl(period.confirmedAt, "dd-MM-yyyy") : "" })
+        : t("fiscal.confirmed", { name: t("fiscal.questions").toLowerCase() === "" ? "" : "u", date: period.confirmedAt ? formatDateNl(period.confirmedAt, "dd-MM-yyyy") : "" });
 
   return (
     <div className="rounded-md border border-[#e2e8f0] bg-white p-3" data-testid={`usage-form-${period.reservationId}`}>
@@ -212,7 +214,7 @@ export default function PortalFiscalPage() {
       )}
       {!isLoading && vehicles.length === 0 && <EmptyState icon={<Calculator className="h-6 w-6" />} text={t("fiscal.none", { year: USAGE_PERIOD_DERIVATION_START.slice(0, 4) })} />}
       {vehicles.map((v) => (
-        <Section key={v.vehicleId} title={`${v.brand} ${v.model}`} count={v.periods.length}>
+        <Section key={v.vehicleId} title={`${vehicleName(v.brand, v.model)}`} count={v.periods.length}>
           <div className="mb-2"><Plate value={v.licensePlate} /></div>
           <div className="space-y-3">
             {v.periods.map((p) => (

@@ -1,3 +1,4 @@
+import { portalCompanyName } from "./company-name";
 import { db } from "../db";
 import {
   portalRequests, portalRequestAttachments, portalRequestMessages, type PortalRequestMessage, customers, portalUsers, reservations, vehicles,
@@ -46,7 +47,8 @@ export function toRequestDto(row: RequestRow, staff: boolean): PortalRequestDto 
     staffReply: row.staffReply, repliedAt: row.repliedAt?.toISOString() ?? null, createdAt: row.createdAt.toISOString(),
     submittedBy: row.submittedBy, reservationLabel: row.reservationLabel,
     attachments: row.attachments.map((a) => ({ id: a.id, fileName: a.fileName, contentType: a.contentType, fileSize: a.fileSize })),
-    messages: row.messages.map((m) => ({ id: m.id, author: m.author as "customer" | "staff", authorName: m.authorName, body: m.body, createdAt: m.createdAt.toISOString() })),
+    // The customer sees the company name for a staff reply, never the staff member's login name.
+    messages: row.messages.map((m) => ({ id: m.id, author: m.author as "customer" | "staff", authorName: m.author === "staff" && !staff ? portalCompanyName() : m.authorName, body: m.body, createdAt: m.createdAt.toISOString() })),
   };
   if (staff) { dto.customerId = row.customerId; dto.customerName = row.customerName; }
   return dto;
@@ -128,6 +130,22 @@ export const requestsStorage = {
     await db.delete(portalRequestAttachments).where(eq(portalRequestAttachments.requestId, id));
     await db.delete(portalRequests).where(eq(portalRequests.id, id));
     return atts;
+  },
+  /**
+   * Withdraws a request only while it still has `status`, in ONE statement: a staff member who took it a moment
+   * earlier wins, and nothing is lost. Returns the attachments to remove from disk, or null when it was not deleted.
+   */
+  async deleteRequestIfStatus(id: number, status: string): Promise<PortalRequestAttachment[] | null> {
+    return db.transaction(async (tx) => {
+      const atts = await tx.select().from(portalRequestAttachments).where(eq(portalRequestAttachments.requestId, id));
+      const gone = await tx.delete(portalRequests).where(and(eq(portalRequests.id, id), eq(portalRequests.status, status))).returning({ id: portalRequests.id });
+      return gone.length ? atts : null;
+    });
+  },
+  async countOpenForCustomer(customerId: number): Promise<number> {
+    const [r] = await db.select({ n: sql<number>`count(*)::int` }).from(portalRequests)
+      .where(and(eq(portalRequests.customerId, customerId), inArray(portalRequests.status, ["new", "in_progress"])));
+    return r?.n ?? 0;
   },
   async countNewRequests(): Promise<number> {
     const [r] = await db.select({ n: sql<number>`count(*)::int` }).from(portalRequests).where(eq(portalRequests.status, "new"));

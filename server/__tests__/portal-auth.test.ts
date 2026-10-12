@@ -76,6 +76,9 @@ describe("portal auth", () => {
     sendEmail.mockClear();
     expect((await request(app).post("/api/portal/forgot").send({ email })).status).toBe(200);
     expect((await request(app).post("/api/portal/forgot").send({ email: `ghost@${TEST_EMAIL_DOMAIN}` })).status).toBe(200);
+    // The mail is sent after the answer (a known address must not answer slower than an unknown one).
+    await vi.waitFor(() => expect(sendEmail).toHaveBeenCalledTimes(1));
+    await new Promise((r) => setTimeout(r, 100));
     expect(sendEmail).toHaveBeenCalledTimes(1);
   });
 
@@ -105,7 +108,13 @@ describe("portal auth", () => {
     const newEmail = `nieuw-adres@${TEST_EMAIL_DOMAIN}`;
     expect((await agent.post("/api/portal/me/email").set("X-CSRF-Token", csrf).send({ newEmail, currentPassword: "fout" })).body.code).toBe("PORTAL_INVALID_CREDENTIALS");
     const other = await portalStorage.createPortalUser({ customerId, email: `bezet@${TEST_EMAIL_DOMAIN}`, fullName: "Bezet", role: "admin" }, "t");
-    expect((await agent.post("/api/portal/me/email").set("X-CSRF-Token", csrf).send({ newEmail: other.email, currentPassword: password })).status).toBe(409);
+    // An address that belongs to another account is answered exactly like a free one (no way to find out who has an account), but no mail goes to it.
+    sendEmail.mockClear();
+    const takenAnswer = await agent.post("/api/portal/me/email").set("X-CSRF-Token", csrf).send({ newEmail: other.email, currentPassword: password });
+    expect(takenAnswer.status).toBe(200);
+    expect(takenAnswer.body).toEqual({ ok: true, pendingEmail: other.email.toLowerCase() });
+    expect(sendEmail).not.toHaveBeenCalled();
+    expect((await portalStorage.getPortalUser((await agent.get("/api/portal/me")).body.id))?.pendingEmail ?? null).toBeNull();
     const asked = await agent.post("/api/portal/me/email").set("X-CSRF-Token", csrf).send({ newEmail, currentPassword: password });
     expect(asked.status).toBe(200);
     expect(sendEmail).toHaveBeenCalledTimes(1);
@@ -120,13 +129,23 @@ describe("portal auth", () => {
     expect(confirmed.status).toBe(200);
     expect(confirmed.body.email).toBe(newEmail);
     expect((await request(app).post("/api/portal/email/confirm").send({ token })).body.code).toBe("PORTAL_TOKEN_INVALID");
-    expect((await agent.get("/api/portal/me")).body).toMatchObject({ email: newEmail, pendingEmail: null });
-    expect((await request(app).post("/api/portal/login").send({ email: newEmail, password })).status).toBe(200);
+    // A confirmed change of the login address ends every session of the account, and the old address is told.
+    expect((await agent.get("/api/portal/me")).status).toBe(401);
+    const notice = (sendEmail as any).mock.calls.map((c: any) => c[0]).find((m: any) => m.to === email);
+    expect(notice?.subject).toMatch(/gewijzigd/i);
+    expect(String(notice?.html)).toContain(newEmail);
+    const fresh = request.agent(app);
+    expect((await fresh.post("/api/portal/login").send({ email: newEmail, password })).status).toBe(200);
+    const freshMe = (await fresh.get("/api/portal/me")).body;
+    expect(freshMe).toMatchObject({ email: newEmail, pendingEmail: null });
     // Put the address back for the tests that follow.
-    await portalStorage.updatePortalUser((await agent.get("/api/portal/me")).body.id, { email });
+    await portalStorage.updatePortalUser(freshMe.id, { email });
+    const admin = request.agent(app);
+    expect((await admin.post("/api/portal/login").send({ email, password })).status).toBe(200);
+    const csrfAdmin = (await admin.get("/api/portal/csrf-token")).body.token as string;
 
     // Company addresses: admins edit them, the customer record changes, staff get a notification.
-    const saved = await agent.patch("/api/portal/me/company").set("X-CSRF-Token", csrf).send({ emailForMOT: `apk@${TEST_EMAIL_DOMAIN}`, emailForInvoices: `factuur@${TEST_EMAIL_DOMAIN}`, emailGeneral: "" });
+    const saved = await admin.patch("/api/portal/me/company").set("X-CSRF-Token", csrfAdmin).send({ emailForMOT: `apk@${TEST_EMAIL_DOMAIN}`, emailForInvoices: `factuur@${TEST_EMAIL_DOMAIN}`, emailGeneral: "", currentPassword: password });
     expect(saved.status).toBe(200);
     expect(saved.body.company).toMatchObject({ emailForMOT: `apk@${TEST_EMAIL_DOMAIN}`, emailForInvoices: `factuur@${TEST_EMAIL_DOMAIN}`, emailGeneral: null });
     expect((await storage.getCustomer(customerId))?.emailForMOT).toBe(`apk@${TEST_EMAIL_DOMAIN}`);
@@ -134,7 +153,13 @@ describe("portal auth", () => {
     const staffNote = (await storage.getUnreadCustomNotifications()).find((n) => n.type === "portal_customer_update" && n.link === `/customers/${customerId}`);
     expect(staffNote?.description).toContain("APK-adres");
     expect(staffNote?.description).not.toContain("emailForMOT");
-    expect((await agent.patch("/api/portal/me/company").set("X-CSRF-Token", csrf).send({ emailForMOT: "geen-adres" })).status).toBe(400);
+    expect((await admin.patch("/api/portal/me/company").set("X-CSRF-Token", csrfAdmin).send({ emailForMOT: "geen-adres", currentPassword: password })).status).toBe(400);
+    // Changing these addresses asks for the password again: without it, or with a wrong one, nothing changes.
+    expect((await admin.patch("/api/portal/me/company").set("X-CSRF-Token", csrfAdmin).send({ emailForInvoices: `omgeleid@${TEST_EMAIL_DOMAIN}` })).status).toBe(400);
+    const wrong = await admin.patch("/api/portal/me/company").set("X-CSRF-Token", csrfAdmin).send({ emailForInvoices: `omgeleid@${TEST_EMAIL_DOMAIN}`, currentPassword: "fout-wachtwoord" });
+    expect(wrong.status).toBe(400);
+    expect(wrong.body.code).toBe("PORTAL_INVALID_CREDENTIALS");
+    expect((await storage.getCustomer(customerId))?.emailForInvoices).toBe(`factuur@${TEST_EMAIL_DOMAIN}`);
   });
 
   it("driver-role users get their driver scope", async () => {

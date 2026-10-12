@@ -12,9 +12,10 @@ import { addressLookupHandler } from "./address-lookup";
 import { addressLookupLimiter } from "../middleware/security/rateLimiter.js";
 import { portalStorage, type PortalReservation } from "../services/portal-storage";
 import { overlaps, isWeekend } from "../services/booking-period";
-import { customerNotifications } from "../services/portal-customer-notifications";
+import { customerNotifications, type NotificationViewer } from "../services/portal-customer-notifications";
 import { getServiceDueVehicles } from "../utils/service-due-scanner";
-import { settingsFlags, requireFeature, requirePortalRole, portalError, logPortalActivity } from "../portal-auth";
+import { setSafeFileHeaders } from "../utils/portal-files";
+import { settingsFlags, requireFeature, requirePortalRole, portalError, logPortalActivity, type PortalRequestContext } from "../portal-auth";
 import { assignDriverToReservation, getDriverAssignments } from "../services/driver-assignments";
 import { notifyStaffOfPortalEvent } from "../services/portal-notifications";
 import { resolveDocumentFilePath, getRelativePath } from "../services/document-paths";
@@ -29,6 +30,7 @@ import { requestPayloadSchemas, REQUEST_NEEDS, PortalRequestType } from "../../s
 import { listMyVehicles } from "../services/portal-vehicles";
 import { findPortalCustomerForBlock, canCustomerChangeMaintenance } from "../services/portal-maintenance-events";
 import { installAsyncErrorHandling } from "../middleware/asyncHandler.js";
+import { vehicleName } from "../../shared/vehicle-name";
 
 export function toFineDto(f: FineListRow): PortalFineDto {
   return {
@@ -62,6 +64,30 @@ export function toReservationDto(r: PortalReservation, showPrices: boolean): Por
   // Prices are omitted entirely (not nulled) unless the customer's switch is on.
   if (showPrices) dto.totalPrice = r.totalPrice;
   return dto;
+}
+
+/** Streams a file; a read error ends the response instead of crashing the process. */
+function streamFile(file: string, res: import("express").Response): void {
+  const stream = fs.createReadStream(file);
+  stream.on("error", (error) => {
+    console.error("portal file stream failed:", error.message);
+    if (!res.headersSent) res.status(404).json({ code: PORTAL_ERROR.NOT_FOUND, message: "File not available" });
+    else res.destroy();
+  });
+  stream.pipe(res);
+}
+
+/**
+ * The history of who drove a rental: names and dates, plus the customer's own note. The staff user ids and the
+ * staff-written notes ("portal request #12") stay on the server.
+ */
+export function toDriverHistoryDto(rows: Array<{ id: number; driverId: number | null; driverName: string | null; assignedFrom: string | Date; assignedUntil: string | Date | null; note: string | null; assignedByPortalUserId: number | null }>) {
+  return rows.map((a) => ({
+    id: a.id, driverId: a.driverId, driverName: a.driverName,
+    assignedFrom: a.assignedFrom instanceof Date ? a.assignedFrom.toISOString() : a.assignedFrom,
+    assignedUntil: a.assignedUntil instanceof Date ? a.assignedUntil.toISOString() : a.assignedUntil,
+    note: a.assignedByPortalUserId ? a.note : null,
+  }));
 }
 
 export function toDriverDto(d: Driver): PortalDriverDto {
@@ -108,7 +134,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
   app.get("/api/portal/reservations", requirePortalUser, async (req, res) => {
     const ctx = ctxOf(req);
     const rows = await portalStorage.listReservationsForCustomer(ctx.customerId, ctx.scope);
-    res.json(rows.map((r) => toReservationDto(r, ctx.settings.showPrices)));
+    res.json(rows.map((r) => toReservationDto(r, settingsFlags(ctx.settings, ctx.user).showPrices)));
   });
 
   app.get("/api/portal/reservations/:id", requirePortalUser, async (req, res) => {
@@ -122,7 +148,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
       const due = (await getServiceDueVehicles()).find((v) => v.id === r.vehicleId);
       serviceDue = due?.serviceDue.isServiceDue ? "due" : due?.serviceDue.isServiceDueSoon ? "soon" : null;
     }
-    res.json({ ...toReservationDto(r, settingsFlags(ctx.settings, ctx.user).showPrices), driverHistory: history, serviceDue });
+    res.json({ ...toReservationDto(r, settingsFlags(ctx.settings, ctx.user).showPrices), driverHistory: toDriverHistoryDto(history), serviceDue });
   });
 
   app.post("/api/portal/reservations/:id/driver", requirePortalUser, requireFeature("canManageDrivers"), requirePortalRole("admin"), async (req, res) => {
@@ -150,7 +176,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
       customerId: ctx.customerId,
     });
     const updated = await portalStorage.getReservationForCustomer(id, ctx.customerId, ctx.scope);
-    res.json({ ...toReservationDto(updated!, ctx.settings.showPrices), driverHistory: await getDriverAssignments(id) });
+    res.json({ ...toReservationDto(updated!, settingsFlags(ctx.settings, ctx.user).showPrices), driverHistory: toDriverHistoryDto(await getDriverAssignments(id)) });
   });
 
   // ---- documents ------------------------------------------------------------
@@ -188,20 +214,33 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
   });
 
   // ---- notifications for the customer -------------------------------------------------------
+  // A driver account only hears about the rentals it drives: null = no restriction (admin accounts).
+  async function driverReservationIds(ctx: PortalRequestContext): Promise<Set<number> | null> {
+    if (!ctx.scope.driverId) return null;
+    return new Set((await portalStorage.listReservationsForCustomer(ctx.customerId, ctx.scope)).map((r) => r.id));
+  }
+  // Also per feature: no fine notices without fines, no document notices without contracts, no request replies without requests.
+  async function notificationViewer(ctx: PortalRequestContext): Promise<NotificationViewer> {
+    const f = settingsFlags(ctx.settings, ctx.user);
+    return {
+      driverReservationIds: await driverReservationIds(ctx),
+      allowType: (type) => !(type.startsWith("fine") && !f.canViewFines) && !(type === "document_available" && !f.canViewContracts) && !(type.startsWith("request_") && !f.canSubmitRequests),
+    };
+  }
   app.get("/api/portal/notifications", requirePortalUser, async (req, res) => {
     const ctx = ctxOf(req);
-    const rows = await customerNotifications.listForUser(ctx.customerId, ctx.user.id);
+    const rows = await customerNotifications.listForUser(ctx.customerId, ctx.user.id, 100, await notificationViewer(ctx));
     res.json(rows.map((n) => ({ id: n.id, type: n.type, title: n.title, description: n.description, link: n.link, isRead: n.isRead, createdAt: n.createdAt.toISOString() })));
   });
   app.get("/api/portal/notifications/unread-count", requirePortalUser, async (req, res) => {
     const ctx = ctxOf(req);
-    res.json({ count: await customerNotifications.countUnread(ctx.customerId, ctx.user.id) });
+    res.json({ count: await customerNotifications.countUnread(ctx.customerId, ctx.user.id, await notificationViewer(ctx)) });
   });
   app.post("/api/portal/notifications/read", requirePortalUser, async (req, res) => {
     const ctx = ctxOf(req);
     const parsed = z.object({ ids: z.array(z.number().int().positive()).max(200).optional() }).safeParse(req.body ?? {});
     if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Invalid input");
-    await customerNotifications.markRead(ctx.customerId, parsed.data.ids ?? "all", ctx.user.id);
+    await customerNotifications.markRead(ctx.customerId, parsed.data.ids ?? "all", ctx.user.id, await notificationViewer(ctx));
     res.json({ ok: true });
   });
 
@@ -212,10 +251,8 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     const file = doc ? resolveDocumentFilePath(doc.filePath) : null;
     if (!doc || !file) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Document not found");
     await logPortalActivity(req, "document_downloaded", { entity: "document", entityId: id });
-    res.setHeader("Content-Type", doc.contentType || "application/octet-stream");
-    const disposition = req.query.inline === "1" ? "inline" : "attachment";
-    res.setHeader("Content-Disposition", `${disposition}; filename="${sanitizeFilename(doc.fileName)}"`);
-    fs.createReadStream(file).pipe(res);
+    setSafeFileHeaders(res, doc.contentType, doc.fileName, req.query.inline === "1", sanitizeFilename(doc.fileName));
+    streamFile(file, res);
   });
 
   // ---- fines ------------------------------------------------------------------
@@ -240,8 +277,8 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     if (!fine || !file) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Letter not found");
     await logPortalActivity(req, "fine_letter_downloaded", { entity: "fine", entityId: id });
     res.setHeader("Content-Type", file.toLowerCase().endsWith(".pdf") ? "application/pdf" : "application/octet-stream");
-    res.setHeader("Content-Disposition", `inline; filename="${sanitizeFilename(path.basename(file))}"`);
-    fs.createReadStream(file).pipe(res);
+    setSafeFileHeaders(res, null, file, true, sanitizeFilename(path.basename(file)));
+    streamFile(file, res);
   });
 
   // ---- requests -----------------------------------------------------------------
@@ -255,6 +292,17 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     fileFilter: createSecureMulterFilter("document"),
   }));
   const requireRequests: RequestHandler[] = [requirePortalUser, requireFeature("canSubmitRequests")];
+
+  // Before anything is written to disk: one customer cannot pile up open requests (each one also mails staff).
+  const MAX_OPEN_REQUESTS = 30;
+  const MAX_MESSAGES_PER_REQUEST = 200;
+  const capOpenRequests: RequestHandler = async (req, res, next) => {
+    if ((await requestsStorage.countOpenForCustomer(ctxOf(req).customerId)) >= MAX_OPEN_REQUESTS) {
+      return portalError(res, 429, PORTAL_ERROR.TOO_MANY_OPEN, "Too many open requests");
+    }
+    next();
+  };
+
 
   app.get("/api/portal/requests", ...requireRequests, async (req, res) => {
     const ctx = ctxOf(req);
@@ -277,6 +325,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     const row = await requestsStorage.getRequestForCustomer(id, ctx.customerId, requestScope(req));
     if (!row) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Request not found");
     if (row.status === "done" || row.status === "rejected") return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Deze aanvraag is afgehandeld; stuur een nieuwe aanvraag");
+    if (row.messages.length >= MAX_MESSAGES_PER_REQUEST) return portalError(res, 429, PORTAL_ERROR.TOO_MANY_OPEN, "Too many messages on this request");
     const msg = await requestsStorage.addMessage({ requestId: id, author: "customer", authorName: ctx.user.fullName, body: parsed.data.body });
     await logPortalActivity(req, "request_message", { entity: "request", entityId: id });
     const customer = await storage.getCustomer(ctx.customerId);
@@ -295,7 +344,9 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     const row = await requestsStorage.getRequestForCustomer(id, ctx.customerId, requestScope(req));
     if (!row) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Request not found");
     if (row.status !== "new") return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Alleen een aanvraag die nog niet in behandeling is kan worden ingetrokken");
-    const atts = await requestsStorage.deleteRequest(id);
+    // One statement checks the status again: a request staff took in the meantime is not deleted.
+    const atts = await requestsStorage.deleteRequestIfStatus(id, "new");
+    if (!atts) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Alleen een aanvraag die nog niet in behandeling is kan worden ingetrokken");
     for (const a of atts) { const file = resolveDocumentFilePath(a.filePath); if (file) fs.rmSync(file, { force: true }); }
     await logPortalActivity(req, "request_withdrawn", { entity: "request", entityId: id, details: { type: row.type } });
     res.json({ ok: true });
@@ -308,12 +359,11 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     const att = row?.attachments.find((a) => a.id === attachmentId);
     const file = att ? resolveDocumentFilePath(att.filePath) : null;
     if (!att || !file) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Attachment not found");
-    res.setHeader("Content-Type", att.contentType);
-    res.setHeader("Content-Disposition", `inline; filename="${sanitizeFilename(att.fileName)}"`);
-    fs.createReadStream(file).pipe(res);
+    setSafeFileHeaders(res, att.contentType, att.fileName, true, sanitizeFilename(att.fileName));
+    streamFile(file, res);
   });
 
-  app.post("/api/portal/requests", ...requireRequests, (req, res, next) => {
+  app.post("/api/portal/requests", ...requireRequests, capOpenRequests, (req, res, next) => {
     attachmentUpload.array("attachments", 5)(req, res, (err: any) => {
       if (err?.code === "LIMIT_FILE_COUNT" || err?.code === "LIMIT_UNEXPECTED_FILE") return portalError(res, 400, PORTAL_ERROR.ATTACHMENT_LIMIT, "At most 5 attachments");
       if (err) return portalError(res, 400, PORTAL_ERROR.VALIDATION, err.message ?? "Upload failed");
@@ -364,6 +414,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
       }
     }
     if (needs === "fine") {
+      if (!settingsFlags(ctx.settings, ctx.user).canViewFines) { discard(); return portalError(res, 403, PORTAL_ERROR.FEATURE_DISABLED, "Fines are not available for your account"); }
       if (!fineId || !(await finesStorage.getFineForCustomer(fineId, ctx.customerId, ctx.scope))) { discard(); return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Fine not found"); }
     }
     const today = new Date().toISOString().slice(0, 10);
@@ -390,14 +441,17 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
         && overlaps(String((r.payload as Record<string, unknown>).startDate), String((r.payload as Record<string, unknown>).endDate || "") || null, p.startDate, p.endDate || null));
       if (duplicate) { discard(); return portalError(res, 409, PORTAL_ERROR.DUPLICATE_REQUEST, `Er staat al een aanvraag (#${duplicate.id}) open voor dit voertuig in deze periode`); }
       // Driver: chosen by an admin, or the driver-role user themself.
-      const driverId = p.driverId ? Number(p.driverId) : ctx.user.role === "driver" && ctx.user.driverId ? ctx.user.driverId : null;
+      // A driver account books for itself only, whatever driverId the client sent; labels are never taken from the client.
+      delete p.driverLabel;
+      const driverId = ctx.user.role === "driver" ? (ctx.user.driverId ?? null) : p.driverId ? Number(p.driverId) : null;
+      if (!driverId) delete p.driverId;
       if (driverId) {
         const driver = await portalStorage.getDriverForCustomer(driverId, ctx.customerId);
         if (!driver || driver.status !== "active") { discard(); return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Driver not found"); }
         p.driverId = String(driver.id);
         p.driverLabel = driver.displayName;
       }
-      p.vehicleLabel = `${check.vehicle.brand} ${check.vehicle.model} · ${check.vehicle.licensePlate}`;
+      p.vehicleLabel = `${vehicleName(check.vehicle.brand, check.vehicle.model)} · ${check.vehicle.licensePlate}`;
     }
     if (type === "extension" && reservation?.endDate && p.newEndDate <= reservation.endDate) {
       discard(); return portalError(res, 400, PORTAL_ERROR.REQUEST_INVALID_PERIOD, "New end date must be after the current end date");
@@ -452,7 +506,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
   // The vehicles the customer has on the road, with maintenance and replacement state.
   app.get("/api/portal/vehicles/mine", requirePortalUser, async (req, res) => {
     const ctx = ctxOf(req);
-    res.json(await listMyVehicles(ctx.customerId, ctx.scope));
+    res.json(await listMyVehicles(ctx.customerId, ctx.scope, requestScope(req)));
   });
 
   // ---- vehicles offered online -------------------------------------------------
@@ -481,7 +535,8 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
   // ---- drivers ----------------------------------------------------------------
   const manageDrivers: RequestHandler[] = [requirePortalUser, requireFeature("canManageDrivers"), requirePortalRole("admin")];
 
-  app.get("/api/portal/drivers", requirePortalUser, async (req, res) => {
+  // Only the screens of an admin with the drivers switch read this list; a driver account must not get its colleagues' contact data and licence numbers.
+  app.get("/api/portal/drivers", ...manageDrivers, async (req, res) => {
     const ctx = ctxOf(req);
     const rows = await portalStorage.listDriversForCustomer(ctx.customerId);
     res.json(rows.map(toDriverDto));
@@ -533,11 +588,14 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     const id = idParam(req, res); if (id === null) return;
     const ctx = ctxOf(req);
     const existing = await portalStorage.getDriverForCustomer(id, ctx.customerId);
-    if (!existing) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Driver not found");
+    if (!existing) { if (req.file) fs.rmSync(req.file.path, { force: true }); return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Driver not found"); }
     if (!req.file) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "No file uploaded");
     const check = await validateAfterUpload(req.file.path, req.file.originalname, req.file.mimetype, "document");
     if (!check.valid) { fs.rmSync(req.file.path, { force: true }); return portalError(res, 400, PORTAL_ERROR.VALIDATION, check.error ?? "Invalid file"); }
     const driver = await storage.updateDriver(id, { licenseFilePath: getRelativePath(req.file.path), updatedBy: ctx.user.email });
+    // The previous licence file is replaced, not left behind.
+    const previous = existing.licenseFilePath ? resolveDocumentFilePath(existing.licenseFilePath) : null;
+    if (previous && previous !== req.file.path) fs.rmSync(previous, { force: true });
     await logPortalActivity(req, "driver_license_uploaded", { entity: "driver", entityId: id });
     res.json(toDriverDto(driver!));
   });

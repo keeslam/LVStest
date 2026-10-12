@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { formatPortalDate as formatDate } from "./reservation-card";
 import { DriverChip, Plate } from "./ui";
+import { vehicleName } from "@shared/vehicle-name";
 
 /** Rows shown before the customer has to type. */
 const MAX_SHOWN = 6;
@@ -40,7 +41,7 @@ export function ReservationPicker({ reservations, value, onChange, testId = "res
         <span className="flex min-w-0 items-center gap-2">
           <Check className="h-4 w-4 shrink-0 text-[#1d9e75]" />
           {selected.vehicle ? <Plate value={selected.vehicle.licensePlate} /> : <span>#{selected.id}</span>}
-          <span className="truncate">{selected.vehicle ? `${selected.vehicle.brand} ${selected.vehicle.model}` : ""} <span className="text-xs text-[#64748b]">{period(selected)}</span></span>
+          <span className="truncate">{selected.vehicle ? `${vehicleName(selected.vehicle.brand, selected.vehicle.model)}` : ""} <span className="text-xs text-[#64748b]">{period(selected)}</span></span>
         </span>
         <Button type="button" size="sm" variant="ghost" onClick={() => { onChange(null); setQuery(""); }} data-testid={`${testId}-change`}>{t("actions.change")}</Button>
       </div>
@@ -62,7 +63,7 @@ export function ReservationPicker({ reservations, value, onChange, testId = "res
             <button type="button" role="option" aria-selected={false} onClick={() => onChange(r.id)} className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-[#f1f5f9] focus:bg-[#f1f5f9] focus:outline-none" data-testid={`${testId}-option-${r.id}`}>
               {r.vehicle ? <Plate value={r.vehicle.licensePlate} /> : <span className="font-mono text-xs">#{r.id}</span>}
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium text-[#1a1d62]">{r.vehicle ? `${r.vehicle.brand} ${r.vehicle.model}` : `#${r.id}`}</span>
+                <span className="block truncate font-medium text-[#1a1d62]">{r.vehicle ? `${vehicleName(r.vehicle.brand, r.vehicle.model)}` : `#${r.id}`}</span>
                 <span className="block truncate text-xs text-[#64748b]">{period(r)}{r.driver ? <> · <DriverChip name={r.driver.displayName} /></> : null}</span>
               </span>
               <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${r.status === "picked_up" ? "bg-[#e1f5ee] text-[#085041]" : "bg-[#e6f1fb] text-[#0c447c]"}`}>{t(`reservations.status.${r.status}`)}</span>

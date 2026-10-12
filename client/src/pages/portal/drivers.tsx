@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { DriverFormDialog } from "@/components/portal/driver-form-dialog";
 import { AssignVehicleDialog } from "@/components/portal/change-driver-dialog";
 import { DriverHistoryDialog, driverHistory } from "@/components/portal/driver-history-dialog";
-import { Avatar, EmptyState, PageHeader, Plate, SearchBox, btnPrimary, btnSecondary, usePortalSearch } from "@/components/portal/ui";
+import { Avatar, EmptyState, PageHeader, Plate, SearchBox, btnPrimary, btnSecondary, usePortalSearch, PortalLoading, PortalLoadError } from "@/components/portal/ui";
+import { vehicleName } from "@shared/vehicle-name";
 
 /** Only the last four characters of a licence number are shown on the card (data minimisation); the full number stays in the edit form. */
 const maskLicence = (n: string) => (n.length <= 4 ? n : `•••• ${n.slice(-4)}`);
@@ -33,7 +34,7 @@ export default function PortalDriversPage() {
   /** Only the car the driver is in right now goes on the card; booked and finished ones live under "Historie". */
   const drivingNow = (driverId: number) => carsOf(reservations, driverId).filter((r) => r.status === "picked_up");
   const historyCount = (driverId: number) => { const h = driverHistory(reservations, driverId); return h.upcoming.length + h.past.length; };
-  const { data = [], isLoading } = useQuery<PortalDriverDto[]>({ queryKey: ["portal", "/api/portal/drivers"], queryFn: portalQueryFn });
+  const { data = [], isLoading, isError, refetch } = useQuery<PortalDriverDto[]>({ queryKey: ["portal", "/api/portal/drivers"], queryFn: portalQueryFn });
   const { data: reservations = [] } = useQuery<PortalReservationDto[]>({ queryKey: ["portal", "/api/portal/reservations"], queryFn: portalQueryFn });
   const { data: fines = [] } = useQuery<PortalFineDto[]>({ queryKey: ["portal", "/api/portal/fines"], queryFn: portalQueryFn, enabled: Boolean(me?.settings.canViewFines) });
   /** Fines still open for this driver. */
@@ -43,7 +44,8 @@ export default function PortalDriversPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["portal", "/api/portal/drivers"] }),
   });
   const { query, setQuery, q, hit } = usePortalSearch();
-  if (isLoading) return null;
+  if (isLoading) return <PortalLoading />;
+  if (isError) return <PortalLoadError onRetry={() => refetch()} />;
   const addButton = <DriverFormDialog><Button className={btnPrimary} data-testid="button-add-driver"><UserPlus className="mr-1.5 h-4 w-4" />{t("actions.addDriver")}</Button></DriverFormDialog>;
   const active = data.filter((d) => d.status === "active").length;
   const shown = data.filter((d) => hit(d.displayName, d.firstName, d.lastName, d.email, d.phone, d.driverLicenseNumber, ...carsOf(reservations, d.id).map((r) => r.vehicle?.licensePlate)));
@@ -81,7 +83,7 @@ export default function PortalDriversPage() {
                         : drivingNow(d.id).map((r) => (
                           <button key={r.id} type="button" onClick={() => openReservation(r.id)} className="inline-flex items-center gap-1.5 rounded-full bg-[#eef0fb] py-0.5 pl-1 pr-2.5 text-xs text-[#1a1d62] hover:bg-[#dfe3f7]" title={`${r.vehicle?.brand ?? ""} ${r.vehicle?.model ?? ""}`.trim()}>
                             {r.vehicle?.licensePlate ? <Plate value={r.vehicle.licensePlate} /> : `#${r.id}`}
-                            <span className="truncate max-w-[9rem]">{r.vehicle ? `${r.vehicle.brand} ${r.vehicle.model}` : ""}</span>
+                            <span className="truncate max-w-[9rem]">{r.vehicle ? `${vehicleName(r.vehicle.brand, r.vehicle.model)}` : ""}</span>
                           </button>
                         ))}
                       {/* View only: opens the fines list filtered on this driver. */}

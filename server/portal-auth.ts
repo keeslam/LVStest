@@ -11,11 +11,12 @@ import { useSecureCookies } from "./utils/secure-cookies.js";
 import { resolveSessionSecret } from "./auth.js";
 import { createCsrfMiddleware } from "./middleware/security/csrf.js";
 import {
-  checkAccountLockout, recordLoginAttempt, clearFailedAttempts,
-  portalLoginLimiter, portalForgotLimiter, portalActivateLimiter,
+  clearFailedAttempts,
+  portalLoginLimiter, portalForgotLimiter, portalActivateLimiter, portalWriteLimiter, portalEmailChangeLimiter,
+  reserveLoginAttempt, settleLoginAttempt,
 } from "./middleware/security/rateLimiter.js";
 import { portalStorage, type PortalScope } from "./services/portal-storage";
-import { sendPortalInvite, sendEmailChangeMail, sendNewDeviceMail } from "./services/portal-mail";
+import { sendPortalInvite, sendEmailChangeMail, sendEmailChangedNotice, sendNewDeviceMail } from "./services/portal-mail";
 import { getPortalConfig } from "./services/portal-config";
 import { randomBytes } from "crypto";
 import { notifyStaffOfPortalEvent } from "./services/portal-notifications";
@@ -126,6 +127,9 @@ async function buildMe(ctx: PortalRequestContext): Promise<PortalMe> {
 }
 
 const DEVICE_COOKIE = "portal_device";
+
+/** Compared against when the e-mail address is unknown, so an unknown and a known address take equally long to refuse. */
+const dummyPasswordHash = hashPassword(randomBytes(24).toString("hex"));
 const MAX_KNOWN_DEVICES = 10;
 
 /**
@@ -143,7 +147,7 @@ async function rememberDevice(req: Request, res: Response, user: PortalUser): Pr
     seen.lastSeen = now; seen.ua = ua;
   } else {
     const id = randomBytes(16).toString("hex");
-    const sec = useSecureCookies(); res.cookie(DEVICE_COOKIE, id, { httpOnly: true, sameSite: "lax", secure: sec === "auto" ? undefined : sec, maxAge: 400 * 86_400_000, path: "/api/portal" });
+    const sec = useSecureCookies(); res.cookie(DEVICE_COOKIE, id, { httpOnly: true, sameSite: "lax", secure: sec === "auto" ? req.secure : sec, maxAge: 400 * 86_400_000, path: "/api/portal" });
     const firstLoginEver = known.length === 0 && !user.lastLoginAt;
     known.push({ id, ua, firstSeen: now, lastSeen: now });
     if (!firstLoginEver) {
@@ -257,7 +261,7 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
   portalPassport.use("portal-local", new LocalStrategy({ usernameField: "email", passwordField: "password" }, async (email, password, done) => {
     try {
       const user = await portalStorage.getPortalUserByEmail(email);
-      if (!user || !user.passwordHash) return done(null, false);
+      if (!user || !user.passwordHash) { await comparePasswords(password, await dummyPasswordHash); return done(null, false); }
       const ok = await comparePasswords(password, user.passwordHash);
       return ok ? done(null, user as unknown as Express.User) : done(null, false);
     } catch (error) {
@@ -276,6 +280,8 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
   });
 
   app.use("/api/portal", portalSession, portalPassport.initialize(), portalPassport.session(), csrf.attachCsrfToken, csrf.csrfProtection);
+  // Reads are free; every write is counted per account (see portalWriteLimiter).
+  app.use("/api/portal", (req, res, next) => (["GET", "HEAD", "OPTIONS"].includes(req.method) ? next() : portalWriteLimiter(req, res, next)));
 
   // last_seen_at is written at most once a minute per user, so the staff
   // "online" overview costs no extra write on ordinary requests.
@@ -313,25 +319,30 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
     const ua = req.get("user-agent") || "unknown";
     const lockKey = LOCKOUT_PREFIX + email;
 
-    const lock = await checkAccountLockout(lockKey, ip);
-    if (lock.locked) return portalError(res, 429, PORTAL_ERROR.LOCKED, "Too many attempts, try again later");
+    // Record first, decide after (BUG-161, as in the staff login): the attempt is counted in one transaction before
+    // the password is compared, so a parallel burst cannot all pass the lock check.
+    const gate = await reserveLoginAttempt(lockKey, ip, ua);
+    if (gate.locked) {
+      await settleLoginAttempt(gate.attemptId, { success: false, failureReason: "account_locked" });
+      return portalError(res, 429, PORTAL_ERROR.LOCKED, "Too many attempts, try again later");
+    }
 
     portalPassport.authenticate("portal-local", async (err: any, user: PortalUser | false) => {
-      if (err) return next(err);
+      if (err) { await settleLoginAttempt(gate.attemptId, { success: false, failureReason: "error" }); return next(err); }
       if (!user) {
-        await recordLoginAttempt(lockKey, ip, ua, false, "invalid_credentials");
+        await settleLoginAttempt(gate.attemptId, { success: false, failureReason: "invalid_credentials" });
         return portalError(res, 401, PORTAL_ERROR.INVALID_CREDENTIALS, "Invalid e-mail or password");
       }
       const { ctx, code } = await loadContext(user.id);
       if (!ctx) {
-        await recordLoginAttempt(lockKey, ip, ua, false, code);
+        await settleLoginAttempt(gate.attemptId, { success: false, failureReason: code });
         return portalError(res, 403, code!, "Account is not available");
       }
       req.session.regenerate((regenErr: any) => {
         if (regenErr) return next(regenErr);
         req.login(user as unknown as Express.User, async (loginErr: any) => {
           if (loginErr) return next(loginErr);
-          await recordLoginAttempt(lockKey, ip, ua, true);
+          await settleLoginAttempt(gate.attemptId, { success: true });
           await clearFailedAttempts(lockKey);
           await rememberDevice(req, res, user);
           await portalStorage.updatePortalUser(user.id, { lastLoginAt: new Date() });
@@ -372,7 +383,7 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
   });
 
   // Change the login address: the new address gets a confirmation link; nothing changes until it is used.
-  app.post("/api/portal/me/email", requirePortalUser, async (req, res) => {
+  app.post("/api/portal/me/email", requirePortalUser, portalEmailChangeLimiter, async (req, res) => {
     const parsed = z.object({ newEmail: z.string().trim().email().max(200), currentPassword: z.string().min(1) }).safeParse(req.body);
     if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, parsed.error.errors[0]?.message ?? "Invalid input");
     const user = req.portalUser!.user;
@@ -381,8 +392,13 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
     }
     const newEmail = parsed.data.newEmail.toLowerCase();
     if (newEmail === user.email.toLowerCase()) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Dit is al uw e-mailadres");
+    // The answer is the same whether the address is free or belongs to another account, so this cannot be used to
+    // find out who has a portal account; an address that is taken simply never gets a mail.
     const taken = await portalStorage.getPortalUserByEmail(newEmail);
-    if (taken && taken.id !== user.id) return portalError(res, 409, PORTAL_ERROR.EMAIL_IN_USE, "Dit e-mailadres is al in gebruik");
+    if (taken && taken.id !== user.id) {
+      await logPortalActivity(req, "email_change_requested", { details: { newEmail, accepted: false } });
+      return res.json({ ok: true, pendingEmail: newEmail });
+    }
     try { await sendEmailChangeMail(user, newEmail); } catch (error) { console.error("email change mail failed:", error); return portalError(res, 500, PORTAL_ERROR.SERVER, "Mail could not be sent"); }
     await logPortalActivity(req, "email_change_requested", { details: { newEmail } });
     res.json({ ok: true, pendingEmail: newEmail });
@@ -406,6 +422,9 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
     const oldEmail = user.email;
     await portalStorage.updatePortalUser(user.id, { email: user.pendingEmail, pendingEmail: null, emailChangeTokenHash: null, emailChangeExpiresAt: null, updatedBy: user.pendingEmail });
     await portalStorage.logActivity({ customerId: user.customerId, portalUserId: user.id, action: "email_changed", details: { from: oldEmail, to: user.pendingEmail } });
+    // A changed login address ends all sessions, and the old address hears about it: if this was not the owner, they can act.
+    try { await revokePortalSessionsExcept(user.id); } catch (e) { console.error("Failed to revoke portal sessions after an e-mail change:", e); }
+    try { await sendEmailChangedNotice(user, oldEmail, user.pendingEmail); } catch (e) { console.error("email changed notice failed:", e); }
     res.json({ ok: true, email: user.pendingEmail });
   });
 
@@ -414,10 +433,15 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
     const ctx = req.portalUser!;
     if (ctx.user.role !== "admin") return portalError(res, 403, PORTAL_ERROR.ROLE_FORBIDDEN, "Only admin accounts can change company details");
     const optionalEmail = z.union([z.string().trim().email().max(200), z.literal("")]).optional();
-    const parsed = z.object({ email: optionalEmail, emailForMOT: optionalEmail, emailForInvoices: optionalEmail, emailGeneral: optionalEmail }).safeParse(req.body);
+    // These addresses decide where invoices, fines and APK mail go: changing them asks for the password again, so a stolen
+    // session alone cannot redirect them.
+    const parsed = z.object({ email: optionalEmail, emailForMOT: optionalEmail, emailForInvoices: optionalEmail, emailGeneral: optionalEmail, currentPassword: z.string().min(1) }).safeParse(req.body);
     if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, parsed.error.errors[0]?.message ?? "Invalid e-mail address");
+    if (!ctx.user.passwordHash || !(await comparePasswords(parsed.data.currentPassword, ctx.user.passwordHash))) {
+      return portalError(res, 400, PORTAL_ERROR.INVALID_CREDENTIALS, "Current password is incorrect");
+    }
     const data: Record<string, string | null> = {};
-    for (const [k, v] of Object.entries(parsed.data)) if (v !== undefined) data[k] = v === "" ? null : v;
+    for (const [k, v] of Object.entries(parsed.data)) if (v !== undefined && k !== "currentPassword") data[k] = v === "" ? null : v;
     if (Object.keys(data).length === 0) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Nothing to save");
     const customer = await storage.updateCustomer(ctx.customerId, data as any);
     if (!customer) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Customer not found");
@@ -537,7 +561,19 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
     res.json({ ok: true });
   });
 
-  // Always 200: never reveal whether an address exists.
+  const forgotSent = new Map<string, number[]>();
+const FORGOT_PER_ADDRESS = 3;
+function forgotAllowed(email: string): boolean {
+  const key = email.toLowerCase();
+  const since = Date.now() - 60 * 60 * 1000;
+  const recent = (forgotSent.get(key) ?? []).filter((t) => t > since);
+  if (recent.length >= FORGOT_PER_ADDRESS) { forgotSent.set(key, recent); return false; }
+  recent.push(Date.now());
+  forgotSent.set(key, recent);
+  return true;
+}
+
+// Always 200: never reveal whether an address exists.
   // BUG-092: the shared limiter carried skipSuccessfulRequests, and this route
   // answers 200 whatever happens (deliberately, so it cannot be used to find
   // out which addresses exist) - so every request was "successful" and nothing
@@ -546,8 +582,10 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
     const parsed = z.object({ email: z.string().email() }).safeParse(req.body);
     if (parsed.success) {
       const user = await portalStorage.getPortalUserByEmail(parsed.data.email);
-      if (user && user.active) {
-        try { await sendPortalInvite(user, "reset"); } catch (error) { console.error("portal reset mail failed:", error); }
+      // Not awaited: a known address must not answer slower than an unknown one. And at most a few mails per address per
+      // hour, so the form cannot be used to bomb one person's mailbox from many addresses.
+      if (user && user.active && forgotAllowed(user.email)) {
+        sendPortalInvite(user, "reset").catch((error) => console.error("portal reset mail failed:", error));
       }
     }
     res.json({ ok: true });
@@ -561,12 +599,15 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
     if (!user.inviteExpiresAt || user.inviteExpiresAt.getTime() < Date.now()) {
       return portalError(res, 400, PORTAL_ERROR.TOKEN_EXPIRED, "This link has expired");
     }
+    // The account is checked before anything is written: a blocked account must not get a new password.
+    const { ctx, code } = await loadContext(user.id);
+    if (!ctx) return portalError(res, 403, code!, "Account is not available");
     await portalStorage.updatePortalUser(user.id, {
       passwordHash: await hashPassword(parsed.data.password),
       inviteTokenHash: null, inviteExpiresAt: null, updatedBy: user.email,
     });
-    const { ctx, code } = await loadContext(user.id);
-    if (!ctx) return portalError(res, 403, code!, "Account is not available");
+    // A reset ends every session that was open with the old password.
+    try { await revokePortalSessionsExcept(user.id); } catch (e) { console.error("Failed to revoke portal sessions after a reset:", e); }
     req.session.regenerate((regenErr: any) => {
       if (regenErr) return next(regenErr);
       req.login(ctx.user as unknown as Express.User, async (loginErr: any) => {

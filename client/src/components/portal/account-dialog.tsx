@@ -49,6 +49,7 @@ export function PortalAccountDialog({ open, onClose }: { open: boolean; onClose:
   const [emailPassword, setEmailPassword] = useState("");
   const [details, setDetails] = useState<Record<CompanyDetailField, string>>(() => emptyDetails());
   const [parts, setParts] = useState<Record<AddressKind, StreetParts>>({ address: toParts(""), billingAddress: toParts("") });
+  const [emailsPassword, setEmailsPassword] = useState("");
   const [requestingName, setRequestingName] = useState(false);
   const [newName, setNewName] = useState("");
   const [company, setCompany] = useState<Record<keyof PortalCompanyEmails, string>>({ email: "", emailForMOT: "", emailForInvoices: "", emailGeneral: "" });
@@ -58,7 +59,7 @@ export function PortalAccountDialog({ open, onClose }: { open: boolean; onClose:
     setChangingEmail(false); setNewEmail(""); setEmailPassword("");
     const d = detailsOf(me?.companyDetails);
     setDetails(d); setParts({ address: toParts(d.address), billingAddress: toParts(d.billingAddress) });
-    setRequestingName(false); setNewName("");
+    setRequestingName(false); setNewName(""); setEmailsPassword("");
     setCompany({ email: me?.company?.email ?? "", emailForMOT: me?.company?.emailForMOT ?? "", emailForInvoices: me?.company?.emailForInvoices ?? "", emailGeneral: me?.company?.emailGeneral ?? "" });
   }, [open, me]);
   const fail = (e: unknown) => toast({ title: e instanceof PortalApiError ? t(`errors.${e.code}`, { defaultValue: e.message }) : t("errors.PORTAL_SERVER_ERROR"), variant: "destructive" });
@@ -86,6 +87,8 @@ export function PortalAccountDialog({ open, onClose }: { open: boolean; onClose:
   async function cancelEmailChange() {
     try { await portalFetch("POST", "/api/portal/me/email/cancel"); await refresh(); toast({ title: t("account.emailChangeCancelled") }); } catch (err) { fail(err); }
   }
+  // These addresses decide where invoices and fines go, so changing one asks for the password again.
+  const emailsChanged = COMPANY_FIELDS.some((k) => company[k].trim() !== (me?.company?.[k] ?? ""));
   // One save button for the whole tab; only the part that really changed goes to the server.
   async function saveCompany(e: FormEvent) {
     e.preventDefault();
@@ -93,7 +96,7 @@ export function PortalAccountDialog({ open, onClose }: { open: boolean; onClose:
       const before = detailsOf(me?.companyDetails);
       if (COMPANY_DETAIL_FIELDS.some((k) => details[k].trim() !== before[k])) await portalFetch("PATCH", "/api/portal/me/company-details", details);
       const emailsBefore = me?.company;
-      if (COMPANY_FIELDS.some((k) => company[k].trim() !== (emailsBefore?.[k] ?? ""))) await portalFetch("PATCH", "/api/portal/me/company", company);
+      if (COMPANY_FIELDS.some((k) => company[k].trim() !== (emailsBefore?.[k] ?? ""))) await portalFetch("PATCH", "/api/portal/me/company", { ...company, currentPassword: emailsPassword });
       await refresh(); toast({ title: t("account.detailsSaved") });
     } catch (err) { fail(err); }
   }
@@ -320,6 +323,13 @@ export function PortalAccountDialog({ open, onClose }: { open: boolean; onClose:
                       </div>
                     ))}
                   </div>
+                  {emailsChanged && (
+                    <div className="max-w-sm" data-testid="emails-password-block">
+                      <Label htmlFor="acc-emails-pw" className="text-xs">{t("account.confirmPassword")}</Label>
+                      <Input id="acc-emails-pw" className="h-9" type="password" autoComplete="current-password" value={emailsPassword} onChange={(e) => setEmailsPassword(e.target.value)} required data-testid="input-emails-password" />
+                      <p className="mt-1 text-xs text-[#64748b]">{t("account.confirmPasswordHint")}</p>
+                    </div>
+                  )}
                 </section>
                 <Button type="submit" size="sm" className={btnPrimary} data-testid="button-save-company">{t("actions.save")}</Button>
               </form>

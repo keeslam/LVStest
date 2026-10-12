@@ -7,6 +7,7 @@ import { portalQueryFn } from "@/lib/portal-api";
 import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { DriverChip, ListCard, Plate, StatusBadge, daysUntil, toneFor } from "@/components/portal/ui";
+import { vehicleName } from "@shared/vehicle-name";
 
 export function formatPortalDate(value: string | null | undefined): string {
   if (!value) return "";
@@ -38,7 +39,7 @@ export function ReservationCard({ reservation, showPrice }: { reservation: Porta
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="truncate font-semibold text-[#0f172a]">
-              {r.vehicle ? `${r.vehicle.brand} ${r.vehicle.model}` : t("reservations.spareFor", { id: r.replacementForReservationId })}
+              {r.vehicle ? `${vehicleName(r.vehicle.brand, r.vehicle.model)}` : t("reservations.spareFor", { id: r.replacementForReservationId })}
             </span>
             {r.vehicle && <Plate value={r.vehicle.licensePlate} />}
           </div>

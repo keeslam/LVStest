@@ -198,6 +198,7 @@ niet, omdat ze in een eerder deel van het werk zaten.
 - **Adres invullen met postcode en huisnummer.** Typ bij een nieuwe of bestaande klant (en in het
   klantenportaal) de postcode en het huisnummer: straat en plaats vult de app zelf in, uit het adresregister
   van het Kadaster. Alles blijft aan te passen ([hoofdstuk 3, paragraaf 3.3](03-klanten.md)).
+- **Het klantenportaal is veiliger en rustiger.** Bestuurders zien geen gegevens van collega's meer, wijzigen van de e-mailadressen van het bedrijf vraagt het wachtwoord, een nieuw wachtwoord of nieuw inlogadres beëindigt alle open sessies, en er zijn grenzen aan het aantal aanvragen en verzoeken. Daarnaast: een melding als er geen gegevens geladen konden worden, een nette pagina bij een verkeerd adres, en documenten die de auto en het contractnummer noemen ([hoofdstuk 3, paragraaf 3.7](03-klanten.md)).
 - **Contractfouten noemen het sjabloon.** Mislukt een contract, dan staat er een Nederlandse zin die zegt
   wat er mist en waar je het oplost ([hoofdstuk 8, paragraaf 8.5](08-documenten.md)).
 

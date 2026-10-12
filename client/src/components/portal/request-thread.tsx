@@ -6,6 +6,7 @@ import type { PortalRequestMessageDto } from "@shared/portal-requests";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { formatDateNl } from "@/lib/format-date-nl";
 
 /**
  * The conversation on a request, oldest first, with a box to add to it.
@@ -38,7 +39,7 @@ export function RequestThread({ messages, mine, canPost, send, onSent, placehold
             <li key={m.id} className={`flex ${own ? "justify-end" : "justify-start"}`} data-testid={`thread-message-${m.id}`}>
               <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${own ? "rounded-br-sm bg-[#1a1d62] text-white" : "rounded-bl-sm bg-[#eef0fb] text-[#0f172a]"}`}>
                 <div className={`mb-0.5 text-[11px] ${own ? "text-[#c7cbf5]" : "text-[#64748b]"}`}>
-                  {m.author === "staff" ? t("thread.staffName", { name: m.authorName }) : m.authorName} · {new Date(m.createdAt).toLocaleString()}
+                  {m.author === "staff" ? t("thread.staffName", { name: m.authorName }) : m.authorName} · {formatDateNl(m.createdAt, "dd-MM-yyyy HH:mm")}
                 </div>
                 <div className="whitespace-pre-wrap">{m.body}</div>
               </div>

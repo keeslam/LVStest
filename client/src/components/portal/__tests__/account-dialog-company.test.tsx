@@ -63,6 +63,18 @@ describe("account dialog — company tab", () => {
     expect((portalFetch.mock.calls[0] as unknown[])[2]).toMatchObject({ phone: "0201234567", city: "Utrecht" });
   });
 
+  it("asks for the password only when an e-mail address changes, and sends it along", async () => {
+    await mount();
+    expect(screen.queryByTestId("emails-password-block")).toBeNull();
+    const email = screen.getByTestId("input-company-email");
+    await userEvent.clear(email);
+    await userEvent.type(email, "nieuw@klant.nl");
+    expect(await screen.findByTestId("emails-password-block")).toBeInTheDocument();
+    await userEvent.type(screen.getByTestId("input-emails-password"), "geheim-wachtwoord");
+    await userEvent.click(screen.getByTestId("button-save-company"));
+    await waitFor(() => expect(portalFetch).toHaveBeenCalledWith("PATCH", "/api/portal/me/company", expect.objectContaining({ email: "nieuw@klant.nl", currentPassword: "geheim-wachtwoord" })));
+  });
+
   it("sends a name change as a request, not as a direct edit", async () => {
     await mount();
     await userEvent.click(screen.getByTestId("button-request-name-change"));

@@ -136,6 +136,32 @@ export const addressLookupLimiter = createAuthLimiter({
   message: 'Too many address lookups, please try again later.',
 });
 
+const portalKey = (req: Request): string => `${loginLimiterKey(req)}|${(req as unknown as { user?: { id?: number } }).user?.id ?? 'anon'}`;
+
+/**
+ * Everything a portal account writes (requests with attachments, messages, drivers, licence uploads,
+ * acknowledgements): counted per account and address, so one login cannot flood the staff mailbox or fill the
+ * disk with 50 MB a call. Generous for real use; the apiLimiter's 1000 per IP was the only brake before.
+ */
+export const portalWriteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  message: { code: 'PORTAL_RATE_LIMITED', message: 'Too many requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: portalKey,
+});
+
+/** Asking for a new login address mails a third party: a handful per hour is plenty. */
+export const portalEmailChangeLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: { code: 'PORTAL_RATE_LIMITED', message: 'Too many requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: portalKey,
+});
+
 /** Staff login. A successful login does not consume budget. */
 export const loginLimiter = createAuthLimiter({
   max: 5,

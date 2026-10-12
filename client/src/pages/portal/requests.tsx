@@ -7,14 +7,15 @@ import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { Button } from "@/components/ui/button";
 import { RequestRow } from "@/components/portal/rows";
 import { AvailableVehicles } from "@/components/portal/vehicle-cards";
-import { EmptyState, PageHeader, SearchBox, btnPrimary, usePortalSearch } from "@/components/portal/ui";
+import { EmptyState, PageHeader, SearchBox, btnPrimary, usePortalSearch, PortalLoading, PortalLoadError } from "@/components/portal/ui";
 
 export default function PortalRequestsPage() {
   const { t } = useTranslation("portal");
   const { openNewRequest } = usePortalDialogs();
-  const { data = [], isLoading } = useQuery<PortalRequestDto[]>({ queryKey: ["portal", "/api/portal/requests"], queryFn: portalQueryFn });
+  const { data = [], isLoading, isError, refetch } = useQuery<PortalRequestDto[]>({ queryKey: ["portal", "/api/portal/requests"], queryFn: portalQueryFn });
   const { query, setQuery, q, hit } = usePortalSearch();
-  if (isLoading) return null;
+  if (isLoading) return <PortalLoading />;
+  if (isError) return <PortalLoadError onRetry={() => refetch()} />;
   const shown = data.filter((r) => hit(t(`requests.type.${r.type}`), r.message, r.id, t(`requests.status.${r.status}`), r.staffReply));
   const newButton = <Button className={btnPrimary} onClick={() => openNewRequest()} data-testid="button-new-request"><Plus className="mr-1.5 h-4 w-4" />{t("requests.new")}</Button>;
 

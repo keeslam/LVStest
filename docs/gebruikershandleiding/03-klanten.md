@@ -330,6 +330,8 @@ past de klant zelf aan, en ze staan meteen in het klantrecord. Je krijgt een mel
 er is gewijzigd (bijvoorbeeld *telefoonnummer, adres*). Slaat de klant op zonder iets te wijzigen, dan
 krijg je geen melding. KvK-nummer en btw-nummer staan niet in het portaal en blijven van jou.
 
+Wijzigt de klant een van de vier **e-mailadressen**, dan vraagt het portaal om het wachtwoord van de klant ter bevestiging: die adressen bepalen waar facturen, bekeuringen en APK-berichten naartoe gaan. Voor adres en contactgegevens is dat niet nodig.
+
 De **bedrijfsnaam** kan de klant niet zelf wijzigen, omdat die op contracten en facturen staat. Hij klikt
 op **Wijziging aanvragen**, vult de nieuwe naam in en verstuurt. Dat komt bij jou als aanvraag
 **Wijziging bedrijfsnaam** in het overzicht van aanvragen, met de gevraagde naam bovenaan. Met
@@ -341,6 +343,10 @@ houden de oude naam tot je ze opnieuw aanmaakt.
 
 Ook de klant vult zijn adres in met postcode en huisnummer: de straat en plaats verschijnen vanzelf, zoals
 hierboven beschreven. Dat geldt voor het adres en het factuuradres.
+
+### Wat een bestuurder in het portaal ziet
+
+Een account met de rol **Bestuurder** ziet alleen zijn eigen reserveringen, bekeuringen, aanvragen en documenten. Het ziet ook niet de bestuurderslijst van het bedrijf (naam, telefoon, e-mail en rijbewijsnummer van collega's) en krijgt alleen meldingen onder het belletje die over zijn eigen auto gaan. Meldingen over bekeuringen, documenten en aanvragen verschijnen alleen als die onderdelen voor dat account aanstaan. Per klant staan maximaal 30 aanvragen tegelijk open; daarna moet de klant er eerst een laten afhandelen of intrekken.
 
 ### Welke e-mails de klant krijgt
 

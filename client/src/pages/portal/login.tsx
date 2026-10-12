@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { PORTAL_SITE } from "@/lib/portal-site";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { portalFetch, PortalApiError } from "@/lib/portal-api";
-import { usePortalAuth } from "@/hooks/use-portal-auth";
+import { usePortalAuth, SESSION_EXPIRED_FLAG } from "@/hooks/use-portal-auth";
 import { btnPrimary } from "@/components/portal/ui";
 
 export default function PortalLoginPage() {
@@ -19,6 +19,10 @@ export default function PortalLoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [expired, setExpired] = useState(false);
+  useEffect(() => {
+    try { if (sessionStorage.getItem(SESSION_EXPIRED_FLAG)) { setExpired(true); sessionStorage.removeItem(SESSION_EXPIRED_FLAG); } } catch { /* storage blocked */ }
+  }, []);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -43,6 +47,7 @@ export default function PortalLoginPage() {
   return (
     <form onSubmit={submit} className="space-y-4" data-testid="portal-login-form">
       <h1 className="text-xl font-semibold">{t("login.title")}</h1>
+      {expired && <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" role="status" data-testid="session-expired">{t("login.sessionExpired")}</p>}
       <div>
         <Label htmlFor="portal-email">{t("fields.email")}</Label>
         <Input id="portal-email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />

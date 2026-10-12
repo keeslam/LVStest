@@ -5,6 +5,7 @@ import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatPortalDate } from "./reservation-card";
 import { Plate, StatusBadge, toneFor, toneClasses } from "./ui";
+import { vehicleName } from "@shared/vehicle-name";
 
 /** A driver's reservations that are not running right now: what is coming and what is done. */
 export function driverHistory(reservations: PortalReservationDto[], driverId: number) {
@@ -27,7 +28,7 @@ export function DriverHistoryDialog({ driver, reservations, open, onOpenChange }
         <span className="flex min-w-0 items-center gap-2">
           {r.vehicle && <Plate value={r.vehicle.licensePlate} />}
           <span className="min-w-0">
-            <span className="block truncate font-medium text-[#0f172a]">{r.vehicle ? `${r.vehicle.brand} ${r.vehicle.model}` : `#${r.id}`}</span>
+            <span className="block truncate font-medium text-[#0f172a]">{r.vehicle ? `${vehicleName(r.vehicle.brand, r.vehicle.model)}` : `#${r.id}`}</span>
             <span className="flex items-center gap-1 text-xs text-[#64748b]"><CalendarDays className="h-3 w-3" />{formatPortalDate(r.startDate)} – {r.endDate ? formatPortalDate(r.endDate) : t("overview.openEnded")}</span>
           </span>
         </span>

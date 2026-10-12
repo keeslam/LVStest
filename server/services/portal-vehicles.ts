@@ -10,7 +10,7 @@ import type { PortalMyVehicleDto, PortalVehicleMaintenanceDto } from "../../shar
 const isoDay = (offset = 0) => { const d = new Date(); d.setDate(d.getDate() + offset); return d.toISOString().slice(0, 10); };
 
 /** The vehicles a customer has on the road right now, with maintenance and replacement state. */
-export async function listMyVehicles(customerId: number, scope: PortalScope): Promise<PortalMyVehicleDto[]> {
+export async function listMyVehicles(customerId: number, scope: PortalScope, requestScope: { portalUserId?: number } = {}): Promise<PortalMyVehicleDto[]> {
   const rentals = (await portalStorage.listReservationsForCustomer(customerId, scope)).filter((r) => r.status === "picked_up" && r.type === "standard" && r.vehicle);
   if (rentals.length === 0) return [];
   const vehicleIds = rentals.map((r) => r.vehicleId!);
@@ -25,7 +25,8 @@ export async function listMyVehicles(customerId: number, scope: PortalScope): Pr
       eq(reservations.type, "replacement"), inArray(reservations.replacementForReservationId, rentalIds), isNull(reservations.deletedAt),
       eq(reservations.placeholderSpare, false), sql`${reservations.vehicleId} is not null`,
     )).orderBy(desc(reservations.startDate)),
-    requestsStorage.listRequestsForCustomer(customerId, {}),
+    // A driver account only sees the requests it made itself, so it is not handed ids of its colleagues' requests.
+    requestsStorage.listRequestsForCustomer(customerId, requestScope),
     getServiceDueVehicles(),
   ]);
   const open = requests.filter((q) => q.status === "new" || q.status === "in_progress");

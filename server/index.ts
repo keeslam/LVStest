@@ -494,12 +494,15 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error('Stack:', err.stack);
 
   const status = err.status || err.statusCode || 500;
-  const message = process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message;
+  // Fail closed: messages and stack traces only on a development machine or in the test suite. A server whose NODE_ENV
+  // is production, something else, or not set at all answers with a plain message.
+  const verbose = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+  const message = verbose ? err.message : 'Internal Server Error';
 
   res.status(status).json({
     error: 'Server Error',
     message,
-    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+    ...(verbose && { stack: err.stack })
   });
 });
 

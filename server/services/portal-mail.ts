@@ -24,6 +24,7 @@ export const PORTAL_TEMPLATE = {
   REQUEST_REPLIED: "portal_request_replied",
   EMAIL_CHANGE: "portal_email_change",
   NEW_DEVICE: "portal_new_device",
+  EMAIL_CHANGED: "portal_email_changed",
   MAINTENANCE: "portal_maintenance",
   // besluiten B-06 (BUG-134) — the three events of the decision that were
   // never built: the office moved the rental, the office cancelled it, and a
@@ -52,6 +53,14 @@ const DEFAULT_TEMPLATES: Array<{ name: string; subject: string; content: string 
 <p>Bevestig dit via deze link (72 uur geldig):</p>
 <p><a href="{{link}}">{{link}}</a></p>
 <p>Heeft u dit niet aangevraagd, dan kunt u deze e-mail negeren; uw huidige adres blijft dan in gebruik.</p>
+<p>Met vriendelijke groet,<br>{{companyName}}</p>`,
+  },
+  {
+    name: PORTAL_TEMPLATE.EMAIL_CHANGED,
+    subject: "Het e-mailadres van uw klantenportaal-account is gewijzigd",
+    content: `<p>Beste {{name}},</p>
+<p>Het e-mailadres waarmee u inlogt op het klantenportaal van {{companyName}} is zojuist gewijzigd naar {{newEmail}}. Alle ingelogde sessies van dit account zijn beëindigd.</p>
+<p>Was u dit zelf? Dan hoeft u niets te doen. Was u dit niet, neem dan direct contact op met {{companyName}}.</p>
 <p>Met vriendelijke groet,<br>{{companyName}}</p>`,
   },
   {
@@ -264,6 +273,14 @@ export async function sendNewDeviceMail(user: PortalUser, info: { ua: string; ip
   const vars = { name: user.fullName, ua: info.ua, ip: info.ip, at: new Date(info.at).toLocaleString("nl-NL", { timeZone: officeTimeZone() }) };
   const html = renderTemplate(template.content, vars);
   return sendEmail({ to: user.email, toName: user.fullName, subject: renderTemplateText(template.subject, vars), html, text: stripHtml(html) }, "custom");
+}
+
+/** Tells the OLD address that the login address was changed, so the owner can react if it was not them. */
+export async function sendEmailChangedNotice(user: PortalUser, oldEmail: string, newEmail: string): Promise<boolean> {
+  const template = await getPortalTemplate(PORTAL_TEMPLATE.EMAIL_CHANGED);
+  const vars = { name: user.fullName, newEmail };
+  const html = renderTemplate(template.content, vars);
+  return sendEmail({ to: oldEmail, toName: user.fullName, subject: renderTemplateText(template.subject, vars), html, text: stripHtml(html) }, "custom");
 }
 
 /** Sends the confirmation link for a new address to that new address; only its hash is stored. */

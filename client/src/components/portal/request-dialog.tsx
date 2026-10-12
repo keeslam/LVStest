@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Loader2 } from "lucide-react";
 import { DetailRow } from "./reservation-dialog";
 import { StatusBadge } from "./ui";
+import { formatDateNl } from "@/lib/format-date-nl";
 
 /** Three steps: submitted, in progress, handled (or rejected). */
 function RequestProgress({ status }: { status: string }) {
@@ -59,7 +60,7 @@ export function RequestDialog({ id, onClose }: { id: number | null; onClose: () 
             <RequestProgress status={r.status} />
             <dl className="space-y-1">
               <DetailRow label={t("requests.chooseType")} value={t(`requests.type.${r.type}`)} />
-              <DetailRow label={t("requests.date")} value={new Date(r.createdAt).toLocaleString()} />
+              <DetailRow label={t("requests.date")} value={formatDateNl(r.createdAt, "dd-MM-yyyy HH:mm")} />
               {r.reservationId && (
                 <div className="grid gap-0.5 text-sm sm:grid-cols-3 sm:gap-2"><dt className="text-muted-foreground">{t("requests.form.reservation")}</dt>
                   <dd className="sm:col-span-2"><button type="button" className="underline" onClick={() => openReservation(r.reservationId!)}>#{r.reservationId}</button></dd></div>

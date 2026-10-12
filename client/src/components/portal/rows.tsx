@@ -1,14 +1,19 @@
 import { useTranslation } from "react-i18next";
 import { formatCurrency, formatDateTime } from "@/lib/format-utils";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { portalFetch, PortalApiError } from "@/lib/portal-api";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { portalFetch, portalQueryFn, PortalApiError } from "@/lib/portal-api";
 import { useToast } from "@/hooks/use-toast";
 import { CalendarDays, ChevronRight, MessageSquare, FileText, ShieldCheck, Eye, Download, CheckCircle2 } from "lucide-react";
 import type { PortalFineDto } from "@shared/fines";
 import type { PortalRequestDto } from "@shared/portal-requests";
-import type { PortalDocumentDto } from "@shared/portal-types";
+import type { PortalDocumentDto, PortalReservationDto } from "@shared/portal-types";
+import { vehicleName } from "@shared/vehicle-name";
+import { formatLicensePlate } from "@shared/license-plate";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { formatDateNl } from "@/lib/format-date-nl";
 import { ListCard, Plate, StatusBadge, btnSecondary, toneFor, DriverChip } from "./ui";
 
 /** Rows shared by the list pages and the list dialogs, so both look the same. */
@@ -44,7 +49,7 @@ export function RequestRow({ request: r }: { request: PortalRequestDto }) {
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="font-semibold text-[#0f172a]">{t(`requests.type.${r.type}`)}</span>
-          <span className="text-xs text-[#64748b]">#{r.id} · {new Date(r.createdAt).toLocaleDateString()}</span>
+          <span className="text-xs text-[#64748b]">#{r.id} · {formatDateNl(r.createdAt, "dd-MM-yyyy")}</span>
         </div>
         <div className="mt-1 truncate text-xs text-[#64748b] sm:text-sm">{r.type === "booking" && (r.payload as { vehicleLabel?: string }).vehicleLabel ? `${(r.payload as { vehicleLabel?: string }).vehicleLabel} · ` : ""}{r.message.split("\n")[0].slice(0, 100)}</div>
         {r.staffReply && <div className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-[#0f6e56]"><MessageSquare className="h-3.5 w-3.5" />{t("requests.replied")}</div>}
@@ -62,6 +67,11 @@ export function DocumentRow({ document: d, showReservationLink = true }: { docum
   const { openDocument, openReservation } = usePortalDialogs();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { data: reservations = [] } = useQuery<PortalReservationDto[]>({ queryKey: ["portal", "/api/portal/reservations"], queryFn: portalQueryFn });
+  const [confirming, setConfirming] = useState(false);
+  // The document is named after the car it is about, not after its file name or an internal reservation number.
+  const reservation = d.reservationId ? reservations.find((r) => r.id === d.reservationId) : undefined;
+  const label = reservation?.vehicle ? `${vehicleName(reservation.vehicle.brand, reservation.vehicle.model)} ${formatLicensePlate(reservation.vehicle.licensePlate)}` : d.reservationId ? t("documents.reservation", { id: d.reservationId }) : "";
   const ack = useMutation({
     mutationFn: () => portalFetch("POST", `/api/portal/documents/${d.id}/ack`),
     onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ["portal"] }); toast({ title: t("documents.ackDone") }); },
@@ -74,16 +84,28 @@ export function DocumentRow({ document: d, showReservationLink = true }: { docum
           {d.kind === "contract" ? <FileText className="h-5 w-5" /> : <ShieldCheck className="h-5 w-5" />}
         </span>
         <div className="min-w-0">
-          <div className="truncate text-sm font-semibold text-[#0f172a]">{t(`documents.${d.kind}`)}{d.reservationId ? ` · ${t("documents.reservation", { id: d.reservationId })}` : ""}</div>
-          <div className="truncate text-xs text-[#64748b]">{d.fileName} · {new Date(d.uploadDate).toLocaleDateString()}</div>
+          <div className="line-clamp-2 text-sm font-semibold text-[#0f172a]" title={d.fileName}>{t(`documents.${d.kind}`)}{label ? ` · ${label}` : ""}</div>
+          <div className="truncate text-xs text-[#64748b]">{reservation?.contractNumber ? `${t("documents.contractNo", { nr: reservation.contractNumber })} · ` : ""}{formatDateNl(d.uploadDate, "dd-MM-yyyy")}</div>
           {showReservationLink && d.reservationId && <button type="button" className="text-xs text-[#2a2f9c] underline" onClick={() => openReservation(d.reservationId!)}>{t("documents.openReservation")}</button>}
           {d.kind === "contract" && (
             d.ack
-              ? <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#e1f5ee] px-2 py-0.5 text-xs font-medium text-[#085041]" data-testid={`document-ack-${d.id}`}><CheckCircle2 className="h-3.5 w-3.5" />{t("documents.ackedBy", { name: d.ack.by, date: new Date(d.ack.at).toLocaleString() })}</div>
-              : <button type="button" onClick={() => { if (window.confirm(t("documents.ackConfirm"))) ack.mutate(); }} disabled={ack.isPending} className="mt-1 inline-flex items-center gap-1 rounded-full border border-[#1d9e75] px-2 py-0.5 text-xs font-medium text-[#085041] hover:bg-[#e1f5ee]" data-testid={`button-ack-${d.id}`}><CheckCircle2 className="h-3.5 w-3.5" />{t("documents.ack")}</button>
+              ? <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#e1f5ee] px-2 py-0.5 text-xs font-medium text-[#085041]" data-testid={`document-ack-${d.id}`}><CheckCircle2 className="h-3.5 w-3.5" />{t("documents.ackedBy", { name: d.ack.by, date: formatDateNl(d.ack.at, "dd-MM-yyyy HH:mm") })}</div>
+              : <button type="button" onClick={() => setConfirming(true)} disabled={ack.isPending} className="mt-1 inline-flex items-center gap-1 rounded-full border border-[#1d9e75] px-2 py-0.5 text-xs font-medium text-[#085041] hover:bg-[#e1f5ee]" data-testid={`button-ack-${d.id}`}><CheckCircle2 className="h-3.5 w-3.5" />{t("documents.ack")}</button>
           )}
         </div>
       </div>
+      <AlertDialog open={confirming} onOpenChange={setConfirming}>
+        <AlertDialogContent data-testid={`ack-dialog-${d.id}`}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("documents.ackConfirmTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("documents.ackConfirm")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("actions.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => ack.mutate()} data-testid={`button-ack-confirm-${d.id}`}>{t("documents.ackConfirmAction")}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <div className="flex shrink-0 gap-1">
         <Button size="sm" variant="outline" className={btnSecondary} onClick={() => openDocument(d)} data-testid={`button-open-document-${d.id}`} aria-label={t("documents.open")}><Eye className="h-4 w-4 sm:mr-1" /><span className="hidden sm:inline">{t("documents.open")}</span></Button>
         {/* target=_blank: never navigate the iframe itself away */}

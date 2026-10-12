@@ -197,3 +197,26 @@ export function daysUntil(iso: string | null | undefined): number | null {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   return Math.round((target.getTime() - today.getTime()) / 86_400_000);
 }
+
+/** What a list page shows while its data loads: not an empty page that looks like "nothing here". */
+export function PortalLoading() {
+  const { t } = useTranslation("portal");
+  return (
+    <div className="space-y-3" role="status" aria-live="polite" aria-busy="true" data-testid="portal-loading">
+      <span className="sr-only">{t("loading")}</span>
+      {[0, 1, 2].map((i) => <div key={i} className="h-20 animate-pulse rounded-2xl bg-white ring-1 ring-[#e6e8f0]" />)}
+    </div>
+  );
+}
+
+/** What a page shows when its data could not be loaded: an honest message and a way to try again, not an empty list. */
+export function PortalLoadError({ onRetry }: { onRetry: () => void }) {
+  const { t } = useTranslation("portal");
+  return (
+    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-8 text-center" role="alert" data-testid="portal-load-error">
+      <p className="text-sm font-medium text-amber-900">{t("loadError.title")}</p>
+      <p className="mt-1 text-sm text-amber-800">{t("loadError.body")}</p>
+      <button type="button" onClick={onRetry} className="mt-4 rounded-full bg-[#1a1d62] px-4 py-1.5 text-sm font-medium text-white hover:bg-[#2a2f9c]" data-testid="portal-load-retry">{t("loadError.retry")}</button>
+    </div>
+  );
+}

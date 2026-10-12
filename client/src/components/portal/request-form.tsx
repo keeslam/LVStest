@@ -17,6 +17,7 @@ import { PeriodPicker, TimeSelect } from "./period-picker";
 import { ReservationPicker } from "./reservation-picker";
 import { formatPortalDate } from "./reservation-card";
 import { officeToday, officeTomorrow } from "@/lib/office-date";
+import { vehicleName } from "@shared/vehicle-name";
 
 export function RequestForm({ initialType, reservationId: initialReservation, fineId: initialFine, vehicleId: initialVehicle, startDate: initialStart, endDate: initialEnd, blockId, blockDate, onSubmitted }: { initialType?: PortalRequestTypeValue; reservationId?: number; fineId?: number; vehicleId?: number; startDate?: string; endDate?: string; blockId?: number; blockDate?: string; onSubmitted: (id: number) => void }) {
   const { t } = useTranslation("portal");
@@ -122,7 +123,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
             <Label htmlFor="rq-vehicle">{t("requests.form.vehicle")}</Label>
             <select id="rq-vehicle" className="w-full rounded-md border px-3 py-2 text-sm" value={payload.vehicleId ?? ""} onChange={(e) => setPayload({ ...payload, vehicleId: e.target.value })} required disabled={!periodOk} data-testid="select-request-vehicle">
               <option value="">{!periodOk ? t("requests.form.pickPeriodFirst") : loadingVehicles ? "…" : vehicles.length === 0 ? t("requests.form.noneFree") : "—"}</option>
-              {vehicles.map((v) => <option key={v.id} value={v.id}>{v.brand} {v.model} · {v.licensePlate}</option>)}
+              {vehicles.map((v) => <option key={v.id} value={v.id}>{vehicleName(v.brand, v.model)} · {v.licensePlate}</option>)}
             </select>
             {periodOk && !loadingVehicles && payload.vehicleId && !vehicles.some((v) => String(v.id) === payload.vehicleId) && <p className="mt-1 text-xs text-[#a32d2d]">{t("requests.form.vehicleNotFree")}</p>}
           </div>

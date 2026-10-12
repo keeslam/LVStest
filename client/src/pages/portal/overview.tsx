@@ -11,7 +11,7 @@ import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { Button } from "@/components/ui/button";
 import { ReservationCard } from "@/components/portal/reservation-card";
 import { DriverFormDialog } from "@/components/portal/driver-form-dialog";
-import { EmptyState, MoreFooter, Section, Tile, btnPrimary, btnSecondary } from "@/components/portal/ui";
+import { EmptyState, MoreFooter, PortalLoadError, PortalLoading, Section, Tile, btnPrimary, btnSecondary } from "@/components/portal/ui";
 import { FineRow, RequestRow } from "@/components/portal/rows";
 
 /** Rows shown per section on the overview; the list dialog has the rest with search. */
@@ -22,7 +22,7 @@ export default function PortalOverviewPage() {
   const { t } = useTranslation("portal");
   const { me } = usePortalAuth();
   const { openNewRequest, openList } = usePortalDialogs();
-  const { data: reservations = [] } = useQuery<PortalReservationDto[]>({ queryKey: ["portal", "/api/portal/reservations"], queryFn: portalQueryFn });
+  const { data: reservations = [], isLoading, isError, refetch } = useQuery<PortalReservationDto[]>({ queryKey: ["portal", "/api/portal/reservations"], queryFn: portalQueryFn });
   const { data: fines = [] } = useQuery<PortalFineDto[]>({ queryKey: ["portal", "/api/portal/fines"], queryFn: portalQueryFn, enabled: Boolean(me?.settings.canViewFines) });
   const { data: requests = [] } = useQuery<PortalRequestDto[]>({ queryKey: ["portal", "/api/portal/requests"], queryFn: portalQueryFn, enabled: Boolean(me?.settings.canSubmitRequests) });
   const showPrice = Boolean(me?.settings.showPrices);
@@ -31,6 +31,10 @@ export default function PortalOverviewPage() {
   const openFines = fines.filter((f) => f.status !== "paid" && f.status !== "cancelled");
   const openRequests = requests.filter((r) => r.status === "new" || r.status === "in_progress");
   const canManageDrivers = Boolean(me?.role === "admin" && me.settings.canManageDrivers);
+
+  // Not the empty-looking dashboard while the data loads, and not "no rentals" when loading failed.
+  if (isLoading) return <PortalLoading />;
+  if (isError) return <PortalLoadError onRetry={() => refetch()} />;
 
   return (
     <div className="space-y-6" data-testid="portal-overview">
@@ -43,13 +47,13 @@ export default function PortalOverviewPage() {
 
       <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
         {me?.settings.canSubmitRequests && <Button className={`${btnPrimary} col-span-2 sm:col-span-1`} onClick={() => openNewRequest()} data-testid="quick-new-request"><Plus className="mr-1.5 h-4 w-4" />{t("requests.new")}</Button>}
-        {me?.settings.canBook && me.settings.canSubmitRequests && <Button asChild className={btnSecondary} variant="outline" data-testid="quick-vehicles"><Link href="/aanvragen"><Car className="mr-1.5 h-4 w-4" />{t("vehicles.quick")}</Link></Button>}
+        {me?.settings.canBook && me.settings.canSubmitRequests && <Button asChild className={`${btnSecondary} h-auto min-h-9 whitespace-normal py-2 text-left`} variant="outline" data-testid="quick-vehicles"><Link href="/aanvragen"><Car className="mr-1.5 h-4 w-4" />{t("vehicles.quick")}</Link></Button>}
         {me?.settings.canSubmitRequests && current.length + upcoming.length > 0 && (<>
-          <Button variant="outline" className={btnSecondary} onClick={() => openNewRequest({ type: "damage" })} data-testid="quick-damage"><TriangleAlert className="mr-1.5 h-4 w-4" />{t("requests.type.damage")}</Button>
-          <Button variant="outline" className={btnSecondary} onClick={() => openNewRequest({ type: "maintenance" })} data-testid="quick-maintenance"><Wrench className="mr-1.5 h-4 w-4" />{t("requests.form.reportMaintenance")}</Button>
+          <Button variant="outline" className={`${btnSecondary} h-auto min-h-9 whitespace-normal py-2 text-left`} onClick={() => openNewRequest({ type: "damage" })} data-testid="quick-damage"><TriangleAlert className="mr-1.5 h-4 w-4" />{t("requests.type.damage")}</Button>
+          <Button variant="outline" className={`${btnSecondary} h-auto min-h-9 whitespace-normal py-2 text-left`} onClick={() => openNewRequest({ type: "maintenance" })} data-testid="quick-maintenance"><Wrench className="mr-1.5 h-4 w-4" />{t("requests.form.reportMaintenance")}</Button>
         </>)}
-        {canManageDrivers && <DriverFormDialog><Button variant="outline" className={btnSecondary}><UserPlus className="mr-1.5 h-4 w-4" />{t("actions.addDriver")}</Button></DriverFormDialog>}
-        {me?.settings.canViewContracts && <Button variant="outline" className={btnSecondary} onClick={() => openList("documents")}><FileText className="mr-1.5 h-4 w-4" />{t("tabs.documents")}</Button>}
+        {canManageDrivers && <DriverFormDialog><Button variant="outline" className={`${btnSecondary} h-auto min-h-9 whitespace-normal py-2 text-left`}><UserPlus className="mr-1.5 h-4 w-4" />{t("actions.addDriver")}</Button></DriverFormDialog>}
+        {me?.settings.canViewContracts && <Button variant="outline" className={`${btnSecondary} h-auto min-h-9 whitespace-normal py-2 text-left`} onClick={() => openList("documents")}><FileText className="mr-1.5 h-4 w-4" />{t("tabs.documents")}</Button>}
       </div>
 
       {/* Two columns on desktop so the lists sit side by side; one column on phones. */}

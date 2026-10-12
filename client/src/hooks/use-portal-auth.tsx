@@ -14,6 +14,8 @@ interface PortalAuthContextValue {
 
 const PortalAuthContext = createContext<PortalAuthContextValue | null>(null);
 export const PORTAL_ME_KEY = ["portal", "/api/portal/me"] as const;
+/** Set when a request found the session gone, so the login page can say so instead of just appearing. */
+export const SESSION_EXPIRED_FLAG = "portal-session-expired";
 
 export function PortalAuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
@@ -32,6 +34,18 @@ export function PortalAuthProvider({ children }: { children: ReactNode }) {
     staleTime: 60_000,
     retry: false,
   });
+
+  // The session ends after an hour without activity. A page that finds out through any other request (not only /me) must
+  // not keep showing stale data: it goes to the login page, which says why.
+  useEffect(() => queryClient.getQueryCache().subscribe((event) => {
+    if (event.type !== "updated" || event.action.type !== "error") return;
+    const error = event.action.error;
+    const key = event.query.queryKey;
+    if (error instanceof PortalApiError && error.status === 401 && key[0] === "portal" && key[1] !== "/api/portal/me") {
+      try { sessionStorage.setItem(SESSION_EXPIRED_FLAG, "1"); } catch { /* storage blocked: the notice is a nicety */ }
+      queryClient.setQueryData(PORTAL_ME_KEY, null);
+    }
+  }), [queryClient]);
 
   // D11: the portal reads "today" on the office calendar the server uses.
   useEffect(() => {

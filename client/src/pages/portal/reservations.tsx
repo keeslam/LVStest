@@ -6,7 +6,7 @@ import type { PortalReservationDto } from "@shared/portal-types";
 import { portalQueryFn } from "@/lib/portal-api";
 import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { ReservationCard } from "@/components/portal/reservation-card";
-import { EmptyState, PageHeader, SearchBox, usePortalSearch } from "@/components/portal/ui";
+import { EmptyState, PageHeader, SearchBox, usePortalSearch, PortalLoading, PortalLoadError } from "@/components/portal/ui";
 
 const FILTERS = ["active", "upcoming", "past", "all"] as const;
 type Filter = typeof FILTERS[number];
@@ -16,8 +16,9 @@ export default function PortalReservationsPage() {
   const { me } = usePortalAuth();
   const [filter, setFilter] = useState<Filter>("active");
   const { query, setQuery, q, hit } = usePortalSearch();
-  const { data = [], isLoading } = useQuery<PortalReservationDto[]>({ queryKey: ["portal", "/api/portal/reservations"], queryFn: portalQueryFn });
-  if (isLoading) return null;
+  const { data = [], isLoading, isError, refetch } = useQuery<PortalReservationDto[]>({ queryKey: ["portal", "/api/portal/reservations"], queryFn: portalQueryFn });
+  if (isLoading) return <PortalLoading />;
+  if (isError) return <PortalLoadError onRetry={() => refetch()} />;
   const matches = (r: PortalReservationDto) =>
     filter === "all" ? true : filter === "active" ? r.status === "picked_up" : filter === "upcoming" ? r.status === "booked" : !["picked_up", "booked"].includes(r.status);
   const shown = data.filter(matches).filter((r) => hit(r.vehicle?.brand, r.vehicle?.model, r.vehicle?.licensePlate, r.driver?.displayName, r.contractNumber, r.startDate, r.endDate));

@@ -5,13 +5,14 @@ import { Receipt } from "lucide-react";
 import type { PortalFineDto } from "@shared/fines";
 import { portalQueryFn } from "@/lib/portal-api";
 import { FineRow } from "@/components/portal/rows";
-import { EmptyState, PageHeader, SearchBox, usePortalSearch } from "@/components/portal/ui";
+import { EmptyState, PageHeader, SearchBox, usePortalSearch, PortalLoading, PortalLoadError } from "@/components/portal/ui";
 
 export default function PortalFinesPage() {
   const { t } = useTranslation("portal");
-  const { data = [], isLoading } = useQuery<PortalFineDto[]>({ queryKey: ["portal", "/api/portal/fines"], queryFn: portalQueryFn });
+  const { data = [], isLoading, isError, refetch } = useQuery<PortalFineDto[]>({ queryKey: ["portal", "/api/portal/fines"], queryFn: portalQueryFn });
   const { query, setQuery, q, hit } = usePortalSearch();
-  if (isLoading) return null;
+  if (isLoading) return <PortalLoading />;
+  if (isError) return <PortalLoadError onRetry={() => refetch()} />;
   const open = data.filter((f) => f.status !== "paid" && f.status !== "cancelled");
   const shown = data.filter((f) => hit(f.description, f.licensePlate, f.driver?.displayName, f.reference, f.totalAmount, t(`fines.status.${f.status}`)));
   const total = open.reduce((sum, f) => sum + Number(f.totalAmount), 0);

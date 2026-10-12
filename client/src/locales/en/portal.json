@@ -57,7 +57,8 @@
     "forgotSubmit": "Send reset link",
     "forgotSent": "If this e-mail address is known, a message with a reset link has been sent.",
     "backToLogin": "Back to login",
-    "privacyNote": "By signing in you agree to the use of your data as described in our"
+    "privacyNote": "By signing in you agree to the use of your data as described in our",
+    "sessionExpired": "Your session has ended because you were inactive for a while. Log in again to continue."
   },
   "activate": {
     "title": "Set your password",
@@ -139,7 +140,10 @@
     "ack": "Seen and agreed",
     "ackConfirm": "Confirm that you have read this contract and agree. Your name and the time are recorded.",
     "ackDone": "Recorded: seen and agreed.",
-    "ackedBy": "Agreed by {{name}} on {{date}}"
+    "ackedBy": "Agreed by {{name}} on {{date}}",
+    "ackConfirmTitle": "Give your approval?",
+    "ackConfirmAction": "Seen and agreed",
+    "contractNo": "contract {{nr}}"
   },
   "drivers": {
     "title": "Drivers",
@@ -269,7 +273,9 @@
       "billingAddress": "Street",
       "billingPostalCode": "Postal code",
       "billingCity": "City"
-    }
+    },
+    "confirmPassword": "Your password to confirm",
+    "confirmPasswordHint": "Needed because these addresses decide where invoices, fines and MOT messages are sent."
   },
   "errors": {
     "PORTAL_NOT_AUTHENTICATED": "You are not logged in.",
@@ -292,7 +298,9 @@
     "PORTAL_DUPLICATE_REQUEST": "There is already an open request for this vehicle in this period.",
     "PORTAL_EMAIL_IN_USE": "This e-mail address is already used by another account.",
     "PORTAL_MAINTENANCE_TOO_LATE": "This maintenance starts within 48 hours and can no longer be changed through the portal. Please call Lam Groep.",
-    "PORTAL_MAINTENANCE_WEEKEND": "Choose a weekday: the workshop is closed at weekends."
+    "PORTAL_MAINTENANCE_WEEKEND": "Choose a weekday: the workshop is closed at weekends.",
+    "PORTAL_RATE_LIMITED": "Too many requests in a short time. Please try again in a quarter of an hour.",
+    "PORTAL_TOO_MANY_OPEN": "You already have many open requests. Wait until some are handled or withdraw one."
   },
   "admin": {
     "navLabel": "Customer portal",
@@ -1254,7 +1262,9 @@
     "title": "Notifications",
     "markAll": "Mark all read",
     "search": "Search notifications…",
-    "empty": "No notifications. Replies to requests, new fines and APK/service warnings show up here."
+    "empty": "No notifications. Replies to requests, new fines and APK/service warnings show up here.",
+    "titleUnread": "Notifications, {{count}} unread",
+    "unread": "Unread"
   },
   "thread": {
     "title": "Messages",
@@ -1321,5 +1331,17 @@
     "disclaimer": "Calculated from the configured fiscal rules and the available data. This is not tax advice and not a return; your own adviser or the tax authority prevails.",
     "pdf": "PDF",
     "csv": "Download this year as CSV"
+  },
+  "pageTitle": "Customer portal",
+  "notFound": {
+    "title": "This page does not exist",
+    "body": "The address is wrong or the page has moved. Go back to the overview to continue.",
+    "back": "To the overview"
+  },
+  "loading": "Loading…",
+  "loadError": {
+    "title": "The data could not be loaded.",
+    "body": "This is not an empty list: something went wrong while fetching it. Check your connection and try again.",
+    "retry": "Try again"
   }
 }

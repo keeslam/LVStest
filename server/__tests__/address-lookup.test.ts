@@ -6,6 +6,7 @@ import { registerAddressLookupRoutes } from "../routes/address-lookup";
 import { portalStorage } from "../services/portal-storage";
 import { hashPassword } from "../auth";
 import { getUploadsDir } from "../../shared/paths";
+import { UserPermission } from "../../shared/schema";
 import { buildPortalTestApp, buildStaffTestApp, createTestCustomer, cleanupPortalTestData, TEST_EMAIL_DOMAIN } from "./portal-helpers";
 
 const COOLSINGEL = [
@@ -73,7 +74,8 @@ describe("address lookup service", () => {
 });
 
 describe("address lookup routes", () => {
-  const staff = buildStaffTestApp([], (app) => registerAddressLookupRoutes(app, { requireAuth: (_r: any, _s: any, n: any) => n(), uploadsDir: getUploadsDir() } as any));
+  const staff = buildStaffTestApp([UserPermission.MANAGE_CUSTOMERS], (app) => registerAddressLookupRoutes(app, { requireAuth: (_r: any, _s: any, n: any) => n(), uploadsDir: getUploadsDir() } as any));
+  const noRights = buildStaffTestApp([UserPermission.VIEW_VEHICLES], (app) => registerAddressLookupRoutes(app, { requireAuth: (_r: any, _s: any, n: any) => n(), uploadsDir: getUploadsDir() } as any));
   const portal = buildPortalTestApp();
   const password = "wachtwoord-1234";
 
@@ -92,6 +94,12 @@ describe("address lookup routes", () => {
     const res = await request(staff).get("/api/address-lookup").query({ postcode: "3011AD", number: "4" });
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ found: true, street: "Coolsingel", city: "Rotterdam" });
+  });
+
+  it("is for staff who manage customers: another staff account gets 403 and nothing is looked up", async () => {
+    mockPdok(COOLSINGEL);
+    expect((await request(noRights).get("/api/address-lookup").query({ postcode: "3011AD", number: "4" })).status).toBe(403);
+    expect(pdok).not.toHaveBeenCalled();
   });
 
   it("rejects a missing or non-numeric house number with a 400", async () => {

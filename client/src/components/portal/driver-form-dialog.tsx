@@ -14,6 +14,7 @@ import { COUNTRIES } from "@shared/countries";
 import { useToast } from "@/hooks/use-toast";
 import { capitalizeName, formatLicensePlate } from "@/lib/format-utils";
 import { btnPrimary } from "./ui";
+import { vehicleName } from "@shared/vehicle-name";
 
 const FIELDS = ["displayName", "email", "phone", "firstName", "lastName", "driverLicenseNumber", "licenseExpiry", "licenseOrigin", "preferredLanguage", "notes"] as const;
 type Field = typeof FIELDS[number];
@@ -58,7 +59,7 @@ export function DriverFormDialog({ driver, children, open: controlledOpen, onOpe
   const { data: reservations = [] } = useQuery<PortalReservationDto[]>({ queryKey: ["portal", "/api/portal/reservations"], queryFn: portalQueryFn, enabled: open && !isEdit });
   const cars = reservations.filter(assignable).map((r) => ({
     id: r.id,
-    label: r.vehicle ? `${r.vehicle.brand} ${r.vehicle.model} · ${formatLicensePlate(r.vehicle.licensePlate)}` : `#${r.id}`,
+    label: r.vehicle ? `${vehicleName(r.vehicle.brand, r.vehicle.model)} · ${formatLicensePlate(r.vehicle.licensePlate)}` : `#${r.id}`,
     sub: r.driver ? t("drivers.currently", { name: r.driver.displayName }) : t("drivers.noDriverYet"),
     search: `${r.vehicle?.licensePlate ?? ""} ${r.driver?.displayName ?? ""} ${r.startDate}`,
   }));

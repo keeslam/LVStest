@@ -14,6 +14,8 @@ import { formatPortalDate } from "@/components/portal/reservation-card";
 import { ChangeDriverDialog } from "@/components/portal/change-driver-dialog";
 import { MaintenanceLine } from "@/components/portal/vehicle-card";
 import { Plate, StatusBadge } from "./ui";
+import { vehicleName } from "@shared/vehicle-name";
+import { formatDateNl } from "@/lib/format-date-nl";
 
 type Detail = PortalReservationDto & {
   driverHistory: Array<{ id: number; driverId: number | null; driverName: string | null; assignedFrom: string; assignedUntil: string | null; note: string | null }>;
@@ -52,7 +54,7 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
         {isError ? <p className="p-6 text-center text-sm text-muted-foreground">{t("errors.PORTAL_NOT_FOUND")}</p> : isLoading || !r ? <div className="flex justify-center p-6"><Loader2 className="h-5 w-5 animate-spin" /></div> : (
           <div className="space-y-4">
             <dl className="space-y-1">
-              {r.vehicle && <div className="grid gap-0.5 text-sm sm:grid-cols-3 sm:gap-2"><dt className="text-muted-foreground">{t("fields.vehicle")}</dt><dd className="flex flex-wrap items-center gap-2 sm:col-span-2">{r.vehicle.brand} {r.vehicle.model} <Plate value={r.vehicle.licensePlate} /></dd></div>}
+              {r.vehicle && <div className="grid gap-0.5 text-sm sm:grid-cols-3 sm:gap-2"><dt className="text-muted-foreground">{t("fields.vehicle")}</dt><dd className="flex flex-wrap items-center gap-2 sm:col-span-2">{vehicleName(r.vehicle.brand, r.vehicle.model)} <Plate value={r.vehicle.licensePlate} /></dd></div>}
               <DetailRow label={t("fields.period")} value={`${formatPortalDate(r.startDate)} – ${r.endDate ? formatPortalDate(r.endDate) : t("overview.openEnded")}`} />
               <DetailRow label={t("fields.driver")} value={r.driver?.displayName} />
               <DetailRow label={t("fields.contractNumber")} value={r.contractNumber} />
@@ -101,7 +103,7 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
                   <li key={h.id} className="flex justify-between gap-2">
                     <span>{h.driverName ?? "—"}{h.note ? <span className="text-muted-foreground"> · {h.note}</span> : null}</span>
                     <span className="text-muted-foreground">
-                      {new Date(h.assignedFrom).toLocaleDateString()} – {h.assignedUntil ? new Date(h.assignedUntil).toLocaleDateString() : t("reservations.current")}
+                      {formatDateNl(h.assignedFrom, "dd-MM-yyyy")} – {h.assignedUntil ? formatDateNl(h.assignedUntil, "dd-MM-yyyy") : t("reservations.current")}
                     </span>
                   </li>
                 ))}

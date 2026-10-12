@@ -2,6 +2,8 @@ import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { lookupDutchAddress } from "../services/address-lookup";
 import { addressLookupLimiter } from "../middleware/security/rateLimiter.js";
+import { hasPermission } from "../middleware/permissions.js";
+import { UserPermission } from "../../shared/schema";
 import type { RouteDeps } from "./deps";
 
 const querySchema = z.object({
@@ -27,7 +29,7 @@ export async function addressLookupHandler(req: Request, res: Response): Promise
   }
 }
 
-/** Staff side. */
+/** Staff side: whoever may add or edit customers (the forms that type an address). */
 export function registerAddressLookupRoutes(app: Express, deps: RouteDeps): void {
-  app.get("/api/address-lookup", deps.requireAuth, addressLookupLimiter, addressLookupHandler);
+  app.get("/api/address-lookup", deps.requireAuth, hasPermission(UserPermission.MANAGE_CUSTOMERS), addressLookupLimiter, addressLookupHandler);
 }

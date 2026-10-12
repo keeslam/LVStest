@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { PeriodPicker } from "./period-picker";
 import { EmptyState, Plate, SearchBox, Section, btnPrimary, usePortalSearch } from "./ui";
 import { officeToday } from "@/lib/office-date";
+import { vehicleName } from "@shared/vehicle-name";
 
 const money = (v: string | null | undefined) => (v ? `€ ${Number(v).toLocaleString("nl-NL", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : null);
 
@@ -49,7 +50,7 @@ export function AvailableVehicles() {
                 <div key={v.id} className="flex flex-col rounded-xl border border-[#e6e8f0] bg-white p-4 shadow-sm" data-testid={`portal-vehicle-${v.id}`}>
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="truncate font-semibold text-[#0f172a]">{v.brand} {v.model}</div>
+                      <div className="truncate font-semibold text-[#0f172a]">{vehicleName(v.brand, v.model)}</div>
                       <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[#64748b]">
                         <Plate value={v.licensePlate} />
                         {v.vehicleType && <span className="inline-flex items-center gap-1"><Tag className="h-3 w-3" />{v.vehicleType}</span>}

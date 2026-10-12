@@ -13,6 +13,7 @@ import { SearchListPicker } from "@/components/ui/search-list-picker";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { DriverFormDialog } from "./driver-form-dialog";
 import { btnPrimary } from "./ui";
+import { vehicleName } from "@shared/vehicle-name";
 
 /** Active drivers; those already on another booked or running car are listed but cannot be chosen (one car per driver). */
 const driverItems = (drivers: PortalDriverDto[], reservations: PortalReservationDto[], reservationId: number, busyLabel: (plate: string) => string) =>
@@ -87,7 +88,7 @@ export function AssignVehicleDialog({ driver, open, onOpenChange }: { driver: Po
   const { data: reservations = [] } = useQuery<PortalReservationDto[]>({ queryKey: ["portal", "/api/portal/reservations"], queryFn: portalQueryFn, enabled: open });
   const cars = reservations.filter((r) => r.status === "booked" || r.status === "picked_up").map((r) => ({
     id: r.id,
-    label: r.vehicle ? `${r.vehicle.brand} ${r.vehicle.model} · ${formatLicensePlate(r.vehicle.licensePlate)}` : `#${r.id}`,
+    label: r.vehicle ? `${vehicleName(r.vehicle.brand, r.vehicle.model)} · ${formatLicensePlate(r.vehicle.licensePlate)}` : `#${r.id}`,
     sub: r.driver?.id === driver.id ? t("drivers.alreadyDriving") : r.driver ? t("drivers.currently", { name: r.driver.displayName }) : t("drivers.noDriverYet"),
     search: `${r.vehicle?.licensePlate ?? ""} ${r.driver?.displayName ?? ""} ${r.startDate}`,
   }));

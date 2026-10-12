@@ -15,6 +15,7 @@ import { portalStorage } from "../services/portal-storage";
 import { storage } from "../storage";
 import { scheduleContractRegeneration } from "../services/reservation-pdf-regeneration";
 import { resolveDocumentFilePath } from "../services/document-paths";
+import { setSafeFileHeaders } from "../utils/portal-files";
 import { sanitizeFilename } from "../utils/security/fileUploadSecurity";
 import { AuditLogger } from "../utils/security/auditLogger";
 import { onMaintenanceBlockChanged, findPortalCustomerForBlock } from "../services/portal-maintenance-events";
@@ -93,9 +94,8 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     const att = await requestsStorage.getAttachment(attachmentId);
     const file = att && att.requestId === id ? resolveDocumentFilePath(att.filePath) : null;
     if (!att || !file) return res.status(404).json({ message: "Attachment not found" });
-    res.setHeader("Content-Type", att.contentType);
-    res.setHeader("Content-Disposition", `inline; filename="${sanitizeFilename(att.fileName)}"`);
-    fs.createReadStream(file).pipe(res);
+    setSafeFileHeaders(res, att.contentType, att.fileName, true, sanitizeFilename(att.fileName));
+    fs.createReadStream(file).on("error", () => res.destroy()).pipe(res);
   });
 
   // Staff add to the conversation without closing the request.

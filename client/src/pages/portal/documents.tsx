@@ -4,13 +4,14 @@ import { FileText } from "lucide-react";
 import type { PortalDocumentDto } from "@shared/portal-types";
 import { portalQueryFn } from "@/lib/portal-api";
 import { DocumentRow } from "@/components/portal/rows";
-import { EmptyState, PageHeader, Section, SearchBox, usePortalSearch } from "@/components/portal/ui";
+import { EmptyState, PageHeader, Section, SearchBox, usePortalSearch, PortalLoading, PortalLoadError } from "@/components/portal/ui";
 
 export default function PortalDocumentsPage() {
   const { t } = useTranslation("portal");
-  const { data = [], isLoading } = useQuery<PortalDocumentDto[]>({ queryKey: ["portal", "/api/portal/documents"], queryFn: portalQueryFn });
+  const { data = [], isLoading, isError, refetch } = useQuery<PortalDocumentDto[]>({ queryKey: ["portal", "/api/portal/documents"], queryFn: portalQueryFn });
   const { query, setQuery, q, hit } = usePortalSearch();
-  if (isLoading) return null;
+  if (isLoading) return <PortalLoading />;
+  if (isError) return <PortalLoadError onRetry={() => refetch()} />;
   const shown = data.filter((d) => hit(d.fileName, d.reservationId, t(`documents.${d.kind}`), d.uploadDate));
   const groups = new Map<number | null, PortalDocumentDto[]>();
   for (const d of shown) groups.set(d.reservationId, [...(groups.get(d.reservationId) ?? []), d]);

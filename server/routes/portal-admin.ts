@@ -16,7 +16,8 @@ const canView = hasPermission(UserPermission.VIEW_PORTAL, UserPermission.MANAGE_
 const canManage = hasPermission(UserPermission.MANAGE_PORTAL);
 
 function publicAccount(u: PortalUser) {
-  const { passwordHash, inviteTokenHash, ...rest } = u;
+  // Token hashes and the list of browsers the account logged in from stay on the server.
+  const { passwordHash, inviteTokenHash, emailChangeTokenHash, knownDevices, ...rest } = u;
   return { ...rest, activated: Boolean(passwordHash), invitePending: Boolean(inviteTokenHash) };
 }
 

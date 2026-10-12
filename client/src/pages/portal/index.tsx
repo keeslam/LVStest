@@ -1,4 +1,4 @@
-import { Route, Switch } from "wouter";
+import { Redirect, Route, Switch } from "wouter";
 import { PortalAuthProvider } from "@/hooks/use-portal-auth";
 import { PortalLayout } from "@/layouts/PortalLayout";
 import PortalLoginPage from "./login";
@@ -12,6 +12,7 @@ import PortalDocumentsPage from "./documents";
 import PortalDriversPage from "./drivers";
 import PortalFinesPage from "./fines";
 import PortalRequestsPage from "./requests";
+import PortalNotFoundPage from "./not-found";
 import { PortalDialogsProvider } from "@/hooks/use-portal-dialogs";
 
 /** Everything under /portaal. Mounted from App.tsx with `nest`, so paths here are relative. */
@@ -29,6 +30,8 @@ export default function PortalApp() {
           <Route path="/voertuigen" component={PortalVehiclesPage} />
           <Route path="/fiscaal" component={PortalFiscalPage} />
           <Route path="/documenten" component={PortalDocumentsPage} />
+          {/* The menu says "Contracten": anyone who types or bookmarks that word lands on the right page. */}
+          <Route path="/contracten">{() => <Redirect to="/documenten" />}</Route>
           <Route path="/bestuurders" component={PortalDriversPage} />
           <Route path="/account" component={PortalOverviewPage} />
           <Route path="/bekeuringen/:id" component={PortalFinesPage} />
@@ -37,7 +40,7 @@ export default function PortalApp() {
           <Route path="/aanvragen/:id" component={PortalRequestsPage} />
           <Route path="/aanvragen" component={PortalRequestsPage} />
           <Route path="/" component={PortalOverviewPage} />
-          <Route>{() => <PortalOverviewPage />}</Route>
+          <Route component={PortalNotFoundPage} />
         </Switch>
       </PortalLayout>
       </PortalDialogsProvider>

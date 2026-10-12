@@ -91,7 +91,8 @@ function toDto(period: VehicleUsagePeriod, plate: string | null, latest: (Fiscal
     assessedThrough: latest?.periodEndEffective ?? null,
     explanation: latest ? explanationFor(latest, withAmounts) : null,
     missingData: latest?.missingData ?? [],
-    reviewReasons: latest?.reviewReasons ?? [],
+    // Why staff review a case is an internal matter; the customer gets the status and what is missing, not the review codes.
+    reviewReasons: [],
     ruleVersionTitle: latest?.ruleVersionTitle ?? null,
     assessedAt: latest ? latest.createdAt.toISOString() : null,
     needsInput,
