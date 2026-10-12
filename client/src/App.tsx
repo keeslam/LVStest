@@ -59,8 +59,9 @@ function AppRoutes() {
         />
       )}
 
-      {/* RDW APK date change confirmation - only for authenticated users */}
-      {user && <ApkDateChangesDialog />}
+      {/* RDW APK date change confirmation: staff only, and never on the customer portal. A staff member who is
+          logged in in the same browser would otherwise see this fleet data on top of the portal pages. */}
+      {user && !location.startsWith("/portaal") && <ApkDateChangesDialog />}
 
       {/* D11: the office time zone (app setting) for every "today" on screen */}
       {user && <OfficeTimeZoneLoader />}
