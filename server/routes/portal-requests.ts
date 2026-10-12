@@ -10,7 +10,7 @@ import { assignDriverToReservation } from "../services/driver-assignments";
 import { realtimeEvents } from "../realtime-events";
 import { customerNotifications } from "../services/portal-customer-notifications";
 import { requestsStorage, toRequestDto } from "../services/portal-requests-storage";
-import { sendRequestReplyMail } from "../services/portal-mail";
+import { sendRequestReplyMail, requestReplyMailOptedOut } from "../services/portal-mail";
 import { portalStorage } from "../services/portal-storage";
 import { storage } from "../storage";
 import { scheduleContractRegeneration } from "../services/reservation-pdf-regeneration";
@@ -59,11 +59,14 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     // BUG-155: whether the customer actually got the mail is part of the
     // answer, not something to swallow into the log. The caller passes it on as
     // `mailSent`, so the staff screen can say "reply saved, mail failed".
-    let mailSent = false;
-    try { mailSent = await sendRequestReplyMail(id); } catch (e) { console.error("request reply mail failed:", e); }
+    let mailSent = false, mailOptedOut = false;
+    try {
+      mailOptedOut = await requestReplyMailOptedOut(id);
+      mailSent = await sendRequestReplyMail(id);
+    } catch (e) { console.error("request reply mail failed:", e); }
     await portalStorage.logActivity({ customerId, action: "request_replied", entity: "request", entityId: id, details: { status, by: actor(req) } });
     await AuditLogger.logFromRequest(req, "portal_request.reply", "portal_request", id, { status });
-    return { ...(updated as Record<string, unknown>), mailSent } as typeof updated & { mailSent: boolean };
+    return { ...(updated as Record<string, unknown>), mailSent, mailOptedOut } as typeof updated & { mailSent: boolean; mailOptedOut: boolean };
   }
 
   app.get("/api/portal-requests", canView, async (req, res) => {
@@ -135,6 +138,10 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     if (row.type === "booking" && parsed.data.status === "done" && !row.reservationId) {
       return res.status(400).json({ message: "Een huuraanvraag kan alleen worden afgehandeld via Goedkeuren (maakt de reservering) of Afwijzen", code: "BOOKING_NEEDS_RESERVATION" });
     }
+    // Same for a name change: "done" without Goedkeuren would tell the customer it is changed while the record is not.
+    if (row.type === "company_name_change" && parsed.data.status === "done") {
+      return res.status(400).json({ message: "Een naamwijziging kan alleen worden afgehandeld via Goedkeuren (past de naam aan) of Afwijzen", code: "COMPANY_NAME_NEEDS_APPROVAL" });
+    }
     if (row.type === "maintenance" && parsed.data.status === "done" && !(await hasBlockFor(id))) {
       return res.status(400).json({ message: "Een onderhoudsmelding kan alleen worden afgehandeld via Inplannen (zet het in de kalender) of Afwijzen", code: "MAINTENANCE_NEEDS_BLOCK" });
     }
@@ -183,6 +190,7 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     if (row.type === "booking") return approveBooking(req, res, id, row);
     if (row.type === "maintenance") return approveMaintenance(req, res, id, row);
     if (row.type === "maintenance_change") return approveMaintenanceChange(req, res, id, row);
+    if (row.type === "company_name_change") return approveCompanyName(req, res, id, row);
     if (row.type !== "extension" && row.type !== "early_return") return res.status(400).json({ message: "Only extensions, early returns and rental requests can be approved" });
     if (!isValidRequestTransition(row.status, "done")) return res.status(400).json({ message: "Request is already closed" });
     const reservation = row.reservationId ? await storage.getReservation(row.reservationId) : undefined;
@@ -203,6 +211,25 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     const reply = row.type === "extension" ? `Goedgekeurd: nieuwe einddatum ${newEnd}.` : `Goedgekeurd: inleverdatum ${newEnd}.`;
     res.json(await finish(req, id, reply, "done", row.customerId));
   });
+
+  /**
+   * Approving a name change writes the new company name to the customer record. For a business
+   * the short `name` mirrors the company name, so it moves along when it still equals the old one.
+   * Contracts that were already generated keep the old name until they are regenerated.
+   */
+  async function approveCompanyName(req: Request, res: Response, id: number, row: NonNullable<Awaited<ReturnType<typeof requestsStorage.getRequest>>>) {
+    if (!isValidRequestTransition(row.status, "done")) return res.status(400).json({ message: "Request is already closed" });
+    const newName = String((row.payload as Record<string, unknown>).newName ?? "").trim();
+    if (newName.length < 2) return res.status(400).json({ message: "Request has no valid company name" });
+    const customer = await storage.getCustomer(row.customerId);
+    if (!customer) return res.status(404).json({ message: "Customer not found" });
+    const previous = customer.companyName || customer.name;
+    const patch: Record<string, string> = { companyName: newName };
+    if (customer.name === previous) patch.name = newName;
+    await storage.updateCustomer(row.customerId, patch as any);
+    await AuditLogger.logFromRequest(req, "customer.update", "customer", row.customerId, { companyName: newName, previousName: previous, viaPortalRequest: id });
+    res.json(await finish(req, id, `Goedgekeurd: de bedrijfsnaam is nu "${newName}".`, "done", row.customerId));
+  }
 
   /**
    * Approving a rental request creates the reservation (status booked) so it lands in the

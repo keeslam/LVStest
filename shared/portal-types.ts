@@ -1,6 +1,9 @@
 // DTOs the portal API returns and the portal client consumes. Kept apart from
 // schema.ts so the client never has to import Drizzle table objects.
 
+import type { PortalCompanyDetails } from './portal-company';
+import type { AccountMailKey, CompanyMailPreferences } from './portal-mail-preferences';
+
 export const PORTAL_ERROR = {
   NOT_AUTHENTICATED: 'PORTAL_NOT_AUTHENTICATED',
   INVALID_CREDENTIALS: 'PORTAL_INVALID_CREDENTIALS',
@@ -67,6 +70,12 @@ export interface PortalMe {
   pendingEmail: string | null;
   /** The company's contact addresses; only sent to admin accounts, who may edit them. */
   company?: PortalCompanyEmails;
+  /** Company contact/address data; only sent to admin accounts, who may edit it (the name via a request). */
+  companyDetails?: PortalCompanyDetails;
+  /** Which mails this account gets; every key is present, true = on. */
+  mailPreferences: Record<AccountMailKey, boolean>;
+  /** Which mails the company address gets; only sent to admin accounts, who may change it. */
+  companyMail?: CompanyMailPreferences;
   settings: PortalSettingsFlags;
   /** Pickup details and privacy link from the portal configuration. */
   info: { pickupAddress: string; openingHours: string; pickupInstructions: string; privacyUrl: string; phone: string };

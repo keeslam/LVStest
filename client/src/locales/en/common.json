@@ -469,5 +469,15 @@
     "toggleSidebar": "Collapse or expand the sidebar",
     "close": "Close",
     "pickerOption": "{{label}}"
+  },
+  "addressLookup": {
+    "loading": "Looking up address…",
+    "found": "Address found: street and city have been filled in.",
+    "partial": "Street and city have been filled in, but we do not know this addition. Please check the house number.",
+    "notfound": "We cannot find this address. Check the postcode and house number, or fill in street and city yourself.",
+    "unavailable": "The lookup is not available right now. Please fill in street and city yourself.",
+    "houseNumber": "House number",
+    "addition": "Addition",
+    "street": "Street"
   }
 }

@@ -85,8 +85,9 @@ Sluit het venster met **Sluiten** of **Terug**.
    - **Debiteurnummer** — het nummer waarop de boekhouding deze klant kent.
    - **Volledige naam** — het enige veld dat écht verplicht is.
    - **Voornaam**, **Achternaam**, **Naam chauffeur**, **Rijbewijsnummer**.
-   - Onder **Adresgegevens**: **Straatnaam**, **Straatadres**, **Postcode**, **Plaats** en
-     **Land** (staat al op *Nederland*).
+   - Onder **Adresgegevens**: begin met **Postcode** en **Huisnummer** (en zo nodig **Toevoeging**).
+     Zijn die compleet, dan vult de app **Straatnaam**, **Straatadres** en **Plaats** zelf in
+     (zie hieronder, *Postcode en huisnummer*). Daarna staat nog **Land** (staat al op *Nederland*).
 4. Ga naar het tabblad **Contact** en vul minstens **Primair e-mailadres** en **Primair
    telefoonnummer** in. Doe dit meteen: zonder e-mailadres kun je deze klant later geen contract
    en geen herinnering sturen. Verder kun je hier een apart **E-mailadres voor APK-keuring**,
@@ -100,6 +101,25 @@ Sluit het venster met **Sluiten** of **Terug**.
 7. Klik onderaan op **Klant toevoegen**.
 
 Je krijgt de melding **Klant succesvol aangemaakt** — *De klant is toegevoegd aan je systeem.*
+
+### Postcode en huisnummer
+
+Bij een Nederlands adres zoekt de app straat en plaats voor je op, uit het adresregister van het Kadaster
+(BAG, via PDOK). Typ de **Postcode** (hoofdletters en spatie maken niet uit) en het **Huisnummer**. Na een
+kort moment staat onder de velden *Adres gevonden: straat en plaats zijn ingevuld.* en zijn **Straatnaam**,
+**Straatadres** (met nummer, bijvoorbeeld *Coolsingel 4A*) en **Plaats** ingevuld. De postcode krijgt zelf
+de spatie (*3011 AD*).
+
+- Een letter hoort bij het huisnummer: typ je *12a* in het veld **Huisnummer**, dan komt de *A* vanzelf in
+  **Toevoeging**.
+- Alles blijft aan te passen. Wat de app invulde, kun je gewoon overschrijven.
+- Vindt de app het adres niet, dan staat er *We vinden dit adres niet. Controleer de postcode en het
+  huisnummer, of vul straat en plaats zelf in.* Vul het dan met de hand in. Kent de app alleen de
+  toevoeging niet, dan staan straat en plaats er wel en vraagt de melding om het huisnummer te controleren.
+- Werkt het opzoeken even niet, dan zegt de app dat ook; het formulier blijft gewoon bruikbaar.
+- Bij een ander land dan Nederland zoekt de app niets op. Een bestaand adres dat je opent wordt nooit
+  automatisch veranderd; er wordt alleen gezocht als jij de postcode of het huisnummer wijzigt.
+- Hetzelfde staat bij **Facturatieadres** op het tabblad **Bedrijf**, en in het klantenportaal (zie 3.7).
 
 **Twee dingen om te weten:**
 
@@ -301,6 +321,48 @@ fiscale check zijn grijs zolang de hoofdschakelaar uit staat, met een regel die 
 
 Deze instellingen zijn de bovengrens. Staat **Ziet prijzen** hier uit, dan ziet geen enkel
 account van deze klant prijzen, ook niet als dat vinkje bij het account zelf aan staat.
+
+### Bedrijfsgegevens die de klant zelf aanpast
+
+In het portaal ziet een beheerder van de klant onder **Mijn account** → **Bedrijf** de gegevens die jij
+van het bedrijf hebt: contactpersoon, telefoonnummer, adres, factuuradres en de vier e-mailadressen. Die
+past de klant zelf aan, en ze staan meteen in het klantrecord. Je krijgt een melding met in woorden wat
+er is gewijzigd (bijvoorbeeld *telefoonnummer, adres*). Slaat de klant op zonder iets te wijzigen, dan
+krijg je geen melding. KvK-nummer en btw-nummer staan niet in het portaal en blijven van jou.
+
+De **bedrijfsnaam** kan de klant niet zelf wijzigen, omdat die op contracten en facturen staat. Hij klikt
+op **Wijziging aanvragen**, vult de nieuwe naam in en verstuurt. Dat komt bij jou als aanvraag
+**Wijziging bedrijfsnaam** in het overzicht van aanvragen, met de gevraagde naam bovenaan. Met
+**Goedkeuren** wordt de naam in het klantrecord aangepast; staat de korte naam van de klant nog gelijk aan
+de oude bedrijfsnaam, dan gaat die mee. Met **Afwijzen** (met een antwoord) blijft alles zoals het was.
+**Afhandelen** zonder goedkeuren kan niet, zodat de klant nooit hoort dat de naam is gewijzigd terwijl dat
+niet zo is. Per klant staat er maar één aanvraag tegelijk open. Contracten en facturen die al gemaakt zijn
+houden de oude naam tot je ze opnieuw aanmaakt.
+
+Ook de klant vult zijn adres in met postcode en huisnummer: de straat en plaats verschijnen vanzelf, zoals
+hierboven beschreven. Dat geldt voor het adres en het factuuradres.
+
+### Welke e-mails de klant krijgt
+
+De klant kiest zelf welke e-mails hij van het portaal wil ontvangen, in het portaal onder **Mijn
+account** → **E-mailmeldingen**. Alles staat standaard aan. Er zijn twee soorten:
+
+- **Per account:** de waarschuwing bij inloggen op een nieuw apparaat en het antwoord op een eigen
+  aanvraag. Elk account kiest dit voor zichzelf. Zet iemand de waarschuwing voor een nieuw apparaat
+  uit, dan staat daar in het portaal een waarschuwing bij dat hij dan niet merkt dat iemand anders inlogt.
+- **Per bedrijf:** de mails over een verplaatste of geannuleerde reservering, over onderhoud en over
+  een nieuw document. Deze gaan naar het e-mailadres van het bedrijf, niet naar één account. Alleen een
+  beheerder van de klant wijzigt ze. Jij ziet ze ook onder **Instellingen voor deze klant**, bij
+  **E-mails naar het bedrijfsadres**, en kunt ze daar zelf omzetten.
+
+Wat de klant niet kan uitzetten: de uitnodiging, het herstellen van een wachtwoord en het bevestigen van
+een nieuw e-mailadres. De melding onder het belletje in het portaal blijft altijd staan; alleen de e-mail
+valt weg. Heeft een klant het antwoord op een aanvraag uitgezet, dan slaat de app het antwoord wel op en
+ziet de klant het in het portaal, maar gaat er geen mail. Een bekeuring mail je zelf met **Klant
+informeren**; dat staat los van deze keuzes.
+
+Elke wijziging staat in **Activiteit in het portaal**, als *E-mailvoorkeur van account gewijzigd* of
+*E-mailvoorkeur van bedrijf gewijzigd*. Zo zie je later wie een mail uitzette.
 
 ### Aanvragen, bekeuringen en activiteit
 

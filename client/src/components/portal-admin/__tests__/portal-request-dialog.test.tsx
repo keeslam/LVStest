@@ -31,6 +31,7 @@ const requests: Record<number, Record<string, unknown>> = {
   3: { ...common, id: 3, type: "other", payload: { subject: "Sleutel kwijt" } },
   4: { ...common, id: 4, type: "booking", payload: { startDate: "2026-11-03", endDate: "2026-11-05", vehicleLabel: "AB-123-C" } },
   5: { ...common, id: 5, type: "damage", payload: {} },
+  6: { ...common, id: 6, type: "company_name_change", payload: { newName: "Nieuwe Naam BV", currentName: "Oude Naam BV" } },
 };
 const calls: Array<{ method: string; url: string; body?: string }> = [];
 
@@ -52,6 +53,15 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("aanvraag behandelen", () => {
+  it("shows the requested company name and offers Goedkeuren, not a plain Afhandelen", async () => {
+    requestId = 6;
+    renderDialog();
+    expect(await screen.findByTestId("requested-company-name")).toHaveTextContent("Nieuwe Naam BV");
+    expect(screen.getByTestId("button-approve-request")).toBeInTheDocument();
+    await userEvent.click(screen.getByTestId("button-approve-request"));
+    await waitFor(() => expect(calls.some((c) => c.method === "POST" && c.url.endsWith("/api/portal-requests/6/approve"))).toBe(true));
+  });
+
   it("writes the requested dates as dd-MM-yyyy, like the list", async () => {
     requestId = 1;
     renderDialog();

@@ -644,6 +644,8 @@ export const portalUsers = pgTable("portal_users", {
   inviteExpiresAt: timestamp("invite_expires_at", { withTimezone: true }),
   /** Own language choice; null = follow the customer's preferred language. */
   language: text("language"),
+  /** Mails this account switched off (see shared/portal-mail-preferences.ts); absent key = on. */
+  mailPreferences: jsonb("mail_preferences").$type<Record<string, boolean>>().notNull().default({}),
   /** A new address waits here until the confirmation link in the mail to it is used. */
   pendingEmail: text("pending_email"),
   emailChangeTokenHash: text("email_change_token_hash"),
@@ -691,6 +693,11 @@ export const portalCustomerSettings = pgTable("portal_customer_settings", {
   canViewContracts: boolean("can_view_contracts").notNull().default(true),
   showPrices: boolean("show_prices").notNull().default(false),
   canReturn: boolean("can_return").notNull().default(true),
+  // Company-wide e-mail switches, set by an admin account in the portal. Only the e-mail is
+  // affected: the bell notification in the portal is always written.
+  mailReservationChanges: boolean("mail_reservation_changes").notNull().default(true),
+  mailMaintenance: boolean("mail_maintenance").notNull().default(true),
+  mailDocuments: boolean("mail_documents").notNull().default(true),
   // Fiscal mobility check (docs/fiscaal/03-schema-en-dataflow.md §1.8). These
   // switch visibility and notifications for the customer; they never change a
   // fiscal parameter, and switching one off deletes nothing.

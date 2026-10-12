@@ -129,6 +129,13 @@ function createAuthLimiter(options: { max: number; skipSuccessfulRequests: boole
   });
 }
 
+/** Postcode lookup in the staff app and the portal: one bucket per IP, generous enough for typing but not for scraping the address register. */
+export const addressLookupLimiter = createAuthLimiter({
+  max: 300,
+  skipSuccessfulRequests: false,
+  message: 'Too many address lookups, please try again later.',
+});
+
 /** Staff login. A successful login does not consume budget. */
 export const loginLimiter = createAuthLimiter({
   max: 5,

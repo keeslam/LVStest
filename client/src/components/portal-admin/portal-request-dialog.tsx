@@ -61,7 +61,7 @@ export function PortalRequestDialog() {
   // Standard answers: what a request of this type usually gets. They only fill the box; staff can edit before sending.
   const standardKinds = (type: string): Array<"received" | "approved" | "rejected"> => [
     ...(["damage", "fine_question", "other", "mileage"].includes(type) ? ["received" as const] : []),
-    ...(["extension", "early_return"].includes(type) ? ["approved" as const] : []),
+    ...(["extension", "early_return", "company_name_change"].includes(type) ? ["approved" as const] : []),
     "rejected" as const,
   ];
   const standardText = (kind: string, type: string) => t(`admin.requests.standard.${kind}.${type}`, { defaultValue: t(`admin.requests.standard.${kind}.default`) });
@@ -92,6 +92,7 @@ export function PortalRequestDialog() {
               </div>
             )}
             {r.type === "extension" && <div><Label>{t("admin.requests.dialog.newEndDate")}</Label><div>{day(p.newEndDate)}</div></div>}
+            {r.type === "company_name_change" && <div><Label>{t("admin.requests.dialog.newCompanyName")}</Label><div data-testid="requested-company-name">{p.newName}</div></div>}
             {r.type === "early_return" && <div><Label>{t("admin.requests.dialog.returnDate")}</Label><div>{day(p.returnDate)}</div></div>}
             {r.type === "damage" && (
               <div className="grid grid-cols-2 gap-2">
@@ -146,15 +147,15 @@ export function PortalRequestDialog() {
                 <Textarea id="rq-reply" rows={4} value={reply} onChange={(e) => setReply(e.target.value)} data-testid="textarea-request-reply" />
                 <div className="flex flex-wrap gap-2">
                   {r.status === "new" && <Button size="sm" variant="outline" onClick={() => act.mutate({ url: `/api/portal-requests/${id}/take` })}>{t("admin.requests.dialog.take")}</Button>}
-                  {(r.type === "extension" || r.type === "early_return") && (
-                    <Button size="sm" onClick={() => act.mutate({ url: `/api/portal-requests/${id}/approve` })} data-testid="button-approve-request">{t("admin.requests.dialog.approve")}</Button>
+                  {(r.type === "extension" || r.type === "early_return" || r.type === "company_name_change") && (
+                    <Button size="sm" onClick={() => act.mutate({ url: `/api/portal-requests/${id}/approve` })} data-testid="button-approve-request">{t(r.type === "company_name_change" ? "admin.requests.dialog.approveCompanyName" : "admin.requests.dialog.approve")}</Button>
                   )}
                   {(r.type === "booking" || r.type === "maintenance" || r.type === "maintenance_change") && !approving && (
                     <Button size="sm" onClick={() => setApproving(true)} data-testid="button-approve-request">
                       {t(r.type === "booking" ? "admin.booking.open" : r.type === "maintenance" ? "admin.maintenance.title" : "admin.maintenance.moveTitle")}
                     </Button>
                   )}
-                  {r.type === "booking" || r.type === "maintenance" || r.type === "maintenance_change"
+                  {r.type === "booking" || r.type === "maintenance" || r.type === "maintenance_change" || r.type === "company_name_change"
                     ? <Button size="sm" variant="outline" onClick={() => needReply() && act.mutate({ url: `/api/portal-requests/${id}/reply`, body: { reply, status: "in_progress" } })} data-testid="button-answer-request">{t("admin.requests.dialog.replyOnly")}</Button>
                     : <Button size="sm" onClick={() => needReply() && act.mutate({ url: `/api/portal-requests/${id}/reply`, body: { reply, status: "done" } })} data-testid="button-answer-request">{t("admin.requests.dialog.answer")}</Button>}
                   <Button size="sm" variant="destructive" onClick={() => needReply() && act.mutate({ url: `/api/portal-requests/${id}/reply`, body: { reply, status: "rejected" } })}>{t("admin.requests.dialog.reject")}</Button>

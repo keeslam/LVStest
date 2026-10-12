@@ -221,8 +221,8 @@
     "pendingEmail": "Wacht op bevestiging: {{email}}",
     "cancelEmailChange": "Intrekken",
     "emailChangeCancelled": "Wijziging ingetrokken.",
-    "sectionCompany": "E-mailadressen van uw bedrijf",
-    "companyHint": "Hier stuurt Lam Groep post over uw bedrijf naartoe. Laat een veld leeg als het niet van toepassing is.",
+    "sectionCompany": "Bedrijfsgegevens",
+    "companyHint": "Dit zijn de gegevens die wij van uw bedrijf hebben. Past u iets aan, dan zien wij dat direct.",
     "companySaved": "E-mailadressen opgeslagen. Lam Groep is op de hoogte gebracht.",
     "company": {
       "email": "Primair e-mailadres",
@@ -230,6 +230,45 @@
       "emailForInvoices": "E-mailadres voor facturen",
       "emailGeneral": "Algemeen e-mailadres",
       "placeholder": "naam@bedrijf.nl"
+    },
+    "sectionMail": "E-mailmeldingen",
+    "mailHint": "Kies welke e-mails u wilt ontvangen. Meldingen onder het belletje in het portaal blijven altijd zichtbaar. E-mails voor uitnodiging, wachtwoord herstellen en e-mailadres wijzigen kunt u niet uitzetten.",
+    "mailYours": "Voor uw eigen account",
+    "mailNewDevice": "Waarschuwing bij inloggen op een nieuw apparaat",
+    "mailNewDeviceWarning": "Dit is een veiligheidsmelding. Zet u hem uit, dan merkt u niet dat iemand anders met uw gegevens inlogt.",
+    "mailRequestReply": "Antwoord op mijn aanvragen",
+    "mailCompany": "Voor het bedrijfsadres",
+    "mailCompanyHint": "Deze e-mails gaan naar het e-mailadres van uw bedrijf, niet naar een persoonlijk account. Alleen beheerders kunnen dit wijzigen.",
+    "mailReservationChanges": "Reservering verplaatst of geannuleerd",
+    "mailMaintenance": "Onderhoud aan uw voertuigen",
+    "mailDocuments": "Nieuw document beschikbaar",
+    "mailSaved": "Voorkeur opgeslagen.",
+    "tabProfile": "Profiel",
+    "tabSecurity": "Inloggen en wachtwoord",
+    "tabMail": "E-mailmeldingen",
+    "tabCompany": "Bedrijf",
+    "companyName": "Bedrijfsnaam",
+    "companyNameHint": "De bedrijfsnaam staat op contracten en facturen. Een nieuwe naam voeren wij door nadat wij uw aanvraag hebben gecontroleerd.",
+    "requestNameChange": "Wijziging aanvragen",
+    "newCompanyName": "Nieuwe bedrijfsnaam",
+    "sendNameRequest": "Aanvraag versturen",
+    "namePending": "Uw aanvraag voor de naam “{{name}}” wacht op goedkeuring.",
+    "nameRequested": "Aanvraag verstuurd. U hoort van ons zodra de bedrijfsnaam is aangepast.",
+    "detailsSaved": "Bedrijfsgegevens opgeslagen. Wij zijn op de hoogte gebracht.",
+    "sectionContact": "Contact",
+    "sectionAddress": "Adres",
+    "sectionBilling": "Factuuradres (alleen invullen als dit afwijkt)",
+    "sectionEmails": "E-mailadressen",
+    "details": {
+      "contactPerson": "Contactpersoon",
+      "phone": "Telefoonnummer",
+      "address": "Straat",
+      "postalCode": "Postcode",
+      "city": "Plaats",
+      "country": "Land",
+      "billingAddress": "Straat",
+      "billingPostalCode": "Postcode",
+      "billingCity": "Plaats"
     }
   },
   "errors": {
@@ -478,8 +517,15 @@
         "fiscalDashboardEnabled": "De klant ziet een schatting van de fiscale bedragen.",
         "fiscalWarningsEnabled": "De klant krijgt een waarschuwing als er gegevens ontbreken of een periode bijna verandert.",
         "fiscalReportsEnabled": "De klant kan de fiscale rapporten bekijken.",
-        "driverFiscalVisibilityEnabled": "Een bestuurder ziet de eigen fiscale status, niet die van collega's."
-      }
+        "driverFiscalVisibilityEnabled": "Een bestuurder ziet de eigen fiscale status, niet die van collega's.",
+        "mailReservationChanges": "Uit: er gaat geen e-mail naar het klantadres als een reservering wordt verplaatst of geannuleerd. De melding onder het belletje blijft staan.",
+        "mailMaintenance": "Uit: geen onderhoudsmails naar het klantadres. De melding onder het belletje blijft staan.",
+        "mailDocuments": "Uit: geen e-mail dat er een document klaarstaat. Het document staat wel in het portaal."
+      },
+      "mailTitle": "E-mails naar het bedrijfsadres",
+      "mailReservationChanges": "Mail bij gewijzigde of geannuleerde reservering",
+      "mailMaintenance": "Mail over onderhoud",
+      "mailDocuments": "Mail bij nieuw document"
     },
     "activity": {
       "title": "Activiteit in het portaal",
@@ -499,6 +545,8 @@
         "email_change_requested": "E-mailwijziging aangevraagd",
         "email_changed": "E-mailadres gewijzigd",
         "company_emails_updated": "Bedrijfsadressen bijgewerkt",
+        "mail_preferences_updated": "E-mailvoorkeur van account gewijzigd",
+        "company_mail_updated": "E-mailvoorkeur van bedrijf gewijzigd",
         "driver_assigned": "Bestuurder gekoppeld",
         "driver_created": "Bestuurder toegevoegd",
         "driver_updated": "Bestuurder gewijzigd",
@@ -510,7 +558,9 @@
         "request_message": "Bericht bij aanvraag",
         "request_withdrawn": "Aanvraag ingetrokken",
         "request_message_staff": "Bericht van medewerker",
-        "request_replied": "Aanvraag beantwoord"
+        "request_replied": "Aanvraag beantwoord",
+        "company_details_updated": "Bedrijfsgegevens bijgewerkt",
+        "company_name_requested": "Wijziging bedrijfsnaam aangevraagd"
       },
       "detailKeys": {
         "by": "door",
@@ -518,7 +568,22 @@
         "email": "primair e-mailadres",
         "emailForMOT": "APK-adres",
         "emailForInvoices": "factuuradres",
-        "emailGeneral": "algemeen e-mailadres"
+        "emailGeneral": "algemeen e-mailadres",
+        "newDevice": "melding nieuw apparaat",
+        "requestReply": "antwoord op aanvraag",
+        "mailReservationChanges": "reservering verplaatst/geannuleerd",
+        "mailMaintenance": "onderhoud",
+        "mailDocuments": "nieuw document",
+        "newName": "nieuwe bedrijfsnaam",
+        "contactPerson": "contactpersoon",
+        "phone": "telefoonnummer",
+        "address": "adres",
+        "postalCode": "postcode",
+        "city": "plaats",
+        "country": "land",
+        "billingAddress": "factuuradres",
+        "billingPostalCode": "factuurpostcode",
+        "billingCity": "factuurplaats"
       },
       "entities": {
         "request": "Aanvraag",
@@ -812,7 +877,8 @@
         "booking": "Huuraanvraag",
         "maintenance": "Onderhoud/storing",
         "maintenance_change": "Onderhoud wijzigen",
-        "mileage": "Kilometerstand"
+        "mileage": "Kilometerstand",
+        "company_name_change": "Wijziging bedrijfsnaam"
       },
       "status": {
         "new": "Nieuw",
@@ -855,7 +921,9 @@
         "standardTitle": "Standaardantwoord invullen",
         "standardReceived": "Ontvangen",
         "standardApproved": "Akkoord",
-        "standardRejected": "Afwijzing"
+        "standardRejected": "Afwijzing",
+        "newCompanyName": "Gevraagde bedrijfsnaam",
+        "approveCompanyName": "Goedkeuren (past de bedrijfsnaam aan)"
       },
       "standard": {
         "received": {
@@ -868,7 +936,8 @@
         "approved": {
           "extension": "Uw verlenging is goedgekeurd.",
           "early_return": "Het eerder inleveren is akkoord.",
-          "default": "Uw aanvraag is goedgekeurd."
+          "default": "Uw aanvraag is goedgekeurd.",
+          "company_name_change": "De nieuwe bedrijfsnaam is doorgevoerd."
         },
         "rejected": {
           "extension": "Helaas kunnen we de verlenging niet toekennen, omdat het voertuig daarna al is gereserveerd.",
@@ -876,7 +945,8 @@
           "booking": "Helaas is het gevraagde voertuig in deze periode niet beschikbaar.",
           "maintenance": "Helaas kunnen we het onderhoud niet op deze manier inplannen.",
           "maintenance_change": "Helaas kunnen we het onderhoud niet naar deze datum verplaatsen.",
-          "default": "Helaas kunnen we aan deze aanvraag niet voldoen."
+          "default": "Helaas kunnen we aan deze aanvraag niet voldoen.",
+          "company_name_change": "Helaas kunnen we de bedrijfsnaam niet wijzigen. Neem contact met ons op voor de mogelijkheden."
         }
       }
     },
@@ -1024,7 +1094,8 @@
       "booking": "Auto huren",
       "maintenance": "Onderhoud of storing melden",
       "maintenance_change": "Onderhoud wijzigen",
-      "mileage": "Kilometerstand doorgeven"
+      "mileage": "Kilometerstand doorgeven",
+      "company_name_change": "Wijziging bedrijfsnaam"
     },
     "status": {
       "new": "Ingediend",

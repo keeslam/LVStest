@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { PortalCustomerSettings } from "@shared/schema";
+import { COMPANY_MAIL_KEYS } from "@shared/portal-mail-preferences";
 import { apiRequest } from "@/lib/queryClient";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -14,7 +15,10 @@ const FLAGS = ["portalEnabled", "canBook", "canManageDrivers", "canSubmitRequest
 // Fiscal mobility check (docs/fiscaal §1.8): visibility and notifications for this customer; never a fiscal parameter.
 const FISCAL_FLAGS = ["fiscalMobilityEnabled", "pseudoEindheffingEnabled", "fiscalDashboardEnabled", "fiscalWarningsEnabled", "fiscalReportsEnabled", "driverFiscalVisibilityEnabled"] as const;
 
-const ALL_FLAGS = [...FLAGS, ...FISCAL_FLAGS] as const;
+// E-mails to the company address; the customer's own admin account can change these too (portal, "Mijn account").
+const MAIL_FLAGS = COMPANY_MAIL_KEYS;
+
+const ALL_FLAGS = [...FLAGS, ...FISCAL_FLAGS, ...MAIL_FLAGS] as const;
 
 export function CustomerPortalSettingsForm({ customerId, readOnly }: { customerId: number; readOnly?: boolean }) {
   const { t, i18n } = useTranslation("portal");
@@ -68,6 +72,8 @@ export function CustomerPortalSettingsForm({ customerId, readOnly }: { customerI
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">{FLAGS.map((flag) => flagRow(flag))}</div>
+      <h4 className="text-sm font-medium">{t("admin.settings.mailTitle")}</h4>
+      <div className="grid gap-3 sm:grid-cols-2">{MAIL_FLAGS.map((flag) => flagRow(flag, { testId: `switch-${flag}` }))}</div>
       <h4 className="text-sm font-medium">{t("admin.settings.fiscalTitle")}</h4>
       {fiscalOff && <p className="text-xs text-muted-foreground">{t("admin.settings.fiscalNeedsMaster")}</p>}
       <div className="grid gap-3 sm:grid-cols-2">{fiscalRows}</div>

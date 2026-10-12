@@ -28,6 +28,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { capitalizeName, capitalizeWords } from "@/lib/format-utils";
+import { AddressLookupRow } from "@/components/ui/address-lookup-row";
+import { composeStreetLine, splitStreetLine, type AddressLookupQuery, type AddressLookupResult } from "@shared/address";
 
 // Extended schema with validation
 export const formSchema = insertCustomerSchema.extend({
@@ -99,6 +101,14 @@ interface CustomerFormProps {
   onDirtyChange?: (dirty: boolean) => void;
 }
 
+// Postcode + house number lookup (PDOK, through our own endpoint); see AddressLookupRow.
+async function lookupAddress(q: AddressLookupQuery): Promise<AddressLookupResult> {
+  const params = new URLSearchParams({ postcode: q.postcode, number: q.number, addition: q.addition ?? "" });
+  return (await apiRequest("GET", `/api/address-lookup?${params}`)).json();
+}
+/** An empty country counts as the Netherlands, like the form's default. */
+const isDutch = (country?: string) => !country?.trim() || /^(nederland|netherlands|the netherlands|nl|holland)$/i.test(country.trim());
+
 export function CustomerForm({
   editMode = false,
   initialData,
@@ -134,6 +144,10 @@ export function CustomerForm({
 
   // Controlled so a server error on a field of the first tab can bring that tab to the front.
   const [activeTab, setActiveTab] = useState("basic");
+  // House number and addition are not stored apart: the address line holds them ("Coolsingel 4A"). They start from
+  // the stored line and are only used to look the street and city up.
+  const [visitNumber, setVisitNumber] = useState(() => { const p = splitStreetLine(initialData?.address); return { houseNumber: p.number, addition: p.addition }; });
+  const [billingNumber, setBillingNumber] = useState(() => { const p = splitStreetLine(initialData?.billingAddress); return { houseNumber: p.number, addition: p.addition }; });
 
   // Setup form with react-hook-form and zod validation
   const form = useForm<z.infer<typeof formSchema>>({
@@ -477,6 +491,21 @@ export function CustomerForm({
                   <div className="space-y-4 md:col-span-2">
                     <h3 className="text-lg font-medium">{t('details.addressInformation')}</h3>
 
+                    <AddressLookupRow
+                      idPrefix="customer-address" fetcher={lookupAddress} enabled={isDutch(form.watch("country"))}
+                      value={{ postalCode: form.watch("postalCode") ?? "", ...visitNumber }}
+                      onChange={({ postalCode, ...number }) => {
+                        if (postalCode !== undefined) form.setValue("postalCode", postalCode, { shouldDirty: true });
+                        if (Object.keys(number).length) setVisitNumber((n) => ({ ...n, ...number }));
+                      }}
+                      onFound={(r, q) => {
+                        form.setValue("streetName", r.street ?? "", { shouldDirty: true });
+                        form.setValue("address", composeStreetLine({ street: r.street ?? "", number: q.number, addition: q.addition ?? "" }), { shouldDirty: true });
+                        form.setValue("city", r.city ?? "", { shouldDirty: true });
+                        form.setValue("postalCode", r.postalCode ?? "", { shouldDirty: true });
+                      }}
+                    />
+
                     <FormField
                       control={form.control}
                       name="streetName"
@@ -516,27 +545,13 @@ export function CustomerForm({
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
-                        name="postalCode"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t('common:fields.postalCode')}</FormLabel>
-                            <FormControl>
-                              <Input placeholder="1234 AB" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
                         name="city"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>{t('common:fields.city')}</FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="Amsterdam" 
+                              <Input
+                                placeholder="Amsterdam"
                                 {...field}
                                 onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
                               />
@@ -545,21 +560,21 @@ export function CustomerForm({
                           </FormItem>
                         )}
                       />
+
+                      <FormField
+                        control={form.control}
+                        name="country"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t('common:fields.country')}</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Nederland" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
-                    
-                    <FormField
-                      control={form.control}
-                      name="country"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t('common:fields.country')}</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Nederland" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                   </div>
                 </div>
               </TabsContent>
@@ -845,7 +860,20 @@ export function CustomerForm({
                   
                   <div className="space-y-4">
                     <h4 className="text-sm font-medium">{t('form.billingAddressSection')}</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <AddressLookupRow
+                      idPrefix="customer-billing" fetcher={lookupAddress}
+                      value={{ postalCode: form.watch("billingPostalCode") ?? "", ...billingNumber }}
+                      onChange={({ postalCode, ...number }) => {
+                        if (postalCode !== undefined) form.setValue("billingPostalCode", postalCode, { shouldDirty: true });
+                        if (Object.keys(number).length) setBillingNumber((n) => ({ ...n, ...number }));
+                      }}
+                      onFound={(r, q) => {
+                        form.setValue("billingAddress", composeStreetLine({ street: r.street ?? "", number: q.number, addition: q.addition ?? "" }), { shouldDirty: true });
+                        form.setValue("billingCity", r.city ?? "", { shouldDirty: true });
+                        form.setValue("billingPostalCode", r.postalCode ?? "", { shouldDirty: true });
+                      }}
+                    />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
                         name="billingAddress"
@@ -876,20 +904,6 @@ export function CustomerForm({
                                 {...field}
                                 onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
                               />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="billingPostalCode"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t('form.billingPostalCode')}</FormLabel>
-                            <FormControl>
-                              <Input placeholder="1234 AB" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

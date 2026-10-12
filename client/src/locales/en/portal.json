@@ -221,8 +221,8 @@
     "pendingEmail": "Awaiting confirmation: {{email}}",
     "cancelEmailChange": "Cancel",
     "emailChangeCancelled": "Change cancelled.",
-    "sectionCompany": "Your company's e-mail addresses",
-    "companyHint": "This is where Lam Groep sends mail about your company. Leave a field empty if it does not apply.",
+    "sectionCompany": "Company details",
+    "companyHint": "These are the details we hold for your company. If you change something, we see it straight away.",
     "companySaved": "E-mail addresses saved. Lam Groep has been notified.",
     "company": {
       "email": "Primary e-mail address",
@@ -230,6 +230,45 @@
       "emailForInvoices": "E-mail address for invoices",
       "emailGeneral": "General e-mail address",
       "placeholder": "name@company.com"
+    },
+    "sectionMail": "E-mail notifications",
+    "mailHint": "Choose which e-mails you want to receive. Notifications under the bell in the portal always stay visible. The e-mails for an invitation, password reset and changing your e-mail address cannot be switched off.",
+    "mailYours": "For your own account",
+    "mailNewDevice": "Warning when logging in on a new device",
+    "mailNewDeviceWarning": "This is a security alert. If you switch it off, you will not notice when someone else logs in with your details.",
+    "mailRequestReply": "Reply to my requests",
+    "mailCompany": "For the company address",
+    "mailCompanyHint": "These e-mails go to your company's e-mail address, not to a personal account. Only admins can change this.",
+    "mailReservationChanges": "Rental moved or cancelled",
+    "mailMaintenance": "Maintenance on your vehicles",
+    "mailDocuments": "New document available",
+    "mailSaved": "Preference saved.",
+    "tabProfile": "Profile",
+    "tabSecurity": "Login and password",
+    "tabMail": "E-mail notifications",
+    "tabCompany": "Company",
+    "companyName": "Company name",
+    "companyNameHint": "The company name appears on contracts and invoices. We apply a new name after we have checked your request.",
+    "requestNameChange": "Request a change",
+    "newCompanyName": "New company name",
+    "sendNameRequest": "Send request",
+    "namePending": "Your request for the name “{{name}}” is waiting for approval.",
+    "nameRequested": "Request sent. You will hear from us as soon as the company name has been changed.",
+    "detailsSaved": "Company details saved. We have been notified.",
+    "sectionContact": "Contact",
+    "sectionAddress": "Address",
+    "sectionBilling": "Billing address (only fill in if different)",
+    "sectionEmails": "E-mail addresses",
+    "details": {
+      "contactPerson": "Contact person",
+      "phone": "Phone number",
+      "address": "Street",
+      "postalCode": "Postal code",
+      "city": "City",
+      "country": "Country",
+      "billingAddress": "Street",
+      "billingPostalCode": "Postal code",
+      "billingCity": "City"
     }
   },
   "errors": {
@@ -478,8 +517,15 @@
         "fiscalDashboardEnabled": "The customer sees an estimate of the fiscal amounts.",
         "fiscalWarningsEnabled": "The customer gets a warning when data is missing or a period is about to change.",
         "fiscalReportsEnabled": "The customer can view the fiscal reports.",
-        "driverFiscalVisibilityEnabled": "A driver sees their own fiscal status, not their colleagues'."
-      }
+        "driverFiscalVisibilityEnabled": "A driver sees their own fiscal status, not their colleagues'.",
+        "mailReservationChanges": "Off: no e-mail goes to the customer's address when a rental is moved or cancelled. The bell notification stays.",
+        "mailMaintenance": "Off: no maintenance e-mails to the customer's address. The bell notification stays.",
+        "mailDocuments": "Off: no e-mail that a document is waiting. The document is still in the portal."
+      },
+      "mailTitle": "E-mails to the company address",
+      "mailReservationChanges": "E-mail when a rental is moved or cancelled",
+      "mailMaintenance": "E-mail about maintenance",
+      "mailDocuments": "E-mail when a document is available"
     },
     "activity": {
       "title": "Activity in the portal",
@@ -499,6 +545,8 @@
         "email_change_requested": "E-mail change requested",
         "email_changed": "E-mail address changed",
         "company_emails_updated": "Company addresses updated",
+        "mail_preferences_updated": "Account e-mail preference changed",
+        "company_mail_updated": "Company e-mail preference changed",
         "driver_assigned": "Driver linked",
         "driver_created": "Driver added",
         "driver_updated": "Driver changed",
@@ -510,7 +558,9 @@
         "request_message": "Message on request",
         "request_withdrawn": "Request withdrawn",
         "request_message_staff": "Message from staff",
-        "request_replied": "Request answered"
+        "request_replied": "Request answered",
+        "company_details_updated": "Company details updated",
+        "company_name_requested": "Company name change requested"
       },
       "detailKeys": {
         "by": "by",
@@ -518,7 +568,22 @@
         "email": "primary e-mail address",
         "emailForMOT": "MOT address",
         "emailForInvoices": "invoice address",
-        "emailGeneral": "general e-mail address"
+        "emailGeneral": "general e-mail address",
+        "newDevice": "new-device alert",
+        "requestReply": "reply to request",
+        "mailReservationChanges": "rental moved/cancelled",
+        "mailMaintenance": "maintenance",
+        "mailDocuments": "new document",
+        "newName": "new company name",
+        "contactPerson": "contact person",
+        "phone": "phone number",
+        "address": "address",
+        "postalCode": "postal code",
+        "city": "city",
+        "country": "country",
+        "billingAddress": "billing address",
+        "billingPostalCode": "billing postal code",
+        "billingCity": "billing city"
       },
       "entities": {
         "request": "Request",
@@ -812,7 +877,8 @@
         "booking": "Rental request",
         "maintenance": "Maintenance/fault",
         "maintenance_change": "Change maintenance",
-        "mileage": "Mileage"
+        "mileage": "Mileage",
+        "company_name_change": "Company name change"
       },
       "status": {
         "new": "New",
@@ -855,7 +921,9 @@
         "standardTitle": "Fill in a standard answer",
         "standardReceived": "Received",
         "standardApproved": "Approved",
-        "standardRejected": "Rejection"
+        "standardRejected": "Rejection",
+        "newCompanyName": "Requested company name",
+        "approveCompanyName": "Approve (changes the company name)"
       },
       "standard": {
         "received": {
@@ -868,7 +936,8 @@
         "approved": {
           "extension": "Your extension has been approved.",
           "early_return": "Returning early is fine.",
-          "default": "Your request has been approved."
+          "default": "Your request has been approved.",
+          "company_name_change": "The new company name has been applied."
         },
         "rejected": {
           "extension": "Unfortunately we cannot grant the extension, because the vehicle is already reserved afterwards.",
@@ -876,7 +945,8 @@
           "booking": "Unfortunately the requested vehicle is not available in this period.",
           "maintenance": "Unfortunately we cannot schedule the maintenance this way.",
           "maintenance_change": "Unfortunately we cannot move the maintenance to this date.",
-          "default": "Unfortunately we cannot grant this request."
+          "default": "Unfortunately we cannot grant this request.",
+          "company_name_change": "Unfortunately we cannot change the company name. Please contact us to discuss the options."
         }
       }
     },
@@ -1024,7 +1094,8 @@
       "booking": "Rent a car",
       "maintenance": "Report maintenance or a fault",
       "maintenance_change": "Change maintenance",
-      "mileage": "Report mileage"
+      "mileage": "Report mileage",
+      "company_name_change": "Company name change"
     },
     "status": {
       "new": "Submitted",

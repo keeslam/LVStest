@@ -24,7 +24,7 @@ export type PortalDocument = Document & { kind: "contract" | "damage_check" };
 
 type PortalUserUpdate = Partial<Pick<PortalUser,
   "fullName" | "role" | "driverId" | "active" | "permissions" | "passwordHash" | "inviteTokenHash" | "inviteExpiresAt" | "lastLoginAt" | "lastSeenAt" | "updatedBy"
-  | "email" | "language" | "pendingEmail" | "emailChangeTokenHash" | "emailChangeExpiresAt" | "knownDevices">>;
+  | "email" | "language" | "pendingEmail" | "emailChangeTokenHash" | "emailChangeExpiresAt" | "knownDevices" | "mailPreferences">>;
 
 /** One row per customer that has a portal (settings row or at least one account). */
 export interface PortalCustomerOverviewRow {

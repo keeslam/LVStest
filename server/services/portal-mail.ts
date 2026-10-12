@@ -14,6 +14,7 @@ import { formatLicensePlate } from "../../shared/license-plate";
 import { officeTimeZone } from "./office-time";
 import { companyName } from "./company-name";
 import { COMPANY_NAME_KEY } from "../../shared/company-name";
+import { accountMailEnabled, type CompanyMailKey } from "../../shared/portal-mail-preferences";
 
 export const PORTAL_TEMPLATE = {
   INVITE: "portal_invite",
@@ -258,6 +259,7 @@ export async function sendPortalInvite(user: PortalUser, kind: "invite" | "reset
 
 /** Warns the account holder about a login from a browser the account has not used before. */
 export async function sendNewDeviceMail(user: PortalUser, info: { ua: string; ip: string; at: string }): Promise<boolean> {
+  if (!accountMailEnabled(user.mailPreferences, "newDevice")) return false;
   const template = await getPortalTemplate(PORTAL_TEMPLATE.NEW_DEVICE);
   const vars = { name: user.fullName, ua: info.ua, ip: info.ip, at: new Date(info.at).toLocaleString("nl-NL", { timeZone: officeTimeZone() }) };
   const html = renderTemplate(template.content, vars);
@@ -321,7 +323,7 @@ export async function sendMaintenanceMail(customerId: number, vars: { plate: str
     storage.getCustomer(customerId), portalStorage.getOrCreateCustomerSettings(customerId), getPortalConfig(),
   ]);
   const to = customer?.emailForMOT || customer?.email;
-  if (!customer || !settings.portalEnabled || !to) return false;
+  if (!customer || !settings.portalEnabled || !settings.mailMaintenance || !to) return false;
   const template = await getPortalTemplate(PORTAL_TEMPLATE.MAINTENANCE);
   const v = {
     name: customer.contactPerson || customer.companyName || customer.name,
@@ -333,6 +335,13 @@ export async function sendMaintenanceMail(customerId: number, vars: { plate: str
   const html = renderTemplate(template.content, v);
   return sendEmail({ to, subject: renderTemplateText(template.subject, v), html, text: stripHtml(html) }, "custom");
 }
+
+/** The company-wide switch (portal_customer_settings) that governs each company mail; a template not listed has no switch. */
+const COMPANY_MAIL_FOR_TEMPLATE: Record<string, CompanyMailKey | undefined> = {
+  [PORTAL_TEMPLATE.RESERVATION_CHANGED]: "mailReservationChanges",
+  [PORTAL_TEMPLATE.RESERVATION_CANCELLED]: "mailReservationChanges",
+  [PORTAL_TEMPLATE.DOCUMENT_AVAILABLE]: "mailDocuments",
+};
 
 /**
  * besluiten **B-06** (BUG-134) — the office changed something and the customer
@@ -355,6 +364,8 @@ export async function sendPortalCustomerMail(
   ]);
   const to = customer?.email || customer?.emailForInvoices || customer?.emailForMOT;
   if (!customer || !settings.portalEnabled || !to) return false;
+  const companySwitch = COMPANY_MAIL_FOR_TEMPLATE[templateName];
+  if (companySwitch && !settings[companySwitch]) return false;
   const template = await getPortalTemplate(templateName);
   const v = {
     name: customer.contactPerson || customer.companyName || customer.name,
@@ -368,13 +379,22 @@ export async function sendPortalCustomerMail(
   return sendEmail({ to, subject: renderTemplateText(template.subject, v), html, text: stripHtml(html) }, "custom");
 }
 
-const REQUEST_TYPE_LABEL: Record<string, string> = { extension: "verlenging", early_return: "eerder inleveren", damage: "schademelding", fine_question: "vraag over bekeuring", other: "overig" };
+const REQUEST_TYPE_LABEL: Record<string, string> = { extension: "verlenging", early_return: "eerder inleveren", damage: "schademelding", fine_question: "vraag over bekeuring", company_name_change: "wijziging bedrijfsnaam", other: "overig" };
 const REQUEST_STATUS_LABEL: Record<string, string> = { new: "nieuw", in_progress: "in behandeling", done: "afgehandeld", rejected: "afgewezen" };
+
+/** True when the account that submitted the request has switched its reply mails off, so staff can tell that from a failed send. */
+export async function requestReplyMailOptedOut(requestId: number): Promise<boolean> {
+  const row = await requestsStorage.getRequest(requestId);
+  if (!row?.portalUserId) return false;
+  const user = await portalStorage.getPortalUser(row.portalUserId);
+  return Boolean(user) && !accountMailEnabled(user!.mailPreferences, "requestReply");
+}
 
 /** Sends the staff reply on a request to the portal user who submitted it. */
 export async function sendRequestReplyMail(requestId: number): Promise<boolean> {
   const row = await requestsStorage.getRequest(requestId);
   if (!row || !row.submitterEmail || !row.staffReply) return false;
+  if (await requestReplyMailOptedOut(requestId)) return false;
   const config = await getPortalConfig();
   const template = await getPortalTemplate(PORTAL_TEMPLATE.REQUEST_REPLIED);
   const vars = {

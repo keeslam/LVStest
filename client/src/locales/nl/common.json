@@ -469,5 +469,15 @@
     "toggleSidebar": "Zijbalk in- of uitklappen",
     "close": "Sluiten",
     "pickerOption": "{{label}}"
+  },
+  "addressLookup": {
+    "loading": "Adres zoeken…",
+    "found": "Adres gevonden: straat en plaats zijn ingevuld.",
+    "partial": "Straat en plaats zijn ingevuld, maar deze toevoeging kennen we niet. Controleer het huisnummer.",
+    "notfound": "We vinden dit adres niet. Controleer de postcode en het huisnummer, of vul straat en plaats zelf in.",
+    "unavailable": "Het opzoeken lukt nu niet. Vul straat en plaats zelf in.",
+    "houseNumber": "Huisnummer",
+    "addition": "Toevoeging",
+    "street": "Straat"
   }
 }

@@ -84,7 +84,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
       <div>
         <Label htmlFor="rq-type">{t("requests.chooseType")}</Label>
         <select id="rq-type" className="w-full rounded-md border px-3 py-2 text-sm" value={type} onChange={(e) => { setType(e.target.value as PortalRequestTypeValue); setPayload({}); }}>
-          {Object.values(PortalRequestType).filter((v) => (v !== "early_return" || me?.settings.canReturn) && (v !== "booking" || canBook) && (v !== "maintenance_change" || type === "maintenance_change")).map((v) => <option key={v} value={v}>{t(`requests.type.${v}`)}</option>)}
+          {Object.values(PortalRequestType).filter((v) => (v !== "early_return" || me?.settings.canReturn) && (v !== "booking" || canBook) && (v !== "maintenance_change" || type === "maintenance_change") && v !== "company_name_change").map((v) => <option key={v} value={v}>{t(`requests.type.${v}`)}</option>)}
         </select>
       </div>
       {type === "maintenance_change" && (

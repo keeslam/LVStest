@@ -4020,6 +4020,27 @@
         "default": "true"
       },
       {
+        "name": "mail_reservation_changes",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "true"
+      },
+      {
+        "name": "mail_maintenance",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "true"
+      },
+      {
+        "name": "mail_documents",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "true"
+      },
+      {
         "name": "fiscal_mobility_enabled",
         "type": "boolean",
         "notNull": true,
@@ -4517,6 +4538,13 @@
         "notNull": false,
         "primary": false,
         "default": null
+      },
+      {
+        "name": "mail_preferences",
+        "type": "jsonb",
+        "notNull": true,
+        "primary": false,
+        "default": "'{}'::jsonb"
       },
       {
         "name": "pending_email",

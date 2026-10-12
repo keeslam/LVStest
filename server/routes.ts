@@ -169,6 +169,7 @@ import { registerPortalAdminRoutes } from "./routes/portal-admin";
 import { registerFiscalRoutes } from "./routes/fiscal";
 import { registerFineRoutes } from "./routes/fines";
 import { registerPortalRequestRoutes } from "./routes/portal-requests";
+import { registerAddressLookupRoutes } from "./routes/address-lookup";
 import { registerTodayRoutes } from "./routes/today";
 import { registerReservationWorklistRoutes } from "./routes/reservation-worklist";
 import { registerRdwTypeRemapRoutes } from "./routes/rdw-type-remap";
@@ -528,6 +529,8 @@ export async function registerRoutes(app: Express): Promise<void> {
   registerFiscalRoutes(app, routeDeps);
   registerFineRoutes(app, routeDeps);
   registerPortalRequestRoutes(app, routeDeps);
+  // Postcode + house number -> street and city (customer form and others).
+  registerAddressLookupRoutes(app, routeDeps);
   // OPT-001 — the one request behind the "Vandaag" work-day screen.
   registerTodayRoutes(app, routeDeps);
   // B-21: the "Nog buiten" worklist. Before /api/reservations/:id so the

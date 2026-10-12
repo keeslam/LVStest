@@ -187,6 +187,17 @@ niet, omdat ze in een eerder deel van het werk zaten.
   ([hoofdstuk 5, paragraaf 5.14](05-reserveringen.md) en [hoofdstuk 10, paragraaf 10.6](10-beheer.md)).
 - **Een echt e-maillogboek.** **Communicatie** → **E-maillogboek** toont wat de app echt heeft verstuurd,
   met de reden in het Nederlands als een mail mislukte ([hoofdstuk 9, paragraaf 9.4](09-email.md)).
+- **De klant kiest welke e-mails hij krijgt.** In het portaal onder **Mijn account** → **E-mailmeldingen**
+  zet een klant de waarschuwing bij een nieuw apparaat, het antwoord op een aanvraag en (als beheerder) de
+  mails over reserveringen, onderhoud en documenten aan of uit. Alles staat standaard aan
+  ([hoofdstuk 3, paragraaf 3.7](03-klanten.md)).
+- **De klant past zijn bedrijfsgegevens zelf aan.** In het portaal onder **Mijn account** → **Bedrijf**
+  wijzigt een beheerder contactpersoon, telefoon, adres en factuuradres direct. Een nieuwe bedrijfsnaam
+  komt bij jou binnen als aanvraag **Wijziging bedrijfsnaam**, die je met **Goedkeuren** doorvoert
+  ([hoofdstuk 3, paragraaf 3.7](03-klanten.md)).
+- **Adres invullen met postcode en huisnummer.** Typ bij een nieuwe of bestaande klant (en in het
+  klantenportaal) de postcode en het huisnummer: straat en plaats vult de app zelf in, uit het adresregister
+  van het Kadaster. Alles blijft aan te passen ([hoofdstuk 3, paragraaf 3.3](03-klanten.md)).
 - **Contractfouten noemen het sjabloon.** Mislukt een contract, dan staat er een Nederlandse zin die zegt
   wat er mist en waar je het oplost ([hoofdstuk 8, paragraaf 8.5](08-documenten.md)).
 

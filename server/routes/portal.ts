@@ -8,6 +8,8 @@ import fs from "fs";
 import multer from "multer";
 import { z } from "zod";
 import { registerPortalFiscalRoutes } from "./portal-fiscal";
+import { addressLookupHandler } from "./address-lookup";
+import { addressLookupLimiter } from "../middleware/security/rateLimiter.js";
 import { portalStorage, type PortalReservation } from "../services/portal-storage";
 import { overlaps, isWeekend } from "../services/booking-period";
 import { customerNotifications } from "../services/portal-customer-notifications";
@@ -37,7 +39,7 @@ export function toFineDto(f: FineListRow): PortalFineDto {
   };
 }
 
-const REQUEST_LABEL: Record<string, string> = { booking: "huuraanvraag", extension: "verlenging", early_return: "eerder inleveren", damage: "schademelding", maintenance: "onderhoudsmelding", maintenance_change: "wijziging onderhoud", mileage: "kilometerstand", fine_question: "vraag over bekeuring", other: "overig" };
+const REQUEST_LABEL: Record<string, string> = { booking: "huuraanvraag", extension: "verlenging", early_return: "eerder inleveren", damage: "schademelding", maintenance: "onderhoudsmelding", maintenance_change: "wijziging onderhoud", mileage: "kilometerstand", fine_question: "vraag over bekeuring", company_name_change: "wijziging bedrijfsnaam", other: "overig" };
 
 export interface PortalRouteDeps {
   requirePortalUser: RequestHandler;
@@ -99,6 +101,8 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
   const ctxOf = (req: Request) => req.portalUser!;
   // Fiscal mobility check (docs/fiscaal): the customer side, in this same realm.
   registerPortalFiscalRoutes(app, { requirePortalUser });
+  // Same lookup as the staff app, behind the portal session.
+  app.get("/api/portal/address-lookup", requirePortalUser, addressLookupLimiter, addressLookupHandler);
 
   // ---- reservations ---------------------------------------------------------
   app.get("/api/portal/reservations", requirePortalUser, async (req, res) => {

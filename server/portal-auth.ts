@@ -20,8 +20,12 @@ import { getPortalConfig } from "./services/portal-config";
 import { randomBytes } from "crypto";
 import { notifyStaffOfPortalEvent } from "./services/portal-notifications";
 import { hashInviteToken } from "./services/portal-tokens";
+import { ACCOUNT_MAIL_KEYS, accountMailEnabled } from "../shared/portal-mail-preferences";
 import { officeTimeZone } from "./services/office-time";
+import { PortalRequestType } from "../shared/portal-requests";
 import { PortalUserRole, type PortalUser, type PortalCustomerSettings, type PortalKnownDevice } from "../shared/schema";
+import { COMPANY_DETAIL_FIELDS, type PortalCompanyDetails } from "../shared/portal-company";
+import { requestsStorage } from "./services/portal-requests-storage";
 import { PORTAL_ERROR, type PortalErrorCode, type PortalMe, type PortalSettingsFlags, type PortalCompanyEmails } from "../shared/portal-types";
 
 /** Staff read the notification text, so the changed fields are named in words, not by column name. */
@@ -31,6 +35,26 @@ const COMPANY_EMAIL_LABEL: Record<string, string> = {
   emailForInvoices: "factuuradres",
   emailGeneral: "algemeen e-mailadres",
 };
+
+/** Same for the address and contact fields an admin changes directly. */
+const COMPANY_DETAIL_LABEL: Record<string, string> = {
+  contactPerson: 'contactpersoon', phone: 'telefoonnummer',
+  address: 'adres', postalCode: 'postcode', city: 'plaats', country: 'land',
+  billingAddress: 'factuuradres (straat)', billingPostalCode: 'factuurpostcode', billingCity: 'factuurplaats',
+};
+
+/** The details block of an admin account, with the open name-change request if there is one. */
+async function companyDetailsOf(customerId: number, customer: Awaited<ReturnType<typeof storage.getCustomer>>): Promise<PortalCompanyDetails | undefined> {
+  if (!customer) return undefined;
+  const open = (await requestsStorage.listRequests({ type: PortalRequestType.COMPANY_NAME_CHANGE, customerId }))
+    .find((r) => r.status === 'new' || r.status === 'in_progress');
+  const pick = Object.fromEntries(COMPANY_DETAIL_FIELDS.map((k) => [k, (customer as Record<string, unknown>)[k] as string | null ?? null])) as Record<(typeof COMPANY_DETAIL_FIELDS)[number], string | null>;
+  return {
+    ...pick,
+    companyName: customer.companyName ?? customer.name ?? null,
+    pendingNameChange: open ? { requestId: open.id, newName: String((open.payload as Record<string, unknown>).newName ?? '') } : null,
+  };
+}
 
 export interface PortalRequestContext {
   user: PortalUser;
@@ -90,6 +114,11 @@ async function buildMe(ctx: PortalRequestContext): Promise<PortalMe> {
     languageOverride,
     pendingEmail: ctx.user.pendingEmail && ctx.user.emailChangeExpiresAt && ctx.user.emailChangeExpiresAt.getTime() > Date.now() ? ctx.user.pendingEmail : null,
     company,
+    companyDetails: ctx.user.role === "admin" ? await companyDetailsOf(ctx.customerId, customer) : undefined,
+    mailPreferences: Object.fromEntries(ACCOUNT_MAIL_KEYS.map((k) => [k, accountMailEnabled(ctx.user.mailPreferences, k)])) as PortalMe["mailPreferences"],
+    companyMail: ctx.user.role === "admin"
+      ? { mailReservationChanges: ctx.settings.mailReservationChanges, mailMaintenance: ctx.settings.mailMaintenance, mailDocuments: ctx.settings.mailDocuments }
+      : undefined,
     settings: settingsFlags(ctx.settings, ctx.user),
     info: { pickupAddress: config.pickupAddress, openingHours: config.openingHours, pickupInstructions: config.pickupInstructions, privacyUrl: config.privacyUrl, phone: config.phone },
     officeTimeZone: officeTimeZone(),
@@ -401,6 +430,90 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
     });
     const { ctx: fresh } = await loadContext(ctx.user.id);
     res.json(await buildMe(fresh!));
+  });
+
+  // The account's own mails (new-device login, reply to its requests). Every role may change its own.
+  app.patch("/api/portal/me/mail-preferences", requirePortalUser, async (req, res) => {
+    const ctx = req.portalUser!;
+    const parsed = z.object({ newDevice: z.boolean().optional(), requestReply: z.boolean().optional() }).strict().safeParse(req.body);
+    if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Invalid mail preferences");
+    const changes = Object.fromEntries(Object.entries(parsed.data).filter(([, v]) => v !== undefined)) as Record<string, boolean>;
+    if (Object.keys(changes).length === 0) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Nothing to save");
+    await portalStorage.updatePortalUser(ctx.user.id, { mailPreferences: { ...(ctx.user.mailPreferences ?? {}), ...changes }, updatedBy: ctx.user.email });
+    await logPortalActivity(req, "mail_preferences_updated", { details: changes });
+    const { ctx: fresh } = await loadContext(ctx.user.id);
+    res.json(await buildMe(fresh!));
+  });
+
+  // The company-address mails (rental changed/cancelled, maintenance, document). Admin accounts only.
+  app.patch("/api/portal/me/company-mail", requirePortalUser, async (req, res) => {
+    const ctx = req.portalUser!;
+    if (ctx.user.role !== "admin") return portalError(res, 403, PORTAL_ERROR.ROLE_FORBIDDEN, "Only admin accounts can change company mail settings");
+    const parsed = z.object({ mailReservationChanges: z.boolean().optional(), mailMaintenance: z.boolean().optional(), mailDocuments: z.boolean().optional() }).strict().safeParse(req.body);
+    if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Invalid mail settings");
+    const changes = Object.fromEntries(Object.entries(parsed.data).filter(([, v]) => v !== undefined)) as Record<string, boolean>;
+    if (Object.keys(changes).length === 0) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Nothing to save");
+    await portalStorage.updateCustomerSettings(ctx.customerId, changes, ctx.user.email);
+    await logPortalActivity(req, "company_mail_updated", { entity: "customer", entityId: ctx.customerId, details: changes });
+    const { ctx: fresh } = await loadContext(ctx.user.id);
+    res.json(await buildMe(fresh!));
+  });
+
+  // Contact and address fields change at once. Admin accounts only; staff are told what changed.
+  app.patch("/api/portal/me/company-details", requirePortalUser, async (req, res) => {
+    const ctx = req.portalUser!;
+    if (ctx.user.role !== "admin") return portalError(res, 403, PORTAL_ERROR.ROLE_FORBIDDEN, "Only admin accounts can change company details");
+    const text = z.string().trim().max(200).optional();
+    const parsed = z.object(Object.fromEntries(COMPANY_DETAIL_FIELDS.map((k) => [k, text]))).strict().safeParse(req.body);
+    if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, parsed.error.errors[0]?.message ?? "Invalid company details");
+    const before = await storage.getCustomer(ctx.customerId);
+    if (!before) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Customer not found");
+    // Only what really changed counts: saving the form unchanged must not ping staff.
+    const data: Record<string, string | null> = {};
+    for (const [k, v] of Object.entries(parsed.data)) {
+      if (v === undefined) continue;
+      const next = v === "" ? null : v;
+      if ((((before as Record<string, unknown>)[k] as string | null | undefined) ?? null) !== next) data[k] = next;
+    }
+    if (Object.keys(data).length === 0) return res.json(await buildMe(ctx));
+    const customer = await storage.updateCustomer(ctx.customerId, data as any);
+    if (!customer) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Customer not found");
+    await logPortalActivity(req, "company_details_updated", { entity: "customer", entityId: ctx.customerId, details: data });
+    await notifyStaffOfPortalEvent({
+      kind: "portal_customer_update",
+      title: `Bedrijfsgegevens gewijzigd: ${customer.companyName || customer.name}`,
+      description: `${ctx.user.fullName} heeft via het portaal bijgewerkt: ${Object.keys(data).map((k) => COMPANY_DETAIL_LABEL[k] ?? k).join(", ")}.`,
+      link: `/customers/${ctx.customerId}`, customerId: ctx.customerId,
+    });
+    const { ctx: fresh } = await loadContext(ctx.user.id);
+    res.json(await buildMe(fresh!));
+  });
+
+  // A new company name goes to staff as a request (type company_name_change); the customer record only changes when they approve.
+  app.post("/api/portal/me/company-name", requirePortalUser, async (req, res) => {
+    const ctx = req.portalUser!;
+    if (ctx.user.role !== "admin") return portalError(res, 403, PORTAL_ERROR.ROLE_FORBIDDEN, "Only admin accounts can ask for a new company name");
+    const parsed = z.object({ newName: z.string().trim().min(2).max(200) }).strict().safeParse(req.body);
+    if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Enter the new company name");
+    const customer = await storage.getCustomer(ctx.customerId);
+    if (!customer) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Customer not found");
+    const currentName = customer.companyName || customer.name;
+    if (parsed.data.newName === currentName) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "This is already the company name");
+    const details = await companyDetailsOf(ctx.customerId, customer);
+    if (details?.pendingNameChange) return portalError(res, 409, PORTAL_ERROR.VALIDATION, "A name change is already waiting for approval");
+    const created = await requestsStorage.createRequest({
+      customerId: ctx.customerId, portalUserId: ctx.user.id, type: PortalRequestType.COMPANY_NAME_CHANGE,
+      payload: { newName: parsed.data.newName, currentName }, status: "new",
+      message: `Wijziging bedrijfsnaam van "${currentName}" naar "${parsed.data.newName}"`,
+    });
+    await logPortalActivity(req, "company_name_requested", { entity: "request", entityId: created.id, details: { newName: parsed.data.newName } });
+    await notifyStaffOfPortalEvent({
+      kind: "portal_request",
+      title: `Nieuwe aanvraag (wijziging bedrijfsnaam): ${currentName}`,
+      description: created.message.slice(0, 200), link: `/portal-admin?request=${created.id}`, customerId: ctx.customerId,
+    });
+    const { ctx: fresh } = await loadContext(ctx.user.id);
+    res.status(201).json(await buildMe(fresh!));
   });
 
   app.post("/api/portal/me/password", requirePortalUser, async (req, res) => {
