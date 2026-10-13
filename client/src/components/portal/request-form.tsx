@@ -81,7 +81,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-3" data-testid="portal-request-form">
+    <form onSubmit={onSubmit} className="grid gap-3 sm:grid-cols-2 sm:items-start" data-testid="portal-request-form">
       <div>
         <Label htmlFor="rq-type">{t("requests.chooseType")}</Label>
         <select id="rq-type" className="w-full rounded-md border px-3 py-2 text-sm" value={type} onChange={(e) => { setType(e.target.value as PortalRequestTypeValue); setPayload({}); }}>
@@ -89,12 +89,12 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
         </select>
       </div>
       {type === "maintenance_change" && (
-        <div className="rounded-md border bg-[#f8fafc] px-3 py-2 text-sm" data-testid="change-current-date">
+        <div className="rounded-md border bg-[#f8fafc] px-3 py-2 text-sm sm:col-span-2" data-testid="change-current-date">
           <span className="text-[#64748b]">{t("requests.form.currentMaintenanceDate")}: </span>{blockDate ? formatPortalDate(blockDate) : `#${blockId}`}
         </div>
       )}
       {needs === "reservation" && type !== "maintenance_change" && (
-        <div>
+        <div className="sm:row-span-2">
           <Label>{t("requests.form.reservation")}</Label>
           <ReservationPicker reservations={openReservations} value={reservationId ? Number(reservationId) : null} onChange={(id) => setReservationId(id ? String(id) : "")} />
         </div>
@@ -109,7 +109,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
         </div>
       )}
       {type === "booking" && (
-        <div className="space-y-3">
+        <div className="space-y-3 sm:col-span-2">
           {/* Period first: the vehicle list below only shows what is free in it. */}
           <div>
             <Label htmlFor="rq-period">{t("requests.form.period")}</Label>
@@ -183,15 +183,15 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
       )}
       {type === "early_return" && <div><Label htmlFor="rq-ret">{t("requests.form.returnDate")}</Label><Input id="rq-ret" type="date" value={payload.returnDate ?? ""} onChange={setP("returnDate")} required /></div>}
       {type === "damage" && (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">
           <div><Label htmlFor="rq-loc">{t("requests.form.location")}</Label><Input id="rq-loc" value={payload.location ?? ""} onChange={setP("location")} /></div>
           <div><Label htmlFor="rq-when">{t("requests.form.occurredAt")}</Label><Input id="rq-when" value={payload.occurredAt ?? ""} onChange={setP("occurredAt")} /></div>
         </div>
       )}
       {type === "other" && <div><Label htmlFor="rq-subj">{t("requests.form.subject")}</Label><Input id="rq-subj" value={payload.subject ?? ""} onChange={setP("subject")} required /></div>}
-      <div><Label htmlFor="rq-msg">{t("requests.form.message")}</Label><Textarea id="rq-msg" rows={4} value={message} onChange={(e) => setMessage(e.target.value)} required /></div>
+      <div className="sm:col-span-2"><Label htmlFor="rq-msg">{t("requests.form.message")}</Label><Textarea id="rq-msg" rows={3} value={message} onChange={(e) => setMessage(e.target.value)} required /></div>
       <div><Label htmlFor="rq-files">{t("requests.form.photos")}</Label><Input id="rq-files" type="file" multiple accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setFiles(Array.from(e.target.files ?? []))} /></div>
-      <Button type="submit" className={btnPrimary} disabled={submit.isPending} data-testid="button-submit-request">{t("requests.form.send")}</Button>
+      <Button type="submit" className={`${btnPrimary} sm:self-end`} disabled={submit.isPending} data-testid="button-submit-request">{t("requests.form.send")}</Button>
     </form>
   );
 }

@@ -209,7 +209,7 @@ export function PortalAccountDialog({ open, onClose }: { open: boolean; onClose:
           </TabsList>
 
           {panel("profile", <User className="h-4 w-4" />, t("account.sectionProfile"), null, (
-            <form onSubmit={saveProfile} className="max-w-md space-y-3">
+            <form onSubmit={saveProfile} className="grid max-w-3xl items-start gap-x-6 gap-y-3 sm:grid-cols-2">
               <div><Label htmlFor="acc-name">{t("fields.fullName")}</Label><Input id="acc-name" value={fullName} onChange={(e) => setFullName(e.target.value)} required /></div>
               <div>
                 <Label htmlFor="acc-lang" className="flex items-center gap-1"><Globe className="h-3.5 w-3.5" />{t("account.language")}</Label>
@@ -220,7 +220,7 @@ export function PortalAccountDialog({ open, onClose }: { open: boolean; onClose:
                 </select>
                 <p className="mt-1 text-xs text-[#64748b]">{t("account.languageHint")}</p>
               </div>
-              <Button type="submit" size="sm" className={btnPrimary} data-testid="button-save-profile">{t("actions.save")}</Button>
+              <Button type="submit" size="sm" className={`${btnPrimary} justify-self-start`} data-testid="button-save-profile">{t("actions.save")}</Button>
             </form>
           ))}
 
@@ -307,15 +307,15 @@ export function PortalAccountDialog({ open, onClose }: { open: boolean; onClose:
                 <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
                   <div className="space-y-4">
                     {addressBlock("address", "account.sectionAddress", true)}
+                    {detailGroup("account.sectionContact", ["contactPerson", "phone"])}
                   </div>
                   <div className="space-y-4">
-                    {detailGroup("account.sectionContact", ["contactPerson", "phone"])}
                     {addressBlock("billingAddress", "account.sectionBilling", false)}
                   </div>
                 </div>
                 <section className="space-y-2">
                   <h4 className="text-xs font-semibold uppercase tracking-wide text-[#64748b]">{t("account.sectionEmails")}</h4>
-                  <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+                  <div className="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
                     {COMPANY_FIELDS.map((k) => (
                       <div key={k}>
                         <Label htmlFor={`acc-co-${k}`} className="text-xs">{t(`account.company.${k}`)}</Label>
