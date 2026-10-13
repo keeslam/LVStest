@@ -5061,6 +5061,34 @@
         "default": null
       },
       {
+        "name": "collection_required",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "false"
+      },
+      {
+        "name": "collection_address",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "collection_city",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "collection_postal_code",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
         "name": "created_at",
         "type": "timestamp with time zone",
         "notNull": true,

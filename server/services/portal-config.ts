@@ -17,6 +17,8 @@ export const portalConfigSchema = z.object({
   pickupAddress: z.string().max(300).default(DEFAULT_PORTAL_CONFIG.pickupAddress),
   openingHours: z.string().max(300).default(DEFAULT_PORTAL_CONFIG.openingHours),
   pickupInstructions: z.string().max(1000).default(DEFAULT_PORTAL_CONFIG.pickupInstructions),
+  returnInstructions: z.string().max(1000).default(DEFAULT_PORTAL_CONFIG.returnInstructions),
+  deliveryNote: z.string().max(500).default(DEFAULT_PORTAL_CONFIG.deliveryNote),
   privacyUrl: z.union([z.string().url(), z.literal("")]).default(DEFAULT_PORTAL_CONFIG.privacyUrl),
   phone: z.string().max(50).default(DEFAULT_PORTAL_CONFIG.phone),
 });

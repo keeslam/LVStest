@@ -15,6 +15,7 @@ import { overlaps, isWeekend } from "../services/booking-period";
 import { customerNotifications, type NotificationViewer } from "../services/portal-customer-notifications";
 import { getServiceDueVehicles } from "../utils/service-due-scanner";
 import { setSafeFileHeaders } from "../utils/portal-files";
+import { handoverOf } from "../../shared/portal-handover";
 import { settingsFlags, requireFeature, requirePortalRole, portalError, logPortalActivity, type PortalRequestContext } from "../portal-auth";
 import { assignDriverToReservation, getDriverAssignments } from "../services/driver-assignments";
 import { notifyStaffOfPortalEvent } from "../services/portal-notifications";
@@ -60,6 +61,7 @@ export function toReservationDto(r: PortalReservation, showPrices: boolean): Por
     vehicle: r.vehicle ? { id: r.vehicle.id, licensePlate: r.vehicle.licensePlate, brand: r.vehicle.brand, model: r.vehicle.model, apkDate: r.vehicle.apkDate ?? null, ...(showPrices ? { dailyPrice: r.vehicle.dailyPrice ?? null } : {}) } : null,
     driver: r.driver ? { id: r.driver.id, displayName: r.driver.displayName } : null,
     replacementForReservationId: r.replacementForReservationId,
+    handover: handoverOf(r),
   };
   // Prices are omitted entirely (not nulled) unless the customer's switch is on.
   if (showPrices) dto.totalPrice = r.totalPrice;

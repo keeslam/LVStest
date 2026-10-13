@@ -1002,6 +1002,12 @@ export const reservations = pgTable("reservations", {
   deliveryStatus: text("delivery_status"), // 'pending' | 'scheduled' | 'en_route' | 'delivered' | 'completed'
   deliveryStaffId: integer("delivery_staff_id").references(() => users.id), // Staff assigned to delivery
   deliveryNotes: text("delivery_notes"), // Special delivery instructions
+  // The other end of the rental: we collect the car from the customer instead of the customer bringing it to the shop.
+  // Its place can differ from the delivery address (the car is often not returned where it was delivered).
+  collectionRequired: boolean("collection_required").default(false).notNull(),
+  collectionAddress: text("collection_address"),
+  collectionCity: text("collection_city"),
+  collectionPostalCode: text("collection_postal_code"),
   
   // Tracking
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

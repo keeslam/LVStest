@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Search, UserRound } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { formatLicensePlate } from "@/lib/format-utils";
+import { formatInOfficeZone } from "@/lib/office-timezone";
 
 /**
  * Small visual vocabulary of the customer portal: brand colours from the
@@ -193,9 +194,9 @@ export function useGreeting(): string {
 /** Whole days from today to an ISO date (negative = in the past). */
 export function daysUntil(iso: string | null | undefined): number | null {
   if (!iso) return null;
-  const target = new Date(`${iso}T00:00:00`);
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  return Math.round((target.getTime() - today.getTime()) / 86_400_000);
+  // Whole calendar days between the office's today and the date, not between two clock times in the browser's zone.
+  const ymd = (v: string) => { const [y, m, d] = v.slice(0, 10).split("-").map(Number); return Date.UTC(y, (m || 1) - 1, d || 1); };
+  return Math.round((ymd(iso) - ymd(formatInOfficeZone(new Date(), "yyyy-MM-dd"))) / 86_400_000);
 }
 
 /** What a list page shows while its data loads: not an empty page that looks like "nothing here". */

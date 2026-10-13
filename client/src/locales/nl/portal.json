@@ -656,7 +656,11 @@
       "phone": "Telefoonnummer voor klanten",
       "fineAdminFee": "Standaard administratiekosten per bekeuring (€)",
       "fineAdminFeeHelp": "Dit bedrag staat bij een nieuwe bekeuring alvast ingevuld en komt bovenop het boetebedrag. Vul 0 in voor geen kosten.",
-      "fineAdminFeeInvalid": "Vul een bedrag van 0 of hoger in, bijvoorbeeld 12,50."
+      "fineAdminFeeInvalid": "Vul een bedrag van 0 of hoger in, bijvoorbeeld 12,50.",
+      "returnInstructions": "Inleverinstructies",
+      "returnInstructionsHint": "Staat bij elke reservering die nog loopt, bij het inleveren: in welke staat de auto terug moet en wat het kost als dat niet zo is.",
+      "deliveryNote": "Brengen en ophalen (tekst voor klanten die bij de zaak ophalen)",
+      "deliveryNoteHint": "Staat bij ophalen en inleveren bij de zaak, zodat de klant weet dat brengen en ophalen kan en wat het kost. Laat leeg om niets te tonen."
     },
     "fines": {
       "title": "Bekeuringen",
@@ -1343,5 +1347,26 @@
     "title": "De gegevens konden niet worden geladen.",
     "body": "Dit is geen lege lijst: er ging iets mis bij het ophalen. Controleer uw verbinding en probeer het opnieuw.",
     "retry": "Opnieuw proberen"
+  },
+  "handover": {
+    "pickupTitle": "Ophalen",
+    "returnTitle": "Inleveren",
+    "today": "Vandaag",
+    "tomorrow": "Morgen",
+    "pickupIn_one": "Over {{count}} dag",
+    "pickupIn_other": "Over {{count}} dagen",
+    "returnIn_one": "Nog {{count}} dag",
+    "returnIn_other": "Nog {{count}} dagen",
+    "daysLate_one": "{{count}} dag te laat",
+    "daysLate_other": "{{count}} dagen te laat",
+    "at": "om {{time}}",
+    "timeByArrangement": "tijdstip in overleg",
+    "noEndDate": "Er is geen einddatum afgesproken.",
+    "lateText": "De einddatum is verstreken. Verleng de huur of lever de auto in, en neem contact met ons op als dat vandaag niet lukt.",
+    "weBring": "Wij brengen de auto naar:",
+    "weCollect": "Wij halen de auto bij u op:",
+    "locationToBeAgreed": "een locatie die we met u afspreken",
+    "atOurShopPickup": "U haalt de auto op bij ons:",
+    "atOurShopReturn": "U levert de auto in bij ons:"
   }
 }

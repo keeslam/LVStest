@@ -175,7 +175,11 @@ lijstjes. Je krijgt geen melding; de auto is er simpelweg niet.
     voor … dagen — bewerk om te overschrijven*. Heeft de auto geen dagprijs, dan blijft er € 0,00
     staan en vul je het bedrag zelf in.
 11. Moet de auto gebracht worden, zet dan **Bezorgservice vereist** aan en vul **Bezorgadres**,
-    **Stad**, **Postcode** en eventueel **Bezorgnotities** in.
+    **Stad**, **Postcode** en eventueel **Bezorgnotities** in. Halen wij de auto aan het einde bij de klant
+    op, zet dan ook **Ophaalservice bij inleveren** aan en vul het **Ophaaladres** in; dat mag een andere
+    plek zijn dan het bezorgadres (met **Zelfde als bezorgadres** vul je het in één klik in). Zonder deze
+    twee gaat de klant ervan uit dat hij de auto bij ons aan de zaak ophaalt en inlevert. Wat de klant ervan
+    ziet, staat in [paragraaf 3.7](03-klanten.md).
 12. Zet bijzonderheden in **Notities**.
 13. Klik onderaan op **Reservering aanmaken**.
 

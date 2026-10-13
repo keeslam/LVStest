@@ -16,6 +16,7 @@ import { MaintenanceLine } from "@/components/portal/vehicle-card";
 import { Plate, StatusBadge } from "./ui";
 import { vehicleName } from "@shared/vehicle-name";
 import { formatDateNl } from "@/lib/format-date-nl";
+import { HandoverBlock } from "./handover-block";
 
 type Detail = PortalReservationDto & {
   driverHistory: Array<{ id: number; driverId: number | null; driverName: string | null; assignedFrom: string; assignedUntil: string | null; note: string | null }>;
@@ -62,14 +63,12 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
               <DetailRow label={t("fields.returnMileage")} value={r.returnMileage} />
               {me?.settings.showPrices && <DetailRow label={t("fields.price")} value={r.totalPrice ? `€ ${r.totalPrice}` : null} />}
             </dl>
-            {/* What the customer should know: pickup details before, APK/service warnings while on the road. */}
-            {r.status === "booked" && me?.info && (
-              <div className="rounded-xl border border-[#dfe2ff] bg-[#eef0fb] p-3 text-sm text-[#1a1d62]" data-testid="pickup-info">
-                <div className="mb-1 flex items-center gap-2 font-semibold"><Info className="h-4 w-4" />{t("reservations.pickupInfo")}</div>
-                <div className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4 shrink-0" /><span>{me.info.pickupAddress}</span></div>
-                <div className="flex items-start gap-2"><Clock className="mt-0.5 h-4 w-4 shrink-0" /><span>{me.info.openingHours}{r.startTime ? ` · ${t("reservations.pickupAt", { time: r.startTime })}` : ""}</span></div>
-                {me.info.pickupInstructions && <p className="mt-1 text-xs text-[#2a2f9c]">{me.info.pickupInstructions}</p>}
-              </div>
+            {/* Where and when the car is collected or returned, what to do, and the way to extend or return early. */}
+            {me?.info && (
+              <HandoverBlock reservation={r} info={me.info}
+                canExtend={canRequest} canReturnEarly={canRequest && Boolean(me.settings.canReturn)}
+                onExtend={() => openNewRequest({ type: "extension", reservationId: r.id })}
+                onReturnEarly={() => openNewRequest({ type: "early_return", reservationId: r.id })} />
             )}
             {(apkWarning || r.serviceDue || myVehicle?.maintenance) && (
               <div className="space-y-1" data-testid="vehicle-alerts">
@@ -84,7 +83,7 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
                 <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "mileage", reservationId: r.id })} data-testid="button-request-mileage"><Gauge className="mr-1 h-4 w-4" />{t("requests.form.reportMileage")}</Button>
                 <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "damage", reservationId: r.id })} data-testid="button-request-damage">{t("requests.type.damage")}</Button>
               </>)}
-              {canRequest && (<>
+              {canRequest && r.status === "booked" && (<>
                 <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "extension", reservationId: r.id })} data-testid="button-request-extension">{t("requests.form.extend")}</Button>
                 {me?.settings.canReturn && <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "early_return", reservationId: r.id })} data-testid="button-request-early-return">{t("requests.form.earlyReturn")}</Button>}
               </>)}

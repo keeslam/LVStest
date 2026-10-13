@@ -505,7 +505,11 @@
       "title": "Document verwijderen",
       "description": "Weet je zeker dat je {{type}} wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
       "confirmLabel": "Verwijderen"
-    }
+    },
+    "collectionServiceLabel": "Ophaalservice bij inleveren",
+    "collectionServiceHint": "Wij halen de auto aan het einde van de huur bij de klant op; de klant brengt hem niet naar de zaak. De klant ziet dit in het klantenportaal.",
+    "collectionAddressLabel": "Ophaaladres",
+    "collectionSameAsDelivery": "Zelfde als bezorgadres"
   },
   "selector": {
     "defaultPlaceholder": "Selecteer een reservering...",

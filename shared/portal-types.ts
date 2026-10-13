@@ -2,6 +2,7 @@
 // schema.ts so the client never has to import Drizzle table objects.
 
 import type { PortalCompanyDetails } from './portal-company';
+import type { PortalHandover } from './portal-handover';
 import type { AccountMailKey, CompanyMailPreferences } from './portal-mail-preferences';
 
 export const PORTAL_ERROR = {
@@ -80,7 +81,7 @@ export interface PortalMe {
   companyMail?: CompanyMailPreferences;
   settings: PortalSettingsFlags;
   /** Pickup details and privacy link from the portal configuration. */
-  info: { pickupAddress: string; openingHours: string; pickupInstructions: string; privacyUrl: string; phone: string };
+  info: { pickupAddress: string; openingHours: string; pickupInstructions: string; returnInstructions: string; deliveryNote: string; privacyUrl: string; phone: string };
   /** D11: the office time zone (app setting); the portal reads "today" on that calendar. Absent on an older server. */
   officeTimeZone?: string;
 }
@@ -107,6 +108,8 @@ export interface PortalReservationDto {
   contractNumber: string | null;
   /** Only present when the customer's showPrices switch is on. */
   totalPrice?: string | null;
+  /** Brought/collected at a place agreed with the office, or collected and returned at the shop. */
+  handover: PortalHandover;
   vehicle: { id: number; licensePlate: string; brand: string; model: string; apkDate: string | null; dailyPrice?: string | null } | null;
   driver: { id: number; displayName: string } | null;
   replacementForReservationId: number | null;
@@ -233,6 +236,10 @@ export interface PortalConfig {
   pickupAddress: string;
   openingHours: string;
   pickupInstructions: string;
+  /** Shown with every return: what state the car must come back in, and what it costs if it does not. */
+  returnInstructions: string;
+  /** Shown to customers who collect and return at the shop: bringing and collecting can also be arranged, and what it costs. */
+  deliveryNote: string;
   /** Link to the privacy statement, shown in the portal footer and on the login page. */
   privacyUrl: string;
   /** Phone number customers should call for changes that the portal no longer allows (e.g. maintenance within 48 hours). */
@@ -247,6 +254,8 @@ export const DEFAULT_PORTAL_CONFIG: PortalConfig = {
   pickupAddress: 'Kerkweg 47a, 3214 VC Zuidland',
   openingHours: 'Maandag t/m vrijdag 08:00 - 17:00',
   pickupInstructions: 'Neem een geldig rijbewijs mee van de bestuurder die de auto ophaalt.',
+  returnInstructions: 'Lever de auto schoon en compleet in. Is de auto niet schoon of niet compleet, dan brengen wij de kosten daarvan in rekening.',
+  deliveryNote: 'Liever dat wij de auto brengen of ophalen? Dat kan in overleg, vanaf € 125. Neem contact met ons op.',
   privacyUrl: 'https://lamgroep.nl/privacy',
   phone: '0181 - 45 10 40',
 };

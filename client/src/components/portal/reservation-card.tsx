@@ -28,7 +28,7 @@ export function ReservationCard({ reservation, showPrice }: { reservation: Porta
   const overdue = r.status === "picked_up" && endIn !== null && endIn < 0;
   const hint = r.status === "booked" && startIn !== null && startIn >= 0
     ? t(startIn === 0 ? "overview.pickupToday" : "overview.pickupIn", { count: startIn })
-    : r.status === "picked_up" && endIn !== null && endIn >= 0 && endIn <= 7
+    : r.status === "picked_up" && endIn !== null && endIn >= 0 && endIn <= 14
       ? t(endIn === 0 ? "overview.returnToday" : "overview.returnIn", { count: endIn })
       : null;
 

@@ -25,6 +25,8 @@ export function PortalConfigForm() {
   const [pickupAddress, setPickupAddress] = useState("");
   const [openingHours, setOpeningHours] = useState("");
   const [pickupInstructions, setPickupInstructions] = useState("");
+  const [returnInstructions, setReturnInstructions] = useState("");
+  const [deliveryNote, setDeliveryNote] = useState("");
   const [privacyUrl, setPrivacyUrl] = useState("");
   const [phone, setPhone] = useState("");
   // A-12-10: the fee a new fine starts with. Kept as text while typing; validated on save.
@@ -35,7 +37,7 @@ export function PortalConfigForm() {
     setOrigins(data.allowedFrameOrigins.join("\n"));
     setEmail(data.notificationEmail);
     setBaseUrl(data.portalBaseUrl);
-    setPickupAddress(data.pickupAddress ?? ""); setOpeningHours(data.openingHours ?? ""); setPickupInstructions(data.pickupInstructions ?? ""); setPrivacyUrl(data.privacyUrl ?? "");
+    setPickupAddress(data.pickupAddress ?? ""); setOpeningHours(data.openingHours ?? ""); setPickupInstructions(data.pickupInstructions ?? ""); setReturnInstructions(data.returnInstructions ?? ""); setDeliveryNote(data.deliveryNote ?? ""); setPrivacyUrl(data.privacyUrl ?? "");
     setPhone(data.phone ?? "");
     setFineAdminFee(String(data.fineAdminFee ?? 0)); setFeeError(false);
   }, [data]);
@@ -45,7 +47,7 @@ export function PortalConfigForm() {
       allowedFrameOrigins: origins.split(/\r?\n/).map((s) => s.trim()).filter(Boolean),
       notificationEmail: email.trim(),
       portalBaseUrl: baseUrl.trim().replace(/\/$/, ""),
-      pickupAddress: pickupAddress.trim(), openingHours: openingHours.trim(), pickupInstructions: pickupInstructions.trim(), privacyUrl: privacyUrl.trim(),
+      pickupAddress: pickupAddress.trim(), openingHours: openingHours.trim(), pickupInstructions: pickupInstructions.trim(), returnInstructions: returnInstructions.trim(), deliveryNote: deliveryNote.trim(), privacyUrl: privacyUrl.trim(),
       phone: phone.trim(),
       fineAdminFee: Number(fineAdminFee),
     })).json(),
@@ -76,6 +78,8 @@ export function PortalConfigForm() {
           <div><Label htmlFor="pc-addr">{t("admin.config.pickupAddress")}</Label><Input id="pc-addr" value={pickupAddress} onChange={(e) => setPickupAddress(e.target.value)} /></div>
           <div><Label htmlFor="pc-hours">{t("admin.config.openingHours")}</Label><Input id="pc-hours" value={openingHours} onChange={(e) => setOpeningHours(e.target.value)} /></div>
           <div className="md:col-span-2"><Label htmlFor="pc-instr">{t("admin.config.pickupInstructions")}</Label><Textarea id="pc-instr" rows={2} value={pickupInstructions} onChange={(e) => setPickupInstructions(e.target.value)} /></div>
+          <div className="md:col-span-2"><Label htmlFor="pc-return">{t("admin.config.returnInstructions")}</Label><Textarea id="pc-return" rows={2} value={returnInstructions} onChange={(e) => setReturnInstructions(e.target.value)} /><p className="mt-1 text-xs text-muted-foreground">{t("admin.config.returnInstructionsHint")}</p></div>
+          <div className="md:col-span-2"><Label htmlFor="pc-delivery-note">{t("admin.config.deliveryNote")}</Label><Textarea id="pc-delivery-note" rows={2} value={deliveryNote} onChange={(e) => setDeliveryNote(e.target.value)} /><p className="mt-1 text-xs text-muted-foreground">{t("admin.config.deliveryNoteHint")}</p></div>
           <div><Label htmlFor="pc-privacy">{t("admin.config.privacyUrl")}</Label><Input id="pc-privacy" type="url" value={privacyUrl} onChange={(e) => setPrivacyUrl(e.target.value)} /></div>
           <div><Label htmlFor="pc-phone">{t("admin.config.phone")}</Label><Input id="pc-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
         </div>

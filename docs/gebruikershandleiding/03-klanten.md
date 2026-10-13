@@ -348,6 +348,18 @@ hierboven beschreven. Dat geldt voor het adres en het factuuradres.
 
 Een account met de rol **Bestuurder** ziet alleen zijn eigen reserveringen, bekeuringen, aanvragen en documenten. Het ziet ook niet de bestuurderslijst van het bedrijf (naam, telefoon, e-mail en rijbewijsnummer van collega's) en krijgt alleen meldingen onder het belletje die over zijn eigen auto gaan. Meldingen over bekeuringen, documenten en aanvragen verschijnen alleen als die onderdelen voor dat account aanstaan. Per klant staan maximaal 30 aanvragen tegelijk open; daarna moet de klant er eerst een laten afhandelen of intrekken.
 
+### Ophalen en inleveren in het portaal
+
+In elke reservering die nog niet is afgerond staat bovenaan een blok **Ophalen** (vóór de huur) of **Inleveren** (tijdens de huur). Het toont de datum en het tijdstip (of *tijdstip in overleg*), een telling (*Over 3 dagen*, *Morgen*, *Nog 8 dagen*) en wat de klant moet weten:
+
+- **Bij ons aan de zaak:** het adres en de openingstijden van de zaak, en bij ophalen de ophaalinstructies.
+- **Gebracht of opgehaald op een locatie:** *Wij brengen de auto naar: …* of *Wij halen de auto bij u op: …*, met het adres uit het reserveringsformulier (**Bezorgservice vereist** en **Ophaalservice bij inleveren**, zie hoofdstuk 5). De openingstijden van de zaak staan er dan niet bij. Is er nog geen adres ingevuld, dan staat er *een locatie die we met u afspreken*.
+- **Bij elk inleveren** staan de inleverinstructies: de auto schoon en compleet inleveren, anders brengen wij kosten in rekening. Onder het blok staat voor klanten die bij de zaak ophalen of inleveren de tekst dat brengen en ophalen kan, vanaf € 125.
+- **Is de einddatum verstreken,** dan kleurt het blok rood met *x dagen te laat* en staat de knop **Verlengen** vooraan. **Eerder inleveren** vervalt dan.
+- De knoppen **Verlengen** en **Eerder inleveren** staan in dit blok, voor accounts die dat mogen.
+
+De teksten **Inleverinstructies** en **Brengen en ophalen** pas je aan onder het portaalbeheer, bij de instellingen van het portaal (naast adres, openingstijden en ophaalinstructies).
+
 ### Welke e-mails de klant krijgt
 
 De klant kiest zelf welke e-mails hij van het portaal wil ontvangen, in het portaal onder **Mijn

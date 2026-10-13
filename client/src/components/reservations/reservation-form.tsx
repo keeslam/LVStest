@@ -110,6 +110,10 @@ const formSchema = insertReservationSchemaBase.extend({
     z.string().transform(val => val === "" ? null : parseFloat(val) || null),
   ]).nullish(),
   deliveryNotes: z.string().nullish(),
+  collectionRequired: z.boolean().optional(),
+  collectionAddress: z.string().nullish(),
+  collectionCity: z.string().nullish(),
+  collectionPostalCode: z.string().nullish(),
   totalPrice: z.union([
     z.number().nullish(),
     z.string().transform(val => val === "" || val === null ? null : parseFloat(val) || null),
@@ -267,6 +271,7 @@ export function ReservationForm({
   const [isOpenEnded, setIsOpenEnded] = useState<boolean>(
     initialData ? !initialData.endDate : false
   );
+  const [collectionRequired, setCollectionRequired] = useState<boolean>(initialData?.collectionRequired || false);
   const [deliveryRequired, setDeliveryRequired] = useState<boolean>(
     initialData?.deliveryRequired || false
   );
@@ -2222,6 +2227,88 @@ export function ReservationForm({
                         </FormItem>
                       )}
                     />
+                  </>
+                )}
+
+                {/* Collection service: at the end we collect the car from the customer. Its place can differ from the delivery address. */}
+                <FormField
+                  control={form.control}
+                  name="collectionRequired"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value || false}
+                          onCheckedChange={(checked) => {
+                            field.onChange(checked);
+                            setCollectionRequired(!!checked);
+                          }}
+                          data-testid="checkbox-collection-required"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>{t('form.collectionServiceLabel')}</FormLabel>
+                        <FormDescription>{t('form.collectionServiceHint')}</FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                {collectionRequired && (
+                  <>
+                    {deliveryRequired && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          form.setValue("collectionAddress", form.getValues("deliveryAddress") ?? "", { shouldDirty: true });
+                          form.setValue("collectionCity", form.getValues("deliveryCity") ?? "", { shouldDirty: true });
+                          form.setValue("collectionPostalCode", form.getValues("deliveryPostalCode") ?? "", { shouldDirty: true });
+                        }}
+                        data-testid="button-collection-same-as-delivery"
+                      >
+                        {t('form.collectionSameAsDelivery')}
+                      </Button>
+                    )}
+                    <FormField
+                      control={form.control}
+                      name="collectionAddress"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t('form.collectionAddressLabel')}</FormLabel>
+                          <FormControl>
+                            <Input placeholder={t('form.deliveryAddressPlaceholder')} {...field} value={field.value || ""} data-testid="input-collection-address" />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="collectionCity"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t('form.cityLabel')}</FormLabel>
+                            <FormControl>
+                              <Input placeholder={t('form.cityPlaceholder')} {...field} value={field.value || ""} data-testid="input-collection-city" />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="collectionPostalCode"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t('form.postalCodeLabel')}</FormLabel>
+                            <FormControl>
+                              <Input placeholder="1234 AB" {...field} value={field.value || ""} data-testid="input-collection-postal-code" />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </>
                 )}
               </div>

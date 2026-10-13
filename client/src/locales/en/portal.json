@@ -656,7 +656,11 @@
       "phone": "Phone number for customers",
       "fineAdminFee": "Default administration fee per fine (€)",
       "fineAdminFeeHelp": "This amount is pre-filled on a new fine and comes on top of the fine amount. Enter 0 for no fee.",
-      "fineAdminFeeInvalid": "Enter an amount of 0 or more, for example 12.50."
+      "fineAdminFeeInvalid": "Enter an amount of 0 or more, for example 12.50.",
+      "returnInstructions": "Return instructions",
+      "returnInstructionsHint": "Shown with the return of every rental that is running: the condition the car must come back in and what it costs if it does not.",
+      "deliveryNote": "Delivery and collection (text for customers who use the shop)",
+      "deliveryNoteHint": "Shown with pickup and return at the shop, so the customer knows delivery and collection can be arranged, and what it costs. Leave empty to show nothing."
     },
     "fines": {
       "title": "Fines",
@@ -1343,5 +1347,26 @@
     "title": "The data could not be loaded.",
     "body": "This is not an empty list: something went wrong while fetching it. Check your connection and try again.",
     "retry": "Try again"
+  },
+  "handover": {
+    "pickupTitle": "Pickup",
+    "returnTitle": "Return",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "pickupIn_one": "In {{count}} day",
+    "pickupIn_other": "In {{count}} days",
+    "returnIn_one": "{{count}} day left",
+    "returnIn_other": "{{count}} days left",
+    "daysLate_one": "{{count}} day late",
+    "daysLate_other": "{{count}} days late",
+    "at": "at {{time}}",
+    "timeByArrangement": "time by arrangement",
+    "noEndDate": "No end date has been agreed.",
+    "lateText": "The end date has passed. Extend the rental or return the car, and contact us if that is not possible today.",
+    "weBring": "We bring the car to:",
+    "weCollect": "We collect the car from you at:",
+    "locationToBeAgreed": "a location we will agree with you",
+    "atOurShopPickup": "You collect the car at our location:",
+    "atOurShopReturn": "You return the car to our location:"
   }
 }

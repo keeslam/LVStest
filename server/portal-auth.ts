@@ -121,7 +121,7 @@ async function buildMe(ctx: PortalRequestContext): Promise<PortalMe> {
       ? { mailReservationChanges: ctx.settings.mailReservationChanges, mailMaintenance: ctx.settings.mailMaintenance, mailDocuments: ctx.settings.mailDocuments }
       : undefined,
     settings: settingsFlags(ctx.settings, ctx.user),
-    info: { pickupAddress: config.pickupAddress, openingHours: config.openingHours, pickupInstructions: config.pickupInstructions, privacyUrl: config.privacyUrl, phone: config.phone },
+    info: { pickupAddress: config.pickupAddress, openingHours: config.openingHours, pickupInstructions: config.pickupInstructions, returnInstructions: config.returnInstructions, deliveryNote: config.deliveryNote, privacyUrl: config.privacyUrl, phone: config.phone },
     officeTimeZone: officeTimeZone(),
   };
 }
