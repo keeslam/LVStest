@@ -1363,10 +1363,19 @@
     "timeByArrangement": "time by arrangement",
     "noEndDate": "No end date has been agreed.",
     "lateText": "The end date has passed. Extend the rental or return the car, and contact us if that is not possible today.",
-    "weBring": "We bring the car to:",
-    "weCollect": "We collect the car from you at:",
     "locationToBeAgreed": "a location we will agree with you",
-    "atOurShopPickup": "You collect the car at our location:",
-    "atOurShopReturn": "You return the car to our location:"
+    "pickup": {
+      "shopTodo": "You collect the car at our location",
+      "shopDone": "Collected at our location",
+      "awayTodo": "We bring the car to",
+      "awayDone": "Brought to"
+    },
+    "return": {
+      "shopTodo": "You return the car to our location",
+      "shopDone": "Returned to our location",
+      "awayTodo": "We collect the car from you at",
+      "awayDone": "Collected from"
+    },
+    "on": "on {{date}}"
   }
 }

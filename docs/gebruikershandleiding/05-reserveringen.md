@@ -177,7 +177,9 @@ lijstjes. Je krijgt geen melding; de auto is er simpelweg niet.
 11. Moet de auto gebracht worden, zet dan **Bezorgservice vereist** aan en vul **Bezorgadres**,
     **Stad**, **Postcode** en eventueel **Bezorgnotities** in. Halen wij de auto aan het einde bij de klant
     op, zet dan ook **Ophaalservice bij inleveren** aan en vul het **Ophaaladres** in; dat mag een andere
-    plek zijn dan het bezorgadres (met **Zelfde als bezorgadres** vul je het in één klik in). Zonder deze
+    plek zijn dan het bezorgadres (met **Zelfde als bezorgadres** vul je het in één klik in). Beide diensten maken
+    meteen een transport aan (bezorgen, en **Terughalen** op de einddatum) dat meeloopt als je het adres of de
+    einddatum wijzigt; zet je de dienst uit, dan wordt dat transport geannuleerd. Zonder deze
     twee gaat de klant ervan uit dat hij de auto bij ons aan de zaak ophaalt en inlevert. Wat de klant ervan
     ziet, staat in [paragraaf 3.7](03-klanten.md).
 12. Zet bijzonderheden in **Notities**.

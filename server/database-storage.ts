@@ -117,6 +117,7 @@ import { addMonths, addDays, parseISO, isBefore, isAfter, isEqual } from "date-f
 import { db, type DbTransaction } from "./db";
 import { eq, ne, and, gte, lte, asc, desc, sql, inArray, not, or, ilike, isNull, isNotNull, getTableColumns, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
+import { COLLECTION_LEG_REASON } from "../shared/portal-handover";
 import { IStorage, type CompleteMaintenanceResult, type CompleteMaintenanceFile, type ExpenseFilters } from "./storage";
 import { getRelativePath } from "./services/document-paths";
 import { formatVehicleBarcode, parseBarcode, normalizeScannedCode } from "../shared/barcode";
@@ -1991,7 +1992,66 @@ export class DatabaseStorage implements IStorage {
   // that's already completed or cancelled is left alone rather than resurrected
   // or overwritten, since that's a real handled/finished job, not a stale draft.
   private async syncDeliveryTransport(reservation: typeof reservations.$inferSelect): Promise<void> {
-    const [existing] = await db.select().from(vehicleTransports).where(eq(vehicleTransports.reservationId, reservation.id));
+    await this.syncDeliveryLeg(reservation);
+    await this.syncCollectionLeg(reservation);
+  }
+
+  /**
+   * The other end of the rental: when we collect the car from the customer (collectionRequired) it gets a transport
+   * of its own, the same way the delivery does — type "repossession" (Terughalen), from the collection address, on the
+   * end date. It is recognised by its reason, so a repossession a person linked to the reservation by hand is never
+   * taken over or cancelled here. A rental without an end date has no date to plan it on yet: nothing is created
+   * until there is one. Finished or cancelled transports are left alone.
+   */
+  private async syncCollectionLeg(reservation: typeof reservations.$inferSelect): Promise<void> {
+    const [existing] = await db.select().from(vehicleTransports).where(and(
+      eq(vehicleTransports.reservationId, reservation.id),
+      eq(vehicleTransports.transportType, 'repossession'),
+      eq(vehicleTransports.reason, COLLECTION_LEG_REASON),
+    ));
+
+    if (!reservation.collectionRequired) {
+      if (existing && existing.status !== 'completed' && existing.status !== 'cancelled') {
+        await db.update(vehicleTransports).set({ status: 'cancelled', updatedAt: new Date() }).where(eq(vehicleTransports.id, existing.id));
+      }
+      return;
+    }
+    if (reservation.vehicleId == null || !reservation.endDate) return;
+
+    const fields = {
+      vehicleId: reservation.vehicleId,
+      customerId: reservation.customerId,
+      transportType: 'repossession' as const,
+      originAddress: reservation.collectionAddress,
+      originCity: reservation.collectionCity,
+      scheduledDate: reservation.endDate,
+      reason: COLLECTION_LEG_REASON,
+      billable: false,
+      reservationId: reservation.id,
+    };
+
+    if (existing) {
+      if (existing.status === 'completed' || existing.status === 'cancelled') return;
+      await db.update(vehicleTransports).set({ ...fields, updatedAt: new Date() }).where(eq(vehicleTransports.id, existing.id));
+    } else {
+      await db.insert(vehicleTransports).values({
+        ...fields,
+        status: 'scheduled',
+        isExternalVehicle: false,
+        spareRequired: false,
+        isBreakdownOrMaintenance: false,
+        invoiced: false,
+      });
+    }
+  }
+
+  private async syncDeliveryLeg(reservation: typeof reservations.$inferSelect): Promise<void> {
+    // Only the delivery transport of this reservation. Any other transport linked to it (the collection leg, a swap, a
+    // repossession someone planned by hand) is not this leg and must never be changed or cancelled from here.
+    const [existing] = await db.select().from(vehicleTransports).where(and(
+      eq(vehicleTransports.reservationId, reservation.id),
+      eq(vehicleTransports.transportType, 'delivery'),
+    ));
 
     if (!reservation.deliveryRequired) {
       if (existing && existing.status !== 'completed' && existing.status !== 'cancelled') {

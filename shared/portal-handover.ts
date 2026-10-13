@@ -15,6 +15,9 @@ export interface HandoverSource {
   collectionPostalCode?: string | null;
 }
 
+/** The reason on the transport that the collection service creates; it is how that transport is recognised again. */
+export const COLLECTION_LEG_REASON = 'Ophaalservice bij inleveren';
+
 export interface PortalHandover {
   /** "delivery": we bring the car to `location`. "shop": the customer collects it at our location. */
   pickup: { method: 'shop' | 'delivery'; location: string | null };

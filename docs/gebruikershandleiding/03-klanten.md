@@ -350,13 +350,13 @@ Een account met de rol **Bestuurder** ziet alleen zijn eigen reserveringen, beke
 
 ### Ophalen en inleveren in het portaal
 
-In elke reservering die nog niet is afgerond staat bovenaan een blok **Ophalen** (vóór de huur) of **Inleveren** (tijdens de huur). Het toont de datum en het tijdstip (of *tijdstip in overleg*), een telling (*Over 3 dagen*, *Morgen*, *Nog 8 dagen*) en wat de klant moet weten:
+In elke reservering die loopt of nog moet beginnen staat bovenaan een blok met twee stappen onder elkaar: **Ophalen** en **Inleveren**. Elke stap zegt waar de auto wordt opgehaald of ingeleverd. Wat al gebeurd is staat in de verleden tijd met een vinkje en de datum (*Opgehaald bij ons*, *Gebracht naar …*, *Opgehaald bij …*); wat nog komt staat in de toekomende tijd. De stap die nu aan de beurt is toont een telling (*Over 3 dagen*, *Morgen*, *Nog 8 dagen*) en de knoppen.
 
-- **Bij ons aan de zaak:** het adres en de openingstijden van de zaak, en bij ophalen de ophaalinstructies.
-- **Gebracht of opgehaald op een locatie:** *Wij brengen de auto naar: …* of *Wij halen de auto bij u op: …*, met het adres uit het reserveringsformulier (**Bezorgservice vereist** en **Ophaalservice bij inleveren**, zie hoofdstuk 5). De openingstijden van de zaak staan er dan niet bij. Is er nog geen adres ingevuld, dan staat er *een locatie die we met u afspreken*.
-- **Bij elk inleveren** staan de inleverinstructies: de auto schoon en compleet inleveren, anders brengen wij kosten in rekening. Onder het blok staat voor klanten die bij de zaak ophalen of inleveren de tekst dat brengen en ophalen kan, vanaf € 125.
+- **Bij ons aan de zaak:** de stap toont het adres van de zaak. Is de stap nog niet geweest, dan staan ook de openingstijden erbij en bij ophalen de ophaalinstructies.
+- **Gebracht of opgehaald op een locatie:** de stap noemt de plek in vet: *Wij brengen de auto naar …*, *Wij halen de auto bij u op …*, later *Gebracht naar …* en *Opgehaald bij …*. Het adres van de zaak staat er dan niet. De plek komt uit het reserveringsformulier (**Bezorgservice vereist** en **Ophaalservice bij inleveren**, zie hoofdstuk 5). Is er nog geen adres ingevuld, dan staat er *een locatie die we met u afspreken*.
+- **Bij elk inleveren** (ook als wij de auto ophalen) staan de inleverinstructies: de auto schoon en compleet inleveren, anders brengen wij kosten in rekening. Onder het blok staat voor klanten die nog bij de zaak ophalen of inleveren de tekst dat brengen en ophalen kan, vanaf € 125.
 - **Is de einddatum verstreken,** dan kleurt het blok rood met *x dagen te laat* en staat de knop **Verlengen** vooraan. **Eerder inleveren** vervalt dan.
-- De knoppen **Verlengen** en **Eerder inleveren** staan in dit blok, voor accounts die dat mogen.
+- De knoppen **Verlengen** en **Eerder inleveren** staan bij de stap Inleveren, voor accounts die dat mogen.
 
 De teksten **Inleverinstructies** en **Brengen en ophalen** pas je aan onder het portaalbeheer, bij de instellingen van het portaal (naast adres, openingstijden en ophaalinstructies).
 

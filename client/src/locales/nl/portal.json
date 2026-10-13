@@ -1363,10 +1363,19 @@
     "timeByArrangement": "tijdstip in overleg",
     "noEndDate": "Er is geen einddatum afgesproken.",
     "lateText": "De einddatum is verstreken. Verleng de huur of lever de auto in, en neem contact met ons op als dat vandaag niet lukt.",
-    "weBring": "Wij brengen de auto naar:",
-    "weCollect": "Wij halen de auto bij u op:",
     "locationToBeAgreed": "een locatie die we met u afspreken",
-    "atOurShopPickup": "U haalt de auto op bij ons:",
-    "atOurShopReturn": "U levert de auto in bij ons:"
+    "pickup": {
+      "shopTodo": "U haalt de auto op bij ons",
+      "shopDone": "Opgehaald bij ons",
+      "awayTodo": "Wij brengen de auto naar",
+      "awayDone": "Gebracht naar"
+    },
+    "return": {
+      "shopTodo": "U levert de auto in bij ons",
+      "shopDone": "Ingeleverd bij ons",
+      "awayTodo": "Wij halen de auto bij u op",
+      "awayDone": "Opgehaald bij"
+    },
+    "on": "op {{date}}"
   }
 }
