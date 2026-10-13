@@ -50,7 +50,7 @@ export function ChangeDriverDialog({ reservation }: { reservation: PortalReserva
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild><Button size="sm" variant="outline" className="w-full sm:w-auto">{t("actions.changeDriver")}</Button></DialogTrigger>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>{t("drivers.changeDriverTitle", { plate: reservation.vehicle?.licensePlate ? formatLicensePlate(reservation.vehicle.licensePlate) : `#${reservation.id}` })}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>

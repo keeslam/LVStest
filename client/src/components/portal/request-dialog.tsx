@@ -48,7 +48,7 @@ export function RequestDialog({ id, onClose }: { id: number | null; onClose: () 
 
   return (<>
     <Dialog open={id !== null} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg" data-testid="portal-request-dialog">
+      <DialogContent className="max-w-5xl" data-testid="portal-request-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {t("requests.detailTitle")} #{id}
@@ -56,7 +56,8 @@ export function RequestDialog({ id, onClose }: { id: number | null; onClose: () 
           </DialogTitle>
         </DialogHeader>
         {isError ? <p className="p-6 text-center text-sm text-muted-foreground">{t("errors.PORTAL_NOT_FOUND")}</p> : isLoading || !r ? <div className="flex justify-center p-6"><Loader2 className="h-5 w-5 animate-spin" /></div> : (
-          <div className="space-y-3">
+          <div className="grid gap-x-8 gap-y-3 lg:grid-cols-2 lg:items-start">
+           <div className="space-y-3">
             <RequestProgress status={r.status} />
             <dl className="space-y-1">
               <DetailRow label={t("requests.chooseType")} value={t(`requests.type.${r.type}`)} />
@@ -107,6 +108,7 @@ export function RequestDialog({ id, onClose }: { id: number | null; onClose: () 
                 </ul>
               </div>
             )}
+           </div>
             <div>
               <h3 className="mb-1 text-sm font-semibold">{t("thread.title")}</h3>
               <RequestThread messages={r.messages} mine="customer" canPost={r.status === "new" || r.status === "in_progress"}

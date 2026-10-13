@@ -193,7 +193,7 @@ export function PortalAccountDialog({ open, onClose }: { open: boolean; onClose:
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl" data-testid="portal-account-dialog">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-5xl" data-testid="portal-account-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <Avatar name={me?.fullName} size="lg" accent />

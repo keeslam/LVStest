@@ -79,7 +79,7 @@ export function PortalListDialog({ kind, initialQuery, onClose }: { kind: Portal
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="flex max-h-[90vh] max-w-2xl flex-col" data-testid={`portal-list-dialog-${kind ?? ""}`}>
+      <DialogContent className="flex max-h-[90vh] max-w-5xl flex-col" data-testid={`portal-list-dialog-${kind ?? ""}`}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             {kind && <span className={`flex h-9 w-9 items-center justify-center rounded-xl text-white ${ICON_TONE[kind]}`}>{ICONS[kind]}</span>}
@@ -90,7 +90,7 @@ export function PortalListDialog({ kind, initialQuery, onClose }: { kind: Portal
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" />
           <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("lists.search")} className="pl-9" data-testid="portal-list-search" />
         </div>
-        <div className="-mx-1 flex-1 space-y-2 overflow-y-auto px-1 pb-1">
+        <div className="-mx-1 grid flex-1 content-start gap-2 overflow-y-auto px-1 pb-1 lg:grid-cols-2 lg:[&>*:only-child]:col-span-2">
           {loading ? <div className="flex justify-center p-6"><Loader2 className="h-5 w-5 animate-spin" /></div>
             : items.length === 0 ? <EmptyState icon={kind ? ICONS[kind] : null} text={q ? t("lists.noMatch") : empty} action={q ? null : action} />
             : items}

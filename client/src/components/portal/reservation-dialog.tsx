@@ -45,7 +45,7 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
 
   return (
     <Dialog open={id !== null} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl" data-testid="portal-reservation-dialog">
+      <DialogContent className="max-w-5xl" data-testid="portal-reservation-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {t("reservations.detailTitle")} #{id}
@@ -53,7 +53,8 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
           </DialogTitle>
         </DialogHeader>
         {isError ? <p className="p-6 text-center text-sm text-muted-foreground">{t("errors.PORTAL_NOT_FOUND")}</p> : isLoading || !r ? <div className="flex justify-center p-6"><Loader2 className="h-5 w-5 animate-spin" /></div> : (
-          <div className="space-y-4">
+          <div className="grid gap-x-8 gap-y-4 lg:grid-cols-2 lg:items-start">
+           <div className="space-y-4">
             <dl className="space-y-1">
               {r.vehicle && <div className="grid gap-0.5 text-sm sm:grid-cols-3 sm:gap-2"><dt className="text-muted-foreground">{t("fields.vehicle")}</dt><dd className="flex flex-wrap items-center gap-2 sm:col-span-2">{vehicleName(r.vehicle.brand, r.vehicle.model)} <Plate value={r.vehicle.licensePlate} /></dd></div>}
               <DetailRow label={t("fields.period")} value={`${formatPortalDate(r.startDate)} – ${r.endDate ? formatPortalDate(r.endDate) : t("overview.openEnded")}`} />
@@ -88,6 +89,8 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
                 {me?.settings.canReturn && <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "early_return", reservationId: r.id })} data-testid="button-request-early-return">{t("requests.form.earlyReturn")}</Button>}
               </>)}
             </div>
+           </div>
+           <div className="space-y-4">
             {me?.settings.canViewFines && linkedFines.length > 0 && (
               <div>
                 <h3 className="mb-1 text-sm font-semibold">{t("reservations.fines", { count: linkedFines.length })}</h3>
@@ -108,6 +111,7 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
                 ))}
               </ul>
             </div>
+           </div>
           </div>
         )}
       </DialogContent>

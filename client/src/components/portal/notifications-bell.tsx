@@ -67,7 +67,7 @@ export function NotificationsBell({ dark = false }: { dark?: boolean }) {
         {count > 0 && <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[#f5a623] px-1 text-[11px] font-bold text-[#1a1d62]" data-testid="portal-bell-count">{count > 99 ? "99+" : count}</span>}
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="flex max-h-[90vh] max-w-lg flex-col" data-testid="portal-notifications-dialog" aria-describedby={undefined}>
+        <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col" data-testid="portal-notifications-dialog" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between gap-2 pr-6">
               <span>{t("notifications.title")}{count > 0 && <span className="ml-2 rounded-full bg-[#f5a623] px-2 py-0.5 text-xs font-semibold text-[#1a1d62]">{count}</span>}</span>

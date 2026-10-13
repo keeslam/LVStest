@@ -22,7 +22,7 @@ export function FineDialog({ id, onClose }: { id: number | null; onClose: () => 
 
   return (<>
     <Dialog open={id !== null} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg" data-testid="portal-fine-dialog">
+      <DialogContent className="max-w-2xl" data-testid="portal-fine-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {t("fines.detailTitle")} #{id}

@@ -41,7 +41,7 @@ export function DriverHistoryDialog({ driver, reservations, open, onOpenChange }
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] max-w-lg flex-col" data-testid="driver-history-dialog">
+      <DialogContent className="flex max-h-[90vh] max-w-2xl flex-col" data-testid="driver-history-dialog">
         <DialogHeader><DialogTitle>{t("drivers.historyTitle", { name: driver.displayName })}</DialogTitle></DialogHeader>
         <div className="min-h-0 flex-1 space-y-4 overflow-auto">
           {upcoming.length > 0 && (

@@ -111,7 +111,7 @@ export function DriverFormDialog({ driver, children, open: controlledOpen, onOpe
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
-      <DialogContent className="sm:max-w-3xl" data-testid="portal-driver-form">
+      <DialogContent className="sm:max-w-4xl" data-testid="portal-driver-form">
         <DialogHeader><DialogTitle>{isEdit ? t("drivers.editTitle", { name: driver?.displayName }) : t("drivers.addTitle")}</DialogTitle></DialogHeader>
         <form onSubmit={submit}>
           <div className="grid items-stretch gap-3 md:grid-cols-2">
