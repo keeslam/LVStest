@@ -120,7 +120,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { COLLECTION_LEG_REASON } from "../shared/portal-handover";
 import { IStorage, type CompleteMaintenanceResult, type CompleteMaintenanceFile, type ExpenseFilters } from "./storage";
 import { getRelativePath } from "./services/document-paths";
-import { formatVehicleBarcode, parseBarcode, normalizeScannedCode } from "../shared/barcode";
+import { formatVehicleBarcode, parseBarcode, normalizeScannedCode, expandShortKeyCode } from "../shared/barcode";
 // besluiten B-16 + B-07: one day count and one total, shared with the form.
 import { recalculateTotalPrice } from "../shared/rental-pricing";
 import { normalizeExpenseCategory } from "../shared/expense-categories";
@@ -287,6 +287,7 @@ export class DatabaseStorage implements IStorage {
     
     // Sanitize the search query to handle license plates with or without dashes
     const sanitizedQuery = searchQuery.replace(/-/g, "").toUpperCase();
+    const shortCodeSql = expandShortKeyCode(searchQuery)?.replace(/-S$/, "") ?? null;
 
     // Search by license plate (without dashes), brand, model, or barcode (so a
     // barcode scanner "typing" VEH-000123 into any search box finds the vehicle)
@@ -298,7 +299,9 @@ export class DatabaseStorage implements IStorage {
           sql`UPPER(replace(${vehicles.licensePlate}, '-', '')) LIKE ${`%${sanitizedQuery}%`}`,
           sql`UPPER(${vehicles.brand}) LIKE ${`%${sanitizedQuery}%`}`,
           sql`UPPER(${vehicles.model}) LIKE ${`%${sanitizedQuery}%`}`,
-          sql`UPPER(replace(${vehicles.barcode}, '-', '')) LIKE ${`%${sanitizedQuery}%`}`
+          sql`UPPER(replace(${vehicles.barcode}, '-', '')) LIKE ${`%${sanitizedQuery}%`}`,
+          // a short key-label code (V123, S123R2) matches the stored VEH- code exactly
+          ...(shortCodeSql ? [sql`UPPER(${vehicles.barcode}) = ${shortCodeSql}`] : [])
         )
       )
       .limit(10);
@@ -1747,6 +1750,7 @@ export class DatabaseStorage implements IStorage {
     } else if (searchQuery) {
       // Sanitize the search query to handle license plates with or without dashes
       const sanitizedQuery = searchQuery.replace(/-/g, "").toUpperCase();
+      const shortCodeSql = expandShortKeyCode(searchQuery)?.replace(/-S$/, "") ?? null;
 
       // First, search for vehicles and customers matching the query (barcode
       // included so scanning a vehicle key label lists its reservations)
@@ -1758,7 +1762,9 @@ export class DatabaseStorage implements IStorage {
             sql`UPPER(replace(${vehicles.licensePlate}, '-', '')) LIKE ${`%${sanitizedQuery}%`}`,
             sql`UPPER(${vehicles.brand}) LIKE ${`%${sanitizedQuery}%`}`,
             sql`UPPER(${vehicles.model}) LIKE ${`%${sanitizedQuery}%`}`,
-            sql`UPPER(replace(${vehicles.barcode}, '-', '')) LIKE ${`%${sanitizedQuery}%`}`
+            sql`UPPER(replace(${vehicles.barcode}, '-', '')) LIKE ${`%${sanitizedQuery}%`}`,
+            // a short key-label code (V123, S123R2) matches the stored VEH- code exactly
+            ...(shortCodeSql ? [sql`UPPER(${vehicles.barcode}) = ${shortCodeSql}`] : [])
           )
         );
       

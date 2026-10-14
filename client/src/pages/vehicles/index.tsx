@@ -26,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { ColumnDef } from "@tanstack/react-table";
 import { Vehicle, Reservation } from "@shared/schema";
+import { expandShortKeyCode } from "@shared/barcode";
 import { formatDate, formatLicensePlate, formatVehicleType } from "@/lib/format-utils";
 import { displayLicensePlate } from "@/lib/utils";
 import { isTrueValue } from "@/lib/utils";
@@ -151,13 +152,14 @@ export default function VehiclesIndex() {
       
       // Check if any of these fields contain the search string (barcode included
       // so a scanner "typing" VEH-000123 into this box finds the vehicle)
+      const expandedShortCode = expandShortKeyCode(debouncedSearchQuery)?.replace(/-S$/, '') ?? null;
       const formattedBarcode = vehicle.barcode?.replace(/-/g, '')?.toLowerCase() || '';
       const matchesSearch = (
         formattedLicensePlate.includes(formattedSearchQuery) ||
         (vehicle.brand?.toLowerCase().includes(searchLower) || false) ||
         (vehicle.model?.toLowerCase().includes(searchLower) || false) ||
         (vehicle.vehicleType?.toLowerCase().includes(searchLower) || false) ||
-        (formattedBarcode !== '' && formattedBarcode.includes(formattedSearchQuery))
+        (formattedBarcode !== '' && (formattedBarcode.includes(formattedSearchQuery) || (expandedShortCode !== null && vehicle.barcode?.toUpperCase() === expandedShortCode)))
       );
       
       if (!matchesSearch) return false;

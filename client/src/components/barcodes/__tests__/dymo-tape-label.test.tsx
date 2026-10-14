@@ -89,6 +89,22 @@ describe("printKeyLabels with a tape layout", () => {
     expect(texts).toEqual(["", "12-XT-102", "Hoofd"]);
   });
 
+  it("prints the short code (V4 / S4), so the bars fit a 30 mm label; the text still says Hoofd/Reserve", async () => {
+    const JsBarcode = (await import("jsbarcode")).default;
+    const bars = (value: string) => {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      JsBarcode(svg, value, { format: "CODE128", displayValue: false, margin: 0 });
+      return svg.querySelectorAll("rect").length;
+    };
+    const rects = () => lastFrameDoc().querySelectorAll(".tape-content svg")[0].querySelectorAll("rect").length;
+    realPrint([vehicle], null, { tape: { tapeWidthMm: 12, lengthMm: 30 } });
+    expect(rects()).toBe(bars("V4"));
+    expect(rects()).toBeLessThan(bars("VEH-000004"));
+    realPrint([{ ...vehicle, barcodeOverride: "VEH-000004-S" }], null, { tape: { tapeWidthMm: 12, lengthMm: 30 } });
+    expect(rects()).toBe(bars("S4"));
+    expect(Array.from(lastFrameDoc().querySelectorAll(".tape-content .field"))[2].textContent).toBe("Reserve");
+  });
+
   it("a spare-key code (-S) says Reserve; several vehicles give one page each", () => {
     realPrint(
       [{ ...vehicle, barcodeOverride: "VEH-000004-S" }, { ...vehicle, id: 5, barcode: "VEH-000005", licensePlate: "AB123C" }],

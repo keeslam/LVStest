@@ -3,7 +3,7 @@ import i18n from "@/i18n";
 import { toast } from "@/hooks/use-toast";
 import { formatLicensePlate } from "@/lib/format-utils";
 import type { BarcodeLabelTemplate } from "@shared/schema";
-import { BarcodeLabelField, resolveBarcodeLabelSource } from "@shared/barcode";
+import { BarcodeLabelField, resolveBarcodeLabelSource, shortKeyLabelCode } from "@shared/barcode";
 import { notifyFileReady } from "@/lib/file-ready";
 import { buildTapeLabelXml, dymoLabelFileName, findDymoService, printDymoLabel, tapeLinesFromFields } from "@/lib/dymo-label";
 
@@ -21,6 +21,13 @@ interface LabelVehicle {
   chassisNumber?: string | null;
   apkDate?: string | null;
   company?: string | null;
+}
+
+// Key labels carry the short code (V123 / S123): a 30x12 mm label has no room for the bars of
+// VEH-000123. The scanner side turns it back into the stored code (normalizeScannedCode).
+function printedKeyCode(vehicle: LabelVehicle): string | undefined {
+  const code = vehicle.barcodeOverride ?? vehicle.barcode;
+  return code ? shortKeyLabelCode(code) : undefined;
 }
 
 const DEFAULT_LABEL_WIDTH_MM = 62;
@@ -278,7 +285,7 @@ export function printKeyLabels(
   doc.close();
 
   for (const vehicle of printable) {
-    const code = vehicle.barcodeOverride ?? vehicle.barcode;
+    const code = printedKeyCode(vehicle);
     if (!code) continue;
     const label = doc.createElement("div");
     label.className = "label";
@@ -330,7 +337,7 @@ function printTapeLabels(printable: LabelVehicle[], tape: TapeLayout, fields: Ba
   doc.close();
 
   for (const vehicle of printable) {
-    const code = vehicle.barcodeOverride ?? vehicle.barcode;
+    const code = printedKeyCode(vehicle);
     if (!code) continue;
     const page = doc.createElement("div");
     page.className = "tape-page";
@@ -365,7 +372,7 @@ async function outputDymoLabels(
   output: DymoOutput,
 ): Promise<void> {
   const jobs = printable.flatMap(vehicle => {
-    const code = vehicle.barcodeOverride ?? vehicle.barcode;
+    const code = printedKeyCode(vehicle);
     if (!code) return [];
     const plate = formatLicensePlate(vehicle.licensePlate);
     const lines = tapeLinesFromFields(fields, { ...vehicle, licensePlate: plate, barcode: code });

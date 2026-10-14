@@ -36,9 +36,32 @@ export function formatReservationBarcode(reservationId: number): string {
   return `${RESERVATION_BARCODE_PREFIX}${String(reservationId).padStart(6, "0")}`;
 }
 
+// Short code printed on small key labels (30x12 mm tape leaves ~24 mm for the bars, too little
+// for the 123 modules of VEH-000123): V123 = main key, S123 = spare key, with R<n> after the
+// id for a regenerated code (V123R2). It is expanded back to the stored VEH- form before any
+// lookup, so nothing is stored differently and labels with the long code keep scanning.
+const SHORT_KEY_CODE_RE = /^([VS])(\d{1,9})(?:R(\d+))?$/;
+
+export function shortKeyLabelCode(code: string): string {
+  const match = VEHICLE_BARCODE_RE.exec(normalizeScannedCode(code));
+  if (!match) return code;
+  const spare = normalizeScannedCode(code).endsWith("-S");
+  const id = parseInt(match[1], 10);
+  return `${spare ? "S" : "V"}${id}${match[2] ? `R${match[2]}` : ""}`;
+}
+
+// The stored VEH- code for a short key-label code, or null when `raw` is not one.
+export function expandShortKeyCode(raw: string): string | null {
+  const match = SHORT_KEY_CODE_RE.exec(raw.trim().toUpperCase());
+  if (!match) return null;
+  const base = `${VEHICLE_BARCODE_PREFIX}${match[2].padStart(6, "0")}`;
+  return `${base}${match[3] ? `-R${match[3]}` : ""}${match[1] === "S" ? "-S" : ""}`;
+}
+
 // Scanners sometimes send trailing whitespace/CR and users may type lowercase.
+// A short key-label code (V123, S123R2) comes back as the stored VEH- code.
 export function normalizeScannedCode(raw: string): string {
-  return raw.trim().toUpperCase();
+  return expandShortKeyCode(raw) ?? raw.trim().toUpperCase();
 }
 
 export function parseBarcode(raw: string): ParsedBarcode {
