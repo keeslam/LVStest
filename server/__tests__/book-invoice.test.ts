@@ -7,7 +7,7 @@ import path from "path";
 import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { registerExpenseRoutes } from "../routes/expenses";
-import { bookInvoiceAsExpenses, groupLinesByCategory, invoiceExpenseDescription, resolveInvoiceFile, receiptFromStoredPath } from "../services/expenses/book-invoice";
+import { bookInvoiceAsExpenses, groupLinesByCategory, linesExclVat, invoiceExpenseDescription, resolveInvoiceFile, receiptFromStoredPath } from "../services/expenses/book-invoice";
 import { inboxStorage } from "../services/invoice-inbox/inbox-storage";
 import { sha256, computeInvoiceHash } from "../services/invoice-inbox/hash";
 import { getUploadsDir } from "../../shared/paths";
@@ -30,6 +30,19 @@ describe("book-invoice helper", () => {
       { category: "maintenance", amount: 10.3, description: "Olie • Filter" },
       { category: "brakes", amount: 55.5, description: "Remblokken" },
     ]);
+  });
+
+  it("books excl. VAT: lines that carry the VAT are scaled down, excl.-VAT lines stay", () => {
+    const inclLines = [
+      { description: "Onderdelen", amount: 121, category: "maintenance" },
+      { description: "Arbeid", amount: 60.5, category: "labor" },
+    ];
+    const scaled = linesExclVat(inclLines, { totalAmount: 181.5, vatAmount: 31.5 });
+    expect(scaled.map((l) => l.amount)).toEqual([100, 50]);
+
+    const exclLines = [{ description: "Onderdelen", amount: 100, category: "maintenance" }, { description: "Arbeid", amount: 50, category: "labor" }];
+    expect(linesExclVat(exclLines, { totalAmount: 181.5, vatAmount: 31.5 })).toBe(exclLines);
+    expect(linesExclVat(exclLines, { totalAmount: 150 })).toBe(exclLines);
   });
 
   it("writes the description the way the cost overview shows it", () => {

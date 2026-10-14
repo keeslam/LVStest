@@ -238,6 +238,26 @@ export function registerExpenseInboxRoutes(app: Express): void {
     res.json({ item: updated, expenses: booked.expenses });
   });
 
+  // Add the sender of a waiting mail to the trusted list, so their invoices are
+  // booked automatically from now on. Editing the list is a settings matter.
+  app.post("/api/expenses/inbox/items/:id/trust-sender", canManageSettings, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const item = await inboxStorage.get(id);
+    if (!item) return res.status(404).json({ message: "Not found" });
+    const sender = String(item.fromAddress ?? "").trim().toLowerCase();
+    if (!sender) return res.status(400).json({ message: "Deze mail heeft geen bekend afzenderadres." });
+    const config = await getInvoiceInboxConfig();
+    if (config.allowedSenders.includes(sender)) return res.json({ sender, added: false });
+    try {
+      await saveInvoiceInboxConfig({ ...config, allowedSenders: [...config.allowedSenders, sender] }, actor(req));
+    } catch (e) {
+      if (e instanceof z.ZodError) return res.status(400).json({ message: e.errors[0]?.message ?? "Invalid input" });
+      throw e;
+    }
+    await AuditLogger.logFromRequest(req, "expense.inbox.trust-sender", "invoice_inbox_item", item.id, { sender });
+    res.json({ sender, added: true });
+  });
+
   app.post("/api/expenses/inbox/items/:id/dismiss", canManageExpenses, async (req, res) => {
     const id = idParam(req, res); if (id === null) return;
     const body = dismissSchema.safeParse(req.body ?? {});

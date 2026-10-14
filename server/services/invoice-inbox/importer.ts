@@ -11,7 +11,7 @@ import {
 import { normalizeExpenseCategory } from "../../../shared/expense-categories";
 import { processInvoiceWithAI, validateParsedInvoice } from "../../utils/invoice-scanner";
 import { getRelativePath } from "../document-paths";
-import { bookInvoiceAsExpenses, groupLinesByCategory } from "../expenses/book-invoice";
+import { bookInvoiceAsExpenses, groupLinesByCategory, linesExclVat } from "../expenses/book-invoice";
 import { inboxStorage } from "./inbox-storage";
 import { computeInvoiceHash, invoiceTotalCents, normalizeInvoiceNumber, sha256 } from "./hash";
 import { extractPlates } from "./plates";
@@ -356,7 +356,7 @@ async function importAttachment(
   }
 
   const booked = await bookInvoiceAsExpenses({
-    invoice: parsed, vehicleId: decision.vehicleId, lineItems: groupLinesByCategory(parsed.lineItems.map(knownCategory)),
+    invoice: parsed, vehicleId: decision.vehicleId, lineItems: linesExclVat(groupLinesByCategory(parsed.lineItems.map(knownCategory)), parsed),
     receipt: { relativePath: stored.relativePath, fileName: attachment.name, size: attachment.content.length, contentType: attachment.contentType },
     inboxItemId: item.id, createdBy,
   });
@@ -373,7 +373,7 @@ async function importAttachment(
   const total = booked.expenses.reduce((sum, e) => sum + Number(e.amount), 0);
   await notifyInvoiceInbox({
     title: `Factuur van ${parsed.vendor} geboekt op ${fleetMatches[0].licensePlate}`,
-    description: `${booked.expenses.length} kostenregel(s), samen ${euro(total)} (factuur ${parsed.invoiceNumber || "zonder nummer"})`,
+    description: `${booked.expenses.length} kostenregel(s), samen ${euro(total)} excl. btw (factuur ${parsed.invoiceNumber || "zonder nummer"})`,
   });
   return { outcome: "booked", scans: 1 };
 }

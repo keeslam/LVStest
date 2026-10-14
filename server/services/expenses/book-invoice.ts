@@ -56,6 +56,40 @@ export function groupLinesByCategory(lines: BookableLine[]): BookableLine[] {
   }));
 }
 
+/**
+ * Expenses are always booked excl. VAT. Garage invoices usually list their lines
+ * excl. VAT, but some list them incl. VAT. When the lines are closer to the
+ * stated total than to the excl.-VAT amount (subtotal, or total minus VAT), the
+ * lines are scaled down to that amount in proportion, largest-remainder rounded
+ * so the result sums to exactly it in cents. Otherwise they stay as they are.
+ */
+export function linesExclVat(
+  lines: BookableLine[],
+  invoice: { totalAmount?: number | null; subtotalAmount?: number | null; vatAmount?: number | null },
+): BookableLine[] {
+  const toCents = (n: unknown) => Math.round((Number(n) || 0) * 100);
+  const totalCents = toCents(invoice.totalAmount);
+  const exclCents = toCents(invoice.subtotalAmount) > 0
+    ? toCents(invoice.subtotalAmount)
+    : toCents(invoice.vatAmount) > 0 ? totalCents - toCents(invoice.vatAmount) : 0;
+  const lineCents = lines.map((line) => toCents(line.amount));
+  const sumCents = lineCents.reduce((acc, c) => acc + c, 0);
+  if (totalCents <= 0 || exclCents <= 0 || exclCents >= totalCents || sumCents <= 0 || lineCents.some((c) => c < 0)) return lines;
+  if (Math.abs(sumCents - totalCents) >= Math.abs(sumCents - exclCents)) return lines;
+
+  const exact = lineCents.map((c) => (c * exclCents) / sumCents);
+  const scaled = exact.map(Math.floor);
+  let remainder = exclCents - scaled.reduce((acc, c) => acc + c, 0);
+  const byFraction = exact.map((value, index) => ({ index, fraction: value - Math.floor(value) }))
+    .sort((a, b) => b.fraction - a.fraction);
+  for (const { index } of byFraction) {
+    if (remainder <= 0) break;
+    scaled[index] += 1;
+    remainder -= 1;
+  }
+  return lines.map((line, index) => ({ ...line, amount: scaled[index] / 100 }));
+}
+
 export function invoiceExpenseDescription(line: BookableLine, invoice: { vendor?: string; invoiceNumber?: string }): string {
   const number = String(invoice.invoiceNumber ?? "").trim() || "onbekend";
   const vendor = String(invoice.vendor ?? "").trim() || "onbekende leverancier";

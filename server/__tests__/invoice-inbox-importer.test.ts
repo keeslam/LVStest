@@ -92,6 +92,7 @@ describe("invoice inbox importer", () => {
     expect(scannerCalls[0].mimeType).toBe("application/pdf");
 
     const booked = await db.select().from(expenses).where(eq(expenses.inboxItemId, item.id));
+    // Costs are booked excl. VAT.
     expect(booked.map((e) => [e.category, e.amount]).sort()).toEqual([["brakes", "50"], ["maintenance", "100"]]);
     expect(booked[0].receiptFilePath).toBe(item.attachmentPath);
     expect(booked[0].description).toContain(`(Factuur ${scanned.invoiceNumber}, ${VENDOR})`);

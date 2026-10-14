@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Loader2, Plus } from "lucide-react";
-import type { InvoiceInboxItem, Vehicle } from "@shared/schema";
+import { UserPermission, type InvoiceInboxItem, type Vehicle } from "@shared/schema";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import type { InboxLineItem } from "@shared/invoice-inbox";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { formatCurrency, formatExpenseCategory } from "@/lib/format-utils";
@@ -75,6 +76,13 @@ export function InvoiceReviewDialog({ item, vehicles, onClose }: Props) {
     onSuccess: () => done(t("invoiceInbox.dialog.dismissedToast")),
     onError: (e: Error) => toast({ title: t("invoiceInbox.dialog.dismissFailed"), description: e.message, variant: "destructive" }),
   });
+
+  const trust = useMutation({
+    mutationFn: async () => (await apiRequest("POST", `/api/expenses/inbox/items/${item!.id}/trust-sender`, {})).json(),
+    onSuccess: (r: { sender: string }) => toast({ title: t("invoiceInbox.dialog.trustSenderToast", { sender: r.sender }) }),
+    onError: (e: Error) => toast({ title: t("invoiceInbox.dialog.trustSenderFailed"), description: e.message, variant: "destructive" }),
+  });
+  const canTrustSender = useHasPermission(UserPermission.MANAGE_SETTINGS);
 
   if (!item) return null;
 
@@ -168,6 +176,14 @@ export function InvoiceReviewDialog({ item, vehicles, onClose }: Props) {
                   <Label htmlFor="inbox-note">{t("invoiceInbox.dialog.dismissNote")}</Label>
                   <Input id="inbox-note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} />
                 </div>
+                {canTrustSender && item.fromAddress && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/40 p-3 text-sm">
+                    <span>{item.fromAddress}<span className="block text-xs text-muted-foreground">{t("invoiceInbox.dialog.trustSenderHint")}</span></span>
+                    <Button variant="outline" size="sm" onClick={() => trust.mutate()} disabled={trust.isPending || trust.isSuccess} data-testid="button-inbox-trust-sender">
+                      {trust.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}{t("invoiceInbox.dialog.trustSender")}
+                    </Button>
+                  </div>
+                )}
                 <div className="flex justify-between gap-2 border-t pt-4">
                   <Button variant="outline" onClick={() => dismiss.mutate()} disabled={dismiss.isPending || book.isPending} data-testid="button-inbox-dismiss">
                     {dismiss.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}{t("invoiceInbox.dialog.dismiss")}

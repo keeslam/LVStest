@@ -162,7 +162,7 @@ describe("Kosten page (A-9-8)", () => {
     expect(downloadCsv).toHaveBeenCalledTimes(1);
     const [subject, header, rows] = downloadCsv.mock.calls[0];
     expect(subject).toBe("kosten");
-    expect(header).toEqual(["Datum", "Kenteken", "Categorie", "Omschrijving", "Bedrag"]);
+    expect(header).toEqual(["Datum", "Kenteken", "Categorie", "Omschrijving", "Bedrag (excl. btw)"]);
     expect(rows).toEqual([
       ["08-10-2026", "XY-99-ZZ", "Parkeren", "Parkeren Schiphol", "7,25"],
       ["03-10-2026", "XY-99-ZZ", "Brandstof", "Tanken Utrecht", "40,00"],
