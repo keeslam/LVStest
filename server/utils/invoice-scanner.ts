@@ -244,6 +244,8 @@ You are an expert invoice processor for a car rental company. Analyze this PDF i
   "lineItems": [
     {
       "description": "Service or item description",
+      "quantity": 1,
+      "unitPrice": 12.34,
       "amount": 12.34,
       "category": "One of: ${EXPENSE_CATEGORIES.join(', ')}"
     }
@@ -266,6 +268,8 @@ IMPORTANT INSTRUCTIONS:
 - If unsure about a category, use "other"
 - totalAmount is the amount to pay INCLUDING VAT (btw); subtotalAmount is the amount EXCLUDING VAT; vatAmount is the VAT itself. Leave subtotalAmount and vatAmount out when the invoice does not state them
 - Line item amounts are the amounts as printed on the line (usually excluding VAT)
+- A line item is one row of the invoice table that carries its own quantity, unit price and amount. Read each row left to right and take the amount from THAT SAME ROW, never from the row above or below. Text rows without a quantity, unit price and amount of their own (headings, work descriptions such as "Remblokken voor vervangen", remarks, "U werd geholpen door ...") are NOT line items: leave them out
+- The line item amounts together must add up to subtotalAmount (excluding VAT). Check this before answering; if the sum differs, you misread a row, so read the table again
 - licensePlates lists every license plate on the invoice, also when it covers several vehicles; licensePlate is the main one
 
 Please respond ONLY with the JSON object, no additional text.
@@ -293,6 +297,8 @@ Please respond ONLY with the JSON object, no additional text.
                 type: "object",
                 properties: {
                   description: { type: "string" },
+                  quantity: { type: "number" },
+                  unitPrice: { type: "number" },
                   amount: { type: "number" },
                   category: { type: "string", enum: [...EXPENSE_CATEGORIES] },
                   subcategory: { type: "string" }
