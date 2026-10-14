@@ -100,6 +100,9 @@ export interface BarcodeLabelField {
   locked?: boolean;
   barcodeHeightMm?: number;
   barcodeWidthMm?: number;
+  // Only for text fields: the box is this many mm wide (text-align works inside it, e.g. a
+  // plate centred under a barcode). Unset = from x to the label's right edge.
+  textWidthMm?: number;
 }
 
 // Data sources the barcode label editor offers. "barcode" renders as a Code

@@ -195,6 +195,18 @@ describe("printKeyLabels with a tape layout", () => {
     expect(Number(last.getAttribute("x")) + Number(last.getAttribute("width"))).toBe(w);
   });
 
+  it("a text field with a set width is that wide, so the plate centres under the barcode", () => {
+    const template = {
+      id: 9, name: "30x12", labelWidthMm: 30, labelHeightMm: 12, tapePrint: false,
+      fields: [{ id: "p", name: "Kenteken", x: 3, y: 8.5, fontSize: 9, isBold: true, source: "licensePlate", textAlign: "center", textWidthMm: 24 }],
+    } as any;
+    realPrint([vehicle], template);
+    const field = lastFrameDoc().querySelector(".label .field") as HTMLElement;
+    expect(field.style.width).toBe("24mm");
+    expect(field.style.textAlign).toBe("center");
+    expect(field.textContent).toBe("12-XT-102");
+  });
+
   it("without a template the original label still shows the code under the bars", () => {
     realPrint([vehicle], null);
     expect(lastFrameDoc().querySelector(".label svg text")).not.toBeNull();

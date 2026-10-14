@@ -697,6 +697,8 @@
     "barcodeHeightLabel": "Barcode height (mm)",
     "barcodeWidthLabel": "Barcode width (mm)",
     "barcodeWidthAuto": "Auto",
+    "plateUnderBarcode": "Plate under barcode",
+    "plateNoRoom": "There is no room under the barcode for the plate: make the label taller or the barcode lower.",
     "xPositionMmLabel": "X position (mm)",
     "yPositionMmLabel": "Y position (mm)",
     "sources": {

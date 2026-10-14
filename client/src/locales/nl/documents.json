@@ -697,6 +697,8 @@
     "barcodeHeightLabel": "Barcodehoogte (mm)",
     "barcodeWidthLabel": "Barcodebreedte (mm)",
     "barcodeWidthAuto": "Automatisch",
+    "plateUnderBarcode": "Kenteken onder barcode",
+    "plateNoRoom": "Onder de barcode is geen ruimte voor het kenteken: maak het label hoger of de barcode lager.",
     "xPositionMmLabel": "X-positie (mm)",
     "yPositionMmLabel": "Y-positie (mm)",
     "sources": {

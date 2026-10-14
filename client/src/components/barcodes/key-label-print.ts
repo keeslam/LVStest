@@ -203,7 +203,7 @@ function appendLabelFields(
       // Non-barcode fields are absolutely positioned with an auto (shrink
       // to content) width, which makes textAlign a no-op. Give the holder
       // the remaining label width so left/center/right actually differ.
-      holder.style.width = `${widthMm - field.x - 1}mm`;
+      holder.style.width = `${field.textWidthMm ?? widthMm - field.x - 1}mm`;
       holder.style.whiteSpace = "normal";
     }
 

@@ -42,6 +42,7 @@ import { BarcodeSvg } from "@/components/barcodes/barcode-svg";
 import { comparableTemplate } from "./comparable-template";
 import { BARCODE_LABEL_SOURCES, BarcodeLabelField, resolveBarcodeLabelSource } from "@shared/barcode";
 import { DEFAULT_TAPE_LAYOUT, builtInTapeFields } from "@/components/barcodes/key-label-print";
+import { plateUnderBarcode } from "./plate-under-barcode";
 
 // Same positioned-field editor as the transport report template editor, but the
 // canvas is a small sticker (millimetres) instead of A4 (points): field x/y are
@@ -123,7 +124,7 @@ interface BarcodeLabelTemplateEditorProps {
 }
 
 /** The label's size and the bar sizes are edited here too, on top of what every template editor compares. */
-const COMPARE = { templateKeys: ["labelWidthMm", "labelHeightMm", "tapePrint"], fieldKeys: ["barcodeHeightMm", "barcodeWidthMm"] } as const;
+const COMPARE = { templateKeys: ["labelWidthMm", "labelHeightMm", "tapePrint"], fieldKeys: ["barcodeHeightMm", "barcodeWidthMm", "textWidthMm"] } as const;
 const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemplateEditorProps = {}) => {
   const { t } = useTranslation(["documents", "common"]);
   const DATA_SOURCE_KEYS: string[] = [...BARCODE_LABEL_SOURCES];
@@ -460,6 +461,28 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
     setNewFieldName('');
     setNewFieldSource('');
     setIsAddFieldDialogOpen(false);
+  };
+
+  // Adds the plate as a centred line under a barcode, as wide as the barcode (so it can be read
+  // without a scanner).
+  const handlePlateUnderBarcode = (barcode: TemplateField) => {
+    if (!currentTemplate) return;
+    const result = plateUnderBarcode(barcode, labelWidthMm, labelHeightMm, `field-${Date.now()}`);
+    if (!result.ok) {
+      toast({
+        title: t('common:status.error'),
+        description: t('barcodeLabelEditor.plateNoRoom'),
+        variant: "destructive",
+      });
+      return;
+    }
+    const fields = [
+      ...currentTemplate.fields.map(f => (f.id === barcode.id ? result.barcode : f)),
+      result.plate,
+    ];
+    setCurrentTemplate({ ...currentTemplate, fields });
+    addToHistory(fields);
+    setSelectedFields([result.plate.id]);
   };
 
   const handleMouseDown = (e: React.MouseEvent, field: TemplateField) => {
@@ -1468,7 +1491,7 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
                                 // left/center/right alignment has room to be visible (an
                                 // auto-width box has no slack for text-align to use). Mirrors
                                 // the equivalent fix in key-label-print.ts.
-                                width: field.source === 'barcode' ? undefined : `${(labelWidthMm - field.x) * MM_TO_PX * zoomLevel}px`,
+                                width: field.source === 'barcode' ? undefined : `${(field.textWidthMm ?? (labelWidthMm - field.x)) * MM_TO_PX * zoomLevel}px`,
                                 fontSize: field.source === 'barcode' ? undefined : `${field.fontSize * PT_TO_MM * MM_TO_PX * zoomLevel}px`,
                                 fontWeight: field.isBold ? 'bold' : 'normal',
                                 backgroundColor: selectedFields.includes(field.id) ? 'rgba(219, 234, 254, 0.8)' : 'transparent',
@@ -1655,6 +1678,16 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
                               data-testid="input-barcode-width-mm"
                             />
                           </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="col-span-2"
+                            onClick={() => handlePlateUnderBarcode(selectedField)}
+                            data-testid="button-plate-under-barcode"
+                          >
+                            {t('barcodeLabelEditor.plateUnderBarcode')}
+                          </Button>
                         </div>
                       ) : (
                         <div>
