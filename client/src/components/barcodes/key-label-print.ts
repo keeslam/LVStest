@@ -251,6 +251,16 @@ export function printKeyLabels(
   const frame = makePrintFrame();
   const doc = frame.contentDocument!;
   doc.open();
+  // A chosen template is the paper: the page is exactly its label size, one label per
+  // page, so a label printer (LabelWriter) gets the template's size instead of whatever
+  // paper its driver defaults to. Without a template the original flowing layout stays.
+  const pagePerLabel = template
+    ? `@page { size: ${widthMm}mm ${heightMm}mm; margin: 0; }
+    html, body { width: ${widthMm}mm; }
+    .label { display: block; break-after: page; page-break-after: always; }
+    .label:last-child { break-after: auto; page-break-after: auto; }
+    @media print { .label { margin: 0; } }`
+    : "";
   doc.write(`<!doctype html><html><head><meta charset="utf-8"><style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: Arial, sans-serif; }
@@ -263,6 +273,7 @@ export function printKeyLabels(
     .field { position: absolute; white-space: nowrap; line-height: 1; }
     .field svg { height: 100%; width: auto; }
     @media print { .label { border: none; } }
+    ${pagePerLabel}
   </style></head><body></body></html>`);
   doc.close();
 

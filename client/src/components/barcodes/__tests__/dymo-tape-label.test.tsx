@@ -145,6 +145,22 @@ describe("printKeyLabels with a tape layout", () => {
     expect(lastFrameDoc().querySelector(".tape-page")).toBeNull();
   });
 
+  it("a die-cut template sets the page to its own label size, one label per page, no margin", () => {
+    // A label printer (LabelWriter 280) takes its paper from the page size: without @page the
+    // driver's default paper decides and the template's width/height never reach the printer.
+    const template = {
+      id: 9, name: "Rol 57x32", labelWidthMm: 57, labelHeightMm: 32, tapePrint: false,
+      fields: [{ id: "p", name: "Kenteken", x: 2, y: 20, fontSize: 10, isBold: true, source: "licensePlate", textAlign: "left" }],
+    } as any;
+    realPrint([vehicle, { ...vehicle, id: 5, barcode: "VEH-000005", licensePlate: "AB123C" }], template);
+    const css = lastFrameDoc().querySelector("style")!.textContent!;
+    expect(css).toContain("@page { size: 57mm 32mm; margin: 0; }");
+    expect(css).toMatch(/\.label\s*\{[^}]*width: 57mm; height: 32mm/);
+    expect(css).toMatch(/@media print\s*\{[^}]*margin: 0/);
+    expect(css).toContain("break-after: page");
+    expect(lastFrameDoc().querySelectorAll(".label")).toHaveLength(2);
+  });
+
   it("toasts the printer settings for the tape once the print window opens", () => {
     realPrint([vehicle], null, { tape: { tapeWidthMm: 12, lengthMm: 48 } });
     expect(toastSpy).not.toHaveBeenCalled();
