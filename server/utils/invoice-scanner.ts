@@ -7,6 +7,7 @@ import { GoogleGenAI } from "@google/genai";
 import fs from "fs";
 import path from "path";
 import { PDFDocument } from 'pdf-lib';
+import { extractPdfTextRows, linesFromTextRows } from './invoice-text-rows';
 import { EXPENSE_CATEGORIES, normalizeExpenseCategory } from "../../shared/expense-categories";
 
 // Using Google Gemini for invoice processing - javascript_gemini integration
@@ -405,6 +406,25 @@ Please respond ONLY with the JSON object, no additional text.
       } : undefined
     };
     
+    // The picture reading can shift table rows; a PDF text layer cannot. When the
+    // text table adds up to the invoice's own subtotal, its rows replace the AI lines.
+    if (mimeType === "application/pdf") {
+      try {
+        const fromText = linesFromTextRows(await extractPdfTextRows(pdfPath), parsedInvoice);
+        if (fromText) {
+          const known = parsedInvoice.lineItems;
+          parsedInvoice.lineItems = fromText.map((row) => {
+            const sameAmount = known.find((k) => Math.abs(k.amount - row.amount) < 0.005 && k.description.trim().toLowerCase() === row.description.trim().toLowerCase())
+              ?? known.find((k) => Math.abs(k.amount - row.amount) < 0.005);
+            return { description: row.description, amount: row.amount, category: sameAmount?.category ?? normalizeExpenseCategory(categorizeLineItem(row.description)) };
+          });
+          console.log(`🧾 Lines rebuilt from the PDF text layer: ${known.length} -> ${parsedInvoice.lineItems.length}`);
+        }
+      } catch (error) {
+        console.warn("PDF text layer could not be read, keeping the AI lines:", (error as Error).message);
+      }
+    }
+
     // If no line items were extracted, create one from the total. I4: say so —
     // such a line was never read off the invoice, so "the lines add up to the
     // total" would be true by construction and proves nothing.
