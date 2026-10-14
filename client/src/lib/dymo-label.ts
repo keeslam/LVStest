@@ -176,6 +176,65 @@ ${[cellXml(barcode), ...textCells].join("\n")}
 `;
 }
 
+export interface TapeImageLabelInput {
+  tapeWidthMm: number;
+  lengthMm: number;
+  /** Base64 PNG of the whole label, as long as `lengthMm` and as high as the tape is wide. */
+  pngBase64: string;
+}
+
+/**
+ * The same ContinuousLabel as buildTapeLabelXml, but with one picture filling the label
+ * (no margins, stretched to the fixed length): the layout is drawn by the app exactly like the
+ * template, so DYMO has no say in sizes or positions.
+ */
+export function buildTapeImageLabelXml(input: TapeImageLabelInput): string {
+  const lengthTwips = mmToTwips(input.lengthMm);
+  const image = `        <ImageObject>
+          <Name>LABEL</Name>
+          <ForeColor Alpha="255" Red="0" Green="0" Blue="0"/>
+          <BackColor Alpha="0" Red="255" Green="255" Blue="255"/>
+          <LinkedObjectName></LinkedObjectName>
+          <Rotation>Rotation0</Rotation>
+          <IsMirrored>False</IsMirrored>
+          <IsVariable>False</IsVariable>
+          <Image>${input.pngBase64}</Image>
+          <ScaleMode>Fill</ScaleMode>
+          <BorderWidth>0</BorderWidth>
+          <BorderColor Alpha="255" Red="0" Green="0" Blue="0"/>
+          <HorizontalAlignment>Center</HorizontalAlignment>
+          <VerticalAlignment>Middle</VerticalAlignment>
+        </ImageObject>`;
+  return `<?xml version="1.0" encoding="utf-8"?>
+<ContinuousLabel Version="8.0" Units="twips">
+  <PaperOrientation>Landscape</PaperOrientation>
+  <Id>Tape${tapePaperName(input.tapeWidthMm)}</Id>
+  <PaperName>${tapePaperName(input.tapeWidthMm)}</PaperName>
+  <LengthMode>Fixed</LengthMode>
+  <LabelLength>${lengthTwips}</LabelLength>
+  <RootCell>
+    <Length>${lengthTwips}</Length>
+    <LengthMode>Fixed</LengthMode>
+    <BorderWidth>0</BorderWidth>
+    <BorderStyle>Solid</BorderStyle>
+    <BorderColor Alpha="255" Red="0" Green="0" Blue="0"/>
+    <SubcellsOrientation>Horizontal</SubcellsOrientation>
+    <Subcells>
+      <Cell>
+${image}
+        <ObjectMargin Left="0" Right="0" Top="0" Bottom="0"/>
+        <Length>${lengthTwips}</Length>
+        <LengthMode>Fixed</LengthMode>
+        <BorderWidth>0</BorderWidth>
+        <BorderStyle>Solid</BorderStyle>
+        <BorderColor Alpha="255" Red="0" Green="0" Blue="0"/>
+      </Cell>
+    </Subcells>
+  </RootCell>
+</ContinuousLabel>
+`;
+}
+
 /** sleutellabel-12-XT-102-VEH-000004.label */
 export function dymoLabelFileName(plate: string, code: string): string {
   const safe = (s: string) => s.replace(/[^A-Za-z0-9-]+/g, "-").replace(/^-+|-+$/g, "");

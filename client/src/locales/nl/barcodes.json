@@ -135,6 +135,8 @@
     "statusFound_other": "DYMO Connect gevonden: {{count}} labelmakers.",
     "jobTitle": "Sleutellabel",
     "filesReady": "{{count}} .label-bestanden gemaakt; open ze in DYMO Connect.",
+    "tooWideTitle": "Barcode past niet op het label",
+    "tooWideDescription": "Deze code is te lang voor een label van {{length}} mm. Maak het label langer of de barcode breder in het sjabloon.",
     "notFoundTitle": "DYMO Connect niet gevonden",
     "notFoundDescription": "De DYMO-webservice op deze pc antwoordt niet. Start DYMO Connect, of kies als uitvoer het bestand .label of het afdrukvenster.",
     "printedTitle": "Naar de labelmaker gestuurd",

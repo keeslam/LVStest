@@ -135,6 +135,8 @@
     "statusFound_other": "DYMO Connect found: {{count}} label makers.",
     "jobTitle": "Key label",
     "filesReady": "{{count}} .label files made; open them in DYMO Connect.",
+    "tooWideTitle": "Barcode does not fit the label",
+    "tooWideDescription": "This code is too long for a {{length}} mm label. Make the label longer or the barcode wider in the template.",
     "notFoundTitle": "DYMO Connect not found",
     "notFoundDescription": "The DYMO web service on this pc does not answer. Start DYMO Connect, or choose the .label file or the print window as output.",
     "printedTitle": "Sent to the label maker",

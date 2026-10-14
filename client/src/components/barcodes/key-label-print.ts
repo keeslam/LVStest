@@ -5,7 +5,8 @@ import { formatLicensePlate } from "@/lib/format-utils";
 import type { BarcodeLabelTemplate } from "@shared/schema";
 import { BarcodeLabelField, resolveBarcodeLabelSource, shortKeyLabelCode } from "@shared/barcode";
 import { notifyFileReady } from "@/lib/file-ready";
-import { buildTapeLabelXml, dymoLabelFileName, findDymoService, printDymoLabel, tapeLinesFromFields } from "@/lib/dymo-label";
+import { buildTapeImageLabelXml, dymoLabelFileName, findDymoService, printDymoLabel } from "@/lib/dymo-label";
+import { renderTapeLabelPngBase64, TapeBarcodeTooWideError } from "@/lib/tape-label-image";
 
 interface LabelVehicle {
   id: number;
@@ -371,14 +372,29 @@ async function outputDymoLabels(
   fields: BarcodeLabelField[],
   output: DymoOutput,
 ): Promise<void> {
-  const jobs = printable.flatMap(vehicle => {
-    const code = printedKeyCode(vehicle);
-    if (!code) return [];
-    const plate = formatLicensePlate(vehicle.licensePlate);
-    const lines = tapeLinesFromFields(fields, { ...vehicle, licensePlate: plate, barcode: code });
-    const xml = buildTapeLabelXml({ tapeWidthMm: tape.tapeWidthMm, lengthMm: tape.lengthMm, code, lines });
-    return [{ plate, code, xml }];
-  });
+  let jobs: { plate: string; code: string; xml: string }[];
+  try {
+    jobs = printable.flatMap(vehicle => {
+      const code = printedKeyCode(vehicle);
+      if (!code) return [];
+      const plate = formatLicensePlate(vehicle.licensePlate);
+      // Drawn like the template (barcode box, plate, texts) and sent as one picture.
+      const pngBase64 = renderTapeLabelPngBase64({
+        tapeWidthMm: tape.tapeWidthMm, lengthMm: tape.lengthMm, fields, code,
+        vehicle: { ...vehicle, licensePlate: plate, barcode: code },
+      });
+      const xml = buildTapeImageLabelXml({ tapeWidthMm: tape.tapeWidthMm, lengthMm: tape.lengthMm, pngBase64 });
+      return [{ plate, code, xml }];
+    });
+  } catch (error) {
+    if (!(error instanceof TapeBarcodeTooWideError)) throw error;
+    toast({
+      title: String(i18n.t("barcodes:dymo.tooWideTitle")),
+      description: String(i18n.t("barcodes:dymo.tooWideDescription", { length: tape.lengthMm })),
+      variant: "destructive",
+    });
+    return;
+  }
   if (jobs.length === 0) return;
 
   if (output.mode === "download") {
