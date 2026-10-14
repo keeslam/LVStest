@@ -177,6 +177,29 @@ describe("printKeyLabels with a tape layout", () => {
     expect(lastFrameDoc().querySelectorAll(".label")).toHaveLength(2);
   });
 
+  it("a template's barcode prints exactly the set width and height: bars only, no margin, no text under it", () => {
+    const template = {
+      id: 9, name: "30x12", labelWidthMm: 30, labelHeightMm: 12, tapePrint: false,
+      fields: [{ id: "b", name: "Barcode", x: 3, y: 1, fontSize: 10, isBold: false, source: "barcode", textAlign: "left", barcodeHeightMm: 7, barcodeWidthMm: 24 }],
+    } as any;
+    realPrint([vehicle], template);
+    const svg = lastFrameDoc().querySelector(".label svg") as SVGElement;
+    expect(svg.querySelector("text")).toBeNull();
+    expect(svg.style.width).toBe("24mm");
+    expect(svg.style.height).toBe("7mm");
+    // viewBox starts at the first bar: no quiet-zone padding inside the box.
+    const first = svg.querySelector("rect") as SVGRectElement;
+    expect(Number(first.getAttribute("x"))).toBe(0);
+    const [, , w] = svg.getAttribute("viewBox")!.split(" ").map(Number);
+    const last = Array.from(svg.querySelectorAll("rect")).pop() as SVGRectElement;
+    expect(Number(last.getAttribute("x")) + Number(last.getAttribute("width"))).toBe(w);
+  });
+
+  it("without a template the original label still shows the code under the bars", () => {
+    realPrint([vehicle], null);
+    expect(lastFrameDoc().querySelector(".label svg text")).not.toBeNull();
+  });
+
   it("toasts the printer settings for the tape once the print window opens", () => {
     realPrint([vehicle], null, { tape: { tapeWidthMm: 12, lengthMm: 48 } });
     expect(toastSpy).not.toHaveBeenCalled();

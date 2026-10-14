@@ -1494,6 +1494,7 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
                                   <BarcodeSvg
                                     value={SAMPLE_VEHICLE.barcode}
                                     height={barcodeHeightPx}
+                                    bare
                                     width={barcodeWidthPx}
                                     className={barcodeWidthPx ? "h-full" : "h-full w-auto"}
                                   />

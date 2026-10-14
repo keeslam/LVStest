@@ -289,7 +289,7 @@ export function printKeyLabels(
     if (!code) continue;
     const label = doc.createElement("div");
     label.className = "label";
-    appendLabelFields(doc, label, fields, vehicle, code, widthMm, true);
+    appendLabelFields(doc, label, fields, vehicle, code, widthMm, !template);
     doc.body.appendChild(label);
   }
 

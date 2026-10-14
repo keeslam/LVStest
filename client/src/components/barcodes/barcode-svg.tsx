@@ -11,12 +11,14 @@ interface BarcodeSvgProps {
    * natural width JsBarcode produces.
    */
   width?: number;
+  /** Bars only, filling exactly the given size: no quiet-zone margin, no text (label template preview). */
+  bare?: boolean;
   className?: string;
 }
 
 // Code 128 SVG barcode with the human-readable value underneath. SVG keeps
 // print output vector-crisp; JsBarcode adds the required quiet zone via margin.
-export function BarcodeSvg({ value, height = 60, width, className }: BarcodeSvgProps) {
+export function BarcodeSvg({ value, height = 60, width, bare, className }: BarcodeSvgProps) {
   const ref = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
@@ -25,10 +27,10 @@ export function BarcodeSvg({ value, height = 60, width, className }: BarcodeSvgP
     try {
       JsBarcode(svg, value, {
         format: "CODE128",
-        displayValue: true,
+        displayValue: !bare,
         fontSize: 14,
         height,
-        margin: 10, // quiet zone
+        margin: bare ? 0 : 10, // quiet zone
         background: "transparent",
         lineColor: "#000000",
       });
@@ -51,7 +53,7 @@ export function BarcodeSvg({ value, height = 60, width, className }: BarcodeSvgP
     } catch (error) {
       console.error("Barcode render failed for value:", value, error);
     }
-  }, [value, height, width]);
+  }, [value, height, width, bare]);
 
   if (!value) return null;
   return <svg ref={ref} className={className} data-testid={`barcode-${value}`} />;
