@@ -14,6 +14,7 @@ import { getInvoiceInboxConfig, invoiceInboxConfigSchema, maskInvoiceInboxConfig
 import { inboxStorage } from "../services/invoice-inbox/inbox-storage";
 import { computeInvoiceHash } from "../services/invoice-inbox/hash";
 import { getInvoiceImapClient, getInvoiceInboxRunState, runInvoiceInboxImport, startInvoiceInboxScheduler } from "../services/invoice-inbox/poller";
+import { rescanStoredInvoice } from "../services/invoice-inbox/importer";
 import { inboxRunLog } from "../services/invoice-inbox/run-log";
 import { bookInvoiceAsExpenses, groupLinesByCategory, receiptFromStoredPath, resolveInvoiceFile } from "../services/expenses/book-invoice";
 
@@ -236,6 +237,29 @@ export function registerExpenseInboxRoutes(app: Express): void {
     });
     await AuditLogger.logFromRequest(req, "expense.inbox.book", "invoice_inbox_item", item.id, { vehicleId, expenses: booked.expenses.length });
     res.json({ item: updated, expenses: booked.expenses });
+  });
+
+  // Read the stored attachment again with the current scanner and replace what
+  // the app had read, for a waiting item whose first reading was wrong.
+  app.post("/api/expenses/inbox/items/:id/rescan", canManageExpenses, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const item = await inboxStorage.get(id);
+    if (!item) return res.status(404).json({ message: "Not found" });
+    if (item.status !== "review") return res.status(409).json({ message: "Deze factuur is al afgehandeld." });
+    const abs = resolveInvoiceFile(item.attachmentPath);
+    if (!abs) return res.status(400).json({ message: "Deze mail heeft geen bijlage om opnieuw uit te lezen." });
+    try {
+      const { parsed, fleetMatches } = await rescanStoredInvoice(abs, item.attachmentContentType || "application/pdf");
+      const updated = await inboxStorage.update(item.id, {
+        parsed, errorMessage: null, updatedBy: actor(req),
+        reviewReason: item.reviewReason === "parse_failed" ? null : item.reviewReason,
+        ...(!item.vehicleId && fleetMatches.length === 1 ? { vehicleId: fleetMatches[0].id } : {}),
+      });
+      await AuditLogger.logFromRequest(req, "expense.inbox.rescan", "invoice_inbox_item", item.id, {});
+      res.json({ item: updated });
+    } catch (e) {
+      res.status(502).json({ message: (e as Error).message || "Opnieuw uitlezen mislukt" });
+    }
   });
 
   // Add the sender of a waiting mail to the trusted list, so their invoices are

@@ -82,6 +82,11 @@ export function InvoiceReviewDialog({ item, vehicles, onClose }: Props) {
     onSuccess: (r: { sender: string }) => toast({ title: t("invoiceInbox.dialog.trustSenderToast", { sender: r.sender }) }),
     onError: (e: Error) => toast({ title: t("invoiceInbox.dialog.trustSenderFailed"), description: e.message, variant: "destructive" }),
   });
+  const rescan = useMutation({
+    mutationFn: async () => (await apiRequest("POST", `/api/expenses/inbox/items/${item!.id}/rescan`, {})).json(),
+    onSuccess: () => done(t("invoiceInbox.dialog.rescanToast")),
+    onError: (e: Error) => toast({ title: t("invoiceInbox.dialog.rescanFailed"), description: e.message, variant: "destructive" }),
+  });
   const canTrustSender = useHasPermission(UserPermission.MANAGE_SETTINGS);
 
   if (!item) return null;
@@ -185,6 +190,9 @@ export function InvoiceReviewDialog({ item, vehicles, onClose }: Props) {
                   </div>
                 )}
                 <div className="flex justify-between gap-2 border-t pt-4">
+                  <Button variant="outline" onClick={() => rescan.mutate()} disabled={rescan.isPending || !item.attachmentPath} data-testid="button-inbox-rescan">
+                    {rescan.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}{t("invoiceInbox.dialog.rescan")}
+                  </Button>
                   <Button variant="outline" onClick={() => dismiss.mutate()} disabled={dismiss.isPending || book.isPending} data-testid="button-inbox-dismiss">
                     {dismiss.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}{t("invoiceInbox.dialog.dismiss")}
                   </Button>

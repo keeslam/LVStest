@@ -29,6 +29,13 @@ export function setInvoiceScanner(replacement: InvoiceScanner | null): void {
   scanner = replacement ?? processInvoiceWithAI;
 }
 
+/** Read a stored attachment again with the current scanner (review dialog: "Opnieuw uitlezen"). */
+export async function rescanStoredInvoice(filePath: string, mimeType: string): Promise<{ parsed: InboxParsedInvoice; fleetMatches: Array<{ id: number; licensePlate: string }> }> {
+  let parsed = await scanner(filePath, mimeType);
+  parsed = { ...parsed, plates: extractPlates(parsed) };
+  return { parsed, fleetMatches: await inboxStorage.findVehiclesByPlates(parsed.plates ?? []) };
+}
+
 export interface ImportMailInput { raw: Buffer; config: InvoiceInboxConfig; createdBy: string }
 export interface ImportMailResult {
   attachments: number; booked: number; review: number; skipped: number;
