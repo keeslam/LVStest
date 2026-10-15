@@ -4534,33 +4534,29 @@ export class DatabaseStorage implements IStorage {
     return first || undefined;
   }
 
+  // A template plays one role or none: main key (isDefault), spare key (isDefaultSpare) or
+  // car sticker (isDefaultCar). Each role lives on at most one template, and taking a role
+  // drops the other two on that template.
+  private async takeBarcodeLabelRole<T extends Partial<InsertBarcodeLabelTemplate>>(templateData: T): Promise<T> {
+    const roles = ["isDefault", "isDefaultSpare", "isDefaultCar"] as const;
+    const taken = roles.find(role => templateData[role] === true);
+    if (!taken) return templateData;
+    await db.update(barcodeLabelTemplates).set({ [taken]: false });
+    const cleared = Object.fromEntries(roles.filter(role => role !== taken).map(role => [role, false]));
+    return { ...templateData, ...cleared };
+  }
+
   async createBarcodeLabelTemplate(templateData: InsertBarcodeLabelTemplate): Promise<BarcodeLabelTemplate> {
-    if (templateData.isDefault) {
-      await db.update(barcodeLabelTemplates).set({ isDefault: false });
-    }
-    if (templateData.isDefaultSpare) {
-      await db.update(barcodeLabelTemplates).set({ isDefaultSpare: false });
-    }
-    if (templateData.isDefaultCar) {
-      await db.update(barcodeLabelTemplates).set({ isDefaultCar: false });
-    }
-    const [template] = await db.insert(barcodeLabelTemplates).values(templateData).returning();
+    const data = await this.takeBarcodeLabelRole(templateData);
+    const [template] = await db.insert(barcodeLabelTemplates).values(data).returning();
     return template;
   }
 
   async updateBarcodeLabelTemplate(id: number, templateData: Partial<InsertBarcodeLabelTemplate>): Promise<BarcodeLabelTemplate | undefined> {
-    if (templateData.isDefault) {
-      await db.update(barcodeLabelTemplates).set({ isDefault: false });
-    }
-    if (templateData.isDefaultSpare) {
-      await db.update(barcodeLabelTemplates).set({ isDefaultSpare: false });
-    }
-    if (templateData.isDefaultCar) {
-      await db.update(barcodeLabelTemplates).set({ isDefaultCar: false });
-    }
+    const data = await this.takeBarcodeLabelRole(templateData);
     const [template] = await db
       .update(barcodeLabelTemplates)
-      .set({ ...templateData, updatedAt: new Date() })
+      .set({ ...data, updatedAt: new Date() })
       .where(eq(barcodeLabelTemplates.id, id))
       .returning();
     return template || undefined;

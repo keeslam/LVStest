@@ -685,7 +685,7 @@
     "default_main": "Hoofdsleutel",
     "default_spare": "Reservesleutel",
     "default_car": "Autolabel (sticker in de auto)",
-    "defaultsHint": "Per soort label wordt dit sjabloon vooraf gekozen bij het afdrukken. Een gevulde ster is de huidige standaard; klikken slaat het sjabloon direct op.",
+    "defaultsHint": "Een sjabloon is standaard voor één soort label of voor geen. Een gevulde ster is de huidige rol; klikken wisselt of haalt de rol weg en slaat direct op.",
     "backToDocuments": "Terug naar documenten",
     "createFirstTemplateDescription": "Maak een eerste labelsjabloon om sleutellabels met barcode af te drukken.",
     "templateNamePlaceholder": "Bijv. Sleutellabel 62x29",

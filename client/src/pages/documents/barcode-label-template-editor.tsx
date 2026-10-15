@@ -945,19 +945,12 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
     deleteTemplateMutation.mutate(currentTemplate.id);
   };
 
-  const handleSetDefaultTemplate = () => {
-    const payload = buildTemplatePayload({ isDefault: true });
-    if (payload) saveTemplateMutation.mutate(payload);
-  };
-
-  // Three independent defaults: main key, spare key (a Reserve label differs from the
-  // main-key one) and the sticker in the car. Each is exclusive among the templates.
-  const handleSetDefaultSpareTemplate = () => {
-    const payload = buildTemplatePayload({ isDefaultSpare: true });
-    if (payload) saveTemplateMutation.mutate(payload);
-  };
-  const handleSetDefaultCarTemplate = () => {
-    const payload = buildTemplatePayload({ isDefaultCar: true });
+  // A template is the default for one kind of label or none: main key, spare key (a
+  // Reserve label differs from the main-key one) or the sticker in the car. Taking a role
+  // drops the other two; clicking the active role gives it up. Saved straight away.
+  type DefaultRole = 'isDefault' | 'isDefaultSpare' | 'isDefaultCar';
+  const setDefaultRole = (role: DefaultRole, active: boolean) => {
+    const payload = buildTemplatePayload({ isDefault: false, isDefaultSpare: false, isDefaultCar: false, [role]: active });
     if (payload) saveTemplateMutation.mutate(payload);
   };
 
@@ -1237,15 +1230,16 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
                   </div>
                   <div className="space-y-2" data-testid="label-defaults">
                     {([
-                      ['main', currentTemplate.isDefault, handleSetDefaultTemplate],
-                      ['spare', currentTemplate.isDefaultSpare, handleSetDefaultSpareTemplate],
-                      ['car', currentTemplate.isDefaultCar, handleSetDefaultCarTemplate],
-                    ] as const).map(([kind, active, onClick]) => (
+                      ['main', 'isDefault', currentTemplate.isDefault],
+                      ['spare', 'isDefaultSpare', currentTemplate.isDefaultSpare],
+                      ['car', 'isDefaultCar', currentTemplate.isDefaultCar],
+                    ] as const).map(([kind, role, active]) => (
                       <Button
                         key={kind}
                         variant={active ? 'secondary' : 'outline'}
-                        onClick={onClick}
-                        disabled={active || saveTemplateMutation.isPending}
+                        onClick={() => setDefaultRole(role, !active)}
+                        disabled={saveTemplateMutation.isPending}
+                        aria-pressed={active}
                         className="w-full justify-start"
                         data-testid={`button-make-default-${kind}`}
                       >
