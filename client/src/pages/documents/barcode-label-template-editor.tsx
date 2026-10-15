@@ -53,6 +53,8 @@ interface Template {
   id: number;
   name: string;
   isDefault: boolean;
+  // Preselected when printing a spare-key label; at most one template.
+  isDefaultSpare: boolean;
   labelWidthMm: number;
   labelHeightMm: number;
   // B-45: printed a quarter turned on a label maker's tape (width = length along the tape, height = tape width).
@@ -245,6 +247,7 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
           labelWidthMm: template.labelWidthMm ?? DEFAULT_LABEL_WIDTH_MM,
           labelHeightMm: template.labelHeightMm ?? DEFAULT_LABEL_HEIGHT_MM,
           isDefault: !!template.isDefault,
+          isDefaultSpare: !!template.isDefaultSpare,
           tapePrint: !!template.tapePrint,
           fields: Array.isArray(fields) ? fields : []
         };
@@ -396,6 +399,7 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
     saveTemplateMutation.mutate({
       name: newTemplateName,
       isDefault: templates.length === 0,
+      isDefaultSpare: false,
       labelWidthMm: tape ? DEFAULT_TAPE_LAYOUT.lengthMm : DEFAULT_LABEL_WIDTH_MM,
       labelHeightMm: tape ? DEFAULT_TAPE_LAYOUT.tapeWidthMm : DEFAULT_LABEL_HEIGHT_MM,
       tapePrint: tape,
@@ -883,6 +887,7 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
       id: currentTemplate.id,
       name: currentTemplate.name,
       isDefault: currentTemplate.isDefault,
+      isDefaultSpare: currentTemplate.isDefaultSpare,
       labelWidthMm: currentTemplate.labelWidthMm,
       labelHeightMm: currentTemplate.labelHeightMm,
       tapePrint: currentTemplate.tapePrint,
@@ -937,6 +942,12 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
 
   const handleSetDefaultTemplate = () => {
     const payload = buildTemplatePayload({ isDefault: true });
+    if (payload) saveTemplateMutation.mutate(payload);
+  };
+
+  // The spare-key label is its own default: a Reserve label differs from the main-key one.
+  const handleSetDefaultSpareTemplate = () => {
+    const payload = buildTemplatePayload({ isDefaultSpare: true });
     if (payload) saveTemplateMutation.mutate(payload);
   };
 
@@ -1158,7 +1169,9 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
                   <SelectContent>
                     {templates.map(template => (
                       <SelectItem key={template.id} value={template.id.toString()}>
-                        {template.name} {template.isDefault ? t('templateEditor.defaultSuffix') : ''}
+                        {template.name}
+                        {template.isDefault ? t('templateEditor.defaultSuffix') : ''}
+                        {template.isDefaultSpare ? t('barcodeLabelEditor.defaultSpareSuffix') : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1213,6 +1226,16 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
                   </div>
                   <Button variant="outline" onClick={handleSetDefaultTemplate} className="w-full">
                     {t('templateEditor.makeDefaultButton')}
+                  </Button>
+                </div>
+              )}
+              {currentTemplate && !currentTemplate.isDefaultSpare && (
+                <div className="space-y-4">
+                  <div className="flex h-6 items-center">
+                    <Label>{t('barcodeLabelEditor.setAsDefaultSpareLabel')}</Label>
+                  </div>
+                  <Button variant="outline" onClick={handleSetDefaultSpareTemplate} className="w-full" data-testid="button-make-default-spare">
+                    {t('barcodeLabelEditor.makeDefaultSpareButton')}
                   </Button>
                 </div>
               )}

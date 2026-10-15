@@ -10,13 +10,13 @@ import { Vehicle, BarcodeLabelTemplate } from "@shared/schema";
 import { formatSpareKeyBarcode } from "@shared/barcode";
 import { BarcodeSvg } from "./barcode-svg";
 import { printKeyLabels } from "./key-label-print";
-import { LabelLayoutPicker, useLabelLayout } from "./label-layout-picker";
+import { KeyLabelKind, LabelLayoutPicker, useLabelLayout } from "./label-layout-picker";
 
 interface KeyLabelPrintPanelProps {
   vehicle: Vehicle;
 }
 
-type PrintTarget = "main" | "spare";
+type PrintTarget = KeyLabelKind;
 
 /**
  * Barcode plus the two key-label print buttons, for placing directly on a page.
@@ -34,8 +34,9 @@ export function KeyLabelPrintPanel({ vehicle }: KeyLabelPrintPanelProps) {
   const { data: labelTemplates } = useQuery<BarcodeLabelTemplate[]>({
     queryKey: ["/api/barcode-label-templates"],
   });
-  const layout = useLabelLayout(labelTemplates);
   const [printTarget, setPrintTarget] = useState<PrintTarget | null>(null);
+  // The spare key preselects its own default template (falls back to the main one).
+  const layout = useLabelLayout(labelTemplates, printTarget ?? "main");
 
   const print = () => {
     if (!printTarget) return;

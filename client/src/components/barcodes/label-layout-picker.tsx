@@ -100,7 +100,16 @@ function outputToDymo(output: string, printers: DymoTapePrinter[], chain: boolea
   return null;
 }
 
-export function useLabelLayout(templates: BarcodeLabelTemplate[] | undefined): LabelLayoutState {
+// Which key the label is for: the spare key has its own default template (isDefaultSpare),
+// falling back to the main-key default when none is marked.
+export type KeyLabelKind = "main" | "spare";
+
+export function defaultTemplateFor(templates: BarcodeLabelTemplate[] | undefined, kind: KeyLabelKind): BarcodeLabelTemplate | undefined {
+  if (!templates) return undefined;
+  return (kind === "spare" ? templates.find(tpl => tpl.isDefaultSpare) : undefined) ?? templates.find(tpl => tpl.isDefault);
+}
+
+export function useLabelLayout(templates: BarcodeLabelTemplate[] | undefined, kind: KeyLabelKind = "main"): LabelLayoutState {
   const [stored] = useState<StoredTape>(() => loadStored());
   const [value, setValue] = useState<string>(stored.preferred ? TAPE_LAYOUT_VALUE : DEFAULT_LAYOUT_VALUE);
   const [tape, setTape] = useState<TapeLayout>({
@@ -115,13 +124,20 @@ export function useLabelLayout(templates: BarcodeLabelTemplate[] | undefined): L
   const [dymoStatus, setDymoStatus] = useState<DymoStatus>("idle");
   const [printers, setPrinters] = useState<DymoTapePrinter[]>([]);
 
-  // Preselect the template marked as default once the list arrives, unless this
-  // pc prefers the tape.
+  // Preselect the template marked as default for this kind of key once the list arrives,
+  // unless this pc prefers the tape. When the kind changes (main -> spare in the same
+  // panel), the picker follows the other default as long as the user did not pick a
+  // template by hand.
+  const picked = useRef(false);
   useEffect(() => {
-    if (value !== DEFAULT_LAYOUT_VALUE) return;
-    const preferred = templates?.find(tpl => tpl.isDefault);
+    if (picked.current || value === TAPE_LAYOUT_VALUE) return;
+    const preferred = defaultTemplateFor(templates, kind);
     if (preferred) setValue(String(preferred.id));
-  }, [templates]);
+  }, [templates, kind]);
+  const pickValue = (next: string) => {
+    picked.current = true;
+    setValue(next);
+  };
 
   const selectedTemplate = templates?.find(tpl => String(tpl.id) === value) ?? null;
   const isTape = value === TAPE_LAYOUT_VALUE || !!selectedTemplate?.tapePrint;
@@ -159,7 +175,7 @@ export function useLabelLayout(templates: BarcodeLabelTemplate[] | undefined): L
   };
 
   return {
-    value, setValue, tape, setTape, selectedTemplate, isTape, output, setOutput, chain, setChain, alignment, setAlignment,
+    value, setValue: pickValue, tape, setTape, selectedTemplate, isTape, output, setOutput, chain, setChain, alignment, setAlignment,
     strip, setStrip, cutGapMm, setCutGapMm, dymoStatus, printers, printOptions,
   };
 }

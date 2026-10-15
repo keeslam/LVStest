@@ -679,6 +679,9 @@
     "notAnswered": "not filled in"
   },
   "barcodeLabelEditor": {
+    "defaultSpareSuffix": " (Default spare key)",
+    "setAsDefaultSpareLabel": "Default for spare key",
+    "makeDefaultSpareButton": "Make default for spare key",
     "backToDocuments": "Back to documents",
     "createFirstTemplateDescription": "Create a first label template to print key labels with a barcode.",
     "templateNamePlaceholder": "E.g. Key label 62x29",

@@ -4538,6 +4538,9 @@ export class DatabaseStorage implements IStorage {
     if (templateData.isDefault) {
       await db.update(barcodeLabelTemplates).set({ isDefault: false });
     }
+    if (templateData.isDefaultSpare) {
+      await db.update(barcodeLabelTemplates).set({ isDefaultSpare: false });
+    }
     const [template] = await db.insert(barcodeLabelTemplates).values(templateData).returning();
     return template;
   }
@@ -4545,6 +4548,9 @@ export class DatabaseStorage implements IStorage {
   async updateBarcodeLabelTemplate(id: number, templateData: Partial<InsertBarcodeLabelTemplate>): Promise<BarcodeLabelTemplate | undefined> {
     if (templateData.isDefault) {
       await db.update(barcodeLabelTemplates).set({ isDefault: false });
+    }
+    if (templateData.isDefaultSpare) {
+      await db.update(barcodeLabelTemplates).set({ isDefaultSpare: false });
     }
     const [template] = await db
       .update(barcodeLabelTemplates)

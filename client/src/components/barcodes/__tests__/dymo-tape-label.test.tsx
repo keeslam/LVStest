@@ -314,6 +314,30 @@ describe("KeyLabelPrintPanel with the tape layout", () => {
     expect(options).toEqual({ tape: { tapeWidthMm: 12, lengthMm: 48, marginSideMm: 1.5, marginVertMm: 1 }, dymo: { mode: "download" } });
   });
 
+  it("preselects the spare-key default template for the spare key and the main default for the main key", async () => {
+    const templates = [
+      { id: 1, name: "Hoofd", isDefault: true, isDefaultSpare: false, labelWidthMm: 62, labelHeightMm: 29, tapePrint: false, fields: [] },
+      { id: 2, name: "Reserve", isDefault: false, isDefaultSpare: true, labelWidthMm: 30, labelHeightMm: 12, tapePrint: true, fields: [] },
+    ];
+    vi.stubGlobal("fetch", vi.fn(async () =>
+      new Response(JSON.stringify(templates), { status: 200, headers: { "Content-Type": "application/json" } }),
+    ));
+    renderPanel();
+    fireEvent.click(screen.getByTestId("button-inline-print-spare-key-label"));
+    const select = await screen.findByTestId("select-key-label-template-picker");
+    await waitFor(() => expect(select.textContent).toContain("Reserve"));
+    fireEvent.click(screen.getByTestId("button-key-label-print-confirm"));
+    const [vehicles, template] = printSpy.mock.calls[0];
+    expect(vehicles[0].barcodeOverride).toBe("VEH-000004-S");
+    expect(template.id).toBe(2);
+
+    fireEvent.click(screen.getByTestId("button-inline-print-key-label"));
+    const select2 = await screen.findByTestId("select-key-label-template-picker");
+    await waitFor(() => expect(select2.textContent).toContain("Hoofd"));
+    fireEvent.click(screen.getByTestId("button-key-label-print-confirm"));
+    expect(printSpy.mock.calls[1][1].id).toBe(1);
+  });
+
   it("starts on the tape when this pc preferred it last time", async () => {
     window.localStorage.setItem("lvs.key-label.tape", JSON.stringify({ tapeWidthMm: 19, lengthMm: 60, preferred: true }));
     renderPanel();

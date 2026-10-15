@@ -679,6 +679,9 @@
     "notAnswered": "niet ingevuld"
   },
   "barcodeLabelEditor": {
+    "defaultSpareSuffix": " (Standaard reservesleutel)",
+    "setAsDefaultSpareLabel": "Standaard voor reservesleutel",
+    "makeDefaultSpareButton": "Als standaard voor reservesleutel instellen",
     "backToDocuments": "Terug naar documenten",
     "createFirstTemplateDescription": "Maak een eerste labelsjabloon om sleutellabels met barcode af te drukken.",
     "templateNamePlaceholder": "Bijv. Sleutellabel 62x29",
