@@ -491,15 +491,17 @@ export default function DeliveryDashboard() {
     }
     if (spareStatus === 'tbd') {
       return (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 whitespace-nowrap">
           <Badge className="bg-amber-100 text-amber-800">{t('dashboardPage.spareStatusTbd')}</Badge>
           <Button
             size="sm"
             variant="outline"
+            className="h-7 px-2"
             onClick={() => { setEditingTransport(transport); setTransportDialogOpen(true); }}
+            title={t('dashboardPage.selectReplacementVehicleButton')}
             data-testid={`button-select-replacement-${transport.id}`}
           >
-            {t('dashboardPage.selectReplacementVehicleButton')}
+            {t('dashboardPage.selectReplacementVehicleButtonShort')}
           </Button>
         </div>
       );
@@ -777,7 +779,9 @@ export default function DeliveryDashboard() {
             )}
           </CardHeader>
           <CardContent>
-            <Table>
+            {/* Twelve columns: tight cells and merged distance/toll keep the table inside the
+                page instead of behind a horizontal scrollbar. */}
+            <Table className="[&_th]:px-2 [&_td]:px-2 [&_td]:py-2">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-10">
@@ -795,8 +799,7 @@ export default function DeliveryDashboard() {
                   <TableHead>{t('dashboardPage.columnType')}</TableHead>
                   <TableHead>{t('dashboardPage.columnRoute')}</TableHead>
                   <TableHead>{t('dashboardPage.columnDate')}</TableHead>
-                  <TableHead>{t('dashboardPage.columnDistance')}</TableHead>
-                  <TableHead>{t('dashboardPage.columnTollCost')}</TableHead>
+                  <TableHead>{t('dashboardPage.columnDistanceToll')}</TableHead>
                   <TableHead>{t('dashboardPage.columnBilling')}</TableHead>
                   <TableHead>{t('dashboardPage.columnStatus')}</TableHead>
                   <TableHead>{t('dashboardPage.columnActions')}</TableHead>
@@ -805,11 +808,11 @@ export default function DeliveryDashboard() {
               <TableBody>
                 {transportsLoading || reservationsLoading ? (
                   <TableRow>
-                    <TableCell colSpan={12} className="text-center py-4">{t('dashboardPage.loadingTransports')}</TableCell>
+                    <TableCell colSpan={11} className="text-center py-4">{t('dashboardPage.loadingTransports')}</TableCell>
                   </TableRow>
                 ) : filteredRows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={12} className="text-center py-4">{t('dashboardPage.noTransportsFound')}</TableCell>
+                    <TableCell colSpan={11} className="text-center py-4">{t('dashboardPage.noTransportsFound')}</TableCell>
                   </TableRow>
                 ) : (
                   filteredRows.map((row) => {
@@ -845,8 +848,7 @@ export default function DeliveryDashboard() {
                               )}
                             </div>
                           </TableCell>
-                          <TableCell>{formatDate(reservation.startDate)}</TableCell>
-                          <TableCell><span className="text-muted-foreground text-sm">-</span></TableCell>
+                          <TableCell className="whitespace-nowrap">{formatDate(reservation.startDate)}</TableCell>
                           <TableCell><span className="text-muted-foreground text-sm">-</span></TableCell>
                           <TableCell>
                             {reservation.deliveryFee ? (
@@ -937,9 +939,11 @@ export default function DeliveryDashboard() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>{formatDate(transport.scheduledDate)}</TableCell>
-                        <TableCell>{transport.distanceKm ? `${Number(transport.distanceKm)} km` : '-'}</TableCell>
-                        <TableCell>{transport.tollCost ? <Price value={Number(transport.tollCost)} /> : '-'}</TableCell>
+                        <TableCell className="whitespace-nowrap">{formatDate(transport.scheduledDate)}</TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <div>{transport.distanceKm ? `${Number(transport.distanceKm)} km` : '-'}</div>
+                          <div className="text-xs text-muted-foreground">{transport.tollCost ? <Price value={Number(transport.tollCost)} /> : '-'}</div>
+                        </TableCell>
                         <TableCell>
                           {transport.billable ? (
                             <div className="flex items-center gap-1 text-sm">
@@ -957,7 +961,7 @@ export default function DeliveryDashboard() {
                         </TableCell>
                         <TableCell>{getTransportStatusBadge(transport.status)}</TableCell>
                         <TableCell>
-                          <div className="flex gap-1">
+                          <div className="flex flex-wrap gap-0.5 w-[7.5rem]">
                             <ActionIconButton
                               onClick={() => openTransportView(transport)}
                               label={t('dashboardPage.viewButton')}
