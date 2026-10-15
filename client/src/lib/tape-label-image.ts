@@ -90,3 +90,46 @@ export function renderTapeLabelCanvas(input: TapeImageInput): HTMLCanvasElement 
 export function renderTapeLabelPngBase64(input: TapeImageInput): string {
   return renderTapeLabelCanvas(input).toDataURL("image/png").split(",")[1] ?? "";
 }
+
+// A thin line across the tape between two labels on one strip, to cut on.
+export const CUT_LINE_MM = 0.3;
+
+/**
+ * Length of a strip of `count` labels of `lengthMm`: a cut line before the first, between every
+ * two and after the last, each with `cutGapMm` white on both sides.
+ */
+export function tapeStripLengthMm(count: number, lengthMm: number, cutGapMm: number): number {
+  return count * (lengthMm + 2 * cutGapMm) + (count + 1) * CUT_LINE_MM;
+}
+
+/**
+ * One or more labels on one strip: line, gap, label, gap, line, gap, label, gap, line. The
+ * printer feeds its blank lead and tail once for the whole strip instead of once per label,
+ * and the desk cuts on the lines, so the blank ends are cut off at a mark too.
+ */
+export function renderTapeStripCanvas(labels: TapeImageInput[], cutGapMm: number): HTMLCanvasElement {
+  const { lengthMm, tapeWidthMm } = labels[0];
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(tapeStripLengthMm(labels.length, lengthMm, cutGapMm) * PX_PER_MM);
+  canvas.height = Math.round(tapeWidthMm * PX_PER_MM);
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const linePx = Math.max(2, Math.round(CUT_LINE_MM * PX_PER_MM));
+  const cutLine = (atMm: number) => {
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(Math.min(canvas.width - linePx, Math.round(atMm * PX_PER_MM)), 0, linePx, canvas.height);
+  };
+  const stepMm = lengthMm + 2 * cutGapMm + CUT_LINE_MM;
+  cutLine(0);
+  labels.forEach((label, index) => {
+    const slotMm = index * stepMm + CUT_LINE_MM + cutGapMm;
+    ctx.drawImage(renderTapeLabelCanvas({ ...label, lengthMm, tapeWidthMm }), Math.round(slotMm * PX_PER_MM), 0);
+    cutLine(slotMm + lengthMm + cutGapMm);
+  });
+  return canvas;
+}
+
+export function renderTapeStripPngBase64(labels: TapeImageInput[], cutGapMm: number): string {
+  return renderTapeStripCanvas(labels, cutGapMm).toDataURL("image/png").split(",")[1] ?? "";
+}

@@ -5,8 +5,8 @@ import { formatLicensePlate } from "@/lib/format-utils";
 import type { BarcodeLabelTemplate } from "@shared/schema";
 import { BarcodeLabelField, resolveBarcodeLabelSource, shortKeyLabelCode } from "@shared/barcode";
 import { notifyFileReady } from "@/lib/file-ready";
-import { buildTapeImageLabelXml, dymoLabelFileName, findDymoService, printDymoLabel } from "@/lib/dymo-label";
-import { renderTapeLabelPngBase64, TapeBarcodeTooWideError } from "@/lib/tape-label-image";
+import { buildTapeImageLabelXml, dymoLabelFileName, findDymoService, printDymoLabel, type TapeAlignment } from "@/lib/dymo-label";
+import { renderTapeLabelPngBase64, renderTapeStripPngBase64, tapeStripLengthMm, TapeBarcodeTooWideError, type TapeImageInput } from "@/lib/tape-label-image";
 
 interface LabelVehicle {
   id: number;
@@ -50,18 +50,22 @@ const FALLBACK_FIELDS: BarcodeLabelField[] = [
 export interface TapeLayout {
   tapeWidthMm: number;
   lengthMm: number;
+  // Empty strip left and right (along the tape) and above and below (across the tape).
+  marginSideMm?: number;
+  marginVertMm?: number;
 }
 
-export const TAPE_WIDTHS_MM = [9, 12, 19] as const;
-export const DEFAULT_TAPE_LAYOUT: TapeLayout = { tapeWidthMm: 12, lengthMm: 48 };
-export const MIN_TAPE_LENGTH_MM = 30;
+export const TAPE_WIDTHS_MM = [6, 9, 12, 19, 24] as const;
+export const DEFAULT_TAPE_LAYOUT: Required<TapeLayout> = { tapeWidthMm: 12, lengthMm: 48, marginSideMm: 1.5, marginVertMm: 1 };
+export const MIN_TAPE_LENGTH_MM = 15;
 export const MAX_TAPE_LENGTH_MM = 100;
+export const MAX_TAPE_MARGIN_MM = 8;
 
 // Where a tape label goes: the browser's print window (default), straight to a
 // DYMO label maker through the DYMO web service on this pc, or a .label file
 // for DYMO Connect.
 export type DymoOutput =
-  | { mode: "print"; printerName: string }
+  | { mode: "print"; printerName: string; chain?: boolean; alignment?: TapeAlignment }
   | { mode: "download" };
 
 export interface KeyLabelPrintOptions {
@@ -70,44 +74,62 @@ export interface KeyLabelPrintOptions {
   tape?: TapeLayout | null;
   // Only used for a tape layout (built-in or a tape template).
   dymo?: DymoOutput | null;
+  // With `dymo`: more than one label goes on one strip with cut lines in between.
+  strip?: TapeStripOptions | null;
 }
 
-export function normalizeTapeLayout(raw: Partial<TapeLayout> | null | undefined): TapeLayout {
+export interface TapeStripOptions {
+  // White on both sides of every cut line.
+  cutGapMm: number;
+}
+
+export const MAX_CUT_GAP_MM = 10;
+export const DEFAULT_CUT_GAP_MM = 2;
+
+export function normalizeCutGapMm(raw: unknown): number {
+  const n = raw === undefined || raw === null || raw === "" ? NaN : Number(raw);
+  return Number.isFinite(n) ? Math.min(MAX_CUT_GAP_MM, Math.max(0, Math.round(n * 10) / 10)) : DEFAULT_CUT_GAP_MM;
+}
+
+export function normalizeTapeLayout(raw: Partial<TapeLayout> | null | undefined): Required<TapeLayout> {
   const width = Number(raw?.tapeWidthMm);
   const length = Number(raw?.lengthMm);
+  const tapeWidthMm = (TAPE_WIDTHS_MM as readonly number[]).includes(width) ? width : DEFAULT_TAPE_LAYOUT.tapeWidthMm;
+  const margin = (value: unknown, fallback: number, max: number) => {
+    const n = value === undefined || value === null || value === "" ? NaN : Number(value);
+    return Number.isFinite(n) ? Math.min(max, Math.max(0, Math.round(n * 10) / 10)) : fallback;
+  };
   return {
-    tapeWidthMm: (TAPE_WIDTHS_MM as readonly number[]).includes(width) ? width : DEFAULT_TAPE_LAYOUT.tapeWidthMm,
+    tapeWidthMm,
     lengthMm: Number.isFinite(length)
       ? Math.min(MAX_TAPE_LENGTH_MM, Math.max(MIN_TAPE_LENGTH_MM, Math.round(length)))
       : DEFAULT_TAPE_LAYOUT.lengthMm,
+    marginSideMm: margin(raw?.marginSideMm, DEFAULT_TAPE_LAYOUT.marginSideMm, MAX_TAPE_MARGIN_MM),
+    // Always leave at least 3 mm of height for the bars.
+    marginVertMm: margin(raw?.marginVertMm, DEFAULT_TAPE_LAYOUT.marginVertMm, Math.min(MAX_TAPE_MARGIN_MM, (tapeWidthMm - 3) / 2)),
   };
 }
 
-// The print head covers less than the tape: ~9 of 12 mm on a LabelManager.
-// Keeping the content inside that band stops the driver from scaling it down.
-function printableTapeHeightMm(tapeWidthMm: number): number {
-  if (tapeWidthMm <= 9) return 6.5;
-  if (tapeWidthMm <= 12) return 9;
-  return 15;
-}
-
-const TAPE_SIDE_MARGIN_MM = 3;
-
 // The built-in tape layout as template fields, so the tape path and the
-// template path draw labels the same way. Barcode over the full length,
-// plate bottom-left, Hoofd/Reserve bottom-right.
-export function builtInTapeFields(tape: TapeLayout): BarcodeLabelField[] {
-  const bandMm = printableTapeHeightMm(tape.tapeWidthMm);
-  const topMm = (tape.tapeWidthMm - bandMm) / 2;
-  const barcodeHeightMm = Math.round(bandMm * 0.6 * 10) / 10;
-  // 1 mm = 2.835 pt; the text line takes ~30% of the band, between 6 and 10 pt.
-  const fontSize = Math.min(10, Math.max(6, Math.round(bandMm * 0.3 * 2.835 * 2) / 2));
+// template path draw labels the same way. Barcode over the full length
+// between the margins, plate bottom-left, Hoofd/Reserve bottom-right. The
+// whole tape height minus the margins is used; a driver that clips the edge
+// of the tape is answered with a bigger margin, not a hidden band.
+export function builtInTapeFields(raw: Partial<TapeLayout> & Pick<TapeLayout, "tapeWidthMm" | "lengthMm">): BarcodeLabelField[] {
+  const tape = normalizeTapeLayout(raw);
+  const side = tape.marginSideMm;
+  const topMm = tape.marginVertMm;
+  const bandMm = tape.tapeWidthMm - 2 * topMm;
+  // 1 mm = 2.835 pt; the text line takes ~30% of the band, between 6 and 12 pt.
+  const fontSize = Math.min(12, Math.max(6, Math.round(bandMm * 0.3 * 2.835 * 2) / 2));
+  const textHeightMm = fontSize / 2.835;
+  const barcodeHeightMm = Math.max(2, Math.round((bandMm - textHeightMm - 0.4) * 10) / 10);
   const textY = Math.round((topMm + barcodeHeightMm + 0.4) * 10) / 10;
-  const contentWidthMm = tape.lengthMm - 2 * TAPE_SIDE_MARGIN_MM;
+  const contentWidthMm = Math.round((tape.lengthMm - 2 * side) * 10) / 10;
   return [
-    { id: "b", name: "Barcode", x: TAPE_SIDE_MARGIN_MM, y: topMm, fontSize: 10, isBold: false, source: "barcode", textAlign: "left", barcodeHeightMm, barcodeWidthMm: contentWidthMm },
-    { id: "p", name: "Kenteken", x: TAPE_SIDE_MARGIN_MM, y: textY, fontSize, isBold: true, source: "licensePlate", textAlign: "left" },
-    { id: "k", name: "Sleutel", x: TAPE_SIDE_MARGIN_MM, y: textY, fontSize, isBold: false, source: "keyKind", textAlign: "right" },
+    { id: "b", name: "Barcode", x: side, y: topMm, fontSize: 10, isBold: false, source: "barcode", textAlign: "left", barcodeHeightMm, barcodeWidthMm: contentWidthMm },
+    { id: "p", name: "Kenteken", x: side, y: textY, fontSize, isBold: true, source: "licensePlate", textAlign: "left", textWidthMm: contentWidthMm },
+    { id: "k", name: "Sleutel", x: side, y: textY, fontSize, isBold: false, source: "keyKind", textAlign: "right", textWidthMm: contentWidthMm },
   ];
 }
 
@@ -241,11 +263,11 @@ export function printKeyLabels(
   const tapeJob = options?.tape
     ? (() => { const tape = normalizeTapeLayout(options.tape); return { tape, fields: builtInTapeFields(tape) }; })()
     : template?.tapePrint
-      ? { tape: { lengthMm: template.labelWidthMm, tapeWidthMm: template.labelHeightMm }, fields: readTemplateFields(template) }
+      ? { tape: { ...DEFAULT_TAPE_LAYOUT, lengthMm: template.labelWidthMm, tapeWidthMm: template.labelHeightMm }, fields: readTemplateFields(template) }
       : null;
   if (tapeJob) {
     if (options?.dymo) {
-      void outputDymoLabels(printable, tapeJob.tape, tapeJob.fields, options.dymo);
+      void outputDymoLabels(printable, tapeJob.tape, tapeJob.fields, options.dymo, options.strip);
     } else {
       printTapeLabels(printable, tapeJob.tape, tapeJob.fields);
     }
@@ -371,21 +393,34 @@ async function outputDymoLabels(
   tape: TapeLayout,
   fields: BarcodeLabelField[],
   output: DymoOutput,
+  strip: TapeStripOptions | null | undefined,
 ): Promise<void> {
-  let jobs: { plate: string; code: string; xml: string }[];
+  let jobs: { plate: string; code: string; xml: string; labels: number }[];
   try {
-    jobs = printable.flatMap(vehicle => {
+    const labels = printable.flatMap(vehicle => {
       const code = printedKeyCode(vehicle);
       if (!code) return [];
       const plate = formatLicensePlate(vehicle.licensePlate);
       // Drawn like the template (barcode box, plate, texts) and sent as one picture.
-      const pngBase64 = renderTapeLabelPngBase64({
+      const input: TapeImageInput = {
         tapeWidthMm: tape.tapeWidthMm, lengthMm: tape.lengthMm, fields, code,
         vehicle: { ...vehicle, licensePlate: plate, barcode: code },
-      });
-      const xml = buildTapeImageLabelXml({ tapeWidthMm: tape.tapeWidthMm, lengthMm: tape.lengthMm, pngBase64 });
-      return [{ plate, code, xml }];
+      };
+      return [{ plate, code, input }];
     });
+    if (strip && labels.length > 0) {
+      // One strip for the lot, with cut lines: the printer's blank lead and tail come once and
+      // are cut off at a mark; a single label gets its two lines too.
+      const lengthMm = tapeStripLengthMm(labels.length, tape.lengthMm, strip.cutGapMm);
+      const pngBase64 = renderTapeStripPngBase64(labels.map(l => l.input), strip.cutGapMm);
+      const xml = buildTapeImageLabelXml({ tapeWidthMm: tape.tapeWidthMm, lengthMm, pngBase64 });
+      jobs = [{ plate: labels[0].plate, code: `strook-${labels.length}`, xml, labels: labels.length }];
+    } else {
+      jobs = labels.map(({ plate, code, input }) => ({
+        plate, code, labels: 1,
+        xml: buildTapeImageLabelXml({ tapeWidthMm: tape.tapeWidthMm, lengthMm: tape.lengthMm, pngBase64: renderTapeLabelPngBase64(input) }),
+      }));
+    }
   } catch (error) {
     if (!(error instanceof TapeBarcodeTooWideError)) throw error;
     toast({
@@ -432,8 +467,8 @@ async function outputDymoLabels(
   let printed = 0;
   try {
     for (const job of jobs) {
-      await printDymoLabel(origin, output.printerName, job.xml, `${i18n.t("barcodes:dymo.jobTitle")} ${job.plate}`);
-      printed += 1;
+      await printDymoLabel(origin, output.printerName, job.xml, `${i18n.t("barcodes:dymo.jobTitle")} ${job.plate}`, { chain: output.chain === true, alignment: output.alignment });
+      printed += job.labels;
     }
     toast({
       title: String(i18n.t("barcodes:dymo.printedTitle")),
@@ -444,7 +479,7 @@ async function outputDymoLabels(
       title: String(i18n.t("barcodes:dymo.failedTitle")),
       description: String(i18n.t("barcodes:dymo.failedDescription", {
         printed,
-        count: jobs.length,
+        count: jobs.reduce((sum, job) => sum + job.labels, 0),
         reason: error instanceof Error ? error.message : String(error),
       })),
       variant: "destructive",

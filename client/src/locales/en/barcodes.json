@@ -124,6 +124,13 @@
     "printOpenedDescription_other": "Your browser's print window is open for {{count}} labels. Choose the printer there."
   },
   "dymo": {
+    "stripLabel": "Several labels on one strip, with a cut line in between (cut by hand)",
+    "cutGapLabel": "Space beside the cut line (mm)",
+    "alignmentLabel": "Position on the tape",
+    "alignmentLeft": "Left (start of the tape)",
+    "alignmentCenter": "Center",
+    "alignmentRight": "Right",
+    "chainLabel": "Chain print (less blank tape, no cut after every label)",
     "outputLabel": "Output",
     "outputBrowser": "The browser's print window",
     "outputPrinter": "{{name}} (directly through DYMO Connect)",
@@ -207,6 +214,8 @@
     "widthLabel": "Tape width",
     "widthOption": "{{width}} mm",
     "lengthLabel": "Label length (mm)",
+    "marginSideLabel": "Margin left/right (mm)",
+    "marginVertLabel": "Margin top/bottom (mm)",
     "hint": "Each label becomes a page of {{width}} by {{length}} mm. In the print window choose the DYMO printer, paper {{width}} mm, portrait, margins None and scale 100%.",
     "mainKey": "Main",
     "spareKey": "Spare",

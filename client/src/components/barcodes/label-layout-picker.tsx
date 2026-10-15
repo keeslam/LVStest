@@ -5,10 +5,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { BarcodeLabelTemplate } from "@shared/schema";
 import {
-  DEFAULT_TAPE_LAYOUT, DymoOutput, KeyLabelPrintOptions, MAX_TAPE_LENGTH_MM, MIN_TAPE_LENGTH_MM,
+  DEFAULT_CUT_GAP_MM, DEFAULT_TAPE_LAYOUT, DymoOutput, KeyLabelPrintOptions, MAX_CUT_GAP_MM, MAX_TAPE_LENGTH_MM, MAX_TAPE_MARGIN_MM, MIN_TAPE_LENGTH_MM,
+  normalizeCutGapMm,
   TAPE_WIDTHS_MM, TapeLayout, normalizeTapeLayout,
 } from "./key-label-print";
-import { DymoTapePrinter, findDymoService, listDymoTapePrinters } from "@/lib/dymo-label";
+import { DymoTapePrinter, TapeAlignment, findDymoService, listDymoTapePrinters } from "@/lib/dymo-label";
+
+const TAPE_ALIGNMENTS: TapeAlignment[] = ["Left", "Center", "Right"];
 
 // Layout choice for a key-label print: the built-in die-cut layout, a saved
 // template, or the label maker's tape (DYMO at the desk). The tape choice, its
@@ -26,6 +29,12 @@ interface StoredTape extends TapeLayout {
   preferred: boolean;
   // "browser" | "download" | "printer:<name>"
   output: string;
+  // Chain print: no cut and less blank strip after every label.
+  chain: boolean;
+  alignment: TapeAlignment;
+  // More than one label on one strip, with cut lines `cutGapMm` away from the labels.
+  strip: boolean;
+  cutGapMm: number;
 }
 
 function loadStored(): StoredTape {
@@ -37,12 +46,16 @@ function loadStored(): StoredTape {
         ...normalizeTapeLayout(parsed),
         preferred: parsed.preferred === true,
         output: typeof parsed.output === "string" ? parsed.output : OUTPUT_BROWSER,
+        chain: parsed.chain === true,
+        alignment: TAPE_ALIGNMENTS.includes(parsed.alignment as TapeAlignment) ? (parsed.alignment as TapeAlignment) : "Center",
+        strip: parsed.strip === true,
+        cutGapMm: normalizeCutGapMm(parsed.cutGapMm),
       };
     }
   } catch {
     // Private window or blocked storage: fall back to the defaults.
   }
-  return { ...DEFAULT_TAPE_LAYOUT, preferred: false, output: OUTPUT_BROWSER };
+  return { ...DEFAULT_TAPE_LAYOUT, preferred: false, output: OUTPUT_BROWSER, chain: false, alignment: "Center", strip: false, cutGapMm: DEFAULT_CUT_GAP_MM };
 }
 
 function saveStored(value: StoredTape): void {
@@ -65,16 +78,24 @@ export interface LabelLayoutState {
   isTape: boolean;
   output: string;
   setOutput: (output: string) => void;
+  chain: boolean;
+  setChain: (chain: boolean) => void;
+  alignment: TapeAlignment;
+  setAlignment: (alignment: TapeAlignment) => void;
+  strip: boolean;
+  setStrip: (strip: boolean) => void;
+  cutGapMm: number;
+  setCutGapMm: (cutGapMm: number) => void;
   dymoStatus: DymoStatus;
   printers: DymoTapePrinter[];
   printOptions: KeyLabelPrintOptions;
 }
 
-function outputToDymo(output: string, printers: DymoTapePrinter[]): DymoOutput | null {
+function outputToDymo(output: string, printers: DymoTapePrinter[], chain: boolean, alignment: TapeAlignment): DymoOutput | null {
   if (output === OUTPUT_DOWNLOAD) return { mode: "download" };
   if (output.startsWith(OUTPUT_PRINTER_PREFIX)) {
     const printerName = output.slice(OUTPUT_PRINTER_PREFIX.length);
-    if (printers.some(p => p.name === printerName)) return { mode: "print", printerName };
+    if (printers.some(p => p.name === printerName)) return { mode: "print", printerName, ...(chain ? { chain } : {}), ...(alignment !== "Center" ? { alignment } : {}) };
   }
   return null;
 }
@@ -82,8 +103,15 @@ function outputToDymo(output: string, printers: DymoTapePrinter[]): DymoOutput |
 export function useLabelLayout(templates: BarcodeLabelTemplate[] | undefined): LabelLayoutState {
   const [stored] = useState<StoredTape>(() => loadStored());
   const [value, setValue] = useState<string>(stored.preferred ? TAPE_LAYOUT_VALUE : DEFAULT_LAYOUT_VALUE);
-  const [tape, setTape] = useState<TapeLayout>({ tapeWidthMm: stored.tapeWidthMm, lengthMm: stored.lengthMm });
+  const [tape, setTape] = useState<TapeLayout>({
+    tapeWidthMm: stored.tapeWidthMm, lengthMm: stored.lengthMm,
+    marginSideMm: stored.marginSideMm, marginVertMm: stored.marginVertMm,
+  });
   const [output, setOutput] = useState<string>(stored.output);
+  const [chain, setChain] = useState<boolean>(stored.chain);
+  const [alignment, setAlignment] = useState<TapeAlignment>(stored.alignment);
+  const [strip, setStrip] = useState<boolean>(stored.strip);
+  const [cutGapMm, setCutGapMm] = useState<number>(stored.cutGapMm);
   const [dymoStatus, setDymoStatus] = useState<DymoStatus>("idle");
   const [printers, setPrinters] = useState<DymoTapePrinter[]>([]);
 
@@ -99,8 +127,8 @@ export function useLabelLayout(templates: BarcodeLabelTemplate[] | undefined): L
   const isTape = value === TAPE_LAYOUT_VALUE || !!selectedTemplate?.tapePrint;
 
   useEffect(() => {
-    saveStored({ ...tape, preferred: value === TAPE_LAYOUT_VALUE, output });
-  }, [tape, value, output]);
+    saveStored({ ...tape, preferred: value === TAPE_LAYOUT_VALUE, output, chain, alignment, strip, cutGapMm });
+  }, [tape, value, output, chain, alignment, strip, cutGapMm]);
 
   // Look for DYMO Connect's web service on this pc the first time a tape is chosen.
   const searched = useRef(false);
@@ -123,13 +151,17 @@ export function useLabelLayout(templates: BarcodeLabelTemplate[] | undefined): L
     return () => { cancelled = true; };
   }, [isTape]);
 
-  const dymo = isTape ? outputToDymo(output, printers) : null;
+  const dymo = isTape ? outputToDymo(output, printers, chain, alignment) : null;
   const printOptions: KeyLabelPrintOptions = {
     ...(value === TAPE_LAYOUT_VALUE ? { tape } : {}),
     ...(dymo ? { dymo } : {}),
+    ...(dymo && strip ? { strip: { cutGapMm } } : {}),
   };
 
-  return { value, setValue, tape, setTape, selectedTemplate, isTape, output, setOutput, dymoStatus, printers, printOptions };
+  return {
+    value, setValue, tape, setTape, selectedTemplate, isTape, output, setOutput, chain, setChain, alignment, setAlignment,
+    strip, setStrip, cutGapMm, setCutGapMm, dymoStatus, printers, printOptions,
+  };
 }
 
 interface LabelLayoutPickerProps {
@@ -146,10 +178,25 @@ export function LabelLayoutPicker({ id, layout, templates, selectTestId, compact
   const [lengthText, setLengthText] = useState(String(layout.tape.lengthMm));
   const isBuiltInTape = layout.value === TAPE_LAYOUT_VALUE;
 
+  const [sideText, setSideText] = useState(String(layout.tape.marginSideMm));
+  const [vertText, setVertText] = useState(String(layout.tape.marginVertMm));
+
   const commitLength = () => {
     const next = normalizeTapeLayout({ ...layout.tape, lengthMm: Number(lengthText) });
     layout.setTape(next);
     setLengthText(String(next.lengthMm));
+  };
+  const [cutGapText, setCutGapText] = useState(String(layout.cutGapMm));
+  const commitCutGap = () => {
+    const next = normalizeCutGapMm(cutGapText);
+    layout.setCutGapMm(next);
+    setCutGapText(String(next));
+  };
+  const commitMargins = () => {
+    const next = normalizeTapeLayout({ ...layout.tape, marginSideMm: sideText, marginVertMm: vertText } as unknown as Partial<TapeLayout>);
+    layout.setTape(next);
+    setSideText(String(next.marginSideMm));
+    setVertText(String(next.marginVertMm));
   };
 
   // A remembered printer that is not there any more falls back to the browser in the list.
@@ -179,7 +226,7 @@ export function LabelLayoutPicker({ id, layout, templates, selectTestId, compact
       </div>
 
       {isBuiltInTape && (
-        <div className={compact ? "flex items-end gap-2" : "grid grid-cols-2 gap-3"} data-testid="tape-layout-fields">
+        <div className={compact ? "flex flex-wrap items-end gap-2" : "grid grid-cols-2 gap-3"} data-testid="tape-layout-fields">
           <div className="space-y-1">
             <Label htmlFor={`${id}-tape-width`} className="text-xs">{t("tape.widthLabel")}</Label>
             <Select
@@ -212,6 +259,40 @@ export function LabelLayoutPicker({ id, layout, templates, selectTestId, compact
               data-testid="input-tape-length"
             />
           </div>
+          <div className="space-y-1">
+            <Label htmlFor={`${id}-tape-margin-side`} className="text-xs">{t("tape.marginSideLabel")}</Label>
+            <Input
+              id={`${id}-tape-margin-side`}
+              type="number"
+              inputMode="decimal"
+              min={0}
+              max={MAX_TAPE_MARGIN_MM}
+              step={0.5}
+              className="w-28"
+              value={sideText}
+              onChange={(e) => setSideText(e.target.value)}
+              onBlur={commitMargins}
+              onKeyDown={(e) => { if (e.key === "Enter") commitMargins(); }}
+              data-testid="input-tape-margin-side"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor={`${id}-tape-margin-vert`} className="text-xs">{t("tape.marginVertLabel")}</Label>
+            <Input
+              id={`${id}-tape-margin-vert`}
+              type="number"
+              inputMode="decimal"
+              min={0}
+              max={MAX_TAPE_MARGIN_MM}
+              step={0.5}
+              className="w-28"
+              value={vertText}
+              onChange={(e) => setVertText(e.target.value)}
+              onBlur={commitMargins}
+              onKeyDown={(e) => { if (e.key === "Enter") commitMargins(); }}
+              data-testid="input-tape-margin-vert"
+            />
+          </div>
         </div>
       )}
 
@@ -232,6 +313,68 @@ export function LabelLayoutPicker({ id, layout, templates, selectTestId, compact
               <SelectItem value={OUTPUT_DOWNLOAD} data-testid="option-tape-output-download">{t("dymo.outputDownload")}</SelectItem>
             </SelectContent>
           </Select>
+          {outputValue.startsWith(OUTPUT_PRINTER_PREFIX) && (
+            <div className="space-y-1">
+              <Label htmlFor={`${id}-tape-alignment`} className="text-xs">{t("dymo.alignmentLabel")}</Label>
+              <Select value={layout.alignment} onValueChange={(v) => layout.setAlignment(v as TapeAlignment)}>
+                <SelectTrigger id={`${id}-tape-alignment`} className="w-40" data-testid="select-tape-alignment">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TAPE_ALIGNMENTS.map(a => (
+                    <SelectItem key={a} value={a} data-testid={`option-tape-alignment-${a.toLowerCase()}`}>{t(`dymo.alignment${a}`)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {outputValue.startsWith(OUTPUT_PRINTER_PREFIX) && (
+            <label className="flex items-start gap-2 text-xs" htmlFor={`${id}-tape-chain`}>
+              <input
+                id={`${id}-tape-chain`}
+                type="checkbox"
+                className="mt-0.5"
+                checked={layout.chain}
+                onChange={(e) => layout.setChain(e.target.checked)}
+                data-testid="checkbox-tape-chain"
+              />
+              <span>{t("dymo.chainLabel")}</span>
+            </label>
+          )}
+          {outputValue !== OUTPUT_BROWSER && (
+            <div className="space-y-1" data-testid="tape-strip">
+              <label className="flex items-start gap-2 text-xs" htmlFor={`${id}-tape-strip`}>
+                <input
+                  id={`${id}-tape-strip`}
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={layout.strip}
+                  onChange={(e) => layout.setStrip(e.target.checked)}
+                  data-testid="checkbox-tape-strip"
+                />
+                <span>{t("dymo.stripLabel")}</span>
+              </label>
+              {layout.strip && (
+                <div className="flex items-center gap-2">
+                  <Label htmlFor={`${id}-tape-cut-gap`} className="text-xs">{t("dymo.cutGapLabel")}</Label>
+                  <Input
+                    id={`${id}-tape-cut-gap`}
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    max={MAX_CUT_GAP_MM}
+                    step={0.5}
+                    className="w-24"
+                    value={cutGapText}
+                    onChange={(e) => setCutGapText(e.target.value)}
+                    onBlur={commitCutGap}
+                    onKeyDown={(e) => { if (e.key === "Enter") commitCutGap(); }}
+                    data-testid="input-tape-cut-gap"
+                  />
+                </div>
+              )}
+            </div>
+          )}
           {!compact && (
             <p className="text-xs text-muted-foreground" data-testid="tape-output-hint">
               {layout.dymoStatus === "searching" && t("dymo.statusSearching")}

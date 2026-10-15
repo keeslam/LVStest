@@ -15,7 +15,7 @@ describe("buildTapeLabelXml", () => {
   it("is a ContinuousLabel for the tape width with a fixed length in twips, the exact code and the text", () => {
     const xml = buildTapeLabelXml({
       tapeWidthMm: 12, lengthMm: 48, code: "VEH-000004-S",
-      lines: [{ text: "12-XT-102  Reserve", fontPt: 7.5, bold: true }],
+      lines: [{ text: "12-XT-102  Reserve", fontPt: 8.5, bold: true }],
     });
     expect(xml).toContain('<ContinuousLabel Version="8.0" Units="twips">');
     expect(xml).toContain("<PaperName>12mm</PaperName>");
@@ -27,7 +27,7 @@ describe("buildTapeLabelXml", () => {
     expect(xml).toContain("<Type>Code128Auto</Type>");
     expect(xml).toContain("<TextPosition>None</TextPosition>");
     expect(xml).toContain("<String>12-XT-102  Reserve</String>");
-    expect(xml).toContain('Size="8" Bold="True"');
+    expect(xml).toContain('Size="9" Bold="True"');
     expect(xml.match(/<Cell>/g)).toHaveLength(2);
   });
 
@@ -46,7 +46,7 @@ describe("tapeLinesFromFields", () => {
 
   it("turns the built-in tape fields into one line: plate and Reserve, bold, from the code", () => {
     const lines = tapeLinesFromFields(builtInTapeFields({ tapeWidthMm: 12, lengthMm: 48 }), vehicle);
-    expect(lines).toEqual([{ text: "12-XT-102  Reserve", fontPt: 7.5, bold: true }]);
+    expect(lines).toEqual([{ text: "12-XT-102  Reserve", fontPt: 8.5, bold: true }]);
   });
 
   it("groups a template's text fields by height, left to right, and skips empty values", () => {
@@ -110,6 +110,12 @@ describe("DYMO web service client", () => {
     expect(body.get("labelXml")).toBe("<ContinuousLabel/>");
     expect(body.get("printParamsXml")).toContain("<CutMode>AutoCut</CutMode>");
     expect(body.get("printParamsXml")).toContain("<JobTitle>Sleutellabel 12-XT-102</JobTitle>");
+    expect(body.get("printParamsXml")).toContain("<Alignment>Center</Alignment>");
+
+    await printDymoLabel("https://127.0.0.1:41951", "DYMO LabelManager 280", "<a/>", "t", { chain: true, alignment: "Right" });
+    const params = ((fetchSpy.mock.calls[1] as unknown as [string, RequestInit])[1].body as URLSearchParams).get("printParamsXml");
+    expect(params).toContain("<Alignment>Right</Alignment>");
+    expect(params).toContain("<CutMode>ChainMarks</CutMode>");
 
     vi.stubGlobal("fetch", vi.fn(async () => new Response("Printer not found", { status: 500 })));
     await expect(printDymoLabel("https://127.0.0.1:41951", "x", "<a/>", "t")).rejects.toThrow("Printer not found");

@@ -56,6 +56,39 @@ describe("renderTapeLabelCanvas", () => {
   });
 });
 
+describe("renderTapeStripCanvas", () => {
+  it("puts the labels side by side with a cut line before, between and after, the gap on both sides of each", async () => {
+    const { renderTapeStripCanvas, tapeStripLengthMm, CUT_LINE_MM } = await import("@/lib/tape-label-image");
+    const one = { lengthMm: 30, tapeWidthMm: 12, fields, vehicle, code: "V4" };
+    const canvas = renderTapeStripCanvas([one, { ...one, code: "V5" }, { ...one, code: "V6" }], 2);
+    expect(tapeStripLengthMm(3, 30, 2)).toBeCloseTo(3 * 34 + 4 * CUT_LINE_MM, 5);
+    expect(canvas.width).toBe(Math.round(tapeStripLengthMm(3, 30, 2) * PX_PER_MM));
+    expect(canvas.height).toBe(Math.round(12 * PX_PER_MM));
+    // the gap rows (y = 0.3 mm, above every field) hold only the four cut lines
+    const top = darkColumns(canvas, Math.round(0.3 * PX_PER_MM));
+    const step = 30 + 4 + CUT_LINE_MM;
+    const lines = [0, 1, 2, 3].map(i => Math.round(i * step * PX_PER_MM));
+    expect(top.length).toBeGreaterThan(0);
+    expect(top.every(x => lines.some(l => x >= l - 1 && x <= l + Math.round(CUT_LINE_MM * PX_PER_MM) + 2))).toBe(true);
+    expect(lines.every(l => top.some(x => x >= l && x <= l + 4))).toBe(true);
+    // the third label's bars start inside its own slot, after the third line
+    const bars = darkColumns(canvas, Math.round(4 * PX_PER_MM));
+    expect(bars.some(x => x > lines[2] + Math.round(5 * PX_PER_MM))).toBe(true);
+    // nothing between the first line and the first label's margin (the line itself is full height)
+    expect(bars.some(x => x > 6 && x < lines[0] + Math.round(5 * PX_PER_MM))).toBe(false);
+  });
+
+  it("a single label gets a cut line at both ends", async () => {
+    const { renderTapeStripCanvas, tapeStripLengthMm, CUT_LINE_MM } = await import("@/lib/tape-label-image");
+    const canvas = renderTapeStripCanvas([{ lengthMm: 30, tapeWidthMm: 12, fields, vehicle, code: "V4" }], 1.5);
+    expect(tapeStripLengthMm(1, 30, 1.5)).toBeCloseTo(33 + 2 * CUT_LINE_MM, 5);
+    const top = darkColumns(canvas, Math.round(0.3 * PX_PER_MM));
+    expect(top.some(x => x <= 4)).toBe(true);
+    expect(top.some(x => x >= canvas.width - 5)).toBe(true);
+    expect(top.some(x => x > 10 && x < canvas.width - 10)).toBe(false);
+  });
+});
+
 describe("buildTapeImageLabelXml", () => {
   it("is a ContinuousLabel of fixed length holding one stretched image without margins", () => {
     const png = renderTapeLabelPngBase64({ lengthMm: 30, tapeWidthMm: 12, fields, vehicle, code: "V4" });

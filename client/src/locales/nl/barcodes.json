@@ -124,6 +124,13 @@
     "printOpenedDescription_other": "Het afdrukvenster van je browser is geopend voor {{count}} labels. Kies daar de printer."
   },
   "dymo": {
+    "stripLabel": "Meerdere labels op één strook, met kniplijn ertussen (zelf knippen)",
+    "cutGapLabel": "Ruimte naast de kniplijn (mm)",
+    "alignmentLabel": "Positie op de tape",
+    "alignmentLeft": "Links (begin van de tape)",
+    "alignmentCenter": "Midden",
+    "alignmentRight": "Rechts",
+    "chainLabel": "Doorlopend printen (minder lege tape, niet knippen na elk label)",
     "outputLabel": "Uitvoer",
     "outputBrowser": "Afdrukvenster van de browser",
     "outputPrinter": "{{name}} (rechtstreeks via DYMO Connect)",
@@ -207,6 +214,8 @@
     "widthLabel": "Tapebreedte",
     "widthOption": "{{width}} mm",
     "lengthLabel": "Labellengte (mm)",
+    "marginSideLabel": "Marge links/rechts (mm)",
+    "marginVertLabel": "Marge boven/onder (mm)",
     "hint": "Elk label wordt een pagina van {{width}} bij {{length}} mm. Kies in het afdrukvenster de DYMO-printer, papier {{width}} mm, staand, marges Geen en schaal 100%.",
     "mainKey": "Hoofd",
     "spareKey": "Reserve",

@@ -125,8 +125,9 @@ describe("printKeyLabels with a tape layout", () => {
     const css = lastFrameDoc().querySelector("style")!.textContent!;
     expect(css).toContain("@page { size: 12mm 100mm; margin: 0; }");
     expect(lastFrameDoc().querySelector(".label")).toBeNull();
-    expect(normalizeTapeLayout({ tapeWidthMm: 19, lengthMm: 10 })).toEqual({ tapeWidthMm: 19, lengthMm: 30 });
-    expect(normalizeTapeLayout(null)).toEqual({ tapeWidthMm: 12, lengthMm: 48 });
+    expect(normalizeTapeLayout({ tapeWidthMm: 19, lengthMm: 10 })).toEqual({ tapeWidthMm: 19, lengthMm: 15, marginSideMm: 1.5, marginVertMm: 1 });
+    expect(normalizeTapeLayout(null)).toEqual({ tapeWidthMm: 12, lengthMm: 48, marginSideMm: 1.5, marginVertMm: 1 });
+    expect(normalizeTapeLayout({ tapeWidthMm: 6, lengthMm: 40, marginSideMm: 99, marginVertMm: 5 })).toMatchObject({ tapeWidthMm: 6, marginSideMm: 8, marginVertMm: 1.5 });
   });
 
   it("a template marked as tape prints its own fields turned a quarter, Hoofd/Reserve from the code", () => {
@@ -271,11 +272,11 @@ describe("KeyLabelPrintPanel with the tape layout", () => {
     const [vehicles, template, options] = printSpy.mock.calls[0];
     expect(vehicles).toEqual([vehicle]);
     expect(template).toBeNull();
-    expect(options).toEqual({ tape: { tapeWidthMm: 12, lengthMm: 40 } });
+    expect(options).toEqual({ tape: { tapeWidthMm: 12, lengthMm: 40, marginSideMm: 1.5, marginVertMm: 1 } });
 
     // The choice is remembered for this pc.
     const stored = JSON.parse(window.localStorage.getItem("lvs.key-label.tape")!);
-    expect(stored).toEqual({ tapeWidthMm: 12, lengthMm: 40, preferred: true, output: "browser" });
+    expect(stored).toEqual({ tapeWidthMm: 12, lengthMm: 40, marginSideMm: 1.5, marginVertMm: 1, preferred: true, output: "browser", chain: false, alignment: "Center", strip: false, cutGapMm: 2 });
   });
 
   it("offers the DYMO label maker as output when DYMO Connect answers, and prints straight to it", async () => {
@@ -299,7 +300,7 @@ describe("KeyLabelPrintPanel with the tape layout", () => {
 
     fireEvent.click(screen.getByTestId("button-key-label-print-confirm"));
     const [, , options] = printSpy.mock.calls[0];
-    expect(options).toEqual({ tape: { tapeWidthMm: 12, lengthMm: 48 }, dymo: { mode: "print", printerName: "DYMO LabelManager 420P" } });
+    expect(options).toEqual({ tape: { tapeWidthMm: 12, lengthMm: 48, marginSideMm: 1.5, marginVertMm: 1 }, dymo: { mode: "print", printerName: "DYMO LabelManager 420P" } });
     expect(JSON.parse(window.localStorage.getItem("lvs.key-label.tape")!).output).toBe("printer:DYMO LabelManager 420P");
   });
 
@@ -310,7 +311,7 @@ describe("KeyLabelPrintPanel with the tape layout", () => {
     await waitFor(() => expect(screen.getByTestId("tape-output-hint").textContent).toContain("DYMO Connect is niet gevonden op deze pc"));
     fireEvent.click(screen.getByTestId("button-key-label-print-confirm"));
     const [, , options] = printSpy.mock.calls[0];
-    expect(options).toEqual({ tape: { tapeWidthMm: 12, lengthMm: 48 }, dymo: { mode: "download" } });
+    expect(options).toEqual({ tape: { tapeWidthMm: 12, lengthMm: 48, marginSideMm: 1.5, marginVertMm: 1 }, dymo: { mode: "download" } });
   });
 
   it("starts on the tape when this pc preferred it last time", async () => {
@@ -322,6 +323,6 @@ describe("KeyLabelPrintPanel with the tape layout", () => {
     fireEvent.click(screen.getByTestId("button-key-label-print-confirm"));
     const [vehicles, , options] = printSpy.mock.calls[0];
     expect(vehicles[0].barcodeOverride).toBe("VEH-000004-S");
-    expect(options).toEqual({ tape: { tapeWidthMm: 19, lengthMm: 60 } });
+    expect(options).toEqual({ tape: { tapeWidthMm: 19, lengthMm: 60, marginSideMm: 1.5, marginVertMm: 1 } });
   });
 });

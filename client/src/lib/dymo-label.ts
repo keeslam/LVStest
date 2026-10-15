@@ -241,8 +241,18 @@ export function dymoLabelFileName(plate: string, code: string): string {
   return `sleutellabel-${safe(plate)}-${safe(code)}.label`;
 }
 
-function tapePrintParamsXml(jobTitle: string): string {
-  return `<TapePrintParams><Copies>1</Copies><JobTitle>${escapeXml(jobTitle)}</JobTitle><Alignment>Center</Alignment><CutMode>AutoCut</CutMode></TapePrintParams>`;
+export type TapeAlignment = "Left" | "Center" | "Right";
+
+export interface TapePrintParams {
+  // Where the label sits on the strip the printer feeds: DYMO's TapeAlignment.
+  alignment?: TapeAlignment;
+  // AutoCut cuts after every label; ChainMarks prints the labels one after the other
+  // with only a small mark between them (DYMO's TapeCutMode).
+  chain?: boolean;
+}
+
+function tapePrintParamsXml(jobTitle: string, params: TapePrintParams): string {
+  return `<TapePrintParams><Copies>1</Copies><JobTitle>${escapeXml(jobTitle)}</JobTitle><Alignment>${params.alignment ?? "Center"}</Alignment><CutMode>${params.chain ? "ChainMarks" : "AutoCut"}</CutMode></TapePrintParams>`;
 }
 
 async function fetchWithTimeout(input: string, init: RequestInit = {}, timeoutMs = PROBE_TIMEOUT_MS): Promise<Response> {
@@ -298,10 +308,10 @@ export async function listDymoTapePrinters(origin: string): Promise<DymoTapePrin
 }
 
 /** Sends one label to the printer; the service answers "true" when it accepted the job. */
-export async function printDymoLabel(origin: string, printerName: string, labelXml: string, jobTitle: string): Promise<void> {
+export async function printDymoLabel(origin: string, printerName: string, labelXml: string, jobTitle: string, params: TapePrintParams = {}): Promise<void> {
   const body = new URLSearchParams({
     printerName,
-    printParamsXml: tapePrintParamsXml(jobTitle),
+    printParamsXml: tapePrintParamsXml(jobTitle, params),
     labelXml,
     labelSetXml: "",
   });
