@@ -14,7 +14,7 @@ import {
   Maximize2, Undo2, Redo2, LayoutGrid, Move, History,
   AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter,
   AlignStartHorizontal, AlignEndHorizontal, AlignCenterHorizontal,
-  AlignStartVertical, AlignEndVertical, AlignCenterVertical, ChevronDown, Pencil
+  AlignStartVertical, AlignEndVertical, AlignCenterVertical, ChevronDown, Pencil, Star
 } from "lucide-react";
 import { Link } from "wouter";
 import { Switch } from "@/components/ui/switch";
@@ -55,6 +55,8 @@ interface Template {
   isDefault: boolean;
   // Preselected when printing a spare-key label; at most one template.
   isDefaultSpare: boolean;
+  // Preselected for the sticker in the car (barcode book, "Stickers afdrukken").
+  isDefaultCar: boolean;
   labelWidthMm: number;
   labelHeightMm: number;
   // B-45: printed a quarter turned on a label maker's tape (width = length along the tape, height = tape width).
@@ -248,6 +250,7 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
           labelHeightMm: template.labelHeightMm ?? DEFAULT_LABEL_HEIGHT_MM,
           isDefault: !!template.isDefault,
           isDefaultSpare: !!template.isDefaultSpare,
+          isDefaultCar: !!template.isDefaultCar,
           tapePrint: !!template.tapePrint,
           fields: Array.isArray(fields) ? fields : []
         };
@@ -400,6 +403,7 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
       name: newTemplateName,
       isDefault: templates.length === 0,
       isDefaultSpare: false,
+      isDefaultCar: false,
       labelWidthMm: tape ? DEFAULT_TAPE_LAYOUT.lengthMm : DEFAULT_LABEL_WIDTH_MM,
       labelHeightMm: tape ? DEFAULT_TAPE_LAYOUT.tapeWidthMm : DEFAULT_LABEL_HEIGHT_MM,
       tapePrint: tape,
@@ -888,6 +892,7 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
       name: currentTemplate.name,
       isDefault: currentTemplate.isDefault,
       isDefaultSpare: currentTemplate.isDefaultSpare,
+      isDefaultCar: currentTemplate.isDefaultCar,
       labelWidthMm: currentTemplate.labelWidthMm,
       labelHeightMm: currentTemplate.labelHeightMm,
       tapePrint: currentTemplate.tapePrint,
@@ -945,9 +950,14 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
     if (payload) saveTemplateMutation.mutate(payload);
   };
 
-  // The spare-key label is its own default: a Reserve label differs from the main-key one.
+  // Three independent defaults: main key, spare key (a Reserve label differs from the
+  // main-key one) and the sticker in the car. Each is exclusive among the templates.
   const handleSetDefaultSpareTemplate = () => {
     const payload = buildTemplatePayload({ isDefaultSpare: true });
+    if (payload) saveTemplateMutation.mutate(payload);
+  };
+  const handleSetDefaultCarTemplate = () => {
+    const payload = buildTemplatePayload({ isDefaultCar: true });
     if (payload) saveTemplateMutation.mutate(payload);
   };
 
@@ -1172,6 +1182,7 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
                         {template.name}
                         {template.isDefault ? t('templateEditor.defaultSuffix') : ''}
                         {template.isDefaultSpare ? t('barcodeLabelEditor.defaultSpareSuffix') : ''}
+                        {template.isDefaultCar ? t('barcodeLabelEditor.defaultCarSuffix') : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1219,24 +1230,31 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
                   </div>
                 </div>
               )}
-              {currentTemplate && !currentTemplate.isDefault && (
+              {currentTemplate && (
                 <div className="space-y-4">
                   <div className="flex h-6 items-center">
-                    <Label>{t('templateEditor.setAsDefaultLabel')}</Label>
+                    <Label>{t('barcodeLabelEditor.defaultsLabel')}</Label>
                   </div>
-                  <Button variant="outline" onClick={handleSetDefaultTemplate} className="w-full">
-                    {t('templateEditor.makeDefaultButton')}
-                  </Button>
-                </div>
-              )}
-              {currentTemplate && !currentTemplate.isDefaultSpare && (
-                <div className="space-y-4">
-                  <div className="flex h-6 items-center">
-                    <Label>{t('barcodeLabelEditor.setAsDefaultSpareLabel')}</Label>
+                  <div className="space-y-2" data-testid="label-defaults">
+                    {([
+                      ['main', currentTemplate.isDefault, handleSetDefaultTemplate],
+                      ['spare', currentTemplate.isDefaultSpare, handleSetDefaultSpareTemplate],
+                      ['car', currentTemplate.isDefaultCar, handleSetDefaultCarTemplate],
+                    ] as const).map(([kind, active, onClick]) => (
+                      <Button
+                        key={kind}
+                        variant={active ? 'secondary' : 'outline'}
+                        onClick={onClick}
+                        disabled={active || saveTemplateMutation.isPending}
+                        className="w-full justify-start"
+                        data-testid={`button-make-default-${kind}`}
+                      >
+                        {active ? <Star className="h-4 w-4 mr-2 fill-current" /> : <Star className="h-4 w-4 mr-2" />}
+                        {t(`barcodeLabelEditor.default_${kind}`)}
+                      </Button>
+                    ))}
                   </div>
-                  <Button variant="outline" onClick={handleSetDefaultSpareTemplate} className="w-full" data-testid="button-make-default-spare">
-                    {t('barcodeLabelEditor.makeDefaultSpareButton')}
-                  </Button>
+                  <p className="text-[11px] leading-snug text-muted-foreground">{t('barcodeLabelEditor.defaultsHint')}</p>
                 </div>
               )}
               <div className="space-y-4">

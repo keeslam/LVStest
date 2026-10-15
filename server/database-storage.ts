@@ -4541,6 +4541,9 @@ export class DatabaseStorage implements IStorage {
     if (templateData.isDefaultSpare) {
       await db.update(barcodeLabelTemplates).set({ isDefaultSpare: false });
     }
+    if (templateData.isDefaultCar) {
+      await db.update(barcodeLabelTemplates).set({ isDefaultCar: false });
+    }
     const [template] = await db.insert(barcodeLabelTemplates).values(templateData).returning();
     return template;
   }
@@ -4551,6 +4554,9 @@ export class DatabaseStorage implements IStorage {
     }
     if (templateData.isDefaultSpare) {
       await db.update(barcodeLabelTemplates).set({ isDefaultSpare: false });
+    }
+    if (templateData.isDefaultCar) {
+      await db.update(barcodeLabelTemplates).set({ isDefaultCar: false });
     }
     const [template] = await db
       .update(barcodeLabelTemplates)

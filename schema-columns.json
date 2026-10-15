@@ -481,6 +481,13 @@
         "default": "false"
       },
       {
+        "name": "is_default_car",
+        "type": "boolean",
+        "notNull": false,
+        "primary": false,
+        "default": "false"
+      },
+      {
         "name": "label_width_mm",
         "type": "integer",
         "notNull": true,

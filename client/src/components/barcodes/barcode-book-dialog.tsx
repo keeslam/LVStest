@@ -27,12 +27,13 @@ export function BarcodeBookDialog({ open, onOpenChange }: BarcodeBookDialogProps
 
   const { data: vehicles, isLoading } = useQuery<Vehicle[]>({ queryKey: ["/api/vehicles"] });
 
-  // Sticker printing reuses the barcode label templates from the Documents page.
+  // Sticker printing reuses the barcode label templates from the Documents page; the
+  // stickers here go in the car, so the car-label default is preselected.
   const { data: labelTemplates } = useQuery<BarcodeLabelTemplate[]>({
     queryKey: ["/api/barcode-label-templates"],
     enabled: open,
   });
-  const layout = useLabelLayout(labelTemplates);
+  const layout = useLabelLayout(labelTemplates, "car");
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();

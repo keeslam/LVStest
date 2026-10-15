@@ -100,13 +100,16 @@ function outputToDymo(output: string, printers: DymoTapePrinter[], chain: boolea
   return null;
 }
 
-// Which key the label is for: the spare key has its own default template (isDefaultSpare),
-// falling back to the main-key default when none is marked.
-export type KeyLabelKind = "main" | "spare";
+// What the label is for: the main key (isDefault), the spare key (isDefaultSpare) or the
+// sticker in the car (isDefaultCar). Spare and car fall back to the main-key default.
+export type KeyLabelKind = "main" | "spare" | "car";
 
 export function defaultTemplateFor(templates: BarcodeLabelTemplate[] | undefined, kind: KeyLabelKind): BarcodeLabelTemplate | undefined {
   if (!templates) return undefined;
-  return (kind === "spare" ? templates.find(tpl => tpl.isDefaultSpare) : undefined) ?? templates.find(tpl => tpl.isDefault);
+  const own = kind === "spare" ? templates.find(tpl => tpl.isDefaultSpare)
+    : kind === "car" ? templates.find(tpl => tpl.isDefaultCar)
+    : undefined;
+  return own ?? templates.find(tpl => tpl.isDefault);
 }
 
 export function useLabelLayout(templates: BarcodeLabelTemplate[] | undefined, kind: KeyLabelKind = "main"): LabelLayoutState {

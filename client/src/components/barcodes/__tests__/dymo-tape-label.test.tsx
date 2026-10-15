@@ -316,8 +316,9 @@ describe("KeyLabelPrintPanel with the tape layout", () => {
 
   it("preselects the spare-key default template for the spare key and the main default for the main key", async () => {
     const templates = [
-      { id: 1, name: "Hoofd", isDefault: true, isDefaultSpare: false, labelWidthMm: 62, labelHeightMm: 29, tapePrint: false, fields: [] },
-      { id: 2, name: "Reserve", isDefault: false, isDefaultSpare: true, labelWidthMm: 30, labelHeightMm: 12, tapePrint: true, fields: [] },
+      { id: 1, name: "Hoofd", isDefault: true, isDefaultSpare: false, isDefaultCar: false, labelWidthMm: 62, labelHeightMm: 29, tapePrint: false, fields: [] },
+      { id: 2, name: "Reserve", isDefault: false, isDefaultSpare: true, isDefaultCar: false, labelWidthMm: 30, labelHeightMm: 12, tapePrint: true, fields: [] },
+      { id: 3, name: "Auto", isDefault: false, isDefaultSpare: false, isDefaultCar: true, labelWidthMm: 62, labelHeightMm: 29, tapePrint: false, fields: [] },
     ];
     vi.stubGlobal("fetch", vi.fn(async () =>
       new Response(JSON.stringify(templates), { status: 200, headers: { "Content-Type": "application/json" } }),
@@ -336,6 +337,17 @@ describe("KeyLabelPrintPanel with the tape layout", () => {
     await waitFor(() => expect(select2.textContent).toContain("Hoofd"));
     fireEvent.click(screen.getByTestId("button-key-label-print-confirm"));
     expect(printSpy.mock.calls[1][1].id).toBe(1);
+  });
+
+  it("defaultTemplateFor: the car sticker has its own default and every kind falls back to the main one", async () => {
+    const { defaultTemplateFor } = await import("@/components/barcodes/label-layout-picker");
+    const main = { id: 1, isDefault: true, isDefaultSpare: false, isDefaultCar: false } as any;
+    const car = { id: 3, isDefault: false, isDefaultSpare: false, isDefaultCar: true } as any;
+    expect(defaultTemplateFor([main, car], "car")?.id).toBe(3);
+    expect(defaultTemplateFor([main, car], "spare")?.id).toBe(1);
+    expect(defaultTemplateFor([main, car], "main")?.id).toBe(1);
+    expect(defaultTemplateFor([car], "main")).toBeUndefined();
+    expect(defaultTemplateFor(undefined, "car")).toBeUndefined();
   });
 
   it("starts on the tape when this pc preferred it last time", async () => {

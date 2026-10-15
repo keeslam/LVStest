@@ -1575,6 +1575,8 @@ export const barcodeLabelTemplates = pgTable("barcode_label_templates", {
   isDefault: boolean("is_default").default(false),
   // Preselected for a spare-key label (the main key uses isDefault); at most one template each.
   isDefaultSpare: boolean("is_default_spare").default(false),
+  // Preselected for the car sticker (the label that goes in the vehicle); at most one template.
+  isDefaultCar: boolean("is_default_car").default(false),
   labelWidthMm: integer("label_width_mm").default(62).notNull(),
   labelHeightMm: integer("label_height_mm").default(29).notNull(),
   // B-45: a label maker's tape. The Windows driver prints the tape portrait,
