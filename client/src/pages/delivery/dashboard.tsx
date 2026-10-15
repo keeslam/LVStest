@@ -789,6 +789,7 @@ export default function DeliveryDashboard() {
                       data-testid="checkbox-select-all-transports"
                     />
                   </TableHead>
+                  <TableHead className="w-12"><span className="sr-only">{t('dashboardPage.printGenerateReportTitle')}</span><Printer className="h-4 w-4" aria-hidden="true" /></TableHead>
                   <TableHead>{t('dashboardPage.columnVehicle')}</TableHead>
                   <TableHead>{t('dashboardPage.columnReplacementVehicle')}</TableHead>
                   <TableHead>{t('dashboardPage.columnType')}</TableHead>
@@ -804,11 +805,11 @@ export default function DeliveryDashboard() {
               <TableBody>
                 {transportsLoading || reservationsLoading ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center py-4">{t('dashboardPage.loadingTransports')}</TableCell>
+                    <TableCell colSpan={12} className="text-center py-4">{t('dashboardPage.loadingTransports')}</TableCell>
                   </TableRow>
                 ) : filteredRows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center py-4">{t('dashboardPage.noTransportsFound')}</TableCell>
+                    <TableCell colSpan={12} className="text-center py-4">{t('dashboardPage.noTransportsFound')}</TableCell>
                   </TableRow>
                 ) : (
                   filteredRows.map((row) => {
@@ -826,6 +827,7 @@ export default function DeliveryDashboard() {
                               data-testid={`checkbox-select-${key}`}
                             />
                           </TableCell>
+                          <TableCell />
                           <TableCell className="font-medium">{getVehicleInfo(reservation.vehicleId)}</TableCell>
                           <TableCell><span className="text-muted-foreground text-sm">—</span></TableCell>
                           <TableCell>
@@ -881,6 +883,24 @@ export default function DeliveryDashboard() {
                             }}
                             data-testid={`checkbox-select-transport-${transport.id}`}
                           />
+                        </TableCell>
+                        <TableCell>
+                          {/* Printing is the desk's main action on a transport; the actions column sits
+                              off-screen to the right of this wide table, so the print button lives here. */}
+                          <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_RESERVATIONS]}>
+                            <ActionIconButton
+                              onClick={() => handlePrintTransportClick(transport)}
+                              disabled={generateReportMutation.isPending || getTransportSpareStatus(transport) === 'tbd'}
+                              label={getTransportSpareStatus(transport) === 'tbd' ? t('dashboardPage.replacementVehicleRequiredForPrint') : t('dashboardPage.printGenerateReportTitle')}
+                              data-testid={`button-print-transport-${transport.id}`}
+                            >
+                              {generateReportMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Printer className="h-4 w-4" />
+                              )}
+                            </ActionIconButton>
+                          </RequiresPermission>
                         </TableCell>
                         <TableCell className="font-medium">
                           {transport.isExternalVehicle ? (
@@ -999,20 +1019,6 @@ export default function DeliveryDashboard() {
                                 </RequiresPermission>
                               );
                             })()}
-                            <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_RESERVATIONS]}>
-                              <ActionIconButton
-                                onClick={() => handlePrintTransportClick(transport)}
-                                disabled={generateReportMutation.isPending || getTransportSpareStatus(transport) === 'tbd'}
-                                label={getTransportSpareStatus(transport) === 'tbd' ? t('dashboardPage.replacementVehicleRequiredForPrint') : t('dashboardPage.printGenerateReportTitle')}
-                                data-testid={`button-print-transport-${transport.id}`}
-                              >
-                                {generateReportMutation.isPending ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Printer className="h-4 w-4" />
-                                )}
-                              </ActionIconButton>
-                            </RequiresPermission>
                             <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_RESERVATIONS]}>
                               <ActionIconButton
                                 onClick={() => { setEditingTransport(transport); setTransportDialogOpen(true); }}
