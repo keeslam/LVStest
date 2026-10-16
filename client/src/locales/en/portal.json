@@ -960,6 +960,9 @@
           "default": "Unfortunately we cannot grant this request.",
           "company_name_change": "Unfortunately we cannot change the company name. Please contact us to discuss the options."
         }
+      },
+      "sort": {
+        "title": "Sort by {{column}}"
       }
     },
     "alert": {

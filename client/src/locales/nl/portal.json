@@ -960,6 +960,9 @@
           "default": "Helaas kunnen we aan deze aanvraag niet voldoen.",
           "company_name_change": "Helaas kunnen we de bedrijfsnaam niet wijzigen. Neem contact met ons op voor de mogelijkheden."
         }
+      },
+      "sort": {
+        "title": "Sorteren op {{column}}"
       }
     },
     "alert": {
