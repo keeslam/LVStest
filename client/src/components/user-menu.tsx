@@ -9,6 +9,7 @@ import {
   Database,
   Globe,
   Languages,
+  BookOpen,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { UserRole } from "@shared/schema";
@@ -16,6 +17,7 @@ import { BackupDialog } from "@/components/dialogs/backup-dialog";
 import { UsersDialog } from "@/components/dialogs/users-dialog";
 import { ProfileDialog } from "@/components/dialogs/profile-dialog";
 import { SettingsDialog } from "@/components/settings/settings-dialog";
+import { ManualDialog } from "@/components/dialogs/manual-dialog";
 
 export function UserMenu() {
   const { user, logoutMutation } = useAuth();
@@ -25,6 +27,7 @@ export function UserMenu() {
   const [usersDialogOpen, setUsersDialogOpen] = useState(false);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [manualDialogOpen, setManualDialogOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const getUserInitials = () => {
@@ -127,6 +130,18 @@ export function UserMenu() {
                 {i18n.language === 'nl' ? 'English' : 'Nederlands'}
               </button>
 
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  setManualDialogOpen(true);
+                }}
+                className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left"
+                data-testid="menu-manual"
+              >
+                <BookOpen className="mr-2 h-4 w-4" />
+                {t('userMenu.manual')}
+              </button>
+
               {user.role === UserRole.ADMIN && (
                 <>
                   <div className="px-3 py-1 border-t border-gray-100">
@@ -178,6 +193,7 @@ export function UserMenu() {
       <UsersDialog open={usersDialogOpen} onOpenChange={setUsersDialogOpen} />
       <ProfileDialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen} />
       <SettingsDialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen} />
+      <ManualDialog open={manualDialogOpen} onOpenChange={setManualDialogOpen} />
     </>
   );
 }

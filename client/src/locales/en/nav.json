@@ -34,7 +34,16 @@
     "backupManagement": "Backup Management",
     "appSettings": "App Settings",
     "logout": "Logout",
-    "noEmailSet": "No email set"
+    "noEmailSet": "No email set",
+    "manual": "User guide"
   },
-  "fines": "Fines"
+  "fines": "Fines",
+  "manual": {
+    "title": "User guide",
+    "chapters": "Chapters",
+    "loading": "Loading chapter…",
+    "loadError": "The user guide could not be loaded.",
+    "chapterNotFound": "This chapter does not exist.",
+    "description": "How the app works. Pick a chapter on the left."
+  }
 }

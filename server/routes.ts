@@ -171,6 +171,7 @@ import { registerFineRoutes } from "./routes/fines";
 import { registerPortalRequestRoutes } from "./routes/portal-requests";
 import { registerAddressLookupRoutes } from "./routes/address-lookup";
 import { registerTodayRoutes } from "./routes/today";
+import { registerManualRoutes } from "./routes/manual";
 import { registerReservationWorklistRoutes } from "./routes/reservation-worklist";
 import { registerRdwTypeRemapRoutes } from "./routes/rdw-type-remap";
 import { registerExpenseRoutes } from "./routes/expenses";
@@ -533,6 +534,8 @@ export async function registerRoutes(app: Express): Promise<void> {
   registerAddressLookupRoutes(app, routeDeps);
   // OPT-001 — the one request behind the "Vandaag" work-day screen.
   registerTodayRoutes(app, routeDeps);
+  // De gebruikershandleiding (docs/gebruikershandleiding) leesbaar in de app.
+  registerManualRoutes(app, routeDeps);
   // B-21: the "Nog buiten" worklist. Before /api/reservations/:id so the
   // literal path wins.
   registerReservationWorklistRoutes(app);

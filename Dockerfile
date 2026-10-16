@@ -42,6 +42,8 @@ COPY --from=builder /app/startup-migration.js ./
 COPY --from=builder /app/schema-columns.json ./
 COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/uploads ./uploads
+# De gebruikershandleiding wordt door GET /api/manual uit deze map gelezen
+COPY --from=builder /app/docs/gebruikershandleiding ./docs/gebruikershandleiding
 
 # Create uploads directory structure if it doesn't exist
 RUN mkdir -p /app/uploads/vehicle-diagrams /app/uploads/documents /app/uploads/drivers

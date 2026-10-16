@@ -22,6 +22,7 @@ import AuthPage from "@/pages/auth-page";
 import PortalApp from "@/pages/portal/index";
 import PortalAdminPage from "@/pages/portal-admin/index";
 import FinesPage from "@/pages/fines/index";
+const ManualPage = lazy(() => import("@/pages/manual/index"));
 import MainLayout from "@/layouts/MainLayout";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { SocketProvider } from "@/hooks/use-socket";
@@ -94,6 +95,8 @@ function AppRoutes() {
               <ProtectedRoute path="/communications" component={CustomerCommunications} />
               <ProtectedRoute path="/portal-admin" component={PortalAdminPage} />
               <ProtectedRoute path="/fines" component={FinesPage} />
+              <ProtectedRoute path="/handleiding/:chapter" component={ManualPage} />
+              <ProtectedRoute path="/handleiding" component={ManualPage} />
               <Route path="/auth" component={AuthPage} />
               <Route component={NotFound} />
             </Switch>

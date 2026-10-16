@@ -34,7 +34,16 @@
     "backupManagement": "Back-upbeheer",
     "appSettings": "App-instellingen",
     "logout": "Uitloggen",
-    "noEmailSet": "Geen e-mailadres ingesteld"
+    "noEmailSet": "Geen e-mailadres ingesteld",
+    "manual": "Handleiding"
   },
-  "fines": "Bekeuringen"
+  "fines": "Bekeuringen",
+  "manual": {
+    "title": "Gebruikershandleiding",
+    "chapters": "Hoofdstukken",
+    "loading": "Hoofdstuk laden…",
+    "loadError": "De handleiding kon niet worden geladen.",
+    "chapterNotFound": "Dit hoofdstuk bestaat niet.",
+    "description": "Lees hier hoe de app werkt. Kies links een hoofdstuk."
+  }
 }
