@@ -357,6 +357,8 @@
       "apkDate": "APK Date",
       "customerName": "Customer Name",
       "customerAddress": "Customer Address",
+      "customerStreetName": "Customer Street Name",
+      "customerHouseNumber": "Customer House Number",
       "customerCity": "Customer City",
       "customerPostalCode": "Customer Postal Code",
       "customerPhone": "Customer Phone",

@@ -14,6 +14,7 @@ import { formatReservationBarcode } from '../../shared/barcode';
 import { renderBarcodePng } from './barcode-png';
 import { resolveUploadsPath } from '../../shared/paths';
 import { resolveDocumentFilePath } from '../services/document-paths';
+import { customerHouseNumber, customerStreetName } from '../../shared/address';
 import { sanitizeForWinAnsi, wrapTextToWidth } from './pdf-text';
 // besluiten B-18 (BUG-192): every date, number and amount on a generated
 // document goes through one Dutch formatter.
@@ -106,6 +107,8 @@ const CONTRACT_FIELD_SOURCES: Record<string, keyof ContractData> = {
   chassisNumber: "chassisNumber",
   customerName: "customerName",
   customerAddress: "customerAddress",
+  customerStreetName: "customerStreetName",
+  customerHouseNumber: "customerHouseNumber",
   customerCity: "customerCity",
   customerPostalCode: "customerPostalCode",
   customerPhone: "customerPhone",
@@ -124,6 +127,8 @@ const CONTRACT_FIELD_SOURCES: Record<string, keyof ContractData> = {
   // The dotted spellings the template editor writes.
   "customer.name": "customerName",
   "customer.address": "customerAddress",
+  "customer.streetName": "customerStreetName",
+  "customer.houseNumber": "customerHouseNumber",
   "customer.city": "customerCity",
   "customer.postalCode": "customerPostalCode",
   "customer.phone": "customerPhone",
@@ -413,6 +418,7 @@ export function prepareContractData(reservation: Reservation) {
   
   const customer = reservation.customer || {
     name: "",
+    streetName: "",
     address: "",
     city: "",
     postalCode: "",
@@ -456,6 +462,10 @@ export function prepareContractData(reservation: Reservation) {
     chassisNumber: vehicle.chassisNumber || "",
     customerName: customer.name,
     customerAddress: customer.address || "",
+    // Contract forms with a box for the street and one for the number (2026-10-17): read
+    // from the address line when the customer was typed without a separate street name.
+    customerStreetName: customerStreetName(customer),
+    customerHouseNumber: customerHouseNumber(customer),
     customerCity: customer.city || "",
     customerPostalCode: customer.postalCode || "",
     customerPhone: customer.phone || "",

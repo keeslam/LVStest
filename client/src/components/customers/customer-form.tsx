@@ -29,7 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { capitalizeName, capitalizeWords } from "@/lib/format-utils";
 import { AddressLookupRow } from "@/components/ui/address-lookup-row";
-import { composeStreetLine, splitStreetLine, type AddressLookupQuery, type AddressLookupResult } from "@shared/address";
+import { composeStreetLine, customerStreetName, splitStreetLine, type AddressLookupQuery, type AddressLookupResult } from "@shared/address";
 
 // Extended schema with validation
 export const formSchema = insertCustomerSchema.extend({
@@ -138,7 +138,9 @@ export function CustomerForm({
         transformed[key] = transformed[key].toString();
       }
     });
-    
+    // A customer saved with only "Hoofdstraat 1" in the address line opens with the street filled in.
+    transformed.streetName = customerStreetName({ streetName: transformed.streetName, address: transformed.address });
+
     return transformed;
   };
 
@@ -297,6 +299,8 @@ export function CustomerForm({
     // Transform empty strings to null and strings to numbers for numeric fields
     const transformedData = {
       ...data,
+      // A street typed only in the address line ("Hoofdstraat 1") still gives the customer a street name.
+      streetName: customerStreetName({ streetName: data.streetName, address: data.address }),
       corporateDiscount: data.corporateDiscount === "" ? null : data.corporateDiscount ? parseFloat(data.corporateDiscount) : null,
       paymentTermDays: data.paymentTermDays === "" ? null : data.paymentTermDays ? parseInt(data.paymentTermDays) : null,
       creditLimit: data.creditLimit === "" ? null : data.creditLimit ? parseFloat(data.creditLimit) : null,

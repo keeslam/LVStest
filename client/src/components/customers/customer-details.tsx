@@ -23,6 +23,7 @@ import { CustomerEditDialog } from "./customer-edit-dialog";
 import { DriverDialog } from "./driver-dialog";
 import { DriverViewDialog } from "./driver-view-dialog";
 import { formatDate, formatCurrency, formatPhoneNumber, formatReservationStatus, formatLicensePlate, formatDateTime } from "@/lib/format-utils";
+import { customerStreetName } from "@shared/address";
 import { downloadCsv, csvDate, csvNumber } from "@/lib/csv";
 import { PortalEditNote } from "@/components/portal-admin/portal-edit-note";
 import { Price } from "@/components/ui/price";
@@ -710,7 +711,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.streetName')}</h4>
-                    <p className="text-base">{customer.streetName || t('details.notProvided')}</p>
+                    <p className="text-base">{customerStreetName(customer) || t('details.notProvided')}</p>
                   </div>
 
                   <div>

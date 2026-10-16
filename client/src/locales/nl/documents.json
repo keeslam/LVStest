@@ -357,6 +357,8 @@
       "apkDate": "APK-datum",
       "customerName": "Klantnaam",
       "customerAddress": "Klantadres",
+      "customerStreetName": "Klant straatnaam",
+      "customerHouseNumber": "Klant huisnummer",
       "customerCity": "Klantplaats",
       "customerPostalCode": "Klantpostcode",
       "customerPhone": "Klanttelefoon",

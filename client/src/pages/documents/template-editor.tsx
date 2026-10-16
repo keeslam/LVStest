@@ -113,7 +113,7 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
   const DATA_SOURCE_KEYS: string[] = [
     'contractNumber', 'contractDate', 'licensePlate', 'brand', 'model', 'chassisNumber',
     'vehicleType', 'fuelType', 'currentMileage', 'currentFuelLevel', 'apkDate',
-    'customerName', 'customerAddress', 'customerCity', 'customerPostalCode', 'customerPhone',
+    'customerName', 'customerAddress', 'customerStreetName', 'customerHouseNumber', 'customerCity', 'customerPostalCode', 'customerPhone',
     'customerEmail', 'companyName', 'driverLicense', 'driverName', 'driverFirstName',
     'driverLastName', 'driverEmail', 'driverPhone', 'driverLicenseNumber', 'driverLicenseExpiry',
     'startDate', 'endDate', 'duration', 'totalPrice', 'pickupMileage', 'returnMileage',

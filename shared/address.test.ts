@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { composeStreetLine, formatPostcode, normalizePostcode, splitStreetLine } from "./address";
+import { composeStreetLine, customerHouseNumber, customerStreetName, formatPostcode, normalizePostcode, splitStreetLine } from "./address";
 
 describe("postcode", () => {
   it("normalizes Dutch postcodes and refuses the rest", () => {
@@ -44,5 +44,21 @@ describe("street line", () => {
     for (const line of ["Coolsingel 4", "Coolsingel 4A", "Dorpsstraat 12-3", "Kade"]) {
       expect(composeStreetLine(splitStreetLine(line))).toBe(line);
     }
+  });
+});
+
+describe("customerStreetName / customerHouseNumber", () => {
+  it("reads the street and number from the address line when no street name was typed", () => {
+    expect(customerStreetName({ streetName: "", address: "Hoofdstraat 12" })).toBe("Hoofdstraat");
+    expect(customerStreetName({ streetName: null, address: "Van der Helstlaan 4A" })).toBe("Van der Helstlaan");
+    expect(customerHouseNumber({ address: "Van der Helstlaan 4A" })).toBe("4A");
+    expect(customerHouseNumber({ address: "Dorpsstraat 12-3" })).toBe("12-3");
+    expect(customerHouseNumber({ address: "Kade" })).toBe("");
+    expect(customerHouseNumber({ address: null })).toBe("");
+  });
+
+  it("prefers a typed street name over the address line", () => {
+    expect(customerStreetName({ streetName: "Coolsingel", address: "Hoofdstraat 12" })).toBe("Coolsingel");
+    expect(customerStreetName({ streetName: "", address: "" })).toBe("");
   });
 });

@@ -90,3 +90,22 @@ describe("customer form — postcode lookup", () => {
     await waitFor(() => expect(screen.getByTestId("address-lookup-status")).toHaveAttribute("data-status", "unavailable"));
   });
 });
+
+describe("the street name on save", () => {
+  it("is read from the address line when the street name field was left empty", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    (globalThis.fetch as any).mockImplementation(async (input: any, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input?.url ?? "";
+      if (url === "/api/customers/1" && init?.method === "PATCH") {
+        bodies.push(JSON.parse(String(init.body)));
+        return new Response(JSON.stringify({ id: 1 }), { status: 200, headers: { "Content-Type": "application/json" } });
+      }
+      return new Response("[]", { status: 200, headers: { "Content-Type": "application/json" } });
+    });
+    renderForm({ id: 1, name: "Bestaand", email: "k@example.com", phone: "0612345678", address: "Dorpsstraat 12B", postalCode: "1234 AB", city: "Utrecht", country: "Nederland", customerType: "business", preferredLanguage: "nl" });
+    await userEvent.click(screen.getByRole("button", { name: /opslaan|bijwerken/i }));
+    await waitFor(() => expect(bodies).toHaveLength(1));
+    expect(bodies[0].streetName).toBe("Dorpsstraat");
+    expect(bodies[0].address).toBe("Dorpsstraat 12B");
+  });
+});

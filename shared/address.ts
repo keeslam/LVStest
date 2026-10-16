@@ -53,3 +53,19 @@ export interface AddressLookupResult {
   /** Formatted "1234 AB". */
   postalCode?: string;
 }
+
+/**
+ * The street of a customer: the `streetName` column when it was filled, else the street read from
+ * the address line. Nearly every customer was typed with only "Hoofdstraat 1" in the address line
+ * (2026-10-17: 300 of 301), so screens and contracts that print the street alone read it from there.
+ */
+export function customerStreetName(customer: { streetName?: string | null; address?: string | null }): string {
+  const typed = (customer.streetName ?? "").trim();
+  return typed || splitStreetLine(customer.address).street;
+}
+
+/** The house number with its addition as it is written on an envelope: "4A", "12-3", "" when there is none. */
+export function customerHouseNumber(customer: { address?: string | null }): string {
+  const { number, addition } = splitStreetLine(customer.address);
+  return composeStreetLine({ street: "", number, addition });
+}
