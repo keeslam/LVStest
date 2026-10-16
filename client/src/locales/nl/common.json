@@ -186,7 +186,11 @@
     "pageOf": "Pagina {{page}} van {{pages}}",
     "goToPage": "Ga naar pagina",
     "goToPagePlaceholder": "Pagina",
-    "sortBy": "Sorteren op {{column}}"
+    "sortBy": "Sorteren op {{column}}",
+    "perPage": "Per pagina",
+    "pageRange": "{{from}}–{{to}} van {{total}}",
+    "prevPage": "Vorige pagina",
+    "nextPage": "Volgende pagina"
   },
   "queryError": {
     "title": "Kon de gegevens niet laden",

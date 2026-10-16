@@ -1,8 +1,8 @@
 import { describeApiError } from "@/lib/api-error";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SortableHead, nextSort, stableSort, type SortState } from "@/components/ui/sortable-head";
+import { TablePager, usePager } from "@/components/ui/table-pager";
 import { useCanManagePortal } from "./accounts-table";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -44,7 +45,6 @@ const STATUS_CLASS: Record<string, string> = {
   needs_fixing: "border-red-200 bg-red-50 text-red-800",
   not_for_rental: "border-gray-200 bg-gray-100 text-gray-700",
 };
-export const PAGE_SIZES = [25, 50, 100, 250] as const;
 
 export type VehicleSortKey = "plate" | "vehicle" | "status" | "online" | "blocked";
 export type OnlineFilter = "all" | "online" | "offline";
@@ -83,8 +83,6 @@ export function OnlineVehiclesTable() {
   const { openPortalListDialog } = useGlobalDialog();
   const [filters, setFilters] = useState<VehicleFilters>({ search: "", status: "", brand: "", online: "all" });
   const [sort, setSort] = useState<SortState<VehicleSortKey>>({ key: "vehicle", dir: "asc" });
-  const [pageSize, setPageSize] = useState<number>(50);
-  const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   // Putting a car online that cannot be rented is allowed, but only after staff saw the warning.
   const [warn, setWarn] = useState<{ ids: number[]; bulk: boolean } | null>(null);
@@ -138,14 +136,10 @@ export function OnlineVehiclesTable() {
   const statuses = useMemo(() => STATUS_ORDER.filter((s) => data.some((v) => v.availabilityStatus === s)), [data]);
   const filtered = useMemo(() => filterVehicles(data, filters), [data, filters]);
   const sorted = useMemo(() => sortVehicles(filtered, sort), [filtered, sort]);
-  const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize));
-  const safePage = Math.min(page, pageCount);
-  const rows = sorted.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const pager = usePager(sorted);
+  const rows = pager.rows;
   const onlineCount = data.filter((v) => v.offeredOnline).length;
   const hasFilter = filters.search.trim() !== "" || filters.status !== "" || filters.brand !== "" || filters.online !== "all";
-
-  // Een ander filter of een andere sortering begint weer op pagina 1.
-  useEffect(() => { setPage(1); }, [filters, sort, pageSize]);
 
   const update = (patchFilters: Partial<VehicleFilters>) => setFilters((f) => ({ ...f, ...patchFilters }));
   const toggleSel = (id: number) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -272,24 +266,7 @@ export function OnlineVehiclesTable() {
         </TableBody>
       </Table>
 
-      {sorted.length > PAGE_SIZES[0] && (
-        <div className="flex flex-wrap items-center justify-between gap-2 text-sm" data-testid="vehicles-pagination">
-          <label className="flex items-center gap-2 text-muted-foreground">
-            {t("admin.vehicles.perPage")}
-            <select className="h-8 rounded-md border bg-background px-2 text-sm" value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} data-testid="vehicles-page-size">
-              {PAGE_SIZES.map((n) => <option key={n} value={n}>{n}</option>)}
-            </select>
-          </label>
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">
-              {t("admin.vehicles.pageRange", { from: (safePage - 1) * pageSize + 1, to: Math.min(safePage * pageSize, sorted.length), total: sorted.length })}
-            </span>
-            <Button variant="outline" size="sm" className="h-8 w-8 p-0" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)} aria-label={t("admin.vehicles.prevPage")} data-testid="vehicles-prev-page"><ChevronLeft className="h-4 w-4" /></Button>
-            <span data-testid="vehicles-page-indicator">{safePage} / {pageCount}</span>
-            <Button variant="outline" size="sm" className="h-8 w-8 p-0" disabled={safePage >= pageCount} onClick={() => setPage(safePage + 1)} aria-label={t("admin.vehicles.nextPage")} data-testid="vehicles-next-page"><ChevronRight className="h-4 w-4" /></Button>
-          </div>
-        </div>
-      )}
+      <TablePager {...pager} testId="vehicles" />
 
       {warn && (
         <ConfirmDialog

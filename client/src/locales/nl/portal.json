@@ -658,11 +658,7 @@
       "loading": "Voertuigen laden…",
       "empty": "Geen voertuigen.",
       "emptyFiltered": "Geen voertuigen die aan de filters voldoen.",
-      "descriptionPlaceholder": "Bijvoorbeeld: 9 zitplaatsen, trekhaak, automaat",
-      "perPage": "Per pagina",
-      "pageRange": "{{from}}–{{to}} van {{total}}",
-      "prevPage": "Vorige pagina",
-      "nextPage": "Volgende pagina"
+      "descriptionPlaceholder": "Bijvoorbeeld: 9 zitplaatsen, trekhaak, automaat"
     },
     "config": {
       "title": "Klantenportaal",
@@ -995,7 +991,7 @@
     "blacklist": {
       "hint": "Een geblokkeerde klant ziet dit voertuig niet in het portaal en kan het niet aanvragen. Blokkades uit de klant- en voertuigdialoog staan hier ook.",
       "search": "Zoek kenteken, voertuig, klant of reden…",
-      "count": "{{n}} blokkade(s)",
+      "count": "{{n}} blokkades",
       "add": "Blokkade toevoegen",
       "vehicle": "Voertuig",
       "customer": "Klant",
@@ -1019,7 +1015,16 @@
       "editTitle": "Blokkade bewerken: {{plate}} · {{customer}}",
       "saveChanges": "Wijzigingen opslaan",
       "confirmTitle": "Blokkade opheffen?",
-      "confirmText": "{{customer}} kan {{vehicle}} ({{plate}}) daarna weer zien en aanvragen in het portaal."
+      "confirmText": "{{customer}} kan {{vehicle}} ({{plate}}) daarna weer zien en aanvragen in het portaal.",
+      "summary": "{{n}} blokkades bij {{customers}} klanten",
+      "onlyOnline": "Alleen online voertuigen",
+      "focusCustomer": "Klant: {{label}}",
+      "focusVehicle": "Voertuig: {{label}}",
+      "clearFocus": "Uitlichting opheffen",
+      "clearFilters": "Filters wissen",
+      "countFiltered": "{{n}} van {{total}} blokkades",
+      "showCustomer": "Toon alle blokkades van deze klant",
+      "showVehicle": "Toon alle blokkades van dit voertuig"
     },
     "booking": {
       "title": "Reservering aanmaken uit deze aanvraag",

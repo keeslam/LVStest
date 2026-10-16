@@ -2,7 +2,7 @@ import { describeApiError } from "@/lib/api-error";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Ban, Plus, Trash2, Pencil } from "lucide-react";
+import { Ban, Plus, Trash2, Pencil, X } from "lucide-react";
 import type { Customer } from "@shared/schema";
 import type { PortalBlacklistEntryDto } from "@shared/portal-types";
 import { apiRequest } from "@/lib/queryClient";
@@ -14,10 +14,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SearchListPicker } from "@/components/ui/search-list-picker";
 import { CustomerSearchPicker } from "@/components/customers/customer-search-picker";
+import { SortableHead, nextSort, stableSort, type SortState } from "@/components/ui/sortable-head";
+import { TablePager, usePager } from "@/components/ui/table-pager";
 import { useToast } from "@/hooks/use-toast";
 import { useCanManagePortal } from "./accounts-table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 interface VehicleRow { id: number; licensePlate: string; brand: string; model: string; offeredOnline: boolean }
 const KEY = ["/api/portal-admin/blacklist"];
@@ -25,16 +28,47 @@ const KEY = ["/api/portal-admin/blacklist"];
 /** Anything that shows blacklist data: this list, the customer dialog, the vehicle dialog and the online-vehicles list. */
 const touchesBlacklist = (key: readonly unknown[]) => key.some((k) => typeof k === "string" && (k.includes("blacklist") || k.includes("vehicles-online")));
 
+export type BlacklistSortKey = "plate" | "vehicle" | "customer" | "reason" | "since";
+/** Eén klant of één voertuig uitgelicht: klik op de naam of het kenteken in een rij. */
+export type BlacklistFocus = { kind: "customer"; id: number; label: string } | { kind: "vehicle"; id: number; label: string } | null;
+export interface BlacklistFilters { search: string; onlyOnline: boolean; focus: BlacklistFocus }
+
+export function filterBlacklist(rows: PortalBlacklistEntryDto[], f: BlacklistFilters): PortalBlacklistEntryDto[] {
+  const q = f.search.trim().toLowerCase();
+  return rows.filter((r) =>
+    (!f.onlyOnline || r.offeredOnline) &&
+    (!f.focus || (f.focus.kind === "customer" ? r.customerId === f.focus.id : r.vehicleId === f.focus.id)) &&
+    (!q || `${r.licensePlate} ${formatLicensePlate(r.licensePlate)} ${r.brand} ${r.model} ${r.customerName} ${r.reason ?? ""}`.toLowerCase().includes(q)),
+  );
+}
+
+export function sortBlacklist(rows: PortalBlacklistEntryDto[], sort: SortState<BlacklistSortKey>): PortalBlacklistEntryDto[] {
+  const vehicle = (r: PortalBlacklistEntryDto) => `${r.brand} ${r.model}`.toLocaleLowerCase();
+  const compare = (a: PortalBlacklistEntryDto, b: PortalBlacklistEntryDto): number => {
+    switch (sort.key) {
+      case "plate": return a.licensePlate.localeCompare(b.licensePlate, "nl");
+      case "vehicle": return vehicle(a).localeCompare(vehicle(b), "nl") || a.licensePlate.localeCompare(b.licensePlate, "nl");
+      case "customer": return a.customerName.localeCompare(b.customerName, "nl", { sensitivity: "base" }) || vehicle(a).localeCompare(vehicle(b), "nl");
+      case "reason": return (a.reason ?? "").localeCompare(b.reason ?? "", "nl", { sensitivity: "base" });
+      case "since": return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    }
+  };
+  return stableSort(rows, compare, sort.dir);
+}
+
 /**
  * Every vehicle/customer block in one place. Same table the customer and
  * vehicle dialogs edit, so a block made here is respected there and vice versa.
+ * Gebouwd voor duizenden blokkades: zoeken, filter op online voertuigen, één
+ * klant of voertuig uitlichten, sorteerbare koppen en pagina's van 50.
  */
 export function BlacklistTable({ initialPlate, initialCustomerId }: { initialPlate?: string; initialCustomerId?: number }) {
   const { t } = useTranslation("portal");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const canManage = useCanManagePortal();
-  const [search, setSearch] = useState(initialPlate ?? "");
+  const [filters, setFilters] = useState<BlacklistFilters>({ search: initialPlate ?? "", onlyOnline: false, focus: null });
+  const [sort, setSort] = useState<SortState<BlacklistSortKey>>({ key: "since", dir: "desc" });
   const [adding, setAdding] = useState(false);
   /** Entry being edited in the same form; null while adding. */
   const [editing, setEditing] = useState<PortalBlacklistEntryDto | null>(null);
@@ -67,16 +101,43 @@ export function BlacklistTable({ initialPlate, initialCustomerId }: { initialPla
     onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
 
-  const q = search.trim().toLowerCase();
-  const rows = useMemo(() => data.filter((r) => !q || `${r.licensePlate} ${formatLicensePlate(r.licensePlate)} ${r.brand} ${r.model} ${r.customerName} ${r.reason ?? ""}`.toLowerCase().includes(q)), [data, q]);
+  const update = (p: Partial<BlacklistFilters>) => setFilters((f) => ({ ...f, ...p }));
+  const hasFilter = filters.search.trim() !== "" || filters.onlyOnline || filters.focus !== null;
+  const filtered = useMemo(() => filterBlacklist(data, filters), [data, filters]);
+  const sorted = useMemo(() => sortBlacklist(filtered, sort), [filtered, sort]);
+  const pager = usePager(sorted);
+  const customerCount = useMemo(() => new Set(data.map((r) => r.customerId)).size, [data]);
   const vehicleItems = vehicles.map((v) => ({ id: v.id, label: `${v.brand} ${v.model} · ${formatLicensePlate(v.licensePlate)}`, sub: v.offeredOnline ? t("admin.vehicles.offered") : null, search: v.licensePlate }));
+  const toggleSort = (key: BlacklistSortKey) => setSort((cur) => nextSort(cur, key, (k) => (k === "since" ? "desc" : "asc")));
+  const head = (key: BlacklistSortKey, label: string, className?: string) =>
+    <SortableHead label={label} sortKey={key} sort={sort} onSort={toggleSort} testId={`sort-blacklist-${key}`} className={className} />;
+  const focusButton = "rounded px-1 -mx-1 text-left hover:bg-muted hover:underline";
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">{t("admin.blacklist.hint")}</p>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-sm text-muted-foreground">{t("admin.blacklist.hint")}</p>
+        <p className="text-sm font-medium whitespace-nowrap" data-testid="blacklist-summary">{t("admin.blacklist.summary", { n: data.length, customers: customerCount })}</p>
+      </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Input placeholder={t("admin.blacklist.search")} value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" data-testid="blacklist-search" />
-        <span className="text-sm text-muted-foreground">{t("admin.blacklist.count", { n: rows.length })}</span>
+        <Input placeholder={t("admin.blacklist.search")} value={filters.search} onChange={(e) => update({ search: e.target.value })} className="w-72" data-testid="blacklist-search" />
+        <Button size="sm" variant={filters.onlyOnline ? "default" : "outline"} aria-pressed={filters.onlyOnline} onClick={() => update({ onlyOnline: !filters.onlyOnline })} data-testid="blacklist-only-online">
+          {t("admin.blacklist.onlyOnline")}
+        </Button>
+        {filters.focus && (
+          <Badge variant="secondary" className="gap-1 py-1 pr-1 font-normal" data-testid="blacklist-focus">
+            {t(filters.focus.kind === "customer" ? "admin.blacklist.focusCustomer" : "admin.blacklist.focusVehicle", { label: filters.focus.label })}
+            <button type="button" className="rounded-full p-0.5 hover:bg-background" onClick={() => update({ focus: null })} aria-label={t("admin.blacklist.clearFocus")} data-testid="blacklist-focus-clear"><X className="h-3 w-3" /></button>
+          </Badge>
+        )}
+        {hasFilter && (
+          <Button size="sm" variant="ghost" onClick={() => setFilters({ search: "", onlyOnline: false, focus: null })} data-testid="blacklist-clear-filters">
+            <X className="h-4 w-4" /> {t("admin.blacklist.clearFilters")}
+          </Button>
+        )}
+        <span className="ml-auto text-sm text-muted-foreground" data-testid="blacklist-count">
+          {hasFilter ? t("admin.blacklist.countFiltered", { n: sorted.length, total: data.length }) : t("admin.blacklist.count", { n: data.length })}
+        </span>
         {canManage && !formOpen && <Button size="sm" onClick={() => { setEditing(null); setAdding(true); }} data-testid="button-blacklist-add"><Plus className="mr-1.5 h-4 w-4" />{t("admin.blacklist.add")}</Button>}
       </div>
 
@@ -110,30 +171,41 @@ export function BlacklistTable({ initialPlate, initialCustomerId }: { initialPla
         </DialogContent>
       </Dialog>
 
-      {!isLoading && rows.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">{q ? t("admin.blacklist.noMatch") : t("admin.blacklist.empty")}</p>
+      {!isLoading && sorted.length === 0 ? (
+        <p className="py-8 text-center text-sm text-muted-foreground">{hasFilter ? t("admin.blacklist.noMatch") : t("admin.blacklist.empty")}</p>
       ) : (
         <Table>
-          <TableHeader><TableRow>
-            <TableHead>{t("admin.vehicles.columns.plate")}</TableHead>
-            <TableHead>{t("admin.vehicles.columns.vehicle")}</TableHead>
-            <TableHead>{t("admin.blacklist.customer")}</TableHead>
-            <TableHead>{t("admin.blacklist.reason")}</TableHead>
-            <TableHead>{t("admin.blacklist.since")}</TableHead>
+          <TableHeader className="sticky top-0 z-10 bg-background shadow-[0_1px_0_0_hsl(var(--border))]"><TableRow>
+            {head("plate", t("admin.vehicles.columns.plate"), "w-32")}
+            {head("vehicle", t("admin.vehicles.columns.vehicle"))}
+            {head("customer", t("admin.blacklist.customer"))}
+            {head("reason", t("admin.blacklist.reason"))}
+            {head("since", t("admin.blacklist.since"), "w-32")}
             {canManage && <TableHead className="w-24" />}
           </TableRow></TableHeader>
           <TableBody>
-            {rows.map((r) => (
-              <TableRow key={r.id} data-testid={`blacklist-row-${r.id}`}>
-                <TableCell className="font-mono">{formatLicensePlate(r.licensePlate)}</TableCell>
-                <TableCell>{r.brand} {r.model} {r.offeredOnline && <Badge variant="secondary" className="ml-1">{t("admin.vehicles.offered")}</Badge>}</TableCell>
-                <TableCell>{r.customerName}</TableCell>
+            {pager.rows.map((r) => (
+              <TableRow key={r.id} className="[&>td]:py-2" data-testid={`blacklist-row-${r.id}`}>
+                <TableCell className="whitespace-nowrap font-mono text-sm">
+                  <button type="button" className={focusButton} title={t("admin.blacklist.showVehicle")} onClick={() => update({ focus: { kind: "vehicle", id: r.vehicleId, label: formatLicensePlate(r.licensePlate) } })} data-testid={`blacklist-focus-vehicle-${r.id}`}>
+                    {formatLicensePlate(r.licensePlate)}
+                  </button>
+                </TableCell>
+                <TableCell>
+                  <span className="font-medium">{r.brand} {r.model}</span>
+                  {r.offeredOnline && <Badge variant="outline" className="ml-2 border-green-200 bg-green-50 font-normal text-green-800">{t("admin.vehicles.offered")}</Badge>}
+                </TableCell>
+                <TableCell>
+                  <button type="button" className={cn(focusButton, "font-medium")} title={t("admin.blacklist.showCustomer")} onClick={() => update({ focus: { kind: "customer", id: r.customerId, label: r.customerName } })} data-testid={`blacklist-focus-customer-${r.id}`}>
+                    {r.customerName}
+                  </button>
+                </TableCell>
                 <TableCell className="max-w-xs truncate text-muted-foreground" title={r.reason ?? undefined}>{r.reason || "—"}</TableCell>
                 <TableCell className="whitespace-nowrap text-muted-foreground">{formatDate(r.createdAt)}</TableCell>
                 {canManage && (
                   <TableCell className="whitespace-nowrap">
-                    <Button size="icon" variant="ghost" title={t("admin.blacklist.edit")} onClick={() => startEdit(r)} data-testid={`button-blacklist-edit-${r.id}`}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" title={t("admin.blacklist.unblock")} onClick={() => setConfirmRemove(r)} data-testid={`button-blacklist-remove-${r.id}`}><Trash2 className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8" title={t("admin.blacklist.edit")} onClick={() => startEdit(r)} data-testid={`button-blacklist-edit-${r.id}`}><Pencil className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8" title={t("admin.blacklist.unblock")} onClick={() => setConfirmRemove(r)} data-testid={`button-blacklist-remove-${r.id}`}><Trash2 className="h-4 w-4" /></Button>
                   </TableCell>
                 )}
               </TableRow>
@@ -141,6 +213,7 @@ export function BlacklistTable({ initialPlate, initialCustomerId }: { initialPla
           </TableBody>
         </Table>
       )}
+      <TablePager {...pager} testId="blacklist" />
 
       {/* Lifting a block lets the customer rent the vehicle again, so ask first. */}
       <AlertDialog open={confirmRemove !== null} onOpenChange={(o) => !o && setConfirmRemove(null)}>

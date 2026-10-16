@@ -658,11 +658,7 @@
       "loading": "Loading vehicles…",
       "empty": "No vehicles.",
       "emptyFiltered": "No vehicles match the filters.",
-      "descriptionPlaceholder": "For example: 9 seats, tow bar, automatic",
-      "perPage": "Per page",
-      "pageRange": "{{from}}–{{to}} of {{total}}",
-      "prevPage": "Previous page",
-      "nextPage": "Next page"
+      "descriptionPlaceholder": "For example: 9 seats, tow bar, automatic"
     },
     "config": {
       "title": "Customer portal",
@@ -995,7 +991,7 @@
     "blacklist": {
       "hint": "A blocked customer does not see this vehicle in the portal and cannot request it. Blocks made in the customer or vehicle dialog show here too.",
       "search": "Search plate, vehicle, customer or reason…",
-      "count": "{{n}} block(s)",
+      "count": "{{n}} blocks",
       "add": "Add block",
       "vehicle": "Vehicle",
       "customer": "Customer",
@@ -1019,7 +1015,16 @@
       "editTitle": "Edit block: {{plate}} · {{customer}}",
       "saveChanges": "Save changes",
       "confirmTitle": "Remove block?",
-      "confirmText": "{{customer}} will then see and be able to request {{vehicle}} ({{plate}}) in the portal again."
+      "confirmText": "{{customer}} will then see and be able to request {{vehicle}} ({{plate}}) in the portal again.",
+      "summary": "{{n}} blocks across {{customers}} customers",
+      "onlyOnline": "Only online vehicles",
+      "focusCustomer": "Customer: {{label}}",
+      "focusVehicle": "Vehicle: {{label}}",
+      "clearFocus": "Clear highlight",
+      "clearFilters": "Clear filters",
+      "countFiltered": "{{n}} of {{total}} blocks",
+      "showCustomer": "Show every block for this customer",
+      "showVehicle": "Show every block for this vehicle"
     },
     "booking": {
       "title": "Create a reservation from this request",

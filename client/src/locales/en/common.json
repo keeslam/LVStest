@@ -186,7 +186,11 @@
     "pageOf": "Page {{page}} of {{pages}}",
     "goToPage": "Go to page",
     "goToPagePlaceholder": "Page",
-    "sortBy": "Sort by {{column}}"
+    "sortBy": "Sort by {{column}}",
+    "perPage": "Per page",
+    "pageRange": "{{from}}–{{to}} of {{total}}",
+    "prevPage": "Previous page",
+    "nextPage": "Next page"
   },
   "queryError": {
     "title": "Could not load the data",
