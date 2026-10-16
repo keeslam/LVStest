@@ -185,7 +185,8 @@
     "showing": "Showing {{from}}-{{to}} of {{total}}",
     "pageOf": "Page {{page}} of {{pages}}",
     "goToPage": "Go to page",
-    "goToPagePlaceholder": "Page"
+    "goToPagePlaceholder": "Page",
+    "sortBy": "Sort by {{column}}"
   },
   "queryError": {
     "title": "Could not load the data",

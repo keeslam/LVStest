@@ -639,7 +639,30 @@
       "offeredFor": "Offer online: {{plate}}",
       "selectRow": "Select {{plate}}",
       "descriptionFor": "Description for customers: {{plate}}",
-      "offerAnyway": "Offer online anyway"
+      "offerAnyway": "Offer online anyway",
+      "summary": "{{online}} of {{total}} vehicles online",
+      "onlineFilter": "Online or offline",
+      "filterAll": "All",
+      "filterOnline": "Online",
+      "filterOffline": "Offline",
+      "allStatuses": "All statuses",
+      "allBrands": "All brands",
+      "brand": "Brand",
+      "clearFilters": "Clear filters",
+      "count": "{{n}} vehicles",
+      "countFiltered": "{{n}} of {{total}} vehicles",
+      "selectedCount": "{{n}} selected",
+      "selectAllFiltered": "Select all {{n}} in this selection",
+      "clearSelection": "Clear selection",
+      "selectPage": "Select everything on this page",
+      "loading": "Loading vehicles…",
+      "empty": "No vehicles.",
+      "emptyFiltered": "No vehicles match the filters.",
+      "descriptionPlaceholder": "For example: 9 seats, tow bar, automatic",
+      "perPage": "Per page",
+      "pageRange": "{{from}}–{{to}} of {{total}}",
+      "prevPage": "Previous page",
+      "nextPage": "Next page"
     },
     "config": {
       "title": "Customer portal",
@@ -960,9 +983,6 @@
           "default": "Unfortunately we cannot grant this request.",
           "company_name_change": "Unfortunately we cannot change the company name. Please contact us to discuss the options."
         }
-      },
-      "sort": {
-        "title": "Sort by {{column}}"
       }
     },
     "alert": {

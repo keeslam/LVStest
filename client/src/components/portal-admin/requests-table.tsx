@@ -7,9 +7,9 @@ import type { PortalRequestDto } from "@shared/portal-requests";
 import { PortalRequestType, PortalRequestStatus } from "@shared/portal-requests";
 import { apiRequest } from "@/lib/queryClient";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { SortableHead, nextSort, stableSort, type SortState } from "@/components/ui/sortable-head";
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = { new: "default", in_progress: "secondary", done: "outline", rejected: "destructive" };
 /** Sorteervolgorde van de status: van "moet nog" naar "klaar", niet alfabetisch. */
@@ -21,7 +21,7 @@ export function RequestStatusBadge({ status }: { status: string }) {
 }
 
 export type RequestSortKey = "date" | "type" | "customer" | "submitter" | "message" | "status";
-export interface RequestSort { key: RequestSortKey; dir: "asc" | "desc" }
+export type RequestSort = SortState<RequestSortKey>;
 
 /**
  * Sorteert de aanvragen op één kolom. Tekstkolommen op de getoonde tekst
@@ -40,33 +40,7 @@ export function sortRequests(rows: PortalRequestDto[], sort: RequestSort, typeLa
       case "status": return STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status);
     }
   };
-  return rows
-    .map((row, index) => ({ row, index }))
-    .sort((a, b) => {
-      const c = compare(a.row, b.row);
-      return c ? c * (sort.dir === "asc" ? 1 : -1) : a.index - b.index;
-    })
-    .map(({ row }) => row);
-}
-
-function SortableHead({ label, sortKey, sort, onSort }: { label: string; sortKey: RequestSortKey; sort: RequestSort; onSort: (key: RequestSortKey) => void }) {
-  const { t } = useTranslation("portal");
-  const active = sort.key === sortKey;
-  const Icon = !active ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
-  return (
-    <TableHead aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
-      <button
-        type="button"
-        onClick={() => onSort(sortKey)}
-        className="inline-flex items-center gap-1 -ml-1 rounded px-1 py-0.5 hover:bg-muted hover:text-foreground"
-        title={t("admin.requests.sort.title", { column: label })}
-        data-testid={`sort-request-${sortKey}`}
-      >
-        {label}
-        <Icon className={active ? "h-3.5 w-3.5" : "h-3.5 w-3.5 opacity-50"} />
-      </button>
-    </TableHead>
-  );
+  return stableSort(rows, compare, sort.dir);
 }
 
 export function RequestsTable({ customerId, preview, types }: { customerId?: number; preview?: Preview; types?: string[] }) {
@@ -91,9 +65,8 @@ export function RequestsTable({ customerId, preview, types }: { customerId?: num
 
   // Nogmaals op dezelfde kolom klikken draait de richting om; een andere kolom begint
   // oplopend, behalve de datum (nieuwste eerst is daar het gewone gebruik).
-  const toggleSort = (key: RequestSortKey) =>
-    setSort((cur) => (cur.key === key ? { key, dir: cur.dir === "asc" ? "desc" : "asc" } : { key, dir: key === "date" ? "desc" : "asc" }));
-  const head = (key: RequestSortKey, label: string) => <SortableHead label={label} sortKey={key} sort={sort} onSort={toggleSort} />;
+  const toggleSort = (key: RequestSortKey) => setSort((cur) => nextSort(cur, key, (k) => (k === "date" ? "desc" : "asc")));
+  const head = (key: RequestSortKey, label: string) => <SortableHead label={label} sortKey={key} sort={sort} onSort={toggleSort} testId={`sort-request-${key}`} />;
 
   return (
     <div className="space-y-3">

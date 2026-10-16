@@ -639,7 +639,30 @@
       "offeredFor": "Online aanbieden: {{plate}}",
       "selectRow": "Selecteer {{plate}}",
       "descriptionFor": "Omschrijving voor klanten: {{plate}}",
-      "offerAnyway": "Toch online aanbieden"
+      "offerAnyway": "Toch online aanbieden",
+      "summary": "{{online}} van {{total}} voertuigen online",
+      "onlineFilter": "Online of offline",
+      "filterAll": "Alle",
+      "filterOnline": "Online",
+      "filterOffline": "Offline",
+      "allStatuses": "Alle statussen",
+      "allBrands": "Alle merken",
+      "brand": "Merk",
+      "clearFilters": "Filters wissen",
+      "count": "{{n}} voertuigen",
+      "countFiltered": "{{n}} van {{total}} voertuigen",
+      "selectedCount": "{{n}} geselecteerd",
+      "selectAllFiltered": "Selecteer alle {{n}} in deze selectie",
+      "clearSelection": "Selectie wissen",
+      "selectPage": "Selecteer alles op deze pagina",
+      "loading": "Voertuigen laden…",
+      "empty": "Geen voertuigen.",
+      "emptyFiltered": "Geen voertuigen die aan de filters voldoen.",
+      "descriptionPlaceholder": "Bijvoorbeeld: 9 zitplaatsen, trekhaak, automaat",
+      "perPage": "Per pagina",
+      "pageRange": "{{from}}–{{to}} van {{total}}",
+      "prevPage": "Vorige pagina",
+      "nextPage": "Volgende pagina"
     },
     "config": {
       "title": "Klantenportaal",
@@ -960,9 +983,6 @@
           "default": "Helaas kunnen we aan deze aanvraag niet voldoen.",
           "company_name_change": "Helaas kunnen we de bedrijfsnaam niet wijzigen. Neem contact met ons op voor de mogelijkheden."
         }
-      },
-      "sort": {
-        "title": "Sorteren op {{column}}"
       }
     },
     "alert": {

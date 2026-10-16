@@ -185,7 +185,8 @@
     "showing": "{{from}}-{{to}} van {{total}} getoond",
     "pageOf": "Pagina {{page}} van {{pages}}",
     "goToPage": "Ga naar pagina",
-    "goToPagePlaceholder": "Pagina"
+    "goToPagePlaceholder": "Pagina",
+    "sortBy": "Sorteren op {{column}}"
   },
   "queryError": {
     "title": "Kon de gegevens niet laden",

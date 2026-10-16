@@ -3,7 +3,7 @@
  * on every change, and a warning before a car that cannot be rented goes online.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
@@ -48,8 +48,9 @@ afterEach(() => vi.unstubAllGlobals());
 describe("voertuigen online", () => {
   it("shows the status in words, not the internal value", async () => {
     renderTable();
-    expect(await screen.findByText("Reparatie nodig")).toBeInTheDocument();
-    expect(screen.getByText("Verhuurd")).toBeInTheDocument();
+    // Scoped to the rows: the status filter above the table names the same statuses.
+    expect(within(await screen.findByTestId("row-vehicle-2")).getByText("Reparatie nodig")).toBeInTheDocument();
+    expect(within(screen.getByTestId("row-vehicle-3")).getByText("Verhuurd")).toBeInTheDocument();
     expect(screen.queryByText("needs_fixing")).not.toBeInTheDocument();
     expect(screen.queryByText("rented")).not.toBeInTheDocument();
   });
