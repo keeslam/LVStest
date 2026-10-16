@@ -670,6 +670,69 @@ async function nullEmptyCompanyNames() {
   }
 }
 
+// ==================== 2026-10-17: CUSTOMER STREET NAME FROM THE ADDRESS LINE ====================
+// Nearly every customer was typed with only "Hoofdstraat 1" in the address line
+// while the separate street_name column stayed empty (300 of 301 rows), so the
+// customer screen said "Niet opgegeven" and a contract template had no street
+// to print on its own. This one-time step fills street_name from the address
+// line with the same rule the app uses (shared/address.ts splitStreetLine): the
+// text before a trailing house number with an optional addition ("4A", "12-3");
+// a line without such a number is taken whole. A street name that was typed is
+// never touched. Idempotent twice over: the app_settings marker stops a second
+// pass, and the UPDATE only matches rows whose street_name is still empty.
+// Never aborts the boot: a failure is reported and skipped (no marker, so the
+// next start retries).
+const CUSTOMER_STREET_MARKER = 'migration:customer_street_name_from_address';
+
+async function fillCustomerStreetNames() {
+  try {
+    const tables = await db.execute(sql`
+      SELECT tablename FROM pg_tables
+       WHERE schemaname = 'public' AND tablename IN ('customers', 'app_settings')
+    `);
+    if (tables.rows.length < 2) {
+      console.log('⚠️ customers or app_settings does not exist yet, skipping the customer street name fill');
+      return;
+    }
+
+    const already = await db.execute(sql`SELECT 1 FROM app_settings WHERE key = ${CUSTOMER_STREET_MARKER}`);
+    if (already.rows.length > 0) {
+      console.log('Customer street names already filled from the address line, skipping');
+      return;
+    }
+
+    let updated = 0;
+    await db.transaction(async (tx) => {
+      const result = await tx.execute(sql`
+        UPDATE customers
+           SET street_name = btrim(coalesce(
+                 substring(btrim(address) from '^(.*[^[:space:]])[[:space:]]+[0-9]{1,5}[[:space:]]*[-/[:space:]]?[[:space:]]*[A-Za-z0-9]{0,6}$'),
+                 btrim(address)))
+         WHERE coalesce(btrim(street_name), '') = ''
+           AND coalesce(btrim(address), '') <> ''
+      `);
+      updated = result.rowCount ?? 0;
+
+      await tx.execute(sql`
+        INSERT INTO app_settings (key, value, category, description)
+        VALUES (
+          ${CUSTOMER_STREET_MARKER},
+          ${JSON.stringify({ appliedAt: new Date().toISOString(), updated })}::jsonb,
+          'general',
+          'Customers typed with only an address line got their street name filled from it (2026-10-17)'
+        )
+        ON CONFLICT (key) DO NOTHING
+      `);
+    });
+
+    console.log('Customer street names filled from the address line: ' + updated + ' row(s) changed');
+  } catch (error) {
+    // Deliberately not rethrown: a failed clean-up must never stop the deploy.
+    // No marker was written, so the next boot tries again.
+    console.error('⚠️ Customer street name fill skipped, will retry on the next start:', error && error.message ? error.message : error);
+  }
+}
+
 // ==================== D19 (B-41): USER FOREIGN KEYS ON DELETE SET NULL ====================
 // 20 foreign keys to users.id (audit_logs.user_id, the created_by/updated_by
 // columns of customers, reservations, expenses ... ) have no ON DELETE rule, so
@@ -2220,6 +2283,9 @@ async function runMigrations() {
 
     // Audit P2 (A-12-2): customers with an empty company name get NULL.
     await nullEmptyCompanyNames();
+
+    // 2026-10-17: customers typed with only an address line get their street name from it.
+    await fillCustomerStreetNames();
 
     // D19 (B-41): foreign keys to users.id become ON DELETE SET NULL, so an
     // account that ever did something can be deleted.
