@@ -20,6 +20,13 @@ describe("prepareContractData street name and house number", () => {
     expect(data.customerHouseNumber).toBe("4A");
   });
 
+  it("prints street and number together when the address line holds only the number", () => {
+    const data = prepareContractData(reservation({ streetName: "Kerkweg", address: "47a" }));
+    expect(data.customerAddress).toBe("Kerkweg 47A");
+    expect(data.customerStreetName).toBe("Kerkweg");
+    expect(data.customerHouseNumber).toBe("47A");
+  });
+
   it("keeps a stored street name and copes with a missing customer", () => {
     expect(prepareContractData(reservation({ streetName: "Coolsingel", address: "Hoofdstraat 12-3" })).customerStreetName).toBe("Coolsingel");
     expect(prepareContractData(reservation({ streetName: "Coolsingel", address: "Hoofdstraat 12-3" })).customerHouseNumber).toBe("12-3");

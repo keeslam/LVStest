@@ -14,7 +14,7 @@ import { formatReservationBarcode } from '../../shared/barcode';
 import { renderBarcodePng } from './barcode-png';
 import { resolveUploadsPath } from '../../shared/paths';
 import { resolveDocumentFilePath } from '../services/document-paths';
-import { customerHouseNumber, customerStreetName } from '../../shared/address';
+import { customerAddressLine, customerHouseNumber, customerStreetName } from '../../shared/address';
 import { sanitizeForWinAnsi, wrapTextToWidth } from './pdf-text';
 // besluiten B-18 (BUG-192): every date, number and amount on a generated
 // document goes through one Dutch formatter.
@@ -461,7 +461,8 @@ export function prepareContractData(reservation: Reservation) {
     model: vehicle.model,
     chassisNumber: vehicle.chassisNumber || "",
     customerName: customer.name,
-    customerAddress: customer.address || "",
+    // "Kerkweg" / "47a" typed in two fields prints as "Kerkweg 47A" (customerAddressLine).
+    customerAddress: customerAddressLine(customer),
     // Contract forms with a box for the street and one for the number (2026-10-17): read
     // from the address line when the customer was typed without a separate street name.
     customerStreetName: customerStreetName(customer),

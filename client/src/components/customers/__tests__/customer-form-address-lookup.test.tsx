@@ -91,6 +91,16 @@ describe("customer form — postcode lookup", () => {
   });
 });
 
+describe("a customer stored as street name + bare number", () => {
+  it("opens with the full line in the address field and the number in the lookup row", async () => {
+    renderForm({ id: 2, name: "Gesplitst", streetName: "Kerkweg", address: "47a", postalCode: "1234 AB", city: "Utrecht", country: "Nederland", customerType: "business", preferredLanguage: "nl" });
+    expect((document.querySelector("input[name=address]") as HTMLInputElement).value).toBe("Kerkweg 47A");
+    expect((document.querySelector("input[name=streetName]") as HTMLInputElement).value).toBe("Kerkweg");
+    expect(screen.getByTestId("customer-address-number")).toHaveValue("47");
+    expect(screen.getByTestId("customer-address-addition")).toHaveValue("A");
+  });
+});
+
 describe("the street name on save", () => {
   it("is read from the address line when the street name field was left empty", async () => {
     const bodies: Record<string, unknown>[] = [];

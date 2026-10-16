@@ -29,7 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { capitalizeName, capitalizeWords } from "@/lib/format-utils";
 import { AddressLookupRow } from "@/components/ui/address-lookup-row";
-import { composeStreetLine, customerStreetName, splitStreetLine, type AddressLookupQuery, type AddressLookupResult } from "@shared/address";
+import { composeStreetLine, customerAddressLine, customerStreetName, splitStreetLine, type AddressLookupQuery, type AddressLookupResult } from "@shared/address";
 
 // Extended schema with validation
 export const formSchema = insertCustomerSchema.extend({
@@ -138,8 +138,11 @@ export function CustomerForm({
         transformed[key] = transformed[key].toString();
       }
     });
-    // A customer saved with only "Hoofdstraat 1" in the address line opens with the street filled in.
-    transformed.streetName = customerStreetName({ streetName: transformed.streetName, address: transformed.address });
+    // A customer saved with only "Hoofdstraat 1" in the address line opens with the street filled in,
+    // and one saved as "Kerkweg" / "47a" opens with the full line "Kerkweg 47A" in the address field.
+    const stored = { streetName: transformed.streetName, address: transformed.address };
+    transformed.streetName = customerStreetName(stored);
+    transformed.address = customerAddressLine(stored);
 
     return transformed;
   };
@@ -148,7 +151,7 @@ export function CustomerForm({
   const [activeTab, setActiveTab] = useState("basic");
   // House number and addition are not stored apart: the address line holds them ("Coolsingel 4A"). They start from
   // the stored line and are only used to look the street and city up.
-  const [visitNumber, setVisitNumber] = useState(() => { const p = splitStreetLine(initialData?.address); return { houseNumber: p.number, addition: p.addition }; });
+  const [visitNumber, setVisitNumber] = useState(() => { const p = splitStreetLine(customerAddressLine(initialData ?? {})); return { houseNumber: p.number, addition: p.addition }; });
   const [billingNumber, setBillingNumber] = useState(() => { const p = splitStreetLine(initialData?.billingAddress); return { houseNumber: p.number, addition: p.addition }; });
 
   // Setup form with react-hook-form and zod validation
@@ -301,6 +304,7 @@ export function CustomerForm({
       ...data,
       // A street typed only in the address line ("Hoofdstraat 1") still gives the customer a street name.
       streetName: customerStreetName({ streetName: data.streetName, address: data.address }),
+      address: customerAddressLine({ streetName: data.streetName, address: data.address }),
       corporateDiscount: data.corporateDiscount === "" ? null : data.corporateDiscount ? parseFloat(data.corporateDiscount) : null,
       paymentTermDays: data.paymentTermDays === "" ? null : data.paymentTermDays ? parseInt(data.paymentTermDays) : null,
       creditLimit: data.creditLimit === "" ? null : data.creditLimit ? parseFloat(data.creditLimit) : null,

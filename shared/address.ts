@@ -61,11 +61,33 @@ export interface AddressLookupResult {
  */
 export function customerStreetName(customer: { streetName?: string | null; address?: string | null }): string {
   const typed = (customer.streetName ?? "").trim();
-  return typed || splitStreetLine(customer.address).street;
+  if (typed) return typed;
+  // A line that is only a house number ("47a") names no street.
+  const address = (customer.address ?? "").trim();
+  return HOUSE_NUMBER_ONLY.test(address) ? "" : splitStreetLine(address).street;
+}
+
+/** "47a", "12-3", "4 A": a house number with an optional addition and nothing else. */
+export const HOUSE_NUMBER_ONLY = /^\d{1,5}\s*[-/\s]?\s*[A-Za-z0-9]{0,6}$/;
+
+/**
+ * The full address line, "Kerkweg 47a". Customers typed by hand sometimes hold the street in
+ * `streetName` and only the number in `address` ("Kerkweg" / "47a"); the line is then put together
+ * from both, so a contract and the customer screen always print street and number together.
+ * A line that already carries a street is kept as it was.
+ */
+export function customerAddressLine(customer: { streetName?: string | null; address?: string | null }): string {
+  const address = (customer.address ?? "").trim();
+  const street = (customer.streetName ?? "").trim();
+  if (street && (address === "" || HOUSE_NUMBER_ONLY.test(address))) {
+    const { number, addition } = splitStreetLine(`${street} ${address}`.trim());
+    return address ? composeStreetLine({ street, number, addition }) : street;
+  }
+  return address;
 }
 
 /** The house number with its addition as it is written on an envelope: "4A", "12-3", "" when there is none. */
-export function customerHouseNumber(customer: { address?: string | null }): string {
-  const { number, addition } = splitStreetLine(customer.address);
+export function customerHouseNumber(customer: { streetName?: string | null; address?: string | null }): string {
+  const { number, addition } = splitStreetLine(customerAddressLine(customer));
   return composeStreetLine({ street: "", number, addition });
 }

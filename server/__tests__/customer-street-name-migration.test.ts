@@ -18,6 +18,7 @@ const STARTUP_SCRIPT = fileURLToPath(new URL("../../startup-migration.js", impor
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const FIXTEST_URL = /\/lvs_fixtest(\?|$)/;
 const MARKER = "migration:customer_street_name_from_address";
+const LINE_MARKER = "migration:customer_address_line_from_street_and_number";
 const MANAGER_MARKER = "migration:c_manager_rights";
 
 describe("startup-migration.js: fill the customer street name from the address line", () => {
@@ -43,10 +44,11 @@ describe("startup-migration.js: fill the customer street name from the address l
     return row;
   };
   const streetOf = async (id: number) => (await db.select().from(customers).where(eq(customers.id, id)))[0].streetName;
+  const addressOf = async (id: number) => (await db.select().from(customers).where(eq(customers.id, id)))[0].address;
 
   beforeAll(async () => {
     expect(process.env.DATABASE_URL ?? "").toMatch(FIXTEST_URL);
-    for (const key of [MARKER, MANAGER_MARKER]) {
+    for (const key of [MARKER, LINE_MARKER, MANAGER_MARKER]) {
       const [row] = await db.select().from(appSettings).where(eq(appSettings.key, key));
       saved[key] = row;
     }
@@ -56,13 +58,13 @@ describe("startup-migration.js: fill the customer street name from the address l
       key: MANAGER_MARKER, value: { appliedAt: "street placeholder", granted: 0 }, category: "general",
       description: "street placeholder, restored after the test",
     }).onConflictDoNothing();
-    await db.delete(appSettings).where(eq(appSettings.key, MARKER));
+    await db.delete(appSettings).where(inArray(appSettings.key, [MARKER, LINE_MARKER]));
   });
 
   afterAll(async () => {
     if (!guarded) return;
     await db.delete(customers).where(inArray(customers.id, ids));
-    for (const key of [MARKER, MANAGER_MARKER]) {
+    for (const key of [MARKER, LINE_MARKER, MANAGER_MARKER]) {
       await db.delete(appSettings).where(eq(appSettings.key, key));
       if (saved[key]) await db.insert(appSettings).values(saved[key]!).onConflictDoNothing();
     }
@@ -72,6 +74,10 @@ describe("startup-migration.js: fill the customer street name from the address l
     const cases = ["Hoofdstraat 1", "Van der Helstlaan 4A", "Dorpsstraat 12-3", "Kade", "  Lange Nieuwstraat 101 bis ", "Postbus 12"];
     const rows = await Promise.all(cases.map((address) => insert(address)));
     const typed = await insert("Hoofdstraat 9", "Coolsingel");
+    // Production shape: the street in its own field, only the number in the address line.
+    const split = await insert("47a", "Kerkweg");
+    const splitDash = await insert("12-3", "Kerkweg");
+    const numberOnly = await insert("47a", null);
     const blank = await insert("", null);
     const nothing = await insert(null, null);
 
@@ -87,6 +93,14 @@ describe("startup-migration.js: fill the customer street name from the address l
     expect(await streetOf(rows[2].id)).toBe("Dorpsstraat");
     expect(await streetOf(rows[3].id)).toBe("Kade");
     expect(await streetOf(typed.id)).toBe("Coolsingel");
+    expect(await addressOf(typed.id)).toBe("Hoofdstraat 9");
+    expect(await addressOf(split.id)).toBe("Kerkweg 47a");
+    expect(await addressOf(splitDash.id)).toBe("Kerkweg 12-3");
+    expect(await streetOf(split.id)).toBe("Kerkweg");
+    // A bare number without a street name cannot be completed: left as it is, not broken.
+    expect(await addressOf(numberOnly.id)).toBe("47a");
+    expect(await streetOf(numberOnly.id) ?? "").toBe("");
+    expect(first).toMatch(/Customer address lines completed from street name and number: \d+ row/);
     expect(await streetOf(blank.id) ?? "").toBe("");
     expect(await streetOf(nothing.id) ?? "").toBe("");
 
@@ -102,9 +116,10 @@ describe("startup-migration.js: fill the customer street name from the address l
     expect(await streetOf(late.id) ?? "").toBe("");
 
     // Marker removed on purpose: the SQL is idempotent too (picks up the late row, changes nothing filled).
-    await db.delete(appSettings).where(eq(appSettings.key, MARKER));
+    await db.delete(appSettings).where(inArray(appSettings.key, [MARKER, LINE_MARKER]));
     runStartupMigration();
     expect(await streetOf(late.id)).toBe("Kerkstraat");
     expect(await streetOf(typed.id)).toBe("Coolsingel");
+    expect(await addressOf(split.id)).toBe("Kerkweg 47a");
   }, 180_000);
 });

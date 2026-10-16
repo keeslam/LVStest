@@ -710,6 +710,7 @@ async function fillCustomerStreetNames() {
                  btrim(address)))
          WHERE coalesce(btrim(street_name), '') = ''
            AND coalesce(btrim(address), '') <> ''
+           AND btrim(address) !~ '^[0-9]{1,5}[[:space:]]*[-/[:space:]]?[[:space:]]*[A-Za-z0-9]{0,6}$'
       `);
       updated = result.rowCount ?? 0;
 
@@ -730,6 +731,65 @@ async function fillCustomerStreetNames() {
     // Deliberately not rethrown: a failed clean-up must never stop the deploy.
     // No marker was written, so the next boot tries again.
     console.error('⚠️ Customer street name fill skipped, will retry on the next start:', error && error.message ? error.message : error);
+  }
+}
+
+// ==================== 2026-10-17: CUSTOMER ADDRESS LINE FROM STREET NAME + NUMBER ====================
+// The other way round: a customer typed by hand sometimes holds the street in
+// street_name and only the number in address ("Kerkweg" / "47a"). The contract
+// and the customer screen print the address line, so that line is completed
+// to "Kerkweg 47a" where the address holds nothing but a house number (with an
+// optional addition) and the street name is filled. Runs after the street
+// name fill above. A line that already carries a street is never touched.
+// Idempotent twice over (marker + the UPDATE only matches number-only lines);
+// never aborts the boot.
+const CUSTOMER_ADDRESS_LINE_MARKER = 'migration:customer_address_line_from_street_and_number';
+
+async function completeCustomerAddressLines() {
+  try {
+    const tables = await db.execute(sql`
+      SELECT tablename FROM pg_tables
+       WHERE schemaname = 'public' AND tablename IN ('customers', 'app_settings')
+    `);
+    if (tables.rows.length < 2) {
+      console.log('⚠️ customers or app_settings does not exist yet, skipping the customer address line completion');
+      return;
+    }
+
+    const already = await db.execute(sql`SELECT 1 FROM app_settings WHERE key = ${CUSTOMER_ADDRESS_LINE_MARKER}`);
+    if (already.rows.length > 0) {
+      console.log('Customer address lines already completed from street name and number, skipping');
+      return;
+    }
+
+    let updated = 0;
+    await db.transaction(async (tx) => {
+      const result = await tx.execute(sql`
+        UPDATE customers
+           SET address = btrim(street_name) || ' ' || btrim(address)
+         WHERE coalesce(btrim(street_name), '') <> ''
+           AND btrim(street_name) !~ '^[0-9]{1,5}[[:space:]]*[-/[:space:]]?[[:space:]]*[A-Za-z0-9]{0,6}$'
+           AND btrim(coalesce(address, '')) ~ '^[0-9]{1,5}[[:space:]]*[-/[:space:]]?[[:space:]]*[A-Za-z0-9]{0,6}$'
+      `);
+      updated = result.rowCount ?? 0;
+
+      await tx.execute(sql`
+        INSERT INTO app_settings (key, value, category, description)
+        VALUES (
+          ${CUSTOMER_ADDRESS_LINE_MARKER},
+          ${JSON.stringify({ appliedAt: new Date().toISOString(), updated })}::jsonb,
+          'general',
+          'Customers typed as street name + bare house number got the full address line (2026-10-17)'
+        )
+        ON CONFLICT (key) DO NOTHING
+      `);
+    });
+
+    console.log('Customer address lines completed from street name and number: ' + updated + ' row(s) changed');
+  } catch (error) {
+    // Deliberately not rethrown: a failed clean-up must never stop the deploy.
+    // No marker was written, so the next boot tries again.
+    console.error('⚠️ Customer address line completion skipped, will retry on the next start:', error && error.message ? error.message : error);
   }
 }
 
@@ -2286,6 +2346,8 @@ async function runMigrations() {
 
     // 2026-10-17: customers typed with only an address line get their street name from it.
     await fillCustomerStreetNames();
+    // ... and the other way round: "Kerkweg" / "47a" becomes the line "Kerkweg 47a".
+    await completeCustomerAddressLines();
 
     // D19 (B-41): foreign keys to users.id become ON DELETE SET NULL, so an
     // account that ever did something can be deleted.

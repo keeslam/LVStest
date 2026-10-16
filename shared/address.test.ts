@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { composeStreetLine, customerHouseNumber, customerStreetName, formatPostcode, normalizePostcode, splitStreetLine } from "./address";
+import { composeStreetLine, customerAddressLine, customerHouseNumber, customerStreetName, formatPostcode, normalizePostcode, splitStreetLine } from "./address";
 
 describe("postcode", () => {
   it("normalizes Dutch postcodes and refuses the rest", () => {
@@ -60,5 +60,23 @@ describe("customerStreetName / customerHouseNumber", () => {
   it("prefers a typed street name over the address line", () => {
     expect(customerStreetName({ streetName: "Coolsingel", address: "Hoofdstraat 12" })).toBe("Coolsingel");
     expect(customerStreetName({ streetName: "", address: "" })).toBe("");
+  });
+});
+
+describe("customerAddressLine", () => {
+  it("puts street and number together when the address line holds only the number", () => {
+    expect(customerAddressLine({ streetName: "Kerkweg", address: "47a" })).toBe("Kerkweg 47A");
+    expect(customerAddressLine({ streetName: "Kerkweg", address: "12-3" })).toBe("Kerkweg 12-3");
+    expect(customerAddressLine({ streetName: "Kerkweg", address: "4 A" })).toBe("Kerkweg 4A");
+    expect(customerAddressLine({ streetName: "Kerkweg", address: "" })).toBe("Kerkweg");
+    expect(customerHouseNumber({ streetName: "Kerkweg", address: "47a" })).toBe("47A");
+  });
+
+  it("keeps a line that already carries a street, and an empty customer stays empty", () => {
+    expect(customerAddressLine({ streetName: "Kerkweg", address: "Kerkweg 47a" })).toBe("Kerkweg 47a");
+    expect(customerAddressLine({ streetName: "", address: "Hoofdstraat 1" })).toBe("Hoofdstraat 1");
+    expect(customerAddressLine({ streetName: null, address: null })).toBe("");
+    expect(customerAddressLine({ streetName: "", address: "47a" })).toBe("47a");
+    expect(customerStreetName({ streetName: "", address: "47a" })).toBe("");
   });
 });

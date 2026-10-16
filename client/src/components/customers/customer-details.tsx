@@ -23,7 +23,7 @@ import { CustomerEditDialog } from "./customer-edit-dialog";
 import { DriverDialog } from "./driver-dialog";
 import { DriverViewDialog } from "./driver-view-dialog";
 import { formatDate, formatCurrency, formatPhoneNumber, formatReservationStatus, formatLicensePlate, formatDateTime } from "@/lib/format-utils";
-import { customerStreetName } from "@shared/address";
+import { customerAddressLine, customerStreetName } from "@shared/address";
 import { downloadCsv, csvDate, csvNumber } from "@/lib/csv";
 import { PortalEditNote } from "@/components/portal-admin/portal-edit-note";
 import { Price } from "@/components/ui/price";
@@ -716,7 +716,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
 
                   <div>
                     <h4 className="text-sm font-medium text-gray-500 mb-1">{t('common:fields.address')}</h4>
-                    <p className="text-base">{customer.address || t('details.notProvided')}</p>
+                    <p className="text-base">{customerAddressLine(customer) || t('details.notProvided')}</p>
                   </div>
 
                   <div>
