@@ -200,9 +200,13 @@ export function ScanPanel({ active = true, intent = null, onHandoverActiveChange
     }
   }, [active]);
 
-  const lookup = async (raw: string) => {
+  // `keepCodeOnMiss`: a history row that is looked up again and still has no
+  // match leaves its code in the field so the employee can correct it. A live
+  // scanner never asks for this: the field must be empty for the next scan.
+  const lookup = async (raw: string, options: { keepCodeOnMiss?: boolean } = {}) => {
     const trimmed = raw.trim();
     if (!trimmed) return;
+    let keepCode = false;
     setIsLoading(true);
     setError(null);
     setResult(null);
@@ -210,6 +214,7 @@ export function ScanPanel({ active = true, intent = null, onHandoverActiveChange
       const response = await fetch(`/api/barcodes/${encodeURIComponent(trimmed)}`, { credentials: "include" });
       if (response.status === 404) {
         setError(t("scanPage.notFound", { code: trimmed }));
+        keepCode = options.keepCodeOnMiss === true;
         return;
       }
       if (!response.ok) {
@@ -231,9 +236,18 @@ export function ScanPanel({ active = true, intent = null, onHandoverActiveChange
       setError(t("scanPage.lookupError"));
     } finally {
       setIsLoading(false);
-      setCode("");
+      setCode(keepCode ? trimmed : "");
       invalidateByPrefix("/api/scan-events");
     }
+  };
+
+  // Clicking a row under "Recente scans" repeats that scan through the same
+  // lookup as the scanner and the search button. The stored record only holds
+  // the code and what it matched at the time; looking the code up again shows
+  // the current state (and a code that had no match then may have one now).
+  const repeatScan = (scan: ScanEvent) => {
+    setCode(scan.code);
+    void lookup(scan.code, { keepCodeOnMiss: true });
   };
 
   // Scanners terminate with Enter; the form submit catches both scanner and
@@ -676,7 +690,15 @@ export function ScanPanel({ active = true, intent = null, onHandoverActiveChange
               <p className="text-sm text-muted-foreground py-2">{t("scanPage.history.empty")}</p>
             ) : (
               recentScans.map((scan) => (
-                <div key={scan.id} className="flex items-center gap-3 py-1 text-sm border-t first:border-t-0">
+                <button
+                  key={scan.id}
+                  type="button"
+                  onClick={() => repeatScan(scan)}
+                  disabled={isLoading}
+                  title={t("scanPage.history.repeat")}
+                  className="flex w-full items-center gap-3 py-1 px-1 -mx-1 text-sm text-left border-t first:border-t-0 rounded-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                  data-testid={`scan-history-row-${scan.id}`}
+                >
                   <span className="text-muted-foreground tabular-nums">
                     {scan.createdAt ? formatNl(scan.createdAt, "dd-MM-yyyy HH:mm") : "—"}
                   </span>
@@ -685,7 +707,7 @@ export function ScanPanel({ active = true, intent = null, onHandoverActiveChange
                     {scan.licensePlate ? formatLicensePlate(scan.licensePlate) : t("scanPage.history.noMatch")}
                   </span>
                   {scan.scannedBy && <span className="ml-auto text-xs text-muted-foreground">{scan.scannedBy}</span>}
-                </div>
+                </button>
               ))
             )}
           </div>
