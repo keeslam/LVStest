@@ -111,18 +111,28 @@ const lastListRequest = () => requested.filter((r) => r.startsWith("/api/expense
 const lastSummaryRequest = () => requested.filter((r) => r.startsWith("/api/expenses/summary")).pop() ?? "";
 
 describe("Kostenoverzicht per categorie", () => {
-  it("shows a section per category with at most five rows, sums over the whole category, and a button for the rest", async () => {
+  it("shows a folded section per category; a click unfolds at most five rows, the sum over the whole category, and a button for the rest", async () => {
+    const user = userEvent.setup();
     renderPage();
     const fuel = await screen.findByTestId("expense-section-fuel");
     const fuelRows = ROWS.filter((r) => r.category === "fuel");
+    // Folded: headline with count and sum, no rows.
+    expect(within(fuel).queryAllByTestId(/^section-fuel-expense-/)).toHaveLength(0);
+    expect(within(fuel).getByTestId("button-expense-section-toggle-fuel")).toHaveAttribute("aria-expanded", "false");
+    await user.click(within(fuel).getByTestId("button-expense-section-toggle-fuel"));
+    expect(within(fuel).getByTestId("button-expense-section-toggle-fuel")).toHaveAttribute("aria-expanded", "true");
     expect(within(fuel).getAllByTestId(/^section-fuel-expense-/)).toHaveLength(5);
     expect(within(fuel).getByText(`(${fuelRows.length} kostenposten)`)).toBeInTheDocument();
     expect(within(fuel).getByTestId("expense-section-total-fuel")).toHaveTextContent("5.481,00");
     expect(within(fuel).getByTestId("button-expense-section-all-fuel")).toHaveTextContent(`Alle ${fuelRows.length} tonen`);
-    // Five tyres rows: every one is on screen, so no button.
+    // Five tyres rows: every one is on screen once unfolded, so no button. A second click folds again.
     const tires = screen.getByTestId("expense-section-tires");
+    await user.click(within(tires).getByTestId("button-expense-section-toggle-tires"));
     expect(within(tires).getAllByTestId(/^section-tires-expense-/)).toHaveLength(5);
     expect(within(tires).queryByTestId("button-expense-section-all-tires")).toBeNull();
+    await user.click(within(tires).getByTestId("button-expense-section-toggle-tires"));
+    expect(within(tires).queryAllByTestId(/^section-tires-expense-/)).toHaveLength(0);
+    expect(within(fuel).getAllByTestId(/^section-fuel-expense-/)).toHaveLength(5);
     // The page never asked for the whole list.
     expect(requested.some((r) => r === "/api/expenses")).toBe(false);
     // The count and sum above the sections span the whole selection.
@@ -133,6 +143,7 @@ describe("Kostenoverzicht per categorie", () => {
   it("opens the whole category in a dialog with a paged table, scoped to that category", async () => {
     const user = userEvent.setup();
     renderPage();
+    await user.click(await screen.findByTestId("button-expense-section-toggle-toll"));
     await user.click(await screen.findByTestId("button-expense-section-all-toll"));
     const dialog = await screen.findByTestId("expense-category-dialog");
     expect(within(dialog).getByRole("heading", { name: "Tol" })).toBeInTheDocument();
@@ -151,6 +162,7 @@ describe("zoeken en sorteren in de kop van de categoriedialoog", () => {
   it("the dialog search and sort picker go to the server, scoped to the category, and the column headers follow the picker", async () => {
     const user = userEvent.setup();
     renderPage();
+    await user.click(await screen.findByTestId("button-expense-section-toggle-fuel"));
     await user.click(await screen.findByTestId("button-expense-section-all-fuel"));
     const dialog = await screen.findByTestId("expense-category-dialog");
     await waitFor(() => expect(within(dialog).getAllByTestId(/^row-expense-/)).toHaveLength(25));
@@ -228,6 +240,7 @@ describe("filters, periods and export", () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByTestId("expense-section-fuel");
+    await user.click(await screen.findByTestId("button-expense-section-toggle-fuel"));
     await user.click(await screen.findByTestId("button-expense-section-all-fuel"));
     await screen.findByTestId("expense-category-dialog");
     await user.keyboard("{Escape}");

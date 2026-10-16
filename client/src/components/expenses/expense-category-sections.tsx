@@ -11,6 +11,7 @@ import { Price } from "@/components/ui/price";
 import type { SortState } from "@/components/ui/sortable-head";
 import { formatExpenseCategory } from "@/lib/format-utils";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { cn } from "@/lib/utils";
 import { ExpenseRows, ExpenseListTable, EXPENSE_COLUMN_CLASSES, DEFAULT_EXPENSE_SORT, type ExpenseListFilters } from "./expense-list-table";
 
 /** The sort choices in the dialog header: "date:desc" and so on, the same sorts the column headers offer. */
@@ -25,8 +26,8 @@ const sortOptionOf = (sort: SortState<ExpenseSortKey>) => `${sort.key}:${sort.di
 export const CATEGORY_SECTION_ROWS = 5;
 
 /**
- * One section per category in the selection: the count and the sum, the five
- * newest rows, and — when the category holds more — a button that opens the
+ * One section per category in the selection, folded until clicked: the count
+ * and the sum in the headline, the five newest rows when unfolded, and — when the category holds more — a button that opens the
  * whole category in a dialog with the paged, sortable table. The sections come
  * from GET /api/expenses/summary, so every count and sum spans the entire
  * selection, not only the rows on screen.
@@ -38,6 +39,13 @@ export function ExpenseCategorySections({ groups, filters, onDelete }: {
 }) {
   const { t } = useTranslation(["expenses", "common"]);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
+  /** The categories unfolded by a click; every section starts folded. */
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const toggle = (category: string) => setExpanded((cur) => {
+    const next = new Set(cur);
+    if (next.has(category)) next.delete(category); else next.add(category);
+    return next;
+  });
   // The dialog has its own search and sort: the search starts as the page's, the sort newest first.
   const [dialogSearch, setDialogSearch] = useState("");
   const [dialogSort, setDialogSort] = useState<SortState<ExpenseSortKey>>(DEFAULT_EXPENSE_SORT);
@@ -57,33 +65,46 @@ export function ExpenseCategorySections({ groups, filters, onDelete }: {
     <div className="space-y-4" data-testid="expense-category-sections">
       {groups.map((group) => (
         <section key={group.category} className="rounded-md border" data-testid={`expense-section-${group.category}`} aria-label={formatExpenseCategory(group.category)}>
-          <header className="flex flex-wrap items-center justify-between gap-2 border-b bg-muted/40 px-4 py-2">
-            <div className="flex items-baseline gap-2">
-              <h3 className="font-semibold">{formatExpenseCategory(group.category)}</h3>
+          {/* Collapsed until clicked: with a dozen categories the page stays one screen of headlines. */}
+          <button
+            type="button"
+            className={cn("flex w-full flex-wrap items-center justify-between gap-2 rounded-md bg-muted/40 px-4 py-2 text-left hover:bg-muted", expanded.has(group.category) && "rounded-b-none border-b")}
+            aria-expanded={expanded.has(group.category)}
+            aria-controls={`expense-section-body-${group.category}`}
+            onClick={() => toggle(group.category)}
+            data-testid={`button-expense-section-toggle-${group.category}`}
+          >
+            <span className="flex items-baseline gap-2">
+              <ChevronRight className={cn("h-4 w-4 self-center text-muted-foreground transition-transform", expanded.has(group.category) && "rotate-90")} aria-hidden="true" />
+              <span className="font-semibold">{formatExpenseCategory(group.category)}</span>
               <span className="text-xs text-muted-foreground">{t("expenses:indexPage.expenseCount", { count: group.count })}</span>
-            </div>
+            </span>
             <span className="font-medium tabular-nums" data-testid={`expense-section-total-${group.category}`}><Price value={group.amount} /></span>
-          </header>
-          <Table className="table-fixed">
-            <TableHeader>
-              <TableRow className="[&>th]:h-9 [&>th]:text-xs">
-                <TableHead className={EXPENSE_COLUMN_CLASSES.date}>{t("expenses:indexPage.dateColumnHeader")}</TableHead>
-                <TableHead className={EXPENSE_COLUMN_CLASSES.plate}>{t("expenses:indexPage.vehicleColumnHeader")}</TableHead>
-                <TableHead>{t("expenses:indexPage.descriptionColumnHeader")}</TableHead>
-                <TableHead className={EXPENSE_COLUMN_CLASSES.amount}>{t("expenses:indexPage.amountColumnHeaderShort")}</TableHead>
-                <TableHead className={EXPENSE_COLUMN_CLASSES.actions} />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <ExpenseRows rows={group.recent.slice(0, CATEGORY_SECTION_ROWS)} onDelete={onDelete} showCategory={false} testIdPrefix={`section-${group.category}-expense`} />
-            </TableBody>
-          </Table>
-          {group.count > CATEGORY_SECTION_ROWS && (
-            <div className="border-t px-2 py-1">
-              <Button variant="ghost" size="sm" className="h-8" onClick={() => openDialog(group.category)} data-testid={`button-expense-section-all-${group.category}`}>
-                {t("expenses:indexPage.showAllOfCategory", { count: group.count })}
-                <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
+          </button>
+          {expanded.has(group.category) && (
+            <div id={`expense-section-body-${group.category}`}>
+              <Table className="min-w-[40rem] table-fixed">
+                <TableHeader>
+                  <TableRow className="[&>th]:h-9 [&>th]:text-xs">
+                    <TableHead className={EXPENSE_COLUMN_CLASSES.date}>{t("expenses:indexPage.dateColumnHeader")}</TableHead>
+                    <TableHead className={EXPENSE_COLUMN_CLASSES.plate}>{t("expenses:indexPage.vehicleColumnHeader")}</TableHead>
+                    <TableHead>{t("expenses:indexPage.descriptionColumnHeader")}</TableHead>
+                    <TableHead className={EXPENSE_COLUMN_CLASSES.amount}>{t("expenses:indexPage.amountColumnHeaderShort")}</TableHead>
+                    <TableHead className={EXPENSE_COLUMN_CLASSES.actions} />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <ExpenseRows rows={group.recent.slice(0, CATEGORY_SECTION_ROWS)} onDelete={onDelete} showCategory={false} testIdPrefix={`section-${group.category}-expense`} />
+                </TableBody>
+              </Table>
+              {group.count > CATEGORY_SECTION_ROWS && (
+                <div className="border-t px-2 py-1">
+                  <Button variant="ghost" size="sm" className="h-8" onClick={() => openDialog(group.category)} data-testid={`button-expense-section-all-${group.category}`}>
+                    {t("expenses:indexPage.showAllOfCategory", { count: group.count })}
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </section>

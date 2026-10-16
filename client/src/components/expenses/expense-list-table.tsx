@@ -167,7 +167,7 @@ export function ExpenseListTable({ filters, onDelete, testId = "expenses", initi
   return (
     <div className={cn("space-y-3", className)}>
       <div className="rounded-md border">
-        <Table className="table-fixed">
+        <Table className="min-w-[44rem] table-fixed">
           <TableHeader className="sticky top-0 z-10 bg-background">
             <TableRow>
               {head("date", t("expenses:indexPage.dateColumnHeader"), EXPENSE_COLUMN_CLASSES.date)}
