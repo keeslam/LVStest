@@ -72,6 +72,19 @@ export interface ExpenseFilters {
   /** Inclusive, YYYY-MM-DD. */
   to?: string;
   category?: string;
+  /** Kosten (2026-10-16): free text, matched against plate (dashes ignored), category and description. */
+  q?: string;
+}
+
+import { EXPENSE_SORT_KEYS, type ExpenseSortKey, type ExpensePage, type ExpenseSummary, type ExpenseFacets } from "../shared/expense-list";
+export { EXPENSE_SORT_KEYS, type ExpenseSortKey, type ExpensePage, type ExpenseSummary, type ExpenseFacets };
+
+export interface ExpenseListOptions {
+  sort?: ExpenseSortKey;
+  dir?: "asc" | "desc";
+  /** 1-based. Without a page the whole selection comes back (the CSV export). */
+  page?: number;
+  pageSize?: number;
 }
 
 export interface IStorage {
@@ -215,7 +228,11 @@ export interface IStorage {
   createPlaceholderReservation(originalReservationId: number, customerId: number, startDate: string, endDate?: string): Promise<Reservation>;
   
   // Expense methods
-  getAllExpenses(filters?: ExpenseFilters): Promise<Expense[]>;
+  getAllExpenses(filters?: ExpenseFilters, options?: ExpenseListOptions): Promise<Expense[]>;
+  /** One page of the filtered, sorted Kosten list with the total count and sum of the selection. */
+  getExpensePage(filters: ExpenseFilters, options: Required<ExpenseListOptions>): Promise<ExpensePage>;
+  getExpenseSummary(filters: ExpenseFilters, recentPerCategory: number): Promise<ExpenseSummary>;
+  getExpenseFacets(): Promise<ExpenseFacets>;
   getExpense(id: number): Promise<Expense | undefined>;
   // `tx`: write inside the caller's transaction (the fuel-status route books the
   // expense together with the vehicle update).

@@ -6,20 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox";
 import { InvoiceScanner } from "@/components/invoice-scanner";
 import { InvoiceInboxButton } from "@/components/expenses/invoice-inbox-dialog";
 import { ExpenseAddDialog } from "@/components/expenses/expense-add-dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { ExpenseListTable, expenseQueryParams, type ExpenseListFilters } from "@/components/expenses/expense-list-table";
+import { ExpenseCategorySections, CATEGORY_SECTION_ROWS } from "@/components/expenses/expense-category-sections";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,31 +24,30 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Expense, UserPermission } from "@shared/schema";
+import type { ExpenseFacets, ExpenseSummary } from "@shared/expense-list";
 import { RequiresPermission } from "@/components/ui/requires-permission";
 import { RecycleBinDialog } from "@/components/recycle-bin/recycle-bin-dialog";
 import { EXPENSE_CATEGORIES } from "@shared/expense-categories";
-import { formatDate, plateMatches, formatExpenseCategory, formatLicensePlate, sumMoney } from "@/lib/format-utils";
+import { formatExpenseCategory, formatLicensePlate } from "@/lib/format-utils";
+import { EXPENSE_PERIODS, expensePeriodRange, matchingExpensePeriod, type ExpensePeriod } from "@/lib/expense-periods";
 import { Price, useHidePrices } from "@/components/ui/price";
 import { downloadCsv, csvDate, csvNumber } from "@/lib/csv";
-import { apiRequest, invalidateByPrefix, invalidateRelatedQueries } from "@/lib/queryClient";
+import { apiRequest, invalidateByPrefix, invalidateRelatedQueries, queryKeyUrl, throwIfResNotOk } from "@/lib/queryClient";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useToast } from "@/hooks/use-toast";
-import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
-import { Archive, Download, Eye, PlusCircle, Trash2 } from "lucide-react";
+import { Archive, Download, LayoutList, Rows3, PlusCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const ALL = "all";
-/** The list shows this many rows at first; "Meer tonen" adds another page. The total always counts every row. */
-const PAGE_SIZE = 100;
-
-/** The category as one key, whatever casing an older row was written in (A-9-1). */
-const categoryKey = (expense: Expense) => (expense.category || "").trim().toLowerCase();
+type View = "categories" | "table";
 
 /**
- * Kostenbeheer (A-9-8): one list of every expense with filters for vehicle
- * (searchable by plate), period and category, a total for what is shown, and a
- * CSV export of exactly that selection. The filters are sent to
- * GET /api/expenses (vehicleId, from, to, category); the unfiltered list is the
- * source of the choices in the vehicle and category pickers, so it needs no
- * vehicle permission of its own.
+ * Kostenbeheer (A-9-8, rebuilt 2026-10-16 for thousands of rows): filters for
+ * vehicle, period (with quick choices), category and free text; a section per
+ * category with its newest rows, or one paged and sortable table; the count
+ * and sum of the whole selection; and a CSV export of exactly that selection.
+ * Nothing here loads the whole table: the list is paged by the server, the
+ * sums come from /api/expenses/summary and the picker choices from /facets.
  */
 export default function ExpensesIndex() {
   const { t } = useTranslation(["expenses", "common"]);
@@ -65,12 +57,13 @@ export default function ExpensesIndex() {
   const [categoryFilter, setCategoryFilter] = useState(ALL);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [view, setView] = useState<View>("categories");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
   const [binOpen, setBinOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const { toast } = useToast();
-  const { openExpenseDialog } = useGlobalDialog();
+  const debouncedSearch = useDebouncedValue(searchQuery);
 
   const deleteExpenseMutation = useMutation({
     mutationFn: async (expenseId: number) => {
@@ -109,87 +102,51 @@ export default function ExpensesIndex() {
     setDeleteDialogOpen(true);
   };
 
-  const hasServerFilter = vehicleFilter !== ALL || categoryFilter !== ALL || from !== "" || to !== "";
+  const filters: ExpenseListFilters = {
+    vehicleId: vehicleFilter === ALL ? undefined : vehicleFilter,
+    category: categoryFilter === ALL ? undefined : categoryFilter,
+    from: from || undefined,
+    to: to || undefined,
+    q: debouncedSearch,
+  };
+  const params = expenseQueryParams(filters);
+  const anyFilter = Object.values(params).some((value) => value !== undefined);
 
-  // Everything: the base list and the source of the picker choices. Always on, as it was.
-  const { data: allExpenses, isLoading: isLoadingAll } = useQuery<Expense[]>({
-    queryKey: ["/api/expenses"],
-    retry: 1,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    staleTime: 0,
-  });
-
-  // The selection: only fetched while a filter is set; the object in the key becomes the query string.
-  const { data: selectedExpenses, isLoading: isLoadingSelected } = useQuery<Expense[]>({
-    queryKey: ["/api/expenses", {
-      vehicleId: vehicleFilter === ALL ? undefined : vehicleFilter,
-      category: categoryFilter === ALL ? undefined : categoryFilter,
-      from: from || undefined,
-      to: to || undefined,
-    }],
-    enabled: hasServerFilter,
+  // The picker choices: every vehicle with an expense and every category in use.
+  const { data: facets } = useQuery<ExpenseFacets>({ queryKey: ["/api/expenses/facets"], retry: 1 });
+  // The selection per category, with the newest rows of each; also the count and sum on top.
+  const { data: summary, isLoading: isLoadingSummary, isError: summaryFailed } = useQuery<ExpenseSummary>({
+    queryKey: ["/api/expenses/summary", { ...params, recent: CATEGORY_SECTION_ROWS }],
     retry: 1,
     staleTime: 0,
   });
 
-  const isLoading = hasServerFilter ? isLoadingSelected : isLoadingAll;
-  const baseRows = (hasServerFilter ? selectedExpenses : allExpenses) ?? [];
-
-  const vehicleOptions = useMemo<ComboboxOption[]>(() => {
-    const seen = new Map<number, ComboboxOption>();
-    for (const expense of allExpenses ?? []) {
-      if (!expense.vehicle || seen.has(expense.vehicleId)) continue;
-      seen.set(expense.vehicleId, {
-        value: String(expense.vehicleId),
-        label: formatLicensePlate(expense.vehicle.licensePlate),
-        description: `${expense.vehicle.brand} ${expense.vehicle.model}`,
+  const vehicleOptions = useMemo<ComboboxOption[]>(() => [
+    { value: ALL, label: t('indexPage.allVehiclesOption') },
+    ...(facets?.vehicles ?? [])
+      .map((vehicle) => ({
+        value: String(vehicle.id),
+        label: formatLicensePlate(vehicle.licensePlate),
+        description: `${vehicle.brand} ${vehicle.model}`,
         // The picker searches label, value, description and tags: the plate without dashes must match too.
-        tags: [expense.vehicle.licensePlate],
-      });
-    }
-    return [
-      { value: ALL, label: t('indexPage.allVehiclesOption') },
-      ...Array.from(seen.values()).sort((a, b) => a.label.localeCompare(b.label)),
-    ];
-  }, [allExpenses, t]);
+        tags: [vehicle.licensePlate],
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
+  ], [facets, t]);
 
   // The canonical categories, plus any other label an older row still carries.
   const categoryChoices = useMemo(() => {
-    const extra = new Set<string>();
-    for (const expense of allExpenses ?? []) {
-      const key = categoryKey(expense);
-      if (key && !(EXPENSE_CATEGORIES as readonly string[]).includes(key)) extra.add(key);
-    }
-    return [...EXPENSE_CATEGORIES, ...Array.from(extra).sort()];
-  }, [allExpenses]);
+    const extra = (facets?.categories ?? []).filter((key) => !(EXPENSE_CATEGORIES as readonly string[]).includes(key));
+    return [...EXPENSE_CATEGORIES, ...extra];
+  }, [facets]);
 
-  const rows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    return baseRows
-      .filter((expense) => {
-        if (!query) return true;
-        return plateMatches(expense.vehicle?.licensePlate, query)
-          || (expense.description || "").toLowerCase().includes(query)
-          || categoryKey(expense).includes(query)
-          || formatExpenseCategory(expense.category).toLowerCase().includes(query);
-      })
-      .sort((a, b) => (b.date || "").localeCompare(a.date || "") || b.id - a.id);
-  }, [baseRows, searchQuery]);
-
-  const totalAmount = sumMoney(rows, (expense) => expense.amount);
-  const totalsByCategory = useMemo(() => {
-    const groups = new Map<string, Expense[]>();
-    for (const expense of rows) {
-      const key = categoryKey(expense);
-      groups.set(key, [...(groups.get(key) ?? []), expense]);
-    }
-    return Array.from(groups.entries())
-      .map(([category, items]) => ({ category, amount: sumMoney(items, (e) => e.amount), count: items.length }))
-      .sort((a, b) => b.amount - a.amount);
-  }, [rows]);
-
-  const visibleRows = rows.slice(0, visibleCount);
+  const activePeriod = matchingExpensePeriod(from, to);
+  const choosePeriod = (period: ExpensePeriod) => {
+    if (activePeriod === period) { setFrom(""); setTo(""); return; }
+    const range = expensePeriodRange(period);
+    setFrom(range.from);
+    setTo(range.to);
+  };
 
   const clearFilters = () => {
     setSearchQuery("");
@@ -197,23 +154,34 @@ export default function ExpensesIndex() {
     setCategoryFilter(ALL);
     setFrom("");
     setTo("");
-    setVisibleCount(PAGE_SIZE);
   };
-  const anyFilter = hasServerFilter || searchQuery !== "";
 
-  const exportCsv = () => {
-    downloadCsv(
-      "kosten",
-      [t('indexPage.dateColumnHeader'), t('indexPage.licensePlateColumnHeader'), t('indexPage.categoryColumnHeader'), t('indexPage.descriptionColumnHeader'), t('indexPage.amountColumnHeader')],
-      rows.map((expense) => [
-        csvDate(expense.date),
-        expense.vehicle ? formatLicensePlate(expense.vehicle.licensePlate) : "",
-        formatExpenseCategory(expense.category),
-        expense.description ?? "",
-        csvNumber(expense.amount),
-      ]),
-    );
+  // The whole selection, newest first, whatever page is on screen.
+  const exportCsv = async () => {
+    setExporting(true);
+    try {
+      const response = await apiRequest("GET", queryKeyUrl(["/api/expenses", { ...params, sort: "date", dir: "desc" }]));
+      await throwIfResNotOk(response);
+      const rows: Expense[] = await response.json();
+      downloadCsv(
+        "kosten",
+        [t('indexPage.dateColumnHeader'), t('indexPage.licensePlateColumnHeader'), t('indexPage.categoryColumnHeader'), t('indexPage.descriptionColumnHeader'), t('indexPage.amountColumnHeader')],
+        rows.map((expense) => [
+          csvDate(expense.date),
+          expense.vehicle ? formatLicensePlate(expense.vehicle.licensePlate) : "",
+          formatExpenseCategory(expense.category),
+          expense.description ?? "",
+          csvNumber(expense.amount),
+        ]),
+      );
+    } catch (error) {
+      toast({ title: t('indexPage.exportFailed'), description: describeApiError(error as Error), variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
   };
+
+  const total = summary?.total ?? 0;
 
   return (
     <div className="space-y-6">
@@ -253,13 +221,13 @@ export default function ExpensesIndex() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4" data-testid="expense-filters">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-3" data-testid="expense-filters">
               <div className="space-y-1">
                 <Label>{t('indexPage.vehicleFilterLabel')}</Label>
                 <SearchableCombobox
                   options={vehicleOptions}
                   value={vehicleFilter}
-                  onChange={(value) => { setVehicleFilter(value); setVisibleCount(PAGE_SIZE); }}
+                  onChange={setVehicleFilter}
                   placeholder={t('indexPage.allVehiclesOption')}
                   searchPlaceholder={t('indexPage.vehicleSearchPlaceholder')}
                   emptyMessage={t('indexPage.noVehicleFound')}
@@ -267,15 +235,15 @@ export default function ExpensesIndex() {
               </div>
               <div className="space-y-1">
                 <Label htmlFor="expense-filter-from">{t('indexPage.fromLabel')}</Label>
-                <Input id="expense-filter-from" type="date" value={from} max={to || undefined} onChange={(e) => { setFrom(e.target.value); setVisibleCount(PAGE_SIZE); }} />
+                <Input id="expense-filter-from" type="date" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="expense-filter-to">{t('indexPage.toLabel')}</Label>
-                <Input id="expense-filter-to" type="date" value={to} min={from || undefined} onChange={(e) => { setTo(e.target.value); setVisibleCount(PAGE_SIZE); }} />
+                <Input id="expense-filter-to" type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="expense-filter-category">{t('indexPage.categoryFilterLabel')}</Label>
-                <Select value={categoryFilter} onValueChange={(value) => { setCategoryFilter(value); setVisibleCount(PAGE_SIZE); }}>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                   <SelectTrigger id="expense-filter-category" aria-label={t('indexPage.categoryFilterLabel')}>
                     <SelectValue placeholder={t('indexPage.filterByCategoryPlaceholder')} />
                   </SelectTrigger>
@@ -289,108 +257,68 @@ export default function ExpensesIndex() {
               </div>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-3 mb-4 md:items-center">
+            <div className="flex flex-wrap items-center gap-2 mb-3">
               <Input
                 placeholder={t('indexPage.searchPlaceholder')}
                 aria-label={t('indexPage.searchPlaceholder')}
                 value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setVisibleCount(PAGE_SIZE); }}
-                className="max-w-sm"
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full sm:max-w-xs"
+                data-testid="expense-search"
               />
+              <div className="flex gap-1" role="group" aria-label={t('indexPage.quickPeriodLabel')}>
+                {EXPENSE_PERIODS.map((period) => (
+                  <Button key={period} size="sm" variant={activePeriod === period ? "default" : "outline"} aria-pressed={activePeriod === period} onClick={() => choosePeriod(period)} data-testid={`button-period-${period}`}>
+                    {t(`indexPage.period.${period}`)}
+                  </Button>
+                ))}
+              </div>
               {anyFilter && (
                 <Button variant="ghost" size="sm" onClick={clearFilters} data-testid="button-clear-expense-filters">
                   {t('indexPage.clearFilters')}
                 </Button>
               )}
               {!hidePrices && (
-                <Button variant="outline" size="sm" className="md:ml-auto" onClick={exportCsv} disabled={rows.length === 0} data-testid="button-export-expenses">
+                <Button variant="outline" size="sm" className="ml-auto" onClick={exportCsv} disabled={total === 0 || exporting} data-testid="button-export-expenses">
                   <Download className="mr-2 h-4 w-4" />
                   {t('indexPage.exportCsv')}
                 </Button>
               )}
             </div>
 
-            {isLoading ? (
-              <div className="flex justify-center items-center h-64" role="status" aria-label={t('indexPage.loading')}>
-                <svg className="animate-spin h-8 w-8 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3 text-sm">
+              <p className="text-muted-foreground" data-testid="expense-selection-summary" aria-live="polite">
+                {summary ? (
+                  <>
+                    <span className="font-medium text-foreground">{t('indexPage.selectionCount', { count: summary.total })}</span>
+                    {" · "}
+                    {t('indexPage.selectionTotal')} <span className="font-medium text-foreground tabular-nums"><Price value={summary.totalAmount} /></span>
+                  </>
+                ) : summaryFailed ? t('indexPage.loadError') : t('indexPage.loading')}
+              </p>
+              <div className="inline-flex rounded-md border p-0.5" role="group" aria-label={t('indexPage.viewLabel')}>
+                <Button size="sm" variant={view === "categories" ? "secondary" : "ghost"} className={cn("h-7", view === "categories" && "shadow-sm")} aria-pressed={view === "categories"} onClick={() => setView("categories")} data-testid="button-view-categories">
+                  <Rows3 className="mr-1.5 h-4 w-4" />{t('indexPage.viewByCategory')}
+                </Button>
+                <Button size="sm" variant={view === "table" ? "secondary" : "ghost"} className={cn("h-7", view === "table" && "shadow-sm")} aria-pressed={view === "table"} onClick={() => setView("table")} data-testid="button-view-table">
+                  <LayoutList className="mr-1.5 h-4 w-4" />{t('indexPage.viewTable')}
+                </Button>
+              </div>
+            </div>
+
+            {view === "table" ? (
+              <ExpenseListTable filters={filters} onDelete={handleDeleteExpense} />
+            ) : isLoadingSummary ? (
+              <div className="flex h-40 items-center justify-center" role="status" aria-label={t('indexPage.loading')}>
+                <svg className="h-8 w-8 animate-spin text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
               </div>
-            ) : rows.length === 0 ? (
-              <div className="text-center p-10 border rounded-md bg-gray-50">
-                <p className="text-gray-500">{t('indexPage.noExpensesFound')}</p>
-              </div>
+            ) : summaryFailed ? (
+              <p className="rounded-md border bg-red-50 p-4 text-sm text-red-700" role="alert">{t('indexPage.loadError')}</p>
             ) : (
-              <>
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('indexPage.dateColumnHeader')}</TableHead>
-                        <TableHead>{t('indexPage.vehicleColumnHeader')}</TableHead>
-                        <TableHead>{t('indexPage.categoryColumnHeader')}</TableHead>
-                        <TableHead>{t('indexPage.descriptionColumnHeader')}</TableHead>
-                        <TableHead className="text-right">{t('indexPage.amountColumnHeader')}</TableHead>
-                        <TableHead></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {visibleRows.map((expense) => (
-                        <TableRow key={expense.id} data-testid={`row-expense-${expense.id}`}>
-                          <TableCell>{formatDate(expense.date || '')}</TableCell>
-                          <TableCell>
-                            {expense.vehicle ? (
-                              <div>
-                                <div className="font-medium">{formatLicensePlate(expense.vehicle.licensePlate)}</div>
-                                <div className="text-sm text-gray-500">{expense.vehicle.brand} {expense.vehicle.model}</div>
-                              </div>
-                            ) : "—"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="font-medium">{formatExpenseCategory(expense.category)}</Badge>
-                          </TableCell>
-                          <TableCell>{expense.description || "—"}</TableCell>
-                          <TableCell className="text-right">
-                            <span className="font-medium"><Price value={Number(expense.amount) || 0} /></span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex gap-1 justify-end">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openExpenseDialog(expense.id)}
-                                data-testid={`button-view-expense-${expense.id}`}
-                              >
-                                <Eye className="h-4 w-4 mr-1" />
-                                {t('common:actions.view')}
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteExpense(expense)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                aria-label={t('detailsPage.deleteButton')}
-                                data-testid={`button-delete-expense-${expense.id}`}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-gray-500">
-                  <span data-testid="expense-rows-shown">{t('indexPage.rowsShown', { shown: visibleRows.length, count: rows.length })}</span>
-                  {visibleRows.length < rows.length && (
-                    <Button variant="outline" size="sm" onClick={() => setVisibleCount((count) => count + PAGE_SIZE)} data-testid="button-show-more-expenses">
-                      {t('indexPage.showMore')}
-                    </Button>
-                  )}
-                </div>
-              </>
+              <ExpenseCategorySections groups={summary?.byCategory ?? []} filters={filters} onDelete={handleDeleteExpense} />
             )}
           </CardContent>
         </Card>
@@ -404,19 +332,19 @@ export default function ExpensesIndex() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">{anyFilter ? t('indexPage.filteredTotalLabel') : t('indexPage.totalExpensesLabel')}</h3>
-                <p className="text-3xl font-bold" data-testid="expense-total"><Price value={totalAmount} /></p>
+                <p className="text-3xl font-bold tabular-nums" data-testid="expense-total"><Price value={summary?.totalAmount ?? 0} /></p>
               </div>
 
-              {!isLoading && totalsByCategory.length > 0 && (
-                <div className="space-y-4">
+              {summary && summary.byCategory.length > 0 && (
+                <div className="space-y-3">
                   <h4 className="text-sm font-medium text-gray-500">{t('indexPage.byCategoryLabel')}</h4>
-                  {totalsByCategory.map(({ category, amount, count }) => (
-                    <div key={category} className="flex justify-between items-center gap-2" data-testid={`summary-category-${category}`}>
-                      <div>
+                  {summary.byCategory.map(({ category, amount, count }) => (
+                    <div key={category} className="flex justify-between items-center gap-2 text-sm" data-testid={`summary-category-${category}`}>
+                      <div className="min-w-0">
                         <span>{formatExpenseCategory(category)}</span>
                         <span className="ml-2 text-xs text-gray-500">{t('indexPage.expenseCount', { count })}</span>
                       </div>
-                      <span className="font-medium"><Price value={amount} /></span>
+                      <span className="font-medium tabular-nums whitespace-nowrap"><Price value={amount} /></span>
                     </div>
                   ))}
                 </div>

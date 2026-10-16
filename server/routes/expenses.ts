@@ -4,7 +4,7 @@ import multer from "multer";
 // parsed.
 import { sanitizeUploadedFields } from "../middleware/security/sanitization";
 import type { Request, Response } from "express";
-import { storage, type ExpenseFilters } from "../storage";
+import { storage, EXPENSE_SORT_KEYS, type ExpenseFilters, type ExpenseSortKey } from "../storage";
 import { processInvoiceWithAI, generateInvoiceHash, validateParsedInvoice } from "../utils/invoice-scanner";
 import path from "path";
 import fs from "fs";
@@ -165,16 +165,20 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
     res.json(expenses);
   });
   
-  // Get all expenses
-  app.get("/api/expenses", hasPermission(UserPermission.MANAGE_EXPENSES), async (req, res) => {
+  const noStore = (res: Response) => {
     // Prevent caching to ensure fresh data is always returned
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
-    
-    // A-9-8: optional filters for the Kosten list. A parameter that is present but
-    // malformed is refused rather than silently ignored (an ignored filter would
-    // show - and total - every expense as if it were the filtered set).
+  };
+
+  /**
+   * A-9-8: optional filters for the Kosten list. A parameter that is present but
+   * malformed is refused rather than silently ignored (an ignored filter would
+   * show - and total - every expense as if it were the filtered set). Answers the
+   * filters, or the 400 it already sent.
+   */
+  const readExpenseFilters = (req: Request, res: Response): ExpenseFilters | null => {
     const filters: ExpenseFilters = {};
     const one = (value: unknown): string | undefined => (typeof value === "string" && value.trim() !== "" ? value.trim() : undefined);
     const vehicleParam = one(req.query.vehicleId);
@@ -183,20 +187,73 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
       // answered 500, and a value beyond 2^53 is silently rounded. Same bounds as every path id (parseIdValue).
       const vehicleFilter = /^\d+$/.test(vehicleParam) ? Number(vehicleParam) : NaN;
       if (!Number.isSafeInteger(vehicleFilter) || vehicleFilter < 1 || vehicleFilter > MAX_INT4) {
-        return res.status(400).json({ message: "Invalid vehicle ID" });
+        res.status(400).json({ message: "Invalid vehicle ID" });
+        return null;
       }
       filters.vehicleId = vehicleFilter;
     }
     for (const key of ["from", "to"] as const) {
       const value = one(req.query[key]);
       if (value === undefined) continue;
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return res.status(400).json({ message: `Invalid ${key} date, expected YYYY-MM-DD` });
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        res.status(400).json({ message: `Invalid ${key} date, expected YYYY-MM-DD` });
+        return null;
+      }
       filters[key] = value;
     }
     filters.category = one(req.query.category);
+    filters.q = one(req.query.q)?.slice(0, 200);
+    return filters;
+  };
 
-    const expenses = await storage.getAllExpenses(filters);
-    res.json(expenses);
+  /** Kosten (2026-10-16): the picker choices, so the list page never needs the whole table for them. */
+  app.get("/api/expenses/facets", hasPermission(UserPermission.MANAGE_EXPENSES), async (_req, res) => {
+    noStore(res);
+    res.json(await storage.getExpenseFacets());
+  });
+
+  /**
+   * Kosten (2026-10-16): the selection summed per category, with the newest
+   * `recent` rows of each (5 by default, at most 20) for the category sections.
+   * Same filters as the list, so the panel and the table always agree.
+   */
+  app.get("/api/expenses/summary", hasPermission(UserPermission.MANAGE_EXPENSES), async (req, res) => {
+    noStore(res);
+    const filters = readExpenseFilters(req, res);
+    if (!filters) return;
+    const recentRaw = typeof req.query.recent === "string" ? req.query.recent : "5";
+    if (!/^\d{1,2}$/.test(recentRaw) || Number(recentRaw) > 20) return res.status(400).json({ message: "Invalid recent, expected 0-20" });
+    res.json(await storage.getExpenseSummary(filters, Number(recentRaw)));
+  });
+
+  // Get all expenses
+  app.get("/api/expenses", hasPermission(UserPermission.MANAGE_EXPENSES), async (req, res) => {
+    noStore(res);
+    const filters = readExpenseFilters(req, res);
+    if (!filters) return;
+
+    // Kosten (2026-10-16): sort and page. With `page` or `pageSize` the answer is
+    // one page plus the count and sum of the whole selection; without, the whole
+    // selection as an array, as every older caller (reports, CSV export) expects.
+    const sortRaw = typeof req.query.sort === "string" ? req.query.sort : undefined;
+    if (sortRaw !== undefined && !(EXPENSE_SORT_KEYS as readonly string[]).includes(sortRaw)) {
+      return res.status(400).json({ message: `Invalid sort, expected one of ${EXPENSE_SORT_KEYS.join(", ")}` });
+    }
+    const sort = (sortRaw ?? "date") as ExpenseSortKey;
+    const dirRaw = typeof req.query.dir === "string" ? req.query.dir : undefined;
+    if (dirRaw !== undefined && dirRaw !== "asc" && dirRaw !== "desc") return res.status(400).json({ message: "Invalid dir, expected asc or desc" });
+    const dir = dirRaw ?? (sortRaw ? "asc" : "desc");
+
+    const pageRaw = req.query.page;
+    const pageSizeRaw = req.query.pageSize;
+    if (pageRaw === undefined && pageSizeRaw === undefined) {
+      return res.json(await storage.getAllExpenses(filters, { sort, dir }));
+    }
+    const page = pageRaw === undefined ? 1 : /^\d{1,6}$/.test(String(pageRaw)) ? Number(pageRaw) : 0;
+    const pageSize = pageSizeRaw === undefined ? 50 : /^\d{1,4}$/.test(String(pageSizeRaw)) ? Number(pageSizeRaw) : 0;
+    if (page < 1) return res.status(400).json({ message: "Invalid page, expected a number from 1" });
+    if (pageSize < 1 || pageSize > 500) return res.status(400).json({ message: "Invalid pageSize, expected 1-500" });
+    res.json(await storage.getExpensePage(filters, { sort, dir, page, pageSize }));
   });
 
   // Get single expense - This MUST come after the more specific routes

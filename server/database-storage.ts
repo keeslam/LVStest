@@ -118,7 +118,7 @@ import { db, type DbTransaction } from "./db";
 import { eq, ne, and, gte, lte, asc, desc, sql, inArray, not, or, ilike, isNull, isNotNull, getTableColumns, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { COLLECTION_LEG_REASON } from "../shared/portal-handover";
-import { IStorage, type CompleteMaintenanceResult, type CompleteMaintenanceFile, type ExpenseFilters } from "./storage";
+import { IStorage, type CompleteMaintenanceResult, type CompleteMaintenanceFile, type ExpenseFilters, type ExpenseListOptions, type ExpenseSortKey, type ExpensePage, type ExpenseSummary, type ExpenseFacets } from "./storage";
 import { getRelativePath } from "./services/document-paths";
 import { formatVehicleBarcode, parseBarcode, normalizeScannedCode, expandShortKeyCode } from "../shared/barcode";
 // besluiten B-16 + B-07: one day count and one total, shared with the form.
@@ -3332,37 +3332,151 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Expense methods
-  async getAllExpenses(filters: ExpenseFilters = {}): Promise<Expense[]> {
-    // A-9-8: the Kosten list narrows on vehicle, period and category. `date` is a
-    // YYYY-MM-DD text column, so the bounds compare lexically; the category is
-    // compared case-insensitively because rows older than A-9-1 may still be capitalised.
+
+  /**
+   * A-9-8: the Kosten list narrows on vehicle, period and category. `date` is a
+   * YYYY-MM-DD text column, so the bounds compare lexically; the category is
+   * compared case-insensitively because rows older than A-9-1 may still be capitalised.
+   * The free-text search (2026-10-16) looks at the plate without dashes, the
+   * category, the description and the brand and model, so "04vkd6", "Banden",
+   * "olie" and "ford transit" all find rows.
+   * Every list query joins `vehicles`, so the plate can be searched and sorted on.
+   */
+  private expenseConditions(filters: ExpenseFilters): SQL | undefined {
     const conditions: SQL[] = [];
     if (filters.vehicleId !== undefined) conditions.push(eq(expenses.vehicleId, filters.vehicleId));
     if (filters.from) conditions.push(gte(expenses.date, filters.from));
     if (filters.to) conditions.push(lte(expenses.date, filters.to));
     if (filters.category) conditions.push(sql`lower(btrim(${expenses.category})) = ${filters.category.trim().toLowerCase()}`);
-    const expensesData = conditions.length
-      ? await db.select().from(expenses).where(and(...conditions))
-      : await db.select().from(expenses);
+    const q = (filters.q ?? "").trim().toLowerCase();
+    if (q) {
+      const like = `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+      const plateLike = `%${q.replace(/[-\s]/g, "").replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+      conditions.push(sql`(
+        lower(coalesce(${expenses.description}, '')) like ${like}
+        or lower(coalesce(${expenses.category}, '')) like ${like}
+        or replace(replace(lower(coalesce(${vehicles.licensePlate}, '')), '-', ''), ' ', '') like ${plateLike}
+        or lower(coalesce(${vehicles.brand}, '') || ' ' || coalesce(${vehicles.model}, '')) like ${like}
+      )`);
+    }
+    return conditions.length ? and(...conditions) : undefined;
+  }
 
-    // Batch-load vehicles instead of one query per expense.
-    const vehicleIds = Array.from(new Set(
-      expensesData
-        .map(e => e.vehicleId)
-        .filter((id): id is number => id !== null && id !== undefined)
-    ));
+  /** The ORDER BY for a sort key; the id breaks every tie so pages never overlap or skip a row. */
+  private expenseOrder(sort: ExpenseSortKey, dir: "asc" | "desc"): SQL[] {
+    const direction = dir === "asc" ? asc : desc;
+    const column: SQL | typeof expenses.date = {
+      date: expenses.date,
+      plate: sql`coalesce(${vehicles.licensePlate}, '')`,
+      category: sql`lower(btrim(${expenses.category}))`,
+      description: sql`lower(coalesce(${expenses.description}, ''))`,
+      amount: sql`${expenses.amount}::numeric`,
+    }[sort];
+    return sort === "date"
+      ? [direction(expenses.date), direction(expenses.id)]
+      : [direction(column), desc(expenses.date), desc(expenses.id)];
+  }
 
-    const vehicleRows = vehicleIds.length
-      ? await db.select().from(vehicles).where(inArray(vehicles.id, vehicleIds))
+  private expenseWithVehicle(row: { expense: typeof expenses.$inferSelect; vehicle: typeof vehicles.$inferSelect | null }): Expense {
+    return { ...row.expense, vehicle: row.vehicle ?? undefined } as Expense;
+  }
+
+  async getAllExpenses(filters: ExpenseFilters = {}, options: ExpenseListOptions = {}): Promise<Expense[]> {
+    const rows = await db
+      .select({ expense: expenses, vehicle: vehicles })
+      .from(expenses)
+      .leftJoin(vehicles, eq(expenses.vehicleId, vehicles.id))
+      .where(this.expenseConditions(filters))
+      .orderBy(...this.expenseOrder(options.sort ?? "date", options.dir ?? (options.sort ? "asc" : "desc")));
+    return rows.map((row) => this.expenseWithVehicle(row));
+  }
+
+  async getExpensePage(filters: ExpenseFilters, options: Required<ExpenseListOptions>): Promise<ExpensePage> {
+    const where = this.expenseConditions(filters);
+    const [[totals], rows] = await Promise.all([
+      db
+        .select({ total: sql<number>`count(*)::int`, totalCents: sql<number>`coalesce(sum(round(${expenses.amount}::numeric * 100)), 0)::bigint` })
+        .from(expenses)
+        .leftJoin(vehicles, eq(expenses.vehicleId, vehicles.id))
+        .where(where),
+      db
+        .select({ expense: expenses, vehicle: vehicles })
+        .from(expenses)
+        .leftJoin(vehicles, eq(expenses.vehicleId, vehicles.id))
+        .where(where)
+        .orderBy(...this.expenseOrder(options.sort, options.dir))
+        .limit(options.pageSize)
+        .offset((options.page - 1) * options.pageSize),
+    ]);
+    return {
+      rows: rows.map((row) => this.expenseWithVehicle(row)),
+      total: Number(totals?.total ?? 0),
+      totalAmount: Number(totals?.totalCents ?? 0) / 100,
+      page: options.page,
+      pageSize: options.pageSize,
+    };
+  }
+
+  async getExpenseSummary(filters: ExpenseFilters, recentPerCategory: number): Promise<ExpenseSummary> {
+    const where = this.expenseConditions(filters);
+    const categoryKey = sql`lower(btrim(${expenses.category}))`;
+    const groups = await db
+      .select({ category: sql<string>`${categoryKey}`, count: sql<number>`count(*)::int`, cents: sql<number>`coalesce(sum(round(${expenses.amount}::numeric * 100)), 0)::bigint` })
+      .from(expenses)
+      .leftJoin(vehicles, eq(expenses.vehicleId, vehicles.id))
+      .where(where)
+      .groupBy(categoryKey);
+
+    // The newest few rows of every category in one pass: a window function ranks
+    // the rows within their category, the outer query keeps the first N ids.
+    const ranked = db
+      .select({ id: expenses.id, rank: sql<number>`row_number() over (partition by ${categoryKey} order by ${expenses.date} desc, ${expenses.id} desc)`.as("rank") })
+      .from(expenses)
+      .leftJoin(vehicles, eq(expenses.vehicleId, vehicles.id))
+      .where(where)
+      .as("ranked");
+    const recentIds = recentPerCategory > 0
+      ? (await db.select({ id: ranked.id }).from(ranked).where(lte(ranked.rank, recentPerCategory))).map((r) => r.id)
       : [];
-    const vehicleById = new Map(vehicleRows.map(v => [v.id, v]));
+    const recentRows = recentIds.length
+      ? await db
+        .select({ expense: expenses, vehicle: vehicles })
+        .from(expenses)
+        .leftJoin(vehicles, eq(expenses.vehicleId, vehicles.id))
+        .where(inArray(expenses.id, recentIds))
+        .orderBy(desc(expenses.date), desc(expenses.id))
+      : [];
+    const recentByCategory = new Map<string, Expense[]>();
+    for (const row of recentRows) {
+      const key = (row.expense.category ?? "").trim().toLowerCase();
+      recentByCategory.set(key, [...(recentByCategory.get(key) ?? []), this.expenseWithVehicle(row)]);
+    }
 
-    return expensesData.map(expense => ({
-      ...expense,
-      vehicle: expense.vehicleId !== null && expense.vehicleId !== undefined
-        ? vehicleById.get(expense.vehicleId)
-        : undefined,
-    })) as Expense[];
+    const byCategory = groups
+      .map((g) => ({ category: g.category ?? "", count: Number(g.count), amount: Number(g.cents) / 100, recent: recentByCategory.get(g.category ?? "") ?? [] }))
+      .sort((a, b) => b.amount - a.amount || a.category.localeCompare(b.category));
+    return {
+      total: byCategory.reduce((n, g) => n + g.count, 0),
+      totalAmount: Math.round(byCategory.reduce((cents, g) => cents + Math.round(g.amount * 100), 0)) / 100,
+      byCategory,
+    };
+  }
+
+  async getExpenseFacets(): Promise<ExpenseFacets> {
+    const [vehicleRows, categoryRows] = await Promise.all([
+      db
+        .selectDistinct({ id: vehicles.id, licensePlate: vehicles.licensePlate, brand: vehicles.brand, model: vehicles.model })
+        .from(vehicles)
+        .innerJoin(expenses, eq(expenses.vehicleId, vehicles.id))
+        .orderBy(asc(vehicles.licensePlate)),
+      db
+        .selectDistinct({ category: sql<string>`lower(btrim(${expenses.category}))` })
+        .from(expenses),
+    ]);
+    return {
+      vehicles: vehicleRows,
+      categories: categoryRows.map((r) => r.category ?? "").filter(Boolean).sort(),
+    };
   }
 
   async getExpense(id: number): Promise<Expense | undefined> {
