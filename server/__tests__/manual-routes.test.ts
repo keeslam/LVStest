@@ -65,10 +65,39 @@ describe("manual routes", () => {
     expect((await request(app).get("/api/manual/afbeeldingen/99-bestaat-niet.png")).status).toBe(404);
   });
 
+  it("searches all chapters and returns the chapter, the section and a snippet per hit", async () => {
+    const res = await request(app).get("/api/manual/zoek?q=transportrapport");
+    expect(res.status).toBe(200);
+    expect(res.body.query).toBe("transportrapport");
+    expect(res.body.hits.length).toBeGreaterThan(0);
+    const hit = res.body.hits.find((h: { slug: string }) => h.slug === "06-transport");
+    expect(hit).toBeTruthy();
+    expect(hit.title).toBe("6. Transport");
+    expect(typeof hit.heading).toBe("string");
+    expect(hit.snippet.toLowerCase()).toContain("transportrapport");
+    // Markdown markers do not leak into the snippet.
+    expect(hit.snippet).not.toMatch(/\*\*|!\[|\]\(/);
+    // Case does not matter.
+    const upper = await request(app).get("/api/manual/zoek?q=TRANSPORTRAPPORT");
+    expect(upper.body.hits.length).toBe(res.body.hits.length);
+  });
+
+  it("answers an empty list for a query shorter than two characters or without hits", async () => {
+    expect((await request(app).get("/api/manual/zoek?q=a")).body).toEqual({ query: "a", hits: [], truncated: false });
+    expect((await request(app).get("/api/manual/zoek")).body.hits).toEqual([]);
+    expect((await request(app).get("/api/manual/zoek?q=xyzzyq-bestaat-niet")).body.hits).toEqual([]);
+  });
+
+  it("caps the number of hits and says so", async () => {
+    const res = await request(app).get("/api/manual/zoek?q=de");
+    expect(res.body.hits.length).toBeLessThanOrEqual(100);
+    expect(res.body.truncated).toBe(true);
+  });
+
   it("runs requireAuth on every route", async () => {
     const locked = express();
     registerManualRoutes(locked, { requireAuth: (_r: any, res: any) => res.status(401).json({ message: "Unauthorized" }) } as any);
-    for (const url of ["/api/manual", "/api/manual/06-transport", "/api/manual/afbeeldingen/01-inlogscherm.png"]) {
+    for (const url of ["/api/manual", "/api/manual/06-transport", "/api/manual/afbeeldingen/01-inlogscherm.png", "/api/manual/zoek?q=transport"]) {
       expect((await request(locked).get(url)).status, url).toBe(401);
     }
   });

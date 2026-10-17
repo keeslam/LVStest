@@ -923,7 +923,9 @@ export function ReservationViewDialog({
             </div>
           )}
 
-          <DialogFooter className="flex gap-2">
+          {/* flex-wrap: met acht knoppen past de rij niet in 1280 px en liepen "Ophalen starten",
+              "Sluiten" en "Datums wijzigen" links buiten het venster (justify-end). */}
+          <DialogFooter className="flex flex-wrap gap-2">
             {reservation?.status === 'booked' && (
               <Button
                 onClick={() => {

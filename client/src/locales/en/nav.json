@@ -44,6 +44,20 @@
     "loading": "Loading chapter…",
     "loadError": "The user guide could not be loaded.",
     "chapterNotFound": "This chapter does not exist.",
-    "description": "How the app works. Pick a chapter on the left."
+    "description": "How the app works. Pick a chapter on the left or search for a word.",
+    "search": {
+      "label": "Search the user guide",
+      "placeholder": "Search for a word, button or screen...",
+      "clear": "Clear search",
+      "tooShort": "Type at least two characters.",
+      "searching": "Searching…",
+      "none": "Nothing found for \"{{query}}\".",
+      "count_one": "{{count}} hit",
+      "count_other": "{{count}} hits",
+      "truncated": "Only the first {{count}} hits are shown; make your search more specific.",
+      "failed": "Search failed. Please try again.",
+      "intro": "Introduction",
+      "backToChapters": "Back to the chapters"
+    }
   }
 }

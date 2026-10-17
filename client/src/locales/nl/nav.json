@@ -44,6 +44,20 @@
     "loading": "Hoofdstuk laden…",
     "loadError": "De handleiding kon niet worden geladen.",
     "chapterNotFound": "Dit hoofdstuk bestaat niet.",
-    "description": "Lees hier hoe de app werkt. Kies links een hoofdstuk."
+    "description": "Lees hier hoe de app werkt. Kies links een hoofdstuk of zoek op een woord.",
+    "search": {
+      "label": "Zoeken in de handleiding",
+      "placeholder": "Zoek een woord, knop of scherm...",
+      "clear": "Zoekopdracht wissen",
+      "tooShort": "Typ minstens twee tekens.",
+      "searching": "Zoeken…",
+      "none": "Niets gevonden voor \"{{query}}\".",
+      "count_one": "{{count}} treffer",
+      "count_other": "{{count}} treffers",
+      "truncated": "Alleen de eerste {{count}} treffers staan hier; maak je zoekwoord specifieker.",
+      "failed": "Zoeken is mislukt. Probeer het opnieuw.",
+      "intro": "Inleiding",
+      "backToChapters": "Terug naar de hoofdstukken"
+    }
   }
 }
