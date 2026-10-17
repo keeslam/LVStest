@@ -11,6 +11,18 @@ import { Badge } from "@/components/ui/badge";
 import { usePortalAccounts } from "@/hooks/use-portal-accounts";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { SearchableCombobox } from "@/components/ui/searchable-combobox";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -30,7 +42,7 @@ import { Price } from "@/components/ui/price";
 import { displayLicensePlate } from "@/lib/utils";
 import { Customer, Reservation, Driver } from "@shared/schema";
 import { apiRequest, queryClient, invalidateRelatedQueries, invalidateByPrefix } from "@/lib/queryClient";
-import { Archive, Calendar, Car, Check, FileWarning } from "lucide-react";
+import { Archive, Calendar, Car, Check, FileWarning, Plus, Trash2 } from "lucide-react";
 import { RecycleBinDialog } from "@/components/recycle-bin/recycle-bin-dialog";
 import {
   AlertDialog,
@@ -142,6 +154,98 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
   } = useQuery<any[]>({
     queryKey: [`/api/customers/${customerId}/blacklist`],
     enabled: canViewCustomers,
+  });
+
+  // Blocking a vehicle for this customer: the mirror image of the vehicle screen,
+  // where the vehicle is fixed and a customer is chosen. Same table, same routes.
+  const canListVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
+  const [isBlockVehicleOpen, setIsBlockVehicleOpen] = useState(false);
+  const [blockVehicleId, setBlockVehicleId] = useState<string>("");
+  const [blockReason, setBlockReason] = useState("");
+  const [blockToRemove, setBlockToRemove] = useState<any | null>(null);
+
+  const { data: allVehicles = [] } = useQuery<any[]>({
+    queryKey: ['/api/vehicles'],
+    enabled: isBlockVehicleOpen && canListVehicles,
+  });
+
+  // Vehicles not yet blocked for this customer, searchable on plate (raw and formatted), brand and model.
+  const blockVehicleOptions = useMemo(() => {
+    const blockedIds = new Set(blockedVehicles.map((b: any) => b.vehicleId));
+    return allVehicles
+      .filter((v: any) => !blockedIds.has(v.id))
+      .map((v: any) => ({
+        value: String(v.id),
+        label: `${v.brand} ${v.model}`,
+        description: formatLicensePlate(v.licensePlate),
+        tags: [v.licensePlate],
+      }));
+  }, [allVehicles, blockedVehicles]);
+
+  const vehicleLabel = (entry: any) => entry?.vehicle ? `${entry.vehicle.brand} ${entry.vehicle.model}` : t('details.unknownVehicle');
+
+  // Every list that shows blocks: this card, the vehicle dialog, the portal overview and the reservation form.
+  const invalidateBlacklists = () => queryClient.invalidateQueries({
+    predicate: (q) => q.queryKey.some((k) => typeof k === "string" && k.includes("blacklist")),
+  });
+
+  const closeBlockVehicleDialog = () => {
+    setIsBlockVehicleOpen(false);
+    setBlockVehicleId("");
+    setBlockReason("");
+  };
+
+  const blockVehicleMutation = useMutation({
+    mutationFn: async ({ vehicleId, reason }: { vehicleId: number; reason?: string }) => {
+      const response = await apiRequest('POST', `/api/vehicles/${vehicleId}/blacklist`, { customerId, reason });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to block vehicle');
+      }
+      return await response.json();
+    },
+    onSuccess: async (_entry, variables) => {
+      await invalidateBlacklists();
+      const vehicle = allVehicles.find((v: any) => v.id === variables.vehicleId);
+      closeBlockVehicleDialog();
+      toast({
+        title: t('details.vehicleBlockedTitle'),
+        description: t('details.vehicleBlockedDescription', { vehicle: vehicle ? `${vehicle.brand} ${vehicle.model}` : t('details.unknownVehicle') }),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('common:status.error'),
+        description: describeApiError(error, undefined, t('details.blockVehicleFailed')),
+        variant: "destructive",
+      });
+    },
+  });
+
+  const removeBlockMutation = useMutation({
+    mutationFn: async (blacklistId: number) => {
+      const response = await apiRequest('DELETE', `/api/blacklist/${blacklistId}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to remove block');
+      }
+      return await response.json();
+    },
+    onSuccess: async () => {
+      await invalidateBlacklists();
+      setBlockToRemove(null);
+      toast({
+        title: t('details.blockRemovedTitle'),
+        description: t('details.blockRemovedDescription'),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('common:status.error'),
+        description: describeApiError(error, undefined, t('details.removeBlockFailed')),
+        variant: "destructive",
+      });
+    },
   });
   
   // Mutation for deleting drivers with optimistic updates
@@ -835,15 +939,78 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
           {/* Blocked Vehicles Section */}
           <Card className="mt-6">
             <CardHeader>
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-                  </svg>
-                  {t('details.blockedVehiclesTitle')}
-                </CardTitle>
-                <CardDescription>{t('details.blockedVehiclesDescription')}</CardDescription>
+              <div className="flex justify-between items-center gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                    </svg>
+                    {t('details.blockedVehiclesTitle')}
+                  </CardTitle>
+                  <CardDescription>{t('details.blockedVehiclesDescription')}</CardDescription>
+                </div>
+                <Dialog open={isBlockVehicleOpen} onOpenChange={(open) => (open ? setIsBlockVehicleOpen(true) : closeBlockVehicleDialog())}>
+                  <DialogTrigger asChild>
+                    <RequiresPermission anyOf={[UserPermission.MANAGE_CUSTOMERS, UserPermission.MANAGE_VEHICLES]}>
+                      <Button size="sm" variant="outline" className="flex items-center gap-2" data-testid="button-block-vehicle">
+                        <Plus className="h-4 w-4" />
+                        {t('details.blockVehicleButton')}
+                      </Button>
+                    </RequiresPermission>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[650px] md:max-w-[720px]">
+                    <DialogHeader>
+                      <DialogTitle>{t('details.blockVehicleDialogTitle')}</DialogTitle>
+                      <DialogDescription>
+                        {t('details.blockVehicleDialogDescription', { name: customer?.name ?? '' })}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="block-vehicle">{t('details.blockVehicleLabel')}</Label>
+                        <SearchableCombobox
+                          id="block-vehicle"
+                          options={blockVehicleOptions}
+                          value={blockVehicleId}
+                          onChange={setBlockVehicleId}
+                          placeholder={t('details.blockVehicleSearchPlaceholder')}
+                          searchPlaceholder={t('details.blockVehicleSearchByPlaceholder')}
+                          emptyMessage={canListVehicles ? t('details.noVehiclesFound') : t('details.blockVehicleNoListRight')}
+                          groups={false}
+                          className="w-full"
+                          data-testid="select-block-vehicle"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="block-reason">{t('details.blockReasonLabel')}</Label>
+                        <Textarea
+                          id="block-reason"
+                          placeholder={t('details.blockReasonPlaceholder')}
+                          value={blockReason}
+                          onChange={(e) => setBlockReason(e.target.value)}
+                          data-testid="input-block-reason"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={closeBlockVehicleDialog}>
+                        {t('common:actions.cancel')}
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          if (blockVehicleId) {
+                            blockVehicleMutation.mutate({ vehicleId: parseInt(blockVehicleId), reason: blockReason || undefined });
+                          }
+                        }}
+                        disabled={!blockVehicleId || blockVehicleMutation.isPending}
+                        data-testid="button-confirm-block-vehicle"
+                      >
+                        {blockVehicleMutation.isPending ? t('details.blockingVehicle') : t('details.blockVehicleConfirm')}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardHeader>
             <CardContent>
@@ -891,19 +1058,48 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
                               })}
                         </p>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-primary-600"
-                        data-testid={`button-view-blocked-vehicle-${entry.id}`}
-                        onClick={() => openVehicleDialog(entry.vehicleId)}
-                      >
-                        {t('details.viewVehicle')}
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-primary-600"
+                          data-testid={`button-view-blocked-vehicle-${entry.id}`}
+                          onClick={() => openVehicleDialog(entry.vehicleId)}
+                        >
+                          {t('details.viewVehicle')}
+                        </Button>
+                        <RequiresPermission anyOf={[UserPermission.MANAGE_CUSTOMERS, UserPermission.MANAGE_VEHICLES]}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600 hover:text-red-800 hover:bg-red-100"
+                            data-testid={`button-remove-blocked-vehicle-${entry.id}`}
+                            onClick={() => setBlockToRemove(entry)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            {t('details.removeBlockButton')}
+                          </Button>
+                        </RequiresPermission>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
+              {/* Lifting a block lets the customer rent the vehicle again, so ask first. */}
+              <ConfirmDialog
+                open={blockToRemove !== null}
+                onOpenChange={(open) => { if (!open) setBlockToRemove(null); }}
+                title={t('details.confirmRemoveBlockTitle')}
+                description={t('details.confirmRemoveBlockDescription', {
+                  vehicle: vehicleLabel(blockToRemove),
+                  plate: blockToRemove?.vehicle?.licensePlate ? formatLicensePlate(blockToRemove.vehicle.licensePlate) : '',
+                })}
+                confirmLabel={t('details.removeBlockButton')}
+                variant="danger"
+                isLoading={removeBlockMutation.isPending}
+                confirmTestId="confirm-remove-blocked-vehicle"
+                onConfirm={() => { if (blockToRemove) removeBlockMutation.mutate(blockToRemove.id); }}
+              />
             </CardContent>
           </Card>
         </TabsContent>

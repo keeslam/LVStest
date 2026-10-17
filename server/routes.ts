@@ -2621,8 +2621,9 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
-  // Add customer to vehicle blacklist
-  app.post("/api/vehicles/:id/blacklist", hasPermission(UserPermission.MANAGE_VEHICLES), async (req: Request, res: Response) => {
+  // Add customer to vehicle blacklist. The vehicle screen (manage_vehicles) and the
+  // customer screen (manage_customers) write the same pair, so either right will do.
+  app.post("/api/vehicles/:id/blacklist", hasPermission(UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_CUSTOMERS), async (req: Request, res: Response) => {
     try {
       const vehicleId = parseInt(req.params.id);
       if (isNaN(vehicleId)) {
@@ -2668,7 +2669,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Remove from blacklist
-  app.delete("/api/blacklist/:id", hasPermission(UserPermission.MANAGE_VEHICLES), async (req: Request, res: Response) => {
+  app.delete("/api/blacklist/:id", hasPermission(UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_CUSTOMERS), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
