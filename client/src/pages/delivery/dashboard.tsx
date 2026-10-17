@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SortableHead, nextSort, stableSort, type SortState } from "@/components/ui/sortable-head";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ActionIconButton } from "@/components/delivery/action-icon-button";
@@ -601,6 +602,61 @@ export default function DeliveryDashboard() {
     setViewDialogOpen(true);
   };
 
+  // Sortable columns. 'none' keeps the server's order (transports, then the
+  // delivery reservations) until a heading is clicked; a date column sorts
+  // newest first on the first click, the rest A-Z.
+  type TransportSortKey = 'none' | 'vehicle' | 'replacement' | 'type' | 'route' | 'date' | 'distance' | 'billing' | 'status';
+  const [sort, setSort] = useState<SortState<TransportSortKey>>({ key: 'none', dir: 'asc' });
+  const toggleSort = (key: TransportSortKey) => setSort((cur) => nextSort(cur, key, (k) => (k === 'date' ? 'desc' : 'asc')));
+  const sortHead = (key: TransportSortKey, label: string) =>
+    <SortableHead label={label} sortKey={key} sort={sort} onSort={toggleSort} testId={`sort-transports-${key}`} />;
+
+  const vehicleLabelOf = (row: UnifiedRow): string => {
+    if (row.kind === 'delivery') return getVehicleInfo(row.reservation.vehicleId) || '';
+    const transport = row.transport;
+    if (transport.isExternalVehicle) return [transport.externalBrand, transport.externalModel, transport.externalLicensePlate].filter(Boolean).join(' ');
+    if (transport.vehicle) return `${transport.vehicle.brand} ${transport.vehicle.model} ${transport.vehicle.licensePlate}`;
+    return getVehicleInfo(transport.vehicleId) || '';
+  };
+  const sortValueOf = (row: UnifiedRow, key: TransportSortKey): string | number => {
+    switch (key) {
+      case 'vehicle': return vehicleLabelOf(row).toLowerCase();
+      case 'replacement': return row.kind === 'transport' ? getTransportSpareStatus(row.transport) : '';
+      case 'type': return TRANSPORT_TYPE_LABELS[rowType(row)] || rowType(row);
+      case 'route': return (row.kind === 'transport'
+        ? routeText(row.transport.originCity, row.transport.destinationCity)
+        : [row.reservation.deliveryAddress, row.reservation.deliveryCity].filter(Boolean).join(', ')) || '';
+      case 'date': return row.kind === 'transport' ? row.transport.scheduledDate || '' : row.reservation.startDate || '';
+      case 'distance': return row.kind === 'transport' ? Number(row.transport.distanceKm) || 0 : 0;
+      case 'billing': return row.kind === 'transport'
+        ? (row.transport.billable ? Number(row.transport.billableAmount) || 0 : -1)
+        : (row.reservation.deliveryFee ? Number(row.reservation.deliveryFee) || 0 : -1);
+      case 'status': return rowStatus(row);
+      default: return 0;
+    }
+  };
+  const sortedRows = useMemo(() => {
+    if (sort.key === 'none') return filteredRows;
+    const key = sort.key;
+    return stableSort(filteredRows, (a, b) => {
+      const va = sortValueOf(a, key);
+      const vb = sortValueOf(b, key);
+      if (typeof va === 'number' && typeof vb === 'number') return va - vb;
+      return String(va).localeCompare(String(vb), 'nl', { numeric: true, sensitivity: 'base' });
+    }, sort.dir);
+    // The accessors read only props of the rows and stable helpers.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredRows, sort]);
+
+  // A click on the row itself opens the view; clicks on the controls inside
+  // it (checkbox, buttons, links) keep doing their own thing.
+  const openRowView = (event: React.MouseEvent<HTMLTableRowElement>, row: UnifiedRow) => {
+    const target = event.target as HTMLElement;
+    if (target.closest('button, a, input, [role="checkbox"], [role="menuitem"], [role="combobox"]')) return;
+    if (row.kind === 'transport') openTransportView(row.transport);
+    else openDeliveryView(row.reservation);
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex flex-wrap justify-between items-center gap-2">
@@ -795,14 +851,14 @@ export default function DeliveryDashboard() {
                     />
                   </TableHead>
                   <TableHead className="w-12"><span className="sr-only">{t('dashboardPage.printGenerateReportTitle')}</span><Printer className="h-4 w-4" aria-hidden="true" /></TableHead>
-                  <TableHead>{t('dashboardPage.columnVehicle')}</TableHead>
-                  <TableHead>{t('dashboardPage.columnReplacementVehicle')}</TableHead>
-                  <TableHead>{t('dashboardPage.columnType')}</TableHead>
-                  <TableHead>{t('dashboardPage.columnRoute')}</TableHead>
-                  <TableHead>{t('dashboardPage.columnDate')}</TableHead>
-                  <TableHead>{t('dashboardPage.columnDistanceToll')}</TableHead>
-                  <TableHead>{t('dashboardPage.columnBilling')}</TableHead>
-                  <TableHead>{t('dashboardPage.columnStatus')}</TableHead>
+                  {sortHead('vehicle', t('dashboardPage.columnVehicle'))}
+                  {sortHead('replacement', t('dashboardPage.columnReplacementVehicle'))}
+                  {sortHead('type', t('dashboardPage.columnType'))}
+                  {sortHead('route', t('dashboardPage.columnRoute'))}
+                  {sortHead('date', t('dashboardPage.columnDate'))}
+                  {sortHead('distance', t('dashboardPage.columnDistanceToll'))}
+                  {sortHead('billing', t('dashboardPage.columnBilling'))}
+                  {sortHead('status', t('dashboardPage.columnStatus'))}
                   <TableHead>{t('dashboardPage.columnActions')}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -816,12 +872,17 @@ export default function DeliveryDashboard() {
                     <TableCell colSpan={11} className="text-center py-4">{t('dashboardPage.noTransportsFound')}</TableCell>
                   </TableRow>
                 ) : (
-                  filteredRows.map((row) => {
+                  sortedRows.map((row) => {
                     const key = rowKey(row);
                     if (row.kind === 'delivery') {
                       const reservation = row.reservation;
                       return (
-                        <TableRow key={key} data-testid={`delivery-row-${reservation.id}`}>
+                        <TableRow
+                          key={key}
+                          data-testid={`delivery-row-${reservation.id}`}
+                          className="cursor-pointer"
+                          onClick={(event) => openRowView(event, row)}
+                        >
                           <TableCell>
                             <Checkbox
                               checked={selectedRowKeys.includes(key)}
@@ -877,7 +938,12 @@ export default function DeliveryDashboard() {
 
                     const transport = row.transport;
                     return (
-                      <TableRow key={key} data-testid={`transport-row-${transport.id}`}>
+                      <TableRow
+                        key={key}
+                        data-testid={`transport-row-${transport.id}`}
+                        className="cursor-pointer"
+                        onClick={(event) => openRowView(event, row)}
+                      >
                         <TableCell>
                           <Checkbox
                             checked={selectedRowKeys.includes(key)}
