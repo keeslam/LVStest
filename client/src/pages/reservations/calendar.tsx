@@ -1,4 +1,5 @@
 import { describeApiError } from "@/lib/api-error";
+import { withPrintIntent } from "@/lib/audit-events";
 import { useState, useMemo, useEffect } from "react";
 import { bucketByVehicleAndDay, cellKey, type BucketableReservation } from "@/lib/reservation-buckets";
 import { useTranslation } from "react-i18next";
@@ -3213,7 +3214,7 @@ export default function ReservationCalendarPage() {
                 variant="outline"
                 onClick={() => {
                   if (!previewDocument) return;
-                  const printWindow = window.open(`/api/documents/view/${previewDocument.id}`, '_blank');
+                  const printWindow = window.open(withPrintIntent(`/api/documents/view/${previewDocument.id}`), '_blank');
                   if (printWindow) {
                     printWindow.addEventListener('load', () => {
                       setTimeout(() => printWindow.print(), 500);

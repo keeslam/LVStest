@@ -1,4 +1,5 @@
 import { notifyFileReady } from "@/lib/file-ready";
+import { withPrintIntent } from "@/lib/audit-events";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import {
@@ -918,7 +919,7 @@ export function MaintenanceViewDialog({
                       variant="outline"
                       className="flex-1 px-2"
                       onClick={() => {
-                        const printWindow = window.open(`/api/documents/download/${doc.id}`, '_blank');
+                        const printWindow = window.open(withPrintIntent(`/api/documents/download/${doc.id}`), '_blank');
                         if (printWindow) {
                           printWindow.addEventListener('load', () => {
                             setTimeout(() => {
@@ -1006,7 +1007,7 @@ export function MaintenanceViewDialog({
           <Button
             variant="outline"
             onClick={() => {
-              const printWindow = window.open(`/api/documents/download/${previewDocument.id}`, '_blank');
+              const printWindow = window.open(withPrintIntent(`/api/documents/download/${previewDocument.id}`), '_blank');
               if (printWindow) {
                 printWindow.addEventListener('load', () => {
                   setTimeout(() => {

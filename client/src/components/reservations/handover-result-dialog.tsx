@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { RequiresPermission } from "@/components/ui/requires-permission";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
+import { withPrintIntent } from "@/lib/audit-events";
 import { EmailDocumentDialog } from "@/components/documents/email-document-dialog";
 import { UserPermission, type Document, type Reservation } from "@shared/schema";
 import { CONTRACT_ERROR_CODES, type ContractErrorCode } from "@shared/contract-error-codes";
@@ -115,7 +116,8 @@ interface HandoverResultDialogProps {
  * own top-level window, which is what gets a real print dialog.
  */
 export function openDocumentForPrint(documentId: number): Window | null {
-  return window.open(`/api/documents/view/${documentId}`, "documentPrintWindow", "width=900,height=700");
+  // `intent=print`: the server logs this request as a print, not a view.
+  return window.open(withPrintIntent(`/api/documents/view/${documentId}`), "documentPrintWindow", "width=900,height=700");
 }
 
 export function HandoverResultDialog({

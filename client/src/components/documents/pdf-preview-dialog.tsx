@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import { releaseIframeFocus } from "@/lib/release-iframe-focus";
+import { reportPrinted, withPrintIntent } from "@/lib/audit-events";
 
 interface PdfPreviewDialogProps {
   open: boolean;
@@ -38,6 +39,9 @@ export function PdfPreviewDialog({ open, onOpenChange, url, title }: PdfPreviewD
       if (iframe && iframe.contentWindow) {
         try {
           iframe.contentWindow.print();
+          // The preview was loaded (and logged) as a view; the print itself
+          // never touches the server, so say so here.
+          reportPrinted(url);
           return;
         } catch (error) {
           console.log('Failed to print from preview iframe:', error);
@@ -46,7 +50,7 @@ export function PdfPreviewDialog({ open, onOpenChange, url, title }: PdfPreviewD
     }
 
     const printWindow = window.open(
-      url,
+      withPrintIntent(url),
       'printWindow',
       'width=800,height=600,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no'
     );

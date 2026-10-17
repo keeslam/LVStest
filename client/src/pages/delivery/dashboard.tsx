@@ -1,4 +1,5 @@
 import { describeApiError } from "@/lib/api-error";
+import { withPrintIntent } from "@/lib/audit-events";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -452,7 +453,7 @@ export default function DeliveryDashboard() {
   // printing that is what actually gets a real print dialog with printer choice.
   const printGeneratedReport = () => {
     if (!reportToPreview) return;
-    const printUrl = `/api/documents/view/${reportToPreview.id}`;
+    const printUrl = withPrintIntent(`/api/documents/view/${reportToPreview.id}`);
     const printWindow = window.open(printUrl, "transportReportPrintWindow", "width=900,height=700");
     if (!printWindow) {
       toast({

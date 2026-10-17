@@ -225,7 +225,18 @@
         "email-log": "Email log entry",
         "notification": "Notification",
         "apk-date-change": "APK date change",
-        "system": "System job"
+        "system": "System job",
+        "backup": "Backup",
+        "interactive-damage-check": "Damage check",
+        "damage-check-template": "Damage form template",
+        "fine-import": "Fine import",
+        "fiscal-assessment": "Fiscal assessment",
+        "fiscal-report": "Fiscal report",
+        "invoice-inbox-item": "Invoice from the mailbox",
+        "portal-request": "Portal request",
+        "label": "Key label",
+        "barcode-book": "Barcode book",
+        "report": "Report"
       },
       "verbs": {
         "create": "created",
@@ -233,7 +244,11 @@
         "delete": "deleted",
         "restore": "restored",
         "upload": "uploaded",
-        "purge": "permanently deleted"
+        "purge": "permanently deleted",
+        "view": "viewed",
+        "download": "downloaded",
+        "print": "printed",
+        "export": "exported"
       },
       "subActions": {
         "reservation": {
@@ -248,7 +263,9 @@
           "spare-status": "Replacement vehicle status changed",
           "complete-maintenance": "Maintenance completed",
           "mark-needs-service": "Marked as needing service",
-          "return-from-service": "Returned from service"
+          "return-from-service": "Returned from service",
+          "contract-pdf": "Contract PDF opened",
+          "damage-check-pdf": "Damage form PDF opened"
         },
         "vehicle": {
           "mileage": "Mileage changed",
@@ -257,7 +274,8 @@
           "barcode": "Barcode changed",
           "toggle-registration": "Registration changed",
           "fiscal-profile": "Fiscal profile changed",
-          "blacklist": "Added to the blacklist"
+          "blacklist": "Added to the blacklist",
+          "damage-check-pdf": "Damage form PDF opened"
         },
         "document": {
           "email": "Document emailed",
@@ -268,10 +286,24 @@
           "link": "Fine linked to a customer",
           "unlink": "Fine unlinked from its customer",
           "reactivate": "Fine reactivated",
-          "status": "Fine status changed"
+          "status": "Fine status changed",
+          "letter-view": "Fine letter viewed"
         },
         "expense": {
-          "with-receipt": "Expense saved with receipt"
+          "with-receipt": "Expense saved with receipt",
+          "receipt-view": "Receipt viewed"
+        },
+        "driver": {
+          "license-view": "Driving licence viewed"
+        },
+        "portal-request": {
+          "attachment-view": "Attachment viewed"
+        },
+        "interactive-damage-check": {
+          "pdf": "Damage check PDF opened"
+        },
+        "fiscal-assessment": {
+          "pdf": "Assessment PDF opened"
         },
         "apk-date-change": {
           "confirm": "RDW APK date applied",

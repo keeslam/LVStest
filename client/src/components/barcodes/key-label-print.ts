@@ -7,6 +7,7 @@ import { BarcodeLabelField, resolveBarcodeLabelSource, shortKeyLabelCode } from 
 import { notifyFileReady } from "@/lib/file-ready";
 import { buildTapeImageLabelXml, dymoLabelFileName, findDymoService, printDymoLabel, type TapeAlignment } from "@/lib/dymo-label";
 import { renderTapeLabelPngBase64, renderTapeStripPngBase64, tapeStripLengthMm, TapeBarcodeTooWideError, type TapeImageInput } from "@/lib/tape-label-image";
+import { reportClientAction } from "@/lib/audit-events";
 
 interface LabelVehicle {
   id: number;
@@ -29,6 +30,17 @@ interface LabelVehicle {
 function printedKeyCode(vehicle: LabelVehicle): string | undefined {
   const code = vehicle.barcodeOverride ?? vehicle.barcode;
   return code ? shortKeyLabelCode(code) : undefined;
+}
+
+/**
+ * Labels never touch the server, so the activity log hears about them from
+ * here: which plates, how many labels, and whether they went to the browser's
+ * print window, a DYMO printer or a .label file.
+ */
+function reportLabelPrint(vehicles: LabelVehicle[], output: "browser" | "dymo" | "file", labels = vehicles.length): void {
+  reportClientAction("label.print", {
+    details: { output, count: labels, plates: vehicles.slice(0, 100).map((v) => v.licensePlate) },
+  });
 }
 
 const DEFAULT_LABEL_WIDTH_MM = 62;
@@ -316,6 +328,7 @@ export function printKeyLabels(
     doc.body.appendChild(label);
   }
 
+  reportLabelPrint(printable, "browser");
   openPrintWindow(
     frame,
     String(i18n.t("barcodes:label.printOpenedTitle")),
@@ -373,6 +386,7 @@ function printTapeLabels(printable: LabelVehicle[], tape: TapeLayout, fields: Ba
 
   // Same as the die-cut path: only the browser's print window opens; the toast says which
   // printer settings make the tape come out right.
+  reportLabelPrint(printable, "browser");
   openPrintWindow(
     frame,
     String(i18n.t("barcodes:label.printOpenedTitle")),
@@ -452,6 +466,7 @@ async function outputDymoLabels(
         description: String(i18n.t("barcodes:dymo.filesReady", { count: jobs.length })),
       });
     }
+    reportLabelPrint(printable, "file", jobs.reduce((sum, job) => sum + job.labels, 0));
     return;
   }
 
@@ -470,6 +485,7 @@ async function outputDymoLabels(
       await printDymoLabel(origin, output.printerName, job.xml, `${i18n.t("barcodes:dymo.jobTitle")} ${job.plate}`, { chain: output.chain === true, alignment: output.alignment });
       printed += job.labels;
     }
+    reportLabelPrint(printable, "dymo", printed);
     toast({
       title: String(i18n.t("barcodes:dymo.printedTitle")),
       description: String(i18n.t("barcodes:dymo.printedDescription", { count: printed, printer: output.printerName })),
@@ -552,6 +568,7 @@ export function printBarcodeBook(vehicles: LabelVehicle[], pageHeader: string): 
   }
 
   // Same as printKeyLabels: this only opens the browser's print window, and the toast says so.
+  reportClientAction("barcode-book.print", { details: { count: printable.length } });
   openPrintWindow(
     frame,
     String(i18n.t("barcodes:book.printOpenedTitle")),

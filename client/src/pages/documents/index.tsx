@@ -1,4 +1,5 @@
 import { describeApiError } from "@/lib/api-error";
+import { reportPrinted, withPrintIntent } from "@/lib/audit-events";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -285,6 +286,8 @@ export default function DocumentsIndex() {
             console.log('Trying to print from visible iframe...');
             iframe.contentWindow.print();
             console.log('Print from visible iframe succeeded');
+            // The print never reaches the server; report it for the activity log.
+            reportPrinted(`/api/documents/view/${documentToPrint.id}`);
             return; // Success, exit function
           } catch (error) {
             console.log('Failed to print from preview iframe:', error);
@@ -296,8 +299,8 @@ export default function DocumentsIndex() {
       // Alternative approach: Print-specific popup window
       console.log('Using popup window for direct printing...');
       
-      const printUrl = `/api/documents/view/${documentToPrint.id}`;
-      
+      const printUrl = withPrintIntent(`/api/documents/view/${documentToPrint.id}`);
+
       // Create a small popup window specifically for printing
       const printWindow = window.open(
         printUrl, 

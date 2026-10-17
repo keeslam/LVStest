@@ -28,13 +28,19 @@ const SUB_ACTIONS: Record<string, readonly string[]> = {
   reservation: [
     "pickup", "return", "status", "revert", "contract", "assign-spare", "basic", "usage-period",
     "spare-status", "complete-maintenance", "mark-needs-service", "return-from-service",
+    "contract-pdf", "damage-check-pdf",
   ],
   vehicle: [
     "mileage", "fuel-status", "maintenance-status", "barcode", "toggle-registration", "fiscal-profile", "blacklist",
+    "damage-check-pdf",
   ],
   document: ["email", "regenerate"],
-  fine: ["letter", "link", "unlink", "reactivate", "status"],
-  expense: ["with-receipt"],
+  fine: ["letter", "link", "unlink", "reactivate", "status", "letter-view"],
+  expense: ["with-receipt", "receipt-view"],
+  driver: ["license-view"],
+  "portal-request": ["attachment-view"],
+  "interactive-damage-check": ["pdf"],
+  "fiscal-assessment": ["pdf"],
   "apk-date-change": ["confirm", "dismiss"],
   // Background runs (server/utils/security/auditLogger.ts AuditLogger.system): one row per run.
   system: ["apk-scan", "service-due-scan", "fiscal-nightly", "cjib-import", "invoice-inbox-import", "backup"],
@@ -47,9 +53,13 @@ const RESOURCES = [
   // Routers that were mounted outside the audit middleware until 2026-10 and now show up in the log.
   "email-template", "email-log", "notification", "apk-date-change",
   "system",
+  // Reads of files (TRACKED_READS in server/middleware/audit.ts) and what the client prints or exports itself.
+  "backup", "interactive-damage-check", "damage-check-template", "fine-import", "fiscal-assessment", "fiscal-report",
+  "invoice-inbox-item", "portal-request", "label", "barcode-book", "report",
 ] as const;
 
-const VERBS = ["create", "update", "delete", "restore", "upload", "purge"] as const;
+// `view`, `download`, `print` and `export` are the read verbs: "Document bekeken", "Rapport geëxporteerd".
+const VERBS = ["create", "update", "delete", "restore", "upload", "purge", "view", "download", "print", "export"] as const;
 
 type Translate = TFunction | ((key: string, options?: Record<string, unknown>) => string);
 

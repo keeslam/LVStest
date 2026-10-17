@@ -225,7 +225,18 @@
         "email-log": "Maillogregel",
         "notification": "Melding",
         "apk-date-change": "APK-datumwijziging",
-        "system": "Systeemtaak"
+        "system": "Systeemtaak",
+        "backup": "Back-up",
+        "interactive-damage-check": "Schadecheck",
+        "damage-check-template": "Schadeformulier-sjabloon",
+        "fine-import": "Boete-import",
+        "fiscal-assessment": "Fiscale beoordeling",
+        "fiscal-report": "Fiscaal rapport",
+        "invoice-inbox-item": "Factuur uit het postvak",
+        "portal-request": "Portaalaanvraag",
+        "label": "Sleutellabel",
+        "barcode-book": "Barcodeboek",
+        "report": "Rapport"
       },
       "verbs": {
         "create": "aangemaakt",
@@ -233,7 +244,11 @@
         "delete": "verwijderd",
         "restore": "hersteld",
         "upload": "geüpload",
-        "purge": "definitief verwijderd"
+        "purge": "definitief verwijderd",
+        "view": "bekeken",
+        "download": "gedownload",
+        "print": "afgedrukt",
+        "export": "geëxporteerd"
       },
       "subActions": {
         "reservation": {
@@ -248,7 +263,9 @@
           "spare-status": "Status vervangend voertuig gewijzigd",
           "complete-maintenance": "Onderhoud afgerond",
           "mark-needs-service": "Gemarkeerd als onderhoud nodig",
-          "return-from-service": "Terug uit onderhoud"
+          "return-from-service": "Terug uit onderhoud",
+          "contract-pdf": "Contract-PDF geopend",
+          "damage-check-pdf": "Schadeformulier-PDF geopend"
         },
         "vehicle": {
           "mileage": "Kilometerstand gewijzigd",
@@ -257,7 +274,8 @@
           "barcode": "Barcode gewijzigd",
           "toggle-registration": "Tenaamstelling gewijzigd",
           "fiscal-profile": "Fiscaal profiel gewijzigd",
-          "blacklist": "Op de zwarte lijst gezet"
+          "blacklist": "Op de zwarte lijst gezet",
+          "damage-check-pdf": "Schadeformulier-PDF geopend"
         },
         "document": {
           "email": "Document gemaild",
@@ -268,10 +286,24 @@
           "link": "Boete gekoppeld aan een klant",
           "unlink": "Koppeling van de boete losgemaakt",
           "reactivate": "Boete weer actief gemaakt",
-          "status": "Status van de boete gewijzigd"
+          "status": "Status van de boete gewijzigd",
+          "letter-view": "Boetebrief bekeken"
         },
         "expense": {
-          "with-receipt": "Kostenpost met bon opgeslagen"
+          "with-receipt": "Kostenpost met bon opgeslagen",
+          "receipt-view": "Bon bekeken"
+        },
+        "driver": {
+          "license-view": "Rijbewijs bekeken"
+        },
+        "portal-request": {
+          "attachment-view": "Bijlage bekeken"
+        },
+        "interactive-damage-check": {
+          "pdf": "Schadecheck-PDF geopend"
+        },
+        "fiscal-assessment": {
+          "pdf": "Beoordelings-PDF geopend"
         },
         "apk-date-change": {
           "confirm": "APK-datum van de RDW overgenomen",

@@ -13,7 +13,81 @@ import { AuditLogger } from '../utils/security/auditLogger';
  * For the entities below it also fetches the row BEFORE the handler runs and
  * compares it against the handler's own JSON response, which is what turns a
  * bare "vehicle.update" into "mileage 55.829 -> 5.526".
+ *
+ * Reads are not logged - a list screen would fill the log with nothing - with
+ * one exception: opening, downloading or printing a file (TRACKED_READS). Those
+ * answer "who looked at this contract" and "who printed the damage report",
+ * which the owner wants in the same log. A print the browser does from an
+ * already-loaded preview never reaches the server; the client reports it to
+ * POST /api/audit-events, and a print that does load the file carries
+ * `?intent=print` so the same request is logged as a print, not a view.
  */
+
+/**
+ * The file reads worth a line. `$1` is the record id where the URL has one.
+ * `?intent=print` on any of these turns the verb into `print`.
+ */
+const TRACKED_READS: Array<{ pattern: RegExp; type: string; verb: string }> = [
+  { pattern: /^\/api\/documents\/view\/(\d+)$/, type: 'document', verb: 'view' },
+  { pattern: /^\/api\/documents\/download\/(\d+)$/, type: 'document', verb: 'download' },
+  // Contract / damage-report PDFs generated on the fly for a reservation
+  { pattern: /^\/api\/contracts\/generate(?:-default)?\/(\d+)$/, type: 'reservation', verb: 'contract-pdf' },
+  { pattern: /^\/api\/damage-checks\/generate\/(\d+)$/, type: 'reservation', verb: 'damage-check-pdf' },
+  { pattern: /^\/api\/vehicles\/(\d+)\/damage-check-pdf$/, type: 'vehicle', verb: 'damage-check-pdf' },
+  // Same type name the write middleware derives from the URL, so the PDF opens
+  // show up in the same record history as the check's creation.
+  { pattern: /^\/api\/interactive-damage-checks\/(\d+)\/pdf$/, type: 'interactive-damage-check', verb: 'pdf' },
+  { pattern: /^\/api\/drivers\/(\d+)\/license$/, type: 'driver', verb: 'license-view' },
+  { pattern: /^\/api\/expenses\/(\d+)\/receipt$/, type: 'expense', verb: 'receipt-view' },
+  { pattern: /^\/api\/expenses\/inbox\/items\/(\d+)\/file$/, type: 'invoice-inbox-item', verb: 'view' },
+  { pattern: /^\/api\/fines\/(\d+)\/letter$/, type: 'fine', verb: 'letter-view' },
+  { pattern: /^\/api\/fines\/imports\/(\d+)\/file$/, type: 'fine-import', verb: 'view' },
+  { pattern: /^\/api\/fiscal\/assessments\/(\d+)\/pdf$/, type: 'fiscal-assessment', verb: 'pdf' },
+  { pattern: /^\/api\/fiscal\/reports\/monthly\.csv$/, type: 'fiscal-report', verb: 'export' },
+  { pattern: /^\/api\/portal-requests\/(\d+)\/attachments\/\d+$/, type: 'portal-request', verb: 'attachment-view' },
+  { pattern: /^\/api\/damage-check-templates\/(\d+)\/export$/, type: 'damage-check-template', verb: 'export' },
+  { pattern: /^\/api\/backups\/download(?:-data|-code|-files|\/.+)$/, type: 'backup', verb: 'download' },
+];
+
+export interface TrackedRead {
+  action: string;
+  type: string;
+  id: number | null;
+  verb: string;
+}
+
+/** Which audit row a GET of this path is worth, or null for an ordinary read. */
+export function describeRead(path: string, intent?: unknown): TrackedRead | null {
+  const clean = path.split('?')[0];
+  for (const entry of TRACKED_READS) {
+    const match = entry.pattern.exec(clean);
+    if (!match) continue;
+    const id = match[1] && /^\d+$/.test(match[1]) ? parseInt(match[1], 10) : null;
+    const verb = intent === 'print' ? 'print' : entry.verb;
+    return { action: `${entry.type}.${verb}`, type: entry.type, id, verb };
+  }
+  return null;
+}
+
+/**
+ * Writes the row for a tracked read, named after the record where it can be
+ * (the document's file name, the vehicle's plate). Shared with the
+ * /api/audit-events route, which reports the prints the server never sees.
+ */
+export async function recordRead(req: Request, read: TrackedRead, extra: Record<string, any> = {}): Promise<void> {
+  const details: Record<string, any> = { operation: read.verb, ...extra };
+  const tracked = Object.values(TRACKED_RESOURCES).find((entry) => entry.type === read.type);
+  if (tracked && read.id !== null) {
+    try {
+      const label = tracked.label(await tracked.load(read.id));
+      if (label) details.label = label;
+    } catch {
+      // The name is a nicety; the row is not.
+    }
+  }
+  if (!details.path) details.path = req.originalUrl.split('?')[0];
+  await AuditLogger.logFromRequest(req, read.action, read.type, read.id ?? undefined, details, 'success');
+}
 
 // Resource segment in the URL -> how to read a single row and how to name it
 const TRACKED_RESOURCES: Record<string, {
@@ -118,6 +192,8 @@ const SELF_LOGGED: Array<{ method: string; pattern: RegExp }> = [
   // D17: applying the RDW type plan writes one `vehicle.type-remap` row per vehicle itself, and
   // the check only stores a plan. Neither is a `vehicle.create`.
   { method: 'POST', pattern: /^\/api\/vehicles\/rdw-type-remap\/(check|apply)$/ },
+  // The client's own print/export reports: the route writes the row it describes.
+  { method: 'POST', pattern: /^\/api\/audit-events$/ },
 ];
 
 const isSecret = (field: string) => SECRET_FIELDS.has(field.toLowerCase());
@@ -201,8 +277,21 @@ function verbFor(method: string): string {
 
 export function auditMutations(req: Request, res: Response, next: NextFunction) {
   const method = req.method.toUpperCase();
-  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) return next();
   if (!req.path.startsWith('/api/')) return next();
+
+  if (method === 'GET') {
+    const read = describeRead(req.path, req.query?.intent);
+    if (!read) return next();
+    res.on('finish', () => {
+      // A 404 or 403 is not "looked at"; the security log has the refusals.
+      if (res.statusCode < 200 || res.statusCode >= 300) return;
+      if (!(req as any).user) return;
+      void recordRead(req, read);
+    });
+    return next();
+  }
+
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) return next();
   if (SKIPPED_PATH_PATTERNS.some((pattern) => pattern.test(req.path))) return next();
   if (SELF_LOGGED.some((entry) => entry.method === method && entry.pattern.test(req.path))) return next();
 

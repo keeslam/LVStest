@@ -1,4 +1,5 @@
 import { describeApiError } from "@/lib/api-error";
+import { reportClientAction } from "@/lib/audit-events";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -686,6 +687,7 @@ function ReportResultsDialog({
   };
 
   const printResults = () => {
+    reportClientAction('report.print', { details: { report: reportName || t('reportBuilderPage.untitledReport'), rows: results.length } });
     printReportTable({
       title: reportName || t('reportBuilderPage.untitledReport'),
       subtitle: t('reportBuilderPage.printSubtitle', { date: formatDateTime(Date.now()), count: results.length }),

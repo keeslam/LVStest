@@ -2,6 +2,7 @@ import { useState, useTransition } from "react";
 // FIX-R (BUG-102): every database value that goes into the print HTML is
 // escaped at the point it is interpolated.
 import { escapeHtml as esc } from "@/lib/html-escape";
+import { reportClientAction } from "@/lib/audit-events";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -747,6 +748,9 @@ function FullReportsPage() {
 
   // Function to handle printing reports
   const printReport = (reportType: string) => {
+    // The report is rendered here, never fetched as a file: report the print
+    // so the activity log knows who printed which overview.
+    reportClientAction('report.print', { details: { report: reportType } });
     // Create a hidden iframe for printing specific content
     const printFrame = document.createElement('iframe');
     printFrame.style.position = 'fixed';

@@ -68,6 +68,7 @@ import {
 } from "@/components/ui/accordion";
 import { Bell, Mail, User, Eye, Edit, Calendar, Plus, Upload, X, FileCheck, Printer, Trash2, Download, ChevronDown, ChevronRight, ChevronLeft, AlertTriangle, Car, ScanLine, Info, History } from "lucide-react";
 import { RecordHistoryDialog } from "@/components/audit/record-history-dialog";
+import { withPrintIntent } from "@/lib/audit-events";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -2362,7 +2363,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                         onClick={(e) => {
                                           e.preventDefault();
                                           const printWindow = window.open(
-                                            `/api/documents/view/${document.id}`,
+                                            withPrintIntent(`/api/documents/view/${document.id}`),
                                             'Print Preview',
                                             'width=900,height=700,toolbar=no,menubar=no,location=no,status=no,scrollbars=yes,resizable=yes'
                                           );

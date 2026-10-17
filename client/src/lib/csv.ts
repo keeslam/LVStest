@@ -16,6 +16,7 @@
 import { officeToday } from "./office-date";
 import { toOfficeWallClock } from "./office-timezone";
 import { notifyFileReady } from "./file-ready";
+import { reportClientAction } from "./audit-events";
 
 type Cell = string | number | null | undefined;
 
@@ -84,5 +85,8 @@ export function downloadCsv(subject: string, header: string[], rows: Cell[][], t
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   notifyFileReady(name, blob.size);
+  // Every CSV leaves through here, so this is the one place the export is
+  // reported to the activity log ("who exported the fines, and when").
+  reportClientAction("report.export", { details: { file: name, rows: rows.length } });
   return name;
 }

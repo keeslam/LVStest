@@ -164,6 +164,7 @@ import { isLatestReturnForVehicle } from "./services/reservation-mileage-sync";
 import { assignDriverToReservation } from "./services/driver-assignments";
 import { getServiceDueVehicles, scanVehiclesForServiceDue } from "./utils/service-due-scanner";
 import { registerUserRoutes } from "./routes/users";
+import { registerAuditEventRoutes } from "./routes/audit-events";
 import { registerPortalAdminRoutes } from "./routes/portal-admin";
 import { registerFiscalRoutes } from "./routes/fiscal";
 import { registerFineRoutes } from "./routes/fines";
@@ -524,6 +525,8 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Who changed what, from the audit_logs table. Same permission as user
   // management: it exposes every user's actions.
   registerUserRoutes(app, routeDeps);
+  // Prints and exports the browser does itself, reported for the activity log.
+  registerAuditEventRoutes(app, routeDeps);
   registerPortalAdminRoutes(app, routeDeps);
   // Fiscal mobility check (docs/fiscaal): configuration, assessments, review cases.
   registerFiscalRoutes(app, routeDeps);
