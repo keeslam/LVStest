@@ -236,7 +236,14 @@
         "portal-request": "Portal request",
         "label": "Key label",
         "barcode-book": "Barcode book",
-        "report": "Report"
+        "report": "Report",
+        "screen": "Screen",
+        "dialog": "Dialog",
+        "ui": "Screen",
+        "access": "Access",
+        "user": "User",
+        "session": "Session",
+        "password": "Password"
       },
       "verbs": {
         "create": "created",
@@ -304,6 +311,26 @@
         },
         "fiscal-assessment": {
           "pdf": "Assessment PDF opened"
+        },
+        "screen": {
+          "open": "Screen opened"
+        },
+        "dialog": {
+          "open": "Dialog opened"
+        },
+        "access": {
+          "denied": "Access denied"
+        },
+        "user": {
+          "login": "Logged in",
+          "logout": "Logged out",
+          "reauthenticate": "Re-authenticated"
+        },
+        "session": {
+          "revoke": "Session revoked"
+        },
+        "password": {
+          "change": "Password changed"
         },
         "apk-date-change": {
           "confirm": "RDW APK date applied",

@@ -629,6 +629,14 @@
       "toLabel": "Up to and including",
       "allUsers": "All users",
       "allActions": "All actions",
+      "scopeLabel": "Kind",
+      "scopes": {
+        "changes": "Changes",
+        "ui": "Screens and dialogs",
+        "all": "Everything"
+      },
+      "more": "+{{count}} more",
+      "fewer": "fewer",
       "resetFilters": "Clear filters",
       "entryCount_one": "{{count}} entry",
       "entryCount_other": "{{count}} entries",

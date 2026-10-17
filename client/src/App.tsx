@@ -1,5 +1,6 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
+import { trackUi } from "@/lib/audit-events";
 import Dashboard from "@/pages/dashboard";
 // OPT-001 — the work-day screen. A *sibling* of the dashboard, not a
 // replacement: a new route plus a prominent entry is the smaller, reversible
@@ -46,6 +47,12 @@ function AppRoutes() {
   // throws while rendering loses the page and keeps the shell. Navigating
   // away clears it — the location is the reset key.
   const [location] = useLocation();
+
+  // Every staff screen the employee opens goes to the activity log
+  // ("Schermen en vensters"); the portal and the login page are left out.
+  useEffect(() => {
+    if (user) trackUi("screen", location);
+  }, [user, location]);
 
   const handleLogout = () => {
     logoutMutation.mutate();

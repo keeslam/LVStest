@@ -88,6 +88,29 @@ export class AuditLogger {
   }
 
   /**
+   * Several rows in one statement: the client reports screens and dialogs in
+   * batches, and forty inserts for one request would be forty round trips.
+   */
+  static async logMany(rows: AuditLogData[]): Promise<void> {
+    if (rows.length === 0) return;
+    try {
+      await db.insert(auditLogs).values(rows.map((data) => ({
+        userId: data.userId || null,
+        username: data.username || 'system',
+        action: data.action,
+        resourceType: data.resourceType || null,
+        resourceId: data.resourceId || null,
+        details: data.details || null,
+        ipAddress: data.ipAddress || null,
+        userAgent: data.userAgent || null,
+        status: data.status || 'success',
+      })));
+    } catch (error) {
+      console.error('Failed to create audit log batch:', error);
+    }
+  }
+
+  /**
    * One row for a background run (scheduler, poller): no user, no request.
    * `details` carries the counts and, capped, the ids the run touched.
    */
@@ -129,7 +152,7 @@ export class AuditLogger {
   /**
    * Extract client IP address from request
    */
-  private static getClientIp(req: Request): string {
+  static getClientIp(req: Request): string {
     const forwarded = req.get('x-forwarded-for');
     if (forwarded) {
       return forwarded.split(',')[0].trim();

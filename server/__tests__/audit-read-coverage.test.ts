@@ -120,6 +120,42 @@ describe("audit coverage — reads, prints and downloads", () => {
     expect((await admin.post("/api/audit-events").send({ printedUrl: "https://evil.example/x" })).status).toBe(400);
   });
 
+  it("screens and dialogs arrive in a batch, land as ui rows, and stay out of the default log view", async () => {
+    const marker = `FIXT-dialog-${Date.now()}`;
+    const res = await admin.post("/api/audit-events").send({
+      events: [
+        { kind: "screen", name: "/reservations", path: "/reservations", at: new Date().toISOString() },
+        { kind: "dialog", name: marker, path: "/reservations" },
+      ],
+    });
+    expect(res.status).toBe(204);
+
+    const rows = await db.select().from(auditLogs)
+      .where(and(eq(auditLogs.resourceType, "ui"), eq(auditLogs.username, admin.username)));
+    const dialogRow = rows.find((r) => r.details?.name === marker);
+    expect(dialogRow).toBeDefined();
+    expect(dialogRow!.action).toBe("dialog.open");
+    expect(dialogRow!.details).toMatchObject({ path: "/reservations", source: "client" });
+
+    // Default view: changes only. The dialog row is reachable under scope=ui and scope=all.
+    const changes = await admin.get(`/api/audit-logs?search=${encodeURIComponent(marker)}&limit=50`);
+    expect(changes.status).toBe(200);
+    expect(changes.body.logs.some((l: any) => l.details?.name === marker)).toBe(false);
+
+    const ui = await admin.get(`/api/audit-logs?scope=ui&search=${encodeURIComponent(marker)}&limit=50`);
+    expect(ui.body.logs.some((l: any) => l.details?.name === marker)).toBe(true);
+    expect(ui.body.logs.every((l: any) => l.resourceType === "ui")).toBe(true);
+
+    const all = await admin.get(`/api/audit-logs?scope=all&search=${encodeURIComponent(marker)}&limit=50`);
+    expect(all.body.logs.some((l: any) => l.details?.name === marker)).toBe(true);
+  });
+
+  it("a batch with an unknown kind or too many events is refused", async () => {
+    expect((await admin.post("/api/audit-events").send({ events: [{ kind: "popup", name: "x" }] })).status).toBe(400);
+    const tooMany = Array.from({ length: 51 }, (_, i) => ({ kind: "dialog", name: `d${i}` }));
+    expect((await admin.post("/api/audit-events").send({ events: tooMany })).status).toBe(400);
+  });
+
   it("a failed read leaves no 'looked at' row", async () => {
     const res = await admin.get("/api/documents/download/999999999");
     expect(res.status).toBe(404);

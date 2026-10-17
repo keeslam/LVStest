@@ -62,6 +62,8 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
         search: typeof req.query.search === 'string' && req.query.search ? req.query.search : undefined,
         from: typeof req.query.from === 'string' && req.query.from ? req.query.from : undefined,
         to: typeof req.query.to === 'string' && req.query.to ? req.query.to : undefined,
+        // Screens and dialogs are a view of their own; anything else is the default.
+        scope: req.query.scope === 'ui' || req.query.scope === 'all' ? req.query.scope : 'changes',
       });
 
       res.json(result);

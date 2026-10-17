@@ -41,6 +41,9 @@ const SUB_ACTIONS: Record<string, readonly string[]> = {
   "portal-request": ["attachment-view"],
   "interactive-damage-check": ["pdf"],
   "fiscal-assessment": ["pdf"],
+  // Screens and dialogs the client reports (client/src/lib/audit-events.ts trackUi).
+  screen: ["open"],
+  dialog: ["open"],
   "apk-date-change": ["confirm", "dismiss"],
   // Background runs (server/utils/security/auditLogger.ts AuditLogger.system): one row per run.
   system: ["apk-scan", "service-due-scan", "fiscal-nightly", "cjib-import", "invoice-inbox-import", "backup"],
@@ -56,6 +59,7 @@ const RESOURCES = [
   // Reads of files (TRACKED_READS in server/middleware/audit.ts) and what the client prints or exports itself.
   "backup", "interactive-damage-check", "damage-check-template", "fine-import", "fiscal-assessment", "fiscal-report",
   "invoice-inbox-item", "portal-request", "label", "barcode-book", "report",
+  "screen", "dialog", "access", "user", "session", "password", "ui",
 ] as const;
 
 // `view`, `download`, `print` and `export` are the read verbs: "Document bekeken", "Rapport geëxporteerd".

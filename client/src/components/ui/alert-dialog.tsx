@@ -3,6 +3,7 @@ import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
+import { useMergedRef, useTrackDialogOpen } from "@/components/ui/dialog"
 
 const AlertDialog = AlertDialogPrimitive.Root
 
@@ -28,11 +29,15 @@ AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName
 const AlertDialogContent = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
->(({ className, ...props }, ref) => (
+>(({ className, ...props }, ref) => {
+  // Same tracking as ui/dialog.tsx: the activity log names the dialog by its title.
+  const [contentRef, setContentRef] = useMergedRef<HTMLDivElement>(ref);
+  useTrackDialogOpen(contentRef);
+  return (
   <AlertDialogPortal>
     <AlertDialogOverlay />
     <AlertDialogPrimitive.Content
-      ref={ref}
+      ref={setContentRef}
       className={cn(
         // Mobile (<sm): full-screen sheet, matching ui/dialog.tsx — the
         // centering transforms misplace dialogs on phone viewports.
@@ -45,7 +50,8 @@ const AlertDialogContent = React.forwardRef<
       {...props}
     />
   </AlertDialogPortal>
-))
+  );
+})
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName
 
 const AlertDialogHeader = ({

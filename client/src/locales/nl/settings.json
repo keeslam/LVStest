@@ -629,6 +629,14 @@
       "toLabel": "Tot en met",
       "allUsers": "Alle gebruikers",
       "allActions": "Alle acties",
+      "scopeLabel": "Soort",
+      "scopes": {
+        "changes": "Wijzigingen",
+        "ui": "Schermen en vensters",
+        "all": "Alles"
+      },
+      "more": "+{{count}} meer",
+      "fewer": "minder",
       "resetFilters": "Filters wissen",
       "entryCount_one": "{{count}} regel",
       "entryCount_other": "{{count}} regels",

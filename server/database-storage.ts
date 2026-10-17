@@ -168,8 +168,19 @@ export class DatabaseStorage implements IStorage {
     search?: string;
     from?: string;
     to?: string;
+    /**
+     * Which rows: `changes` (default) leaves out the screens and dialogs the
+     * client reports (resource_type 'ui'), `ui` is only those, `all` is both.
+     * The default keeps the activity log readable: one afternoon at the counter
+     * opens more dialogs than a week of edits.
+     */
+    scope?: 'changes' | 'ui' | 'all';
   }): Promise<{ logs: AuditLog[]; total: number }> {
     const conditions = [];
+
+    const scope = options.scope ?? 'changes';
+    if (scope === 'changes') conditions.push(sql`${auditLogs.resourceType} IS DISTINCT FROM 'ui'`);
+    if (scope === 'ui') conditions.push(eq(auditLogs.resourceType, 'ui'));
 
     if (options.username) conditions.push(eq(auditLogs.username, options.username));
     if (options.action) conditions.push(eq(auditLogs.action, options.action));

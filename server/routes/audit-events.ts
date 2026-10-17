@@ -23,6 +23,15 @@ const CLIENT_ACTIONS = new Set(["label.print", "barcode-book.print", "report.pri
 const MAX_DETAILS_CHARS = 4000;
 
 const printedSchema = z.object({ printedUrl: z.string().min(1).max(500) }).strict();
+/** Screens and dialogs, batched by the client (client/src/lib/audit-events.ts trackUi). */
+const uiBatchSchema = z.object({
+  events: z.array(z.object({
+    kind: z.enum(["screen", "dialog"]),
+    name: z.string().min(1).max(120),
+    path: z.string().max(300).optional(),
+    at: z.string().datetime().optional(),
+  })).min(1).max(50),
+}).strict();
 const actionSchema = z.object({
   action: z.string().min(1).max(60),
   resourceType: z.string().min(1).max(60).optional(),
@@ -46,6 +55,33 @@ export function registerAuditEventRoutes(app: Express, { requireAuth }: RouteDep
           return res.status(400).json({ message: "printedUrl is not a file the activity log tracks" });
         }
         await recordRead(req, read, { path, source: "client" });
+        return res.status(204).end();
+      }
+
+      const batch = uiBatchSchema.safeParse(req.body);
+      if (batch.success) {
+        const user = req.user as { id?: number; username?: string } | undefined;
+        const ipAddress = AuditLogger.getClientIp(req);
+        const userAgent = req.get("user-agent");
+        // One row per screen or dialog, resourceType 'ui' so the activity log
+        // can keep them out of its default view of changes.
+        await AuditLogger.logMany(batch.data.events.map((event) => ({
+          userId: user?.id,
+          username: user?.username,
+          action: `${event.kind}.open`,
+          resourceType: "ui",
+          details: {
+            name: event.name,
+            path: event.path ?? null,
+            // The client's clock, for ordering within a batch; the row's own
+            // createdAt stays the server's time.
+            openedAt: event.at ?? null,
+            source: "client",
+          },
+          ipAddress,
+          userAgent,
+          status: "success" as const,
+        })));
         return res.status(204).end();
       }
 

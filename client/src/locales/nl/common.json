@@ -236,7 +236,14 @@
         "portal-request": "Portaalaanvraag",
         "label": "Sleutellabel",
         "barcode-book": "Barcodeboek",
-        "report": "Rapport"
+        "report": "Rapport",
+        "screen": "Scherm",
+        "dialog": "Venster",
+        "ui": "Scherm",
+        "access": "Toegang",
+        "user": "Gebruiker",
+        "session": "Sessie",
+        "password": "Wachtwoord"
       },
       "verbs": {
         "create": "aangemaakt",
@@ -304,6 +311,26 @@
         },
         "fiscal-assessment": {
           "pdf": "Beoordelings-PDF geopend"
+        },
+        "screen": {
+          "open": "Scherm geopend"
+        },
+        "dialog": {
+          "open": "Venster geopend"
+        },
+        "access": {
+          "denied": "Toegang geweigerd"
+        },
+        "user": {
+          "login": "Ingelogd",
+          "logout": "Uitgelogd",
+          "reauthenticate": "Opnieuw aangemeld"
+        },
+        "session": {
+          "revoke": "Sessie beëindigd"
+        },
+        "password": {
+          "change": "Wachtwoord gewijzigd"
         },
         "apk-date-change": {
           "confirm": "APK-datum van de RDW overgenomen",

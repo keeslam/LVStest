@@ -4,8 +4,32 @@ import { X } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import { cn } from "@/lib/utils"
+import { dialogNameFrom, trackUi } from "@/lib/audit-events"
 
 const Dialog = DialogPrimitive.Root
+
+/**
+ * Every dialog in the app goes through DialogContent, so this is the one place
+ * that tells the activity log which dialog was opened (named by its title).
+ * The title is read after mount, when Radix has wired aria-labelledby.
+ */
+export function useTrackDialogOpen(ref: React.RefObject<HTMLElement | null>): void {
+  React.useEffect(() => {
+    const handle = setTimeout(() => trackUi("dialog", dialogNameFrom(ref.current)), 0);
+    return () => clearTimeout(handle);
+  }, [ref]);
+}
+
+/** Merges the caller's forwarded ref with the local one the tracker reads. */
+export function useMergedRef<T>(forwarded: React.ForwardedRef<T>): [React.RefObject<T | null>, (node: T | null) => void] {
+  const local = React.useRef<T | null>(null);
+  const setRef = React.useCallback((node: T | null) => {
+    local.current = node;
+    if (typeof forwarded === "function") forwarded(node);
+    else if (forwarded) (forwarded as React.MutableRefObject<T | null>).current = node;
+  }, [forwarded]);
+  return [local, setRef];
+}
 
 const DialogTrigger = DialogPrimitive.Trigger
 
@@ -33,11 +57,13 @@ const DialogContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, ...props }, ref) => {
   const { t } = useTranslation("common");
+  const [contentRef, setContentRef] = useMergedRef<HTMLDivElement>(ref);
+  useTrackDialogOpen(contentRef);
   return (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
-      ref={ref}
+      ref={setContentRef}
       className={cn(
         // Mobile (<sm): full-screen sheet — centering transforms misplace
         // dialogs on phone viewports, so pin to the viewport edges instead
