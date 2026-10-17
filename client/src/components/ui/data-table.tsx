@@ -33,6 +33,17 @@ interface DataTableProps<TData, TValue> {
   searchPlaceholder?: string;
   pagination?: boolean;
   globalFilterFn?: (value: any, filterValue: string) => boolean;
+  /**
+   * Opens the row on a click anywhere in it, except on the controls inside
+   * it (buttons, links, inputs), which keep their own behaviour.
+   */
+  onRowClick?: (row: TData) => void;
+}
+
+/** True when the click landed on a control that handles itself. */
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  return target instanceof Element
+    && target.closest('button, a, input, select, textarea, [role="checkbox"], [role="menuitem"], [role="combobox"]') !== null;
 }
 
 export function DataTable<TData, TValue>({
@@ -43,6 +54,7 @@ export function DataTable<TData, TValue>({
   searchPlaceholder = "Search...",
   pagination = true,
   globalFilterFn,
+  onRowClick,
 }: DataTableProps<TData, TValue>) {
   const { t } = useTranslation("common");
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -145,6 +157,8 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  className={onRowClick ? "cursor-pointer" : undefined}
+                  onClick={onRowClick ? (event) => { if (!isInteractiveTarget(event.target)) onRowClick(row.original); } : undefined}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

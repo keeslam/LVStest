@@ -816,6 +816,9 @@ export default function VehiclesIndex() {
                 <DataTable
                   columns={columns}
                   data={filteredVehicles || []}
+                  // A click on the row opens the vehicle, same as the Bekijken button
+                  // (including the remarks warning first, when the vehicle has remarks).
+                  onRowClick={handleViewClick}
                 />
               </div>
 

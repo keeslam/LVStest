@@ -503,6 +503,8 @@ export default function CustomersIndex() {
               <DataTable
                 columns={columns}
                 data={filteredCustomers || []}
+                // A click on the row opens the customer, same as the Bekijken button.
+                onRowClick={(customer) => setViewDialogCustomerId(customer.id)}
               />
             )}
           </div>
