@@ -32,9 +32,10 @@ Onderaan staat hoeveel regels je ziet, bijvoorbeeld *1-10 van 300 getoond*, met 
 en druk op Enter om er meteen heen te springen. Typ je een nummer dat niet bestaat, dan kom je
 op de laatste (of eerste) pagina uit.
 
-![De klantendatabase met het zoekveld en de filters](afbeeldingen/06-klanten.png)
-*De **Klantendatabase**: zoekveld, sorteerkeuze en **Filters** boven de lijst; achter elke regel
-**Bekijken**, **Nieuwe reservering** en **Verwijderen**.*
+![De Klantendatabase met het zoekveld (1), Filters (2), Klant toevoegen (3), Bekijken (4) en Verwijderde klanten (5)](afbeeldingen/03-klanten-lijst-knoppen.png)
+*De **Klantendatabase**: 1 het zoekveld **Klanten zoeken**, 2 **Filters**, 3 **Klant toevoegen**,
+4 **Bekijken** achter een regel (een klik ergens op de regel werkt ook), 5 **Verwijderde klanten**,
+de prullenbak van dit scherm.*
 
 **Sneller:** het zoekveld bovenin het scherm (hoofdstuk 1, paragraaf 1.3) doorzoekt klanten,
 voertuigen en reserveringen tegelijk. Zoek je alleen een klant, dan is de klantenlijst
@@ -44,14 +45,20 @@ overzichtelijker.
 
 ## 3.2 Een klant bekijken
 
-Klik bij de juiste regel op **Bekijken**. Je krijgt het venster **Klantgegevens** met als
-ondertitel *Bekijk klantinformatie en reserveringsgeschiedenis*.
+Klik bij de juiste regel op **Bekijken**, of klik ergens op de regel zelf. Je krijgt het venster
+**Klantgegevens** met als ondertitel *Bekijk klantinformatie en reserveringsgeschiedenis*.
 
 Bovenin staan de naam, de regel *Klant sinds <datum>* en de knoppen **Terug**, **Bewerken** en
 **Nieuwe reservering**. Daaronder vier tegels: **Totaal aantal verhuringen**, **Actieve
 verhuringen**, **Voltooid** en **Totaal aantal km gereden**.
 
-Daaronder staan vijf tabbladen:
+![Het venster Klantgegevens met de knoppen Bewerken (1) en Nieuwe reservering (2) en de tabbladen (3)](afbeeldingen/03-klantgegevens.png)
+*Het venster **Klantgegevens**: 1 **Bewerken**, 2 **Nieuwe reservering**, 3 de tabbladen. Het tabblad
+**Persoonlijke gegevens** staat open; scrol naar beneden voor de rest van de gegevens en het blok
+**Geblokkeerde voertuigen**.*
+
+Daaronder staan vijf tabbladen (**Portaal** alleen voor wie **Klantportaal bekijken** of **Klantportaal
+beheren** heeft):
 
 | Tabblad | Wat je er ziet |
 |---|---|
@@ -65,9 +72,49 @@ Wat niet is ingevuld, staat er als **Niet opgegeven**. Dat is geen fout; het bet
 het veld leeg is. Vul het aan zodra je het weet: wat leeg is op de klantkaart, blijft ook leeg op
 het contract (hoofdstuk 8).
 
+### Geblokkeerde voertuigen: een auto blokkeren voor deze klant
+
 Onderaan het tabblad **Persoonlijke gegevens** staat het blok **Geblokkeerde voertuigen** —
 *Voertuigen die deze klant niet mag huren*. Staat daar *Deze klant is niet geblokkeerd voor enig
-voertuig*, dan mag de klant alles huren.
+voertuig.* (met eronder *Ze kunnen alle beschikbare voertuigen huren.*), dan mag de klant alles
+huren. Een geblokkeerde auto staat hier met het kenteken, de **Reden** en wie de blokkade wanneer
+toevoegde. In het boekingsvenster verschijnt zo'n auto voor deze klant niet meer in de keuzelijst
+(hoofdstuk 5, paragraaf 5.3).
+
+![Het blok Geblokkeerde voertuigen met de knop Voertuig blokkeren (1) en bij een blokkade de knop Blokkade opheffen (2)](afbeeldingen/03-geblokkeerde-voertuigen.png)
+*Het blok **Geblokkeerde voertuigen**: 1 **Voertuig blokkeren**, 2 **Blokkade opheffen** achter een
+bestaande blokkade.*
+
+**Een auto blokkeren**
+
+1. Open de klant met **Bekijken** en scrol op **Persoonlijke gegevens** naar beneden tot
+   **Geblokkeerde voertuigen**.
+2. Klik op **Voertuig blokkeren**. Het venster **Voertuig blokkeren voor deze klant** opent — *Kies
+   een voertuig dat <naam> niet mag huren.*
+3. Klik op **Voertuig** en zoek de auto op kenteken, merk of model (*Zoek op kenteken, merk of
+   model...*). Auto's die al geblokkeerd zijn voor deze klant staan niet in de lijst.
+4. Vul eventueel **Reden (optioneel)** in — *Waarom mag deze klant dit voertuig niet huren?* Die reden
+   ziet elke collega die de klant of de auto opent.
+5. Klik op **Blokkeren**.
+
+![Het venster Voertuig blokkeren voor deze klant met het veld Voertuig (1), Reden (2) en de knop Blokkeren (3)](afbeeldingen/03-voertuig-blokkeren.png)
+*Het venster **Voertuig blokkeren voor deze klant**: 1 kies het **Voertuig**, 2 vul de **Reden** in,
+3 klik op **Blokkeren**.*
+
+Je krijgt **Voertuig geblokkeerd** en de auto staat meteen in het blok. Staat de auto er al, dan weigert
+de app met een rode melding.
+
+**Een blokkade opheffen.** Klik achter de blokkade op **Blokkade opheffen**. De app vraagt **Blokkade
+opheffen?** — *<voertuig> (<kenteken>) wordt vrijgegeven; deze klant kan het voertuig daarna weer
+huren.* Bevestig met **Blokkade opheffen**, of kies **Annuleren**.
+
+![De vraag Blokkade opheffen? met de knop Blokkade opheffen (1)](afbeeldingen/03-blokkade-opheffen.png)
+*De bevestiging **Blokkade opheffen?**: pas na een klik op **Blokkade opheffen** (1) is de blokkade weg.*
+
+Beide knoppen zijn er voor wie **Klanten beheren** of **Voertuigen beheren** heeft; zonder dat vinkje
+staan ze er grijs. Hetzelfde kun je vanaf de andere kant doen: op de voertuigkaart heet het blok
+**Klant zwarte lijst**, met **Toevoegen aan zwarte lijst** (hoofdstuk 4). Het is dezelfde lijst; wat je
+aan de ene kant doet, zie je meteen aan de andere kant.
 
 Sluit het venster met **Sluiten** of **Terug**.
 
@@ -88,19 +135,34 @@ Sluit het venster met **Sluiten** of **Terug**.
    - Onder **Adresgegevens**: begin met **Postcode** en **Huisnummer** (en zo nodig **Toevoeging**).
      Zijn die compleet, dan vult de app **Straatnaam**, **Straatadres** en **Plaats** zelf in
      (zie hieronder, *Postcode en huisnummer*). Daarna staat nog **Land** (staat al op *Nederland*).
+
+   ![Het tabblad Basisgegevens met Klanttype (1), Volledige naam (2), Postcode (3), Huisnummer (4) en het tabblad Contact (5)](afbeeldingen/03-klant-toevoegen-basis.png)
+   *Het tabblad **Basisgegevens**: 1 **Klanttype**, 2 **Volledige naam**, 3 **Postcode** en 4
+   **Huisnummer** (de app vult straat en plaats in), 5 het tabblad **Contact** voor de volgende stap.*
 4. Ga naar het tabblad **Contact** en vul minstens **Primair e-mailadres** en **Primair
    telefoonnummer** in. Doe dit meteen: zonder e-mailadres kun je deze klant later geen contract
    en geen herinnering sturen. Verder kun je hier een apart **E-mailadres voor APK-keuring**,
    **E-mailadres voor facturen**, **Algemeen e-mailadres** en **Telefoonnummer chauffeur**
    kwijt.
+
+   ![Het tabblad Contact met Primair e-mailadres (1), Primair telefoonnummer (2) en het tabblad Bedrijf (3)](afbeeldingen/03-klant-toevoegen-contact.png)
+   *Het tabblad **Contact**: 1 **Primair e-mailadres**, 2 **Primair telefoonnummer**, 3 het tabblad
+   **Bedrijf**.*
 5. Is het een bedrijf, vul dan het tabblad **Bedrijf** in: **Bedrijfsnaam**, **Contactpersoon**,
    **Kamer van Koophandel nummer (KvK)**, **BTW-nummer**, **RSIN**, het **Facturatiecontact**,
    de **Accountmanager**, de **Zakelijke korting (%)** en zo nodig een afwijkend
    **Facturatieadres**.
+
+   ![Het tabblad Bedrijf met Bedrijfsnaam (1), Kamer van Koophandel nummer (2) en de knop Klant toevoegen (3)](afbeeldingen/03-klant-toevoegen-bedrijf.png)
+   *Het tabblad **Bedrijf**: 1 **Bedrijfsnaam**, 2 **Kamer van Koophandel nummer (KvK)**, 3 de knop
+   **Klant toevoegen** onderaan.*
 6. Het tabblad **Aanvullend** is voor **Status**, **Statusdatum** en **Notities**.
 7. Klik onderaan op **Klant toevoegen**.
 
 Je krijgt de melding **Klant succesvol aangemaakt** — *De klant is toegevoegd aan je systeem.*
+
+![De groene melding Klant succesvol aangemaakt rechtsonder in beeld](afbeeldingen/03-klant-aangemaakt.png)
+*De melding rechtsonder na het opslaan. Zo'n melding verdwijnt na een paar seconden vanzelf.*
 
 ### Postcode en huisnummer
 
@@ -153,6 +215,9 @@ andere klant staat, verschijnt er direct onder dat veld een oranje kader:
 Staat de klant er al op met **zelfde telefoonnummer** of met **zelfde e-mailadres +
 telefoonnummer**, dan zie je dat er ook bij.
 
+![Het oranje kader Deze klant bestaat mogelijk al onder het e-mailveld, met de knop Openen (1)](afbeeldingen/03-bestaat-mogelijk-al.png)
+*De waarschuwing onder het veld: klik op **Openen** (1) om de bestaande klant te bekijken.*
+
 **Wat je doet:** klik op **Openen** naast de naam. Je opent dan de klant die er al is. Gebruik
 die, en sluit het formulier dat je aan het invullen was.
 
@@ -171,6 +236,9 @@ acht cijfers heeft, en met een kleine vertraging. Dat is normaal.
 1. Open de klant met **Bekijken** en klik op **Bewerken**, of gebruik het potloodje in de lijst.
 2. Het venster **Klant bewerken** opent — *Werk klantinformatie en gegevens bij*. Het is
    hetzelfde formulier als bij het aanmaken, met dezelfde vier tabbladen.
+
+   ![Het venster Klant bewerken met de vier tabbladen (1) en de knop Klant bijwerken (2)](afbeeldingen/03-klant-bewerken.png)
+   *Het venster **Klant bewerken**: 1 de tabbladen, 2 **Klant bijwerken** onderaan.*
 3. Wijzig wat nodig is en klik onderaan op **Klant bijwerken**.
 
 Je krijgt **Klant succesvol bijgewerkt** — *De klant is bijgewerkt in je systeem.*
@@ -195,6 +263,10 @@ Zo weet je achteraf wie de auto werkelijk had.
 2. Klik op het tabblad **Chauffeurs**. Je ziet het kaartje **Bevoegde chauffeurs** — *Beheer
    chauffeurs die voertuigen mogen huren voor deze klant*.
 3. Klik rechtsboven in dat kaartje op **Chauffeur toevoegen**.
+
+   ![Het tabblad Chauffeurs met de knoppen Chauffeur toevoegen (1) en Verwijderde chauffeurs (2) en de lijst met chauffeurs](afbeeldingen/03-chauffeurs.png)
+   *Het tabblad **Chauffeurs**: 1 **Chauffeur toevoegen**, 2 **Verwijderde chauffeurs** (de prullenbak
+   van deze klant). In de lijst staat de hoofdchauffeur met het label **Hoofd**.*
 4. Vul in het venster **Chauffeur toevoegen** minstens **Weergavenaam** in; dat is het enige
    verplichte veld (er staat een sterretje bij). Verder kun je kwijt: **Voornaam**,
    **Achternaam**, **E-mailadres**, **Telefoonnummer**, **Rijbewijsnummer**, **Land van afgifte
@@ -202,6 +274,9 @@ Zo weet je achteraf wie de auto werkelijk had.
    maximaal 10 MB), **Voorkeurstaal**, **Status** (**Actief** of **Inactief**) en **Notities**.
 5. Is dit de vaste bestuurder van deze klant, zet dan **Hoofdchauffeur** aan.
 6. Klik op **Chauffeur toevoegen**.
+
+![Het venster Chauffeur toevoegen met het veld Weergavenaam (1) en de knop Chauffeur toevoegen (2)](afbeeldingen/03-chauffeur-toevoegen.png)
+*Het venster **Chauffeur toevoegen**: 1 **Weergavenaam** (verplicht), 2 **Chauffeur toevoegen**.*
 
 Je krijgt **Chauffeur toegevoegd** — *De chauffeur is succesvol toegevoegd.*
 
@@ -212,7 +287,9 @@ dat een rijbewijs afloopt.
 **Een chauffeur bekijken, wijzigen of verwijderen.** In de lijst staan per regel de kolommen
 **Chauffeur**, **Contact**, **Rijbewijs**, **Voertuig**, **Status** en **Acties**, met de knoppen
 **Bekijken**, **Bewerken** en **Verwijderen**. De hoofdchauffeur heeft het label **Hoofd**; een
-chauffeur met een eigen portaallogin het label **Portaalaccount**.
+chauffeur met een eigen portaallogin het label **Portaalaccount**. Onderaan het venster van een
+chauffeur staat **Geschiedenis**: wie wat wanneer aan deze chauffeur heeft gewijzigd (hoofdstuk 10,
+paragraaf 10.5).
 
 Bij **Verwijderen** vraagt de app: *Weet je zeker dat je <naam> wilt verwijderen? De chauffeur gaat naar
 de prullenbak van deze klant; terugzetten kan via Prullenbak.* Een verwijderde chauffeur is dus niet weg:
@@ -254,7 +331,15 @@ klant**, **Aanvragen**, **Bekeuringen** en **Activiteit in het portaal**.
 
 1. Open de klant met **Bekijken** en ga naar het tabblad **Portaal**.
 2. Staat er nog niets, dan lees je *Nog geen accounts. Nodig een contactpersoon uit.*
+
+   ![Het tabblad Portaal (1) met bovenaan Portaalaccounts en de knop Uitnodigen (2)](afbeeldingen/03-portaal-tabblad.png)
+   *Het tabblad **Portaal** (1): bovenaan **Portaalaccounts** met de knop **Uitnodigen** (2), daaronder
+   **Instellingen voor deze klant**.*
 3. Klik op **Uitnodigen**. Het venster **Portaalaccount** opent.
+
+   ![Het venster Portaalaccount met het e-mailadres (1) en de knop Uitnodigen (2)](afbeeldingen/03-portaalaccount-uitnodigen.png)
+   *Het venster **Portaalaccount**: 1 het **E-mailadres** staat al ingevuld, 2 **Uitnodigen** verstuurt de
+   uitnodiging.*
 4. **E-mailadres** is alvast ingevuld vanuit de klantgegevens — er staat bij: *Vooraf ingevuld
    vanuit de klantgegevens; aanpassen mag.* Controleer het adres, want de uitnodiging gaat
    daarheen.
@@ -313,6 +398,10 @@ schadeformulieren · Ziet prijzen**
 
 Daaronder is ruimte voor **Interne notities (wat heeft deze klant nodig?)**. Klik op **Opslaan**;
 je krijgt *Instellingen opgeslagen.*
+
+![De schakelaars onder Instellingen voor deze klant, met Portaal actief (1) en Ziet prijzen (2)](afbeeldingen/03-portaal-instellingen.png)
+*De schakelaars onder **Instellingen voor deze klant**: 1 **Portaal actief** is de hoofdschakelaar,
+2 **Ziet prijzen** staat hier uit, dus deze klant ziet geen bedragen in het portaal.*
 
 Onder elke schakelaar staat één regel die zegt wat hij doet, bijvoorbeeld bij **Portaal actief**: *Uit:
 niemand van deze klant kan nog inloggen in het portaal.* Zet je een schakelaar om, dan meldt de app
@@ -418,6 +507,10 @@ aangemaakte kaart. Een klant met geschiedenis laat je staan.
 3. Eronder staat *Een beheerder kan de klant daarna terugzetten vanuit de prullenbak.*
 4. Typ de naam van de klant over in het veld **Typ <naam> om te bevestigen**. Zolang die niet
    klopt, blijft **Klant verwijderen** uitgeschakeld. Hoofdletters en extra spaties maken niet uit.
+
+   ![Het venster Klant verwijderen met het veld om de naam over te typen (1) en de knop Klant verwijderen (2)](afbeeldingen/03-klant-verwijderen.png)
+   *Het venster **Klant verwijderen**: typ de naam over in veld 1; pas dan wordt knop 2, **Klant
+   verwijderen**, blauw.*
 5. Klik op **Klant verwijderen**, of op **Annuleren** als je twijfelt.
 
 **De app weigert als er nog een huur aan hangt.** Heeft de klant een lopende of toekomstige
@@ -439,6 +532,10 @@ haal je hem — als hij er echt nooit had moeten staan — voorgoed weg met **De
 Dat mag iedereen met het vinkje **Prullenbak beheren** (hoofdstuk 15, paragraaf 15.16); zonder dat
 vinkje staat de knop er grijs. Let op: de tekst in het venster zegt nog *Een beheerder*, maar het
 vinkje bepaalt wie het mag. Alles over de prullenbak staat in hoofdstuk 10, paragraaf 10.6.
+
+![Het venster Verwijderde klanten met per regel Terugzetten en Definitief verwijderen](afbeeldingen/03-verwijderde-klanten.png)
+*De prullenbak **Verwijderde klanten**: per regel wie de klant wanneer verwijderde, wat eraan hing,
+en de knoppen **Terugzetten** en **Definitief verwijderen**.*
 
 **Een dubbele klant opruimen doe je zo:**
 
@@ -494,6 +591,8 @@ een invult, moet het uniek zijn.
 | Een verwijderde chauffeur terughalen | **Bekijken** → **Chauffeurs** → **Verwijderde chauffeurs** → **Terugzetten** (vraagt het vinkje **Prullenbak beheren**) |
 | Een portaallogin regelen | **Bekijken** → **Portaal** → **Uitnodigen** |
 | Zien wat een klant online mag | **Bekijken** → **Portaal** → **Instellingen voor deze klant** |
+| Een auto blokkeren voor deze klant | **Bekijken** → **Persoonlijke gegevens** → **Geblokkeerde voertuigen** → **Voertuig blokkeren** |
+| Een blokkade opheffen | **Bekijken** → **Geblokkeerde voertuigen** → **Blokkade opheffen** → bevestigen |
 | Een klant verwijderen | **Verwijderen** in de lijst (lukt niet bij een lopende huur) |
 | Debiteurnummer al bezet | Veldfout onder **Debiteurnummer** (ook tegen de prullenbak), zie 3.9 |
 | Een verwijderde klant terughalen | **Klanten** → **Verwijderde klanten** → **Terugzetten** (vraagt het vinkje **Prullenbak beheren**) |

@@ -61,7 +61,8 @@ Van boven naar beneden:
    met de knop **Voertuig toewijzen**.
 5. **Recente kosten** met de knop **Alles bekijken**; die knop staat er alleen voor wie **Kosten
    beheren** heeft. Een categorie staat er in het Nederlands, bijvoorbeeld **Banden** en niet *Tires*.
-6. **Aankomende reserveringen** in een tabel: **Voertuig**, **Klant**, **Periode**, **Acties**.
+6. **Aankomende reserveringen** in een tabel: **Voertuig**, **Klant**, **Periode**, **Status**,
+   **Acties**.
 7. **Reserveringskalender** — een kleine maandkalender, met **Reservering toevoegen**.
 
 ![Het dashboard met de snelle acties en de signaalblokken](afbeeldingen/03-dashboard.png)
@@ -84,9 +85,12 @@ Rechtsboven staan de knoppen:
 | **Bulk importeren** | Meerdere voertuigen tegelijk uit een bestand inlezen |
 | **Voertuig toevoegen** | Eén nieuw voertuig |
 
-Daaronder staat de lijst **Voertuigenpark**, met **Filter functies** en **Sorteren op**. Per
-regel zie je het kenteken, een statuslabel, merk en model, de APK-datum en de knoppen
-**Bekijken**, **Reserveren** of **Verhuur bekijken**.
+![De knoppen rechtsboven op Voertuigbeheer: Verwijderde voertuigen (1), Barcodeboek (2), Sleutelkast-audit (3), Reservesleutelkast-audit (4), Bulk importeren (5) en Voertuig toevoegen (6)](afbeeldingen/04-voertuigen-knoppen-rechtsboven.png)
+*De knoppen rechtsboven op **Voertuigbeheer**, in de volgorde van de tabel hierboven (1 tot en met 6).*
+
+Daaronder staat de lijst **Voertuigenpark**, met **Filter functies**, **Sorteren op:** en **Tonen:**.
+Per regel zie je het kenteken, een statuslabel, merk en model, de APK-datum en de knoppen
+**Bekijken**, **Reserveren** of **Verhuur bekijken**. Een klik ergens op de regel opent de auto ook.
 
 **De statuslabels die je tegenkomt:** *Beschikbaar*, *Gepland*, *Verhuurd*, *Reparatie nodig*,
 *Niet voor verhuur*, *Vervangend voertuig*, *Vervangend voertuig (actief)*, en combinaties als
@@ -106,6 +110,7 @@ knoppen **Terug**, **Barcode bekijken**, **Bewerken**, **Brandstofstatus bijwerk
 - **Reserveringen** — de verhuurgeschiedenis.
 - **Onderhoud** — de werkplaatsbezoeken.
 - **Geschiedenis** — wie wat wanneer aan deze auto heeft gewijzigd.
+- **Fiscaal** — de fiscale check van deze auto (alleen voor wie **Fiscaal bekijken** heeft).
 
 **De prullenbak.** De knop **Verwijderde voertuigen** opent de prullenbak van dit scherm, met
 alleen voertuigen erin (vroeger stonden hier alle soorten door elkaar; sinds oktober 2026 heeft
@@ -138,7 +143,12 @@ de actieve of aankomende reservering. Daaronder staan de acties die op dat momen
 openen · Kosten registreren · Document uploaden · Tanken · Km-stand bijwerken · Onderhoud
 inplannen · Terug uit onderhoud · Transport starten · Transport afronden · Opnieuw scannen**
 
-Onderaan staat **Recente scans**, zodat je kunt terugzien wat je net in handen had.
+![Het scanscherm na een scan: de auto met zijn gegevens en daaronder de genummerde tegels met acties](afbeeldingen/18-scanresultaat-tegels.png)
+*Na een scan: bovenin de auto, daaronder de tegels. Welke tegels er staan, hangt af van de stand van
+de auto; zie hoofdstuk 18, paragraaf 18.4.*
+
+Onderaan staat **Recente scans**, zodat je kunt terugzien wat je net in handen had. Klik op een
+regel daarin en de app zoekt die code opnieuw op.
 
 Camera scannen werkt alleen als de app via een beveiligde verbinding (https) draait. Gaat dat
 niet, gebruik dan de USB-scanner of typ de code.
@@ -155,8 +165,12 @@ Het scherm heet **Klanten**, met daaronder de **Klantendatabase**.
   verhuur**, **Actieve verhuur**, …) en **Filters** (onder andere *Zakelijk*, *Particulier*,
   *Actieve verhuur*, *Onvolledig profiel*).
 - De tabel heeft de kolommen **Naam**, **E-mail**, **Telefoon** en **Plaats**, en per regel
-  **Bekijken**, **Nieuwe reservering** en **Verwijderen**.
+  **Bekijken**, **Nieuwe reservering** en **Verwijderen**. Een klik ergens op de regel opent de klant ook.
 - Onderaan staat hoeveel er getoond worden, met **Vorige** en **Volgende**.
+
+![Het scherm Klanten met de Klantendatabase](afbeeldingen/06-klanten.png)
+*Het scherm **Klanten**: rechtsboven **Verwijderde klanten** en **Klant toevoegen**, daaronder de
+**Klantendatabase** met het zoekveld, de sorteerkeuze en **Filters**.*
 
 **Een klant openen.** Klik op **Bekijken**. Je krijgt **Klantgegevens** met bovenaan het aantal
 verhuringen, de actieve verhuringen en het totaal aantal gereden kilometers, de knoppen
@@ -180,8 +194,8 @@ hoofdstuk 3, paragraaf 3.8.
 Het scherm heet **Klantenportaal beheren**: *Aanvragen, accounts, bekeuringen en het aanbod voor
 klanten op één plek. Klik op een tegel om die lijst te openen.*
 
-Bovenaan staan **Bekeuringen**, **Brieven scannen** en **Account uitnodigen**. Daaronder acht tegels die je
-aanklikt om die lijst te openen:
+Bovenaan staan **Bekeuringen**, **Fiscale check** (alleen voor wie **Fiscaal bekijken** heeft), **Brieven
+scannen** en **Account uitnodigen**. Daaronder acht tegels die je aanklikt om die lijst te openen:
 
 **Aanvragen** (nieuw) · **Onderhoud** (meldingen en placeholders) · **Bekeuringen** (niet
 gekoppeld) · **Klanten** (nu online) · **Accounts** (open · verlopen) · **Voertuigen online**
@@ -197,7 +211,9 @@ Daaronder staan vier panelen:
 | **Klanten** | Per klant hoeveel portaalaccounts er zijn en wanneer er voor het laatst iets gebeurde |
 
 Elk paneel toont alleen de eerste regels; met **Alles bekijken en zoeken** open je de volledige
-lijst.
+lijst. In de lijsten achter **Aanvragen**, **Voertuigen online** en **Blacklist** sorteert een klik op
+een kolomkop de tabel (nog een klik draait de volgorde om); **Voertuigen online** en **Blacklist**
+hebben daarnaast een zoekveld, filters en pagina's van 50 regels.
 
 ![Het scherm Klantenportaal beheren met de tegels en panelen](afbeeldingen/12-klantenportaal-beheer.png)
 *Het scherm **Klantenportaal beheren**: de tegels bovenaan zijn ingangen naar een lijst, de
@@ -272,6 +288,11 @@ Rechtsboven staan:
 Boven de kalender: **Kleuren** (de legenda van de kleuren), **Vandaag** (spring terug naar deze
 maand), de maandnavigatie en de filters **Alle typen** en **Alle voertuigen**.
 
+![De Reserveringskalender met de knoppen Lijstweergave (1), Voltooid bekijken (2), achterstallig (3), Administratie (4), Verwijderde reserveringen (5), Nieuwe reservering (6), Kleuren (7) en Vandaag (8)](afbeeldingen/05-kalender-knoppen.png)
+*De knoppen van de **Reserveringskalender**: 1 **Lijstweergave**, 2 **Voltooid bekijken (…)**, 3 **…
+achterstallig** (alleen als er iets achterstallig is), 4 **Administratie**, 5 **Verwijderde
+reserveringen**, 6 **Nieuwe reservering**, 7 **Kleuren**, 8 **Vandaag**.*
+
 In een dagvakje staat per reservering het kenteken, het woordje **uit** of **in**, en de klant.
 **uit** betekent: die dag gaat de auto mee. **in** betekent: die dag komt hij terug. Staan er
 meer dan vijf, dan verschijnt **+… meer**. Klik op een regel voor **Reserveringsdetails**.
@@ -304,13 +325,25 @@ Daaronder het **Kostenoverzicht** (*Bekijk en beheer alle voertuiggerelateerde k
 **Kostensamenvatting**. Kosten heeft geen eigen hoofdstuk; de klikpaden staan in hoofdstuk 13,
 paragraaf 13.10, en vastleggen met de auto in je hand staat in hoofdstuk 18. Wat je moet weten:
 
-- **Eén lijst met filters.** Het **Kostenoverzicht** is één lijst, nieuwste bovenaan, met de kolommen
-  **Datum**, **Voertuig**, **Categorie**, **Omschrijving** en **Bedrag**. Je filtert op **Voertuig** (typ
-  het kenteken met of zonder streepjes), **Van** en **Tot en met** (allebei meegeteld), **Categorie** en
-  het zoekveld *Zoeken op kenteken, categorie of omschrijving...*; **Filters wissen** zet alles terug.
-  De **Kostensamenvatting** rekent precies over wat je ziet (*Totaal van de gekozen filters*), met een
-  totaal per categorie. De lijst toont er 100 tegelijk; klik op **Meer tonen** voor de volgende. De
-  uitklapbare lijst per categorie is vervangen door deze lijst met een filter.
+- **Filters bovenaan, twee weergaven eronder.** Boven de lijst filter je op **Voertuig** (typ het
+  kenteken met of zonder streepjes), **Van** en **Tot en met** (allebei meegeteld), **Categorie** en het
+  zoekveld *Zoeken op kenteken, merk, categorie of omschrijving...*; de knoppen **Deze maand**, **Vorige
+  maand** en **Dit jaar** zetten de periode in één klik, en **Filters wissen** zet alles terug. Onder de
+  filters staat hoeveel kostenposten je selectie heeft en wat ze samen kosten (*11 kostenposten · totaal
+  € 2.856,85*). Daarnaast kies je de weergave:
+  - **Per categorie** (standaard): elke categorie is een ingeklapte regel met het aantal en het totaal.
+    Klik op de regel en je ziet de vijf nieuwste kostenposten van die categorie, met de knop **Alle N
+    tonen** die de hele categorie in een venster opent, met een eigen zoekveld en **Sorteren**.
+  - **Alle kosten**: één tabel met de kolommen **Datum**, **Voertuig**, **Categorie**, **Omschrijving**
+    en **Bedrag (excl. btw)**. Klik op een kolomkop om te sorteren; onderaan kies je de pagina en hoeveel
+    regels je per pagina ziet.
+
+  De **Kostensamenvatting** rechts rekent altijd over wat je hebt gefilterd (*Totaal van de gekozen
+  filters*), met een totaal per categorie.
+
+  ![Het scherm Kosten met de filters, de weergave Per categorie en rechts de Kostensamenvatting](afbeeldingen/02-kosten-overzicht.png)
+  *Het scherm **Kosten**: bovenin de filters en de snelle periodes, daaronder de categorieën (klik op
+  een regel om hem open te klappen) en de keuze **Per categorie** / **Alle kosten**.*
 - **De prullenbak van Kosten.** Rechtsboven staat de knop **Verwijderde kostenposten**, de prullenbak van
   dit scherm, voor wie het vinkje **Prullenbak beheren** heeft. Een verwijderde kostenpost staat daar met
   zijn bon en kan worden teruggezet (hoofdstuk 10, paragraaf 10.6). Een kostenpost die ontstond doordat je
@@ -340,19 +373,25 @@ en andere voertuigbewegingen*. Bovenaan **Route-optimalisatie** en de tellers **
 planning**, **Klaar voor levering**, **In uitvoering** en **Leveringen voltooid**. Daaronder de
 tabbladen **Alle transporten**, **Voertuigwissel**, **Slepen**, **Terughalen**, **Levering** en
 **Overig**, en de knoppen **Nieuw transport** en **Verwijderde transporten** (de prullenbak van dit
-scherm). Uitgebreid in hoofdstuk 6.
+scherm). In de tabel sorteert een klik op een kolomkop, en een klik op een regel opent het transport.
+Uitgebreid in hoofdstuk 6.
 
 **Communicatie** — het scherm **Klantcommunicatie** met de tabbladen **Meldingen versturen**,
 **Sjabloonbouwer**, **E-maillogboek** en **Analyse**. Onder **Meldingen versturen** kies je
 **APK-herinneringen**, **Onderhoud** of **Aangepast bericht**. Uitgebreid in hoofdstuk 9.
 
+![Het scherm Klantcommunicatie met de vier tabbladen en daaronder APK-herinneringen](afbeeldingen/02-communicatie.png)
+*Het scherm **Communicatie**: bovenin de vier tabbladen, daaronder de drie soorten berichten.*
+
 **Rapporten** — het scherm **Rapporten**: *Genereer en analyseer rapporten voor je
 autoverhuurbedrijf.* Rechtsboven staan vijf afdrukknoppen: **APK**, **Garantie**, **Kosten**,
 **Benutting** en **Klanten**. Daaronder de twee ingangen **Aangepaste rapportbouwer** en
 **Analyse onderhoudskosten**, en het blok **Rapportfilters** waarmee je het **Datumbereik**, het
-**Voertuig** en de **Kostencategorie** instelt. De cijfers zelf staan op de tabbladen
-**Operaties**, **Kosten**, **Voertuigen**, **Klanten**, **Transporten** en **Financieel**.
-Rapporten heeft geen eigen hoofdstuk; de klikpaden staan in hoofdstuk 13, paragraaf 13.13.
+**Voertuig** en de **Kostencategorie** instelt; met **Filters herstellen** zet je ze terug en met
+**Alle gegevens (verleden & toekomst)**, **Deze maand** en **Volgende maand** kies je een periode in
+één klik. De cijfers zelf staan op de tabbladen **Operaties**, **Kosten**, **Voertuigen**,
+**Klanten**, **Transporten**, **Financieel** en **Fiscaal**. Rapporten heeft geen eigen hoofdstuk; de
+klikpaden staan in hoofdstuk 13, paragraaf 13.13.
 
 **Wat je moet weten:**
 
@@ -367,8 +406,13 @@ Rapporten heeft geen eigen hoofdstuk; de klikpaden staan in hoofdstuk 13, paragr
   **Financieel** (omzet en marge worden over alle kosten berekend), **Fiscaal**, **Transporten** en de
   overzichten **APK** en **Garantie** staat een regel die dat zegt, bijvoorbeeld *Het categoriefilter
   (Banden) geldt niet voor dit tabblad.*
-- **Afdrukken.** De vijf afdrukknoppen noemen wat ze afdrukken (*Afdrukken: APK*, ...). Het
+- **Afdrukken.** De vijf afdrukknoppen noemen wat ze afdrukken (*Afdrukken: APK*, ...). Een klik opent
+  eerst een afdrukvoorbeeld van het rapport, met onderin **Sluiten** en **Afdrukken**; pas **Afdrukken**
+  opent het afdrukvenster van je browser. Zo ook bij **Afdrukken** in de rapportbouwer. Het
   klantenrapport telt alleen klanten met een reservering in de periode.
+
+  ![Het afdrukvoorbeeld van het APK-rapport, met onderin de knop Afdrukken (1)](afbeeldingen/02-rapporten-afdrukvoorbeeld.png)
+  *Het afdrukvoorbeeld na *Afdrukken: APK*: lees het rapport en klik op **Afdrukken** (1).*
 - **Een stijging vanaf 0.** Gaat een bedrag van 0 naar iets, dan staat er *nieuw* en geen *+100%*; is
   er niets om mee te vergelijken, dan staat er een streepje.
 
@@ -403,6 +447,10 @@ scherm. Vijf grote tegels bovenaan:
 
 **Ophalen starten · Innemen starten · Scannen · Nieuwe reservering · Schadecheck starten**
 
+![Het blok Snelle acties met de vijf grote tegels genummerd 1 tot en met 5 en daaronder de kleinere knoppen](afbeeldingen/02-snelle-acties.png)
+*Het blok **Snelle acties**: 1 **Ophalen starten**, 2 **Innemen starten**, 3 **Scannen**, 4 **Nieuwe
+reservering**, 5 **Schadecheck starten**; daaronder de kleinere knoppen.*
+
 Daaronder: **Voertuig toevoegen**, **Klant toevoegen** en **RDW APK-datums scannen**. En als
 rijtje kleinere knoppen: **Document uploaden**, **Kosten registreren**, **Brandstofstatus
 bijwerken**, **Registratie wijzigen**, **APK-rapport uploaden** en **APK-meldingen versturen**.
@@ -431,20 +479,31 @@ Drie dingen om te weten:
 **Markeer als gelezen** of **Markeer als ongelezen** geven en zelf een **Nieuwe melding**
 aanmaken met een titel, omschrijving, datum en prioriteit (**Hoog**, **Normaal**, **Laag**).
 
+![Het Meldingencentrum met de tabbladen Alle, Reserveringen, Onderhoud, APK, Garantie en Aangepast](afbeeldingen/02-meldingencentrum.png)
+*Het **Meldingencentrum**, geopend met het belletje rechtsboven.*
+
 **Je eigen menu (je initialen en naam).** Hierin staan:
 
 - je naam en e-mailadres;
 - **Profiel** — je gegevens bekijken, wijzigen en je wachtwoord veranderen;
 - een taalknop: staat de app in het Nederlands, dan staat er **English**, en omgekeerd;
+- **Handleiding** — deze handleiding, leesbaar in de app, met een zoekveld om snel iets terug te
+  vinden; dezelfde lezer staat op de pagina `/handleiding`;
 - alleen voor een beheerder, onder het kopje **Beheer**: **Gebruikers**, **Back-upbeheer** en
   **App-instellingen**;
 - **Uitloggen**.
+
+De afbeelding van dit menu staat in hoofdstuk 1, paragraaf 1.2; die van het beheerdeel in hoofdstuk
+10, paragraaf 10.1.
 
 ---
 
 ## 2.11 Sneltoetsen
 
 Er is één kleine, vaste set sneltoetsen. Druk op **?** voor het overzicht **Sneltoetsen**.
+
+![Het venster Sneltoetsen met de zes toetsen en hun betekenis](afbeeldingen/02-sneltoetsen.png)
+*Het overzicht **Sneltoetsen**, geopend met de toets `?`.*
 
 | Toets | Wat er gebeurt |
 |---|---|

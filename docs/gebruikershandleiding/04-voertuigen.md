@@ -43,18 +43,31 @@ de laatste pagina.
 - Onbekende waarden tonen **N.v.t.**
 
 Per regel staan de knoppen **Bekijken**, een potlood (bewerken), een prullenbak (verwijderen) en
-daarachter **Reserveren** of **Verhuur bekijken**. Bij een auto die op *niet voor verhuur* staat,
-is **Reserveren** grijs met de tekst *Voertuig is niet beschikbaar voor verhuur*.
+daarachter **Reserveren** of **Verhuur bekijken**. Een klik ergens op de regel opent de auto ook. Bij
+een auto die op *niet voor verhuur* staat, is **Reserveren** grijs met de tekst *Voertuig is niet
+beschikbaar voor verhuur*.
 
-![Het scherm Voertuigbeheer met het voertuigenpark](afbeeldingen/05-voertuigen.png)
-*Het scherm **Voertuigbeheer**: bovenaan de knoppen, daaronder het **Voertuigenpark** met het
-zoekveld, **Filter functies** en **Sorteren op:**.*
+![Het scherm Voertuigbeheer met het zoekveld (1), Filter functies (2), Sorteren op (3), Tonen (4), Bekijken (5) en Voertuig toevoegen (6)](afbeeldingen/04-voertuigen-lijst-knoppen.png)
+*Het scherm **Voertuigbeheer**: 1 het zoekveld, 2 **Filter functies**, 3 **Sorteren op:**, 4 **Tonen:**,
+5 **Bekijken** achter een regel, 6 **Voertuig toevoegen**.*
+
+![De knoppen rechtsboven: Verwijderde voertuigen (1), Barcodeboek (2), Sleutelkast-audit (3), Reservesleutelkast-audit (4), Bulk importeren (5), Voertuig toevoegen (6)](afbeeldingen/04-voertuigen-knoppen-rechtsboven.png)
+*De knoppen rechtsboven: 1 **Verwijderde voertuigen**, 2 **Barcodeboek**, 3 **Sleutelkast-audit**,
+4 **Reservesleutelkast-audit**, 5 **Bulk importeren**, 6 **Voertuig toevoegen**.*
 
 ---
 
 ## 4.2 Een voertuig bekijken
 
-Klik op **Bekijken**. Je krijgt **Voertuiggegevens - <merk> <model> (<kenteken>)**.
+Klik op **Bekijken**, of ergens op de regel. Je krijgt **Voertuiggegevens - <merk> <model>
+(<kenteken>)**.
+
+**Staan er opmerkingen bij de auto**, dan krijg je eerst het venster **Voertuigopmerkingen
+waarschuwing** met die opmerkingen. Lees ze en klik op **Ik begrijp het**; met **Opmerkingen bewerken**
+pas je ze meteen aan. Dat is dezelfde tekst die bij het ophalen aan de balie wordt getoond (4.5).
+
+![Het venster Voertuigopmerkingen waarschuwing met de opmerking en de knop Ik begrijp het (1)](afbeeldingen/04-voertuigopmerkingen.png)
+*De waarschuwing bij een auto met opmerkingen: klik op **Ik begrijp het** (1) om door te gaan.*
 
 Bovenin staan de barcode van de auto (bijvoorbeeld *VEH-001821*) met de knoppen
 **Sleutellabel** en **Reservesleutel-label**, en daarnaast:
@@ -62,12 +75,21 @@ Bovenin staan de barcode van de auto (bijvoorbeeld *VEH-001821*) met de knoppen
 **Terug · Barcode bekijken · Bewerken · Brandstofstatus bijwerken · Verwijderen · Nieuwe
 reservering**
 
+![Het venster Voertuiggegevens met Barcode bekijken (1), Bewerken (2), Brandstofstatus bijwerken (3), Nieuwe reservering (4) en de tabbladen (5)](afbeeldingen/04-voertuiggegevens.png)
+*Het venster **Voertuiggegevens**: 1 **Barcode bekijken**, 2 **Bewerken**, 3 **Brandstofstatus
+bijwerken**, 4 **Nieuwe reservering**, 5 de tabbladen.*
+
 Daaronder zes tegels: **Voertuigtype**, **Huidige kilometerstand**, **Huidig brandstofniveau**,
 **APK-vervaldatum** (met het aantal dagen), **Garantievervaldatum** en de statusinformatie. Heeft
 de auto geen garantiedatum, dan staat er *Geen garantiedatum* en niet meer *Dagen resterend:
-0*.
+0*. Bij drie tegels staat een potloodje waarmee je die waarde direct aanpast: **Kilometerstand
+aanpassen**, **Brandstofniveau aanpassen** en **APK-vervaldatum aanpassen**.
 
-En zes tabbladen:
+![De tegels op de voertuigkaart met de potloodjes Kilometerstand aanpassen (1), Brandstofniveau aanpassen (2) en APK-vervaldatum aanpassen (3)](afbeeldingen/04-voertuigkaart-tegels.png)
+*De tegels: 1 **Kilometerstand aanpassen**, 2 **Brandstofniveau aanpassen**, 3 **APK-vervaldatum
+aanpassen**.*
+
+En zeven tabbladen:
 
 | Tabblad | Wat je er ziet |
 |---|---|
@@ -77,6 +99,13 @@ En zes tabbladen:
 | **Reserveringen** | De verhuurgeschiedenis |
 | **Onderhoud** | APK, garantie en de volgende onderhoudsbeurt |
 | **Geschiedenis** | Wie wat wanneer aan deze auto heeft gewijzigd |
+| **Fiscaal** | De fiscale check van deze auto; alleen voor wie **Fiscaal bekijken** heeft |
+
+![Het tabblad Onderhoud (1) van de voertuigkaart met APK-keuring en Garantie-informatie](afbeeldingen/04-onderhoud-tabblad.png)
+*Het tabblad **Onderhoud** (1): de APK- en garantiegegevens en de knop **APK-keuring plannen** (4.7).*
+
+![Het tabblad Geschiedenis (1) van de voertuigkaart](afbeeldingen/04-geschiedenis-tabblad.png)
+*Het tabblad **Geschiedenis** (1): elke wijziging aan deze auto, met wie en wanneer.*
 
 ---
 
@@ -86,6 +115,10 @@ Klik rechtsboven op **Voertuig toevoegen**. Het venster **Nieuw voertuig toevoeg
 dezelfde vijf tabbladen als het bewerkformulier (4.5). Vul minstens **Kenteken**, **Merk** en
 **Model** in en klik onderaan op **Voertuig toevoegen**. De datumvelden mag je leeg laten; een
 leeg datumveld betekent gewoon "geen datum".
+
+![Het venster Nieuw voertuig toevoegen met het veld Kenteken (1), de knop Opzoeken (2) en de knop Voertuig toevoegen (3)](afbeeldingen/04-voertuig-toevoegen.png)
+*Het venster **Nieuw voertuig toevoegen**: 1 typ het **Kenteken**, 2 klik op **Opzoeken** om de
+gegevens bij de RDW op te halen, 3 **Voertuig toevoegen** onderaan.*
 
 Je krijgt **Voertuig succesvol aangemaakt** — *Het voertuig is toegevoegd aan je wagenpark.* De auto
 staat daarna meteen in het **Voertuigenpark**.
@@ -105,6 +138,9 @@ Wat je in het formulier wél kunt gebruiken, is het opzoeken bij de RDW:
 3. Wordt de auto gevonden, dan vult de app merk, model, voertuigtype, brandstof, chassisnummer,
    APK-datum en bouwdatum zelf in. Je krijgt **Voertuiggegevens gevonden** —
    *Voertuiggegevens succesvol opgehaald uit de RDW-database.*
+
+   ![Het venster na Opzoeken: merk, model en voertuigtype zijn ingevuld](afbeeldingen/04-voertuig-toevoegen-rdw.png)
+   *Na **Opzoeken**: de velden op **Algemeen** zijn ingevuld; controleer ze en vul de rest aan.*
 
    **Hoe de app het voertuigtype kiest.** Een bestelwagen volgens de RDW wordt **Van**. Ook een
    personenauto met **acht of meer zitplaatsen** wordt **Van**: de RDW registreert een
@@ -133,6 +169,10 @@ ook voor **Voertuig bewerken** (4.5).
 
 1. Klik rechtsboven op **Bulk importeren**. Het venster **Voertuigen bulk importeren** opent,
    met twee tabbladen: **Handmatig invoeren** en **CSV uploaden**.
+
+   ![Het venster Voertuigen bulk importeren met het vinkje Ook onbekende kentekens aanmaken (1), het tabblad CSV uploaden (2), het veld Kentekens (3) en de knop Import starten (4)](afbeeldingen/04-bulk-importeren.png)
+   *Het venster **Voertuigen bulk importeren**: 1 het vinkje **Ook onbekende kentekens aanmaken**, 2 het
+   tabblad **CSV uploaden**, 3 het veld **Kentekens** (één per regel), 4 **Import starten**.*
 
 ### Tabblad "Handmatig invoeren"
 
@@ -206,8 +246,12 @@ waarschuwing, <aantal> mislukt.*
 ## 4.5 Een voertuig bijwerken
 
 1. Klik in de lijst op het potloodje, of open de auto met **Bekijken** en klik op **Bewerken**.
-2. Het venster **Voertuig bewerken** opent — *Werk voertuiginformatie en -gegevens bij*. Boven de
-   tabbladen staat weer het kenteken met **Opzoeken** (4.3).
+2. Het venster **Voertuig bewerken** opent — *Werk de gegevens bij voor <merk> <model> (<kenteken>)*.
+   Boven de tabbladen staat weer het kenteken met **Opzoeken** (4.3).
+
+   ![Het venster Voertuig bewerken met Opzoeken (1), de vijf tabbladen (2) en de knop Voertuig bijwerken (3)](afbeeldingen/04-voertuig-bewerken.png)
+   *Het venster **Voertuig bewerken**: 1 **Opzoeken** bij de RDW, 2 de tabbladen **Algemeen**,
+   **Technisch**, **Datums**, **Contract** en **Overig**, 3 **Voertuig bijwerken**.*
 3. Vul aan wat nodig is en klik onderaan op **Voertuig bijwerken**.
 
 Je krijgt **Voertuig succesvol bijgewerkt** — *Het voertuig in je wagenpark is bijgewerkt.*
@@ -221,6 +265,18 @@ De vijf tabbladen:
 | **Datums** | **APK-vervaldatum**, **Vervaldatum garantie**, **Bouwdatum**, de **Registratiestatus** (Opnaam of BV, met datum), **Vervaldatum Euro-zone**, **Toegang milieuzone**, **Move IZI** |
 | **Contract** | **Maandprijs (€)**, **Dagprijs (€)** en **Retourkilometerstand (km)** |
 | **Overig** | **Interne afspraken** en **Opmerkingen** |
+
+![Het tabblad Technisch (1) van Voertuig bewerken](afbeeldingen/04-voertuig-bewerken-technisch.png)
+*Het tabblad **Technisch** (1): brandstof, GPS, reservesleutel, banden en uitrusting.*
+
+![Het tabblad Datums (1) van Voertuig bewerken](afbeeldingen/04-voertuig-bewerken-datums.png)
+*Het tabblad **Datums** (1): APK, garantie, bouwdatum en registratie.*
+
+![Het tabblad Contract (1) van Voertuig bewerken](afbeeldingen/04-voertuig-bewerken-contract.png)
+*Het tabblad **Contract** (1): de prijzen die bij het boeken worden gebruikt.*
+
+![Het tabblad Overig (1) van Voertuig bewerken](afbeeldingen/04-voertuig-bewerken-overig.png)
+*Het tabblad **Overig** (1): **Interne afspraken** voor kantoor en **Opmerkingen** voor aan de balie.*
 
 **Verplicht zijn kenteken, merk en model.** Ontbreekt er één, dan meldt de app *Vul alle
 verplichte velden in: kenteken, merk en model.* Onder het veld zelf staat dan *Kenteken is
@@ -268,6 +324,10 @@ knop **Wijzigen** bij het blok **Beschikbaarheidsstatus**. In dat lijstje kun je
 kiezen: **Beschikbaar**, **Moet gerepareerd worden**, **Niet voor verhuur** en **Verhuurd**.
 **Gepland** staat er niet bij: die status zet de app zelf zodra er een reservering op de auto
 ligt of er onderhoud voor is ingepland.
+
+![Het blok Beschikbaarheidsstatus op het tabblad Algemeen met de knop Wijzigen (1)](afbeeldingen/04-beschikbaarheidsstatus.png)
+*Het blok **Beschikbaarheidsstatus** op het tabblad **Algemeen**: klik op **Wijzigen** (1) en kies een
+van de vier waarden.*
 
 **Gepland onderhoud maakt van een auto geen "Reparatie nodig".** Plan je onderhoud, dan blijft de auto
 **Gepland** zolang hij er nog niet is. Pas als je het onderhoud op **Binnen** zet, wordt het **Reparatie
@@ -366,9 +426,14 @@ De kilometerstand wordt automatisch bijgewerkt bij het ophalen en het innemen (h
 je het los, bijvoorbeeld na een werkplaatsbezoek:
 
 1. Open de auto, of scan hem (hoofdstuk 18).
-2. Klik op **Km-stand bijwerken**. Het venster **Kilometerstand bijwerken** opent, met daaronder
-   *Huidige stand: <getal> km*.
-3. Vul **Nieuwe kilometerstand** in en klik op **Opslaan**.
+2. Op de voertuigkaart klik je op het potloodje bij de tegel **Huidige kilometerstand**
+   (**Kilometerstand aanpassen**); het venster **Kilometerstand aanpassen** opent met het veld **Huidige
+   kilometerstand**. Op het scanscherm klik je op **Km-stand bijwerken**; dat venster heet
+   **Kilometerstand bijwerken**, met *Huidige stand: <getal> km* en het veld **Nieuwe kilometerstand**.
+3. Vul de nieuwe stand in en klik op **Opslaan**.
+
+![Het venster Kilometerstand aanpassen met het veld (1) en de knop Opslaan (2)](afbeeldingen/04-kilometerstand.png)
+*Het venster **Kilometerstand aanpassen** vanaf de voertuigkaart: 1 typ de stand, 2 **Opslaan**.*
 
 Je krijgt **Kilometerstand opgeslagen** — *Nieuwe stand: <getal> km.*
 
@@ -402,6 +467,10 @@ scanscherm. In het venster **Brandstofstatus bijwerken** vul je in:
   bedrag zijn van ten hoogste € 1.000.000.*
 - **Bon (optioneel)** — met **Bon uploaden**.
 - **Notities (optioneel)**.
+
+![Het venster Brandstofstatus bijwerken met Brandstofniveau (1), Tankkosten (2), Bon uploaden (3) en de knop Brandstofstatus bijwerken (4)](afbeeldingen/04-brandstofstatus.png)
+*Het venster **Brandstofstatus bijwerken**: 1 **Brandstofniveau**, 2 **Tankkosten (€)**, 3 **Bon
+uploaden**, 4 **Brandstofstatus bijwerken** om op te slaan.*
 
 Vul je niets in, dan meldt de app *Geef minstens één veld op om bij te werken.*
 
@@ -442,6 +511,12 @@ documenten met betrekking tot dit voertuig*.
   en de knop **PDF**.
 - Een document verwijderen vraagt om bevestiging: *"Weet je zeker dat je het document "<naam>"
   wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."*
+- Bij elk document staat ook de knop **Geschiedenis**: wie het document wanneer heeft geüpload,
+  bekeken, gedownload, afgedrukt of gemaild (hoofdstuk 10, paragraaf 10.5).
+
+![Het tabblad Documenten (1) van de voertuigkaart met Document uploaden (2) en Nieuwe check (3)](afbeeldingen/04-documenten-tabblad.png)
+*Het tabblad **Documenten** (1): **Document uploaden** (2), het blok **Interactieve schadechecks** met
+**Nieuwe check** (3), en daaronder de **Snel uploaden categorieën**.*
 
 Meer over documenten, sjablonen en afdrukken staat in hoofdstuk 8.
 
@@ -457,26 +532,47 @@ verkeerde auto mee pakken.
 
 1. Open de auto met **Bekijken**.
 2. Klik op **Barcode bekijken**. Het venster **Voertuigbarcode** opent.
+
+   ![Het venster Voertuigbarcode met Labelsjabloon (1), Sleutellabel afdrukken (2) en Reservesleutel-label afdrukken (3)](afbeeldingen/04-voertuigbarcode.png)
+   *Het venster **Voertuigbarcode**: 1 **Labelsjabloon**, 2 **Sleutellabel afdrukken**, 3
+   **Reservesleutel-label afdrukken**; onderaan **Barcode opnieuw genereren**.*
 3. Kies bij **Labelsjabloon** de indeling die bij jullie labelprinter hoort: de
    **Standaardindeling** (62 bij 29 mm), een eigen sjabloon uit **Documenten**, of **DYMO-tape
-   (labelmaker, staand)** voor de labelmaker aan de balie (zie hieronder).
+   (labelmaker, staand)** voor de labelmaker aan de balie (zie hieronder). Zijn er onder
+   **Documenten** → **Barcodelabels** standaardsjablonen aangewezen (**Hoofdsleutel**,
+   **Reservesleutel**, **Autolabel**), dan staat het juiste sjabloon hier al voor.
 4. Klik op **Sleutellabel afdrukken** of op **Reservesleutel-label afdrukken**. Er opent een
    afdrukvenster van je browser en de app meldt dat met **Afdrukvenster geopend** — *Het
    afdrukvenster van je browser is geopend voor het label van <kenteken>. Kies daar de printer.*
    Je kiest daar zelf de printer; de app maakt geen bestand.
 
+**Wat er op het label staat.** Op het scherm en in het barcodeboek heet de barcode *VEH-000123*, maar
+op het sleutellabel zelf staat de **korte code**: **V123** voor de hoofdsleutel, **S123** voor de
+reservesleutel en bijvoorbeeld **V123R2** na *Barcode opnieuw genereren*. Zo blijft de streepjescode
+leesbaar op een label van 30 bij 12 mm. Scannen of typen werkt met beide vormen; de app zet de korte
+code zelf om.
+
 **Op de DYMO-labelmaker (tape).** De labelmaker aan de balie (LabelManager 420P, tape van
 12 mm) drukt via Windows alleen staand af; een gewoon sleutellabel van 62 bij 29 mm kwam daardoor
 afgesneden uit de printer. Kies daarom bij **Labelsjabloon** de optie **DYMO-tape (labelmaker,
-staand)**. Er verschijnen dan **Tapebreedte** (9, 12 of 19 mm; standaard 12) en **Labellengte (mm)**
-(standaard 48, de lengte van het sleutellabel), en daaronder **Uitvoer**. Daar kies je waar het
-label heen gaat:
+staand)**. Er verschijnen dan **Tapebreedte** (6, 9, 12, 19 of 24 mm; standaard 12), **Labellengte
+(mm)** (standaard 48, de lengte van het sleutellabel; minimaal 15), **Marge links/rechts (mm)** en
+**Marge boven/onder (mm)**, en daaronder **Uitvoer**. Daar kies je waar het label heen gaat:
+
+![Het venster Voertuigbarcode met het labelsjabloon DYMO-tape en de velden Tapebreedte, Labellengte en Uitvoer](afbeeldingen/04-voertuigbarcode-dymo.png)
+*Hetzelfde venster met **DYMO-tape (labelmaker, staand)** gekozen: de tapematen en de keuze
+**Uitvoer** verschijnen eronder.*
 
 - **<naam van de labelmaker> (rechtstreeks via DYMO Connect)**, bijvoorbeeld *DYMO LabelManager
   420P*: de app stuurt het label zelf naar de labelmaker, zonder afdrukvenster. Dat kan als op de pc
   DYMO Connect draait; de regel eronder zegt *DYMO Connect gevonden: 1 labelmaker.* De labelmaker
   snijdt elk label af. Na het sturen meldt de app **Naar de labelmaker gestuurd** — *1 label is naar
-  DYMO LabelManager 420P gestuurd.* Dit is de bedoelde weg aan de balie.
+  DYMO LabelManager 420P gestuurd.* Dit is de bedoelde weg aan de balie. Bij deze keuze kun je ook de
+  **Positie op de tape** kiezen (**Links (begin van de tape)**, **Midden** of **Rechts**) en
+  **Doorlopend printen (minder lege tape, niet knippen na elk label)** aanzetten. Voegt de labelmaker
+  toch steeds een stuk lege tape toe, zet dan **Meerdere labels op één strook, met kniplijn ertussen
+  (zelf knippen)** aan en kies de **Ruimte naast de kniplijn (mm)**: de labels komen dan achter elkaar
+  op één strook met een kniplijn ertussen, en de lege rand komt maar één keer.
 - **Bestand .label (openen in DYMO Connect)**: de app maakt per label een bestand in het formaat van
   DYMO (**Bestand gemaakt** — *sleutellabel-<kenteken>-<code>.label*). Open het in DYMO Connect en
   druk daar af; handig op een pc zonder aangesloten labelmaker.
@@ -510,7 +606,13 @@ opnieuw worden afgedrukt. Deze actie kan niet ongedaan worden gemaakt."*
 **Labelsjabloon**, filtert eventueel op status, en klikt op **Alles afdrukken (…)**,
 **Gefilterde afdrukken (…)**, **Selectie afdrukken** of **Stickers afdrukken**. Staat het
 **Labelsjabloon** op **DYMO-tape (labelmaker, staand)**, dan maakt **Stickers afdrukken** één
-tapelabel per auto; de labelmaker snijdt ze na elkaar af.
+tapelabel per auto; de labelmaker snijdt ze na elkaar af. **Stickers afdrukken** kiest vanzelf het
+sjabloon dat onder **Documenten** → **Barcodelabels** als **Autolabel (sticker in de auto)** is
+aangewezen.
+
+![Het venster Barcodeboek met Labelsjabloon (1), Alles afdrukken (2) en Stickers afdrukken (3)](afbeeldingen/04-barcodeboek.png)
+*Het venster **Barcodeboek**: 1 **Labelsjabloon**, 2 **Alles afdrukken (…)**, 3 **Stickers afdrukken**;
+daaronder het zoekveld, het statusfilter en de lijst om auto's aan te vinken.*
 
 **De sleutelkast nalopen** doe je met **Sleutelkast-audit** en **Reservesleutelkast-audit**.
 Tijdens het scannen zie je welke sleutels al gescand zijn en welke nog niet. Uitgebreid in
@@ -531,6 +633,10 @@ hoofdstuk 18.
 4. Typ het kenteken over in het veld **Typ <kenteken> om te bevestigen**. Zolang dat niet klopt,
    blijft de knop grijs. Dat overtypen is de rem: je verwijdert nooit per ongeluk de regel
    erboven.
+
+   ![Het venster Voertuig verwijderen met het veld om het kenteken over te typen (1) en de knop Voertuig verwijderen (2)](afbeeldingen/04-voertuig-verwijderen.png)
+   *Het venster **Voertuig verwijderen**: typ het kenteken in veld 1; dan wordt knop 2 rood en
+   klikbaar.*
 5. Klik op **Voertuig verwijderen**.
 
 Je krijgt **Voertuig verwijderd** — *<merk> <model> is verwijderd. Een beheerder kan het
@@ -550,6 +656,9 @@ venster:
 De blokkerende huren staan er dus bij, met hun periode en hun status in het Nederlands. De knop
 blijft grijs tot je die huren hebt afgerond of geannuleerd.
 
+![Het venster Voertuig verwijderen met de rode weigering en de lijst van reserveringen die het tegenhouden](afbeeldingen/04-voertuig-verwijderen-geweigerd.png)
+*De weigering: de reserveringen die het verwijderen tegenhouden staan erbij; de knop blijft grijs.*
+
 ### De prullenbak
 
 De knop **Verwijderde voertuigen** rechtsboven op **Voertuigbeheer** is de prullenbak van dit
@@ -564,6 +673,9 @@ hoofdstuk 10, paragraaf 10.6. Per regel zie je de omschrijving, de regel *Verwij
 
 1. Zoek de regel, eventueel met het zoekveld *Zoeken op omschrijving of naam…*
 2. Klik op **Terugzetten**.
+
+![De prullenbak Verwijderde voertuigen met per regel Terugzetten (1) en Definitief verwijderen (2)](afbeeldingen/04-verwijderde-voertuigen.png)
+*De prullenbak **Verwijderde voertuigen**: 1 **Terugzetten**, 2 **Definitief verwijderen**.*
 
 Je krijgt **Teruggezet** met een bevestiging erbij, bijvoorbeeld *12-AB-34 Kia Picanto is
 teruggezet.* Het voertuig staat weer op zijn plek, met alles wat eraan hing. Een regel die al is
@@ -586,9 +698,12 @@ De typering van de RDW is verbeterd: een bus met negen zitplaatsen is geen **SUV
 (zie 4.3). Auto's die al in het wagenpark staan, houden hun oude type. Wil je die in één keer laten
 nalopen, dan doet een beheerder dat in de app, niet op de server.
 
-1. Klik op het tandwiel (**Instellingen**) en ga naar het tabblad **Voertuigen**. Je ziet de kaart
-   **RDW-voertuigtypes**. Er staat bij: *Er wordt niets aangepast voordat een beheerder op Toepassen
-   drukt.*
+1. Klik rechtsboven op je naam, kies onder **Beheer** de ingang **App-instellingen** en ga naar het
+   tabblad **Voertuigen**. Je ziet de kaart **RDW-voertuigtypes**. Er staat bij: *Er wordt niets
+   aangepast voordat een beheerder op Toepassen drukt.*
+
+   ![App-instellingen, tabblad Voertuigen (1), met de kaart RDW-voertuigtypes en de knop Controleren (2)](afbeeldingen/04-rdw-voertuigtypes.png)
+   *Het tabblad **Voertuigen** (1) van de app-instellingen met de knop **Controleren** (2).*
 2. Klik op **Controleren**. De app vraagt de RDW per voertuig, op de achtergrond, en laat zien hoe ver
    hij is: *Controleren… 12 van 99 voertuigen*. Voor ongeveer honderd auto's duurt dat anderhalve
    minuut of meer; je kunt het scherm laten staan of er later terugkomen. Er loopt maar één controle
@@ -634,4 +749,5 @@ controle-uitkomst meer om toe te passen. Draai eerst Controleren.*
 | Een auto verwijderen | Prullenbakje in de lijst; kenteken overtypen |
 | Een verwijderd voertuig terugzetten | **Verwijderde voertuigen** → **Terugzetten** (vraagt het vinkje **Prullenbak beheren**) |
 | Onbekende kentekens toch aanmaken bij het importeren | **Bulk importeren** → vinkje **Ook onbekende kentekens aanmaken** |
-| De voertuigtypes van het park laten nalopen door de RDW | **Instellingen** → **Voertuigen** → **RDW-voertuigtypes** → **Controleren**, daarna (beheerder) **Toepassen** |
+| De voertuigtypes van het park laten nalopen door de RDW | Je naam → **App-instellingen** → **Voertuigen** → **RDW-voertuigtypes** → **Controleren**, daarna (beheerder) **Toepassen** |
+| Een klant blokkeren voor deze auto | **Bekijken** → tabblad **Reserveringen** → blok **Klant zwarte lijst** → **Toevoegen aan zwarte lijst** (of vanaf de klantkaart, hoofdstuk 3, paragraaf 3.2) |
