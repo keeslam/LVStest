@@ -52,7 +52,11 @@ router.post('/:id/confirm', hasPermission(UserPermission.MANAGE_VEHICLES), async
       return res.status(400).json({ message: 'This change has already been resolved' });
     }
 
-    await storage.updateVehicle(change.vehicleId, { apkDate: change.newApkDate });
+    // The confirmation is a staff decision, so the vehicle row names who took it.
+    await storage.updateVehicle(change.vehicleId, {
+      apkDate: change.newApkDate,
+      updatedBy: req.user?.username ?? null,
+    });
     const updated = await storage.updateApkDateChange(id, {
       status: 'confirmed',
       resolvedAt: new Date(),
@@ -228,7 +232,8 @@ router.post('/bulk-confirm', hasPermission(UserPermission.MANAGE_VEHICLES), asyn
 
     const resolvedBy = req.user?.username || null;
     const results = await applyPerRow(ids, async (change) => {
-      await storage.updateVehicle(change.vehicleId, { apkDate: change.newApkDate });
+      // The confirmation is a staff decision, so the vehicle row names who took it.
+      await storage.updateVehicle(change.vehicleId, { apkDate: change.newApkDate, updatedBy: resolvedBy });
       await storage.updateApkDateChange(change.id, {
         status: 'confirmed',
         resolvedAt: new Date(),
