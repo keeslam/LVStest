@@ -49,11 +49,39 @@ type Scope = "changes" | "ui" | "all";
 
 const PAGE_SIZE = 50;
 const ANY = "__all__";
+
+/** The staff routes (App.tsx) as the menu names them; an unknown path shows as itself. */
+const SCREEN_KEYS: Array<[RegExp, string]> = [
+  [/^\/$/, "dashboard"],
+  [/^\/vehicles/, "vehicles"],
+  [/^\/scan/, "scan"],
+  [/^\/customers/, "customers"],
+  [/^\/reservations\/edit\//, "reservationEdit"],
+  [/^\/reservations/, "reservations"],
+  [/^\/maintenance/, "maintenance"],
+  [/^\/expenses\/add/, "expenseAdd"],
+  [/^\/expenses/, "expenses"],
+  [/^\/documents/, "documents"],
+  [/^\/reports/, "reports"],
+  [/^\/delivery/, "delivery"],
+  [/^\/communications/, "communications"],
+  [/^\/portal-admin/, "portalAdmin"],
+  [/^\/fines/, "fines"],
+  [/^\/handleiding/, "manual"],
+];
+
+function screenName(t: (key: string, options?: Record<string, unknown>) => string, path: string): string {
+  const hit = SCREEN_KEYS.find(([pattern]) => pattern.test(path));
+  return hit ? t(`settingsPage.activityLog.screens.${hit[1]}`, { defaultValue: path }) : path;
+}
 /** Changes shown inline before the row folds the rest behind "+n". */
 const CHANGES_INLINE = 3;
 
 export function ActivityLogPanel() {
   const { t } = useTranslation(["settings", "common"]);
+  // The action wording lives in the common namespace (recordHistory.actions);
+  // handing auditActionLabel the settings-bound `t` showed the raw keys.
+  const { t: tCommon } = useTranslation("common");
   const [search, setSearch] = useState("");
   const [username, setUsername] = useState(ANY);
   const [action, setAction] = useState(ANY);
@@ -177,7 +205,7 @@ export function ActivityLogPanel() {
               <SelectContent className="max-h-[300px]">
                 <SelectItem value={ANY}>{t('settingsPage.activityLog.allActions')}</SelectItem>
                 {actionOptions.map((value) => (
-                  <SelectItem key={value} value={value}>{auditActionLabel(t, value)}</SelectItem>
+                  <SelectItem key={value} value={value}>{auditActionLabel(tCommon, value)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -250,8 +278,12 @@ export function ActivityLogPanel() {
                   logs.map((entry) => {
                     const changes = entry.details?.changes ?? [];
                     const isUi = entry.resourceType === "ui";
+                    // A screen is named after its menu entry ("Rapporten"), a
+                    // dialog after its title; the path stays as the detail.
                     const subject = isUi
-                      ? (entry.details?.name || '-')
+                      ? (entry.action === "screen.open"
+                        ? screenName(t, entry.details?.name || entry.details?.path || '')
+                        : (entry.details?.name || '-'))
                       : (entry.details?.label || (entry.resourceId ? `#${entry.resourceId}` : '-'));
                     const isOpen = expanded.has(entry.id);
                     const shown = isOpen ? changes : changes.slice(0, CHANGES_INLINE);
@@ -276,7 +308,7 @@ export function ActivityLogPanel() {
                             // The code stays reachable for anyone who needs to quote it.
                             title={entry.action}
                           >
-                            {auditActionLabel(t, entry.action)}
+                            {auditActionLabel(tCommon, entry.action)}
                           </Badge>
                         </TableCell>
                         <TableCell className="px-2 py-1 align-top max-w-[260px]">
