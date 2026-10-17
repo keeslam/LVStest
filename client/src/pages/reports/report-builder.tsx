@@ -1,5 +1,5 @@
 import { describeApiError } from "@/lib/api-error";
-import { reportClientAction } from "@/lib/audit-events";
+import { HtmlPreviewDialog } from "@/components/documents/html-preview-dialog";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -21,7 +21,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { downloadCsv } from "@/lib/csv";
 import { formatDateTime } from "@/lib/format-utils";
 import {
-  sourceLabel, fieldLabel, operatorLabel, outputHeader, csvCell, displayCell, printReportTable, reportFileSubject,
+  sourceLabel, fieldLabel, operatorLabel, outputHeader, csvCell, displayCell, buildReportTableHtml, reportFileSubject,
 } from "@/pages/reports/report-builder-output";
 import {
   DATA_SOURCES, 
@@ -676,6 +676,8 @@ function ReportResultsDialog({
   const { t } = useTranslation("reports");
   const header = outputHeader(t, columns);
   const canOutput = results.length > 0 && columns.length > 0;
+  // The print preview, same dialog as the overview reports and the PDFs.
+  const [printPreview, setPrintPreview] = useState<{ title: string; html: string } | null>(null);
 
   // A-14-1: the same writer as every other CSV in the application (Dutch decimals and dates, dated file name, "file made" toast).
   const exportCsv = () => {
@@ -687,16 +689,27 @@ function ReportResultsDialog({
   };
 
   const printResults = () => {
-    reportClientAction('report.print', { details: { report: reportName || t('reportBuilderPage.untitledReport'), rows: results.length } });
-    printReportTable({
-      title: reportName || t('reportBuilderPage.untitledReport'),
-      subtitle: t('reportBuilderPage.printSubtitle', { date: formatDateTime(Date.now()), count: results.length }),
-      header,
-      rows: results.map((row) => columns.map((col) => displayCell(t, col, row[col.field]))),
+    const title = reportName || t('reportBuilderPage.untitledReport');
+    setPrintPreview({
+      title,
+      html: buildReportTableHtml({
+        title,
+        subtitle: t('reportBuilderPage.printSubtitle', { date: formatDateTime(Date.now()), count: results.length }),
+        header,
+        rows: results.map((row) => columns.map((col) => displayCell(t, col, row[col.field]))),
+      }),
     });
   };
 
   return (
+    <>
+    <HtmlPreviewDialog
+      open={printPreview !== null}
+      onOpenChange={(isOpen) => { if (!isOpen) setPrintPreview(null); }}
+      html={printPreview?.html ?? null}
+      title={printPreview?.title ?? ''}
+      reportName={printPreview?.title ?? ''}
+    />
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[80vh] overflow-auto" data-testid="dialog-report-results">
         <DialogHeader>
@@ -746,5 +759,6 @@ function ReportResultsDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

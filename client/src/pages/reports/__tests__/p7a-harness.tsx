@@ -61,20 +61,25 @@ export function renderWithClient(node: React.ReactNode) {
 }
 
 /**
- * Makes the hidden print iframe of /reports observable: returns the HTML each
- * print() call was given. Call restore() when done.
+ * Makes the print documents of /reports observable: the body HTML of every
+ * report the print preview dialog (HtmlPreviewDialog) is given, in order.
+ * jsdom does not render `srcdoc`, so the document is read from the attribute.
+ * Call restore() when done.
  */
 export function capturePrints() {
   const printed: string[] = [];
-  const realCreate = document.createElement.bind(document);
-  const spy = vi.spyOn(document, "createElement").mockImplementation(((tag: string, opts?: any) => {
-    const el = realCreate(tag, opts);
-    if (tag === "iframe") {
-      Object.defineProperty(el, "contentWindow", {
-        value: { print: () => printed.push((el as HTMLIFrameElement).contentDocument!.body.innerHTML), document: undefined },
-      });
-    }
-    return el;
-  }) as any);
-  return { printed, restore: () => spy.mockRestore() };
+  const seen = new WeakSet<Element>();
+  const collect = () => {
+    document.querySelectorAll('iframe[data-testid="iframe-report-preview"]').forEach((frame) => {
+      if (seen.has(frame)) return;
+      const html = frame.getAttribute("srcdoc");
+      if (!html) return;
+      seen.add(frame);
+      const body = /<body[^>]*>([\s\S]*)<\/body>/i.exec(html);
+      printed.push(body ? body[1] : html);
+    });
+  };
+  const observer = new MutationObserver(collect);
+  observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["srcdoc"] });
+  return { printed, restore: () => observer.disconnect() };
 }

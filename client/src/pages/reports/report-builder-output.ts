@@ -80,24 +80,13 @@ export function reportFileSubject(name: string): string {
 }
 
 /**
- * Prints a table in the hidden, sandboxed frame the report page already uses
- * (no scripts can run in it; every value is escaped).
+ * The printable table as a complete HTML document, for the print preview
+ * dialog (HtmlPreviewDialog), which renders it in a sandboxed frame without
+ * scripts; every value is escaped.
  */
-export function printReportTable(options: { title: string; subtitle: string; header: string[]; rows: string[][] }): void {
-  const frame = document.createElement("iframe");
-  frame.style.position = "fixed";
-  frame.style.right = "0";
-  frame.style.bottom = "0";
-  frame.style.width = "0";
-  frame.style.height = "0";
-  frame.style.border = "0";
-  frame.setAttribute("sandbox", "allow-same-origin allow-modals");
-  document.body.appendChild(frame);
-
-  frame.onload = () => {
-    const doc = frame.contentDocument || frame.contentWindow?.document;
-    if (!doc) return;
-    doc.head.innerHTML = `
+export function buildReportTableHtml(options: { title: string; subtitle: string; header: string[]; rows: string[][] }): string {
+  return `<!doctype html><html><head>
+      <meta charset="utf-8">
       <title>${escapeHtml(options.title)}</title>
       <style>
         body { font-family: Arial, sans-serif; color: #333; padding: 20px; }
@@ -106,19 +95,12 @@ export function printReportTable(options: { title: string; subtitle: string; hea
         table { width: 100%; border-collapse: collapse; }
         th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #ddd; font-size: 13px; }
         th { background: #f2f2f2; }
-      </style>`;
-    doc.body.innerHTML = `
+      </style></head><body>
       <h1>${escapeHtml(options.title)}</h1>
       <div class="meta">${escapeHtml(options.subtitle)}</div>
       <table>
         <thead><tr>${options.header.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr></thead>
         <tbody>${options.rows.map((r) => `<tr>${r.map((c) => `<td>${escapeHtml(c)}</td>`).join("")}</tr>`).join("")}</tbody>
-      </table>`;
-    setTimeout(() => {
-      frame.contentWindow?.print();
-      setTimeout(() => frame.remove(), 1000);
-    }, 500);
-  };
-  frame.src = "about:blank";
+      </table></body></html>`;
 }
 

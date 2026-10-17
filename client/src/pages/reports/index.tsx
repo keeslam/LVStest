@@ -2,7 +2,7 @@ import { useState, useTransition } from "react";
 // FIX-R (BUG-102): every database value that goes into the print HTML is
 // escaped at the point it is interpolated.
 import { escapeHtml as esc } from "@/lib/html-escape";
-import { reportClientAction } from "@/lib/audit-events";
+import { HtmlPreviewDialog } from "@/components/documents/html-preview-dialog";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -746,37 +746,19 @@ function FullReportsPage() {
     </table>
   `;
 
-  // Function to handle printing reports
+  // The report shown in the print preview dialog (HtmlPreviewDialog), like
+  // every other print button in the app: the employee sees it first and
+  // prints from the dialog. The old hidden frame printed straight away, which
+  // read as "the button does nothing" when the browser swallowed the dialog.
+  const [reportPreview, setReportPreview] = useState<{ type: string; title: string; html: string } | null>(null);
+
+  // Builds the report document and opens it in the preview dialog
   const printReport = (reportType: string) => {
-    // The report is rendered here, never fetched as a file: report the print
-    // so the activity log knows who printed which overview.
-    reportClientAction('report.print', { details: { report: reportType } });
-    // Create a hidden iframe for printing specific content
-    const printFrame = document.createElement('iframe');
-    printFrame.style.position = 'fixed';
-    printFrame.style.right = '0';
-    printFrame.style.bottom = '0';
-    printFrame.style.width = '0';
-    printFrame.style.height = '0';
-    printFrame.style.border = '0';
-    // FIX-R (BUG-102), defence in depth: without `allow-scripts` nothing in
-    // this document can execute — not a <script>, not an onerror handler — so
-    // a value that slips past the escaping above still cannot run anything.
-    // `allow-same-origin` is what lets this page write into contentDocument,
-    // and `allow-modals` is what lets print() open the print dialog.
-    printFrame.setAttribute('sandbox', 'allow-same-origin allow-modals');
-    
-    document.body.appendChild(printFrame);
-    
-    // Wait for iframe to load before adding content
-    printFrame.onload = () => {
-      const doc = printFrame.contentDocument || printFrame.contentWindow?.document;
-      
-      if (!doc) {
-        console.error('Could not create print document');
-        return;
-      }
-      
+    // A detached document: nothing in it runs (FIX-R, BUG-102), and the
+    // preview iframe renders it sandboxed without scripts as well.
+    const doc = document.implementation.createHTMLDocument('');
+    {
+
       const reportTypeTitles: Record<string, string> = {
         apk: t('reportsPage.printReport.reportTitles.apk'),
         utilization: t('reportsPage.printReport.reportTitles.utilization'),
@@ -1376,20 +1358,13 @@ function FullReportsPage() {
       
       // Add content to document body
       doc.body.innerHTML = content;
-      
-      // Print the document
-      setTimeout(() => {
-        printFrame.contentWindow?.print();
-        
-        // Remove the frame after printing
-        setTimeout(() => {
-          document.body.removeChild(printFrame);
-        }, 1000);
-      }, 500);
-    };
-    
-    // Set source to trigger load
-    printFrame.src = 'about:blank';
+
+      setReportPreview({
+        type: reportType,
+        title: t('reportsPage.printReport.printReportTitle', { type: reportTypeTitles[reportType] || reportType }),
+        html: `<!doctype html>${doc.documentElement.outerHTML}`,
+      });
+    }
   };
 
   return (
@@ -2706,6 +2681,15 @@ function FullReportsPage() {
       </Tabs>
 
       {/* Report Builder Dialog */}
+      {/* Print preview for the overview reports, opened by the Afdrukken buttons above */}
+      <HtmlPreviewDialog
+        open={reportPreview !== null}
+        onOpenChange={(open) => { if (!open) setReportPreview(null); }}
+        html={reportPreview?.html ?? null}
+        title={reportPreview?.title ?? ''}
+        reportName={reportPreview?.type ?? ''}
+      />
+
       <Dialog open={reportBuilderOpen} onOpenChange={setReportBuilderOpen}>
         <DialogContent className="max-w-[95vw] w-full h-[95vh] max-h-[95vh] p-0">
           <DialogHeader className="px-6 py-4 border-b">
