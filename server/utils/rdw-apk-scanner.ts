@@ -5,6 +5,8 @@ export interface ApkScanResult {
   scanned: number;
   changesFound: number;
   errors: number;
+  /** The vehicles a pending change was created or updated for; the audit row names them. */
+  changedVehicleIds: number[];
 }
 
 // Small delay between requests so a full-fleet scan doesn't hammer RDW's
@@ -34,7 +36,7 @@ export async function scanVehiclesForApkChanges(): Promise<ApkScanResult> {
       pendingByVehicle.set(pending.vehicleId, pending as any);
     }
   }
-  const result: ApkScanResult = { scanned: 0, changesFound: 0, errors: 0 };
+  const result: ApkScanResult = { scanned: 0, changesFound: 0, errors: 0, changedVehicleIds: [] };
 
   for (const vehicle of vehicles) {
     if (!vehicle.licensePlate) {
@@ -59,7 +61,7 @@ export async function scanVehiclesForApkChanges(): Promise<ApkScanResult> {
             newApkDate: rdwApkDate,
             previousApkDate: vehicle.apkDate,
           });
-          result.changesFound++;
+          result.changesFound++; result.changedVehicleIds.push(vehicle.id);
         }
         continue;
       }
@@ -70,7 +72,7 @@ export async function scanVehiclesForApkChanges(): Promise<ApkScanResult> {
         newApkDate: rdwApkDate,
         status: "pending",
       });
-      result.changesFound++;
+      result.changesFound++; result.changedVehicleIds.push(vehicle.id);
     } catch (error) {
       // A vehicle with no RDW record (e.g. exported, scrapped) is not an
       // error worth counting - everything else (timeout, upstream failure) is.

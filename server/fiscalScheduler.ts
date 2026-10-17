@@ -1,5 +1,6 @@
 import { runNightlyFiscalRun } from './services/fiscal/nightly';
 import { createOfficeCronTask, type OfficeCronTask } from './services/office-time';
+import { AuditLogger } from './utils/security/auditLogger';
 
 /**
  * Fiscal mobility check (docs/fiscaal, besluit F-03): the nightly assessment
@@ -23,8 +24,26 @@ export class FiscalScheduler {
           `Nightly fiscal run completed: ${r.customers} customers, ${r.periodsAssessed} periods, ${r.assessmentsCreated} new assessments, ` +
           `${r.profilesRefreshed} profiles refreshed, ${r.staffNotifications} staff and ${r.customerNotifications} customer notifications, ${r.versionsActivated} versions activated`,
         );
+        // Per-period detail lives in fiscal_audit_events; this is the one row
+        // in the activity log that says the run happened and what it did.
+        void AuditLogger.system('system.fiscal-nightly', {
+          trigger: 'scheduled',
+          today: r.today,
+          customers: r.customers,
+          versionsActivated: r.versionsActivated,
+          periodsReconciled: r.periodsReconciled,
+          profilesRefreshed: r.profilesRefreshed,
+          periodsAssessed: r.periodsAssessed,
+          assessmentsCreated: r.assessmentsCreated,
+          staffNotifications: r.staffNotifications,
+          customerNotifications: r.customerNotifications,
+        });
       } catch (error) {
         console.error('Nightly fiscal run failed:', error);
+        void AuditLogger.system('system.fiscal-nightly', {
+          trigger: 'scheduled',
+          error: error instanceof Error ? error.message : String(error),
+        }, 'failure');
       }
     });
     this.scheduledTask.start();

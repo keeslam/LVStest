@@ -1,5 +1,9 @@
 import { scanVehiclesForServiceDue } from './utils/service-due-scanner';
 import { createOfficeCronTask, type OfficeCronTask } from './services/office-time';
+import { AuditLogger } from './utils/security/auditLogger';
+
+/** How many ids one audit row names; the counts are always complete. */
+const MAX_IDS_IN_AUDIT_ROW = 100;
 
 // Keeps the "service due" notifications in sync with the vehicles' odometer
 // readings and last-service dates. Runs nightly (after the backup and the RDW
@@ -45,8 +49,23 @@ export class ServiceDueScheduler {
         `Service-due scan (${reason}): ${result.scanned} vehicles, ${result.due} due, ${result.dueSoon} due soon, ` +
           `${result.notificationsCreated} notification(s) created, ${result.notificationsRemoved} removed`,
       );
+      // One activity-log row per run, so a "service due" notification that
+      // appeared overnight can be traced to the scan that made it.
+      void AuditLogger.system('system.service-due-scan', {
+        trigger: reason,
+        scanned: result.scanned,
+        due: result.due,
+        dueSoon: result.dueSoon,
+        notificationsCreated: result.notificationsCreated,
+        notificationsRemoved: result.notificationsRemoved,
+        vehicleIds: result.notifiedVehicleIds.slice(0, MAX_IDS_IN_AUDIT_ROW),
+      });
     } catch (error) {
       console.error(`Service-due scan (${reason}) failed:`, error);
+      void AuditLogger.system('system.service-due-scan', {
+        trigger: reason,
+        error: error instanceof Error ? error.message : String(error),
+      }, 'failure');
     }
   }
 }

@@ -3,6 +3,7 @@ import { getCjibConfig } from "./config";
 import { ftpsClient, type CjibFtpsClient } from "./ftps-client";
 import { importCjibFile } from "./importer";
 import { createOfficeCronTask, type OfficeCronTask } from "../office-time";
+import { AuditLogger } from "../../utils/security/auditLogger";
 
 let client: CjibFtpsClient = ftpsClient;
 /** Tests swap the FTPS client for a fake. */
@@ -51,6 +52,22 @@ export function runCjibImport(trigger: CjibRunSummary["trigger"], createdBy = "s
     }
     summary.finishedAt = new Date().toISOString();
     lastRun = summary;
+    // A manual run is already in the activity log under the employee who
+    // started it (the request middleware). A scheduled run that fetched a
+    // file, or failed, gets its own row; an empty poll every quarter hour
+    // would only bury the rows that matter.
+    if (trigger !== "manual" && (summary.files > 0 || summary.errors.length > 0)) {
+      void AuditLogger.system("system.cjib-import", {
+        trigger,
+        files: summary.files,
+        skipped: summary.skipped,
+        created: summary.created,
+        linked: summary.linked,
+        duplicate: summary.duplicate,
+        failed: summary.failed,
+        errors: summary.errors.slice(0, 10),
+      }, summary.errors.length ? "failure" : "success");
+    }
     if (summary.errors.length) console.error("CJIB import finished with errors:", summary.errors);
     else console.log(`CJIB import: ${summary.files} file(s), ${summary.created} fine(s) created, ${summary.linked} linked`);
     return summary;

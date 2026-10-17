@@ -5,6 +5,7 @@ import { importInvoiceMail, recordFailedMail, recordOversizeMail, MAX_MAIL_BYTES
 import { notifyInvoiceInbox } from "./notify";
 import { inboxRunLog } from "./run-log";
 import { createOfficeCronTask, type OfficeCronTask } from "../office-time";
+import { AuditLogger } from "../../utils/security/auditLogger";
 
 /** Bounds one run: every mail can cost a Gemini call. The rest waits for the next run. */
 export const MAX_MAILS_PER_RUN = 25;
@@ -148,6 +149,21 @@ export function runInvoiceInboxImport(
     // Deliberately not awaited: the log may never delay a run, and record()
     // swallows whatever goes wrong writing it.
     if (attempted) void inboxRunLog.record(summary, trigger === "manual" ? createdBy : null);
+    // The activity log gets the scheduled runs that did something (or failed);
+    // a manual run is already there under the employee who started it, and an
+    // empty poll is noise. The full per-run trail stays in invoice_inbox_runs.
+    if (attempted && trigger !== "manual" && (summary.mails > 0 || summary.errors.length > 0)) {
+      void AuditLogger.system("system.invoice-inbox-import", {
+        trigger,
+        mails: summary.mails,
+        attachments: summary.attachments,
+        booked: summary.booked,
+        review: summary.review,
+        skipped: summary.skipped,
+        failed: summary.failed,
+        errors: summary.errors.slice(0, 10),
+      }, summary.errors.length ? "failure" : "success");
+    }
     if (summary.errors.length) console.error("Invoice inbox run finished with errors:", summary.errors);
     else console.log(`Invoice inbox: ${summary.mails} mail(s), ${summary.booked} booked, ${summary.review} for review, ${summary.skipped} skipped`);
     return summary;

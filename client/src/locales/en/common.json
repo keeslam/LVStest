@@ -220,7 +220,12 @@
         "driver": "Driver",
         "maintenance": "Maintenance",
         "blacklist": "Blacklist",
-        "maintenance_block": "Maintenance block"
+        "maintenance_block": "Maintenance block",
+        "email-template": "Email template",
+        "email-log": "Email log entry",
+        "notification": "Notification",
+        "apk-date-change": "APK date change",
+        "system": "System job"
       },
       "verbs": {
         "create": "created",
@@ -267,6 +272,18 @@
         },
         "expense": {
           "with-receipt": "Expense saved with receipt"
+        },
+        "apk-date-change": {
+          "confirm": "RDW APK date applied",
+          "dismiss": "APK date change dismissed"
+        },
+        "system": {
+          "apk-scan": "Nightly RDW APK scan ran",
+          "service-due-scan": "Service-due scan ran",
+          "fiscal-nightly": "Nightly fiscal assessment ran",
+          "cjib-import": "CJIB fines imported",
+          "invoice-inbox-import": "Invoices imported from the mailbox",
+          "backup": "Backup made"
         }
       }
     }

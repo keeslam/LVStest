@@ -23,6 +23,8 @@ export interface ServiceDueScanResult {
   dueSoon: number;
   notificationsCreated: number;
   notificationsRemoved: number;
+  /** The vehicles a notification was (re)created for; the audit row names them. */
+  notifiedVehicleIds: number[];
 }
 
 /**
@@ -94,7 +96,7 @@ export async function scanVehiclesForServiceDue(): Promise<ServiceDueScanResult>
     if (m) existingByVehicle.set(Number(m[1]), n);
   }
 
-  const result: ServiceDueScanResult = { scanned: 0, due: 0, dueSoon: 0, notificationsCreated: 0, notificationsRemoved: 0 };
+  const result: ServiceDueScanResult = { scanned: 0, due: 0, dueSoon: 0, notificationsCreated: 0, notificationsRemoved: 0, notifiedVehicleIds: [] };
 
   if (settings && settings.showServiceReminders === false) {
     for (const vehicleId of existingByVehicle.keys()) {
@@ -130,6 +132,7 @@ export async function scanVehiclesForServiceDue(): Promise<ServiceDueScanResult>
       userId: null,
     });
     result.notificationsCreated++;
+    result.notifiedVehicleIds.push(vehicle.id);
   }
 
   for (const vehicleId of existingByVehicle.keys()) {

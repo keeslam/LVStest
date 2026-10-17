@@ -42,7 +42,15 @@ type KnownAuditAction =
   | 'expense.delete'
   | 'session.revoke'
   | 'password.change'
-  | 'system.backup';
+  | 'system.backup'
+  // Background jobs that change data without a user behind them. One row per
+  // run, so "why did this APK date / notification / fine appear overnight"
+  // has an answer in the same log as the staff actions.
+  | 'system.apk-scan'
+  | 'system.service-due-scan'
+  | 'system.fiscal-nightly'
+  | 'system.cjib-import'
+  | 'system.invoice-inbox-import';
 
 interface AuditLogData {
   userId?: number;
@@ -77,6 +85,18 @@ export class AuditLogger {
       // Don't throw - logging should not break the application
       console.error('Failed to create audit log:', error);
     }
+  }
+
+  /**
+   * One row for a background run (scheduler, poller): no user, no request.
+   * `details` carries the counts and, capped, the ids the run touched.
+   */
+  static async system(
+    action: AuditAction,
+    details: Record<string, any>,
+    status: 'success' | 'failure' = 'success',
+  ): Promise<void> {
+    await this.log({ username: 'system', action, resourceType: 'system', details, status });
   }
 
   /**

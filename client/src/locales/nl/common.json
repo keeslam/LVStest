@@ -220,7 +220,12 @@
         "driver": "Chauffeur",
         "maintenance": "Onderhoud",
         "blacklist": "Zwarte lijst",
-        "maintenance_block": "Onderhoudsplanning"
+        "maintenance_block": "Onderhoudsplanning",
+        "email-template": "E-mailsjabloon",
+        "email-log": "Maillogregel",
+        "notification": "Melding",
+        "apk-date-change": "APK-datumwijziging",
+        "system": "Systeemtaak"
       },
       "verbs": {
         "create": "aangemaakt",
@@ -267,6 +272,18 @@
         },
         "expense": {
           "with-receipt": "Kostenpost met bon opgeslagen"
+        },
+        "apk-date-change": {
+          "confirm": "APK-datum van de RDW overgenomen",
+          "dismiss": "APK-datumwijziging afgewezen"
+        },
+        "system": {
+          "apk-scan": "Nachtelijke RDW APK-scan uitgevoerd",
+          "service-due-scan": "Servicebeurt-scan uitgevoerd",
+          "fiscal-nightly": "Nachtelijke fiscale beoordeling uitgevoerd",
+          "cjib-import": "CJIB-boetes geïmporteerd",
+          "invoice-inbox-import": "Facturen uit het postvak geïmporteerd",
+          "backup": "Back-up gemaakt"
         }
       }
     }

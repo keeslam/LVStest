@@ -35,12 +35,18 @@ const SUB_ACTIONS: Record<string, readonly string[]> = {
   document: ["email", "regenerate"],
   fine: ["letter", "link", "unlink", "reactivate", "status"],
   expense: ["with-receipt"],
+  "apk-date-change": ["confirm", "dismiss"],
+  // Background runs (server/utils/security/auditLogger.ts AuditLogger.system): one row per run.
+  system: ["apk-scan", "service-due-scan", "fiscal-nightly", "cjib-import", "invoice-inbox-import", "backup"],
 };
 
 const RESOURCES = [
   "reservation", "vehicle", "customer", "document", "expense", "transport", "fine", "driver", "maintenance", "blacklist",
   // The recycle bin writes `<entityType>.purge` with the entity type as it is stored, underscore and all.
   "maintenance_block",
+  // Routers that were mounted outside the audit middleware until 2026-10 and now show up in the log.
+  "email-template", "email-log", "notification", "apk-date-change",
+  "system",
 ] as const;
 
 const VERBS = ["create", "update", "delete", "restore", "upload", "purge"] as const;
