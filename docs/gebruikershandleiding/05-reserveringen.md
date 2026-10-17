@@ -37,6 +37,11 @@ pijltjes voor de vorige en volgende maand, en de filters **Voertuigen zoeken...*
 **Voertuigtype** (**Alle typen**) en **Beschikbaarheid** (**Alle voertuigen**, **Beschikbaar**,
 **Gereserveerd**).
 
+![De Reserveringskalender met de knoppen Lijstweergave (1), Voltooid bekijken (2), achterstallig (3), Administratie (4), Verwijderde reserveringen (5), Nieuwe reservering (6), Kleuren (7) en Vandaag (8)](afbeeldingen/05-kalender-knoppen.png)
+*De knoppen van de kalender, in de volgorde van de tabel: 1 **Lijstweergave**, 2 **Voltooid bekijken
+(…)**, 3 **… achterstallig**, 4 **Administratie**, 5 **Verwijderde reserveringen**, 6 **Nieuwe
+reservering**, 7 **Kleuren**, 8 **Vandaag**.*
+
 **Wat er in een dagvakje staat.** Alleen reserveringen die op die dag **beginnen of eindigen**.
 Per regel zie je het kenteken, het woordje **uit** (die dag gaat de auto mee) of **in** (die dag
 komt hij terug), en de klantnaam. Zijn er meer dan vijf, dan verschijnt **+… meer**; die knop
@@ -57,6 +62,16 @@ Klik op **Kleuren** voor het venster **Legenda reserveringskalender** met de bet
 kleur: **Bevestigde reservering**, **Reservering in behandeling**, **Voltooide reservering**,
 **Geannuleerde reservering**, **Vervangend voertuig**, **Vervangend voertuig (nog te bepalen)**,
 **Ophaaldag** en **Inleverdag**.
+
+![Het venster Legenda reserveringskalender met de betekenis van elke kleur](afbeeldingen/05-kleuren-legenda.png)
+*De legenda achter de knop **Kleuren**.*
+
+**Administratie.** Achter de knop **Administratie** zit *Administratie - Factuurgegevens*, het
+overzicht voor het externe facturatiesysteem (hoofdstuk 2, paragraaf 2.7).
+
+![Het venster Administratie - Factuurgegevens met de tabbladen Huidige verhuur en Geschiedenis](afbeeldingen/05-administratie.png)
+*Het venster **Administratie - Factuurgegevens**: zoeken op kenteken, bedrijf of contract, met de
+kolommen voor de facturatie.*
 
 **Een reservering verslepen.** Sleep je een blok naar een andere dag, dan vraagt de app eerst
 **Reservering verplaatsen?** — *Je staat op het punt deze reservering … dag(en) later te zetten*
@@ -79,6 +94,11 @@ merk en model, de klant en het contractnummer, **Uit:** met de startdatum en **I
 einddatum plus de duur, de kilometerstanden (**KM:** uit → in) en de prijs. Rechts staan een
 oogje (bekijken), een potlood (bewerken) en een prullenbak (verwijderen). Bij een nog niet
 toegewezen vervanger staat er **Voertuig toewijzen**.
+
+![De lijstweergave met de tabbladen (1), het zoekveld (2) en per regel Bekijken (3) en Bewerken (4)](afbeeldingen/05-lijstweergave.png)
+*De **Lijstweergave**: 1 de tabbladen **Actief**, **Achterstallig** en **Geschiedenis**, 2 het
+zoekveld, 3 **Bekijken** (het oogje) en 4 **Bewerken** (het potlood) achter een regel. Bij een
+opgehaalde huur staat er ook het draai-pijltje **Overdracht terugdraaien** (5.14).*
 
 Op het tabblad **Achterstallig** staat de toelichting *Voertuigen die ingeleverd hadden moeten
 zijn maar nog bij de klant zijn*, met per regel **… dag(en) te laat** en **Verwacht: <datum>**.
@@ -118,6 +138,10 @@ daarna filtert de app de voertuiglijst.
    dezelfde dag wisselt van klant. De app gebruikt de tijden om te zien dat dat geen echt
    conflict is.
 
+   ![Stap 1 van het boekingsvenster met Startdatum (1), Einddatum (2) en het vinkje Huur zonder einddatum (3)](afbeeldingen/05-nieuwe-reservering-stap1.png)
+   *Stap 1: 1 **Startdatum**, 2 **Einddatum**, 3 **Huur zonder einddatum**; onder de velden staat
+   **Duur:**.*
+
 > **Waarom de datums eerst:** de app haalt de lijst met vrije auto's op voor precies die periode.
 > Vul je ze later in, dan staan er auto's in de lijst die in jouw periode al bezet zijn.
 
@@ -142,9 +166,17 @@ je geselecteerde data worden getoond.*
      waarschuwing van stap 8 als hij echt botst.
    - Met **Nieuw toevoegen** en **Bewerken** kun je vanuit dit venster een auto aanmaken of
      bijwerken.
+
+   ![De voertuigkeuze: na het typen van "Boxer" staat de Peugeot Boxer in de lijst](afbeeldingen/05-nieuwe-reservering-voertuig.png)
+   *De voertuigkeuze: typ een deel van het kenteken, merk of model en klik op de auto. Alleen auto's
+   die in je periode vrij zijn, staan erin; een auto met een verlopen APK heeft het label **APK
+   verlopen**.*
 7. Klik op **Klant** → **Zoek en selecteer een klant...** en typ de naam, het telefoonnummer of
    de plaats. Onder elke naam staan het telefoonnummer en het e-mailadres — lees die regel
    voordat je klikt, zeker bij een veelvoorkomende naam.
+
+   ![De klantkeuze: na het typen van "Hoveniers" staat Hoveniersbedrijf Groen in de lijst](afbeeldingen/05-nieuwe-reservering-klant.png)
+   *De klantkeuze werkt net zo: typ en klik op de juiste klant.*
 8. Zodra er een klant staat, verschijnt het veld **Gemachtigde chauffeur (optioneel)**. Kies de
    chauffeur die gaat rijden, of maak er een aan met **Snel chauffeur toevoegen**. De
    hoofdchauffeur van de klant heeft het label **Primaire chauffeur**.
@@ -183,9 +215,16 @@ lijstjes. Je krijgt geen melding; de auto is er simpelweg niet.
     twee gaat de klant ervan uit dat hij de auto bij ons aan de zaak ophaalt en inlevert. Wat de klant ervan
     ziet, staat in [paragraaf 3.7](03-klanten.md).
 12. Zet bijzonderheden in **Notities**.
+
+    ![Stap 3 met Totaalprijs (1), Bezorgservice vereist (2), Ophaalservice bij inleveren (3) en de knop Reservering aanmaken (4)](afbeeldingen/05-nieuwe-reservering-details.png)
+    *Stap 3: 1 **Totaalprijs (€)** (hier automatisch ingevuld: € 85 per dag maal 4 dagen), 2
+    **Bezorgservice vereist**, 3 **Ophaalservice bij inleveren**, 4 **Reservering aanmaken**.*
 13. Klik onderaan op **Reservering aanmaken**.
 
 Je krijgt **Reservering succesvol aangemaakt** — *Reservering voor <merk> <model> is aangemaakt.*
+
+![De melding na het aanmaken met de knop Nu ophalen (1)](afbeeldingen/05-reservering-aangemaakt.png)
+*Na het aanmaken: de knop **Nu ophalen** (1) opent meteen het ophaalvenster voor deze reservering.*
 Daarna verandert **Annuleren** in **Sluiten**; documenten uploaden kan nu wel. Met de knop
 **Nu ophalen** open je het ophaalvenster (5.7) voor deze reservering, zodat boeken en direct meegeven één
 klik extra is. De knop staat in de groene melding in het formulier; sluit het venster zichzelf na het
@@ -228,6 +267,9 @@ knoppen. Dat is belangrijk, want de kleine wijzigvensters van 5.5 zitten maar in
 
 **Ophalen starten** of **Inleveren starten** · **Bewerken** · **Onderhoud** · **Sluiten**
 
+![Het korte venster Reserveringsdetails vanuit de kalender met Ophalen starten (1), Bewerken (2) en Sluiten (3)](afbeeldingen/05-reserveringsdetails-kort.png)
+*Het korte venster vanuit de kalender: 1 **Ophalen starten**, 2 **Bewerken**, 3 **Sluiten**.*
+
 In de kalender staat er bij een huur die al is opgehaald, afgesloten of geannuleerd ook
 **Overdracht terugdraaien** bij (bij een geannuleerde huur heet de knop **Annulering terugdraaien**;
 zie 5.14), plus een prullenbakje. Het volledige venster hieronder heeft die knop niet.
@@ -241,8 +283,18 @@ voertuig, de klant, de chauffeur, de documenten, het blok **Voertuigservice** en
 **Ophalen starten** of **Inleveren starten** · **Datums wijzigen** · **Klant wijzigen** ·
 **Voertuig wijzigen** · **Bewerken** · **Reservering annuleren** · **Verwijderen** · **Sluiten**
 
+![De zoekresultaten voor "Sprinter" met onder Reserveringen drie regels met klant en periode](afbeeldingen/05-zoeken-reservering.png)
+*Zoek in het veld bovenin op kenteken, model, klant of contractnummer en klik onder **Reserveringen**
+op de juiste regel.*
+
+![Het volledige venster Reserveringsdetails met Datums wijzigen (1), Klant wijzigen (2), Voertuig wijzigen (3) en Reservering annuleren (4)](afbeeldingen/05-reserveringsdetails-volledig.png)
+*Het volledige venster: onderaan 1 **Datums wijzigen**, 2 **Klant wijzigen**, 3 **Voertuig
+wijzigen**, 4 **Reservering annuleren**; daarnaast **Bewerken**, **Verwijderen** en bij een geboekte
+huur **Ophalen starten**.*
+
 **Reservering annuleren** staat er alleen zolang de reservering nog loopt. Bij een huur die al
-**Voltooid** of **Geannuleerd** is, verdwijnt de knop.
+**Voltooid** of **Geannuleerd** is, verdwijnt de knop. **Datums wijzigen** staat er alleen zolang de
+huur nog niet is opgehaald.
 
 > **Onthoud:** wil je snel alleen de datums, de klant of de auto corrigeren, of wil je de huur
 > annuleren, zoek de reservering dan op via het **zoekveld bovenin**. Vanuit de kalender krijg je
@@ -272,6 +324,9 @@ reservering, dan overschrijft het volledige formulier elkaars werk, en deze vens
 3. Pas **Begindatum** en/of **Einddatum** aan.
 4. Klik op **Opslaan**.
 
+![Het venster Datums wijzigen met de begin- en einddatum en de knop Opslaan (1)](afbeeldingen/05-datums-wijzigen.png)
+*Het venster **Datums wijzigen**: pas de datums aan en klik op **Opslaan** (1).*
+
 Zet je de einddatum vóór de begindatum, dan verschijnt meteen in het venster: *De einddatum kan
 niet vóór de begindatum liggen.* Botst de nieuwe periode met een andere boeking, dan weigert de
 app met de botsende reservering erbij.
@@ -288,6 +343,9 @@ app met de botsende reservering erbij.
    Met **Andere klant kiezen** pak je een andere.
 3. Klik op **Opslaan**. Je krijgt **Klant gewijzigd**.
 
+![Het venster Klant wijzigen met het zoekveld voor de klant](afbeeldingen/05-klant-wijzigen.png)
+*Het venster **Klant wijzigen**: alleen de klant verandert, de rest van de boeking blijft staan.*
+
 ### Voertuig wijzigen
 
 1. Klik op **Voertuig wijzigen**. Je leest: *Alleen het voertuig wordt gewijzigd; de
@@ -301,6 +359,13 @@ In de kalender staat het contractnummer in een blauw vakje met een potloodje ern
 bewerken*). Het venster **Contractnummer bewerken** controleert live of het nummer vrij is:
 **Beschikbaarheid controleren...**, dan **Beschikbaar** of *Al in gebruik door reservering #…
 Kies een ander nummer.*
+
+![Het korte venster van een opgehaalde huur met het potloodje Contractnummer bewerken (1), Inleveren starten (2) en Overdracht terugdraaien (3)](afbeeldingen/05-reserveringsdetails-opgehaald.png)
+*Een opgehaalde huur in de kalender: 1 het potloodje **Contractnummer bewerken**, 2 **Inleveren
+starten**, 3 **Overdracht terugdraaien** (5.14).*
+
+![Het venster Contractnummer bewerken met de controle of het nummer vrij is](afbeeldingen/05-contractnummer-bewerken.png)
+*Het venster **Contractnummer bewerken**: typ een nummer en wacht op **Beschikbaar**.*
 
 **Na elke wijziging:** is er al een contract gemaakt, dan krijgt dat het oranje label
 **Verouderd**. Klik op **Opnieuw genereren** en geef de klant de nieuwe versie (hoofdstuk 8).
@@ -344,6 +409,10 @@ Je kunt het ophalen op drie manieren starten. Ze openen allemaal precies hetzelf
 - **Scannen** → het sleutellabel scannen → **Ophalen starten** (het veiligst, hoofdstuk 18);
 - de reservering openen → **Ophalen starten**.
 
+![Het venster Ophalen starten vanaf het Dashboard met het invoerveld voor de scan (1)](afbeeldingen/05-ophalen-scanvenster.png)
+*Vanaf het Dashboard: het venster **Ophalen starten**. Scan het sleutellabel in veld 1 of typ het
+kenteken en druk op Enter; het ophaalvenster opent dan vanzelf.*
+
 Het venster heet **Ophaalproces starten** — *Voer de huidige kilometerstand en het brandstofniveau
 van het voertuig bij ophalen in. Er wordt automatisch een contract gegenereerd.*
 
@@ -362,9 +431,18 @@ van het voertuig bij ophalen in. Er wordt automatisch een contract gegenereerd.*
 7. Zet bijzonderheden in **Aanvullende notities (optioneel)**.
 8. Klik op **Ophalen voltooien & contract genereren**.
 
+![Het venster Ophaalproces starten met Contractnummer (1), Kilometerstand bij ophalen (2), Brandstofniveau bij ophalen (3), Ophaal-schadecheck aanmaken (4) en de knop Ophalen voltooien & contract genereren (5)](afbeeldingen/05-ophaalproces.png)
+*Het venster **Ophaalproces starten**: 1 **Contractnummer** (al ingevuld), 2 **Kilometerstand bij
+ophalen**, 3 **Brandstofniveau bij ophalen**, 4 **Ophaal-schadecheck aanmaken**, 5 **Ophalen voltooien
+& contract genereren**. Het groene blok zegt dat de voertuigopmerkingen bevestigd zijn (zie punt 1
+hieronder).*
+
 Je krijgt **Ophalen voltooid** — *Voertuig succesvol opgehaald. Contract is gegenereerd.* Direct
 daarna verschijnt het venster **Contract klaar** met de bestandsnaam en de knoppen **Afdrukken**,
 **Mail naar klant** en **Sluiten**.
+
+![Het venster Contract klaar met Afdrukken (1) en Mail naar klant (2)](afbeeldingen/05-contract-klaar.png)
+*Het venster **Contract klaar**: 1 **Afdrukken**, 2 **Mail naar klant**.*
 
 De melding belooft het contract alleen als het er ook echt is. Lukt het maken van het contract
 niet, dan staat er alleen *Voertuig succesvol opgehaald.* Kijk dan in hoofdstuk 8 hoe je het contract
@@ -392,7 +470,10 @@ staan, klaar voor de volgende scan.
 **1. Voertuigopmerkingen.** Staan er opmerkingen bij de auto, dan verschijnt eerst
 **Voertuigopmerkingen - Ophaalwaarschuwing** met de tekst *BELANGRIJK: Bekijk deze opmerkingen
 voordat het voertuig vertrekt:*. Lees ze, bespreek ze met de klant en klik op **Ik bevestig & ga
-door**. Klik je op **Annuleren**, dan sluit het hele ophaalvenster. Klik je ergens naast het
+door**.
+
+![Het venster Voertuigopmerkingen - Ophaalwaarschuwing met de opmerking en de knop Ik bevestig & ga door (1)](afbeeldingen/05-voertuigopmerkingen-ophalen.png)
+*De ophaalwaarschuwing: lees de opmerking en klik op **Ik bevestig & ga door** (1).* Klik je op **Annuleren**, dan sluit het hele ophaalvenster. Klik je ergens naast het
 venster, dan gebeurt er niets: dat is bewust, en onder de tekst staat dat ook: *Kies Annuleren of
 Ik bevestig & ga door om verder te gaan; klikken naast dit venster doet niets.* Het venster licht
 dan even op, zodat je ziet dat je eerst een keuze moet maken. Sla je de bevestiging over, dan meldt de
@@ -483,9 +564,17 @@ voertuig bij inleveren in. Er wordt automatisch een schadecheck gegenereerd.*
 6. Zet schade, een ontbrekende sleutel of een vuile auto in **Aanvullende notities (optioneel)**.
 7. Klik op **Inleveren voltooien & schadecheck genereren**.
 
+![Het venster Inleverproces starten met Inleverdatum (1), Kilometerstand bij inleveren (2), Brandstofniveau bij inleveren (3), Inlever-schadecheck aanmaken (4) en de knop Inleveren voltooien & schadecheck genereren (5)](afbeeldingen/05-inleverproces.png)
+*Het venster **Inleverproces starten**: 1 **Inleverdatum**, 2 **Kilometerstand bij inleveren**, 3
+**Brandstofniveau bij inleveren**, 4 **Inlever-schadecheck aanmaken**, 5 **Inleveren voltooien &
+schadecheck genereren**.*
+
 Je krijgt **Inleveren voltooid** — *Voertuig succesvol ingeleverd. Schadecheck is gegenereerd.*
 Daarna verschijnt **Schadeformulier klaar** met de bestandsnaam en de knoppen **Afdrukken**,
 **Mail naar klant** en **Sluiten**.
+
+![Het venster Schadeformulier klaar met Afdrukken (1) en Mail naar klant (2)](afbeeldingen/05-schadeformulier-klaar.png)
+*Het venster **Schadeformulier klaar**: 1 **Afdrukken**, 2 **Mail naar klant**.*
 
 ### Wat er nu automatisch gebeurt
 
@@ -517,6 +606,10 @@ dagen, of het laatste jaar). Per regel staan de auto, de klant, de periode, de k
 de brandstof en het totaalbedrag, met de knoppen **Bekijken**, **Overdracht terugdraaien** en
 **Verwijderen**.
 
+![Het venster Geschiedenis voltooide verhuur met per regel de knop Overdracht terugdraaien (1)](afbeeldingen/05-voltooid-bekijken.png)
+*Het venster **Geschiedenis voltooide verhuur**: per regel **Bekijken**, **Overdracht terugdraaien** (1)
+en **Verwijderen**.*
+
 **Overdracht terugdraaien** draait de inname terug. Je krijgt eerst de voorvertoning van 5.14: de
 verhuring gaat van **Voltooid** terug naar **Opgehaald**, de kilometerstand, het brandstofniveau en
 de inleverdatum die je bij het innemen invulde worden gewist — die inname heeft immers niet
@@ -539,6 +632,10 @@ gewoon opnieuw in, met de juiste gegevens. **Verwijderen** brengt de verhuring n
    meeannuleren**, **Placeholder-reservering meeannuleren** of **Chauffeurstoewijzing
    meeannuleren**. Er staat bij: *Wat je niet aanvinkt, blijft gewoon staan.*
 5. Klik op **Reservering annuleren**, of op **Niet annuleren** als je twijfelt.
+
+![Het venster Reservering annuleren met de knoppen Reservering annuleren (1) en Niet annuleren (2)](afbeeldingen/05-reservering-annuleren.png)
+*Het venster **Reservering annuleren**: 1 **Reservering annuleren** zet het door, 2 **Niet annuleren**
+laat alles staan.*
 
 Je krijgt **Reservering geannuleerd** — *Reservering #… staat nu op Geannuleerd.* De regel blijft
 zichtbaar op de kalender en in de lijsten, met de kleur van een geannuleerde reservering, en het
@@ -584,6 +681,9 @@ dat vinkje staat hij er wel, maar grijs. Alles over terugzetten en definitief ve
 hoofdstuk 10, paragraaf 10.6. Een verwijderd **onderhoudsblok** staat niet hier maar in de prullenbak
 van **Onderhoud** (hoofdstuk 7, paragraaf 7.8).
 
+![De prullenbak Verwijderde reserveringen](afbeeldingen/05-verwijderde-reserveringen.png)
+*De prullenbak **Verwijderde reserveringen**: per regel **Terugzetten** en **Definitief verwijderen**.*
+
 Lukt terugzetten niet omdat de auto inmiddels opnieuw verhuurd is in die periode, dan meldt de
 app: *Deze reservering kan niet terug: het voertuig is in de tussentijd geboekt voor die
 periode.*
@@ -606,6 +706,9 @@ Je vindt ze op drie plekken:
   iets achterstallig is. Het venster **Te late verhuren** toont per regel het merk en model, het
   kenteken, de klant met het telefoonnummer, *Had ingeleverd moeten zijn: <datum>*, een rood
   label **… dag(en) te laat** en de knop **Details bekijken**.
+
+  ![Het venster Te late verhuren met per regel Details bekijken (1)](afbeeldingen/05-achterstallig.png)
+  *Het venster **Te late verhuren**: klik op **Details bekijken** (1) om de reservering te openen.*
 - **Reserveringen** → **Lijstweergave** → tabblad **Achterstallig (…)**, met een zoekveld (5.2).
   Klik op een regel om de reservering te openen.
 - **Dashboard** → het blok **Achterstallige verhuringen**; met het oogje open je de reservering.
@@ -653,6 +756,10 @@ beginnen. Twee knoppen per regel:
   wie **Reserveringen beheren** heeft; zonder dat recht staat hij er wel, maar grijs (hoofdstuk
   15, paragraaf 15.9). Iedereen met **Reserveringen bekijken** ziet de melding en de lijst zelf
   wél, ook zonder dat recht.
+
+![Het venster Niet opgehaalde reserveringen met per regel Bekijken (1) en Annuleren (2)](afbeeldingen/05-niet-opgehaald.png)
+*Het venster **Niet opgehaalde reserveringen**: 1 **Bekijken** opent de reservering, 2 **Annuleren**
+opent het annuleervenster.*
 
 Is de lijst leeg, dan staat er *Geen niet opgehaalde reserveringen.* Sluit het venster met
 **Sluiten**.
@@ -722,6 +829,10 @@ heeft hem ook niet: een blok is nooit aan een klant meegegeven.
    staat, blijft de bevestigingsknop grijs.
 4. Klik op **Overdracht terugdraaien** (of **Annulering terugdraaien**). Twijfel je, klik dan op
    **Annuleren**: er is dan niets veranderd.
+
+![Het venster Overdracht terugdraaien met de voorvertoning en de knoppen Overdracht terugdraaien (1) en Annuleren (2)](afbeeldingen/05-overdracht-terugdraaien.png)
+*Het venster **Overdracht terugdraaien**: lees de voorvertoning; 1 **Overdracht terugdraaien** voert
+het uit, 2 **Annuleren** laat alles zoals het was.*
 
 Je krijgt **Overdracht teruggedraaid** (bij een annulering **Annulering teruggedraaid**) —
 *Reservering #… heeft weer de status Geboekt.*

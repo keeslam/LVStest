@@ -46,6 +46,10 @@ een klant aan vastzit.
 *De **Onderhoudskalender**: per dag de APK-signalen en de ingeplande onderhoudsblokken, met
 labels als **Verhuur komt eraan**.*
 
+![De knoppen van de Onderhoudskalender: Lijstweergave (1), Voltooide bekijken (2), Verwijderd onderhoud (3), Onderhoud plannen (4) en Kleuren (5)](afbeeldingen/07-kalender-knoppen.png)
+*De knoppen: 1 **Lijstweergave**, 2 **Voltooide bekijken (…)**, 3 **Verwijderd onderhoud**, 4
+**Onderhoud plannen**, 5 **Kleuren**.*
+
 **Een dag openen.** Klik op een dagvakje. Je krijgt het venster **Onderhoudsevenementen -
 <datum>** — *Onderhoudsevenementen voor deze dag bekijken en beheren*. Wat je per regel kunt doen,
 hangt af van het soort regel:
@@ -54,6 +58,10 @@ hangt af van het soort regel:
   keuring in de kalender.
 - Bij een **onderhoudsblok** staan **Afronden**, **Bewerken**, **Verwijderen** en **Onderhoud
   bekijken**.
+
+![Het dagvenster Onderhoudsevenementen met per blok Afronden (1), Bewerken (2) en Onderhoud bekijken (3)](afbeeldingen/07-dagvenster.png)
+*Het dagvenster: per onderhoudsblok 1 **Afronden**, 2 **Bewerken**, 3 **Onderhoud bekijken**; het
+label **Vervangend voertuig nodig** zegt dat er een klant aan vastzit.*
 
 Is er niets, dan staat er *Geen onderhoudsevenementen gepland voor deze dag*.
 
@@ -102,6 +110,10 @@ Is er niets, dan staat er *Geen onderhoudsevenementen gepland voor deze dag*.
    filterwissel*. Extra uitleg zet je in **Notities**.
 9. Klik op **Onderhoud plannen**.
 
+![Het venster Onderhoud plannen met Voertuig (1), Onderhoudstype (2), Geplande datum (3), Duur (4), Omschrijving (5) en de knop Onderhoud plannen (6)](afbeeldingen/07-onderhoud-plannen.png)
+*Het venster **Onderhoud plannen**: 1 **Voertuig**, 2 **Onderhoudstype**, 3 **Geplande datum**, 4 **Duur
+(dagen)**, 5 **Omschrijving**, 6 **Onderhoud plannen**.*
+
 Je krijgt **Onderhoud gepland** — *Het onderhoud is gepland en de herinneringen zijn bijgewerkt.*
 Het blok staat nu in de kalender op de gekozen dagen, met het kenteken en het type.
 
@@ -128,6 +140,14 @@ Per betrokken reservering kies je onder **Vervoersoplossing:** één van drie:
 | **Later vervanger toewijzen (nog te bepalen)** | Er komt een placeholder; je wijst later een auto aan (7.4) |
 | **Klant regelt eigen vervoer** | Er komt geen vervanger |
 
+![Het venster Vervangende voertuigen toewijzen met per reservering de drie keuzes onder Vervoersoplossing](afbeeldingen/07-vervangende-voertuigen-toewijzen.png)
+*De tweede stap **Vervangende voertuigen toewijzen**: per betrokken klant kies je een van de drie
+keuzes.*
+
+![Hetzelfde venster met Later vervanger toewijzen (1) gekozen en de knop Vervangers toewijzen & onderhoud plannen (2)](afbeeldingen/07-vervangende-voertuigen-keuze.png)
+*Met 1 **Later vervanger toewijzen (nog te bepalen)** gekozen klik je op 2 **Vervangers toewijzen &
+onderhoud plannen**.*
+
 Met **Bewerken** achter *Vervangende verhuur* stel je in het venster **Huurperiode vervanger
 instellen** de start- en einddatum van de vervangende huur in. Laat je de einddatum leeg, dan is
 het een huur zonder einddatum. De knoppen **Onderhoudsdata gebruiken** en **Open einde maken**
@@ -149,6 +169,10 @@ afbreken?** — *Het onderhoud wordt weer weggehaald. Wilt u zonder vervanger pl
 'Later vervanger toewijzen'.* Met **Plannen afbreken** haal je het onderhoud weg (je krijgt **Plannen
 afgebroken** — *Het onderhoud is weer weggehaald.*), met **Doorgaan met plannen** ga je terug naar het
 venster.
+
+![De vraag Plannen afbreken? met de knoppen Plannen afbreken (1) en Doorgaan met plannen (2)](afbeeldingen/07-plannen-afbreken.png)
+*De vraag **Plannen afbreken?**: 1 **Plannen afbreken** haalt het onderhoud weg, 2 **Doorgaan met
+plannen** gaat terug.*
 
 Wil je wél plannen, maar nog geen vervanger kiezen? Kies dan bij de klant **Later vervanger toewijzen
 (nog te bepalen)** (7.4) en plan door; **Annuleren** is daar niet voor bedoeld.
@@ -274,11 +298,18 @@ alsnog doorzetten met een reden; zie hoofdstuk 5, paragraaf 5.7.
 
 1. Open de reservering via het zoekveld bovenin.
 2. Klik onder **Voertuigservice** op **Voertuig markeren voor onderhoud**.
+
+   ![Het blok Voertuigservice in de reservering met de knop Voertuig markeren voor onderhoud (1)](afbeeldingen/07-voertuigservice.png)
+   *Het blok **Voertuigservice** in het volledige reserveringsvenster: klik op **Voertuig markeren voor
+   onderhoud** (1).*
 3. Kies bij **Onderhoudsstatus**: **Onderhoud nodig** of **Momenteel in onderhoud** — *Kies of
    het voertuig onderhoud nodig heeft of momenteel wordt onderhouden.*
 4. Zet in **Servicenotities** wat er aan de hand is.
 5. Vul eventueel **Startdatum onderhoud** en **Einddatum onderhoud** in.
 6. Klik op **Markeren voor onderhoud**.
+
+   ![Het venster Voertuig markeren voor onderhoud met de knop Markeren voor onderhoud (1)](afbeeldingen/07-voertuig-markeren-onderhoud.png)
+   *Het venster: kies de status, vul de notities in en klik op **Markeren voor onderhoud** (1).*
 
 Je krijgt **Voertuig gemarkeerd voor onderhoud** — *Het voertuig is succesvol gemarkeerd als
 onderhoud nodig.* De app zet de auto op **In reparatie** en maakt er meteen een onderhoudsblok
@@ -369,6 +400,11 @@ onderhoudskalender, en die toont de blokken pas als je ook voertuigen en reserve
    voertuig uitgevoerd?* Bijvoorbeeld *olieverversing, luchtfilter, bougies*.
 9. Klik op **Afronden**.
 
+![Het venster Onderhoud afronden met Afrondingsdatum (1), APK-datum (2), APK-keuringsformulier (3), Huidige kilometerstand (4), Onderhoudsdetails (5) en de knop Afronden (6)](afbeeldingen/07-onderhoud-afronden.png)
+*Het venster **Onderhoud afronden**: 1 **Afrondingsdatum**, 2 **APK-datum**, 3
+**APK-keuringsformulier (optioneel)**, 4 **Huidige kilometerstand (km)**, 5 **Onderhoudsdetails**, 6
+**Afronden**.*
+
 Je krijgt **Onderhoud afgerond** met je omschrijving erbij, bijvoorbeeld *Onderhoud afgerond:
 olie- en filterwissel.* Het blok verdwijnt uit de kalender en staat voortaan onder **Voltooide
 bekijken**.
@@ -426,6 +462,9 @@ die in de werkplaats staat zonder dat je een blok afrondt.
 kilometerstand is geen afronding. Onder in het bewerkvenster staat daarom de knop **Afronden**; die
 opent hetzelfde venster **Onderhoud afronden** als in 7.6 en sluit het bewerkvenster zodra het
 afronden gelukt is. Het plan-venster van het scanscherm, in de bewerkstand, heeft dezelfde knop.
+
+![Het bewerkvenster van een onderhoudsblok met de keuze Status (1) en de knop Afronden (2)](afbeeldingen/07-onderhoud-bewerken.png)
+*Het bewerkvenster: 1 **Status** (**Gepland** of **Binnen**), 2 **Afronden** om het blok te sluiten.*
 
 Is een blok al afgerond, dan staat er in het bewerkvenster geen statuskeuze maar de tekst *Afgerond
 op <datum>*. Probeert een oudere pagina toch een afronding via de status te bewaren, dan weigert de
@@ -499,6 +538,12 @@ heeft geen van beide. De twee knoppen vragen elk een eigen recht:
 | **Afronden** | **Onderhoud beheren** of **Reserveringen beheren** (net als **Afronden** in het dagvenster van de kalender) |
 | **Binnen melden** | **Voertuigen beheren** |
 
+![Het Onderhoudsoverzicht, tabblad Gepland, met de tabbladen (1) en per blok Binnen melden (2) en Afronden (3)](afbeeldingen/07-lijstweergave-gepland.png)
+*Het **Onderhoudsoverzicht**, tabblad **Gepland**: 1 de tabbladen, 2 **Binnen melden**, 3 **Afronden**.*
+
+![Het tabblad Vervangers met per regel de knop Toewijzen (1)](afbeeldingen/07-lijstweergave-vervangers.png)
+*Het tabblad **Vervangers**: klik op **Toewijzen** (1) om een auto aan een placeholder te geven.*
+
 Heb je het vinkje niet, dan staat de knop er wel, maar grijs; tik of klik erop en de app zegt welk
 vinkje je mist (hoofdstuk 15, paragraaf 15.9). Een werkplaatsprofiel heeft beide vinkjes.
 
@@ -528,6 +573,9 @@ regel staan het type, het label **Gepland** of **Reparatie**, de auto, de regel 
 - **Verwijderen** — *Dit onderhoudsrecord wordt naar de prullenbak van dit scherm verplaatst (knop Verwijderd
   onderhoud); terugzetten kan daar.* Doe dit alleen bij een regel die er nooit had moeten
   staan.
+
+![Het venster Geschiedenis voltooid onderhoud met per regel de knop Terugdraaien (1)](afbeeldingen/07-voltooide-bekijken.png)
+*Het venster **Geschiedenis voltooid onderhoud**: per regel **Terugdraaien** (1) en **Verwijderen**.*
 
 **De prullenbak van Onderhoud.** Rechtsboven staat de knop **Verwijderd onderhoud**. Daarin staan de
 verwijderde onderhoudsplanningen, met het label **Onderhoud** (vroeger stonden ze tussen de

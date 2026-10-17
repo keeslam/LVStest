@@ -5,8 +5,8 @@ Car Rental Manager
 Gebruikershandleiding
 Voor nieuwe medewerkers
 
-Versie: 1.0
-Datum: 13 september 2026
+Versie: 1.1
+Datum: 17 oktober 2026
 ```
 
 ---
@@ -29,6 +29,15 @@ een scherm iets doet wat je niet verwacht, staat dat er gewoon bij.
 De handleiding spreekt je aan met **je**. Knoppen, menu's en tabbladen staan **vet** en met
 exact de tekst die de app laat zien. Staat er in de app een Engels woord, dan staat dat Engelse
 woord ook hier — dan weet je zeker dat je het goede knopje hebt.
+
+**De afbeeldingen.** Bij elke handeling staat een afbeelding van het scherm of het venster. De rode
+omlijningen met een nummer erop staan alleen in de handleiding, niet in de app: ze wijzen aan waar je
+moet klikken of typen, en de regel onder de afbeelding zegt wat elk nummer is. De namen en kentekens
+op de afbeeldingen zijn verzonnen testgegevens.
+
+**In de app.** Dezelfde handleiding staat in de app: klik rechtsboven op je naam en kies
+**Handleiding**. Daar kun je ook zoeken: typ een woord in het zoekveld boven de hoofdstukken en klik
+op een treffer.
 
 ## Hoe je deze handleiding gebruikt
 
@@ -70,16 +79,15 @@ Alle achttien hoofdstukken zijn af, met daarbij een overzicht van wat nieuw is (
 acceptatiechecklist (hoofdstuk 19). De schermafbeeldingen staan in de map `afbeeldingen/` en
 worden vanuit de hoofdstukken zelf getoond.
 
-**Bijgewerkt op 12 oktober 2026.** De tekst volgt de reparaties na de fysieke audit (10 oktober) en
-deelproject D (de besluiten B-41): de status van een reservering verandert alleen nog via handelingen
-en na het boeken staat er **Nu ophalen**, onderhoud wordt met **Afronden** afgesloten en plannen kun je
-afbreken, een tankbedrag wordt ook een kostenpost, de bulkimport maakt onbekende kentekens alleen aan op
-verzoek, chauffeurs en kostenposten hebben een prullenbak, bekeuringen worden alleen geregistreerd en de
-klant hoort er pas van na **Klant informeren**, er is een wachtwoordregel voor medewerkers, een
-tijdzone- en een bedrijfsnaaminstelling, een melding van geweigerde pogingen voor de beheerder en een
-RDW-typecontrole in de instellingen. Deze wijzigingen zijn uitgerold op 12-10-2026. De schermafbeeldingen zijn nog niet opnieuw gemaakt; de tekst in de
-hoofdstukken is leidend. Het PDF-bestand (`Gebruikershandleiding-Car-Rental-Manager-v1.0.pdf`) maak je
-opnieuw met `node scripts/build-manual-pdf.cjs`.
+**Versie 1.1, 17 oktober 2026.** Elk hoofdstuk is langs de app gelopen (de lijst van afwijkingen
+staat in `afwijkingen-2026-10-17.md`), de tekst is gecorrigeerd en elke handeling heeft nu een
+afbeelding met genummerde omlijningen. Nieuw sinds 12 oktober: de handleiding in de app met
+zoekfunctie, **Voertuig blokkeren** op de klantkaart, de nieuwe opzet van **Kosten**, klikbare rijen
+en sorteerbare kolomkoppen, het afdrukvoorbeeld bij **Rapporten**, de korte code op sleutellabels en
+een uitgebreider activiteitenlog (hoofdstuk 0). De afbeeldingen worden gemaakt met
+`node scripts/handleiding/run.mjs` tegen de testomgeving (zie `scripts/handleiding/lib.mjs`). Het
+PDF-bestand (`Gebruikershandleiding-Car-Rental-Manager-v1.1.pdf`) maak je opnieuw met
+`node scripts/build-manual-pdf.cjs`.
 
 ---
 

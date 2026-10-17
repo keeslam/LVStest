@@ -1,9 +1,69 @@
 # 0. Wat is er nieuw
 
-Op 12 oktober 2026 is een nieuwe versie van de app uitgerold. Deze pagina zegt in het kort wat er
-anders werkt, per rol: **Balie**, **Werkplaats** en **Beheerder**. Bij elk punt staat wat het is, hoe je het
-doet en waar je er meer over leest. De schermafbeeldingen in de handleiding zijn niet vernieuwd; de
-tekst klopt, lees die.
+Op 12 oktober 2026 is een nieuwe versie van de app uitgerold, en sindsdien is er verder gebouwd.
+Deze pagina zegt in het kort wat er anders werkt, per rol: **Balie**, **Werkplaats** en **Beheerder**.
+Bij elk punt staat wat het is, hoe je het doet en waar je er meer over leest. Bovenaan staat wat er
+sinds 17 oktober is bijgekomen; daaronder de uitrol van 12 oktober.
+
+---
+
+## Sinds 17 oktober 2026
+
+1. **De handleiding staat in de app, en je kunt erin zoeken.** Klik rechtsboven op je naam en kies
+   **Handleiding**. Links staan de hoofdstukken; typ in het zoekveld erboven een woord (een knop, een
+   scherm, een melding) en je ziet per treffer het hoofdstuk, de paragraaf en een stukje tekst. Klik op
+   een treffer: het hoofdstuk opent en het woord is geel gemarkeerd. Meer in
+   [hoofdstuk 1, paragraaf 1.2](01-snel-aan-de-slag.md).
+
+2. **Een auto blokkeren voor een klant kan vanuit de klantkaart.** Open de klant, scrol op
+   **Persoonlijke gegevens** naar **Geblokkeerde voertuigen** en klik op **Voertuig blokkeren**: kies de
+   auto en vul eventueel een reden in. Achter elke blokkade staat **Blokkade opheffen**, met een
+   bevestiging. Op de voertuigkaart heet hetzelfde **Klant zwarte lijst**. Meer in
+   [hoofdstuk 3, paragraaf 3.2](03-klanten.md).
+
+3. **Een klik op een regel opent hem.** In de lijsten **Klanten**, **Voertuigen** en **Transporten**
+   hoef je niet meer op **Bekijken** te mikken: klik ergens op de regel. In de transporttabel en in de
+   lijsten van het klantenportaal (**Aanvragen**, **Voertuigen online**, **Blacklist**) sorteert een
+   klik op een kolomkop.
+
+4. **Het scherm Kosten is anders opgebouwd.** Boven de lijst staan de filters en de knoppen **Deze
+   maand**, **Vorige maand** en **Dit jaar**; daaronder kies je **Per categorie** (ingeklapte
+   categorieën met aantal en totaal) of **Alle kosten** (één tabel met sorteerbare koppen). De knop
+   **Meer tonen** bestaat niet meer. Meer in [hoofdstuk 2, paragraaf 2.8](02-navigatie.md).
+
+5. **Afdrukken bij Rapporten toont eerst een voorbeeld.** De vijf afdrukknoppen en **Afdrukken** in
+   de rapportbouwer openen een afdrukvoorbeeld met **Sluiten** en **Afdrukken**. Er is ook een
+   tabblad **Fiscaal** en de knop **Filters herstellen**. Meer in
+   [hoofdstuk 2, paragraaf 2.8](02-navigatie.md).
+
+6. **Recente scans zijn klikbaar.** Klik op een regel onder **Recente scans** en de app zoekt die
+   code opnieuw op. Op het sleutellabel staat voortaan de korte code **V123** (reserve **S123**); de
+   lange code *VEH-000123* blijft op het scherm. Meer in
+   [hoofdstuk 18, paragrafen 18.2 en 18.5](18-barcode-en-scannen.md).
+
+7. **Sleutellabels: drie standaardsjablonen en meer tape-opties.** Onder **Documenten** →
+   **Barcodelabels** wijs je een standaard aan voor **Hoofdsleutel**, **Reservesleutel** en
+   **Autolabel (sticker in de auto)**. Bij **DYMO-tape** zijn er meer tapebreedtes, marges, de
+   **Positie op de tape**, **Doorlopend printen** en een strook met kniplijnen. Meer in
+   [hoofdstuk 4, paragraaf 4.11](04-voertuigen.md) en [hoofdstuk 8, paragraaf 8.5](08-documenten.md).
+
+8. **Facturen uit het postvak worden exclusief btw geboekt.** In het controlevenster staan de
+   knoppen **Opnieuw uitlezen** en **Afzender vertrouwen**. Meer in
+   [hoofdstuk 9, paragraaf 9.9](09-email.md).
+
+9. **Het activiteitenlog laat meer zien (beheerder).** Ook bekijken, downloaden, afdrukken en
+   exporteren staan erin, net als elk geopend scherm en venster (filter **Soort**: **Wijzigingen**,
+   **Schermen en vensters**, **Alles**) en de nachtelijke taken als *systeem*. **Geschiedenis** staat
+   nu ook bij een kostenpost, een document en een chauffeur. Meer in
+   [hoofdstuk 10, paragraaf 10.5](10-beheer.md).
+
+10. **De handleiding heeft bij elke handeling een afbeelding.** De rode genummerde omlijningen op de
+    afbeeldingen staan alleen in de handleiding, niet in de app; het nummer verwijst naar de stap of
+    de uitleg eronder.
+
+---
+
+## De uitrol van 12 oktober 2026
 
 Wat je in de app mag, hangt af van je vinkjes (hoofdstuk 15), niet van de naam van je rol. Staat een knop
 er niet, of is hij grijs, dan klik of tik je erop: de app zegt welk vinkje je mist.
@@ -206,6 +266,7 @@ niet, omdat ze in een eerder deel van het werk zaten.
 
 ## Wat je nog moet weten
 
-- De schermafbeeldingen in de handleiding zijn niet vernieuwd. De tekst is leidend.
+- De schermafbeeldingen zijn op 17 oktober 2026 opnieuw gemaakt met testgegevens; de namen en
+  kentekens erop zijn verzonnen.
 - Zie je in de app iets anders dan hier staat, geloof dan de app en meld het.
 - Wil je alles zelf uitproberen, doorloop dan [de acceptatiechecklist](19-acceptatiechecklist.md).

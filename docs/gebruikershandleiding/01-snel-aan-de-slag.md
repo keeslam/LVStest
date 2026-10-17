@@ -3,6 +3,12 @@
 Dit hoofdstuk brengt je in een half uur op gang: inloggen, het scherm lezen, iets terugvinden en
 de handelingen doen die je de eerste week het vaakst nodig hebt.
 
+**Zo lees je deze handleiding.** Elke handeling staat in genummerde stappen. Onder de stappen staat
+een afbeelding van wat je dan op je scherm ziet. Op die afbeelding staan rode vakjes met een nummer:
+die wijzen aan waar je moet klikken of typen. De regel onder de afbeelding zegt wat elk nummer is.
+De rode vakjes staan alleen in de handleiding, niet in de app. Een woord dat **vet** staat, is precies
+de tekst die je in de app op een knop, een menu of een tabblad ziet.
+
 ---
 
 ## 1.1 Inloggen

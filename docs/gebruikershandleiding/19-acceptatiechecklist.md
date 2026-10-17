@@ -97,7 +97,7 @@ paragraaf 15.7.
 - [ ] **Een nieuwe reservering, kort.** Druk op `N` → datums, voertuig, klant → **Reservering aanmaken**. Verwacht: *Reservering succesvol aangemaakt*, er is geen statusveld en er staat een knop **Nu ophalen**. **(nieuw)** (hfst 1.4, 5.3)
 - [ ] **Gele balk bij onderhoud.** Boek een auto met gepland onderhoud in die periode. Verwacht: een gele balk *Let op: dit voertuig staat in deze periode ingepland voor onderhoud (… t/m …). Opslaan mag; het onderhoudsblok blijft staan.* (hfst 1.4, 5.3)
 - [ ] **Rode balk bij een bezette auto.** Boek een auto die in die periode al gereserveerd is. Verwacht: een rode balk en een grijze knop **Reservering aanmaken**. (hfst 1.4, 5.3)
-- [ ] **Een voertuig opzoeken.** **Voertuigen** → **Bekijken**. Verwacht: **Voertuiggegevens** met de tabbladen **Algemeen**, **Kosten**, **Documenten**, **Reserveringen**, **Onderhoud**, **Geschiedenis**. (hfst 1.4, 4.2)
+- [ ] **Een voertuig opzoeken.** **Voertuigen** → **Bekijken**. Verwacht: **Voertuiggegevens** met de tabbladen **Algemeen**, **Kosten**, **Documenten**, **Reserveringen**, **Onderhoud**, **Geschiedenis**, **Fiscaal**; een klik ergens op de regel opent de auto ook. (hfst 1.4, 4.2)
 - [ ] **Een reservering opzoeken.** Zoekveld → kenteken, klantnaam of contractnummer → klik onder **Reserveringen** op de regel. Verwacht: **Reserveringsdetails**. (hfst 1.4, 5.4)
 
 ### Uitloggen en de sessie
@@ -148,7 +148,7 @@ paragraaf 15.7.
 ### Klanten
 
 - [ ] **Klantendatabase.** Verwacht: **Klant toevoegen** en **Verwijderde klanten** rechtsboven; zoekveld, sorteerkeuze, **Filters**; kolommen **Naam**, **E-mail**, **Telefoon**, **Plaats**; per regel **Bekijken**, **Nieuwe reservering**, **Verwijderen**. (hfst 2.5, 3.1)
-- [ ] **Klantkaart.** **Bekijken**. Verwacht: **Klantgegevens** met de tabbladen **Persoonlijke gegevens**, **Chauffeurs**, **Actieve verhuringen**, **Geschiedenis**, **Portaal** en onderaan **Geblokkeerde voertuigen**. (hfst 2.5, 3.2)
+- [ ] **Klantkaart.** **Bekijken**. Verwacht: **Klantgegevens** met de tabbladen **Persoonlijke gegevens**, **Chauffeurs**, **Actieve verhuringen**, **Geschiedenis**, **Portaal** en onderaan **Geblokkeerde voertuigen** met de knop **Voertuig blokkeren**; een klik ergens op de regel opent de klant ook. (hfst 2.5, 3.2)
 
 ### Klantenportaal en bekeuringen
 
@@ -174,20 +174,20 @@ paragraaf 15.7.
 - [ ] **Administratie.** **Administratie** → *Administratie - Factuurgegevens* met de tabbladen **Huidige verhuur** en **Geschiedenis**; zoek en sorteer op **Ophaaldatum**, **Kenteken**, **Bedrijf**, **Contract #**. (hfst 2.7)
 - [ ] **Onderhoud, het scherm.** [werkplaats] **Onderhoudskalender** met **Lijstweergave**, **Voltooide bekijken (…)**, **Verwijderd onderhoud**, **Onderhoud plannen**. (hfst 2.8, 7.1)
 - [ ] **Kosten, het scherm.** [kantoor] **Kostenbeheer** met **Factuur scannen**, **Kosten registreren**, **Kostenoverzicht** en **Kostensamenvatting**. (hfst 2.8)
-- [ ] **Kostenoverzicht filteren.** Filter op **Voertuig** (kenteken met of zonder streepjes), **Van**, **Tot en met**, **Categorie**, het zoekveld. Verwacht: de **Kostensamenvatting** rekent precies over wat je ziet (*Totaal van de gekozen filters*). **Filters wissen** zet alles terug. (hfst 2.8, 13.10)
-- [ ] **Meer tonen.** Bij meer dan 100 kostenposten: klik **Meer tonen**. Verwacht: de volgende 100. (hfst 2.8)
+- [ ] **Kostenoverzicht filteren.** Filter op **Voertuig** (kenteken met of zonder streepjes), **Van**, **Tot en met**, **Categorie**, het zoekveld. Verwacht: de **Kostensamenvatting** rekent precies over wat je ziet (*Totaal van de gekozen filters*). **Filters wissen** zet alles terug; **Deze maand**, **Vorige maand** en **Dit jaar** zetten de periode in één klik. (hfst 2.8, 13.10)
+- [ ] **Per categorie en Alle kosten.** Standaard staat elke categorie ingeklapt met aantal en totaal; klik erop voor de vijf nieuwste en **Alle N tonen**. Kies **Alle kosten** voor één tabel met sorteerbare koppen en een paginakiezer. (hfst 2.8)
 - [ ] **Exporteren (CSV).** Verwacht: de melding **Bestand gemaakt** en een csv met puntkomma's, decimale komma en datums dd-mm-jjjj; open hem in Excel. Met **Prijzen verbergen** staat de knop er niet. (hfst 2.8, 12)
 - [ ] **Kosten registreren, een voertuig is verplicht.** Laat het voertuig leeg. Verwacht: *Kies een voertuig*; ontbreekt de categorie: *Kies een categorie*. Het venster heet **Nieuwe kosten toevoegen**, ook vanaf het Dashboard. (hfst 2.8)
 - [ ] **Categorieën.** Verwacht de lijst **Onderhoud**, **Banden**, **Remmen**, **Schade**, **Brandstof**, **Verzekering**, **Registratie**, **Schoonmaak**, **Accessoires**, **Tol**, **Parkeren**, **Overig**. (hfst 2.8)
 - [ ] **Verwijderde kostenposten.** [kantoor] Verwijder een oefenkostenpost en open **Verwijderde kostenposten**. Verwacht: de kostenpost staat er met zijn bon; **Terugzetten** brengt hem terug. **(nieuw)** (hfst 2.8, 10.6)
 - [ ] **Ontvangen facturen: Logboek.** In het venster **Ontvangen facturen** staat naast **Nu ophalen** de knop **Logboek**. (hfst 2.8, 9.9)
 - [ ] **Documenten, het scherm.** **Documentbeheer** met **Document uploaden** en de tabbladen **Documentbibliotheek**, **Contractsjablonen**, **Transportrapportsjablonen**, **Barcodelabels**, **Schadecheck-sjablonen**. (hfst 2.8, 8.3)
-- [ ] **Transporten, het scherm.** **Transportdashboard** met **Route-optimalisatie**, de vier tellers, de zes tabbladen, **Nieuw transport** en **Verwijderde transporten**. (hfst 2.8, 6.1)
+- [ ] **Transporten, het scherm.** **Transportdashboard** met **Route-optimalisatie**, de vier tellers, de zes tabbladen, **Nieuw transport** en **Verwijderde transporten**; de kolomkoppen sorteren en een klik op een regel opent het transport. (hfst 2.8, 6.1)
 - [ ] **Communicatie, het scherm.** **Klantcommunicatie** met de tabbladen **Meldingen versturen**, **Sjabloonbouwer**, **E-maillogboek**, **Analyse**; onder **Meldingen versturen**: **APK-herinneringen**, **Onderhoud**, **Aangepast bericht**. (hfst 2.8, 9)
-- [ ] **Rapporten, het scherm.** Rechtsboven vijf afdrukknoppen (**APK**, **Garantie**, **Kosten**, **Benutting**, **Klanten**), **Aangepaste rapportbouwer**, **Analyse onderhoudskosten**, **Rapportfilters** en de tabbladen **Operaties**, **Kosten**, **Voertuigen**, **Klanten**, **Transporten**, **Financieel**. (hfst 2.8, 13.13)
+- [ ] **Rapporten, het scherm.** Rechtsboven vijf afdrukknoppen (**APK**, **Garantie**, **Kosten**, **Benutting**, **Klanten**), **Aangepaste rapportbouwer**, **Analyse onderhoudskosten**, **Rapportfilters** en de tabbladen **Operaties**, **Kosten**, **Voertuigen**, **Klanten**, **Transporten**, **Financieel**, **Fiscaal**; bij **Rapportfilters** ook **Filters herstellen** en de snelle keuzes **Alle gegevens (verleden & toekomst)**, **Deze maand**, **Volgende maand**. (hfst 2.8, 13.13)
 - [ ] **Regel onder de filters.** Verwacht: *Alle cijfers op deze pagina gelden voor <periode> en de hele vloot (N voertuigen).* (hfst 2.8)
 - [ ] **Filter werkt, met melding.** Wijzig een filter. Verwacht: kort *Cijfers worden bijgewerkt...*; bij **Financieel** staat *Het categoriefilter (Banden) geldt niet voor dit tabblad.* (hfst 2.8)
-- [ ] **Afdrukken noemt wat het afdrukt.** Verwacht: *Afdrukken: APK*, enzovoort; het klantenrapport telt alleen klanten met een reservering in de periode. (hfst 2.8)
+- [ ] **Afdrukken noemt wat het afdrukt.** Verwacht: *Afdrukken: APK*, enzovoort; een klik opent eerst een afdrukvoorbeeld met **Sluiten** en **Afdrukken**; het klantenrapport telt alleen klanten met een reservering in de periode. (hfst 2.8)
 - [ ] **Stijging vanaf 0.** Verwacht: *nieuw* in plaats van *+100%*; zonder vergelijking een streepje. (hfst 2.8)
 - [ ] **Analyse onderhoudskosten.** Verwacht: *Telt alleen onderhoudskosten (...)*, kosten per km alleen bij **Alle tijd** (anders een streepje), **Onvoldoende gegevens** bij een merk met te weinig regels, maanden in het Nederlands. (hfst 2.8)
 - [ ] **Rapportbouwer.** Maak een rapport, voer het uit. Verwacht: **Exporteren naar CSV** en **Afdrukken** zijn grijs zolang er geen resultaat is. (hfst 2.8)
@@ -226,7 +226,7 @@ paragraaf 15.7.
 - [ ] **Paginering.** Onderaan: *1-10 van 300 getoond*, **Vorige** en **Volgende**, *Pagina 1 van 30* met invulveld **Pagina**: typ een nummer en Enter; een nummer voorbij de laatste brengt je naar de laatste pagina. (hfst 3.1)
 - [ ] **Klantkaart.** **Bekijken**. Verwacht: *Klant sinds <datum>*, vier tegels (**Totaal aantal verhuringen**, **Actieve verhuringen**, **Voltooid**, **Totaal aantal km gereden**), knoppen **Terug**, **Bewerken**, **Nieuwe reservering**, vijf tabbladen. (hfst 3.2)
 - [ ] **Niet opgegeven.** Een leeg veld toont **Niet opgegeven**, geen fout. (hfst 3.2)
-- [ ] **Geblokkeerde voertuigen.** Onderaan het eerste tabblad; een niet-geblokkeerde klant: *Deze klant is niet geblokkeerd voor enig voertuig*. (hfst 3.2)
+- [ ] **Geblokkeerde voertuigen.** Onderaan het eerste tabblad; een niet-geblokkeerde klant: *Deze klant is niet geblokkeerd voor enig voertuig.* Klik op **Voertuig blokkeren**, kies een auto, vul een reden in en klik op **Blokkeren**. Verwacht: de auto staat in het blok met de reden; **Blokkade opheffen** vraagt **Blokkade opheffen?** en haalt hem weer weg. Op de voertuigkaart (tabblad **Reserveringen**, **Klant zwarte lijst**) zie je dezelfde blokkade. **(nieuw)** (hfst 3.2)
 - [ ] **Geschiedenis exporteren.** Tabblad **Geschiedenis** → **Exporteren (CSV)**. Verwacht: **Bestand gemaakt**. (hfst 3.2)
 
 ### Aanmaken en bijwerken
@@ -548,7 +548,7 @@ paragraaf 15.7.
 - [ ] **Voertuigwissel.** **Type = Voertuigwissel**; zet **Pech- of onderhoudswissel** aan (*Onze eigen kosten, niet die van de klant — standaard niet gefactureerd.*). (hfst 6.3)
 - [ ] **Vervangend voertuig kiezen.** Zet **Vervangend voertuig vereist** aan en kies een auto. Verwacht: het label **Vervangend voertuig (het voertuig dat als vervanger wordt ingezet)**; alleen auto's die op de geplande datum vrij zijn. (hfst 6.4)
 - [ ] **TBD.** Laat het leeg. Verwacht: **Vervangend voertuig (TBD — nog niet geselecteerd)** en op het dashboard het label **TBD**. Het kruisje (*Wissen (terug naar TBD)*) zet hem terug. (hfst 6.4)
-- [ ] **Later toewijzen.** Op het dashboard **Vervangend voertuig selecteren** → kies → **Wijzigingen opslaan**. Verwacht: **Transport bijgewerkt** — *De transportopdracht is bijgewerkt.* en het label wordt **Toegewezen**. (hfst 6.4)
+- [ ] **Later toewijzen.** Op het dashboard **Selecteren** bij **TBD** → kies → **Wijzigingen opslaan**. Verwacht: **Transport bijgewerkt** — *De transportopdracht is bijgewerkt.* en het label wordt **Toegewezen**. (hfst 6.4)
 - [ ] **Rapport zonder vervanger.** Verwacht: **Afdrukken / rapport genereren** is grijs met *Voor dit transport is een vervangend voertuig vereist, maar er is er nog geen geselecteerd. …* (hfst 6.4)
 - [ ] **Transport starten op het scanscherm.** **Scannen** → een auto met transport → blok **Actief transport** (route en **Gepland**) → **Transport starten**. Verwacht: **Transport gestart**, label **Onderweg**, knop **Transport afronden**; op het dashboard **Bezig**. Op het transportdashboard zelf is er geen startknop. (hfst 6.5)
 - [ ] **Transport afronden op het scanscherm.** **Transport afronden**. Verwacht: **Transport afgerond**. (hfst 6.6)

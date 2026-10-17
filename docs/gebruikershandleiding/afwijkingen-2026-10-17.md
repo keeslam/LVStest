@@ -87,10 +87,11 @@ het maken van de screenshots nog eens venster voor venster nagelopen.
 | 8.1 | 8.5 Barcodelabels: één standaard met **Als standaard instellen**. | De editor toont drie standaarden naast elkaar — **Hoofdsleutel**, **Reservesleutel**, **Autolabel (sticker in de auto)** — met een gevulde ster op de huidige; klikken slaat direct op. Een sjabloon is standaard voor één soort of voor geen (d32e8ce9, f446be45). Nieuwe knop **Kenteken onder barcode** in de editor (cc465f03). |
 | 8.2 | 8.3/8.4: documenten op de voertuigkaart. | Per document de knop **Geschiedenis** (zie 4.2). |
 
-### Hoofdstuk 9 — E-mail (1)
+### Hoofdstuk 9 — E-mail (2)
 
 | # | Staat er | Hoort er te staan |
 |---|---|---|
+| 9.0 | 9.3 en 8.4: *de knop **E-mailen** bij een document* opent **Documenten e-mailen naar klant**. | De knop **E-mailen** in de documentbibliotheek opent het eenvoudige venster **Document e-mailen** (*Ontvangers (kommagescheiden)*, **Onderwerp**, **Bericht**, **E-mail versturen**). Het venster **Documenten e-mailen naar klant** zit achter **Mail naar klant** (na ophalen/innemen) en in de reservering. Gevonden bij het maken van de screenshots. |
 | 9.1 | 9.9: *De bedragen worden geboekt zoals ze op de factuur staan … De app rekent niets om.* | Mailfacturen worden **exclusief btw** geboekt: regels die incl. btw staan rekent de app terug naar excl. btw (976ad874). Velden en kolommen heten **Bedrag (excl. btw)**. In het venster **Controleren** staan de knoppen **Opnieuw uitlezen** (75b38eb7) en **Afzender vertrouwen** (zet het adres op de vertrouwde lijst). |
 
 ### Hoofdstuk 10 — Beheer (2)
@@ -157,7 +158,26 @@ Dat zijn ongeveer 105 schermafbeeldingen, waarvan 11 bestaande die opnieuw worde
 
 ---
 
-## Twee dingen die ik nodig heb
+## Gevonden tijdens het maken van de screenshots (en gerepareerd)
+
+- **Knoppenbalk van het volledige reserveringsvenster liep buiten beeld.** Op een scherm van 1280 px
+  breed pasten de acht knoppen niet op één rij; door `justify-end` schoven **Ophalen starten**,
+  **Sluiten** en **Datums wijzigen** links buiten het venster en waren onzichtbaar en onklikbaar.
+  Gerepareerd met `flex-wrap` op de `DialogFooter` (commit 72554d10).
+- **De voertuigkeuze in het boekingsvenster** hangt vast aan het venster en klapt niet om: op een
+  scherm van 900 px hoog valt de lijst onder de rand. De E2E-tests gebruiken daarom al een hoger
+  venster. Niet gerepareerd; genoteerd als bekend punt.
+
+## Stand van zaken
+
+- Uitgevoerd: hoofdstukken 0 t/m 10, 13, 15, 18 en 19 gecorrigeerd en voorzien van afbeeldingen;
+  155 afbeeldingen in `afbeeldingen/`, gemaakt met `scripts/handleiding/`.
+- De zoekfunctie in de in-app handleiding (vraag van 17 oktober) is gebouwd: `GET /api/manual/zoek`
+  en een zoekveld boven de hoofdstukkenlijst.
+- Hoofdstukken 11, 12, 14, 16 en 17 zijn naslaghoofdstukken zonder eigen schermen; zij verwijzen
+  naar de hoofdstukken hierboven.
+
+## Twee dingen die ik nodig had (opgelost)
 
 1. **Een inlog voor de schermfoto's.** Het browserpaneel maakt schermfoto's op maximaal 800 px breed,
    te klein voor de handleiding. Daarom wil ik ze maken met Playwright (zit al in het project) op

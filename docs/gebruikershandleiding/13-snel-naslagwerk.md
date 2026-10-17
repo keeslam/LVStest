@@ -17,6 +17,7 @@ De pijl **→** betekent: klik hierop, of ga hierheen.
 | De taal omzetten | Je naam rechtsboven → **English** / **Nederlands** |
 | Doorwerken na de waarschuwing *Sessie verloopt binnenkort* | **Ingelogd blijven** |
 | Uitloggen | Je naam rechtsboven → **Uitloggen** |
+| De handleiding openen en erin zoeken | Je naam rechtsboven → **Handleiding** → typ een woord in **Zoeken in de handleiding** → klik op een treffer |
 
 Zie hoofdstuk 1.
 
@@ -99,6 +100,9 @@ Zie hoofdstuk 5 en hoofdstuk 11.
 | Een chauffeur toevoegen | Open de klant → tabblad **Chauffeurs** |
 | Een verwijderde chauffeur terughalen | Open de klant → tabblad **Chauffeurs** → **Verwijderde chauffeurs** → **Terugzetten** (vraagt het vinkje **Prullenbak beheren**) |
 | Zien welke auto's een klant niet mag huren | Open de klant → **Geblokkeerde voertuigen** |
+| Een auto blokkeren voor een klant | Open de klant → **Geblokkeerde voertuigen** → **Voertuig blokkeren** → kies de auto → **Blokkeren** |
+| Een blokkade opheffen | Open de klant → **Geblokkeerde voertuigen** → **Blokkade opheffen** → bevestigen |
+| Een klant openen zonder op Bekijken te mikken | **Klanten** → klik ergens op de regel (ook bij **Voertuigen** en **Transporten**) |
 | Filteren op onvolledige profielen | **Klanten** → **Filters** → *Onvolledig profiel* |
 | Een klant verwijderen | **Klanten** → **Verwijderen** (lukt niet bij een lopende of toekomstige huur) |
 | Naar een pagina in de lijst springen | Onder de tabel → invulveld **Pagina** → Enter (ook bij **Voertuigen**) |
@@ -192,7 +196,9 @@ Zie hoofdstuk 8.
 | Wat je wilt | Klikpad |
 |---|---|
 | Kosten vastleggen | **Kosten** → **Kosten registreren** (hetzelfde venster ook vanaf het Dashboard; een voertuig is verplicht) |
-| De kosten filteren | **Kosten** → **Voertuig**, **Van**, **Tot en met**, **Categorie** of het zoekveld; **Filters wissen** |
+| De kosten filteren | **Kosten** → **Voertuig**, **Van**, **Tot en met**, **Categorie** of het zoekveld; **Deze maand** / **Vorige maand** / **Dit jaar**; **Filters wissen** |
+| Alle kosten van één categorie zien | **Kosten** → **Per categorie** → klik op de categorie → **Alle N tonen** |
+| Alle kosten als één tabel | **Kosten** → **Alle kosten** → klik op een kolomkop om te sorteren |
 | De gefilterde kosten naar Excel | **Kosten** → **Exporteren (CSV)** |
 | Het logboek van de factuurpostbus zien | **Kosten** → **Ontvangen facturen** → **Logboek** |
 | Een verwijderde kostenpost terughalen | **Kosten** → **Verwijderde kostenposten** → **Terugzetten** (vraagt het vinkje **Prullenbak beheren**) |
@@ -249,8 +255,8 @@ Zie hoofdstuk 9.
 
 | Wat je wilt | Klikpad |
 |---|---|
-| De cijfers bekijken | **Rapporten** → tabblad **Operaties**, **Kosten**, **Voertuigen**, **Klanten**, **Transporten** of **Financieel** |
-| Een rapport afdrukken | **Rapporten** → rechtsboven **APK**, **Garantie**, **Kosten**, **Benutting** of **Klanten** |
+| De cijfers bekijken | **Rapporten** → tabblad **Operaties**, **Kosten**, **Voertuigen**, **Klanten**, **Transporten**, **Financieel** of **Fiscaal** |
+| Een rapport afdrukken | **Rapporten** → rechtsboven **APK**, **Garantie**, **Kosten**, **Benutting** of **Klanten** → in het afdrukvoorbeeld **Afdrukken** |
 | De periode of de auto instellen | **Rapporten** → **Rapportfilters** |
 | Een eigen rapport maken | **Rapporten** → **Aangepaste rapportbouwer** |
 | Het resultaat van een eigen rapport naar Excel of op papier | **Aangepaste rapportbouwer** → uitvoeren → **Exporteren naar CSV** of **Afdrukken** |

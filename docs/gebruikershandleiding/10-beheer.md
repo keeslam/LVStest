@@ -20,8 +20,12 @@ rechtsboven in het scherm. Onder het kopje **Beheer** staan drie ingangen:
 | **Back-upbeheer** | Back-ups bekijken, maken, downloaden en terugzetten |
 | **App-instellingen** | Alle instellingen van de app, inclusief e-mail |
 
-Daarboven staan **Profiel** (je eigen gegevens en wachtwoord) en de taalknop. Die zijn voor
-iedereen.
+Daarboven staan **Profiel** (je eigen gegevens en wachtwoord), de taalknop en **Handleiding**. Die
+zijn voor iedereen.
+
+![Het eigen menu van een beheerder met onder Beheer de ingangen Gebruikers (1), Back-upbeheer (2) en App-instellingen (3)](afbeeldingen/10-gebruikersmenu-beheer.png)
+*Klik rechtsboven op je naam. Onder het kopje **Beheer** staan 1 **Gebruikers**, 2 **Back-upbeheer**
+en 3 **App-instellingen**.*
 
 ---
 
@@ -30,9 +34,13 @@ iedereen.
 Kies **Gebruikers**. Het scherm heet **Gebruikersbeheer**. Heb je geen beheerdersaccount, dan
 staat er **Toegang geweigerd** — *"Je hebt geen toestemming voor deze functie."*
 
+![Het venster Gebruikersbeheer met de knop Gebruiker toevoegen (1) en per gebruiker Bekijken (2)](afbeeldingen/10-gebruikersbeheer.png)
+*Het venster **Gebruikersbeheer**. 1 is **Gebruiker toevoegen**. 2 is **Bekijken** bij een gebruiker.*
+
 ### Een gebruiker toevoegen
 
-Klik op **Gebruiker toevoegen**. Je krijgt het formulier **Nieuwe gebruiker toevoegen**:
+Klik op **Gebruiker toevoegen**. In hetzelfde venster verschijnt het formulier **Nieuwe gebruiker
+toevoegen**:
 
 | Veld | Toelichting |
 |---|---|
@@ -43,6 +51,13 @@ Klik op **Gebruiker toevoegen**. Je krijgt het formulier **Nieuwe gebruiker toev
 | **Rol** | Zie hieronder. |
 | **Actief** | *"Gebruiker kan inloggen wanneer actief"*. Zet je dit uit, dan kan de medewerker niet meer inloggen, maar blijft alles wat hij ooit deed zichtbaar in de geschiedenis. |
 | **Prijzen verbergen** | *"Gebruiker ziet nergens in de app prijzen/geldbedragen"*. |
+
+![Het formulier Nieuwe gebruiker toevoegen met Gebruikersnaam (1), Wachtwoord (2) en Rol (3)](afbeeldingen/10-nieuwe-gebruiker.png)
+*Het formulier **Nieuwe gebruiker toevoegen**. 1 is **Gebruikersnaam**. 2 is **Wachtwoord**. 3 is
+**Rol**. Daaronder staan **Actief** en **Prijzen verbergen**.*
+
+![Onderaan het formulier de knop Gebruiker aanmaken (1)](afbeeldingen/10-nieuwe-gebruiker-opslaan.png)
+*Scrol naar beneden en klik op **Gebruiker aanmaken** (1).*
 
 Opslaan met **Gebruiker aanmaken** of **Gebruiker bijwerken**. Het lukt, dan staat er **Gelukt** met
 de naam erbij, bijvoorbeeld *Gebruiker "jan" is aangemaakt* of *Gebruiker "jan" is opgeslagen*. Lukt
@@ -104,7 +119,13 @@ Voor de andere rollen bepalen de vinkjes wat iemand mag.
 ### De rechten (de vinkjes)
 
 Onder **Aanvullende rechten** staat *"Selecteer aanvullende rechten voor deze gebruiker"* en
-daaronder een raster met alle rechten. Je vinkt aan wat iemand nodig heeft. De belangrijkste:
+daaronder een raster met alle rechten. Je vinkt aan wat iemand nodig heeft.
+
+![Het raster met rechten onder Aanvullende rechten, met de knop Benodigde rechten ook aanzetten (1)](afbeeldingen/15-rechtenraster.png)
+*Het rechtenraster: elk vinkje is één recht. Onder een vinkje staat *Heeft nodig: …*. 1 is de knop
+**Benodigde rechten ook aanzetten**.*
+
+De belangrijkste:
 
 | Vinkje | Wat het toestaat |
 |---|---|
@@ -176,9 +197,15 @@ dat bij het inloggen: bovenaan het **Dashboard** staat een balk met *Sinds je vo
 probeerden 3 medewerkers iets waarvoor ze geen recht hebben* (bij één medewerker: *probeerde 1 medewerker
 iets waarvoor die geen recht heeft*).
 
+![De balk bovenaan het Dashboard over geweigerde pogingen, met de knop Bekijken (1)](afbeeldingen/10-geweigerde-pogingen-balk.png)
+*De balk bovenaan het Dashboard. Klik op **Bekijken** (1).*
+
 - Klik op **Bekijken**. Het venster **Geweigerde pogingen** laat zien *Wat medewerkers probeerden sinds je
   vorige inlog (<datum>) en niet mochten.* Per regel staan **Wie**, **Wat** (een scherm, gegevens ophalen
   of wijzigen), het **Recht dat ontbrak** en **Wanneer**.
+
+  ![Het venster Geweigerde pogingen met per regel Wie, Wat, Recht dat ontbrak en Wanneer](afbeeldingen/10-geweigerde-pogingen.png)
+  *Het venster **Geweigerde pogingen**.*
 - Met het kruisje sluit je de balk voor de rest van die sessie. Er is geen balk als er niets te melden is,
   en ook niet bij je allereerste inlog (er is dan geen vorige inlog om mee te vergelijken).
 - Dezelfde pogingen staan in het activiteitenlog (10.5) onder de actie *access.denied*, met de status
@@ -214,6 +241,19 @@ configuratie van je verhuursysteem"*. Het heeft negen tabbladen:
 | **Activiteit** | Het **Activiteitenlog**: wie heeft wat gewijzigd, en wanneer |
 | **Klantenportaal** | De instellingen van het portaal |
 | **Voertuigen** | De kaart **RDW-voertuigtypes**: het wagenpark laten nalopen door de RDW (hoofdstuk 4, paragraaf 4.13) |
+
+![Het venster Applicatie-instellingen met de negen tabbladen (1)](afbeeldingen/10-app-instellingen.png)
+*Het venster **Applicatie-instellingen**: bovenaan de negen tabbladen (1). Klik op een tabblad om
+die instellingen te zien.*
+
+![Het tabblad Bedrijfsregels met de knoppen Bedrijfsnaam opslaan (1) en Tijdzone opslaan (2)](afbeeldingen/10-bedrijfsregels.png)
+*Het tabblad **Bedrijfsregels**. 1 is **Bedrijfsnaam opslaan**. 2 is **Tijdzone opslaan**.*
+
+![Het tabblad Documenten (1) met het Startcontractnummer](afbeeldingen/10-instellingen-documenten.png)
+*Het tabblad **Documenten** (1) met het **Startcontractnummer**.*
+
+![Het tabblad Klantenportaal (1)](afbeeldingen/10-instellingen-klantenportaal.png)
+*Het tabblad **Klantenportaal** (1): de instellingen van het portaal en de bekeuringen.*
 
 Vier instellingen komen vaak terug:
 
@@ -323,6 +363,10 @@ Is er langere tijd geen geverifieerde back-up gemaakt, dan verschijnt er ook op 
 een balk: **Geen geverifieerde back-up in 30 uur** met *"Open Back-up & Herstel om er nu een uit
 te voeren."* Negeer die balk niet.
 
+![Het venster Back-up & Herstel met de knop Nu back-uppen (1)](afbeeldingen/10-backup-herstel.png)
+*Het venster **Back-up & Herstel**: bovenaan de laatste en de volgende back-up, 1 is **Nu
+back-uppen**.*
+
 Met **Nu back-uppen** maak je er meteen een, los van het schema. Mislukt dat, dan staat er een
 Nederlandse zin, zoals *De back-up is mislukt.* of, als er al een loopt, *Er loopt al een
 back-up. Wacht tot die klaar is.* De schakelaar
@@ -393,13 +437,21 @@ rolled back; the database was not changed."*
 
 ## 10.5 Geschiedenis per record
 
-Bij elke reservering, elk voertuig en elke klant houdt de app bij wie wat wanneer veranderde.
+Bij elke reservering, elk voertuig, elke klant, elke chauffeur, elke kostenpost en elk document
+houdt de app bij wie wat wanneer veranderde.
 
 Je vindt het onder het kopje **Geschiedenis**:
 
 - **Reservering** — onderaan het venster van de reservering.
 - **Voertuig** — het tabblad **Geschiedenis**.
 - **Klant** — het tabblad **Geschiedenis**.
+- **Chauffeur** — onderaan het venster van de chauffeur (hoofdstuk 3, paragraaf 3.6).
+- **Kostenpost** — onderaan het venster van de kostenpost.
+- **Document** — de knop **Geschiedenis** bij het document op de voertuigkaart (hoofdstuk 4,
+  paragraaf 4.10). Hier staat ook wie het document heeft bekeken, gedownload of afgedrukt.
+
+![Het tabblad Geschiedenis (1) van een klant](afbeeldingen/10-geschiedenis.png)
+*Het tabblad **Geschiedenis** (1) bij een klant: per regel wat er gebeurde, wie het deed en wanneer.*
 
 Onder het kopje staat: *"Elke wijziging aan dit record, met wie het deed en wanneer."*
 
@@ -428,9 +480,25 @@ contractnummer gewijzigd?" staan hier gewoon in.
 
 Een beheerder ziet alles bij elkaar: **App-instellingen → tabblad Activiteit → Activiteitenlog**
 — *"Wie heeft wat gewijzigd, en wanneer."* Je filtert op **Zoeken** (kenteken, klant, veld of
-actie), **Gebruiker**, **Actie**, **Vanaf** en **Tot en met**, en wist alles met
+actie), **Gebruiker**, **Actie**, **Soort**, **Vanaf** en **Tot en met**, en wist alles met
 **Filters wissen**. De kolommen zijn **Wanneer**, **Wie**, **Actie**, **Object** en
-**Wijzigingen**.
+**Wijzigingen**. Er staan 50 regels per pagina; lange wijzigingen staan op één regel met **+n meer**.
+
+![App-instellingen, tabblad Activiteit (1), met het Activiteitenlog en het filter Soort (2)](afbeeldingen/10-activiteitenlog.png)
+*Het **Activiteitenlog** op het tabblad **Activiteit** (1). 2 is het filter **Soort**.*
+
+**Het filter Soort.** Het log bewaart niet alleen wijzigingen, maar ook elk scherm en elk venster dat
+een medewerker opent (*Scherm geopend*, *Venster geopend*, met de naam uit het menu). Om het
+overzicht te bewaren staat het filter **Soort** standaard op **Wijzigingen**. Kies **Schermen en
+vensters** om te zien wie welk scherm opende, of **Alles**.
+
+**Bekijken, afdrukken en exporteren staan er ook in.** Wie een contract opent, een
+schadeformulier afdrukt, een sleutellabel print of een CSV exporteert, krijgt een regel in het log
+(*bekeken*, *gedownload*, *afgedrukt*, *geëxporteerd*).
+
+**Nachtelijke taken heten systeem.** De RDW APK-scan, de servicebeurt-scan, de fiscale nachtrun en
+de postvakken (CJIB, facturen) schrijven per run één regel, met als gebruiker *systeem* en de
+aantallen erbij. Een mislukte run heeft de status *mislukt*.
 
 ---
 
@@ -472,6 +540,10 @@ twee knoppen om voorgoed te verwijderen (hieronder). Per regel:
 - **Bevat: …** — wat er nog aan hing, in woorden, bijvoorbeeld *2 reserveringen, 1 document*. Hing er
   niets aan, dan staat er *geen gekoppelde gegevens*;
 - de knoppen **Terugzetten** en **Definitief verwijderen**.
+
+![De prullenbak Verwijderde voertuigen met Terugzetten (1) en Definitief verwijderen (2)](afbeeldingen/04-verwijderde-voertuigen.png)
+*Een prullenbak, hier die van **Voertuigen**. 1 is **Terugzetten**. 2 is **Definitief verwijderen**.
+Alle acht prullenbakken zien er zo uit.*
 
 Per soort staan de nieuwste 200 regels erin, de nieuwste bovenaan. Een regel die al is teruggezet,
 wordt standaard **niet meer getoond**, zodat je alleen ziet wat er nog te doen is. Wil je ze wel zien,

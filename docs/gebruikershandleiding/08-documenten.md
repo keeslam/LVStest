@@ -65,9 +65,17 @@ open of dicht. De groepen staan op kenteken gesorteerd. Filter je zo dat er op d
 niets meer staat, dan springt de lijst terug naar een pagina met inhoud, in plaats van een leeg
 scherm te tonen. Staat er niets: *"Geen documenten gevonden die overeenkomen met je filters."*
 
-**Document uploaden.** Rechtsboven staat de knop **Document uploaden**. Je kiest eerst het
-voertuig; het formulier verschijnt dan meteen in hetzelfde venster, zonder tweede knop of tweede
-venster. Heb je in de bibliotheek al op een voertuig gefilterd, dan staat dat voertuig er al
+![De Documentbibliotheek met Document uploaden (1), de tabbladen (2), het zoekveld (3) en Alles uitklappen (4)](afbeeldingen/08-documentbibliotheek-knoppen.png)
+*De **Documentbibliotheek**. 1 is de knop **Document uploaden**. 2 zijn de tabbladen. 3 is het
+zoekveld. 4 is **Alles uitklappen**. Klik op een auto en daarna op een groep (bijvoorbeeld
+**Contracten**); dan zie je de documenten.*
+
+**Document uploaden.** Rechtsboven staat de knop **Document uploaden**. Klik erop. Je ziet een venster
+waarin je eerst de auto kiest. Zodra je een auto hebt gekozen, verschijnt het uploadformulier in
+hetzelfde venster.
+
+![Het venster Document uploaden na het kiezen van een voertuig, met het uploadformulier](afbeeldingen/08-document-uploaden.png)
+*Het venster **Document uploaden**: kies de auto en het formulier verschijnt eronder.* Heb je in de bibliotheek al op een voertuig gefilterd, dan staat dat voertuig er al
 ingevuld. De knop is voor wie **Documenten bewerken en genereren** heeft (8.7); zonder dat
 vinkje staat hij grijs, en als je erop tikt of klikt zegt de app welk vinkje je mist.
 
@@ -75,9 +83,14 @@ vinkje staat hij grijs, en als je erop tikt of klikt zegt de app welk vinkje je 
 Open het voertuig en ga naar het tabblad **Documenten**. Je ziet alleen wat bij deze auto hoort.
 
 **Bij de reservering**
-Open de reservering en klik op de knop om documenten te openen. Je krijgt het venster
-**Reserveringsdocumenten** — *"Documenten specifiek gekoppeld aan deze reservering (contracten,
-schaderapporten, foto's)"*. Dit is de plek waar je ook ziet of een document gemaild is.
+Open de reservering via het zoekveld bovenin. Scrol naar het kopje **Documenten**. Daar staan de
+knoppen om snel iets te uploaden (**+ Contract (ondertekend)**, **+ Schaderapport foto**, **+
+Schaderapport PDF**, **+ Overig**) en daaronder **Geüploade documenten**: de contracten en
+schadechecks van deze huur. Hier zie je ook of een document gemaild is.
+
+![Het blok Documenten in het reserveringsvenster met de uploadknop Contract (ondertekend) (1) en het gemaakte contract (2)](afbeeldingen/08-reserveringsdocumenten.png)
+*Het blok **Documenten** in de reservering. 1 is **+ Contract (ondertekend)**: daarmee upload je het
+getekende exemplaar. 2 is het contract dat de app bij het ophalen heeft gemaakt.*
 
 De kopjes boven de groepen in dit venster, en de omschrijvingen eronder, staan in het Nederlands:
 **Contract (niet ondertekend)**, **Contract (ondertekend)**, **Schadecheck (ophalen)**,
@@ -128,8 +141,12 @@ In de documentbibliotheek heeft elk document dezelfde vijf knoppen:
 | **Bekijken** | Opent het PDF in een voorvertoning |
 | **Downloaden** | Slaat het bestand op je computer op |
 | **Afdrukken** | Opent het afdrukvenster van je browser |
-| **E-mailen** | Opent het venster om het document naar de klant te sturen (hoofdstuk 9) |
+| **E-mailen** | Opent het venster **Document e-mailen** om dit ene document te sturen (hoofdstuk 9, paragraaf 9.3) |
 | **Verwijderen** | Haalt het document weg |
+
+![Een document in de bibliotheek met Bekijken (1), Downloaden (2), Afdrukken (3), E-mailen (4), Verwijderen (5) en Opnieuw genereren (6)](afbeeldingen/08-documentknoppen.png)
+*De knoppen bij een document: 1 **Bekijken**, 2 **Downloaden**, 3 **Afdrukken**, 4 **E-mailen**, 5
+**Verwijderen**. Bij een verouderd contract staat er ook 6 **Opnieuw genereren** (zie 8.6).*
 
 Bij afdrukken meldt de app *"Afdrukken gestart — Het afdrukvenster zou nu open moeten zijn.
 De pop-up sluit automatisch."* Lukt dat niet, dan krijg je een van deze twee meldingen:
@@ -187,6 +204,19 @@ Een contractsjabloon open je via **Sjablooneditor openen**. In de editor sleep j
 achtergrond. Eén sjabloon is de standaard; die herken je aan het label **Standaard**, en je
 stelt hem in met **Als standaard instellen**.
 
+![Het tabblad Contractsjablonen (1) met Sjablooneditor openen (2) en per sjabloon Bewerken (3)](afbeeldingen/08-contractsjablonen.png)
+*Het tabblad **Contractsjablonen** (1). 2 is **Sjablooneditor openen**. 3 is **Bewerken** bij een
+sjabloon. Het label **Standaard** staat bij het sjabloon dat de app gebruikt.*
+
+![De sjablooneditor met links de velden en rechts de achtergrond van het contract](afbeeldingen/08-sjablooneditor.png)
+*De sjablooneditor: sleep velden op de achtergrond en klik op **Opslaan**.*
+
+![Het tabblad Transportrapportsjablonen (1)](afbeeldingen/08-transportrapportsjablonen.png)
+*Het tabblad **Transportrapportsjablonen** (1) werkt net als de contractsjablonen.*
+
+![Het tabblad Schadecheck-sjablonen (1)](afbeeldingen/08-schadecheck-sjablonen.png)
+*Het tabblad **Schadecheck-sjablonen** (1): het formulier en de voertuigdiagrammen.*
+
 **Barcodelabels: etiket of DYMO-tape.** Bij **Nieuw sjabloon** kies je naast de naam het **Soort
 label**: **Etiket (62 x 29 mm)** — *Een los etiket of een vel etiketten: barcode boven, kenteken
 eronder.* — of **DYMO-tape (48 x 12 mm)** — *Voor de labelmaker aan de balie: barcode over de lengte,
@@ -199,6 +229,16 @@ app draait de inhoud bij het afdrukken zelf een kwartslag en drukt barcodes op t
 eronder. Het veld **Sleutel (Hoofd/Reserve)** leest het uit de code: een reservesleutel-code eindigt
 op -S. Het sjabloon kies je daarna bij **Labelsjabloon** op de voertuigkaart, in **Voertuigbarcode** of
 in het **Barcodeboek**; zie [hoofdstuk 18, paragraaf 18.9](18-barcode-en-scannen.md).
+
+**Drie standaarden.** In de labeleditor staan drie knoppen naast elkaar: **Hoofdsleutel**,
+**Reservesleutel** en **Autolabel (sticker in de auto)**. Een gevulde ster zegt welk sjabloon voor dat
+soort label de standaard is. Klikken slaat het meteen op. Een sjabloon is standaard voor één soort of
+voor geen. Is er voor de reservesleutel of het autolabel geen eigen standaard, dan gebruikt de app
+het sjabloon van de hoofdsleutel. Met de knop **Kenteken onder barcode** zet je in één keer het
+kenteken als tekst onder de streepjescode.
+
+![Het tabblad Barcodelabels (1) met de sjablonen en de drie standaarden](afbeeldingen/08-barcodelabels.png)
+*Het tabblad **Barcodelabels** (1).*
 
 **Dit is de belangrijkste regel over sjablonen:** een sjabloon zonder velden levert een blanco
 contract op, en daarom weigert de app het — liever een duidelijke fout dan een onbruikbaar
@@ -283,6 +323,10 @@ Je herkent het aan een oranje label bij het document:
 
 Ga je er met de muis overheen, dan staat er: *"Dit document is gemaakt vóór een wijziging aan de
 reservering en klopt mogelijk niet meer."*
+
+![Een contract met het oranje label Verouderd (1) en daarnaast de knop Opnieuw genereren (2)](afbeeldingen/08-verouderd.png)
+*Een verouderd contract in de bibliotheek. 1 is het label **Verouderd**. 2 is de knop **Opnieuw
+genereren**.*
 
 **Het oude document blijft altijd bewaard.** De app gooit nooit uit zichzelf een contract weg en
 vervangt het ook niet stilletjes. Wat er ooit is afgedrukt of gemaild, blijft terug te vinden.

@@ -73,11 +73,22 @@ scherm noemt dat adres erbij, zodat je ziet waar hij dan terechtkomt.
 
 ## 9.3 Documenten mailen naar de klant
 
-Je opent dit venster op drie plekken: met de knop **E-mailen** bij een document, met
-**Mail naar klant** in het venster na het ophalen, en vanuit de reserveringskalender.
+Er zijn twee vensters.
 
-Het venster heet **Documenten e-mailen naar klant** — *"Selecteer documenten, ontvanger en taal
-om naar de klant te sturen"*.
+**Eén document, vanuit de bibliotheek.** Klik bij een document in de **Documentbibliotheek** (of op
+de voertuigkaart) op **E-mailen**. Je ziet het venster **Document e-mailen** — *Verstuur
+"<bestandsnaam>" via e-mail*. Vul **Ontvangers (kommagescheiden)** in: één of meer e-mailadressen,
+met een komma ertussen. Pas zo nodig **Onderwerp** en **Bericht** aan. Klik op **E-mail versturen**.
+Die knop blijft grijs zolang er geen ontvanger staat.
+
+![Het venster Document e-mailen met het veld Ontvangers (1) en de knop E-mail versturen (2)](afbeeldingen/09-document-emailen.png)
+*Het venster **Document e-mailen**. 1: typ het e-mailadres bij **Ontvangers**. 2: klik op **E-mail
+versturen**.*
+
+**De documenten van een reservering naar de klant.** Dit venster opent met **Mail naar klant** in
+het venster na het ophalen (**Contract klaar**) en na het innemen (**Schadeformulier klaar**), en
+vanuit de reservering. Het heet **Documenten e-mailen naar klant** — *"Selecteer documenten,
+ontvanger en taal om naar de klant te sturen"*.
 
 Je vult in:
 
@@ -158,6 +169,18 @@ sturen, doe dat dan via **Meldingen versturen**.
 
 Verstuur je vanuit **Communicatie**, dan staat de nieuwe regel meteen in het logboek; je hoeft de
 pagina niet meer te vernieuwen.
+
+![Het scherm Communicatie met de vier tabbladen (1), de drie soorten berichten (2), het sjabloon (3) en de knop Voorvertonen & versturen (4)](afbeeldingen/09-meldingen-versturen.png)
+*Het scherm **Communicatie**, tabblad **Meldingen versturen**. 1 zijn de vier tabbladen. 2 kies je
+**APK-herinneringen**, **Onderhoud** of **Aangepast bericht**. 3 kies je het **E-mailsjabloon**. 4 is
+**Voorvertonen & versturen**; die knop wordt pas blauw als je een sjabloon en minstens één auto hebt
+gekozen.*
+
+![Het tabblad E-maillogboek (1)](afbeeldingen/09-emaillogboek.png)
+*Het tabblad **E-maillogboek** (1): elke verstuurde en mislukte e-mail, de nieuwste bovenaan.*
+
+![Het tabblad Analyse (1)](afbeeldingen/09-analyse.png)
+*Het tabblad **Analyse** (1): de aantallen verstuurd en mislukt, per soort.*
 
 Het tabblad **Analyse** rekent zijn cijfers uit diezelfde regels: **Verstuurde e-mails**,
 **Mislukte e-mails**, **Verzendrondes** en **Rondes met mislukkingen**, en per soort (**APK-meldingen**,
@@ -269,6 +292,10 @@ alleen in op de mailserver. Onder de knop verschijnt het antwoord, groen of rood
 
 Is er nog niets ingevuld, dan staat er **Geen e-mailconfiguratie ingesteld**.
 
+![App-instellingen, tabblad E-mail & GPS (1)](afbeeldingen/09-email-gps-instellingen.png)
+*Het tabblad **E-mail & GPS** (1) van de app-instellingen: per doel een mailserver, met **Verbinding
+testen**.*
+
 **De naam onder je mails.** De naam van het bedrijf in de mails (onderaan de herinneringen, in de portaalmails
 en als standaard afzendernaam) stel je niet hier in, maar bij **App-instellingen → tabblad Bedrijfsregels →
 Bedrijfsnaam** (hoofdstuk 10, paragraaf 10.3). Eén naam voor alle mails; zolang je niets opslaat, is het
@@ -289,11 +316,17 @@ De teksten van de mails staan op twee plekken.
 in een Engelse en een Nederlandse versie, met een **Onderwerp** en een **Bericht**. Opslaan doe
 je met **E-mailsjablonen opslaan**. Vereist het recht **Instellingen beheren**.
 
+![App-instellingen, tabblad Doc-e-mails (1)](afbeeldingen/09-doc-emails.png)
+*Het tabblad **Doc-e-mails** (1): de teksten van de mails waarmee je documenten verstuurt.*
+
 **Voor APK, onderhoud en vrije berichten:** **Communicatie → Sjabloonbouwer**. Daar maak je met
 **Nieuw sjabloon** een sjabloon met een **Sjabloonnaam**, **E-mailonderwerp**,
 **Sjablooncategorie** (APK-herinneringen, Onderhoud, Aangepast) en **E-mailinhoud**. Met
 **Placeholders invoegen** zet je velden als het kenteken of de naam van de klant in de tekst.
 Vereist het recht **E-mailsjablonen beheren**.
+
+![Het tabblad Sjabloonbouwer (1) onder Communicatie](afbeeldingen/09-sjabloonbouwer.png)
+*Het tabblad **Sjabloonbouwer** (1): links de lijst met sjablonen, rechts het formulier.*
 
 De plaatshouders worden bij het versturen automatisch ingevuld met de gegevens van de
 reservering en de klant. Je mag ze met één accolade (`{customerName}`) of met twee schrijven; beide
@@ -401,9 +434,9 @@ Dan maakt de app één kostenregel per categorie (bijvoorbeeld Onderhoud en Remm
 de factuur als bon aan elke regel en zet een melding in de bel:
 "Factuur van Garage Jansen geboekt op V-123-XB".
 
-De bedragen worden geboekt zoals ze op de factuur staan — op garagefacturen is dat
-meestal **exclusief btw**, want de regels staan er excl. btw en het totaal incl. btw. De
-app rekent niets om.
+De bedragen worden geboekt **exclusief btw**. Staan de regels op de factuur inclusief btw, dan
+rekent de app ze terug naar exclusief btw (met het subtotaal, of het totaal min de btw). Elk
+bedragveld en elke kolom in de app heet daarom **Bedrag (excl. btw)**.
 
 > **Open het postvak niet met de hand.** De app haalt alleen ongelezen mail op. Lees je
 > een factuurmail in de webmail of in Outlook, dan is hij gelezen en ziet de app hem niet
@@ -428,9 +461,16 @@ staat onder **Te controleren**, met de reden erbij:
 | Uitlezen mislukt | Vul leverancier, datum en regels zelf in; de factuur staat ernaast. |
 | Geen bruikbare bijlage | De mail had geen PDF of foto. Vraag de factuur opnieuw op of wijs af. |
 
+![Het venster Ontvangen facturen met Nu ophalen (1), Logboek (2) en de tabbladen Te controleren, Geboekt en Afgewezen (3)](afbeeldingen/09-ontvangen-facturen.png)
+*Het venster **Ontvangen facturen**. 1 is **Nu ophalen**. 2 is **Logboek**. 3 zijn de tabbladen **Te
+controleren**, **Geboekt** en **Afgewezen**.*
+
 Klik op **Controleren**. Links staat de factuur, rechts wat de app heeft gelezen. Pas aan
 wat niet klopt, kies het voertuig en klik op **Boeken**. Hoort de factuur niet in de app,
-klik dan op **Afwijzen** (met eventueel een korte notitie). Afgewezen en geboekte facturen
+klik dan op **Afwijzen** (met eventueel een korte notitie). Twee knoppen helpen daarbij:
+**Opnieuw uitlezen** laat de app de factuur nog een keer lezen (handig als een eerdere lezing fout
+was), en **Afzender vertrouwen** zet het afzenderadres op de lijst **Vertrouwde afzenders**, zodat
+de volgende facturen van die afzender vanzelf worden geboekt. Afgewezen en geboekte facturen
 blijven terug te vinden in de andere twee tabbladen. Wijs je iets af met de reden
 **Onbekende afzender** of **Geen bruikbare bijlage**, dan gooit de app het bestand meteen
 weg: dat is meestal reclame of spam en hoeft niet bewaard te blijven. Bij alle andere

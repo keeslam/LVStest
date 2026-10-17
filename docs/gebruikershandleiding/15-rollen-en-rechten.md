@@ -95,6 +95,10 @@ wat je met vernieuwen oplost. Zie 15.8.
 
 ## 15.4 De rechten, één voor één
 
+![Het rechtenraster in Gebruikersbeheer, met de knop Benodigde rechten ook aanzetten (1)](afbeeldingen/15-rechtenraster.png)
+*Zo ziet een beheerder de rechten bij een gebruiker: één vinkje per recht, met eronder *Heeft nodig:
+…*. 1 is de knop **Benodigde rechten ook aanzetten** (hoofdstuk 10, paragraaf 10.2).*
+
 In het beheerscherm staan onder **Aanvullende rechten** vijfendertig vinkjes. Negenentwintig daarvan
 bepalen het dagelijkse werk; die staan hieronder, per vinkje wat het opent. De zes vinkjes van de
 fiscale mobiliteitscheck staan onderaan in een eigen tabel.
@@ -322,6 +326,10 @@ Er zijn drie manieren waarop de app je een ontbrekend recht laat merken.
 **1. Het menu-item staat er niet.** Dit is het meest voorkomende. Je ziet **Onderhoud** of
 **Documenten** simpelweg niet staan. Er is geen grijze knop en geen uitleg: het item is er niet.
 
+![Het menu links van een account met alleen kijkrechten: Onderhoud, Kosten en Communicatie ontbreken](afbeeldingen/15-menu-kijker.png)
+*Het menu van een account met alleen kijkrechten. Vergelijk met het volledige menu in hoofdstuk 1,
+paragraaf 1.2: de items waar je geen recht voor hebt, staan er gewoon niet.*
+
 **2. Een melding met de naam van het recht erin.** Open je een scherm langs een omweg, of druk je
 op een knop waar je het recht niet voor hebt, dan komt er:
 
@@ -369,6 +377,10 @@ dat je niet mag openen, zoals **Contractsjablonen** en **Transportrapportsjablon
 staat er grijs, en tikken of klikken zegt welk vinkje je mist. Dit vervangt voor deze knoppen de oude melding uit 15.8,
 punt 2 — die melding kan nog wel voorkomen bij een knop die deze behandeling nog niet heeft
 gekregen.
+
+![Het scherm Voertuigbeheer van een account met alleen kijkrechten: de knop Voertuig toevoegen (1) staat grijs, met een tekstballon die het ontbrekende recht noemt](afbeeldingen/15-grijze-knop-uitleg.png)
+*Een grijze knop met uitleg: **Voertuig toevoegen** (1) staat er wel, maar werkt niet; wijs hem aan
+en de tekstballon zegt welk vinkje je mist.*
 
 **Een stukje van een scherm dat gegevens uit een ander recht toont, laat dat nu netjes weg.**
 Sommige schermen tonen een detail dat eigenlijk bij een ander recht hoort — bijvoorbeeld een

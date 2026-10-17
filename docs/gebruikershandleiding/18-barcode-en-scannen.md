@@ -24,7 +24,9 @@ de code handmatig.*
 Op het scherm staan een invoerveld, de knop **Zoeken**, een cameraknopje en onderaan het blok
 **Recente scans**.
 
-![Het scanscherm met het invoerveld, de knop Zoeken en het blok Recente scans](afbeeldingen/10-scannen.png)
+![Het scanscherm met het invoerveld (1), de knop Zoeken (2) en de knop Camera scannen (3)](afbeeldingen/18-scanscherm-knoppen.png)
+*Het scherm **Barcode scannen**. 1 is het invoerveld: hier komt de scan of het kenteken. 2 is
+**Zoeken**. 3 is **Camera scannen**.*
 
 **Met een USB-scanner.** Een barcodescanner gedraagt zich als een toetsenbord: hij typt de code
 en drukt zelf op Enter. Zorg dat de cursor in het invoerveld staat (klik er één keer in) en scan.
@@ -45,17 +47,22 @@ zoeken staat er *Bezig met zoeken...*
 
 | Code | Wat het is |
 |---|---|
-| **VEH-000123** | Het sleutellabel van een voertuig |
-| **VEH-000123-S** | Het label van de **reservesleutel** van datzelfde voertuig |
-| **VEH-000123-R2** | Een opnieuw aangemaakt label (na *Barcode opnieuw genereren*) |
+| **VEH-000123** of **V123** | Het sleutellabel van een voertuig. Op het scherm heet de code *VEH-000123*; op het label zelf staat de korte vorm *V123* |
+| **VEH-000123-S** of **S123** | Het label van de **reservesleutel** van datzelfde voertuig |
+| **VEH-000123-R2** of **V123R2** | Een opnieuw aangemaakt label (na *Barcode opnieuw genereren*) |
 | **RES-003366** | De code van een reservering |
 | Een **kenteken** | Werkt ook: typ of scan gewoon `HL-02-HL` |
 
-Hoofdletters, kleine letters en spaties maken niet uit; de app maakt er zelf hoofdletters van.
+Hoofdletters, kleine letters en spaties maken niet uit; de app maakt er zelf hoofdletters van. De
+korte code op het label zet de app zelf om naar de lange code.
 
 Wordt er niets gevonden, dan staat er: *Geen voertuig of reservering gevonden voor "ZZ-00-ZZ"*.
 Controleer dan het label of typ het kenteken. Bij een storing krijg je *Opzoeken mislukt.
 Controleer de verbinding en probeer opnieuw.*
+
+![Het scanscherm na een onbekende code, met de melding dat er niets is gevonden](afbeeldingen/18-geen-match.png)
+*Een code die de app niet kent: de melding staat onder het veld en de code blijft staan, zodat je hem
+kunt verbeteren.*
 
 ---
 
@@ -72,6 +79,14 @@ afgerond.
 
 Scande je het reservesleutel-label, dan staat er het extra label **Reservesleutel** bij. Zo weet
 je zeker welke sleutel je in handen hebt.
+
+![Het scanscherm na het scannen van 34-SPR-5: de auto met status, gegevens, de aankomende reservering en de tegels](afbeeldingen/18-scanresultaat.png)
+*Na een scan: bovenin de auto met zijn status en barcode, daaronder de gegevens, de reservering en de
+tegels.*
+
+![Hetzelfde voor een verhuurde auto: status Verhuurd en de actieve reservering](afbeeldingen/18-scanresultaat-verhuurd.png)
+*Een auto die bij een klant staat: status **Verhuurd**, met de lopende reservering en de tegel
+**Inleveren starten**.*
 
 Daaronder een rijtje gegevens: **APK-vervaldatum**, **Garantie tot**, **Kilometerstand**,
 **Brandstof** en **Registratie**. Wat niet bekend is, toont **N.v.t.**
@@ -120,6 +135,11 @@ allemaal tegelijk.
 | **Terug uit onderhoud** | De auto staat wél in de werkplaats |
 | **Transport starten** | Er ligt een transport op **Gepland** |
 | **Transport afronden** | Het transport staat op **Bezig** |
+
+![De tegels onder het scanresultaat, genummerd](afbeeldingen/18-scanresultaat-tegels.png)
+*De tegels bij een auto met een aankomende reservering: 1 **Ophalen starten**, 2 **Voertuig
+openen**, 3 **Reservering openen**, 4 **Kosten registreren**, 5 **Document uploaden**, 6 **Tanken**,
+7 **Km-stand bijwerken**, 8 **Onderhoud inplannen**, 9 **Opnieuw scannen**.*
 
 Van **Ophalen starten** en **Inleveren starten** zie je er altijd maar één; welke, hangt af van
 de stand van de huur. Is er helemaal geen reservering, dan zie je ze geen van beide.
@@ -178,6 +198,13 @@ code, het kenteken dat erbij hoort en wie er gescand heeft. Vond de app niets, d
 Handig als je net iets in handen had en niet meer weet welk kenteken het was, en om te zien of
 een collega die sleutel al langs heeft gehad. Staat er niets, dan lees je *Nog geen scans*.
 
+**Een regel is een knop.** Klik op een regel in **Recente scans** (of ga er met de pijltjestoetsen
+heen en druk op Enter) en de app zoekt die code opnieuw op, net alsof je hem weer scande. Was het een
+regel met **geen match**, dan blijft de code in het zoekveld staan, zodat je hem kunt verbeteren.
+
+![Het blok Recente scans onderaan het scanscherm, met per regel tijd, code, kenteken en wie scande](afbeeldingen/18-recente-scans.png)
+*Het blok **Recente scans**. Elke regel is een knop: klik erop om die scan opnieuw op te zoeken.*
+
 ---
 
 ## 18.6 Scannen met de camera
@@ -185,6 +212,10 @@ een collega die sleutel al langs heeft gehad. Staat er niets, dan lees je *Nog g
 Klik op het cameraknopje naast het invoerveld. Je krijgt **Camera scannen** — *Richt de camera op
 de barcode van het sleutellabel.* Houd de barcode rustig in beeld; zodra hij gelezen is, gaat het
 venster dicht en staat het resultaat op het scherm. Met **Sluiten** stop je.
+
+![Het venster Camera scannen](afbeeldingen/18-camera.png)
+*Het venster **Camera scannen**. Op een pc zonder camera staat hier de melding dat er geen camera
+is gevonden.*
 
 **Camera scannen werkt alleen via een beveiligde verbinding (https).** Opent de app via gewoon
 `http`, dan blokkeert de browser de camera en krijg je de melding:
@@ -237,6 +268,9 @@ je daarbij door bij te houden welke sleutels je gescand hebt en welke ontbreken.
    model. Zo zie je terwijl je bezig bent wat er nog moet hangen. Is er nog niets gescand, dan staat
    er *Nog niets gescand*; is alles gescand, dan staat bij de tweede lijst *Alle verwachte sleutels
    zijn gescand*.
+
+   ![Het venster Sleutelkast-audit met het scanveld (1), de lijsten Gescand en Nog niet gescand en de knop Audit afronden (2)](afbeeldingen/18-sleutelkast-audit.png)
+   *Het venster **Sleutelkast-audit** na één scan. 1 is het scanveld. 2 is **Audit afronden**.*
 5. Ben je door de kast heen, klik dan op **Audit afronden**.
 6. Je krijgt de uitslag te zien:
    - **Ontbrekende sleutels** — de auto's waarvan je het label niet hebt gescand, met kenteken,
@@ -247,6 +281,10 @@ je daarbij door bij te houden welke sleutels je gescand hebt en welke ontbreken.
      **Inleveren starten**. Is de einddatum al voorbij, dan staat de huur ook bij
      **Reserveringen** achter **… achterstallig** (hoofdstuk 5, paragraaf 5.11).
    - Is alles compleet, dan staat er: *Geen sleutels ontbreken 🎉*
+
+   ![De uitslag van de audit met de lijst Ontbrekende sleutels](afbeeldingen/18-sleutelkast-audit-uitslag.png)
+   *De uitslag na **Audit afronden**: de sleutels die je niet hebt gescand staan onder **Ontbrekende
+   sleutels**.*
 7. Met **Opnieuw beginnen** wis je de telling en begin je opnieuw. Met **Sluiten** ga je weg.
 
 **Meldingen tijdens het scannen:**
@@ -283,9 +321,14 @@ die sleutel terecht niet in de kast hangt.
 
 1. Open de auto met **Bekijken**.
 2. Klik op **Barcode bekijken**. Het venster **Voertuigbarcode** opent.
+
+   ![Het venster Voertuigbarcode met Labelsjabloon (1), Sleutellabel afdrukken (2) en Reservesleutel-label afdrukken (3)](afbeeldingen/04-voertuigbarcode.png)
+   *Het venster **Voertuigbarcode**. 1 is **Labelsjabloon**. 2 is **Sleutellabel afdrukken**. 3 is
+   **Reservesleutel-label afdrukken**.*
 3. Kies bij **Labelsjabloon** de indeling die bij jullie labelprinter hoort — *Kies het
    labelsjabloon voor deze afdruk.* Voor de labelmaker aan de balie kies je **DYMO-tape
-   (labelmaker, staand)**; zie *Op de DYMO-labelmaker* hieronder.
+   (labelmaker, staand)**; zie *Op de DYMO-labelmaker* hieronder. Op het label komt de korte code
+   (**V123**, of **S123** voor de reservesleutel), zie 18.2.
 4. Klik op **Sleutellabel afdrukken** of op **Reservesleutel-label afdrukken**. De app meldt dat er
    een afdrukvenster van je browser is geopend (**Afdrukvenster geopend** — *Het afdrukvenster van je
    browser is geopend voor het label van <kenteken>. Kies daar de printer.*). De app maakt hier geen
@@ -300,15 +343,23 @@ klik je op **Afdrukken**.
 **Op de DYMO-labelmaker (tape).** De labelmaker aan de balie (LabelManager 420P, tape van
 12 mm) drukt via Windows alleen staand af; een gewoon sleutellabel van 62 bij 29 mm kwam daardoor
 afgesneden uit de printer. Kies daarom bij **Labelsjabloon** de optie **DYMO-tape (labelmaker,
-staand)**. Er verschijnen dan **Tapebreedte** (9, 12 of 19 mm; standaard 12) en **Labellengte (mm)**
-(standaard 48, de lengte van het sleutellabel), en daaronder **Uitvoer**. Daar kies je waar het
-label heen gaat:
+staand)**. Er verschijnen dan **Tapebreedte** (6, 9, 12, 19 of 24 mm; standaard 12), **Labellengte
+(mm)** (standaard 48, de lengte van het sleutellabel; minimaal 15), **Marge links/rechts (mm)** en
+**Marge boven/onder (mm)**, en daaronder **Uitvoer**. Daar kies je waar het label heen gaat:
+
+![Het venster Voertuigbarcode met DYMO-tape gekozen en de tapematen en Uitvoer eronder](afbeeldingen/04-voertuigbarcode-dymo.png)
+*Met **DYMO-tape (labelmaker, staand)** gekozen verschijnen de tapematen en de keuze **Uitvoer**.*
 
 - **<naam van de labelmaker> (rechtstreeks via DYMO Connect)**, bijvoorbeeld *DYMO LabelManager
   420P*: de app stuurt het label zelf naar de labelmaker, zonder afdrukvenster. Dat kan als op de pc
   DYMO Connect draait; de regel eronder zegt *DYMO Connect gevonden: 1 labelmaker.* De labelmaker
   snijdt elk label af. Na het sturen meldt de app **Naar de labelmaker gestuurd** — *1 label is naar
-  DYMO LabelManager 420P gestuurd.* Dit is de bedoelde weg aan de balie.
+  DYMO LabelManager 420P gestuurd.* Dit is de bedoelde weg aan de balie. Bij deze keuze kun je ook de
+  **Positie op de tape** kiezen (**Links (begin van de tape)**, **Midden** of **Rechts**) en
+  **Doorlopend printen (minder lege tape, niet knippen na elk label)** aanzetten. Voegt de labelmaker
+  toch steeds een stuk lege tape toe, zet dan **Meerdere labels op één strook, met kniplijn ertussen
+  (zelf knippen)** aan en kies de **Ruimte naast de kniplijn (mm)**: de labels komen achter elkaar op
+  één strook met een kniplijn ertussen.
 - **Bestand .label (openen in DYMO Connect)**: de app maakt per label een bestand in het formaat van
   DYMO (**Bestand gemaakt** — *sleutellabel-<kenteken>-<code>.label*). Open het in DYMO Connect en
   druk daar af; handig op een pc zonder aangesloten labelmaker.
@@ -347,7 +398,12 @@ daarna niet meer. Na afloop krijg je **Nieuwe barcode: <code>**. Druk meteen een
 1. Klik op **Voertuigen** → **Barcodeboek**. Je krijgt **Barcodeboek** — *Druk alle
    voertuigbarcodes af voor in een map of klapper.*
 2. Kies een **Labelsjabloon**. Met **DYMO-tape (labelmaker, staand)** maakt **Stickers afdrukken**
-   één tapelabel per auto.
+   één tapelabel per auto. **Stickers afdrukken** kiest vanzelf het sjabloon dat onder **Documenten**
+   → **Barcodelabels** als **Autolabel (sticker in de auto)** is aangewezen.
+
+   ![Het venster Barcodeboek met DYMO-tape gekozen, Labelsjabloon (1) en de afdrukknop (2)](afbeeldingen/18-barcodeboek-dymo.png)
+   *Het **Barcodeboek** met **DYMO-tape** als sjabloon. 1 is **Labelsjabloon**. 2 is de afdrukknop; de
+   naam ervan hangt af van je selectie.*
 3. Filter eventueel met het zoekveld *Zoeken op kenteken, merk of model...* of met het
    statuslijstje **Alle statussen**.
 4. Selecteer wat je wilt met **Alles selecteren** of door regels aan te vinken; **Selectie

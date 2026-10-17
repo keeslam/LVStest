@@ -27,12 +27,18 @@ En dan de tabel **Voertuigtransporten** met een zoekveld **Transporten zoeken...
 **Alle statussen** (**Gepland**, **Bezig**, **Voltooid**, **Geannuleerd**) en de knop **Nieuw
 transport**.
 
-De kolommen zijn: **Voertuig**, **Vervangend voertuig**, **Type**, **Route**, **Datum**,
-**Afstand**, **Tolkosten**, **Facturatie**, **Status** en **Acties**.
+De kolommen zijn: een selectievakje, **Afdrukken / rapport genereren**, **Voertuig**, **Vervangend
+voertuig**, **Type**, **Route**, **Datum**, **Afstand / tol**, **Facturatie**, **Status** en
+**Acties**. Klik op een kolomkop om op die kolom te sorteren; nog een klik draait de volgorde om.
+Een klik ergens op een regel opent het transport (hetzelfde als **Bekijken**).
+
+![Het Transportdashboard met Route-optimalisatie (1), Verwijderde transporten (2), de tabbladen (3), het zoekveld (4) en Nieuw transport (5)](afbeeldingen/06-transportdashboard-knoppen.png)
+*Het **Transportdashboard**: 1 **Route-optimalisatie**, 2 **Verwijderde transporten**, 3 de tabbladen
+per soort, 4 het zoekveld, 5 **Nieuw transport**.*
 
 - **Vervangend voertuig** toont het kenteken met de stand van zaken: **TBD**, **Toegewezen**,
-  **Opgehaald** of **Teruggebracht**. Bij **TBD** staat er een knopje **Vervangend voertuig
-  selecteren** bij.
+  **Opgehaald** of **Teruggebracht**. Bij **TBD** staat er een knopje **Selecteren** bij (met de
+  muis erop lees je *Vervangend voertuig selecteren*).
 - **Facturatie** toont **Gefactureerd**, **Niet gefactureerd** of **Niet factureerbaar**.
 - **Status** is **Gepland**, **Bezig**, **Voltooid** of **Geannuleerd**.
 - Een auto die niet van ons is, krijgt het label **Extern**.
@@ -57,6 +63,13 @@ tellers, daaronder de tabbladen per soort en de tabel **Voertuigtransporten**.*
 
 Elk icoontje heeft een naam: staat de muis erop, dan verschijnt er een tekstje, en een
 schermlezer leest hem voor. Dat geldt ook voor het prullenbakje, dat vroeger geen naam had.
+**Afdrukken / rapport genereren** staat vooraan in de tabel, direct na het selectievakje; de andere
+knoppen staan rechts onder **Acties**.
+
+![De tabel Voertuigtransporten met Afdrukken / rapport genereren (1), Bekijken (2), Markeren als voltooid (3), Bewerken (4) en Verwijderen (5)](afbeeldingen/06-transporttabel-knoppen.png)
+*De knoppen in een regel: 1 **Afdrukken / rapport genereren**, 2 **Bekijken**, 3 **Markeren als
+voltooid**, 4 **Bewerken**, 5 **Verwijderen**. De grijze knoppen ertussen zijn **Vervangend voertuig
+markeren als opgehaald** en **… als teruggebracht**; die werken pas als er een vervanger is.*
 
 Vink je meerdere regels aan, dan verschijnt bovenin een balk met **… geselecteerd**,
 **Afdrukken**, **Markeer voltooid** en **Wissen**.
@@ -80,6 +93,10 @@ Vink je meerdere regels aan, dan verschijnt bovenin een balk met **… geselecte
 5. Heeft de klant een vervanger nodig, vink dan **Vervangend voertuig vereist** aan. Zie 6.4.
 6. Vul de **Geplande datum** in. Dat veld is verplicht. **Voltooiingsdatum (optioneel)** laat je
    meestal leeg; die vult zichzelf als je het transport afrondt.
+
+   ![Het venster Transport registreren met Type (1), Voertuig (2), Vervangend voertuig vereist (3) en Geplande datum (4)](afbeeldingen/06-transport-registreren.png)
+   *Het venster **Transport registreren**, bovenste deel: 1 **Type**, 2 **Voertuig**, 3 **Vervangend
+   voertuig vereist**, 4 **Geplande datum**.*
 7. Vul onder **Van (optioneel)** en **Naar (optioneel)** het **Straatadres** en de **Plaats** in.
    Doe dat ook als het om ons eigen terrein gaat: zonder adressen kan de app geen afstand
    berekenen en staat er op het dashboard alleen een streepje.
@@ -88,6 +105,10 @@ Vink je meerdere regels aan, dan verschijnt bovenin een balk met **… geselecte
 9. Klik op **Voorstellen** naast **Tolkosten (€) (optioneel)**. De app rekent met een vast tarief
    per kilometer (*€0.15/km — instelbaar in Instellingen*). Gaat de chauffeur leeg terug, vink
    dan **Retour — voorstel omvat de lege terugrit** aan.
+
+   ![Het middelste deel van Transport registreren met Van (1), Naar (2), Berekenen (3) en Voorstellen (4)](afbeeldingen/06-transport-registreren-adres.png)
+   *Adressen en kosten: 1 **Van**, 2 **Naar** (straat en plaats), 3 **Berekenen** voor de afstand,
+   4 **Voorstellen** voor de tolkosten.*
 10. Moet de klant dit transport betalen, zet dan **Doorbelasten aan klant** aan — *Breng dit
     transport in rekening bij de klant, los van wat het ons aan tol heeft gekost*. Kies de
     **Klant** en vul het **Te factureren bedrag (€)** in. Is de rit al gefactureerd, zet dan
@@ -97,6 +118,9 @@ Vink je meerdere regels aan, dan verschijnt bovenin een balk met **… geselecte
 12. Zet zo nodig iets in **Reden (optioneel)** (*bijv. Niet-betaling, pech*) en **Notities
     (optioneel)**.
 13. Klik op **Transport registreren**.
+
+    ![Het onderste deel van Transport registreren met Doorbelasten aan klant (1), Chauffeur (2) en de knop Transport registreren (3)](afbeeldingen/06-transport-registreren-opslaan.png)
+    *Onderaan: 1 **Doorbelasten aan klant**, 2 **Chauffeur (optioneel)**, 3 **Transport registreren**.*
 
 Je krijgt **Transport geregistreerd** — *De transportopdracht is geregistreerd.*
 
@@ -143,14 +167,21 @@ er vrij is, en je wilt de afspraak toch al vastleggen.
 
 Met het kruisje achter een gekozen auto (*Wissen (terug naar TBD)*) zet je hem weer op TBD.
 
+![Het venster Transport registreren met het vinkje Vervangend voertuig vereist (1) aan en daaronder het veld voor de vervanger](afbeeldingen/06-vervangend-voertuig-tbd.png)
+*Met **Vervangend voertuig vereist** (1) aan verschijnt het veld voor de vervanger; laat je het leeg,
+dan wordt het **TBD**.*
+
 ### Later een echte auto toewijzen
 
 Er zijn twee plekken waar dat kan:
 
-**1. Vanaf het transportdashboard.** Klik in de kolom **Vervangend voertuig** op **Vervangend
-voertuig selecteren**. Het venster **Transport bewerken** opent bij het veld **Vervangend
-voertuig**. Kies de auto en klik op **Wijzigingen opslaan**. Je krijgt **Transport bijgewerkt** —
-*De transportopdracht is bijgewerkt.* Het label springt van **TBD** naar **Toegewezen**.
+**1. Vanaf het transportdashboard.** Klik in de kolom **Vervangend voertuig** op **Selecteren** (de
+knop bij **TBD**). Het venster **Transport bewerken** opent bij het veld **Vervangend voertuig**. Kies
+de auto en klik op **Wijzigingen opslaan**. Je krijgt **Transport bijgewerkt** — *De transportopdracht
+is bijgewerkt.* Het label springt van **TBD** naar **Toegewezen**.
+
+![De tabel met bij een transport zonder vervanger de knop Selecteren (1) in de kolom Vervangend voertuig](afbeeldingen/06-vervangend-voertuig-selecteren.png)
+*Een transport met **TBD**: klik op **Selecteren** (1) om alsnog een auto te kiezen.*
 
 **2. Vanuit het onderhoud.** Zie hoofdstuk 7: **Onderhoud** → **Lijstweergave** → tabblad
 **Vervangers (…)** → **Toewijzen**.
@@ -199,6 +230,10 @@ Dat kan op drie manieren:
   door te zetten, of sluit het venster als je je bedacht hebt. Daarna krijg je **Transport
   gemarkeerd als voltooid**. Zit er een vervangend voertuig aan het transport, dan volgt daarna
   nog de vraag hieronder.
+
+  ![Het venster Transport afronden? met Afgerond op, Uitkomst en de knop Afronden (1)](afbeeldingen/06-transport-afronden.png)
+  *Het venster **Transport afronden?**: vul **Afgerond op** en eventueel **Uitkomst** in en klik op
+  **Afronden** (1).*
 - **In bulk:** vink meerdere regels aan en klik op **Markeer voltooid**. Je hebt dan zelf een
   selectie gemaakt, en er komt geen extra vraag.
 
@@ -271,6 +306,9 @@ Heb je meerdere ritten op één dag, dan kun je de volgorde laten uitrekenen.
 2. Kies de **Datum**.
 3. Klik op **Route optimaliseren**.
 
+![Het venster Routeoptimalisatie met het datumveld (1) en de knop Route optimaliseren (2)](afbeeldingen/06-routeoptimalisatie.png)
+*Het venster **Routeoptimalisatie**: 1 kies de **Datum**, 2 klik op **Route optimaliseren**.*
+
 Is de knop grijs, dan staat er onder het venster waarom: *Er is op deze datum niets gepland. Kies
 een andere datum.* of *Geen van de geplande ritten heeft een adres of plaats. Vul die eerst in.*
 
@@ -287,6 +325,9 @@ dan ontbraken er adressen en is de afstand een ruwe schatting.
 **Tolkosten**, **Facturatie**, **Klant**, **Chauffeur**, **Reden** en **Notities**. Hoort het
 transport bij een reservering, dan staat er **Levering vanuit reservering #…** en kun je met
 **Open reservering** meteen naar de huur.
+
+![Het venster met de gegevens van een transport na Bekijken](afbeeldingen/06-transport-bekijken.png)
+*Een transport na **Bekijken** (of een klik op de regel): alle gegevens op een rij.*
 
 **Wijzigen.** Klik op **Bewerken**, pas aan en klik op **Wijzigingen opslaan**.
 
@@ -310,7 +351,7 @@ weghalen kan op dezelfde plek met **Definitief verwijderen** (hoofdstuk 10, para
 | Een rit vastleggen | **Transporten** → **Nieuw transport** |
 | Een wissel plannen | **Nieuw transport** → **Type: Voertuigwissel** |
 | Een vervanger openhouden | **Vervangend voertuig vereist** aan, veld leeg = **TBD** |
-| Later een auto toewijzen | **Vervangend voertuig selecteren** op het dashboard |
+| Later een auto toewijzen | **Selecteren** bij **TBD** op het dashboard |
 | Het transport starten | **Scannen** → **Transport starten** |
 | Het transport afronden | **Scannen** → **Transport afronden**, of **Markeren als voltooid** |
 | Het rapport maken | **Afdrukken / rapport genereren** achter de regel |
