@@ -66,7 +66,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Bell, Mail, User, Eye, Edit, Calendar, Plus, Upload, X, FileCheck, Printer, Trash2, Download, ChevronDown, ChevronRight, ChevronLeft, AlertTriangle, Car, ScanLine, Info } from "lucide-react";
+import { Bell, Mail, User, Eye, Edit, Calendar, Plus, Upload, X, FileCheck, Printer, Trash2, Download, ChevronDown, ChevronRight, ChevronLeft, AlertTriangle, Car, ScanLine, Info, History } from "lucide-react";
+import { RecordHistoryDialog } from "@/components/audit/record-history-dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -150,6 +151,8 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
   const [damageCheckToDelete, setDamageCheckToDelete] = useState<{ id: number; checkType: string; checkDate: string; reservationId?: number | null } | null>(null);
   const [deleteDocumentDialogOpen, setDeleteDocumentDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<{ id: number; fileName: string } | null>(null);
+  // The document whose "Geschiedenis" (who uploaded, mailed, regenerated it) is open.
+  const [documentHistory, setDocumentHistory] = useState<{ id: number; fileName: string } | null>(null);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
   const [receiptPreviewExpense, setReceiptPreviewExpense] = useState<Expense | null>(null);
 
@@ -2387,6 +2390,16 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                         <Trash2 className="h-3.5 w-3.5" />
                                         {t('common:actions.delete')}
                                       </button>
+
+                                      <button
+                                        className="text-gray-600 hover:text-gray-800 text-sm flex items-center gap-1 transition-colors"
+                                        data-testid={`button-history-document-${document.id}`}
+                                        title={t('common:recordHistory.title')}
+                                        onClick={() => setDocumentHistory({ id: document.id, fileName: document.fileName })}
+                                      >
+                                        <History className="h-3.5 w-3.5" />
+                                        {t('common:recordHistory.title')}
+                                      </button>
                                     </div>
                                   </CardContent>
                                 </Card>
@@ -3727,6 +3740,14 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
           setDamageCheckToDelete(null);
         }}
         onCancel={() => setDamageCheckToDelete(null)}
+      />
+
+      {/* One document's history: who uploaded, mailed or regenerated it. */}
+      <RecordHistoryDialog
+        resourceType="document"
+        resourceId={documentHistory?.id ?? null}
+        label={documentHistory?.fileName}
+        onClose={() => setDocumentHistory(null)}
       />
 
       {/* Delete Document Confirmation Dialog */}

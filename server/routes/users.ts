@@ -85,6 +85,10 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
     reservation: [UserPermission.MANAGE_USERS, UserPermission.MANAGE_RESERVATIONS],
     vehicle: [UserPermission.MANAGE_USERS, UserPermission.MANAGE_VEHICLES],
     customer: [UserPermission.MANAGE_USERS, UserPermission.MANAGE_CUSTOMERS],
+    expense: [UserPermission.MANAGE_USERS, UserPermission.MANAGE_EXPENSES],
+    document: [UserPermission.MANAGE_USERS, UserPermission.MANAGE_DOCUMENTS],
+    // Drivers belong to a customer and are managed under that customer's rights.
+    driver: [UserPermission.MANAGE_USERS, UserPermission.MANAGE_CUSTOMERS],
   };
 
   app.get(
@@ -97,6 +101,8 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       UserPermission.MANAGE_RESERVATIONS,
       UserPermission.MANAGE_VEHICLES,
       UserPermission.MANAGE_CUSTOMERS,
+      UserPermission.MANAGE_EXPENSES,
+      UserPermission.MANAGE_DOCUMENTS,
     ),
     async (req, res) => {
     try {

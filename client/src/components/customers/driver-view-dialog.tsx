@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { Driver, Reservation } from "@shared/schema";
 import { formatDate, formatPhoneNumber, formatReservationStatus, formatLicensePlate } from "@/lib/format-utils";
 import { User, Mail, Phone, CreditCard, Calendar, Car, FileText, Globe } from "lucide-react";
+import { RecordHistory } from "@/components/audit/record-history";
 
 interface DriverViewDialogProps {
   driver: Driver | null;
@@ -268,6 +269,13 @@ export function DriverViewDialog({ driver, activeReservation, open, onOpenChange
               </CardContent>
             </Card>
           )}
+
+          {/* Who changed this driver, what and when. */}
+          <Card>
+            <CardContent className="pt-6">
+              <RecordHistory resourceType="driver" resourceId={driver.id} />
+            </CardContent>
+          </Card>
         </div>)}
       </DialogContent>
     </Dialog>

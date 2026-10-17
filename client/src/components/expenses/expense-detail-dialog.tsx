@@ -33,6 +33,7 @@ import { Price } from "@/components/ui/price";
 import { Expense, Vehicle } from "@shared/schema";
 import { ExpenseForm } from "./expense-form";
 import { PdfPreviewDialog } from "@/components/documents/pdf-preview-dialog";
+import { RecordHistory } from "@/components/audit/record-history";
 
 interface ExpenseDetailDialogProps {
   expenseId: number | null;
@@ -234,6 +235,12 @@ export function ExpenseDetailDialog({ expenseId, open, onOpenChange, hideVehicle
                   {expense.updatedBy && <div>{t('detailsPage.byLabel', { name: expense.updatedBy })}</div>}
                 </div>
               )}
+            </div>
+
+            {/* Who changed this expense, what and when - the same history the
+                reservation, vehicle and customer dialogs show. */}
+            <div className="border-t pt-4">
+              <RecordHistory resourceType="expense" resourceId={expense.id} />
             </div>
 
             <div className="flex gap-3 pt-4 border-t">

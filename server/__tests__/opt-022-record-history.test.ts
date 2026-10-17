@@ -30,6 +30,7 @@ beforeAll(async () => {
     { resourceType: "reservation", resourceId: "900001", action: "reservation.return" },
     { resourceType: "reservation", resourceId: "900002", action: "reservation.create" },
     { resourceType: "vehicle", resourceId: "900001", action: "vehicle.update" },
+    { resourceType: "expense", resourceId: "900001", action: "expense.update" },
   ];
   for (const row of rows) {
     await db.insert(auditLogs).values({
@@ -71,8 +72,15 @@ describe("OPT-022 — one record's history", () => {
     expect(res.body.logs[0].action).toBe("vehicle.update");
   });
 
-  it("an unknown resource type is refused rather than answered with everything", async () => {
+  it("an expense has a history of its own (the cost dialog's Geschiedenis section)", async () => {
     const res = await admin.get("/api/audit-logs/resource/expense/900001");
+    expect(res.status).toBe(200);
+    expect(res.body.logs).toHaveLength(1);
+    expect(res.body.logs[0].action).toBe("expense.update");
+  });
+
+  it("an unknown resource type is refused rather than answered with everything", async () => {
+    const res = await admin.get("/api/audit-logs/resource/fine/900001");
     expect(res.status).toBe(400);
   });
 
