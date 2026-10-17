@@ -18,9 +18,7 @@ import { mountUploads } from "../../middleware/uploads-mount";
 import { mountBodyParsers } from "../../middleware/body-limits";
 import { registerRoutes } from "../../routes";
 import { mountApiNotFound } from "../../middleware/api-not-found";
-import notificationRoutes from "../../routes/notifications";
-import { hasPermission } from "../../middleware/permissions";
-import { UserPermission } from "../../../shared/schema";
+import { mountStaffRouters } from "../../middleware/staff-routers";
 
 /** Prefix for every user this helper creates, so a leak is greppable. */
 export const FIXTURE_USER_PREFIX = "FIXT-user-";
@@ -47,16 +45,12 @@ export async function makeApp(): Promise<Express> {
   // definition here — otherwise BUG-026 ("200 with the SPA shell instead of the
   // file") would be untestable in-process.
   mountUploads(app, requireAuth);
-  // The notification router is a `Router`, not a `register*()` function, so
-  // `registerRoutes()` does not mount it — server/index.ts does, which this
-  // harness deliberately does not load. Mounted with the same guards here, so
-  // besluit B-24 (who gets a vehicle reminder) is testable in-process.
-  app.use(
-    "/api/notifications",
-    requireAuth,
-    hasPermission(UserPermission.MANAGE_NOTIFICATIONS),
-    notificationRoutes,
-  );
+  // The `Router` objects (notifications, e-mail templates, APK date changes,
+  // ...) and the activity-log middleware are mounted by the same function
+  // server/index.ts uses, so what the tests exercise is the production order:
+  // besluit B-24 (who gets a vehicle reminder) and the audit coverage of these
+  // routers are both testable in-process.
+  mountStaffRouters(app, requireAuth);
   await registerRoutes(app);
   // Mirrors server/index.ts: an /api request nothing claimed is a JSON 404.
   mountApiNotFound(app);

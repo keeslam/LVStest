@@ -81,7 +81,6 @@ import { hasPermission } from "./middleware/permissions.js";
 import { describeDbError, dbErrorBody } from "./utils/db-errors.js";
 import { installAsyncErrorHandling } from "./middleware/asyncHandler.js";
 import { AuditLogger } from "./utils/security/auditLogger.js";
-import { auditMutations } from "./middleware/audit";
 import { clearEmailConfigCache, sendEmail, testSmtpConnection } from "./utils/email-service";
 import { 
   getVehicleStatusContext, 
@@ -511,9 +510,9 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Set up authentication routes and middleware
   const { requireAuth } = setupAuth(app);
 
-  // Records every data-changing request for the activity log. Registered here,
-  // after auth so req.user is known, and before the routes below.
-  app.use(auditMutations);
+  // The activity-log middleware (auditMutations) is mounted by
+  // mountStaffRouters() in server/index.ts, before the routers that live
+  // outside this file as well as before everything registered below.
 
   // Shared BackupService singleton (see server/backupService.ts) - must be
   // the same instance the scheduler uses so the runBackup re-entrancy guard

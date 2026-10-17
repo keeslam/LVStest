@@ -28,14 +28,7 @@ import { ServiceDueScheduler } from "./serviceDueScheduler";
 import { PortalAlertScheduler } from "./portalAlertScheduler";
 import { FiscalScheduler } from "./fiscalScheduler";
 import { initializeDefaultAdmin, displayDeploymentInfo } from "./initAdmin";
-import notificationRoutes from "./routes/notifications.js";
-import vehiclesWithReservationsRoutes from "./routes/vehicles-with-reservations.js";
-import filteredVehiclesRoutes from "./routes/filtered-vehicles.js";
-import emailTemplatesRoutes from "./routes/email-templates.js";
-import emailLogsRoutes from "./routes/email-logs.js";
-import apkDateChangesRoutes from "./routes/apk-date-changes.js";
-import { hasPermission } from "./middleware/permissions.js";
-import { UserPermission } from "../shared/schema.js";
+import { mountStaffRouters } from "./middleware/staff-routers.js";
 
 // Security middleware imports
 import { securityHeaders, customSecurityHeaders, portalFrameHeaders } from "./middleware/security/headers.js";
@@ -412,13 +405,10 @@ app.get('/api', (_req, res) => {
   });
 });
 
-// Register API routes FIRST (before production static files)  
-app.use('/api/notifications', requireAuth, hasPermission(UserPermission.MANAGE_NOTIFICATIONS), notificationRoutes);
-app.use('/api/vehicles/with-reservations', requireAuth, hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES, UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), vehiclesWithReservationsRoutes);
-app.use('/api/vehicles/filtered', requireAuth, hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), filteredVehiclesRoutes);
-app.use('/api/email-templates', requireAuth, hasPermission(UserPermission.MANAGE_EMAIL_TEMPLATES), emailTemplatesRoutes);
-app.use('/api/email-logs', requireAuth, hasPermission(UserPermission.MANAGE_EMAIL_TEMPLATES), emailLogsRoutes);
-app.use('/api/apk-date-changes', requireAuth, hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), apkDateChangesRoutes);
+// Register API routes FIRST (before production static files). The activity-log
+// middleware is mounted inside mountStaffRouters(), ahead of every staff
+// router, so the routers below and everything registerRoutes() adds are logged.
+mountStaffRouters(app, requireAuth);
 await registerRoutes(app);
 
 // Any /api request no route claimed gets a JSON 404 here, before the static
