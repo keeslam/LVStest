@@ -267,7 +267,7 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
 
       // Don't send passwords to client
       const safeUsers = allUsers.map(user => {
-        const { password, ...userWithoutPassword } = user;
+        const { password, mileageOverridePasswordHash: _mileageOverrideHash, ...userWithoutPassword } = user;
         return {
           ...userWithoutPassword,
           isLastAdmin: activeAdmins.length === 1 && activeAdmins[0].id === user.id,
@@ -297,7 +297,7 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       }
       
       // Don't send password to client
-      const { password, ...userWithoutPassword } = user;
+      const { password, mileageOverridePasswordHash: _mileageOverrideHash, ...userWithoutPassword } = user;
       
       res.json(userWithoutPassword);
     } catch (error) {
@@ -365,7 +365,7 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       });
       
       // Don't send password back to client
-      const { password, ...userWithoutPassword } = newUser;
+      const { password, mileageOverridePasswordHash: _mileageOverrideHash, ...userWithoutPassword } = newUser;
       
       // Broadcast real-time update
       realtimeEvents.users.created(userWithoutPassword);
@@ -551,7 +551,7 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
           if (newPassword) {
             await storage.updateUserPassword(id, await hashPassword(newPassword));
           }
-          const { password: _hidden, ...safeUser } = updatedUser;
+          const { password: _hidden, mileageOverridePasswordHash: _mileageOverrideHash, ...safeUser } = updatedUser;
           await endSessionsAfterSave();
           realtimeEvents.users.updated(safeUser);
           return res.json(safeUser);
@@ -581,7 +581,7 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
         }
         
         // Don't send password back to client
-        const { password: _, ...userWithoutPassword } = updatedUser;
+        const { password: _, mileageOverridePasswordHash: _mileageOverrideHash, ...userWithoutPassword } = updatedUser;
         await endSessionsAfterSave();
         
         // Broadcast real-time update
@@ -597,7 +597,7 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
         }
         
         // Don't send password back to client
-        const { password: _, ...userWithoutPassword } = updatedUser;
+        const { password: _, mileageOverridePasswordHash: _mileageOverrideHash, ...userWithoutPassword } = updatedUser;
         await endSessionsAfterSave();
         
         // Broadcast real-time update

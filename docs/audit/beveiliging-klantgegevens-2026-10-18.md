@@ -457,3 +457,31 @@ Kees gaf akkoord; opgelost in commit c932276e:
 Nog open:
 - de punten Laag (7 t/m 12);
 - een eigen sessiegeheim en een eigen sessietabel voor het portaal. Dat besluit ligt bij Kees, omdat het alle klanten één keer uitlogt.
+
+## Status Laag-punten en sessiescheiding (18 oktober 2026, later)
+
+Kees gaf akkoord ("doe die punten ook"):
+- **7 Rapportbouwer:** klanten en bestuurders alleen met klantrecht, op de server én in het scherm.
+- **8 Back-ups:**
+  - alle back-uproutes zijn nu alleen voor beheerders; het back-upvenster was dat al;
+  - een back-upmap binnen de applicatie mag alleen de map `backups` zijn, en dat wordt gecontroleerd bij opslaan én bij gebruik.
+- **9 Inlogslot:**
+  - het slot gaat per account én adres, na 5 fouten;
+  - over alle adressen samen gaat het slot na 25 fouten;
+  - een vreemde kan zo de beheerder niet meer buitensluiten;
+  - raden vanaf veel adressen wordt nog steeds afgeremd.
+- **10 Serverlog:**
+  - formulierinhoud en preview-tokens gaan niet meer naar de log;
+  - in de requestlog worden zoektermen gemaskeerd.
+- **11 `/uploads`:** alleen PDF's en afbeeldingen worden in de browser getoond; al het andere is een download met sandbox.
+- **12 Kleine punten:**
+  - het rijbewijs in het portaal krijgt dezelfde veilige headers als de andere portaalbestanden;
+  - de route `/object-storage/*` is weg;
+  - de hash van het km-wachtwoord gaat niet meer mee in gebruikersantwoorden;
+  - `setupAuth` koppelt nog maar één keer.
+- **Sessies:** het portaal heeft nu een eigen sessietabel (`portal_session`) en een eigen geheim, afgeleid van SESSION_SECRET. Alle klanten moeten na de update één keer opnieuw inloggen. Oude portaalsessies worden bij de start uit `session` verwijderd.
+
+Bewust niet gewijzigd:
+- **Foutteksten naar de browser:** ruwe fouten gaan al alleen naar de log; alleen bewuste meldingen gaan naar de browser.
+- **Notities van een bestuurder:** dat veld is gedeeld. De klant ziet en bewerkt het in het portaal. Zet daar dus geen interne opmerkingen in.
+- **Tweestaps-login voor medewerkers:** dat is een groter stuk werk en een eigen besluit.

@@ -105,7 +105,8 @@ describe("FIX-J — no endpoint answers an anonymous request", () => {
   });
 
   it("BUG-051: /object-storage/* refuses an anonymous caller", async () => {
+    // Security review 2026-10-18: the route is gone altogether; nothing is served from there.
     const res = await anon.get("/object-storage/anything");
-    expect(res.status).toBe(401);
+    expect(res.status).not.toBe(200);
   });
 });

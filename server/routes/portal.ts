@@ -701,7 +701,8 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     const driver = await portalStorage.getDriverForCustomer(id, ctx.customerId);
     const file = driver?.licenseFilePath ? resolveDocumentFilePath(driver.licenseFilePath) : null;
     if (!driver || !file) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "No licence file");
-    res.setHeader("Content-Disposition", `inline; filename="${sanitizeFilename(path.basename(file))}"`);
-    fs.createReadStream(file).pipe(res);
+    // Security review 2026-10-18 (Laag 12): the same safe headers as every other portal file (type from the name, nosniff, sandbox).
+    setSafeFileHeaders(res, null, file, true, sanitizeFilename(path.basename(file)));
+    streamFile(file, res);
   });
 }

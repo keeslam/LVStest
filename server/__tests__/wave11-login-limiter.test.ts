@@ -19,7 +19,8 @@
  *      hop the header is ignored entirely.
  *   3. IPv6 keys go through the library's own `ipKeyGenerator`, so the
  *      ERR_ERL_KEY_GEN_IPV6 validation is satisfied.
- *   4. The account lockout stays per account, whatever address it comes from.
+ *   4. The account lockout counts per account and address, with an account-wide ceiling over all
+ *      addresses together (security review 2026-10-18, Laag 9).
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { like } from "drizzle-orm";
@@ -34,6 +35,7 @@ import {
   recordLoginAttempt,
   checkAccountLockout,
   LOCKOUT_THRESHOLD,
+  ACCOUNT_WIDE_LOCKOUT_THRESHOLD,
 } from "../middleware/security/rateLimiter";
 import { makeApp, cleanupFixtureUsers } from "./helpers/app";
 import request from "supertest";
@@ -138,12 +140,23 @@ describe("WAVE 11 / BUG-161 — the lockout stays per account", () => {
     await db.delete(loginAttempts).where(like(loginAttempts.username, `${USER_PREFIX}%`));
   });
 
-  it("locks the account after the threshold even when every attempt claims a different address", async () => {
+  it("locks the address that guessed, not the owner somewhere else", async () => {
+    const own = `${username}-a`;
     for (let i = 0; i < LOCKOUT_THRESHOLD; i++) {
-      await recordLoginAttempt(username, `198.51.100.${i + 1}`, "vitest", false, "invalid_credentials");
+      await recordLoginAttempt(own, "198.51.100.7", "vitest", false, "invalid_credentials");
     }
-    const status = await checkAccountLockout(username, "198.51.100.250");
+    expect((await checkAccountLockout(own, "198.51.100.7")).locked).toBe(true);
+    // Security review 2026-10-18 (Laag 9): a stranger failing five times no longer keeps the account shut for its owner.
+    expect((await checkAccountLockout(own, "203.0.113.20")).locked).toBe(false);
+  });
+
+  it("still locks the account everywhere when the guessing is spread over many addresses", async () => {
+    const spread = `${username}-b`;
+    for (let i = 0; i < ACCOUNT_WIDE_LOCKOUT_THRESHOLD; i++) {
+      await recordLoginAttempt(spread, `198.51.100.${i + 1}`, "vitest", false, "invalid_credentials");
+    }
+    const status = await checkAccountLockout(spread, "198.51.100.250");
     expect(status.locked).toBe(true);
-    expect(status.attemptsCount).toBeGreaterThanOrEqual(LOCKOUT_THRESHOLD);
+    expect(status.attemptsCount).toBeGreaterThanOrEqual(ACCOUNT_WIDE_LOCKOUT_THRESHOLD);
   });
 });

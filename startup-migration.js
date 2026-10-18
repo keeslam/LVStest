@@ -2073,6 +2073,21 @@ async function runMigrations() {
         acked_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )`);
     await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS portal_document_acks_document_idx ON portal_document_acks (document_id)`);
+    // Security review 2026-10-18: portal sessions get a table of their own (server/portal-auth.ts,
+    // ensurePortalSessionTable). Own index names: connect-pg-simple's would collide with the staff table.
+    await db.execute(sql.raw(`CREATE TABLE IF NOT EXISTS portal_session (
+        sid varchar NOT NULL COLLATE "default" PRIMARY KEY,
+        sess json NOT NULL,
+        expire timestamptz(6) NOT NULL
+      )`));
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS portal_session_expire_idx ON portal_session (expire)`);
+    // Portal sessions written before the split are of no use any more; they leave the staff table.
+    // Guarded: on a fresh database the session table does not exist yet, and a failure here would stop the whole migration.
+    await db.execute(sql.raw(`DO $$ BEGIN
+      IF to_regclass('public.session') IS NOT NULL THEN
+        DELETE FROM session WHERE sess::jsonb -> 'passport' -> 'user' ->> 'kind' = 'portal';
+      END IF;
+    END $$`));
     // Kees, 2026-10-18: contracts signed in the portal. Written out here (not left to the manifest
     // sync) for the unique index: it is what stops two people signing the same contract at once.
     await createTableIfNotExists('portal_contract_signatures', `

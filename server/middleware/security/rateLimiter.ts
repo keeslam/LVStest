@@ -71,8 +71,32 @@ export function loginLimiterKey(req: Request): string {
 
 /** How long a burst of failures keeps an account locked. */
 export const LOCKOUT_WINDOW_MINUTES = 15;
-/** Failures inside the window that lock the account. */
+/** Failures inside the window, from one address, that lock the account for that address. */
 export const LOCKOUT_THRESHOLD = 5;
+/**
+ * Failures inside the window from all addresses together that lock the account everywhere.
+ *
+ * Security review 2026-10-18 (Laag 9): with one count per account, anyone who knew a user name
+ * (say "admin") could keep that account locked for its owner by failing five times every quarter
+ * of an hour. The lock is now per account *and* address, so a stranger only locks himself out;
+ * this higher account-wide ceiling still stops guessing spread over many addresses (BUG-161).
+ */
+export const ACCOUNT_WIDE_LOCKOUT_THRESHOLD = 25;
+
+/** The SELECT list both lockout checks share: failures in total, from this address, and seconds left. */
+function lockoutCounts(ipAddress: string) {
+  return {
+    failedCount: sql<number>`count(*)::int`,
+    fromAddress: sql<number>`(count(*) filter (where ${loginAttempts.ipAddress} = ${ipAddress}))::int`,
+    remainingSeconds: sql<number>`
+      coalesce(
+        ceil(
+          extract(epoch from (min(${loginAttempts.attemptedAt}) + interval '${sql.raw(String(LOCKOUT_WINDOW_MINUTES))} minutes' - now()))
+        ),
+        0
+      )::int`,
+  };
+}
 
 /**
  * General API rate limiter.
@@ -217,20 +241,11 @@ export const portalActivateLimiter = createAuthLimiter({
  */
 export async function checkAccountLockout(
   username: string,
-  _ipAddress: string
+  ipAddress: string
 ): Promise<{ locked: boolean; remainingTime?: number; attemptsCount?: number }> {
   try {
     const [row] = await db
-      .select({
-        failedCount: sql<number>`count(*)::int`,
-        remainingSeconds: sql<number>`
-          coalesce(
-            ceil(
-              extract(epoch from (min(${loginAttempts.attemptedAt}) + interval '${sql.raw(String(LOCKOUT_WINDOW_MINUTES))} minutes' - now()))
-            ),
-            0
-          )::int`,
-      })
+      .select(lockoutCounts(ipAddress))
       .from(loginAttempts)
       .where(
         and(
@@ -241,8 +256,9 @@ export async function checkAccountLockout(
       );
 
     const failedCount = Number(row?.failedCount ?? 0);
+    const fromAddress = Number(row?.fromAddress ?? 0);
 
-    if (failedCount >= LOCKOUT_THRESHOLD) {
+    if (fromAddress >= LOCKOUT_THRESHOLD || failedCount >= ACCOUNT_WIDE_LOCKOUT_THRESHOLD) {
       return {
         locked: true,
         remainingTime: Math.max(0, Number(row?.remainingSeconds ?? 0)),
@@ -320,16 +336,7 @@ export async function reserveLoginAttempt(
         .returning({ id: loginAttempts.id });
 
       const [row] = await tx
-        .select({
-          failedCount: sql<number>`count(*)::int`,
-          remainingSeconds: sql<number>`
-            coalesce(
-              ceil(
-                extract(epoch from (min(${loginAttempts.attemptedAt}) + interval '${sql.raw(String(LOCKOUT_WINDOW_MINUTES))} minutes' - now()))
-              ),
-              0
-            )::int`,
-        })
+        .select(lockoutCounts(ipAddress))
         .from(loginAttempts)
         .where(
           and(
@@ -340,11 +347,12 @@ export async function reserveLoginAttempt(
         );
 
       const failedCount = Number(row?.failedCount ?? 0);
+      const fromAddress = Number(row?.fromAddress ?? 0);
       return {
         attemptId: inserted?.id ?? null,
         // This request's own row is already counted, so the threshold is
         // crossed on the attempt *after* LOCKOUT_THRESHOLD failures.
-        locked: failedCount > LOCKOUT_THRESHOLD,
+        locked: fromAddress > LOCKOUT_THRESHOLD || failedCount > ACCOUNT_WIDE_LOCKOUT_THRESHOLD,
         remainingTime: Math.max(0, Number(row?.remainingSeconds ?? 0)),
         attemptsCount: failedCount,
       };

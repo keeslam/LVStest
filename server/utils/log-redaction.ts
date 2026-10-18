@@ -21,3 +21,25 @@ export function redactForLog(value: any, depth = 0): any {
   }
   return out;
 }
+
+/**
+ * Security review 2026-10-18 (Laag 10): the request log keeps the query string (which filter, which
+ * page) but not what people typed. A search for a customer's name, e-mail address or phone number
+ * used to end up in the server log verbatim. Numbers, dates, true/false and short plain words
+ * (status=booked, sort=desc) stay; every other value becomes "***".
+ */
+export function redactQueryForLog(url: string): string {
+  const q = url.indexOf("?");
+  if (q < 0) return url;
+  const path = url.slice(0, q);
+  const params = new URLSearchParams(url.slice(q + 1));
+  const kept: string[] = [];
+  for (const [key, value] of params) {
+    const plain = /^-?\d+(\.\d+)?$/.test(value)
+      || /^\d{4}-\d{2}-\d{2}([T ][\d:.]+Z?)?$/.test(value)
+      || /^(true|false)$/i.test(value)
+      || (/^[a-z_]{1,20}$/.test(value) && !/(search|query|^q$|name|email|mail|phone|tel|plate|kenteken|zoek)/i.test(key));
+    kept.push(`${encodeURIComponent(key)}=${plain ? encodeURIComponent(value) : "***"}`);
+  }
+  return kept.length ? `${path}?${kept.join("&")}` : path;
+}

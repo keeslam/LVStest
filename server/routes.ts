@@ -1028,7 +1028,6 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Create vehicle
   app.post("/api/vehicles", hasPermission(UserPermission.MANAGE_VEHICLES), async (req: Request, res: Response) => {
     try {
-      console.log("Received vehicle data:", JSON.stringify(req.body));
       
       // Check if required fields are present
       if (!req.body.licensePlate || !req.body.brand || !req.body.model) {
@@ -1542,7 +1541,6 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(400).json({ message: "Invalid vehicle ID" });
       }
       
-      console.log("Received vehicle update data:", JSON.stringify(req.body));
 
       // Create a sanitized copy of the request body
       const sanitizedData = { ...req.body };
@@ -3481,7 +3479,6 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
       }
       
-      console.log('Parsed bodyData:', bodyData);
       
       // Convert string fields to the correct types
       if (bodyData.vehicleId) bodyData.vehicleId = parseInt(bodyData.vehicleId);
@@ -3498,7 +3495,6 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
       }
       
-      console.log('After conversions - driverId type:', typeof bodyData.driverId, 'value:', bodyData.driverId);
       
       // Convert boolean fields from strings
       if (bodyData.placeholderSpare !== undefined) {
@@ -3811,7 +3807,6 @@ export async function registerRoutes(app: Express): Promise<void> {
             
             // Delete the preview token
             previewTokenService.delete(bodyData.contractPreviewToken);
-            console.log(`🗑️ Deleted preview token: ${bodyData.contractPreviewToken}`);
           }
         } catch (error) {
           console.error('Error finalizing contract from preview:', error);
@@ -3864,7 +3859,6 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Create maintenance with spare vehicle assignment
   app.post("/api/reservations/maintenance-with-spare", hasPermission(UserPermission.MANAGE_RESERVATIONS, UserPermission.MANAGE_MAINTENANCE), async (req: Request, res: Response) => {
     try {
-      console.log('Raw request body:', req.body);
       
       // Handle the case where multer wraps the JSON data
       let bodyData = req.body;
@@ -7551,7 +7545,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         userId: req.user!.id.toString(),
       });
 
-      console.log(`✅ Preview generated and stored with token: ${token}`);
+      console.log("✅ Contract preview generated"); // never the token itself: it opens the preview (security review 2026-10-18)
       
       // Return token and download URL
       res.json({
@@ -7580,7 +7574,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "Preview not found or expired" });
       }
 
-      console.log(`📄 Serving preview PDF for token: ${token}`);
+      console.log("📄 Serving contract preview");
       
       // Set headers for PDF download
       res.setHeader('Content-Type', 'application/pdf');
@@ -9029,25 +9023,8 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
-  // Serve object storage files (for template backgrounds)
-  app.get('/object-storage/*', requireAuth, async (req, res) => {
-    try {
-      const objectPath = req.path.replace('/object-storage', '');
-      console.log(`Serving object storage file: ${objectPath}`);
-      
-      const file = objectStorageService.getFile(objectPath);
-      const [exists] = await file.exists();
-      
-      if (!exists) {
-        return res.status(404).send('File not found in object storage');
-      }
-      
-      await objectStorageService.downloadObject(file, res);
-    } catch (error) {
-      console.error('Error serving object storage file:', error);
-      res.status(500).send('Error loading file from object storage');
-    }
-  });
+  // Security review 2026-10-18 (Laag 12): the /object-storage/* route (Replit object storage, inert on
+  // Coolify) is gone; it handed any object to any logged-in employee.
 
   // ============================================
   // VEHICLE TRANSPORT ROUTES (swap / tow / repossession / delivery jobs)

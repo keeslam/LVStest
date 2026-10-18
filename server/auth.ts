@@ -172,6 +172,12 @@ const credentialFailure = (reason: "unknown_user" | "wrong_password"): { message
   ({ message: INVALID_CREDENTIALS_MESSAGE, reason } as { message: string });
 
 export function setupAuth(app: Express) {
+  // Security review 2026-10-18 (Laag 12): index.ts and registerRoutes() both call this. The second
+  // call used to mount a second session store, Passport, CSRF pair and login routes, so every
+  // request loaded the staff session twice. Now the second call hands back the first result.
+  const existing = app.locals.staffAuth as { requireAuth: RequestHandler; sessionMiddleware: RequestHandler } | undefined;
+  if (existing) return existing;
+
   // Determine storage type based on storage implementation
   const useDatabase = usesDatabaseStorage(storage);
   
@@ -349,7 +355,7 @@ export function setupAuth(app: Express) {
       });
 
       // Return user without password (don't auto-login to preserve admin session)
-      const { password, ...userWithoutPassword } = user;
+      const { password, mileageOverridePasswordHash: _mileageOverrideHash, ...userWithoutPassword } = user;
       res.status(201).json(userWithoutPassword);
     } catch (error) {
       if (error instanceof Error && error.name === 'ZodError') {
@@ -503,7 +509,7 @@ export function setupAuth(app: Express) {
           });
           
           // Return user without password
-          const { password, ...userWithoutPassword } = user;
+          const { password, mileageOverridePasswordHash: _mileageOverrideHash, ...userWithoutPassword } = user;
           res.status(200).json({ ...userWithoutPassword, previousLoginAt: previousLoginAt ? previousLoginAt.toISOString() : null });
         });
       });
@@ -548,7 +554,7 @@ export function setupAuth(app: Express) {
     }
     
     // Return user without password
-    const { password, ...userWithoutPassword } = req.user as User;
+    const { password, mileageOverridePasswordHash: _mileageOverrideHash, ...userWithoutPassword } = req.user as User;
     res.json({ ...userWithoutPassword, previousLoginAt: (req.session as any)?.previousLoginAt ?? null });
   });
 
@@ -617,5 +623,7 @@ export function setupAuth(app: Express) {
   });
 
   // Return the auth middleware
-  return { requireAuth, sessionMiddleware };
+  const staffAuth = { requireAuth, sessionMiddleware };
+  app.locals.staffAuth = staffAuth;
+  return staffAuth;
 }

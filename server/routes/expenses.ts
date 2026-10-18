@@ -384,7 +384,6 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
       if (req.body.vehicleId) req.body.vehicleId = parseInt(req.body.vehicleId);
       // We don't convert amount because the schema now handles both string and number
       
-      console.log("Standard endpoint - data being passed to schema:", req.body);
       const expenseData = insertExpenseSchema.parse(req.body);
       
       // Add user tracking information
@@ -419,8 +418,6 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
   app.post("/api/expenses/with-receipt", hasPermission(UserPermission.MANAGE_EXPENSES), expenseReceiptUpload.single('receiptFile'), async (req, res) => {
     try {
       console.log("Handling expense with receipt upload");
-      console.log("Request body:", req.body);
-      console.log("File info:", req.file);
       
       // Post-upload validation if file was uploaded
       if (req.file) {
@@ -439,7 +436,6 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
       if (req.body.vehicleId) req.body.vehicleId = parseInt(req.body.vehicleId);
       // We don't convert amount because the schema now handles both string and number
       
-      console.log("Data being passed to schema:", req.body);
       const expenseData = insertExpenseSchema.parse(req.body);
       console.log("Parsed expense data:", expenseData);
       
@@ -505,7 +501,6 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
       if (req.body.vehicleId) req.body.vehicleId = parseInt(req.body.vehicleId);
       // We don't convert amount because the schema now handles both string and number
       
-      console.log("Update data being passed to schema:", req.body);
       const expenseData = insertExpenseSchema.parse(req.body);
       
       // Add additional metadata from the uploaded file if present
@@ -568,7 +563,6 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
       if (req.body.vehicleId) req.body.vehicleId = parseInt(req.body.vehicleId);
       // We don't convert amount because the schema now handles both string and number
       
-      console.log("Update data being passed to schema:", req.body);
       const expenseData = insertExpenseSchema.parse(req.body);
       
       // Add additional metadata from the uploaded file if present

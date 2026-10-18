@@ -18,7 +18,7 @@ import {
 import { portalStorage, type PortalScope } from "./services/portal-storage";
 import { sendPortalInvite, sendEmailChangeMail, sendEmailChangedNotice, sendNewDeviceMail } from "./services/portal-mail";
 import { getPortalConfig } from "./services/portal-config";
-import { randomBytes } from "crypto";
+import { createHmac, randomBytes } from "crypto";
 import { notifyStaffOfPortalEvent } from "./services/portal-notifications";
 import { hashInviteToken } from "./services/portal-tokens";
 import { ACCOUNT_MAIL_KEYS, accountMailEnabled } from "../shared/portal-mail-preferences";
@@ -208,15 +208,49 @@ export function requirePortalRole(role: "admin"): RequestHandler {
 }
 
 /**
- * BUG-091 - the portal realm stores its sessions in the shared connect-pg-simple
+ * Security review 2026-10-18: the portal keeps its sessions in a table of its own, signed with a
+ * secret of its own (derived from SESSION_SECRET, so no new setting is needed). Before, staff and
+ * portal sessions shared the table `session` and one secret, so a customer could hand his
+ * `portal.sid` value to the staff side under the name `connect.sid` (the Socket.IO handshake let
+ * him in). Now one realm's cookie cannot even be loaded by the other. Switching over logs every
+ * customer out once.
+ */
+export const PORTAL_SESSION_TABLE = "portal_session";
+/**
+ * Creates the portal session table once per process. Not left to connect-pg-simple: its table.sql
+ * names the primary key and index after "session", and those names already belong to the staff table.
+ * startup-migration.js runs the same statement in production.
+ */
+let portalSessionTableReady: Promise<void> | null = null;
+export function ensurePortalSessionTable(): Promise<void> {
+  if (!portalSessionTableReady) {
+    portalSessionTableReady = pool.query(`CREATE TABLE IF NOT EXISTS portal_session (
+    sid varchar NOT NULL COLLATE "default" PRIMARY KEY,
+    sess json NOT NULL,
+    expire timestamptz(6) NOT NULL
+  )`)
+      .then(() => pool.query(`CREATE INDEX IF NOT EXISTS portal_session_expire_idx ON portal_session (expire)`))
+      .then(() => undefined)
+      .catch((error) => { portalSessionTableReady = null; throw error; });
+  }
+  return portalSessionTableReady;
+}
+
+export function portalSessionSecret(): string {
+  return createHmac("sha256", resolveSessionSecret()).update("lvstest-portal-session-v1").digest("hex");
+}
+
+/**
+ * BUG-091 - the portal realm stores its sessions in its own connect-pg-simple
  * table, with the passport payload in `sess`. Deleting every row that belongs to
  * this portal user (except the caller's own) is what actually ends their other
  * sessions: the cookie still exists in those browsers, but the store no longer
  * has anything to load for it.
  */
 export async function revokePortalSessionsExcept(portalUserId: number, exceptSessionId?: string): Promise<number> {
+  await ensurePortalSessionTable();
   const result = await pool.query(
-    `delete from session
+    `delete from ${PORTAL_SESSION_TABLE}
        where sess -> 'passport' -> 'user' ->> 'kind' = 'portal'
          and sess -> 'passport' -> 'user' ->> 'id' = $1
          and ($2::text is null or sid <> $2)`,
@@ -238,11 +272,12 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
     // with a value that is in this repository. resolveSessionSecret() is the
     // staff realm's resolver: a configured secret, or a random one with a loud
     // warning - never a known constant.
-    secret: resolveSessionSecret(),
+    // Its own secret and its own table (security review 2026-10-18), see PORTAL_SESSION_TABLE.
+    secret: portalSessionSecret(),
     resave: false,
     saveUninitialized: false,
     rolling: true,
-    store: new PostgresSessionStore({ pool, createTableIfMissing: true }),
+    store: new PostgresSessionStore({ pool, tableName: PORTAL_SESSION_TABLE, createTableIfMissing: false }),
     cookie: {
       maxAge: PORTAL_SESSION_MAX_AGE,
       secure: useSecureCookies(),
@@ -280,7 +315,9 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
     }
   });
 
-  app.use("/api/portal", portalSession, portalPassport.initialize(), portalPassport.session(), csrf.attachCsrfToken, csrf.csrfProtection);
+  // The first request waits until the session table exists (see ensurePortalSessionTable).
+  const portalSessionTable: RequestHandler = (_req, _res, next) => { ensurePortalSessionTable().then(() => next(), next); };
+  app.use("/api/portal", portalSessionTable, portalSession, portalPassport.initialize(), portalPassport.session(), csrf.attachCsrfToken, csrf.csrfProtection);
   // Reads are free; every write is counted per account (see portalWriteLimiter).
   app.use("/api/portal", (req, res, next) => (["GET", "HEAD", "OPTIONS"].includes(req.method) ? next() : portalWriteLimiter(req, res, next)));
 

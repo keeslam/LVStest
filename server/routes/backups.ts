@@ -3,7 +3,15 @@ import path from "path";
 import fs from "fs";
 import { UserPermission } from "../../shared/schema";
 import { backupService } from "../backupService";
-import { hasPermission } from "../middleware/permissions.js";
+import { hasPermission, requireAdmin } from "../middleware/permissions.js";
+import { backupLocalPathProblem } from "../utils/backup-path-guard";
+
+/**
+ * Security review 2026-10-18 (Laag 8): a backup is the whole database, customers, password hashes
+ * and all, and a restore can make anyone anything. The backup screen in the app has only ever been
+ * shown to administrators; the server now says the same, on top of manage_backups.
+ */
+const backupAdminOnly = requireAdmin;
 import { getUploadsDir } from "../../shared/paths";
 import { validateAfterUpload } from "../utils/security/fileUploadSecurity";
 import type { Express } from "express";
@@ -112,7 +120,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   // ==================== BACKUP SETTINGS ROUTES ====================
   
   // Get backup settings
-  app.get("/api/backup-settings", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.get("/api/backup-settings", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, async (req, res) => {
     try {
       const settings = await storage.getBackupSettings();
       if (!settings) {
@@ -126,8 +134,10 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   });
 
   // Create or update backup settings
-  app.post("/api/backup-settings", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.post("/api/backup-settings", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, async (req, res) => {
     try {
+      const pathProblem = backupLocalPathProblem(req.body?.localPath);
+      if (pathProblem) return res.status(400).json({ error: pathProblem, code: "BACKUP_PATH_NOT_ALLOWED" });
       const currentUser = req.user as any;
       const settingsData = {
         ...req.body,
@@ -144,9 +154,11 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   });
 
   // Update backup settings
-  app.put("/api/backup-settings/:id", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.put("/api/backup-settings/:id", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const pathProblem = backupLocalPathProblem(req.body?.localPath);
+      if (pathProblem) return res.status(400).json({ error: pathProblem, code: "BACKUP_PATH_NOT_ALLOWED" });
       const currentUser = req.user as any;
       const settingsData = {
         ...req.body,
@@ -167,7 +179,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   // ==================== BACKUP ROUTES ====================
   
   // Simple download app data (database only)
-  app.get("/api/backups/download-data", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.get("/api/backups/download-data", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, async (req, res) => {
     // A-19-1: the dump is written into a private directory under the OS temp
     // dir (never inside the source tree) and removed in `finally`, whichever way
     // the request ends. Leftovers of older versions in <cwd>/temp are swept once.
@@ -221,7 +233,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   // tar failed, and answered `details: error.message`, which holds the whole
   // command line with the absolute server path. A failure now logs the detail
   // on the server and answers a fixed message plus a code.
-  app.get("/api/backups/download-code", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.get("/api/backups/download-code", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, async (req, res) => {
     const timestamp = new Date().toISOString().split('T')[0];
     // Excludes node_modules, .git, temp, backups, uploads, logs, env files, build output.
     const excludes = [
@@ -252,7 +264,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
    * needs the same guarantees, not a weaker copy of them (BUG-197, BUG-199,
    * BUG-221f).
    */
-  app.post("/api/backups/restore-data", hasPermission(UserPermission.MANAGE_BACKUPS), backupUpload.single('backup'), async (req, res) => {
+  app.post("/api/backups/restore-data", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, backupUpload.single('backup'), async (req, res) => {
     const cleanupUpload = async () => {
       if (req.file?.path) {
         try { await fs.promises.unlink(req.file.path); } catch { /* already gone */ }
@@ -396,7 +408,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
    *   3. Nothing calls `process.exit`. Whoever asked for the restore decides
    *      what to do with the staged tree.
    */
-  app.post("/api/backups/restore-code", hasPermission(UserPermission.MANAGE_BACKUPS), backupUpload.single('backup'), async (req, res) => {
+  app.post("/api/backups/restore-code", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, backupUpload.single('backup'), async (req, res) => {
     const cleanupUpload = async () => {
       if (req.file?.path) {
         try { await fs.promises.unlink(req.file.path); } catch { /* already gone */ }
@@ -476,7 +488,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   // A-19-2 / A-19-1: streamed, so the first byte leaves at once instead of after
   // the whole archive was built (17 s for 448 MB, which a proxy timeout can cut
   // off), and there is no archive file to leave behind.
-  app.get("/api/backups/download-files", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.get("/api/backups/download-files", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, async (req, res) => {
     const timestamp = new Date().toISOString().split('T')[0];
     const filename = `car-rental-files-${timestamp}.tar.gz`;
     const failure = { error: "Failed to download uploaded files", code: "BACKUP_DOWNLOAD_FAILED" };
@@ -512,7 +524,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
    * success. BUG-069: `tar -xzf … -C cwd` honours every path in an
    * operator-supplied archive.
    */
-  app.post("/api/backups/restore-files", hasPermission(UserPermission.MANAGE_BACKUPS), backupUpload.single('backup'), async (req, res) => {
+  app.post("/api/backups/restore-files", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, backupUpload.single('backup'), async (req, res) => {
     const cleanupUpload = async () => {
       if (req.file?.path) {
         try { await fs.promises.unlink(req.file.path); } catch { /* already gone */ }
@@ -585,7 +597,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   });
 
   // List available backups
-  app.get("/api/backups/list", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.get("/api/backups/list", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, async (req, res) => {
     try {
       const type = req.query.type as 'database' | 'files' | undefined;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
@@ -614,7 +626,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   // backupSettings.localPath and never consulted BACKUP_PATH, so every
   // automated backup 404'd once BACKUP_PATH was set, which is the only
   // protection this design offers against losing the server itself.
-  app.get("/api/backups/download/:filename", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.get("/api/backups/download/:filename", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, async (req, res) => {
     try {
       const { filename } = req.params;
 
@@ -668,7 +680,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   });
 
   // Get backup status
-  app.get("/api/backups/status", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.get("/api/backups/status", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, async (req, res) => {
     try {
       const status = await backupService.getStatus();
       // The stored failure text can hold a command line or a directory; the
@@ -681,7 +693,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   });
 
   // Get backup health (staleness) for UI warnings
-  app.get("/api/backups/health", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.get("/api/backups/health", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, async (req, res) => {
     try {
       // Use the OLDER of the two required types' last success: a healthy
       // database backup must not mask a files backup that has been failing
@@ -738,7 +750,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   });
 
   // List available backups
-  app.get("/api/backups", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.get("/api/backups", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, async (req, res) => {
     try {
       const type = req.query.type as 'database' | 'files' | undefined;
       const backups = await backupService.listBackups(type);
@@ -750,7 +762,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   });
 
   // Run backup manually
-  app.post("/api/backups/run", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.post("/api/backups/run", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, async (req, res) => {
     try {
       const result = await backupService.runBackup();
       res.json({
@@ -782,7 +794,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   });
 
   // Download backup file
-  app.get("/api/backups/download/:type/:filename", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.get("/api/backups/download/:type/:filename", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, async (req, res) => {
     try {
       const { type, filename } = req.params;
 
@@ -830,7 +842,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   });
 
   // Delete backup file
-  app.delete("/api/backups/:type/:filename", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.delete("/api/backups/:type/:filename", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, async (req, res) => {
     try {
       const { type, filename } = req.params;
 
@@ -856,7 +868,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   });
 
   // Cleanup old backups
-  app.post("/api/backups/cleanup", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.post("/api/backups/cleanup", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, async (req, res) => {
     try {
       await backupService.cleanupOldBackups();
       res.json({
@@ -870,7 +882,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   });
 
   // Upload backup file
-  app.post("/api/backups/upload", hasPermission(UserPermission.MANAGE_BACKUPS), backupUpload.single('backup'), async (req, res) => {
+  app.post("/api/backups/upload", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, backupUpload.single('backup'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "No backup file provided" });
@@ -986,7 +998,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   // ==================== BACKUP RESTORE ROUTES ====================
   
   // Restore database from backup
-  app.post("/api/backups/restore/database", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.post("/api/backups/restore/database", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, async (req, res) => {
     try {
       const { filename, confirmFilename } = req.body ?? {};
 
@@ -1037,7 +1049,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   });
 
   // Restore files from backup
-  app.post("/api/backups/restore/files", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.post("/api/backups/restore/files", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, async (req, res) => {
     try {
       // targetPath is intentionally NOT accepted from the request body.
       // restoreFiles archives getUploadsDir() for its safety backup but would
@@ -1078,7 +1090,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   });
 
   // Complete system restore (database + files)
-  app.post("/api/backups/restore/complete", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.post("/api/backups/restore/complete", hasPermission(UserPermission.MANAGE_BACKUPS), backupAdminOnly, async (req, res) => {
     try {
       const { databaseBackup, filesBackup, confirmDatabaseBackup, confirmFilesBackup } = req.body ?? {};
 

@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Play, Save, Trash2, X, Filter as FilterIcon, Download, Printer, Settings, BarChart3 } from "lucide-react";
 import { apiRequest, queryClient, invalidateByPrefix } from "@/lib/queryClient";
 import { UserPermission } from "@shared/schema";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { RequiresPermission } from "@/components/ui/requires-permission";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { downloadCsv } from "@/lib/csv";
@@ -46,6 +47,9 @@ interface SavedReport {
 export default function ReportBuilder() {
   const { t } = useTranslation("reports");
   const { toast } = useToast();
+  // Security review 2026-10-18 (Laag 7): customers and drivers are only offered with the customer right (the server checks too).
+  const canSeeCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
+  const offeredSources = DATA_SOURCES.filter((source) => canSeeCustomers || !["customers", "drivers"].includes(source.table));
   const [activeTab, setActiveTab] = useState<'builder' | 'saved'>('builder');
   
   const [reportName, setReportName] = useState('');
@@ -237,7 +241,7 @@ export default function ReportBuilder() {
                 <CardDescription>{t('reportBuilderPage.dataSourcesDescription')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {DATA_SOURCES.map(source => (
+                {offeredSources.map(source => (
                   <div key={source.id} className="space-y-2">
                     <div className="flex items-center gap-2">
                       <input

@@ -3,6 +3,22 @@ import { storage } from "../storage";
 import { ReportValidationError } from "../database-storage";
 import { UserPermission } from "../../shared/schema";
 import { hasPermission } from "../middleware/permissions.js";
+import { getDataSource } from "../../shared/report-builder-config";
+import { UserRole } from "../../shared/schema";
+
+/**
+ * Security review 2026-10-18 (Laag 7): names, e-mail addresses and phone numbers of customers and
+ * drivers are not report material for someone who may not open the customer screens. The report
+ * builder reads one data source per report, so the source decides.
+ */
+const PERSONAL_DATA_TABLES = new Set(["customers", "drivers"]);
+function mayReportOn(user: Express.User | undefined, dataSources: unknown): boolean {
+  const first = Array.isArray(dataSources) ? getDataSource(String(dataSources[0])) : undefined;
+  if (!first || !PERSONAL_DATA_TABLES.has(first.table)) return true;
+  if (user?.role === UserRole.ADMIN) return true;
+  const rights = user?.permissions ?? [];
+  return rights.includes(UserPermission.VIEW_CUSTOMERS) || rights.includes(UserPermission.MANAGE_CUSTOMERS);
+}
 import type { Express } from "express";
 import { buildMaintenanceCostReport } from "../utils/maintenance-costs";
 import { buildVehicleFinancials, buildMileagePerMonth, type DateRangeYmd } from "../utils/financial-reports";
@@ -115,6 +131,9 @@ export function registerReportRoutes(app: Express): void {
 
       if (!config.columns || config.columns.length === 0) {
         return res.status(400).json({ message: "No columns specified" });
+      }
+      if (!mayReportOn(req.user, config.dataSources)) {
+        return res.status(403).json({ message: "A report on customers or drivers needs the customer right", code: "CUSTOMER_RIGHT_REQUIRED" });
       }
 
       const results = await storage.executeReport(config);

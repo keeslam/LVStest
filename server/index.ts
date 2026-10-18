@@ -38,7 +38,7 @@ import { logStartupWarnings } from "./startup-checks";
 import { apiLimiter } from "./middleware/security/rateLimiter.js";
 import { mountCompression } from "./middleware/compression.js";
 import { startSessionCleanupScheduler } from "./utils/security/sessionManager.js";
-import { redactForLog } from "./utils/log-redaction.js";
+import { redactForLog, redactQueryForLog } from "./utils/log-redaction.js";
 
 // Graceful shutdown implementation
 let server: any = null;
@@ -318,7 +318,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   const requestPath = req.path;
   // Log the query string too. Without it a filtered list request and a full
   // one both read as "GET /api/vehicles", which makes log forensics guesswork.
-  const requestUrl = req.originalUrl || requestPath;
+  // Values a person typed (a name, an e-mail address in a search) are masked: redactQueryForLog.
+  const requestUrl = redactQueryForLog(req.originalUrl || requestPath);
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
   if (LOG_RESPONSE_BODIES) {

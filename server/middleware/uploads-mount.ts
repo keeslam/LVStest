@@ -31,6 +31,8 @@ import { getUploadsDir, getUploadsRoot } from "../../shared/paths";
  * without index.ts' listener and schedulers — mount the very same thing, and
  * so there is exactly one definition of where /uploads points.
  */
+const INLINE_EXTENSIONS = new Set([".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp"]);
+
 export function mountUploads(app: Express, requireAuth: RequestHandler): string {
   const uploadsPath = getUploadsDir();
   if (path.resolve(uploadsPath) !== getUploadsRoot()) {
@@ -42,7 +44,18 @@ export function mountUploads(app: Express, requireAuth: RequestHandler): string 
     "/uploads",
     requireAuth,
     hasPermission(UserPermission.MANAGE_DOCUMENTS),
-    express.static(uploadsPath)
+    express.static(uploadsPath, {
+      // Security review 2026-10-18 (Laag 11): the type follows the extension, but only a PDF or an
+      // image is shown in the browser; anything else (an old .html invoice, a CJIB .xml file) is a
+      // sandboxed download, so no stored file can ever run as a page of this application.
+      setHeaders(res, filePath) {
+        res.setHeader("X-Content-Type-Options", "nosniff");
+        if (!INLINE_EXTENSIONS.has(path.extname(filePath).toLowerCase())) {
+          res.setHeader("Content-Disposition", "attachment");
+          res.setHeader("Content-Security-Policy", "sandbox; default-src 'none'");
+        }
+      },
+    })
   );
   return uploadsPath;
 }

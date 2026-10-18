@@ -57,8 +57,6 @@ const AUTHENTICATED_ONLY_ROUTES = new Set([
   "GET /api/barcode-label-templates",
   "GET /api/barcode-label-templates/default",
   "GET /api/barcode-label-templates/:id",
-  // Inert Replit sidecar passthrough; requireAuth added by BUG-051.
-  "GET /object-storage/*",
 ]);
 
 interface Registration {

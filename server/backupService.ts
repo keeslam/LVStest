@@ -18,6 +18,9 @@ import {
   inspectFilesArchive, extractFilesArchive, makeRestoreTempDir, safeUnlink,
   backupTempDir, cleanupStaleTempFiles, gunzipTo, isGzip, pgTool, restoreToolsAvailable,
 } from './restoreSafety';
+import { backupLocalPathProblem } from "./utils/backup-path-guard";
+
+let warnedAboutLocalPath = false;
 
 export interface BackupManifest {
   timestamp: string;
@@ -58,7 +61,14 @@ export class BackupService {
    * redeploy.
    */
   resolveBackupPath(settings: { localPath?: string | null } | null): string {
-    return getBackupPathFromEnv() || settings?.localPath || join(process.cwd(), 'backups');
+    // Security review 2026-10-18 (Laag 8): a stored folder the guard refuses (for instance inside the
+    // served application folder) is ignored, also when it was saved before the guard existed.
+    const stored = settings?.localPath && !backupLocalPathProblem(settings.localPath) ? settings.localPath : undefined;
+    if (settings?.localPath && !stored && !warnedAboutLocalPath) {
+      warnedAboutLocalPath = true;
+      console.warn(`Backup folder ${settings.localPath} is not allowed (${backupLocalPathProblem(settings.localPath)}); using the default`);
+    }
+    return getBackupPathFromEnv() || stored || join(process.cwd(), 'backups');
   }
 
   /**
