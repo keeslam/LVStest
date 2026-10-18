@@ -148,7 +148,30 @@
     "ackedBy": "De acordo por {{name}} em {{date}}",
     "ackConfirmTitle": "Dar o seu acordo?",
     "ackConfirmAction": "Visto e de acordo",
-    "contractNo": "contrato {{nr}}"
+    "contractNo": "contrato {{nr}}",
+    "signAction": "Assinar",
+    "awaitingSignature": "A aguardar a assinatura de um administrador",
+    "signedBy": "Assinado por {{name}} em {{date}}",
+    "superseded": "Substituído por uma versão mais recente",
+    "signedContract": "Contrato assinado",
+    "sign": {
+      "title": "Assinar contrato",
+      "intro": "Leia o contrato, escreva o seu nome e assine. Depois enviamos o contrato assinado para o nosso escritório.",
+      "step1": "1. Leia o contrato",
+      "openFull": "Abrir numa janela grande",
+      "previewTitle": "Contrato",
+      "step2": "2. O seu nome",
+      "step3": "3. A sua assinatura",
+      "clear": "Recomeçar",
+      "padLabel": "Caixa para assinar",
+      "padHint": "Assine na caixa com o dedo, uma caneta ou o rato.",
+      "agree": "Li o contrato e concordo. Assino em nome da minha empresa.",
+      "recorded": "Registamos o seu nome, a data e a hora, o seu endereço IP e o browser, e uma impressão digital do contrato. Depois de assinado, o contrato já não pode mudar.",
+      "submit": "Assinar e enviar",
+      "done": "O contrato foi assinado. Encontra a cópia assinada nos seus documentos.",
+      "adminOnly": "Só um administrador da sua empresa pode assinar este contrato.",
+      "notSignable": "Este contrato já não pode ser assinado."
+    }
   },
   "drivers": {
     "title": "Condutores",
@@ -306,7 +329,11 @@
     "PORTAL_MAINTENANCE_TOO_LATE": "Esta manutenção começa dentro de 48 horas e já não pode ser alterada através do portal. Telefone para a Lam Groep.",
     "PORTAL_MAINTENANCE_WEEKEND": "Escolha um dia útil: a oficina está fechada ao fim de semana.",
     "PORTAL_RATE_LIMITED": "Demasiados pedidos num curto espaço de tempo. Tente novamente dentro de um quarto de hora.",
-    "PORTAL_TOO_MANY_OPEN": "Tem já muitos pedidos em aberto. Aguarde que alguns sejam tratados ou retire um."
+    "PORTAL_TOO_MANY_OPEN": "Tem já muitos pedidos em aberto. Aguarde que alguns sejam tratados ou retire um.",
+    "PORTAL_ALREADY_SIGNED": "Este contrato já foi assinado.",
+    "PORTAL_NOT_SIGNABLE": "Existe uma versão mais recente deste contrato ou a reserva está encerrada. Atualize a página.",
+    "PORTAL_DOCUMENT_CHANGED": "O contrato acabou de mudar. Abra-o novamente e assine.",
+    "PORTAL_INVALID_SIGNATURE": "Assine primeiro na caixa."
   },
   "admin": {
     "navLabel": "Portal do cliente",
@@ -1382,6 +1409,15 @@
       },
       "request_message": {
         "title": "Nova mensagem no pedido n.º {{id}}"
+      },
+      "contract_to_sign": {
+        "title": "Contrato pronto para assinar",
+        "description": "Tem um contrato pronto para assinar ({{fileName}}), para o seu aluguer de {{period}}.",
+        "descriptionNoPeriod": "Tem um contrato pronto para assinar ({{fileName}})."
+      },
+      "contract_signed": {
+        "title": "Contrato assinado: {{plate}}",
+        "description": "{{signer}} assinou o contrato em {{at}}. O contrato assinado está nos seus documentos."
       }
     },
     "words": {

@@ -3961,6 +3961,130 @@
     ]
   },
   {
+    "name": "portal_contract_signatures",
+    "columns": [
+      {
+        "name": "id",
+        "type": "serial",
+        "notNull": true,
+        "primary": true,
+        "default": null
+      },
+      {
+        "name": "document_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "signed_document_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "reservation_id",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "customer_id",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "portal_user_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "signer_name",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "signer_email",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "signed_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": "now()"
+      },
+      {
+        "name": "ip",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "user_agent",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "language",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "consent_version",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "original_file_name",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "original_version",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "original_sha256",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "signed_sha256",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      }
+    ]
+  },
+  {
     "name": "portal_customer_settings",
     "columns": [
       {

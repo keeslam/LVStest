@@ -27,6 +27,7 @@ import { formatDateForLanguage } from "../utils/locale-format";
 import { PORTAL_MAIL_PHRASES } from "./portal-mail-texts";
 import type { SupportedLanguage } from "../../shared/languages";
 import { isContractDocument, isDamageCheckDocument } from "../../shared/document-types";
+import { isUnsignedContractType } from "../../shared/contract-signing";
 import { portalCompanyName } from "./company-name";
 import { vehicleName } from "../../shared/vehicle-name";
 
@@ -212,11 +213,16 @@ export async function onDocumentAvailable(doc: Document | null | undefined): Pro
 
     const car = await describeVehicle(rental.vehicleId);
     const when = period(rental.startDate, rental.endDate);
+    // Kees, 2026-10-18: an unsigned contract can be signed in the portal as soon as it exists, so the
+    // notice says so (only portal administrators see this kind; see notificationViewer in routes/portal.ts).
+    const toSign = isUnsignedContractType(doc.documentType);
     const created = await customerNotifications.notify({
       customerId: rental.customerId,
-      type: "document_available",
-      title: `Nieuw document: ${label}`,
-      description: `Er staat een nieuw document voor u klaar in het klantenportaal: ${label} (${doc.fileName})${when ? `, bij uw huur van ${when}` : ""}. U kunt het daar bekijken en downloaden.`,
+      type: toSign ? "contract_to_sign" : "document_available",
+      title: toSign ? "Contract klaar om te tekenen" : `Nieuw document: ${label}`,
+      description: toSign
+        ? `Er staat een contract voor u klaar om te tekenen in het klantenportaal (${doc.fileName})${when ? `, bij uw huur van ${when}` : ""}.`
+        : `Er staat een nieuw document voor u klaar in het klantenportaal: ${label} (${doc.fileName})${when ? `, bij uw huur van ${when}` : ""}. U kunt het daar bekijken en downloaden.`,
       params: {
         documentKind: isContractDocument(doc.documentType) ? "contract" : "damageCheck",
         fileName: doc.fileName, startDate: rental.startDate ?? null, endDate: rental.endDate ?? null,

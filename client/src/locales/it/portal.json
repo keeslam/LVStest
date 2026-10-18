@@ -148,7 +148,30 @@
     "ackedBy": "Approvato da {{name}} il {{date}}",
     "ackConfirmTitle": "Dare l’approvazione?",
     "ackConfirmAction": "Visto e approvato",
-    "contractNo": "contratto {{nr}}"
+    "contractNo": "contratto {{nr}}",
+    "signAction": "Firmare",
+    "awaitingSignature": "In attesa della firma di un amministratore",
+    "signedBy": "Firmato da {{name}} il {{date}}",
+    "superseded": "Sostituito da una versione più recente",
+    "signedContract": "Contratto firmato",
+    "sign": {
+      "title": "Firmare il contratto",
+      "intro": "Legga il contratto, inserisca il Suo nome e firmi. Poi inviamo il contratto firmato al nostro ufficio.",
+      "step1": "1. Legga il contratto",
+      "openFull": "Apri in una finestra grande",
+      "previewTitle": "Contratto",
+      "step2": "2. Il Suo nome",
+      "step3": "3. La Sua firma",
+      "clear": "Ricomincia",
+      "padLabel": "Riquadro per firmare",
+      "padHint": "Firmi nel riquadro con il dito, una penna o il mouse.",
+      "agree": "Ho letto il contratto e sono d'accordo. Firmo a nome della mia azienda.",
+      "recorded": "Registriamo il Suo nome, la data e l'ora, il Suo indirizzo IP e il browser, e un'impronta digitale del contratto. Dopo la firma il contratto non può più cambiare.",
+      "submit": "Firma e invia",
+      "done": "Il contratto è firmato. Trova la copia firmata tra i Suoi documenti.",
+      "adminOnly": "Solo un amministratore della Sua azienda può firmare questo contratto.",
+      "notSignable": "Questo contratto non può più essere firmato."
+    }
   },
   "drivers": {
     "title": "Conducenti",
@@ -306,7 +329,11 @@
     "PORTAL_MAINTENANCE_TOO_LATE": "Questa manutenzione inizia entro 48 ore e non può più essere modificata tramite il portale. Telefoni a Lam Groep.",
     "PORTAL_MAINTENANCE_WEEKEND": "Scelga un giorno feriale: l’officina è chiusa nel fine settimana.",
     "PORTAL_RATE_LIMITED": "Troppe richieste in poco tempo. Riprovi tra un quarto d’ora.",
-    "PORTAL_TOO_MANY_OPEN": "Ha già molte richieste in sospeso. Attenda che alcune vengano gestite oppure ne ritiri una."
+    "PORTAL_TOO_MANY_OPEN": "Ha già molte richieste in sospeso. Attenda che alcune vengano gestite oppure ne ritiri una.",
+    "PORTAL_ALREADY_SIGNED": "Questo contratto è già stato firmato.",
+    "PORTAL_NOT_SIGNABLE": "Esiste una versione più recente di questo contratto oppure la prenotazione è chiusa. Aggiorni la pagina.",
+    "PORTAL_DOCUMENT_CHANGED": "Il contratto è appena cambiato. Lo apra di nuovo e poi firmi.",
+    "PORTAL_INVALID_SIGNATURE": "Firmi prima nel riquadro."
   },
   "admin": {
     "navLabel": "Portale clienti",
@@ -1382,6 +1409,15 @@
       },
       "request_message": {
         "title": "Nuovo messaggio sulla richiesta n. {{id}}"
+      },
+      "contract_to_sign": {
+        "title": "Contratto pronto da firmare",
+        "description": "Un contratto è pronto per la Sua firma ({{fileName}}), per il noleggio del {{period}}.",
+        "descriptionNoPeriod": "Un contratto è pronto per la Sua firma ({{fileName}})."
+      },
+      "contract_signed": {
+        "title": "Contratto firmato: {{plate}}",
+        "description": "{{signer}} ha firmato il contratto il {{at}}. Il contratto firmato si trova tra i Suoi documenti."
       }
     },
     "words": {

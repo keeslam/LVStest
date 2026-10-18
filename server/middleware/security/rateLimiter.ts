@@ -162,6 +162,16 @@ export const portalEmailChangeLimiter = rateLimit({
   keyGenerator: portalKey,
 });
 
+/** Signing a contract builds a PDF and mails: a handful per hour per account covers a fleet of contracts. */
+export const portalSignLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  message: { code: 'PORTAL_RATE_LIMITED', message: 'Too many requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: portalKey,
+});
+
 /** Staff login. A successful login does not consume budget. */
 export const loginLimiter = createAuthLimiter({
   max: 5,

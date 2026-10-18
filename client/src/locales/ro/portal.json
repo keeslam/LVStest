@@ -148,7 +148,30 @@
     "ackedBy": "De acord: {{name}}, la {{date}}",
     "ackConfirmTitle": "Vă exprimați acordul?",
     "ackConfirmAction": "Citit și de acord",
-    "contractNo": "contractul {{nr}}"
+    "contractNo": "contractul {{nr}}",
+    "signAction": "Semnați",
+    "awaitingSignature": "Se așteaptă semnătura unui administrator",
+    "signedBy": "Semnat de {{name}} la {{date}}",
+    "superseded": "Înlocuit de o versiune mai nouă",
+    "signedContract": "Contract semnat",
+    "sign": {
+      "title": "Semnarea contractului",
+      "intro": "Citiți contractul, introduceți numele și semnați. Apoi trimitem contractul semnat la biroul nostru.",
+      "step1": "1. Citiți contractul",
+      "openFull": "Deschideți într-o fereastră mare",
+      "previewTitle": "Contract",
+      "step2": "2. Numele dumneavoastră",
+      "step3": "3. Semnătura dumneavoastră",
+      "clear": "De la capăt",
+      "padLabel": "Caseta pentru semnătură",
+      "padHint": "Semnați în casetă cu degetul, un creion sau mouse-ul.",
+      "agree": "Am citit contractul și sunt de acord. Semnez în numele companiei mele.",
+      "recorded": "Înregistrăm numele dumneavoastră, data și ora, adresa IP și browserul, precum și o amprentă digitală a contractului. După semnare, contractul nu se mai poate schimba.",
+      "submit": "Semnați și trimiteți",
+      "done": "Contractul a fost semnat. Găsiți exemplarul semnat la documentele dumneavoastră.",
+      "adminOnly": "Doar un administrator al companiei dumneavoastră poate semna acest contract.",
+      "notSignable": "Acest contract nu mai poate fi semnat."
+    }
   },
   "drivers": {
     "title": "Șoferi",
@@ -306,7 +329,11 @@
     "PORTAL_MAINTENANCE_TOO_LATE": "Această mentenanță începe în mai puțin de 48 de ore și nu mai poate fi modificată prin portal. Sunați la Lam Groep.",
     "PORTAL_MAINTENANCE_WEEKEND": "Alegeți o zi lucrătoare: atelierul este închis în weekend.",
     "PORTAL_RATE_LIMITED": "Prea multe cereri într-un timp scurt. Încercați din nou peste un sfert de oră.",
-    "PORTAL_TOO_MANY_OPEN": "Aveți deja multe solicitări deschise. Așteptați să fie tratate câteva sau retrageți una."
+    "PORTAL_TOO_MANY_OPEN": "Aveți deja multe solicitări deschise. Așteptați să fie tratate câteva sau retrageți una.",
+    "PORTAL_ALREADY_SIGNED": "Acest contract a fost deja semnat.",
+    "PORTAL_NOT_SIGNABLE": "Există o versiune mai nouă a acestui contract sau rezervarea este închisă. Reîmprospătați pagina.",
+    "PORTAL_DOCUMENT_CHANGED": "Contractul tocmai s-a schimbat. Deschideți-l din nou și apoi semnați.",
+    "PORTAL_INVALID_SIGNATURE": "Mai întâi semnați în casetă."
   },
   "admin": {
     "navLabel": "Portal pentru clienți",
@@ -1382,6 +1409,15 @@
       },
       "request_message": {
         "title": "Mesaj nou la solicitarea nr. {{id}}"
+      },
+      "contract_to_sign": {
+        "title": "Contract gata de semnat",
+        "description": "Un contract vă așteaptă semnătura ({{fileName}}), pentru închirierea din {{period}}.",
+        "descriptionNoPeriod": "Un contract vă așteaptă semnătura ({{fileName}})."
+      },
+      "contract_signed": {
+        "title": "Contract semnat: {{plate}}",
+        "description": "{{signer}} a semnat contractul la {{at}}. Contractul semnat se află la documentele dumneavoastră."
       }
     },
     "words": {

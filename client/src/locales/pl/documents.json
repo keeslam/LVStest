@@ -809,5 +809,27 @@
       "superseded": "zastąpiono nowszą wersją",
       "reservationChanged": "rezerwacja została zmieniona po utworzeniu tego dokumentu"
     }
+  },
+  "signatures": {
+    "badgeSigned": "Podpisane elektronicznie",
+    "badgeOriginal": "Podpisane w portalu",
+    "badgeChanged": "Plik zmieniony po podpisaniu",
+    "badgeTitle": "Podpisane przez {{name}} w dniu {{date}}",
+    "panelTitle": "Podpisane elektronicznie w portalu klienta",
+    "signedBy": "{{name}} ({{email}}) w dniu {{date}}",
+    "document": "Dokument",
+    "version": "wersja {{version}}",
+    "ip": "Adres IP",
+    "browser": "Przeglądarka",
+    "hashOriginal": "SHA-256 oryginału",
+    "hashSigned": "SHA-256 podpisanego",
+    "original": "Oryginał",
+    "signedFile": "Podpisany plik",
+    "openSigned": "Otwórz podpisaną umowę",
+    "integrity": {
+      "intact": "bez zmian",
+      "changed": "ZMIENIONY po podpisaniu",
+      "missing": "brak pliku"
+    }
   }
 }

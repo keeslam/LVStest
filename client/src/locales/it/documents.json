@@ -797,5 +797,27 @@
       "superseded": "sostituito da una versione più recente",
       "reservationChanged": "la prenotazione è stata modificata dopo la creazione di questo documento"
     }
+  },
+  "signatures": {
+    "badgeSigned": "Firmato digitalmente",
+    "badgeOriginal": "Firmato nel portale",
+    "badgeChanged": "File modificato dopo la firma",
+    "badgeTitle": "Firmato da {{name}} il {{date}}",
+    "panelTitle": "Firmato digitalmente nel portale clienti",
+    "signedBy": "{{name}} ({{email}}) il {{date}}",
+    "document": "Documento",
+    "version": "versione {{version}}",
+    "ip": "Indirizzo IP",
+    "browser": "Browser",
+    "hashOriginal": "SHA-256 originale",
+    "hashSigned": "SHA-256 firmato",
+    "original": "Originale",
+    "signedFile": "File firmato",
+    "openSigned": "Apri contratto firmato",
+    "integrity": {
+      "intact": "invariato",
+      "changed": "MODIFICATO dopo la firma",
+      "missing": "file mancante"
+    }
   }
 }

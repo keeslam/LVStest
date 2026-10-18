@@ -121,6 +121,7 @@ import { recalculateTotalPrice } from "../shared/rental-pricing";
 import { calculateDutchHolidays, mergeHolidaysWithOverrides } from "../shared/holidays";
 import { geocodeAddress, haversineDistanceKm, nearestNeighborOrder, getRoadRouteDistances } from "./geocoding";
 import { isDamageCheckDocument } from "../shared/document-types";
+import { isDocumentLockedBySignature } from "./services/contract-signing";
 import { getUploadsDir } from "../shared/paths";
 import { parseBarcode, normalizeScannedCode, isOwnVehicleBarcode } from "../shared/barcode";
 import { 
@@ -6933,6 +6934,10 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (!document) {
         return res.status(404).json({ message: "Document not found" });
       }
+      // Kees, 2026-10-18: a contract signed in the portal (or the original it was signed from) stays as it was.
+      if (req.body?.documentType !== undefined && await isDocumentLockedBySignature(id)) {
+        return res.status(409).json({ message: "Dit contract is digitaal getekend in het klantenportaal en kan niet gewijzigd of verwijderd worden.", code: "SIGNED_CONTRACT_LOCKED" });
+      }
 
       // Add user tracking information
       const user = req.user;
@@ -7301,6 +7306,10 @@ export async function registerRoutes(app: Express): Promise<void> {
       const document = await storage.getDocument(id);
       if (!document) {
         return res.status(404).json({ message: "Document not found" });
+      }
+      // Kees, 2026-10-18: the signed contract and its original are evidence; they are never deleted from here.
+      if (await isDocumentLockedBySignature(id)) {
+        return res.status(409).json({ message: "Dit contract is digitaal getekend in het klantenportaal en kan niet gewijzigd of verwijderd worden.", code: "SIGNED_CONTRACT_LOCKED" });
       }
 
       // BUG-012: never unlink a path that resolves outside the uploads directory —

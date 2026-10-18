@@ -797,5 +797,27 @@
       "superseded": "înlocuit de o versiune mai nouă",
       "reservationChanged": "rezervarea a fost modificată după crearea acestui document"
     }
+  },
+  "signatures": {
+    "badgeSigned": "Semnat digital",
+    "badgeOriginal": "Semnat în portal",
+    "badgeChanged": "Fișier modificat după semnare",
+    "badgeTitle": "Semnat de {{name}} la {{date}}",
+    "panelTitle": "Semnat digital în portalul clienților",
+    "signedBy": "{{name}} ({{email}}) la {{date}}",
+    "document": "Document",
+    "version": "versiunea {{version}}",
+    "ip": "Adresă IP",
+    "browser": "Browser",
+    "hashOriginal": "SHA-256 original",
+    "hashSigned": "SHA-256 semnat",
+    "original": "Original",
+    "signedFile": "Fișier semnat",
+    "openSigned": "Deschide contractul semnat",
+    "integrity": {
+      "intact": "nemodificat",
+      "changed": "MODIFICAT după semnare",
+      "missing": "fișier lipsă"
+    }
   }
 }

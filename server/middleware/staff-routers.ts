@@ -8,6 +8,7 @@ import filteredVehiclesRoutes from '../routes/filtered-vehicles';
 import emailTemplatesRoutes from '../routes/email-templates';
 import emailLogsRoutes from '../routes/email-logs';
 import apkDateChangesRoutes from '../routes/apk-date-changes';
+import contractSignaturesRoutes from '../routes/contract-signatures';
 
 /**
  * The staff routers that are `Router` objects rather than `register*()`
@@ -34,4 +35,5 @@ export function mountStaffRouters(app: Express, requireAuth: RequestHandler): vo
   app.use('/api/email-templates', requireAuth, hasPermission(UserPermission.MANAGE_EMAIL_TEMPLATES), emailTemplatesRoutes);
   app.use('/api/email-logs', requireAuth, hasPermission(UserPermission.MANAGE_EMAIL_TEMPLATES), emailLogsRoutes);
   app.use('/api/apk-date-changes', requireAuth, hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), apkDateChangesRoutes);
+  app.use('/api/contract-signatures', requireAuth, hasPermission(UserPermission.VIEW_DOCUMENTS, UserPermission.MANAGE_DOCUMENTS), contractSignaturesRoutes);
 }

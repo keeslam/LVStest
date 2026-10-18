@@ -153,7 +153,30 @@
     "ackedBy": "Zaakceptowane przez {{name}} dnia {{date}}",
     "ackConfirmTitle": "Zaakceptować?",
     "ackConfirmAction": "Zapoznano się i zaakceptowano",
-    "contractNo": "umowa {{nr}}"
+    "contractNo": "umowa {{nr}}",
+    "signAction": "Podpisz",
+    "awaitingSignature": "Czeka na podpis administratora",
+    "signedBy": "Podpisane przez {{name}} w dniu {{date}}",
+    "superseded": "Zastąpione nowszą wersją",
+    "signedContract": "Podpisana umowa",
+    "sign": {
+      "title": "Podpisanie umowy",
+      "intro": "Prosimy przeczytać umowę, wpisać imię i nazwisko oraz złożyć podpis. Następnie przesyłamy podpisaną umowę do naszego biura.",
+      "step1": "1. Przeczytaj umowę",
+      "openFull": "Otwórz w dużym oknie",
+      "previewTitle": "Umowa",
+      "step2": "2. Imię i nazwisko",
+      "step3": "3. Podpis",
+      "clear": "Od nowa",
+      "padLabel": "Pole na podpis",
+      "padHint": "Prosimy podpisać się w polu palcem, rysikiem lub myszą.",
+      "agree": "Przeczytałem(-am) umowę i akceptuję ją. Podpisuję w imieniu mojej firmy.",
+      "recorded": "Zapisujemy imię i nazwisko, datę i godzinę, adres IP i przeglądarkę oraz cyfrowy odcisk umowy. Po podpisaniu umowa nie może się już zmienić.",
+      "submit": "Podpisz i wyślij",
+      "done": "Umowa została podpisana. Podpisany egzemplarz znajdą Państwo w dokumentach.",
+      "adminOnly": "Tę umowę może podpisać tylko administrator Państwa firmy.",
+      "notSignable": "Tej umowy nie można już podpisać."
+    }
   },
   "drivers": {
     "title": "Kierowcy",
@@ -312,7 +335,11 @@
     "PORTAL_MAINTENANCE_TOO_LATE": "Ten serwis rozpoczyna się w ciągu 48 godzin i nie można go już zmienić przez portal. Prosimy zadzwonić do Lam Groep.",
     "PORTAL_MAINTENANCE_WEEKEND": "Wybierz dzień roboczy: warsztat jest zamknięty w weekendy.",
     "PORTAL_RATE_LIMITED": "Zbyt wiele żądań w krótkim czasie. Spróbuj ponownie za kwadrans.",
-    "PORTAL_TOO_MANY_OPEN": "Mają Państwo już wiele otwartych wniosków. Poczekaj, aż część zostanie rozpatrzona, lub wycofaj któryś z nich."
+    "PORTAL_TOO_MANY_OPEN": "Mają Państwo już wiele otwartych wniosków. Poczekaj, aż część zostanie rozpatrzona, lub wycofaj któryś z nich.",
+    "PORTAL_ALREADY_SIGNED": "Ta umowa została już podpisana.",
+    "PORTAL_NOT_SIGNABLE": "Istnieje nowsza wersja tej umowy lub rezerwacja jest zamknięta. Prosimy odświeżyć stronę.",
+    "PORTAL_DOCUMENT_CHANGED": "Umowa właśnie się zmieniła. Prosimy otworzyć ją ponownie i podpisać.",
+    "PORTAL_INVALID_SIGNATURE": "Prosimy najpierw złożyć podpis w polu."
   },
   "admin": {
     "navLabel": "Portal klienta",
@@ -1391,6 +1418,15 @@
       },
       "request_message": {
         "title": "Nowa wiadomość w zgłoszeniu nr {{id}}"
+      },
+      "contract_to_sign": {
+        "title": "Umowa gotowa do podpisu",
+        "description": "Umowa czeka na Państwa podpis ({{fileName}}), dotyczy najmu w okresie {{period}}.",
+        "descriptionNoPeriod": "Umowa czeka na Państwa podpis ({{fileName}})."
+      },
+      "contract_signed": {
+        "title": "Umowa podpisana: {{plate}}",
+        "description": "{{signer}} podpisał(a) umowę w dniu {{at}}. Podpisana umowa jest w Państwa dokumentach."
       }
     },
     "words": {

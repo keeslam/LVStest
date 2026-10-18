@@ -34,6 +34,8 @@ export const PORTAL_TEMPLATE = {
   RESERVATION_CHANGED: "portal_reservation_changed",
   RESERVATION_CANCELLED: "portal_reservation_cancelled",
   DOCUMENT_AVAILABLE: "portal_document_available",
+  // Kees, 2026-10-18: a contract was signed in the portal; a link, never the PDF itself.
+  CONTRACT_SIGNED: "portal_contract_signed",
 } as const;
 
 // Seeded once; staff edit them afterwards in Communicatie > E-mailsjablonen. These are the Dutch
@@ -148,6 +150,16 @@ export const DEFAULT_TEMPLATES: Array<{ name: string; subject: string; content: 
 <p>Er staat een nieuw document voor u klaar in het klantenportaal: {{document}} ({{fileName}}).</p>
 <p>Auto: {{car}}<br>Periode: {{period}}</p>
 <p>Bekijk en download het document hier: <a href="{{link}}">{{link}}</a></p>
+<p>Met vriendelijke groet,<br>{{companyName}}</p>`,
+  },
+  {
+    name: PORTAL_TEMPLATE.CONTRACT_SIGNED,
+    subject: "Contract getekend: {{plate}}",
+    content: `<p>Beste {{name}},</p>
+<p>{{signer}} heeft op {{at}} het contract voor {{company}} digitaal getekend.</p>
+<p>Auto: {{car}}<br>Periode: {{period}}</p>
+<p>Het getekende contract staat in het klantenportaal: <a href="{{link}}">{{link}}</a></p>
+<p>Heeft u dit niet gedaan? Neem dan direct contact op met {{companyName}}.</p>
 <p>Met vriendelijke groet,<br>{{companyName}}</p>`,
   },
 ];
@@ -415,6 +427,7 @@ const COMPANY_MAIL_FOR_TEMPLATE: Record<string, CompanyMailKey | undefined> = {
   [PORTAL_TEMPLATE.RESERVATION_CHANGED]: "mailReservationChanges",
   [PORTAL_TEMPLATE.RESERVATION_CANCELLED]: "mailReservationChanges",
   [PORTAL_TEMPLATE.DOCUMENT_AVAILABLE]: "mailDocuments",
+  [PORTAL_TEMPLATE.CONTRACT_SIGNED]: "mailDocuments",
 };
 
 /**
@@ -483,4 +496,33 @@ export async function sendRequestReplyMail(requestId: number): Promise<boolean> 
   };
   const html = renderTemplate(template.content, vars);
   return sendEmail({ to: row.submitterEmail, toName: row.submittedBy ?? undefined, subject: renderTemplateText(template.subject, vars), html, text: stripHtml(html) }, "custom");
+}
+
+/**
+ * "Contract getekend" (Kees, 2026-10-18): to the company address like every document mail (and its
+ * switch), and always to the account that signed when that is another address: a signature is a
+ * legal act, so the person whose login was used must hear about it even if the company mails are off.
+ * Only a link to the portal, never the PDF. Returns the number of mails sent.
+ */
+export async function sendContractSignedMails(
+  customerId: number,
+  signer: Pick<PortalUser, "email" | "fullName" | "language" | "customerId">,
+  vars: (language: SupportedLanguage) => Record<string, string>,
+): Promise<number> {
+  let sent = 0;
+  if (await sendPortalCustomerMail(customerId, PORTAL_TEMPLATE.CONTRACT_SIGNED, vars, "/documenten")) sent += 1;
+  const customer = await storage.getCustomer(customerId);
+  const companyTo = (customer?.email || customer?.emailForInvoices || customer?.emailForMOT || "").toLowerCase();
+  if (!signer.email || signer.email.toLowerCase() === companyTo) return sent;
+  const config = await getPortalConfig();
+  const template = await getPortalTemplate(PORTAL_TEMPLATE.CONTRACT_SIGNED, await portalUserLanguage(signer));
+  const v: Record<string, string> = {
+    name: signer.fullName, company: customer?.companyName || customer?.name || "",
+    ...vars(template.language),
+    link: `${config.portalBaseUrl.replace(/\/$/, "")}/portaal/documenten`,
+  };
+  if (v.plate) v.plate = formatLicensePlate(v.plate);
+  const html = renderTemplate(template.content, v);
+  if (await sendEmail({ to: signer.email, toName: signer.fullName, subject: renderTemplateText(template.subject, v), html, text: stripHtml(html) }, "custom")) sent += 1;
+  return sent;
 }

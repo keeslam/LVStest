@@ -2073,6 +2073,30 @@ async function runMigrations() {
         acked_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )`);
     await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS portal_document_acks_document_idx ON portal_document_acks (document_id)`);
+    // Kees, 2026-10-18: contracts signed in the portal. Written out here (not left to the manifest
+    // sync) for the unique index: it is what stops two people signing the same contract at once.
+    await createTableIfNotExists('portal_contract_signatures', `
+      CREATE TABLE portal_contract_signatures (
+        id SERIAL PRIMARY KEY,
+        document_id INTEGER REFERENCES documents(id) ON DELETE SET NULL,
+        signed_document_id INTEGER REFERENCES documents(id) ON DELETE SET NULL,
+        reservation_id INTEGER NOT NULL,
+        customer_id INTEGER NOT NULL,
+        portal_user_id INTEGER REFERENCES portal_users(id) ON DELETE SET NULL,
+        signer_name TEXT NOT NULL,
+        signer_email TEXT NOT NULL,
+        signed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        ip TEXT,
+        user_agent TEXT,
+        language TEXT,
+        consent_version TEXT NOT NULL,
+        original_file_name TEXT NOT NULL,
+        original_version INTEGER,
+        original_sha256 TEXT NOT NULL,
+        signed_sha256 TEXT NOT NULL
+      )`);
+    await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS portal_contract_signatures_document_idx ON portal_contract_signatures (document_id)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS portal_contract_signatures_reservation_idx ON portal_contract_signatures (reservation_id)`);
     console.log('✅ Fines and portal request tables ready');
 
     // ==================== FISCALE MOBILITEITSCHECK ====================

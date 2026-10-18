@@ -1,7 +1,7 @@
 import { db } from "../db";
 import {
   customers, vehicles, drivers, reservations, documents,
-  portalUsers, portalCustomerSettings, portalActivityLog, reservationDriverAssignments, fines, fineImportFiles, portalRequests, fiscalAuditEvents,
+  portalUsers, portalCustomerSettings, portalActivityLog, portalContractSignatures, reservationDriverAssignments, fines, fineImportFiles, portalRequests, fiscalAuditEvents,
   type Customer, type Vehicle, type Driver, type Reservation, type Document, type Fine,
 } from "../../shared/schema";
 import { like, inArray } from "drizzle-orm";
@@ -97,6 +97,7 @@ export async function cleanupPortalTestData(): Promise<void> {
   const testCustomers = await db.select({ id: customers.id }).from(customers).where(like(customers.name, `${TEST_PREFIX}%`));
   const ids = testCustomers.map((c) => c.id);
   if (ids.length) {
+    await db.delete(portalContractSignatures).where(inArray(portalContractSignatures.customerId, ids));
     await db.delete(portalActivityLog).where(inArray(portalActivityLog.customerId, ids));
     await db.delete(portalRequests).where(inArray(portalRequests.customerId, ids));
     await db.delete(portalUsers).where(inArray(portalUsers.customerId, ids));

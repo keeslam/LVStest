@@ -143,7 +143,30 @@
     "ackedBy": "Agreed by {{name}} on {{date}}",
     "ackConfirmTitle": "Give your approval?",
     "ackConfirmAction": "Seen and agreed",
-    "contractNo": "contract {{nr}}"
+    "contractNo": "contract {{nr}}",
+    "signAction": "Sign",
+    "awaitingSignature": "Waiting for an administrator's signature",
+    "signedBy": "Signed by {{name}} on {{date}}",
+    "superseded": "Replaced by a newer version",
+    "signedContract": "Signed contract",
+    "sign": {
+      "title": "Sign contract",
+      "intro": "Read the contract, enter your name and sign. We then send the signed contract back to our office.",
+      "step1": "1. Read the contract",
+      "openFull": "Open in a large window",
+      "previewTitle": "Contract",
+      "step2": "2. Your name",
+      "step3": "3. Your signature",
+      "clear": "Start again",
+      "padLabel": "Box to sign in",
+      "padHint": "Sign in the box with your finger, pen or mouse.",
+      "agree": "I have read the contract and agree. I sign on behalf of my company.",
+      "recorded": "We record your name, the date and time, your IP address and browser, and a digital fingerprint of the contract. After signing, the contract can no longer change.",
+      "submit": "Sign and send",
+      "done": "The contract has been signed. You will find the signed copy with your documents.",
+      "adminOnly": "Only an administrator of your company can sign this contract.",
+      "notSignable": "This contract can no longer be signed."
+    }
   },
   "drivers": {
     "title": "Drivers",
@@ -300,7 +323,11 @@
     "PORTAL_MAINTENANCE_TOO_LATE": "This maintenance starts within 48 hours and can no longer be changed through the portal. Please call Lam Groep.",
     "PORTAL_MAINTENANCE_WEEKEND": "Choose a weekday: the workshop is closed at weekends.",
     "PORTAL_RATE_LIMITED": "Too many requests in a short time. Please try again in a quarter of an hour.",
-    "PORTAL_TOO_MANY_OPEN": "You already have many open requests. Wait until some are handled or withdraw one."
+    "PORTAL_TOO_MANY_OPEN": "You already have many open requests. Wait until some are handled or withdraw one.",
+    "PORTAL_ALREADY_SIGNED": "This contract has already been signed.",
+    "PORTAL_NOT_SIGNABLE": "There is a newer version of this contract, or the reservation is closed. Please refresh the page.",
+    "PORTAL_DOCUMENT_CHANGED": "The contract has just changed. Open it again, then sign.",
+    "PORTAL_INVALID_SIGNATURE": "Please sign in the box first."
   },
   "admin": {
     "navLabel": "Customer portal",
@@ -1373,6 +1400,15 @@
       },
       "request_message": {
         "title": "New message on request #{{id}}"
+      },
+      "contract_to_sign": {
+        "title": "Contract ready to sign",
+        "description": "A contract is ready for you to sign ({{fileName}}), for your rental {{period}}.",
+        "descriptionNoPeriod": "A contract is ready for you to sign ({{fileName}})."
+      },
+      "contract_signed": {
+        "title": "Contract signed: {{plate}}",
+        "description": "{{signer}} signed the contract on {{at}}. The signed contract is with your documents."
       }
     },
     "words": {

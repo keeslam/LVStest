@@ -54,7 +54,7 @@ describe("unknown portal address", () => {
 
 describe("a document is named after its car", () => {
   const reservation = { id: 7, status: "picked_up", type: "standard", startDate: "2026-09-01", endDate: null, contractNumber: "1011", vehicle: { id: 1, licensePlate: "11ZSZ3", brand: "PEUGEOT", model: "PEUGEOT BOXER" }, driver: null };
-  const doc = { id: 5, reservationId: 7, documentType: "contract", kind: "contract" as const, fileName: "31XT121_contract_pickup_2026-09-06_1788717261858.pdf", uploadDate: "2026-09-06T10:00:00.000Z", ack: null };
+  const doc = { id: 5, reservationId: 7, documentType: "contract", kind: "contract" as const, fileName: "31XT121_contract_pickup_2026-09-06_1788717261858.pdf", uploadDate: "2026-09-06T10:00:00.000Z", ack: null, signing: null };
 
   function row() {
     const qc = client();

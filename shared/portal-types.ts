@@ -30,6 +30,10 @@ export const PORTAL_ERROR = {
   REQUEST_INVALID_PERIOD: 'PORTAL_REQUEST_INVALID_PERIOD',
   ATTACHMENT_LIMIT: 'PORTAL_ATTACHMENT_LIMIT',
   CSRF: 'PORTAL_CSRF',
+  ALREADY_SIGNED: 'PORTAL_ALREADY_SIGNED',
+  NOT_SIGNABLE: 'PORTAL_NOT_SIGNABLE',
+  DOCUMENT_CHANGED: 'PORTAL_DOCUMENT_CHANGED',
+  INVALID_SIGNATURE: 'PORTAL_INVALID_SIGNATURE',
   SERVER: 'PORTAL_SERVER_ERROR',
 } as const;
 export type PortalErrorCode = typeof PORTAL_ERROR[keyof typeof PORTAL_ERROR];
@@ -199,6 +203,22 @@ export interface PortalDocumentDto {
   uploadDate: string;
   /** "Gezien en akkoord" by a portal user, if given. */
   ack: { by: string; at: string } | null;
+  /** Contracts only: where signing stands (see shared/contract-signing.ts); null for other documents. */
+  signing: {
+    status: 'to_sign' | 'signed' | 'superseded' | 'signed_copy';
+    signedBy?: string;
+    signedAt?: string;
+    signedDocumentId?: number | null;
+  } | null;
+}
+
+/** What the sign dialog needs: the fingerprint of the file shown, and whether this account may sign. */
+export interface PortalSigningInfoDto {
+  documentId: number;
+  status: 'to_sign' | 'signed' | 'superseded' | 'signed_copy';
+  sha256: string;
+  canSign: boolean;
+  signerName: string;
 }
 
 /** The values a portal notification is about (plate, dates, car...), so the portal can word it in the reader's language. */

@@ -922,6 +922,40 @@ export const portalDocumentAcks = pgTable("portal_document_acks", {
 }, (table) => ({ documentIdx: uniqueIndex("portal_document_acks_document_idx").on(table.documentId) }));
 export type PortalDocumentAck = typeof portalDocumentAcks.$inferSelect;
 
+/**
+ * A contract signed in the customer portal (Kees, 2026-10-18): the audit trail of one signature.
+ *
+ * `documentId` is the unsigned contract that was signed (one signature per document, enforced by the
+ * unique index), `signedDocumentId` the PDF the server made from it (original pages plus a signature
+ * page). Both hashes are SHA-256 of the file bytes at signing time; staff and portal compare them with
+ * the file on disk to show that nothing changed afterwards. Rows are never updated except to fill
+ * `signedDocumentId` once, and never deleted: the document links fall back to null when a document
+ * is purged, the hashes and names stay.
+ */
+export const portalContractSignatures = pgTable("portal_contract_signatures", {
+  id: serial("id").primaryKey(),
+  documentId: integer("document_id").references(() => documents.id, { onDelete: "set null" }),
+  signedDocumentId: integer("signed_document_id").references(() => documents.id, { onDelete: "set null" }),
+  reservationId: integer("reservation_id").notNull(),
+  customerId: integer("customer_id").notNull(),
+  portalUserId: integer("portal_user_id").references(() => portalUsers.id, { onDelete: "set null" }),
+  signerName: text("signer_name").notNull(),
+  signerEmail: text("signer_email").notNull(),
+  signedAt: timestamp("signed_at", { withTimezone: true }).defaultNow().notNull(),
+  ip: text("ip"),
+  userAgent: text("user_agent"),
+  language: text("language"),
+  consentVersion: text("consent_version").notNull(),
+  originalFileName: text("original_file_name").notNull(),
+  originalVersion: integer("original_version"),
+  originalSha256: text("original_sha256").notNull(),
+  signedSha256: text("signed_sha256").notNull(),
+}, (table) => ({
+  documentIdx: uniqueIndex("portal_contract_signatures_document_idx").on(table.documentId),
+  reservationIdx: index("portal_contract_signatures_reservation_idx").on(table.reservationId),
+}));
+export type PortalContractSignature = typeof portalContractSignatures.$inferSelect;
+
 // Reservations table
 export const reservations = pgTable("reservations", {
   id: serial("id").primaryKey(),

@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ContractSignatureBadge, ContractSignaturesPanel, useReservationSignatures } from "@/components/documents/contract-signatures";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -377,6 +378,8 @@ export function ReservationForm({
   
   // Fetch documents for the reservation (in edit mode or after creation)
   const activeReservationId = createdReservationId ?? initialData?.id ?? null;
+  // Contracts signed in the customer portal: badge on the documents, audit trail below them.
+  const { data: contractSignatures } = useReservationSignatures(activeReservationId);
   const { data: reservationDocuments, refetch: refetchDocuments } = useQuery<Document[]>({
     queryKey: [`/api/documents/reservation/${activeReservationId}`],
     enabled: !!activeReservationId
@@ -2463,6 +2466,7 @@ export function ReservationForm({
                                 )}
                                 <div className="text-left">
                                   <div className="text-xs font-semibold truncate max-w-[150px]">{doc.documentType}</div>
+                                  <ContractSignatureBadge documentId={doc.id} signatures={contractSignatures} />
                                   <div className="text-[10px] text-gray-500 truncate max-w-[150px]">
                                     {doc.documentType?.startsWith('Damage Check')
                                       ? doc.fileName.replace('.pdf', '').replace('.PDF', '')
@@ -2489,6 +2493,7 @@ export function ReservationForm({
                       </div>
                     </div>
                   )}
+                  {activeReservationId && <ContractSignaturesPanel reservationId={activeReservationId} />}
                 </div>
               )}
               

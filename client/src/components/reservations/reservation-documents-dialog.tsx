@@ -21,6 +21,7 @@ import {
   StaleDocumentBadge,
 } from "@/components/documents/stale-document";
 import { DocumentMailStatus } from "@/components/documents/document-mail-status";
+import { ContractSignatureBadge, ContractSignaturesPanel, useReservationSignatures } from "@/components/documents/contract-signatures";
 import { queryClient , invalidateByPrefix } from "@/lib/queryClient";
 
 interface ReservationDocumentsDialogProps {
@@ -43,6 +44,7 @@ export function ReservationDocumentsDialog({
   });
 
   // Filter documents for this specific reservation ONLY (not general vehicle docs)
+  const { data: contractSignatures } = useReservationSignatures(open ? reservationId : null);
   const reservationDocuments = documents?.filter(
     doc => doc.reservationId === reservationId
   ) || [];
@@ -122,6 +124,8 @@ export function ReservationDocumentsDialog({
                 </Card>
               )}
 
+              {reservationId && <ContractSignaturesPanel reservationId={reservationId} />}
+
               {/* Documents by Type */}
               {Object.entries(documentsByType).map(([type, docs]) => (
                 <div key={type}>
@@ -140,6 +144,7 @@ export function ReservationDocumentsDialog({
                                 {doc.fileName}
                                 {/* B-05: the old version is kept, but it says so. */}
                                 <StaleDocumentBadge document={doc} />
+                                <ContractSignatureBadge documentId={doc.id} signatures={contractSignatures} />
                               </h4>
                               <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
                                 <span>{t('documentsDialog.uploadedLabel', { date: formatDate(doc.uploadDate) })}</span>

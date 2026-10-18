@@ -785,5 +785,27 @@
       "superseded": "vervangen door een nieuwere versie",
       "reservationChanged": "de reservering is gewijzigd nadat dit document was gemaakt"
     }
+  },
+  "signatures": {
+    "badgeSigned": "Digitaal getekend",
+    "badgeOriginal": "Getekend in portaal",
+    "badgeChanged": "Bestand gewijzigd na tekenen",
+    "badgeTitle": "Getekend door {{name}} op {{date}}",
+    "panelTitle": "Digitaal getekend in het klantenportaal",
+    "signedBy": "{{name}} ({{email}}) op {{date}}",
+    "document": "Document",
+    "version": "versie {{version}}",
+    "ip": "IP-adres",
+    "browser": "Browser",
+    "hashOriginal": "SHA-256 origineel",
+    "hashSigned": "SHA-256 getekend",
+    "original": "Origineel",
+    "signedFile": "Getekend bestand",
+    "openSigned": "Getekend contract openen",
+    "integrity": {
+      "intact": "onveranderd",
+      "changed": "GEWIJZIGD na tekenen",
+      "missing": "bestand ontbreekt"
+    }
   }
 }

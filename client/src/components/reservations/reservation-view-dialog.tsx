@@ -45,6 +45,7 @@ import { ExpenseAddDialog } from "@/components/expenses/expense-add-dialog";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { ReservationDocumentsDialog } from "@/components/reservations/reservation-documents-dialog";
 import { StaleDocumentBadge } from "@/components/documents/stale-document";
+import { ContractSignatureBadge, ContractSignaturesPanel, useReservationSignatures } from "@/components/documents/contract-signatures";
 import { PickupDialog, ReturnDialog } from "@/components/reservations/pickup-return-dialogs";
 
 const DOCUMENT_QUICK_TYPE_KEYS: Record<string, string> = {
@@ -213,6 +214,8 @@ export function ReservationViewDialog({
     queryKey: [`/api/documents/reservation/${reservationId}`],
     enabled: !!reservationId && open,
   });
+  // Contracts signed in the customer portal: badge on the documents, audit trail below them.
+  const { data: contractSignatures } = useReservationSignatures(open ? reservationId : null);
 
   // Fetch active replacement reservation if this is an original reservation
   const { data: activeReplacement } = useQuery<Reservation>({
@@ -639,6 +642,7 @@ export function ReservationViewDialog({
                                     <div className="text-xs font-semibold truncate max-w-[150px]">{doc.documentType}</div>
                                     {/* A-6-4: a document the server marked stale (e.g. after a reversal) says so here too. */}
                                     <StaleDocumentBadge document={doc} />
+                                    <ContractSignatureBadge documentId={doc.id} signatures={contractSignatures} />
                                     <div className="text-[10px] text-gray-500">
                                       {doc.fileName.split('.').pop()?.toUpperCase() || 'FILE'}
                                     </div>
@@ -787,6 +791,7 @@ export function ReservationViewDialog({
                                     <div className="text-xs font-semibold truncate max-w-[150px]">{doc.documentType}</div>
                                     {/* A-6-4: a document the server marked stale (e.g. after a reversal) says so here too. */}
                                     <StaleDocumentBadge document={doc} />
+                                    <ContractSignatureBadge documentId={doc.id} signatures={contractSignatures} />
                                     <div className="text-[10px] text-gray-500">
                                       {doc.fileName.split('.').pop()?.toUpperCase() || 'FILE'}
                                     </div>
@@ -813,6 +818,8 @@ export function ReservationViewDialog({
                   </div>
                 )}
               </div>
+
+              {reservationId && <ContractSignaturesPanel reservationId={reservationId} />}
 
               {/* Fuel Tracking Information */}
               {(reservation.fuelLevelPickup || reservation.fuelLevelReturn || reservation.fuelCost || reservation.fuelCardNumber || reservation.fuelNotes) && (

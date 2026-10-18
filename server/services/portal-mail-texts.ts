@@ -29,6 +29,7 @@ export const CUSTOMER_TEMPLATE_NAMES = [
   "portal_invite", "portal_password_reset", "portal_fine_linked", "portal_request_replied",
   "portal_email_change", "portal_new_device", "portal_email_changed", "portal_maintenance",
   "portal_reservation_changed", "portal_reservation_cancelled", "portal_document_available",
+  "portal_contract_signed",
 ] as const;
 export type CustomerTemplateName = (typeof CUSTOMER_TEMPLATE_NAMES)[number];
 
@@ -47,6 +48,7 @@ interface TemplateWording {
   reservationChanged: { subject: string; intro: string; car: string; period: string; view: string; wrong: string };
   reservationCancelled: { subject: string; intro: string; view: string; wrong: string };
   documentAvailable: { subject: string; intro: string; view: string };
+  contractSigned: { subject: string; intro: string; view: string; notYou: string };
 }
 
 const LINK = `<a href="{{link}}">{{link}}</a>`;
@@ -111,6 +113,10 @@ function buildTemplates(w: TemplateWording): Record<CustomerTemplateName, Templa
     portal_document_available: {
       subject: w.documentAvailable.subject,
       content: mail(p(w.documentAvailable.intro), carAndPeriod, p(`${w.documentAvailable.view}: ${LINK}`)),
+    },
+    portal_contract_signed: {
+      subject: w.contractSigned.subject,
+      content: mail(p(w.contractSigned.intro), carAndPeriod, p(`${w.contractSigned.view}: ${LINK}`), p(w.contractSigned.notYou)),
     },
   };
 }
@@ -180,6 +186,12 @@ const TEMPLATE_WORDING: Record<PortalMailLanguage, TemplateWording> = {
       intro: "A new document is waiting for you in the customer portal: {{document}} ({{fileName}}).",
       view: "View and download the document here",
     },
+    contractSigned: {
+      subject: "Contract signed: {{plate}}",
+      intro: "{{signer}} signed the contract for {{company}} digitally on {{at}}.",
+      view: "The signed contract is in the customer portal",
+      notYou: "Did you not do this? Please contact {{companyName}} straight away.",
+    },
   },
   es: {
     greeting: "Estimado/a {{name}}:",
@@ -244,6 +256,12 @@ const TEMPLATE_WORDING: Record<PortalMailLanguage, TemplateWording> = {
       subject: "Nuevo documento disponible: {{document}}",
       intro: "Tiene un nuevo documento disponible en el portal de clientes: {{document}} ({{fileName}}).",
       view: "Consulte y descargue el documento aquí",
+    },
+    contractSigned: {
+      subject: "Contrato firmado: {{plate}}",
+      intro: "{{signer}} firmó digitalmente el contrato de {{company}} el {{at}}.",
+      view: "El contrato firmado está en el portal de clientes",
+      notYou: "¿No ha sido usted? Póngase en contacto con {{companyName}} de inmediato.",
     },
   },
   pt: {
@@ -310,6 +328,12 @@ const TEMPLATE_WORDING: Record<PortalMailLanguage, TemplateWording> = {
       intro: "Tem um novo documento à sua espera no portal de clientes: {{document}} ({{fileName}}).",
       view: "Consulte e descarregue o documento aqui",
     },
+    contractSigned: {
+      subject: "Contrato assinado: {{plate}}",
+      intro: "{{signer}} assinou digitalmente o contrato de {{company}} em {{at}}.",
+      view: "O contrato assinado está no portal de clientes",
+      notYou: "Não foi o senhor/a senhora? Contacte imediatamente {{companyName}}.",
+    },
   },
   it: {
     greeting: "Gentile {{name}},",
@@ -374,6 +398,12 @@ const TEMPLATE_WORDING: Record<PortalMailLanguage, TemplateWording> = {
       subject: "Nuovo documento disponibile: {{document}}",
       intro: "Un nuovo documento La attende nel portale clienti: {{document}} ({{fileName}}).",
       view: "Visualizzi e scarichi il documento qui",
+    },
+    contractSigned: {
+      subject: "Contratto firmato: {{plate}}",
+      intro: "{{signer}} ha firmato digitalmente il contratto di {{company}} il {{at}}.",
+      view: "Il contratto firmato si trova nel portale clienti",
+      notYou: "Non è stato Lei? Contatti subito {{companyName}}.",
     },
   },
   ro: {
@@ -440,6 +470,12 @@ const TEMPLATE_WORDING: Record<PortalMailLanguage, TemplateWording> = {
       intro: "Un document nou vă așteaptă în portalul clienților: {{document}} ({{fileName}}).",
       view: "Vedeți și descărcați documentul aici",
     },
+    contractSigned: {
+      subject: "Contract semnat: {{plate}}",
+      intro: "{{signer}} a semnat digital contractul pentru {{company}} la {{at}}.",
+      view: "Contractul semnat se află în portalul clienților",
+      notYou: "Nu ați fost dumneavoastră? Contactați imediat {{companyName}}.",
+    },
   },
   pl: {
     greeting: "Dzień dobry {{name}},",
@@ -504,6 +540,12 @@ const TEMPLATE_WORDING: Record<PortalMailLanguage, TemplateWording> = {
       subject: "Nowy dokument: {{document}}",
       intro: "W portalu klienta czeka na Państwa nowy dokument: {{document}} ({{fileName}}).",
       view: "Dokument można obejrzeć i pobrać tutaj",
+    },
+    contractSigned: {
+      subject: "Umowa podpisana: {{plate}}",
+      intro: "{{signer}} podpisał(a) elektronicznie umowę dla {{company}} w dniu {{at}}.",
+      view: "Podpisana umowa jest dostępna w portalu klienta",
+      notYou: "To nie Państwo? Prosimy o natychmiastowy kontakt z {{companyName}}.",
     },
   },
 };

@@ -129,12 +129,12 @@ describe("B-06 — de reserveringsroutes roepen de melding ook echt aan", () => 
         fileSize: 3, contentType: "application/pdf",
       } as any);
       // The hook runs off the write; wait inside the stub so the mail lands here.
-      await waitForNotification("document_available", "/documenten");
+      await waitForNotification("contract_to_sign", "/documenten");
     });
 
     const rows = await db.select().from(portalNotifications).where(and(
       eq(portalNotifications.customerId, customerId),
-      eq(portalNotifications.type, "document_available"),
+      eq(portalNotifications.type, "contract_to_sign"),
     ));
     expect(rows.length).toBeGreaterThanOrEqual(1);
     expect(rows.some((r) => r.description.includes(`w15-contract-${row.id}.pdf`))).toBe(true);

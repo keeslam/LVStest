@@ -9,7 +9,7 @@
  */
 import type { TFunction } from "i18next";
 import type { PortalNotificationDto, PortalNotificationParams } from "@shared/portal-types";
-import { formatPortalCurrency, formatPortalDate } from "@/lib/portal-format";
+import { formatPortalCurrency, formatPortalDate, formatPortalDateTime } from "@/lib/portal-format";
 
 type Text = { title: string; description: string };
 
@@ -34,6 +34,7 @@ function valuesOf(t: TFunction, p: PortalNotificationParams): Record<string, str
     date: formatPortalDate(str(p.date) || null),
     endDate: formatPortalDate(str(p.endDate) || null),
     apkDate: formatPortalDate(str(p.apkDate) || null),
+    at: p.at ? formatPortalDateTime(str(p.at)) : "",
     amount: p.amount === undefined || p.amount === null ? "" : formatPortalCurrency(p.amount as string | number),
     period: periodText(t, p.startDate, p.endDate),
     oldPeriod: periodText(t, p.oldStartDate, p.oldEndDate),
@@ -44,7 +45,7 @@ function valuesOf(t: TFunction, p: PortalNotificationParams): Record<string, str
 /** Which description of a kind fits these values: a range, no period, or the plain one. */
 function descriptionKey(type: string, p: PortalNotificationParams, values: Record<string, string>): string {
   if (["maintenance_planned", "maintenance_moved", "replacement_ready"].includes(type) && p.endDate && p.endDate !== p.date) return "descriptionRange";
-  if (["reservation_cancelled", "document_available"].includes(type) && !values.period) return "descriptionNoPeriod";
+  if (["reservation_cancelled", "document_available", "contract_to_sign"].includes(type) && !values.period) return "descriptionNoPeriod";
   return "description";
 }
 

@@ -3,7 +3,10 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { portalFetch, portalQueryFn, PortalApiError } from "@/lib/portal-api";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarDays, ChevronRight, MessageSquare, FileText, ShieldCheck, Eye, Download, CheckCircle2 } from "lucide-react";
+import { CalendarDays, ChevronRight, MessageSquare, FileText, ShieldCheck, Eye, Download, CheckCircle2, PenLine, FileSignature, Clock } from "lucide-react";
+import { PORTAL_ME_KEY } from "@/hooks/use-portal-auth";
+import type { PortalMe } from "@shared/portal-types";
+import { SignContractDialog } from "./sign-contract-dialog";
 import type { PortalFineDto } from "@shared/fines";
 import type { PortalRequestDto } from "@shared/portal-requests";
 import type { PortalDocumentDto, PortalReservationDto } from "@shared/portal-types";
@@ -68,6 +71,11 @@ export function DocumentRow({ document: d, showReservationLink = true }: { docum
   const { toast } = useToast();
   const { data: reservations = [] } = useQuery<PortalReservationDto[]>({ queryKey: ["portal", "/api/portal/reservations"], queryFn: portalQueryFn });
   const [confirming, setConfirming] = useState(false);
+  const [signing, setSigning] = useState(false);
+  // Read from the cache the auth provider fills, so the row also renders outside it (tests, previews).
+  const { data: me } = useQuery<PortalMe | null>({ queryKey: PORTAL_ME_KEY, enabled: false });
+  const sign = d.signing;
+  const canSign = sign?.status === "to_sign" && me?.role === "admin";
   // The document is named after the car it is about, not after its file name or an internal reservation number.
   const reservation = d.reservationId ? reservations.find((r) => r.id === d.reservationId) : undefined;
   const label = reservation?.vehicle ? `${vehicleName(reservation.vehicle.brand, reservation.vehicle.model)} ${formatLicensePlate(reservation.vehicle.licensePlate)}` : d.reservationId ? t("documents.reservation", { id: d.reservationId }) : "";
@@ -83,10 +91,16 @@ export function DocumentRow({ document: d, showReservationLink = true }: { docum
           {d.kind === "contract" ? <FileText className="h-5 w-5" /> : <ShieldCheck className="h-5 w-5" />}
         </span>
         <div className="min-w-0">
-          <div className="line-clamp-2 text-sm font-semibold text-[#0f172a]" title={d.fileName}>{t(`documents.${d.kind}`)}{label ? ` · ${label}` : ""}</div>
+          <div className="line-clamp-2 text-sm font-semibold text-[#0f172a]" title={d.fileName}>{sign?.status === "signed_copy" ? t("documents.signedContract") : t(`documents.${d.kind}`)}{label ? ` · ${label}` : ""}</div>
           <div className="truncate text-xs text-[#64748b]">{reservation?.contractNumber ? `${t("documents.contractNo", { nr: reservation.contractNumber })} · ` : ""}{formatPortalDate(d.uploadDate)}</div>
           {showReservationLink && d.reservationId && <button type="button" className="text-xs text-[#2a2f9c] underline" onClick={() => openReservation(d.reservationId!)}>{t("documents.openReservation")}</button>}
-          {d.kind === "contract" && (
+          {sign?.status === "signed" && <div className="mt-1 flex w-fit items-center gap-1 rounded-full bg-[#e1f5ee] px-2 py-0.5 text-xs font-medium text-[#085041]" data-testid={`document-signed-${d.id}`}><FileSignature className="h-3.5 w-3.5" />{t("documents.signedBy", { name: sign.signedBy, date: sign.signedAt ? formatPortalDateTime(sign.signedAt) : "" })}</div>}
+          {sign?.status === "superseded" && <div className="mt-1 text-xs text-[#64748b]" data-testid={`document-superseded-${d.id}`}>{t("documents.superseded")}</div>}
+          {sign?.status === "to_sign" && (canSign
+            ? <button type="button" onClick={() => setSigning(true)} className="mt-1 flex w-fit items-center gap-1 rounded-full bg-[#f5a623] px-3 py-1 text-xs font-semibold text-[#1a1d62] hover:bg-[#f9bf55]" data-testid={`button-sign-${d.id}`}><PenLine className="h-3.5 w-3.5" />{t("documents.signAction")}</button>
+            : <div className="mt-1 flex w-fit items-center gap-1 rounded-full bg-[#faeeda] px-2 py-0.5 text-xs font-medium text-[#854f0b]" data-testid={`document-awaiting-${d.id}`}><Clock className="h-3.5 w-3.5" />{t("documents.awaitingSignature")}</div>)}
+          {/* "Gezien en akkoord" stays for contracts without portal signing (uploaded ones, older types). */}
+          {d.kind === "contract" && !sign && (
             d.ack
               ? <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#e1f5ee] px-2 py-0.5 text-xs font-medium text-[#085041]" data-testid={`document-ack-${d.id}`}><CheckCircle2 className="h-3.5 w-3.5" />{t("documents.ackedBy", { name: d.ack.by, date: formatPortalDateTime(d.ack.at) })}</div>
               : <button type="button" onClick={() => setConfirming(true)} disabled={ack.isPending} className="mt-1 inline-flex items-center gap-1 rounded-full border border-[#1d9e75] px-2 py-0.5 text-xs font-medium text-[#085041] hover:bg-[#e1f5ee]" data-testid={`button-ack-${d.id}`}><CheckCircle2 className="h-3.5 w-3.5" />{t("documents.ack")}</button>
@@ -105,6 +119,7 @@ export function DocumentRow({ document: d, showReservationLink = true }: { docum
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {canSign && <SignContractDialog document={signing ? d : null} onClose={() => setSigning(false)} />}
       <div className="flex shrink-0 gap-1">
         <Button size="sm" variant="outline" className={btnSecondary} onClick={() => openDocument(d)} data-testid={`button-open-document-${d.id}`} aria-label={t("documents.open")}><Eye className="h-4 w-4 sm:mr-1" /><span className="hidden sm:inline">{t("documents.open")}</span></Button>
         {/* target=_blank: never navigate the iframe itself away */}

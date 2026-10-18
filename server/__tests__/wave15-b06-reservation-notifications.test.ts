@@ -130,10 +130,22 @@ describe("B-06 — kantoorwijzigingen bereiken de portaalklant", () => {
     expect(await onDocumentAvailable(doc)).toBe(true);
     expect(await onDocumentAvailable(doc)).toBe(false);
 
-    const rows = (await mine("document_available")).filter((n) => n.description.includes("contract.pdf"));
+    // Since 2026-10-18 an unsigned contract can be signed in the portal, so the notice says that.
+    const rows = (await mine("contract_to_sign")).filter((n) => n.description.includes("contract.pdf"));
     expect(rows).toHaveLength(1);
     expect(rows[0].link).toBe("/documenten");
-    expect(rows[0].title).toContain("Huurcontract");
+    expect(rows[0].title).toBe("Contract klaar om te tekenen");
+    expect(rows[0].params).toMatchObject({ documentKind: "contract", fileName: "contract.pdf" });
+  });
+
+  it("c — a damage form stays a plain 'new document'", async () => {
+    const row = await rental();
+    const doc = await createTestDocument({
+      reservationId: row.id, vehicleId, documentType: "Damage Check (Pickup)", fileName: "schade-nieuw.pdf",
+    });
+    expect(await onDocumentAvailable(doc)).toBe(true);
+    const rows = (await mine("document_available")).filter((n) => n.description.includes("schade-nieuw.pdf"));
+    expect(rows).toHaveLength(1);
   });
 
   it("c — a document the portal never shows says nothing", async () => {

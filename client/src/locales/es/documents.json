@@ -797,5 +797,27 @@
       "superseded": "sustituido por una versión más reciente",
       "reservationChanged": "la reserva se modificó después de crear este documento"
     }
+  },
+  "signatures": {
+    "badgeSigned": "Firmado digitalmente",
+    "badgeOriginal": "Firmado en el portal",
+    "badgeChanged": "Archivo modificado tras la firma",
+    "badgeTitle": "Firmado por {{name}} el {{date}}",
+    "panelTitle": "Firmado digitalmente en el portal de clientes",
+    "signedBy": "{{name}} ({{email}}) el {{date}}",
+    "document": "Documento",
+    "version": "versión {{version}}",
+    "ip": "Dirección IP",
+    "browser": "Navegador",
+    "hashOriginal": "SHA-256 original",
+    "hashSigned": "SHA-256 firmado",
+    "original": "Original",
+    "signedFile": "Archivo firmado",
+    "openSigned": "Abrir contrato firmado",
+    "integrity": {
+      "intact": "sin cambios",
+      "changed": "MODIFICADO tras la firma",
+      "missing": "falta el archivo"
+    }
   }
 }

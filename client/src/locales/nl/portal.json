@@ -143,7 +143,30 @@
     "ackedBy": "Akkoord door {{name}} op {{date}}",
     "ackConfirmTitle": "Akkoord geven?",
     "ackConfirmAction": "Gezien en akkoord",
-    "contractNo": "contract {{nr}}"
+    "contractNo": "contract {{nr}}",
+    "signAction": "Tekenen",
+    "awaitingSignature": "Wacht op handtekening van een beheerder",
+    "signedBy": "Getekend door {{name}} op {{date}}",
+    "superseded": "Vervangen door een nieuwere versie",
+    "signedContract": "Getekend contract",
+    "sign": {
+      "title": "Contract tekenen",
+      "intro": "Lees het contract, vul uw naam in en zet uw handtekening. Daarna sturen wij het getekende contract terug naar ons kantoor.",
+      "step1": "1. Lees het contract",
+      "openFull": "Openen in groot venster",
+      "previewTitle": "Contract",
+      "step2": "2. Uw naam",
+      "step3": "3. Uw handtekening",
+      "clear": "Opnieuw",
+      "padLabel": "Vak om te tekenen",
+      "padHint": "Teken met uw vinger, pen of muis in het vak.",
+      "agree": "Ik heb het contract gelezen en ga akkoord. Ik teken namens mijn bedrijf.",
+      "recorded": "Wij leggen vast: uw naam, de datum en tijd, uw IP-adres en browser, en een digitale vingerafdruk van het contract. Na het tekenen kan het contract niet meer veranderen.",
+      "submit": "Tekenen en versturen",
+      "done": "Het contract is getekend. U vindt het getekende exemplaar bij uw documenten.",
+      "adminOnly": "Alleen een beheerder van uw bedrijf kan dit contract tekenen.",
+      "notSignable": "Dit contract kan niet (meer) getekend worden."
+    }
   },
   "drivers": {
     "title": "Bestuurders",
@@ -300,7 +323,11 @@
     "PORTAL_MAINTENANCE_TOO_LATE": "Dit onderhoud start binnen 48 uur en kan via het portaal niet meer worden gewijzigd. Bel Lam Groep.",
     "PORTAL_MAINTENANCE_WEEKEND": "Kies een doordeweekse dag: de werkplaats is in het weekend gesloten.",
     "PORTAL_RATE_LIMITED": "Te veel verzoeken in korte tijd. Probeer het over een kwartier opnieuw.",
-    "PORTAL_TOO_MANY_OPEN": "U heeft al veel openstaande aanvragen. Wacht tot een aantal is afgehandeld of trek er een in."
+    "PORTAL_TOO_MANY_OPEN": "U heeft al veel openstaande aanvragen. Wacht tot een aantal is afgehandeld of trek er een in.",
+    "PORTAL_ALREADY_SIGNED": "Dit contract is al getekend.",
+    "PORTAL_NOT_SIGNABLE": "Er is een nieuwere versie van dit contract, of de reservering is afgesloten. Vernieuw de pagina.",
+    "PORTAL_DOCUMENT_CHANGED": "Het contract is net gewijzigd. Open het opnieuw en teken dan.",
+    "PORTAL_INVALID_SIGNATURE": "Zet eerst uw handtekening in het vak."
   },
   "admin": {
     "navLabel": "Klantenportaal",
@@ -1373,6 +1400,15 @@
       },
       "request_message": {
         "title": "Nieuw bericht bij aanvraag #{{id}}"
+      },
+      "contract_to_sign": {
+        "title": "Contract klaar om te tekenen",
+        "description": "Er staat een contract voor u klaar om te tekenen ({{fileName}}), bij uw huur van {{period}}.",
+        "descriptionNoPeriod": "Er staat een contract voor u klaar om te tekenen ({{fileName}})."
+      },
+      "contract_signed": {
+        "title": "Contract getekend: {{plate}}",
+        "description": "{{signer}} heeft het contract getekend op {{at}}. Het getekende contract staat bij uw documenten."
       }
     },
     "words": {
