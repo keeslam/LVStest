@@ -726,7 +726,11 @@
       "returnInstructions": "Istruzioni per la riconsegna",
       "returnInstructionsHint": "Compare in ogni prenotazione ancora in corso, al momento della riconsegna: in quali condizioni l’auto deve essere restituita e quanto costa se non lo è.",
       "deliveryNote": "Consegna e ritiro a domicilio (testo per i clienti che ritirano in sede)",
-      "deliveryNoteHint": "Compare al ritiro e alla riconsegna in sede, così che il cliente sappia che la consegna e il ritiro a domicilio sono possibili e quanto costano. Lasci vuoto per non mostrare nulla."
+      "deliveryNoteHint": "Compare al ritiro e alla riconsegna in sede, così che il cliente sappia che la consegna e il ritiro a domicilio sono possibili e quanto costano. Lasci vuoto per non mostrare nulla.",
+      "requestsEnabled": "Richieste nel portale clienti",
+      "requestsEnabledHint": "Disattivato: i clienti non vedono la scheda Richieste e non possono inviare richieste (noleggio, proroga, danni, domande). Le richieste aperte restano qui. Si può disattivare anche per singolo cliente nelle impostazioni del cliente.",
+      "requestsOnDone": "Le richieste sono attive nel portale.",
+      "requestsOffDone": "Le richieste sono disattivate nel portale."
     },
     "fines": {
       "title": "Multe",

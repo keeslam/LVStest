@@ -726,7 +726,11 @@
       "returnInstructions": "Instruções de devolução",
       "returnInstructionsHint": "Aparece em cada reserva em curso, na devolução: em que estado o automóvel deve ser devolvido e quanto custa se não for assim.",
       "deliveryNote": "Entrega e recolha (texto para clientes que levantam na empresa)",
-      "deliveryNoteHint": "Aparece no levantamento e na devolução na empresa, para que o cliente saiba que a entrega e a recolha são possíveis e quanto custam. Deixe vazio para não mostrar nada."
+      "deliveryNoteHint": "Aparece no levantamento e na devolução na empresa, para que o cliente saiba que a entrega e a recolha são possíveis e quanto custam. Deixe vazio para não mostrar nada.",
+      "requestsEnabled": "Pedidos no portal de clientes",
+      "requestsEnabledHint": "Desligado: os clientes não veem o separador Pedidos e não podem enviar pedidos (aluguer, prolongamento, danos, perguntas). Os pedidos abertos continuam aqui. Também pode ser desligado por cliente nas definições do cliente.",
+      "requestsOnDone": "Os pedidos estão ligados no portal.",
+      "requestsOffDone": "Os pedidos estão desligados no portal."
     },
     "fines": {
       "title": "Multas",

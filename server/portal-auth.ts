@@ -162,8 +162,13 @@ async function rememberDevice(req: Request, res: Response, user: PortalUser): Pr
 async function loadContext(userId: number): Promise<{ ctx?: PortalRequestContext; code?: PortalErrorCode }> {
   const user = await portalStorage.getPortalUser(userId);
   if (!user || !user.active) return { code: PORTAL_ERROR.ACCOUNT_BLOCKED };
-  const settings = await portalStorage.getOrCreateCustomerSettings(user.customerId);
-  if (!settings.portalEnabled) return { code: PORTAL_ERROR.PORTAL_DISABLED };
+  const stored = await portalStorage.getOrCreateCustomerSettings(user.customerId);
+  if (!stored.portalEnabled) return { code: PORTAL_ERROR.PORTAL_DISABLED };
+  // Kees, 2026-10-18: the office can switch requests off for the whole portal (Instellingen >
+  // Klantenportaal). It overrides the customer's own switch here, so the tab, every request route
+  // (requireFeature("canSubmitRequests")) and the notices about requests all follow it.
+  const config = await getPortalConfig();
+  const settings = config.requestsEnabled === false ? { ...stored, canSubmitRequests: false } : stored;
   const scope: PortalScope = user.role === PortalUserRole.DRIVER ? { driverId: user.driverId } : {};
   return { ctx: { user, customerId: user.customerId, settings, scope } };
 }

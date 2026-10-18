@@ -22,7 +22,7 @@ import { db } from "../db";
 import { customers, documents, portalUsers, reservations, vehicles, portalContractSignatures, type Document, type PortalContractSignature } from "../../shared/schema";
 import {
   CONSENT_STATEMENT_NL, CONSENT_VERSION, MIN_SIGNATURE_BYTES, MAX_SIGNATURE_BYTES, SIGNABLE_LABEL_NL,
-  signedKindOf, signedTypeFor, unsignedKindOf,
+  SIGNABLE_DOCUMENT_TYPES, signableSeriesOf, signedKindOf, signedTypeFor, unsignedKindOf,
   type AwaitingSignatureRow, type ContractSignatureDto, type ContractSigningStatus, type SignableKind, type SignatureIntegrity,
   type SignContractInput, type SignedDocumentRow,
 } from "../../shared/contract-signing";
@@ -58,13 +58,13 @@ export interface SigningState {
 
 type DocumentRef = Pick<Document, "id" | "reservationId" | "documentType" | "isStale" | "version" | "uploadDate">;
 
-/** The newest current unsigned document per reservation and kind: the only one that can be signed. */
+/** The newest current unsigned document per reservation and type: the only one that can be signed. */
 function currentUnsignedIds(rows: DocumentRef[]): Set<number> {
   const best = new Map<string, DocumentRef>();
   for (const d of rows) {
-    const kind = unsignedKindOf(d.documentType);
-    if (d.reservationId == null || d.isStale || !kind) continue;
-    const key = `${d.reservationId}:${kind}`;
+    const series = signableSeriesOf(d.documentType);
+    if (d.reservationId == null || d.isStale || !series) continue;
+    const key = `${d.reservationId}:${series}`;
     const prev = best.get(key);
     const newer = !prev || (d.version ?? 1) > (prev.version ?? 1)
       || ((d.version ?? 1) === (prev.version ?? 1) && new Date(d.uploadDate).getTime() > new Date(prev.uploadDate).getTime());
@@ -375,7 +375,7 @@ export async function listAwaitingSignature(limit = 200): Promise<AwaitingSignat
     .innerJoin(customers, eq(reservations.customerId, customers.id))
     .leftJoin(vehicles, eq(reservations.vehicleId, vehicles.id))
     .where(and(
-      inArray(documents.documentType, ["Contract (Unsigned)", "Damage Check (Unsigned)"]),
+      inArray(documents.documentType, [...SIGNABLE_DOCUMENT_TYPES]),
       inArray(reservations.status, ["booked", "picked_up"]),
       isNull(reservations.deletedAt),
       sql`exists (select 1 from ${portalUsers} pu where pu.customer_id = ${customers.id})`,

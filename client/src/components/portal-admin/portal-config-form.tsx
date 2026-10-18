@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Globe } from "lucide-react";
+import { Globe, Inbox } from "lucide-react";
 
 const KEY = ["/api/portal-admin/config"];
 
@@ -50,8 +51,20 @@ export function PortalConfigForm() {
       pickupAddress: pickupAddress.trim(), openingHours: openingHours.trim(), pickupInstructions: pickupInstructions.trim(), returnInstructions: returnInstructions.trim(), deliveryNote: deliveryNote.trim(), privacyUrl: privacyUrl.trim(),
       phone: phone.trim(),
       fineAdminFee: Number(fineAdminFee),
+      requestsEnabled: data?.requestsEnabled ?? true,
     })).json(),
     onSuccess: (saved) => { queryClient.setQueryData(KEY, saved); toast({ title: t("admin.config.saved") }); },
+    onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
+  });
+
+  // Kees, 2026-10-18: requests on or off for the whole portal. Saved at once, like a light switch;
+  // the rest of the stored configuration goes along unchanged.
+  const toggleRequests = useMutation({
+    mutationFn: async (requestsEnabled: boolean) => (await apiRequest("PUT", KEY[0], { ...data, requestsEnabled })).json(),
+    onSuccess: (saved: PortalConfig) => {
+      queryClient.setQueryData(KEY, saved);
+      toast({ title: saved.requestsEnabled ? t("admin.config.requestsOnDone") : t("admin.config.requestsOffDone") });
+    },
     onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
 
@@ -62,6 +75,14 @@ export function PortalConfigForm() {
         <CardDescription>{t("admin.config.description")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="flex items-start justify-between gap-4 rounded-md border p-3" data-testid="portal-requests-switch-row">
+          <div className="space-y-1">
+            <Label htmlFor="pc-requests" className="flex items-center gap-2 font-medium"><Inbox className="h-4 w-4" />{t("admin.config.requestsEnabled")}</Label>
+            <p className="text-xs text-muted-foreground">{t("admin.config.requestsEnabledHint")}</p>
+          </div>
+          <Switch id="pc-requests" checked={data?.requestsEnabled ?? true} disabled={!data || toggleRequests.isPending}
+            onCheckedChange={(v) => toggleRequests.mutate(v)} data-testid="switch-portal-requests" />
+        </div>
         <div>
           <Label htmlFor="pc-origins">{t("admin.config.allowedFrameOrigins")}</Label>
           <Textarea id="pc-origins" rows={3} value={origins} onChange={(e) => setOrigins(e.target.value)} placeholder={"https://lamgroep.nl\nhttps://www.lamgroep.nl"} />

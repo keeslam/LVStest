@@ -52,12 +52,27 @@ export type ContractSigningStatus =
 
 const normalize = (documentType?: string | null) => (documentType ?? "").toLowerCase().replace(/[\s_-]+/g, "");
 
-/** `Contract (Unsigned)` / `Damage Check (Unsigned)` in any spelling: the kind that can be signed, else null. */
+/**
+ * The document types a customer can sign in the portal, as stored in `documents.document_type`:
+ * the generated contract and damage form, and (Kees, 2026-10-18) the damage checks made on the tablet
+ * at pickup and return.
+ */
+export const SIGNABLE_DOCUMENT_TYPES = ["Contract (Unsigned)", "Damage Check (Unsigned)", "Damage Check (Pickup)", "Damage Check (Return)"] as const;
+
+/** One of SIGNABLE_DOCUMENT_TYPES in any spelling: the kind that can be signed, else null. */
 export function unsignedKindOf(documentType?: string | null): SignableKind | null {
   const n = normalize(documentType);
   if (n === "contract(unsigned)") return "contract";
-  if (n === "damagecheck(unsigned)") return "damage_check";
+  if (n === "damagecheck(unsigned)" || n === "damagecheck(pickup)" || n === "damagecheck(return)") return "damage_check";
   return null;
+}
+
+/**
+ * Which documents replace each other: a newer version of the same type on the same reservation. A
+ * pickup check and a return check are two documents, each signed on its own.
+ */
+export function signableSeriesOf(documentType?: string | null): string | null {
+  return unsignedKindOf(documentType) ? normalize(documentType) : null;
 }
 
 /** `Contract (Signed)` / `Damage Check (Signed)` in any spelling: the kind of signed copy, else null. */

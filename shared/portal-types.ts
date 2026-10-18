@@ -271,6 +271,11 @@ export interface PortalConfig {
   privacyUrl: string;
   /** Phone number customers should call for changes that the portal no longer allows (e.g. maintenance within 48 hours). */
   phone: string;
+  /**
+   * Kees, 2026-10-18: the "Aanvragen" part of the portal as a whole. Off = no customer sees the tab
+   * or can send a request (rental, extension, damage, question...), whatever their own switch says.
+   */
+  requestsEnabled: boolean;
 }
 
 export const DEFAULT_PORTAL_CONFIG: PortalConfig = {
@@ -285,6 +290,7 @@ export const DEFAULT_PORTAL_CONFIG: PortalConfig = {
   deliveryNote: 'Liever dat wij de auto brengen of ophalen? Dat kan in overleg, vanaf € 125. Neem contact met ons op.',
   privacyUrl: 'https://lamgroep.nl/privacy',
   phone: '0181 - 45 10 40',
+  requestsEnabled: true,
 };
 
 export const PORTAL_CONFIG_KEY = 'portal_config';

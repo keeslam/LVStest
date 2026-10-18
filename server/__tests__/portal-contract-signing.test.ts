@@ -301,6 +301,29 @@ describe("signing a contract in the portal", () => {
       expect(row.seenAt).toBeTruthy();
     });
 
+    it("the tablet checks at pickup and return can each be signed on their own (Kees, 2026-10-18)", async () => {
+      const res4 = (await createTestReservation({ customerId: customerA, vehicleId: vehicleA, status: "picked_up", startDate: "2097-01-01", endDate: "2097-01-20" })).id;
+      const pickup = await createContract(res4, vehicleA, { documentType: "Damage Check (Pickup)" });
+      const ret = await createContract(res4, vehicleA, { documentType: "Damage Check (Return)" });
+      const a = await login(`sign-a-admin@${TEST_EMAIL_DOMAIN}`);
+      const states = () => a.agent.get("/api/portal/documents").then((r) => r.body as Array<{ id: number; kind: string; signing: { status: string } | null }>);
+      let docs = await states();
+      expect(docs.find((d) => d.id === pickup.doc.id)).toMatchObject({ kind: "damage_check", signing: { status: "to_sign" } });
+      expect(docs.find((d) => d.id === ret.doc.id)?.signing?.status).toBe("to_sign");
+
+      const res = await a.sign(pickup.doc.id, body(pickup.sha));
+      expect(res.status).toBe(201);
+      const [signed] = await db.select().from(documents).where(eq(documents.id, res.body.signedDocumentId));
+      expect(signed.documentType).toBe("Damage Check (Signed)");
+      docs = await states();
+      expect(docs.find((d) => d.id === pickup.doc.id)?.signing?.status).toBe("signed");
+      // The return check is another document: still to sign, and on the office's waiting list.
+      expect(docs.find((d) => d.id === ret.doc.id)?.signing?.status).toBe("to_sign");
+      const awaiting = (await request(dashboard).get("/api/portal-admin/signatures")).body.awaiting.map((r: { documentId: number }) => r.documentId);
+      expect(awaiting).toContain(ret.doc.id);
+      expect(awaiting).not.toContain(pickup.doc.id);
+    });
+
     it("is closed to staff without the portal right", async () => {
       expect((await request(outsider).get("/api/portal-admin/signatures")).status).toBe(403);
       expect((await request(outsider).post(`/api/portal-admin/signatures/${signatureId}/seen`)).status).toBe(403);

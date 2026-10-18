@@ -138,13 +138,24 @@ describe("B-06 — kantoorwijzigingen bereiken de portaalklant", () => {
     expect(rows[0].params).toMatchObject({ documentKind: "contract", fileName: "contract.pdf" });
   });
 
-  it("c — a damage form stays a plain 'new document'", async () => {
+  it("c — a damage check from the tablet can be signed, so the notice asks for it (Kees, 2026-10-18)", async () => {
     const row = await rental();
     const doc = await createTestDocument({
       reservationId: row.id, vehicleId, documentType: "Damage Check (Pickup)", fileName: "schade-nieuw.pdf",
     });
     expect(await onDocumentAvailable(doc)).toBe(true);
-    const rows = (await mine("document_available")).filter((n) => n.description.includes("schade-nieuw.pdf"));
+    const rows = (await mine("contract_to_sign")).filter((n) => n.description.includes("schade-nieuw.pdf"));
+    expect(rows).toHaveLength(1);
+    expect(rows[0].params).toMatchObject({ documentKind: "damageCheck" });
+  });
+
+  it("c — an uploaded damage check (not signable) stays a plain 'new document'", async () => {
+    const row = await rental();
+    const doc = await createTestDocument({
+      reservationId: row.id, vehicleId, documentType: "Damage Check", fileName: "schade-scan.pdf",
+    });
+    expect(await onDocumentAvailable(doc)).toBe(true);
+    const rows = (await mine("document_available")).filter((n) => n.description.includes("schade-scan.pdf"));
     expect(rows).toHaveLength(1);
   });
 

@@ -72,3 +72,16 @@ describe("PortalConfigForm: administration fee", () => {
     expect(puts).toEqual([]);
   });
 });
+
+describe("PortalConfigForm: requests on or off for the whole portal (Kees, 2026-10-18)", () => {
+  it("shows the switch on by default and saves 'off' at once, with the rest of the configuration", async () => {
+    renderIt();
+    const toggle = await screen.findByTestId("switch-portal-requests");
+    await vi.waitFor(() => expect(toggle).not.toBeDisabled());
+    expect(toggle).toHaveAttribute("data-state", "checked");
+    await userEvent.click(toggle);
+    await vi.waitFor(() => expect(puts).toHaveLength(1));
+    expect(puts[0]).toMatchObject({ requestsEnabled: false, fineAdminFee: 12.5, allowedFrameOrigins: ["https://lamgroep.nl"] });
+    expect(await screen.findByText("Aanvragen staan uit in het portaal.")).toBeInTheDocument();
+  });
+});
