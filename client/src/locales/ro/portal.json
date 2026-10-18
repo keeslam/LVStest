@@ -727,10 +727,11 @@
       "returnInstructionsHint": "Apar la fiecare rezervare încă în curs, la returnare: în ce stare trebuie returnat autoturismul și cât costă dacă nu este așa.",
       "deliveryNote": "Livrare și ridicare (text pentru clienții care ridică de la sediu)",
       "deliveryNoteHint": "Apare la ridicarea și returnarea la sediu, astfel încât clientul să știe că livrarea și ridicarea sunt posibile și cât costă. Lăsați gol pentru a nu afișa nimic.",
-      "requestsEnabled": "Cereri în portalul clienților",
-      "requestsEnabledHint": "Dezactivat: clienții nu văd fila Cereri și nu pot trimite cereri (închiriere, prelungire, daune, întrebări). Cererile deschise rămân aici. Se poate dezactiva și pentru fiecare client în setările clientului.",
-      "requestsOnDone": "Cererile sunt activate în portal.",
-      "requestsOffDone": "Cererile sunt dezactivate în portal."
+      "onlineBookingEnabled": "Închirierea vehiculelor oferite online",
+      "onlineBookingEnabledHint": "Dezactivat: clienții nu mai văd vehiculele oferite online și nu pot trimite o cerere de închiriere pentru ele. Celelalte cereri (prelungire, daune, întrebări) rămân posibile. Se poate dezactiva și pentru fiecare client în setările clientului.",
+      "onlineBookingOnDone": "Închirierea vehiculelor online este activată.",
+      "onlineBookingOffDone": "Închirierea vehiculelor online este dezactivată.",
+      "onlineBookingNotSaved": "Nesalvat: serverul nu cunoaște încă acest comutator. Reporniți serverul și încercați din nou."
     },
     "fines": {
       "title": "Amenzi",

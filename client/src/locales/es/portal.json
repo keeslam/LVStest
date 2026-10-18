@@ -727,10 +727,11 @@
       "returnInstructionsHint": "Se muestra en cada reserva en curso, al devolver: en qué estado debe devolverse el coche y cuánto cuesta si no es así.",
       "deliveryNote": "Entrega y recogida a domicilio (texto para los clientes que recogen en la empresa)",
       "deliveryNoteHint": "Se muestra en la recogida y la devolución en la empresa, para que el cliente sepa que se puede entregar y recoger a domicilio y cuánto cuesta. Déjelo vacío para no mostrar nada.",
-      "requestsEnabled": "Solicitudes en el portal de clientes",
-      "requestsEnabledHint": "Desactivado: los clientes no ven la pestaña Solicitudes y no pueden enviar solicitudes (alquiler, prórroga, daños, preguntas). Las solicitudes abiertas siguen aquí. También se puede desactivar por cliente en los ajustes del cliente.",
-      "requestsOnDone": "Las solicitudes están activadas en el portal.",
-      "requestsOffDone": "Las solicitudes están desactivadas en el portal."
+      "onlineBookingEnabled": "Alquiler de vehículos ofrecidos en línea",
+      "onlineBookingEnabledHint": "Desactivado: los clientes ya no ven los vehículos ofrecidos en línea y no pueden enviar una solicitud de alquiler para ellos. Las demás solicitudes (prórroga, daños, preguntas) siguen funcionando. También se puede desactivar por cliente en los ajustes del cliente.",
+      "onlineBookingOnDone": "El alquiler de vehículos en línea está activado.",
+      "onlineBookingOffDone": "El alquiler de vehículos en línea está desactivado.",
+      "onlineBookingNotSaved": "No guardado: el servidor aún no conoce este interruptor. Reinicie el servidor e inténtelo de nuevo."
     },
     "fines": {
       "title": "Multas",

@@ -721,10 +721,11 @@
       "returnInstructionsHint": "Shown with the return of every rental that is running: the condition the car must come back in and what it costs if it does not.",
       "deliveryNote": "Delivery and collection (text for customers who use the shop)",
       "deliveryNoteHint": "Shown with pickup and return at the shop, so the customer knows delivery and collection can be arranged, and what it costs. Leave empty to show nothing.",
-      "requestsEnabled": "Requests in the customer portal",
-      "requestsEnabledHint": "Off: customers do not see the Requests tab and cannot send requests (rental, extension, damage, questions). Open requests stay here as they are. It can also be switched off per customer in the customer settings.",
-      "requestsOnDone": "Requests are on in the portal.",
-      "requestsOffDone": "Requests are off in the portal."
+      "onlineBookingEnabled": "Renting vehicles offered online",
+      "onlineBookingEnabledHint": "Off: customers no longer see the vehicles offered online and cannot send a rental request for them. Other requests (extension, damage, questions) keep working. It can also be switched off per customer in the customer settings.",
+      "onlineBookingOnDone": "Renting vehicles online is on.",
+      "onlineBookingOffDone": "Renting vehicles online is off.",
+      "onlineBookingNotSaved": "Not saved: the server does not know this switch yet. Restart the server and try again."
     },
     "fines": {
       "title": "Fines",

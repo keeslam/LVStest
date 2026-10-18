@@ -721,10 +721,11 @@
       "returnInstructionsHint": "Staat bij elke reservering die nog loopt, bij het inleveren: in welke staat de auto terug moet en wat het kost als dat niet zo is.",
       "deliveryNote": "Brengen en ophalen (tekst voor klanten die bij de zaak ophalen)",
       "deliveryNoteHint": "Staat bij ophalen en inleveren bij de zaak, zodat de klant weet dat brengen en ophalen kan en wat het kost. Laat leeg om niets te tonen.",
-      "requestsEnabled": "Aanvragen in het klantenportaal",
-      "requestsEnabledHint": "Uit: klanten zien de tab Aanvragen niet en kunnen geen aanvragen insturen (huur, verlenging, schade, vragen). Open aanvragen blijven hier gewoon staan. Per klant kan het ook nog uit bij de klantinstellingen.",
-      "requestsOnDone": "Aanvragen staan aan in het portaal.",
-      "requestsOffDone": "Aanvragen staan uit in het portaal."
+      "onlineBookingEnabled": "Huren van online voertuigen",
+      "onlineBookingEnabledHint": "Uit: klanten zien de online aangeboden voertuigen niet meer en kunnen er geen huuraanvraag voor doen. Andere aanvragen (verlenging, schade, vragen) blijven gewoon mogelijk. Per klant kan het ook nog uit bij de klantinstellingen.",
+      "onlineBookingOnDone": "Huren van online voertuigen staat aan.",
+      "onlineBookingOffDone": "Huren van online voertuigen staat uit.",
+      "onlineBookingNotSaved": "Niet opgeslagen: de server kent deze schakelaar nog niet. Start de server opnieuw en probeer het nog eens."
     },
     "fines": {
       "title": "Bekeuringen",

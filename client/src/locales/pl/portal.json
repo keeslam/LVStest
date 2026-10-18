@@ -733,10 +733,11 @@
       "returnInstructionsHint": "Wyświetlane przy każdej trwającej rezerwacji, przy zwrocie: w jakim stanie samochód ma zostać zwrócony i ile to kosztuje, jeśli tak nie jest.",
       "deliveryNote": "Dowóz i odbiór (tekst dla klientów odbierających na miejscu)",
       "deliveryNoteHint": "Wyświetlane przy odbiorze i zwrocie na miejscu, aby klient wiedział, że dowóz i odbiór są możliwe oraz ile kosztują. Zostaw puste, aby nic nie wyświetlać.",
-      "requestsEnabled": "Wnioski w portalu klienta",
-      "requestsEnabledHint": "Wyłączone: klienci nie widzą zakładki Wnioski i nie mogą wysyłać wniosków (najem, przedłużenie, szkoda, pytania). Otwarte wnioski pozostają tutaj. Można to też wyłączyć dla pojedynczego klienta w jego ustawieniach.",
-      "requestsOnDone": "Wnioski są włączone w portalu.",
-      "requestsOffDone": "Wnioski są wyłączone w portalu."
+      "onlineBookingEnabled": "Najem pojazdów oferowanych online",
+      "onlineBookingEnabledHint": "Wyłączone: klienci nie widzą już pojazdów oferowanych online i nie mogą wysłać dla nich wniosku o najem. Pozostałe wnioski (przedłużenie, szkoda, pytania) nadal działają. Można to też wyłączyć dla pojedynczego klienta w jego ustawieniach.",
+      "onlineBookingOnDone": "Najem pojazdów online jest włączony.",
+      "onlineBookingOffDone": "Najem pojazdów online jest wyłączony.",
+      "onlineBookingNotSaved": "Nie zapisano: serwer nie zna jeszcze tego przełącznika. Prosimy uruchomić serwer ponownie i spróbować jeszcze raz."
     },
     "fines": {
       "title": "Mandaty",

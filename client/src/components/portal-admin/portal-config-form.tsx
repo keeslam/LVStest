@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Globe, Inbox } from "lucide-react";
+import { Globe, Car } from "lucide-react";
 
 const KEY = ["/api/portal-admin/config"];
 
@@ -51,19 +51,24 @@ export function PortalConfigForm() {
       pickupAddress: pickupAddress.trim(), openingHours: openingHours.trim(), pickupInstructions: pickupInstructions.trim(), returnInstructions: returnInstructions.trim(), deliveryNote: deliveryNote.trim(), privacyUrl: privacyUrl.trim(),
       phone: phone.trim(),
       fineAdminFee: Number(fineAdminFee),
-      requestsEnabled: data?.requestsEnabled ?? true,
+      onlineBookingEnabled: data?.onlineBookingEnabled ?? true,
     })).json(),
     onSuccess: (saved) => { queryClient.setQueryData(KEY, saved); toast({ title: t("admin.config.saved") }); },
     onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
 
-  // Kees, 2026-10-18: requests on or off for the whole portal. Saved at once, like a light switch;
-  // the rest of the stored configuration goes along unchanged.
-  const toggleRequests = useMutation({
-    mutationFn: async (requestsEnabled: boolean) => (await apiRequest("PUT", KEY[0], { ...data, requestsEnabled })).json(),
+  // Kees, 2026-10-18: renting the online vehicles on or off for the whole portal. Saved at once, like a
+  // light switch; the rest of the stored configuration goes along unchanged.
+  const toggleOnlineBooking = useMutation({
+    mutationFn: async (onlineBookingEnabled: boolean) => (await apiRequest("PUT", KEY[0], { ...data, onlineBookingEnabled })).json(),
     onSuccess: (saved: PortalConfig) => {
+      // A server that does not know the switch yet (still running older code) answers without it.
+      if (typeof saved.onlineBookingEnabled !== "boolean") {
+        toast({ title: t("admin.config.onlineBookingNotSaved"), variant: "destructive" });
+        return;
+      }
       queryClient.setQueryData(KEY, saved);
-      toast({ title: saved.requestsEnabled ? t("admin.config.requestsOnDone") : t("admin.config.requestsOffDone") });
+      toast({ title: saved.onlineBookingEnabled ? t("admin.config.onlineBookingOnDone") : t("admin.config.onlineBookingOffDone") });
     },
     onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
@@ -75,13 +80,13 @@ export function PortalConfigForm() {
         <CardDescription>{t("admin.config.description")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-start justify-between gap-4 rounded-md border p-3" data-testid="portal-requests-switch-row">
+        <div className="flex items-start justify-between gap-4 rounded-md border p-3" data-testid="portal-online-booking-switch-row">
           <div className="space-y-1">
-            <Label htmlFor="pc-requests" className="flex items-center gap-2 font-medium"><Inbox className="h-4 w-4" />{t("admin.config.requestsEnabled")}</Label>
-            <p className="text-xs text-muted-foreground">{t("admin.config.requestsEnabledHint")}</p>
+            <Label htmlFor="pc-online-booking" className="flex items-center gap-2 font-medium"><Car className="h-4 w-4" />{t("admin.config.onlineBookingEnabled")}</Label>
+            <p className="text-xs text-muted-foreground">{t("admin.config.onlineBookingEnabledHint")}</p>
           </div>
-          <Switch id="pc-requests" checked={data?.requestsEnabled ?? true} disabled={!data || toggleRequests.isPending}
-            onCheckedChange={(v) => toggleRequests.mutate(v)} data-testid="switch-portal-requests" />
+          <Switch id="pc-online-booking" checked={data?.onlineBookingEnabled ?? true} disabled={!data || toggleOnlineBooking.isPending}
+            onCheckedChange={(v) => toggleOnlineBooking.mutate(v)} data-testid="switch-portal-online-booking" />
         </div>
         <div>
           <Label htmlFor="pc-origins">{t("admin.config.allowedFrameOrigins")}</Label>

@@ -164,11 +164,12 @@ async function loadContext(userId: number): Promise<{ ctx?: PortalRequestContext
   if (!user || !user.active) return { code: PORTAL_ERROR.ACCOUNT_BLOCKED };
   const stored = await portalStorage.getOrCreateCustomerSettings(user.customerId);
   if (!stored.portalEnabled) return { code: PORTAL_ERROR.PORTAL_DISABLED };
-  // Kees, 2026-10-18: the office can switch requests off for the whole portal (Instellingen >
-  // Klantenportaal). It overrides the customer's own switch here, so the tab, every request route
-  // (requireFeature("canSubmitRequests")) and the notices about requests all follow it.
+  // Kees, 2026-10-18: the office can switch renting the online vehicles off for the whole portal
+  // (App-instellingen > Klantenportaal). It overrides the customer's own canBook here, so the vehicle
+  // list, the rental request (both check canBook on the server) and the buttons all follow it; every
+  // other request keeps working.
   const config = await getPortalConfig();
-  const settings = config.requestsEnabled === false ? { ...stored, canSubmitRequests: false } : stored;
+  const settings = config.onlineBookingEnabled === false ? { ...stored, canBook: false } : stored;
   const scope: PortalScope = user.role === PortalUserRole.DRIVER ? { driverId: user.driverId } : {};
   return { ctx: { user, customerId: user.customerId, settings, scope } };
 }

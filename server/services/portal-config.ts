@@ -21,7 +21,7 @@ export const portalConfigSchema = z.object({
   deliveryNote: z.string().max(500).default(DEFAULT_PORTAL_CONFIG.deliveryNote),
   privacyUrl: z.union([z.string().url(), z.literal("")]).default(DEFAULT_PORTAL_CONFIG.privacyUrl),
   phone: z.string().max(50).default(DEFAULT_PORTAL_CONFIG.phone),
-  requestsEnabled: z.boolean().default(true),
+  onlineBookingEnabled: z.boolean().default(true),
 });
 
 const CACHE_TTL_MS = 60_000;
@@ -46,10 +46,10 @@ export async function getPortalConfig(): Promise<PortalConfig> {
 }
 
 export async function savePortalConfig(input: unknown, updatedBy: string): Promise<PortalConfig> {
-  // A save that does not mention the requests switch (an older screen, a script) keeps it as it is,
-  // instead of the schema default quietly switching requests back on.
+  // A save that does not mention the online-booking switch (an older screen, a script) keeps it as it
+  // is, instead of the schema default quietly switching it back on.
   const current = await getPortalConfig();
-  const withSwitch = input && typeof input === "object" && !("requestsEnabled" in input) ? { ...input, requestsEnabled: current.requestsEnabled } : input;
+  const withSwitch = input && typeof input === "object" && !("onlineBookingEnabled" in input) ? { ...input, onlineBookingEnabled: current.onlineBookingEnabled } : input;
   const value = portalConfigSchema.parse(withSwitch);
   const existing = await storage.getAppSettingByKey(PORTAL_CONFIG_KEY);
   if (existing) {

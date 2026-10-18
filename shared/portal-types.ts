@@ -272,10 +272,11 @@ export interface PortalConfig {
   /** Phone number customers should call for changes that the portal no longer allows (e.g. maintenance within 48 hours). */
   phone: string;
   /**
-   * Kees, 2026-10-18: the "Aanvragen" part of the portal as a whole. Off = no customer sees the tab
-   * or can send a request (rental, extension, damage, question...), whatever their own switch says.
+   * Kees, 2026-10-18: renting the vehicles offered online, for the whole portal. Off = no customer sees
+   * the online vehicles or can send a rental request for one, whatever their own switch says. Every
+   * other request (extension, damage, question...) keeps working.
    */
-  requestsEnabled: boolean;
+  onlineBookingEnabled: boolean;
 }
 
 export const DEFAULT_PORTAL_CONFIG: PortalConfig = {
@@ -290,7 +291,7 @@ export const DEFAULT_PORTAL_CONFIG: PortalConfig = {
   deliveryNote: 'Liever dat wij de auto brengen of ophalen? Dat kan in overleg, vanaf € 125. Neem contact met ons op.',
   privacyUrl: 'https://lamgroep.nl/privacy',
   phone: '0181 - 45 10 40',
-  requestsEnabled: true,
+  onlineBookingEnabled: true,
 };
 
 export const PORTAL_CONFIG_KEY = 'portal_config';
