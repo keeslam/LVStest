@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { findCandidates, driverAt, attributeFine, linkFineManually, unlinkFine } from "../services/fine-attribution";
 import { assignDriverToReservation } from "../services/driver-assignments";
+import { finesStorage } from "../services/fines-storage";
+import { normalizeLicensePlate } from "../../shared/fines";
 import { createTestCustomer, createTestVehicle, createTestDriver, createTestReservation, createTestFine, cleanupPortalTestData } from "./portal-helpers";
 
 describe("fine attribution", () => {
@@ -65,5 +67,22 @@ describe("fine attribution", () => {
     const back = await unlinkFine(fine.id, "staff");
     expect(back.status).toBe("new");
     expect(back.customerId).toBeNull();
+  });
+
+  it("finds the vehicle and its reservation when the vehicle's plate has dashes", async () => {
+    // Fines store the plate without dashes ("PT12AB"), vehicles keep it as typed ("PT-12-AB").
+    const dashed = `PT-${Date.now().toString().slice(-4)}-DS`;
+    const dashedVehicle = await createTestVehicle(dashed);
+    const res = (await createTestReservation({ customerId: customerA, vehicleId: dashedVehicle.id, startDate: "2026-08-01", endDate: "2026-08-05", status: "picked_up" })).id;
+    const stored = normalizeLicensePlate(dashed);
+    expect(stored).not.toContain("-");
+    expect((await finesStorage.getVehicleByPlate(stored))?.id).toBe(dashedVehicle.id);
+    expect((await finesStorage.getVehicleByPlate(dashed))?.id).toBe(dashedVehicle.id);
+    const { covering } = await findCandidates(stored, new Date("2026-08-03T10:00:00Z"));
+    expect(covering.map((c) => c.id)).toEqual([res]);
+    const fine = await createTestFine({ licensePlate: stored, offenceAt: new Date("2026-08-03T10:00:00Z") });
+    const { fine: linked } = await attributeFine(fine.id);
+    expect(linked.status).toBe("linked");
+    expect(linked.reservationId).toBe(res);
   });
 });
