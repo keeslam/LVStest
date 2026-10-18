@@ -61,7 +61,7 @@ export function PortalRequestDialog() {
   // Standard answers: what a request of this type usually gets. They only fill the box; staff can edit before sending.
   const standardKinds = (type: string): Array<"received" | "approved" | "rejected"> => [
     ...(["damage", "fine_question", "other", "mileage"].includes(type) ? ["received" as const] : []),
-    ...(["extension", "early_return", "company_name_change"].includes(type) ? ["approved" as const] : []),
+    ...(["extension", "early_return", "company_name_change", "cancellation"].includes(type) ? ["approved" as const] : []),
     "rejected" as const,
   ];
   const standardText = (kind: string, type: string) => t(`admin.requests.standard.${kind}.${type}`, { defaultValue: t(`admin.requests.standard.${kind}.default`) });
@@ -147,8 +147,8 @@ export function PortalRequestDialog() {
                 <Textarea id="rq-reply" rows={4} value={reply} onChange={(e) => setReply(e.target.value)} data-testid="textarea-request-reply" />
                 <div className="flex flex-wrap gap-2">
                   {r.status === "new" && <Button size="sm" variant="outline" onClick={() => act.mutate({ url: `/api/portal-requests/${id}/take` })}>{t("admin.requests.dialog.take")}</Button>}
-                  {(r.type === "extension" || r.type === "early_return" || r.type === "company_name_change") && (
-                    <Button size="sm" onClick={() => act.mutate({ url: `/api/portal-requests/${id}/approve` })} data-testid="button-approve-request">{t(r.type === "company_name_change" ? "admin.requests.dialog.approveCompanyName" : "admin.requests.dialog.approve")}</Button>
+                  {(r.type === "extension" || r.type === "early_return" || r.type === "company_name_change" || r.type === "cancellation") && (
+                    <Button size="sm" onClick={() => act.mutate({ url: `/api/portal-requests/${id}/approve` })} data-testid="button-approve-request">{t(r.type === "company_name_change" ? "admin.requests.dialog.approveCompanyName" : r.type === "cancellation" ? "admin.requests.dialog.approveCancellation" : "admin.requests.dialog.approve")}</Button>
                   )}
                   {(r.type === "booking" || r.type === "maintenance" || r.type === "maintenance_change") && !approving && (
                     <Button size="sm" onClick={() => setApproving(true)} data-testid="button-approve-request">

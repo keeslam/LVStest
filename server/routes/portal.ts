@@ -37,6 +37,7 @@ import { requestsStorage, toRequestDto } from "../services/portal-requests-stora
 import { requestPayloadSchemas, REQUEST_NEEDS, PortalRequestType } from "../../shared/portal-requests";
 import { listMyVehicles } from "../services/portal-vehicles";
 import { findPortalCustomerForBlock, canCustomerChangeMaintenance } from "../services/portal-maintenance-events";
+import { cancellationState } from "../services/portal-cancellation";
 import { installAsyncErrorHandling } from "../middleware/asyncHandler.js";
 import { vehicleName } from "../../shared/vehicle-name";
 import { SUPPORTED_LANGUAGES } from "../../shared/languages";
@@ -50,7 +51,7 @@ export function toFineDto(f: FineListRow): PortalFineDto {
   };
 }
 
-const REQUEST_LABEL: Record<string, string> = { booking: "huuraanvraag", extension: "verlenging", early_return: "eerder inleveren", damage: "schademelding", maintenance: "onderhoudsmelding", maintenance_change: "wijziging onderhoud", mileage: "kilometerstand", fine_question: "vraag over bekeuring", company_name_change: "wijziging bedrijfsnaam", other: "overig" };
+const REQUEST_LABEL: Record<string, string> = { booking: "huuraanvraag", extension: "verlenging", early_return: "eerder inleveren", damage: "schademelding", maintenance: "onderhoudsmelding", maintenance_change: "wijziging onderhoud", mileage: "kilometerstand", fine_question: "vraag over bekeuring", company_name_change: "wijziging bedrijfsnaam", cancellation: "annulering", other: "overig" };
 
 export interface PortalRouteDeps {
   requirePortalUser: RequestHandler;
@@ -158,7 +159,13 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
       const due = (await getServiceDueVehicles()).find((v) => v.id === r.vehicleId);
       serviceDue = due?.serviceDue.isServiceDue ? "due" : due?.serviceDue.isServiceDueSoon ? "soon" : null;
     }
-    res.json({ ...toReservationDto(r, settingsFlags(ctx.settings, ctx.user).showPrices), driverHistory: toDriverHistoryDto(history), serviceDue });
+    const openCancel = r.status === "booked"
+      ? (await requestsStorage.listRequestsForCustomer(ctx.customerId, {})).find((q) => q.type === "cancellation" && q.reservationId === r.id && (q.status === "new" || q.status === "in_progress"))
+      : undefined;
+    res.json({
+      ...toReservationDto(r, settingsFlags(ctx.settings, ctx.user).showPrices), driverHistory: toDriverHistoryDto(history), serviceDue,
+      cancellation: cancellationState(r, openCancel?.id ?? null),
+    });
   });
 
   app.post("/api/portal/reservations/:id/driver", requirePortalUser, requireFeature("canManageDrivers"), requirePortalRole("admin"), async (req, res) => {
@@ -483,7 +490,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     const files = (req.files as Express.Multer.File[] | undefined) ?? [];
     const discard = () => files.forEach((f) => fs.rmSync(f.path, { force: true }));
     const base = z.object({
-      type: z.enum([PortalRequestType.BOOKING, PortalRequestType.EXTENSION, PortalRequestType.EARLY_RETURN, PortalRequestType.DAMAGE, PortalRequestType.MAINTENANCE, PortalRequestType.MAINTENANCE_CHANGE, PortalRequestType.MILEAGE, PortalRequestType.FINE_QUESTION, PortalRequestType.OTHER]),
+      type: z.enum([PortalRequestType.BOOKING, PortalRequestType.EXTENSION, PortalRequestType.EARLY_RETURN, PortalRequestType.DAMAGE, PortalRequestType.MAINTENANCE, PortalRequestType.MAINTENANCE_CHANGE, PortalRequestType.MILEAGE, PortalRequestType.FINE_QUESTION, PortalRequestType.CANCELLATION, PortalRequestType.OTHER]),
       message: z.string().trim().min(1).max(4000),
       reservationId: z.coerce.number().int().positive().optional(),
       fineId: z.coerce.number().int().positive().optional(),
@@ -571,7 +578,12 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     if (type === "early_return" && reservation && (p.returnDate < today || (reservation.endDate && p.returnDate >= reservation.endDate))) {
       discard(); return portalError(res, 400, PORTAL_ERROR.REQUEST_INVALID_PERIOD, "Return date must be before the current end date");
     }
-    if (type === "maintenance" || type === "maintenance_change") {
+    if (type === "cancellation" && reservation) {
+      const state = cancellationState(reservation, null);
+      if (state.reason === "too_late") { discard(); return portalError(res, 400, PORTAL_ERROR.CANCEL_TOO_LATE, "Cancelling is possible until 48 hours before the start"); }
+      if (!state.allowed) { discard(); return portalError(res, 400, PORTAL_ERROR.CANCEL_NOT_ALLOWED, "Only a booked reservation that has not started can be cancelled"); }
+    }
+    if (type === "maintenance" || type === "maintenance_change" || type === "cancellation") {
       const openSame = (await requestsStorage.listRequestsForCustomer(ctx.customerId, {})).find((r) => r.type === type && r.reservationId === reservationId && (r.status === "new" || r.status === "in_progress"));
       if (openSame) { discard(); return portalError(res, 409, PORTAL_ERROR.DUPLICATE_REQUEST, `Er staat al een aanvraag (#${openSame.id}) open hiervoor`); }
     }

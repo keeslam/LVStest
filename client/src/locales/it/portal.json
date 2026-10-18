@@ -373,7 +373,9 @@
     "PORTAL_ALREADY_SIGNED": "Questo documento è già stato firmato.",
     "PORTAL_NOT_SIGNABLE": "Esiste una versione più recente di questo documento oppure la prenotazione è chiusa. Aggiorni la pagina.",
     "PORTAL_DOCUMENT_CHANGED": "Il documento è appena cambiato. Lo apra di nuovo e poi firmi.",
-    "PORTAL_INVALID_SIGNATURE": "Firmi prima nel riquadro."
+    "PORTAL_INVALID_SIGNATURE": "Firmi prima nel riquadro.",
+    "PORTAL_CANCEL_TOO_LATE": "Puoi annullare fino a 48 ore prima dell'inizio. Contattaci.",
+    "PORTAL_CANCEL_NOT_ALLOWED": "Questa prenotazione non può essere annullata tramite il portale."
   },
   "admin": {
     "navLabel": "Portale clienti",
@@ -995,7 +997,8 @@
         "maintenance": "Manutenzione/guasto",
         "maintenance_change": "Modifica della manutenzione",
         "mileage": "Chilometraggio",
-        "company_name_change": "Modifica della ragione sociale"
+        "company_name_change": "Modifica della ragione sociale",
+        "cancellation": "Annullamento"
       },
       "status": {
         "new": "Nuova",
@@ -1040,7 +1043,8 @@
         "standardApproved": "Approvata",
         "standardRejected": "Rifiuto",
         "newCompanyName": "Ragione sociale richiesta",
-        "approveCompanyName": "Approvare (modifica la ragione sociale)"
+        "approveCompanyName": "Approvare (modifica la ragione sociale)",
+        "approveCancellation": "Approva annullamento"
       },
       "standard": {
         "received": {
@@ -1054,7 +1058,8 @@
           "extension": "La Sua proroga è stata approvata.",
           "early_return": "La riconsegna anticipata è stata accettata.",
           "default": "La Sua richiesta è stata approvata.",
-          "company_name_change": "La nuova ragione sociale è stata applicata."
+          "company_name_change": "La nuova ragione sociale è stata applicata.",
+          "cancellation": "La tua prenotazione è stata annullata."
         },
         "rejected": {
           "extension": "Purtroppo non possiamo concedere la proroga, perché il veicolo è già prenotato per il periodo successivo.",
@@ -1063,7 +1068,8 @@
           "maintenance": "Purtroppo non possiamo pianificare la manutenzione in questo modo.",
           "maintenance_change": "Purtroppo non possiamo spostare la manutenzione a questa data.",
           "default": "Purtroppo non possiamo accogliere questa richiesta.",
-          "company_name_change": "Purtroppo non possiamo modificare la ragione sociale. Ci contatti per conoscere le possibilità."
+          "company_name_change": "Purtroppo non possiamo modificare la ragione sociale. Ci contatti per conoscere le possibilità.",
+          "cancellation": "Purtroppo non possiamo più annullare la prenotazione. Contattaci."
         }
       }
     },
@@ -1248,7 +1254,8 @@
       "maintenance": "Segnalare manutenzione o guasto",
       "maintenance_change": "Modificare la manutenzione",
       "mileage": "Comunicare il chilometraggio",
-      "company_name_change": "Modifica della ragione sociale"
+      "company_name_change": "Modifica della ragione sociale",
+      "cancellation": "Annulla prenotazione"
     },
     "status": {
       "new": "Inviata",
@@ -1313,7 +1320,14 @@
     "progress": "Avanzamento",
     "noneOpen": "Nessuna richiesta in sospeso.",
     "withdraw": "Ritirare la richiesta",
-    "withdrawn": "Richiesta ritirata."
+    "withdrawn": "Richiesta ritirata.",
+    "cancel": {
+      "button": "Annulla",
+      "until": "Puoi annullare fino al {{date}}",
+      "tooLate": "Puoi annullare fino a 48 ore prima dell'inizio. Contattaci.",
+      "pending": "Annullamento richiesto (#{{id}})",
+      "formHint": "Puoi annullare fino a 48 ore prima dell'inizio. Lam Groep conferma l'annullamento; fino ad allora la prenotazione resta valida."
+    }
   },
   "site": {
     "backToSite": "Vai a lamgroep.nl",

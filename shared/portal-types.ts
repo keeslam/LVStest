@@ -27,6 +27,8 @@ export const PORTAL_ERROR = {
   DUPLICATE_REQUEST: 'PORTAL_DUPLICATE_REQUEST',
   MAINTENANCE_TOO_LATE: 'PORTAL_MAINTENANCE_TOO_LATE',
   MAINTENANCE_WEEKEND: 'PORTAL_MAINTENANCE_WEEKEND',
+  CANCEL_TOO_LATE: 'PORTAL_CANCEL_TOO_LATE',
+  CANCEL_NOT_ALLOWED: 'PORTAL_CANCEL_NOT_ALLOWED',
   EMAIL_IN_USE: 'PORTAL_EMAIL_IN_USE',
   REQUEST_INVALID_PERIOD: 'PORTAL_REQUEST_INVALID_PERIOD',
   ATTACHMENT_LIMIT: 'PORTAL_ATTACHMENT_LIMIT',
@@ -121,6 +123,20 @@ export interface PortalReservationDto {
   replacementForReservationId: number | null;
   /** Detail view only: service is due (or due soon) on this vehicle. */
   serviceDue?: 'due' | 'soon' | null;
+  /** Detail view only: whether the customer can still ask to cancel. */
+  cancellation?: PortalCancellationDto;
+}
+
+/**
+ * Asking to cancel a reservation (Kees, 2026-10-18): only a booked rental, not a replacement car, and
+ * only until 48 hours before the start. The deadline is that moment (ISO instant).
+ */
+export interface PortalCancellationDto {
+  allowed: boolean;
+  reason: 'not_booked' | 'replacement' | 'too_late' | null;
+  deadline: string | null;
+  /** An open cancellation request for this reservation. */
+  openRequestId: number | null;
 }
 
 /** A vehicle Lam Groep offers online, as a customer sees it (blacklisted ones are never sent). */

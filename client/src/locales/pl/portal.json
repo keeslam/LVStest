@@ -379,7 +379,9 @@
     "PORTAL_ALREADY_SIGNED": "Ten dokument został już podpisany.",
     "PORTAL_NOT_SIGNABLE": "Istnieje nowsza wersja tego dokumentu lub rezerwacja jest zamknięta. Prosimy odświeżyć stronę.",
     "PORTAL_DOCUMENT_CHANGED": "Dokument właśnie się zmienił. Prosimy otworzyć go ponownie i podpisać.",
-    "PORTAL_INVALID_SIGNATURE": "Prosimy najpierw złożyć podpis w polu."
+    "PORTAL_INVALID_SIGNATURE": "Prosimy najpierw złożyć podpis w polu.",
+    "PORTAL_CANCEL_TOO_LATE": "Anulować można do 48 godzin przed rozpoczęciem. Prosimy o kontakt.",
+    "PORTAL_CANCEL_NOT_ALLOWED": "Tej rezerwacji nie można anulować przez portal."
   },
   "admin": {
     "navLabel": "Portal klienta",
@@ -1001,7 +1003,8 @@
         "maintenance": "Serwis/usterka",
         "maintenance_change": "Zmiana serwisu",
         "mileage": "Przebieg",
-        "company_name_change": "Zmiana nazwy firmy"
+        "company_name_change": "Zmiana nazwy firmy",
+        "cancellation": "Anulowanie"
       },
       "status": {
         "new": "Nowy",
@@ -1046,7 +1049,8 @@
         "standardApproved": "Zatwierdzono",
         "standardRejected": "Odrzucenie",
         "newCompanyName": "Wnioskowana nazwa firmy",
-        "approveCompanyName": "Zatwierdź (zmienia nazwę firmy)"
+        "approveCompanyName": "Zatwierdź (zmienia nazwę firmy)",
+        "approveCancellation": "Zatwierdź anulowanie"
       },
       "standard": {
         "received": {
@@ -1060,7 +1064,8 @@
           "extension": "Państwa przedłużenie zostało zatwierdzone.",
           "early_return": "Wcześniejszy zwrot został zaakceptowany.",
           "default": "Państwa wniosek został zatwierdzony.",
-          "company_name_change": "Nowa nazwa firmy została wprowadzona."
+          "company_name_change": "Nowa nazwa firmy została wprowadzona.",
+          "cancellation": "Twoja rezerwacja została anulowana."
         },
         "rejected": {
           "extension": "Niestety nie możemy przyznać przedłużenia, ponieważ pojazd jest już zarezerwowany na później.",
@@ -1069,7 +1074,8 @@
           "maintenance": "Niestety nie możemy zaplanować serwisu w ten sposób.",
           "maintenance_change": "Niestety nie możemy przesunąć serwisu na ten termin.",
           "default": "Niestety nie możemy zrealizować tego wniosku.",
-          "company_name_change": "Niestety nie możemy zmienić nazwy firmy. Prosimy o kontakt w celu omówienia możliwości."
+          "company_name_change": "Niestety nie możemy zmienić nazwy firmy. Prosimy o kontakt w celu omówienia możliwości.",
+          "cancellation": "Niestety nie możemy już anulować rezerwacji. Prosimy o kontakt."
         }
       }
     },
@@ -1257,7 +1263,8 @@
       "maintenance": "Zgłoszenie serwisu lub usterki",
       "maintenance_change": "Zmiana serwisu",
       "mileage": "Podanie przebiegu",
-      "company_name_change": "Zmiana nazwy firmy"
+      "company_name_change": "Zmiana nazwy firmy",
+      "cancellation": "Anuluj rezerwację"
     },
     "status": {
       "new": "Złożony",
@@ -1322,7 +1329,14 @@
     "progress": "Postęp",
     "noneOpen": "Brak otwartych wniosków.",
     "withdraw": "Wycofaj wniosek",
-    "withdrawn": "Wniosek wycofany."
+    "withdrawn": "Wniosek wycofany.",
+    "cancel": {
+      "button": "Anuluj",
+      "until": "Możesz anulować do {{date}}",
+      "tooLate": "Anulować można do 48 godzin przed rozpoczęciem. Prosimy o kontakt.",
+      "pending": "Wysłano prośbę o anulowanie (#{{id}})",
+      "formHint": "Anulować można do 48 godzin przed rozpoczęciem. Lam Groep potwierdza anulowanie; do tego czasu rezerwacja pozostaje ważna."
+    }
   },
   "site": {
     "backToSite": "Do lamgroep.nl",

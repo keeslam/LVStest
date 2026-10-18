@@ -42,7 +42,8 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
   const { data: vehicles = [], isFetching: loadingVehicles } = useQuery<PortalVehicleDto[]>({ queryKey: ["portal", vehiclesUrl], queryFn: portalQueryFn, enabled: type === "booking" && periodOk && Boolean(me?.settings.canBook) });
   const canPickDriver = me?.role === "admin" && Boolean(me.settings.canManageDrivers);
   const { data: drivers = [] } = useQuery<PortalDriverDto[]>({ queryKey: ["portal", "/api/portal/drivers"], queryFn: portalQueryFn, enabled: type === "booking" && canPickDriver });
-  const openReservations = reservations.filter((r) => r.status === "booked" || r.status === "picked_up");
+  // A cancellation is only for a booked reservation that has not started.
+  const openReservations = reservations.filter((r) => (type === "cancellation" ? r.status === "booked" : r.status === "booked" || r.status === "picked_up"));
   const chosen = reservations.find((r) => String(r.id) === reservationId);
   /** Extension: days × the vehicle's day price, only when prices are shown and the new date is later. */
   const extensionEstimate = (() => {
@@ -86,7 +87,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
       <div>
         <Label htmlFor="rq-type">{t("requests.chooseType")}</Label>
         <select id="rq-type" className="w-full rounded-md border px-3 py-2 text-sm" value={type} onChange={(e) => { setType(e.target.value as PortalRequestTypeValue); setPayload({}); }}>
-          {Object.values(PortalRequestType).filter((v) => (v !== "early_return" || me?.settings.canReturn) && (v !== "booking" || canBook) && (v !== "maintenance_change" || type === "maintenance_change") && v !== "company_name_change").map((v) => <option key={v} value={v}>{t(`requests.type.${v}`)}</option>)}
+          {Object.values(PortalRequestType).filter((v) => (v !== "early_return" || me?.settings.canReturn) && (v !== "booking" || canBook) && (v !== "maintenance_change" || type === "maintenance_change") && (v !== "cancellation" || type === "cancellation") && v !== "company_name_change").map((v) => <option key={v} value={v}>{t(`requests.type.${v}`)}</option>)}
         </select>
       </div>
       {type === "maintenance_change" && (
@@ -182,6 +183,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
           <p className="mt-1 text-xs text-[#64748b]">{t("requests.form.mileageHint")}</p>
         </div>
       )}
+      {type === "cancellation" && <p className="rounded-md border border-[#f3c1c1] bg-[#fcebeb] px-3 py-2 text-sm text-[#791f1f] sm:col-span-2" data-testid="cancel-hint">{t("requests.cancel.formHint")}</p>}
       {type === "early_return" && <div><Label htmlFor="rq-ret">{t("requests.form.returnDate")}</Label><Input id="rq-ret" type="date" value={payload.returnDate ?? ""} onChange={setP("returnDate")} required /></div>}
       {type === "damage" && (
         <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">

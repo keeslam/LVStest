@@ -193,6 +193,7 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     if (row.type === "maintenance") return approveMaintenance(req, res, id, row);
     if (row.type === "maintenance_change") return approveMaintenanceChange(req, res, id, row);
     if (row.type === "company_name_change") return approveCompanyName(req, res, id, row);
+    if (row.type === "cancellation") return approveCancellation(req, res, id, row);
     if (row.type !== "extension" && row.type !== "early_return") return res.status(400).json({ message: "Only extensions, early returns and rental requests can be approved" });
     if (!isValidRequestTransition(row.status, "done")) return res.status(400).json({ message: "Request is already closed" });
     const reservation = row.reservationId ? await storage.getReservation(row.reservationId) : undefined;
@@ -213,6 +214,28 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     const reply = row.type === "extension" ? `Goedgekeurd: nieuwe einddatum ${newEnd}.` : `Goedgekeurd: inleverdatum ${newEnd}.`;
     res.json(await finish(req, id, reply, "done", row.customerId));
   });
+
+  /**
+   * Approving a cancellation (Kees, 2026-10-18) cancels the reservation the way the office's own
+   * cancel does: status cancelled, its open transports, spare cars and driver assignment closed, the
+   * vehicle's availability recomputed and the calendar told. The 48 hours were checked when the
+   * customer asked; staff may still approve later. A car already picked up is never cancelled here.
+   * The customer hears it through the request's own notice and mail, so no second "reservation
+   * cancelled" mail goes out.
+   */
+  async function approveCancellation(req: Request, res: Response, id: number, row: NonNullable<Awaited<ReturnType<typeof requestsStorage.getRequest>>>) {
+    if (!isValidRequestTransition(row.status, "done")) return res.status(400).json({ message: "Request is already closed" });
+    const before = row.reservationId ? await storage.getReservation(row.reservationId) : undefined;
+    if (!before || before.deletedAt || before.customerId !== row.customerId) return res.status(400).json({ message: "Reservation not found" });
+    if (before.status !== "booked") return res.status(409).json({ message: "Only a booked reservation can be cancelled this way" });
+    const reservation = await storage.updateReservation(before.id, { status: "cancelled", updatedBy: actor(req) } as any);
+    if (!reservation) return res.status(400).json({ message: "Reservation not found" });
+    const cascade = await storage.applyReservationCancelCascade(before.id, { transports: true, spares: true, placeholders: true, drivers: true }, { username: actor(req) });
+    if (reservation.vehicleId) await storage.recomputeVehicleAvailability(reservation.vehicleId);
+    realtimeEvents.reservations.updated(reservation);
+    await AuditLogger.logFromRequest(req, "reservation.status", "reservation", before.id, { from: before.status, to: "cancelled", viaPortalRequest: id, cascade });
+    res.json(await finish(req, id, `Goedgekeurd: reservering #${before.id} is geannuleerd.`, "done", row.customerId));
+  }
 
   /**
    * Approving a name change writes the new company name to the customer record. For a business

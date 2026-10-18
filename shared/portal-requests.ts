@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const PortalRequestType = {
-  BOOKING: 'booking', EXTENSION: 'extension', EARLY_RETURN: 'early_return', DAMAGE: 'damage', MAINTENANCE: 'maintenance', MAINTENANCE_CHANGE: 'maintenance_change', MILEAGE: 'mileage', COMPANY_NAME_CHANGE: 'company_name_change', FINE_QUESTION: 'fine_question', OTHER: 'other',
+  BOOKING: 'booking', EXTENSION: 'extension', EARLY_RETURN: 'early_return', DAMAGE: 'damage', MAINTENANCE: 'maintenance', MAINTENANCE_CHANGE: 'maintenance_change', MILEAGE: 'mileage', COMPANY_NAME_CHANGE: 'company_name_change', FINE_QUESTION: 'fine_question', CANCELLATION: 'cancellation', OTHER: 'other',
 } as const;
 export type PortalRequestTypeValue = typeof PortalRequestType[keyof typeof PortalRequestType];
 
@@ -59,12 +59,14 @@ export const requestPayloadSchemas = {
   /** Current odometer reading. */
   mileage: z.object({ mileage: z.coerce.number().int().min(0) }),
   fine_question: z.object({}),
+  /** Cancel a booked reservation; until 48 hours before the start, staff approve (Kees, 2026-10-18). */
+  cancellation: z.object({}),
   other: z.object({ subject: z.string().trim().min(1).max(200) }),
 } as const;
 
 /** Which link a type requires. */
 export const REQUEST_NEEDS: Record<PortalRequestTypeValue, 'reservation' | 'fine' | null> = {
-  booking: null, extension: 'reservation', early_return: 'reservation', damage: 'reservation', maintenance: 'reservation', maintenance_change: 'reservation', mileage: 'reservation', company_name_change: null, fine_question: 'fine', other: null,
+  booking: null, extension: 'reservation', early_return: 'reservation', damage: 'reservation', maintenance: 'reservation', maintenance_change: 'reservation', mileage: 'reservation', company_name_change: null, fine_question: 'fine', cancellation: 'reservation', other: null,
 };
 
 export interface PortalRequestAttachmentDto { id: number; fileName: string; contentType: string; fileSize: number }

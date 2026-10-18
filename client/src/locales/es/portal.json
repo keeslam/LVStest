@@ -373,7 +373,9 @@
     "PORTAL_ALREADY_SIGNED": "Este documento ya está firmado.",
     "PORTAL_NOT_SIGNABLE": "Existe una versión más reciente de este documento o la reserva está cerrada. Actualice la página.",
     "PORTAL_DOCUMENT_CHANGED": "El documento acaba de cambiar. Ábralo de nuevo y firme.",
-    "PORTAL_INVALID_SIGNATURE": "Primero firme en el recuadro."
+    "PORTAL_INVALID_SIGNATURE": "Primero firme en el recuadro.",
+    "PORTAL_CANCEL_TOO_LATE": "Puede cancelar hasta 48 horas antes del inicio. Póngase en contacto con nosotros.",
+    "PORTAL_CANCEL_NOT_ALLOWED": "Esta reserva no se puede cancelar a través del portal."
   },
   "admin": {
     "navLabel": "Portal de clientes",
@@ -995,7 +997,8 @@
         "maintenance": "Mantenimiento/avería",
         "maintenance_change": "Modificar mantenimiento",
         "mileage": "Kilometraje",
-        "company_name_change": "Cambio del nombre de la empresa"
+        "company_name_change": "Cambio del nombre de la empresa",
+        "cancellation": "Cancelación"
       },
       "status": {
         "new": "Nueva",
@@ -1040,7 +1043,8 @@
         "standardApproved": "Aprobada",
         "standardRejected": "Rechazo",
         "newCompanyName": "Nombre de empresa solicitado",
-        "approveCompanyName": "Aprobar (modifica el nombre de la empresa)"
+        "approveCompanyName": "Aprobar (modifica el nombre de la empresa)",
+        "approveCancellation": "Aprobar cancelación"
       },
       "standard": {
         "received": {
@@ -1054,7 +1058,8 @@
           "extension": "Su ampliación ha sido aprobada.",
           "early_return": "La devolución anticipada está aceptada.",
           "default": "Su solicitud ha sido aprobada.",
-          "company_name_change": "El nuevo nombre de la empresa ha sido aplicado."
+          "company_name_change": "El nuevo nombre de la empresa ha sido aplicado.",
+          "cancellation": "Su reserva ha sido cancelada."
         },
         "rejected": {
           "extension": "Lamentablemente no podemos conceder la ampliación, porque el vehículo ya está reservado a continuación.",
@@ -1063,7 +1068,8 @@
           "maintenance": "Lamentablemente no podemos programar el mantenimiento de esta manera.",
           "maintenance_change": "Lamentablemente no podemos trasladar el mantenimiento a esta fecha.",
           "default": "Lamentablemente no podemos atender esta solicitud.",
-          "company_name_change": "Lamentablemente no podemos modificar el nombre de la empresa. Póngase en contacto con nosotros para conocer las posibilidades."
+          "company_name_change": "Lamentablemente no podemos modificar el nombre de la empresa. Póngase en contacto con nosotros para conocer las posibilidades.",
+          "cancellation": "Lamentablemente ya no podemos cancelar la reserva. Póngase en contacto con nosotros."
         }
       }
     },
@@ -1248,7 +1254,8 @@
       "maintenance": "Notificar mantenimiento o avería",
       "maintenance_change": "Modificar mantenimiento",
       "mileage": "Comunicar el kilometraje",
-      "company_name_change": "Cambio del nombre de la empresa"
+      "company_name_change": "Cambio del nombre de la empresa",
+      "cancellation": "Cancelar reserva"
     },
     "status": {
       "new": "Enviada",
@@ -1313,7 +1320,14 @@
     "progress": "Progreso",
     "noneOpen": "No hay solicitudes pendientes.",
     "withdraw": "Retirar la solicitud",
-    "withdrawn": "Solicitud retirada."
+    "withdrawn": "Solicitud retirada.",
+    "cancel": {
+      "button": "Cancelar",
+      "until": "Puede cancelar hasta el {{date}}",
+      "tooLate": "Puede cancelar hasta 48 horas antes del inicio. Póngase en contacto con nosotros.",
+      "pending": "Cancelación solicitada (#{{id}})",
+      "formHint": "Puede cancelar hasta 48 horas antes del inicio. Lam Groep confirma la cancelación; hasta entonces la reserva sigue vigente."
+    }
   },
   "site": {
     "backToSite": "Ir a lamgroep.nl",

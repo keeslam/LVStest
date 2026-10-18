@@ -367,7 +367,9 @@
     "PORTAL_ALREADY_SIGNED": "Dit document is al getekend.",
     "PORTAL_NOT_SIGNABLE": "Er is een nieuwere versie van dit document, of de reservering is afgesloten. Vernieuw de pagina.",
     "PORTAL_DOCUMENT_CHANGED": "Het document is net gewijzigd. Open het opnieuw en teken dan.",
-    "PORTAL_INVALID_SIGNATURE": "Zet eerst uw handtekening in het vak."
+    "PORTAL_INVALID_SIGNATURE": "Zet eerst uw handtekening in het vak.",
+    "PORTAL_CANCEL_TOO_LATE": "Annuleren kan tot 48 uur voor de start. Neem contact met ons op.",
+    "PORTAL_CANCEL_NOT_ALLOWED": "Deze reservering kan niet via het portaal worden geannuleerd."
   },
   "admin": {
     "navLabel": "Klantenportaal",
@@ -989,7 +991,8 @@
         "maintenance": "Onderhoud/storing",
         "maintenance_change": "Onderhoud wijzigen",
         "mileage": "Kilometerstand",
-        "company_name_change": "Wijziging bedrijfsnaam"
+        "company_name_change": "Wijziging bedrijfsnaam",
+        "cancellation": "Annulering"
       },
       "status": {
         "new": "Nieuw",
@@ -1034,7 +1037,8 @@
         "standardApproved": "Akkoord",
         "standardRejected": "Afwijzing",
         "newCompanyName": "Gevraagde bedrijfsnaam",
-        "approveCompanyName": "Goedkeuren (past de bedrijfsnaam aan)"
+        "approveCompanyName": "Goedkeuren (past de bedrijfsnaam aan)",
+        "approveCancellation": "Annuleren goedkeuren"
       },
       "standard": {
         "received": {
@@ -1048,7 +1052,8 @@
           "extension": "Uw verlenging is goedgekeurd.",
           "early_return": "Het eerder inleveren is akkoord.",
           "default": "Uw aanvraag is goedgekeurd.",
-          "company_name_change": "De nieuwe bedrijfsnaam is doorgevoerd."
+          "company_name_change": "De nieuwe bedrijfsnaam is doorgevoerd.",
+          "cancellation": "Uw reservering is geannuleerd."
         },
         "rejected": {
           "extension": "Helaas kunnen we de verlenging niet toekennen, omdat het voertuig daarna al is gereserveerd.",
@@ -1057,7 +1062,8 @@
           "maintenance": "Helaas kunnen we het onderhoud niet op deze manier inplannen.",
           "maintenance_change": "Helaas kunnen we het onderhoud niet naar deze datum verplaatsen.",
           "default": "Helaas kunnen we aan deze aanvraag niet voldoen.",
-          "company_name_change": "Helaas kunnen we de bedrijfsnaam niet wijzigen. Neem contact met ons op voor de mogelijkheden."
+          "company_name_change": "Helaas kunnen we de bedrijfsnaam niet wijzigen. Neem contact met ons op voor de mogelijkheden.",
+          "cancellation": "Helaas kunnen we de reservering niet meer annuleren. Neem contact met ons op."
         }
       }
     },
@@ -1239,7 +1245,8 @@
       "maintenance": "Onderhoud of storing melden",
       "maintenance_change": "Onderhoud wijzigen",
       "mileage": "Kilometerstand doorgeven",
-      "company_name_change": "Wijziging bedrijfsnaam"
+      "company_name_change": "Wijziging bedrijfsnaam",
+      "cancellation": "Reservering annuleren"
     },
     "status": {
       "new": "Ingediend",
@@ -1304,7 +1311,14 @@
     "progress": "Voortgang",
     "noneOpen": "Geen openstaande aanvragen.",
     "withdraw": "Aanvraag intrekken",
-    "withdrawn": "Aanvraag ingetrokken."
+    "withdrawn": "Aanvraag ingetrokken.",
+    "cancel": {
+      "button": "Annuleren",
+      "until": "Annuleren kan tot {{date}}",
+      "tooLate": "Annuleren kan tot 48 uur voor de start. Neem contact met ons op.",
+      "pending": "Annulering aangevraagd (#{{id}})",
+      "formHint": "Annuleren kan tot 48 uur voor de start. Lam Groep bevestigt de annulering; tot dan blijft de reservering staan."
+    }
   },
   "site": {
     "backToSite": "Naar lamgroep.nl",

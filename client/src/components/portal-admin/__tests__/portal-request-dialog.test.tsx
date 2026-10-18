@@ -32,6 +32,7 @@ const requests: Record<number, Record<string, unknown>> = {
   4: { ...common, id: 4, type: "booking", payload: { startDate: "2026-11-03", endDate: "2026-11-05", vehicleLabel: "AB-123-C" } },
   5: { ...common, id: 5, type: "damage", payload: {} },
   6: { ...common, id: 6, type: "company_name_change", payload: { newName: "Nieuwe Naam BV", currentName: "Oude Naam BV" } },
+  7: { ...common, id: 7, type: "cancellation", reservationId: 12, payload: {} },
 };
 const calls: Array<{ method: string; url: string; body?: string }> = [];
 
@@ -60,6 +61,15 @@ describe("aanvraag behandelen", () => {
     expect(screen.getByTestId("button-approve-request")).toBeInTheDocument();
     await userEvent.click(screen.getByTestId("button-approve-request"));
     await waitFor(() => expect(calls.some((c) => c.method === "POST" && c.url.endsWith("/api/portal-requests/6/approve"))).toBe(true));
+  });
+
+  it("approves a cancellation with its own button (Kees, 2026-10-18)", async () => {
+    requestId = 7;
+    renderDialog();
+    expect(await screen.findByTestId("button-approve-request")).toHaveTextContent("Annuleren goedkeuren");
+    expect(screen.getByTestId("standard-answer-approved")).toBeInTheDocument();
+    await userEvent.click(screen.getByTestId("button-approve-request"));
+    await waitFor(() => expect(calls.some((c) => c.method === "POST" && c.url.endsWith("/api/portal-requests/7/approve"))).toBe(true));
   });
 
   it("writes the requested dates as dd-MM-yyyy, like the list", async () => {

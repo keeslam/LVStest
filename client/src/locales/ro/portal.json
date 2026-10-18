@@ -373,7 +373,9 @@
     "PORTAL_ALREADY_SIGNED": "Acest document a fost deja semnat.",
     "PORTAL_NOT_SIGNABLE": "Există o versiune mai nouă a acestui document sau rezervarea este închisă. Reîmprospătați pagina.",
     "PORTAL_DOCUMENT_CHANGED": "Documentul tocmai s-a schimbat. Deschideți-l din nou și apoi semnați.",
-    "PORTAL_INVALID_SIGNATURE": "Mai întâi semnați în casetă."
+    "PORTAL_INVALID_SIGNATURE": "Mai întâi semnați în casetă.",
+    "PORTAL_CANCEL_TOO_LATE": "Puteți anula până cu 48 de ore înainte de început. Vă rugăm să ne contactați.",
+    "PORTAL_CANCEL_NOT_ALLOWED": "Această rezervare nu poate fi anulată prin portal."
   },
   "admin": {
     "navLabel": "Portal pentru clienți",
@@ -995,7 +997,8 @@
         "maintenance": "Mentenanță/defecțiune",
         "maintenance_change": "Modificare mentenanță",
         "mileage": "Kilometraj",
-        "company_name_change": "Modificarea numelui firmei"
+        "company_name_change": "Modificarea numelui firmei",
+        "cancellation": "Anulare"
       },
       "status": {
         "new": "Nouă",
@@ -1040,7 +1043,8 @@
         "standardApproved": "De acord",
         "standardRejected": "Respingere",
         "newCompanyName": "Numele de firmă solicitat",
-        "approveCompanyName": "Aprobă (modifică numele firmei)"
+        "approveCompanyName": "Aprobă (modifică numele firmei)",
+        "approveCancellation": "Aprobă anularea"
       },
       "standard": {
         "received": {
@@ -1054,7 +1058,8 @@
           "extension": "Prelungirea dumneavoastră a fost aprobată.",
           "early_return": "Returnarea anticipată este aprobată.",
           "default": "Solicitarea dumneavoastră a fost aprobată.",
-          "company_name_change": "Noul nume al firmei a fost operat."
+          "company_name_change": "Noul nume al firmei a fost operat.",
+          "cancellation": "Rezervarea dumneavoastră a fost anulată."
         },
         "rejected": {
           "extension": "Din păcate nu putem acorda prelungirea, deoarece vehiculul este deja rezervat după aceea.",
@@ -1063,7 +1068,8 @@
           "maintenance": "Din păcate nu putem programa mentenanța în acest mod.",
           "maintenance_change": "Din păcate nu putem muta mentenanța la această dată.",
           "default": "Din păcate nu putem da curs acestei solicitări.",
-          "company_name_change": "Din păcate nu putem modifica numele firmei. Contactați-ne pentru a afla ce posibilități există."
+          "company_name_change": "Din păcate nu putem modifica numele firmei. Contactați-ne pentru a afla ce posibilități există.",
+          "cancellation": "Din păcate nu mai putem anula rezervarea. Vă rugăm să ne contactați."
         }
       }
     },
@@ -1248,7 +1254,8 @@
       "maintenance": "Raportarea mentenanței sau a unei defecțiuni",
       "maintenance_change": "Modificarea mentenanței",
       "mileage": "Transmiterea kilometrajului",
-      "company_name_change": "Modificarea numelui firmei"
+      "company_name_change": "Modificarea numelui firmei",
+      "cancellation": "Anulează rezervarea"
     },
     "status": {
       "new": "Trimisă",
@@ -1313,7 +1320,14 @@
     "progress": "Progres",
     "noneOpen": "Nicio solicitare deschisă.",
     "withdraw": "Retrage solicitarea",
-    "withdrawn": "Solicitarea a fost retrasă."
+    "withdrawn": "Solicitarea a fost retrasă.",
+    "cancel": {
+      "button": "Anulează",
+      "until": "Puteți anula până la {{date}}",
+      "tooLate": "Puteți anula până cu 48 de ore înainte de început. Vă rugăm să ne contactați.",
+      "pending": "Anulare solicitată (#{{id}})",
+      "formHint": "Puteți anula până cu 48 de ore înainte de început. Lam Groep confirmă anularea; până atunci rezervarea rămâne valabilă."
+    }
   },
   "site": {
     "backToSite": "Către lamgroep.nl",

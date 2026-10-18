@@ -8,7 +8,8 @@ import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, MapPin, Clock, Info, ShieldAlert, Wrench, Gauge } from "lucide-react";
+import { Loader2, MapPin, Clock, Info, ShieldAlert, Wrench, Gauge, XCircle } from "lucide-react";
+import { formatPortalDateTimeMedium } from "@/lib/portal-format";
 import { daysUntil } from "./ui";
 import { formatPortalDate } from "@/components/portal/reservation-card";
 import { ChangeDriverDialog } from "@/components/portal/change-driver-dialog";
@@ -88,6 +89,12 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
               {canRequest && r.status === "booked" && (<>
                 <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "extension", reservationId: r.id })} data-testid="button-request-extension">{t("requests.form.extend")}</Button>
                 {me?.settings.canReturn && <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "early_return", reservationId: r.id })} data-testid="button-request-early-return">{t("requests.form.earlyReturn")}</Button>}
+                {/* Cancel (Kees, 2026-10-18): a request staff approve, until 48 hours before the start. */}
+                {r.cancellation?.openRequestId
+                  ? <span className="self-center text-xs text-[#64748b]" data-testid="cancel-pending">{t("requests.cancel.pending", { id: r.cancellation.openRequestId })}</span>
+                  : r.cancellation?.allowed
+                    ? <Button size="sm" variant="outline" className="text-[#a32d2d]" onClick={() => openNewRequest({ type: "cancellation", reservationId: r.id })} title={r.cancellation.deadline ? t("requests.cancel.until", { date: formatPortalDateTimeMedium(r.cancellation.deadline) }) : undefined} data-testid="button-request-cancellation"><XCircle className="mr-1 h-4 w-4" />{t("requests.cancel.button")}</Button>
+                    : r.cancellation?.reason === "too_late" && <span className="self-center text-xs text-[#64748b]" data-testid="cancel-too-late">{t("requests.cancel.tooLate")}</span>}
               </>)}
             </div>
             {me?.settings.canViewFines && linkedFines.length > 0 && (
