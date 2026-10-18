@@ -144,7 +144,7 @@
     "reservation": "Rezerwacja #{{id}}",
     "open": "Otwórz",
     "noPreview": "Tego typu pliku nie można tu wyświetlić. Użyj opcji Pobierz.",
-    "subtitle": "Umowy i kontrole uszkodzeń według rezerwacji.",
+    "subtitle": "Co jeszcze trzeba podpisać oraz wszystkie umowy i kontrole uszkodzeń.",
     "other": "Pozostałe dokumenty",
     "openReservation": "Wyświetl rezerwację",
     "ack": "Zapoznano się i zaakceptowano",
@@ -185,7 +185,28 @@
       "adminOnlyDamage": "Tę kontrolę uszkodzeń może podpisać tylko administrator Państwa firmy.",
       "notSignableDamage": "Tej kontroli uszkodzeń nie można już podpisać."
     },
-    "signedDamageCheck": "Podpisana kontrola uszkodzeń"
+    "signedDamageCheck": "Podpisana kontrola uszkodzeń",
+    "list": {
+      "toSignTitle": "Do podpisania",
+      "allTitle": "Wszystkie dokumenty",
+      "search": "Szukaj po numerze, pojeździe, rodzaju lub dacie…",
+      "showOld": "Pokaż starsze wersje",
+      "showAllToSign": "Pokaż wszystkie ({{n}})",
+      "prev": "Poprzednia",
+      "next": "Następna",
+      "page": "Strona {{page}} z {{pages}}",
+      "col": {
+        "date": "Data",
+        "document": "Dokument",
+        "status": "Status"
+      },
+      "status": {
+        "toSign": "Do podpisania",
+        "signed": "Podpisano {{date}}",
+        "signedCopy": "Podpisany egzemplarz",
+        "superseded": "Zastąpiono nowszą wersją"
+      }
+    }
   },
   "drivers": {
     "title": "Kierowcy",

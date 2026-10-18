@@ -134,7 +134,7 @@
     "reservation": "Reservation #{{id}}",
     "open": "Open",
     "noPreview": "This file type cannot be shown here. Use Download.",
-    "subtitle": "Contracts and damage checks per reservation.",
+    "subtitle": "What you still have to sign, and all your contracts and damage checks.",
     "other": "Other documents",
     "openReservation": "View reservation",
     "ack": "Seen and agreed",
@@ -175,7 +175,28 @@
       "adminOnlyDamage": "Only an administrator of your company can sign this damage check.",
       "notSignableDamage": "This damage check can no longer be signed."
     },
-    "signedDamageCheck": "Signed damage check"
+    "signedDamageCheck": "Signed damage check",
+    "list": {
+      "toSignTitle": "Still to sign",
+      "allTitle": "All documents",
+      "search": "Search by plate, car, type or date…",
+      "showOld": "Show old versions",
+      "showAllToSign": "Show all {{n}}",
+      "prev": "Previous",
+      "next": "Next",
+      "page": "Page {{page}} of {{pages}}",
+      "col": {
+        "date": "Date",
+        "document": "Document",
+        "status": "Status"
+      },
+      "status": {
+        "toSign": "To sign",
+        "signed": "Signed {{date}}",
+        "signedCopy": "Signed copy",
+        "superseded": "Replaced by a newer version"
+      }
+    }
   },
   "drivers": {
     "title": "Drivers",

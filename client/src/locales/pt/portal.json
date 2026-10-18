@@ -139,7 +139,7 @@
     "reservation": "Reserva n.º {{id}}",
     "open": "Abrir",
     "noPreview": "Este tipo de ficheiro não pode ser apresentado aqui. Utilize Descarregar.",
-    "subtitle": "Contratos e inspeções de danos por reserva.",
+    "subtitle": "O que ainda tem de assinar, e todos os seus contratos e inspeções de danos.",
     "other": "Outros documentos",
     "openReservation": "Ver reserva",
     "ack": "Visto e de acordo",
@@ -180,7 +180,28 @@
       "adminOnlyDamage": "Só um administrador da sua empresa pode assinar esta inspeção de danos.",
       "notSignableDamage": "Esta inspeção de danos já não pode ser assinada."
     },
-    "signedDamageCheck": "Inspeção de danos assinada"
+    "signedDamageCheck": "Inspeção de danos assinada",
+    "list": {
+      "toSignTitle": "Por assinar",
+      "allTitle": "Todos os documentos",
+      "search": "Pesquisar por matrícula, veículo, tipo ou data…",
+      "showOld": "Mostrar versões antigas",
+      "showAllToSign": "Mostrar todos ({{n}})",
+      "prev": "Anterior",
+      "next": "Seguinte",
+      "page": "Página {{page}} de {{pages}}",
+      "col": {
+        "date": "Data",
+        "document": "Documento",
+        "status": "Estado"
+      },
+      "status": {
+        "toSign": "Por assinar",
+        "signed": "Assinado {{date}}",
+        "signedCopy": "Cópia assinada",
+        "superseded": "Substituído por uma versão mais recente"
+      }
+    }
   },
   "drivers": {
     "title": "Condutores",

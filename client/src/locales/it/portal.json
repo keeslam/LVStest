@@ -139,7 +139,7 @@
     "reservation": "Prenotazione #{{id}}",
     "open": "Aprire",
     "noPreview": "Questo tipo di file non può essere mostrato qui. Utilizzi Scaricare.",
-    "subtitle": "Contratti e controlli danni per prenotazione.",
+    "subtitle": "Cosa deve ancora firmare, e tutti i Suoi contratti e controlli danni.",
     "other": "Altri documenti",
     "openReservation": "Visualizzare la prenotazione",
     "ack": "Visto e approvato",
@@ -180,7 +180,28 @@
       "adminOnlyDamage": "Solo un amministratore della Sua azienda può firmare questo controllo danni.",
       "notSignableDamage": "Questo controllo danni non può più essere firmato."
     },
-    "signedDamageCheck": "Controllo danni firmato"
+    "signedDamageCheck": "Controllo danni firmato",
+    "list": {
+      "toSignTitle": "Da firmare",
+      "allTitle": "Tutti i documenti",
+      "search": "Cerca per targa, veicolo, tipo o data…",
+      "showOld": "Mostra versioni precedenti",
+      "showAllToSign": "Mostra tutti ({{n}})",
+      "prev": "Precedente",
+      "next": "Successiva",
+      "page": "Pagina {{page}} di {{pages}}",
+      "col": {
+        "date": "Data",
+        "document": "Documento",
+        "status": "Stato"
+      },
+      "status": {
+        "toSign": "Da firmare",
+        "signed": "Firmato {{date}}",
+        "signedCopy": "Copia firmata",
+        "superseded": "Sostituito da una versione più recente"
+      }
+    }
   },
   "drivers": {
     "title": "Conducenti",

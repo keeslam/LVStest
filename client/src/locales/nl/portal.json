@@ -134,7 +134,7 @@
     "reservation": "Reservering #{{id}}",
     "open": "Openen",
     "noPreview": "Dit bestandstype kan hier niet getoond worden. Gebruik Downloaden.",
-    "subtitle": "Contracten en schadechecks per reservering.",
+    "subtitle": "Wat u nog moet tekenen, en al uw contracten en schadechecks.",
     "other": "Overige documenten",
     "openReservation": "Reservering bekijken",
     "ack": "Gezien en akkoord",
@@ -175,7 +175,28 @@
       "adminOnlyDamage": "Alleen een beheerder van uw bedrijf kan deze schadecheck tekenen.",
       "notSignableDamage": "Deze schadecheck kan niet (meer) getekend worden."
     },
-    "signedDamageCheck": "Getekende schadecheck"
+    "signedDamageCheck": "Getekende schadecheck",
+    "list": {
+      "toSignTitle": "Nog te tekenen",
+      "allTitle": "Alle documenten",
+      "search": "Zoeken op kenteken, auto, soort of datum…",
+      "showOld": "Oude versies tonen",
+      "showAllToSign": "Toon alle {{n}}",
+      "prev": "Vorige",
+      "next": "Volgende",
+      "page": "Pagina {{page}} van {{pages}}",
+      "col": {
+        "date": "Datum",
+        "document": "Document",
+        "status": "Status"
+      },
+      "status": {
+        "toSign": "Te tekenen",
+        "signed": "Getekend {{date}}",
+        "signedCopy": "Getekend exemplaar",
+        "superseded": "Vervangen door nieuwere versie"
+      }
+    }
   },
   "drivers": {
     "title": "Bestuurders",

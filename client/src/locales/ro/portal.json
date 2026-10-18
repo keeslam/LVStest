@@ -139,7 +139,7 @@
     "reservation": "Rezervarea #{{id}}",
     "open": "Deschide",
     "noPreview": "Acest tip de fișier nu poate fi afișat aici. Folosiți Descarcă.",
-    "subtitle": "Contracte și verificări de daune, pe rezervare.",
+    "subtitle": "Ce mai aveți de semnat, precum și toate contractele și verificările de daune.",
     "other": "Alte documente",
     "openReservation": "Vezi rezervarea",
     "ack": "Citit și de acord",
@@ -180,7 +180,28 @@
       "adminOnlyDamage": "Doar un administrator al companiei dumneavoastră poate semna această verificare de daune.",
       "notSignableDamage": "Această verificare de daune nu mai poate fi semnată."
     },
-    "signedDamageCheck": "Verificare daune semnată"
+    "signedDamageCheck": "Verificare daune semnată",
+    "list": {
+      "toSignTitle": "De semnat",
+      "allTitle": "Toate documentele",
+      "search": "Căutați după număr, vehicul, tip sau dată…",
+      "showOld": "Afișați versiunile vechi",
+      "showAllToSign": "Afișați toate ({{n}})",
+      "prev": "Înapoi",
+      "next": "Înainte",
+      "page": "Pagina {{page}} din {{pages}}",
+      "col": {
+        "date": "Data",
+        "document": "Document",
+        "status": "Stare"
+      },
+      "status": {
+        "toSign": "De semnat",
+        "signed": "Semnat {{date}}",
+        "signedCopy": "Exemplar semnat",
+        "superseded": "Înlocuit de o versiune mai nouă"
+      }
+    }
   },
   "drivers": {
     "title": "Șoferi",
