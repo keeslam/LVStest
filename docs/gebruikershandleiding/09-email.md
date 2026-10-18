@@ -1,8 +1,9 @@
 # 9. E-mail versturen vanuit de app
 
-De app kan zelf e-mail versturen: documenten naar de klant, meldingen naar het klantenportaal,
-APK-herinneringen en bericht over een bekeuring. In dit hoofdstuk staat welke mail er bestaat,
-wie hem krijgt, waar je ziet of hij aangekomen is, en wat je doet als het misgaat.
+De app kan zelf e-mail versturen. Bijvoorbeeld documenten naar de klant, meldingen naar het
+klantenportaal, APK-herinneringen en bericht over een bekeuring. In dit hoofdstuk lees je welke
+mail er bestaat en wie hem krijgt. Je leest ook waar je ziet of een mail is aangekomen. En je
+leest wat je doet als het misgaat.
 
 ---
 
@@ -14,15 +15,15 @@ wie hem krijgt, waar je ziet of hij aangekomen is, en wat je doet als het misgaa
 | **Portaaluitnodiging en wachtwoord-reset** | Jij, vanuit het klantenportaalscherm | De portaalgebruiker |
 | **Bevestiging nieuw e-mailadres / nieuwe aanmelding** | De klant zelf, in het portaal | De portaalgebruiker |
 | **Onderhoudsmelding** | De app, zodra onderhoud gepland, verzet of afgerond wordt | De klant van de huur waar dat onderhoud bij hoort |
-| **Reservering gewijzigd, geannuleerd of nieuw document** | De app, zodra kantoor dat doet | De klant van die reservering — zie 9.8 |
-| **Bekeuring gekoppeld** | Jij, met de knop **Klant informeren** in het venster van de bekeuring (alleen bij een gekoppelde bekeuring) | Het e-mailadres van die klant; het bevestigingsvenster noemt het adres |
+| **Reservering gewijzigd, geannuleerd of nieuw document** | De app, zodra kantoor dat doet | De klant van die reservering (zie 9.8) |
+| **Bekeuring gekoppeld** | Jij, met de knop **Klant informeren** in het venster van de bekeuring. Dit kan alleen bij een gekoppelde bekeuring | Het e-mailadres van die klant. Het bevestigingsvenster noemt het adres |
 | **Reactie op een portaalaanvraag** | Jij, als je een aanvraag beantwoordt | De klant die de aanvraag deed |
-| **APK-herinnering** | Jij, met **APK-meldingen versturen** of de knop op de voertuigkaart | De huidige huurder — zie 9.2 |
-| **Onderhoudsherinnering en vrij bericht** | Jij, vanuit **Communicatie** | De klanten die je selecteert |
+| **APK-herinnering** | Jij, met **APK-meldingen versturen** of de knop op de voertuigkaart | De huidige huurder (zie 9.2) |
+| **Onderhoudsherinnering en vrij bericht** | Jij, vanuit **Communicatie** | De klanten die je kiest |
 | **GPS-activatieverzoek** | Jij, vanuit het voertuig | De GPS-leverancier |
 | **Melding aan kantoor** | De app | Het kantooradres uit de instellingen |
 
-De onderhoudsmail kent zeven soorten bericht. De aanleiding staat in het onderwerp:
+De onderhoudsmail heeft zeven soorten bericht. De aanleiding staat in het onderwerp:
 **Onderhoud gepland**, **Onderhoud verplaatst**, **Auto in onderhoud**, **Onderhoud klaar**,
 **Onderhoud vervalt**, **Onderhoud hoort niet meer bij uw huur**, en
 **Vervangend vervoer staat klaar**.
@@ -41,33 +42,33 @@ De onderhoudsmail kent zeven soorten bericht. De aanleiding staat in het onderwe
 
 ## 9.2 Wie krijgt een APK-herinnering?
 
-**Alleen de huidige huurder.** Dat is de klant van de huur die op dit moment loopt. Loopt er
-geen huur, dan is het de klant van de eerstvolgende geplande huur.
+**Alleen de huidige huurder.** Dat is de klant van de huur die nu loopt. Loopt er geen huur? Dan
+is het de klant van de eerstvolgende geplande huur.
 
-Staat de auto leeg — geen lopende en geen geplande huur — dan gaat er geen klantmail uit. In
-plaats daarvan krijgt kantoor één verzamelmail:
+Staat de auto leeg? Dat betekent: er is geen lopende huur en geen geplande huur. Dan gaat er geen
+mail naar een klant. In plaats daarvan krijgt kantoor één verzamelmail:
 
 > **Herinnering: 3 voertuig(en) zonder huurder**
 > *"Deze voertuigen zijn nu niet verhuurd, dus er is geen huurder om te waarschuwen:"*
 > … per regel het kenteken, merk, model en de APK-datum …
 > *"Deze melding gaat alleen naar kantoor."*
 
-Is er wél een huidige huurder, maar heeft die geen bruikbaar e-mailadres, dan komt die auto ook
-op die kantoorlijst. Zo blijft het zichtbaar dat er iemand gebeld moet worden.
+Is er wel een huidige huurder, maar heeft die geen bruikbaar e-mailadres? Dan komt die auto ook
+op die lijst voor kantoor. Zo blijft zichtbaar dat er iemand gebeld moet worden.
 
-Een klant die de auto ooit heeft gehuurd en nu niet meer, krijgt **nooit** een herinnering. Een
-klant van wie de huur pas over een halfjaar begint, krijgt hem alleen als er nu niemand anders
-in rijdt.
+Een klant die de auto vroeger huurde en nu niet meer, krijgt **nooit** een herinnering. Begint de
+huur van een klant pas over een halfjaar? Dan krijgt die klant de herinnering alleen als er nu
+niemand anders in rijdt.
 
-Het venster **APK-herinnering versturen** op de voertuigkaart toont precies die ene ontvanger,
-met het label **Huidige huurder** en de periode van zijn huur erbij. Staat de auto niet
-verhuurd, dan meldt het venster **Dit voertuig is nu niet verhuurd** en heet de knop **Melding
+Het venster **APK-herinnering versturen** op de voertuigkaart toont precies die ene ontvanger.
+Erbij staan het label **Huidige huurder** en de periode van zijn huur. Is de auto niet verhuurd?
+Dan meldt het venster **Dit voertuig is nu niet verhuurd**. De knop heet dan **Melding
 naar kantoor versturen**.
 
-Het kantooradres stel je in bij **App-instellingen → E-mail & GPS**, in het kader
-**Kantooradres voor meldingen** onder de mailservers. Vul het adres in en kies **Kantooradres
-opslaan**. Laat je het leeg, dan gaat de kantoormelding naar het afzenderadres van de app — het
-scherm noemt dat adres erbij, zodat je ziet waar hij dan terechtkomt.
+Het kantooradres stel je in bij **App-instellingen → E-mail & GPS**. Daar staat het kader
+**Kantooradres voor meldingen**, onder de mailservers. Vul het adres in. Kies daarna **Kantooradres
+opslaan**. Laat je het leeg? Dan gaat de kantoormelding naar het afzenderadres van de app. Het
+scherm noemt dat adres erbij. Zo zie je waar de melding dan terechtkomt.
 
 ---
 
@@ -75,50 +76,59 @@ scherm noemt dat adres erbij, zodat je ziet waar hij dan terechtkomt.
 
 Er zijn twee vensters.
 
-**Eén document, vanuit de bibliotheek.** Klik bij een document in de **Documentbibliotheek** (of op
-de voertuigkaart) op **E-mailen**. Je ziet het venster **Document e-mailen** — *Verstuur
-"<bestandsnaam>" via e-mail*. Vul **Ontvangers (kommagescheiden)** in: één of meer e-mailadressen,
-met een komma ertussen. Pas zo nodig **Onderwerp** en **Bericht** aan. Klik op **E-mail versturen**.
-Die knop blijft grijs zolang er geen ontvanger staat.
+**Eén document, vanuit de bibliotheek.** Ga naar de **Documentbibliotheek** of naar de
+voertuigkaart. Klik bij een document op **E-mailen**. Je ziet nu het venster **Document e-mailen**.
+Daarin staat *Verstuur "<bestandsnaam>" via e-mail*. Vul **Ontvangers (kommagescheiden)** in. Dat
+zijn één of meer e-mailadressen. Zet een komma tussen de adressen. Pas zo nodig **Onderwerp** en
+**Bericht** aan. Klik op **E-mail versturen**. Die knop blijft grijs zolang er geen ontvanger staat.
+
+![Het veld Ontvangers, van dichtbij](afbeeldingen/09-document-emailen-k1.png)
+*Zo ziet het veld **Ontvangers (kommagescheiden)** eruit. Typ hier één of meer e-mailadressen, met een komma ertussen.*
+
+![De knop E-mail versturen, van dichtbij](afbeeldingen/09-document-emailen-k2.png)
+*Zo ziet de knop **E-mail versturen** eruit. Klik erop. De knop blijft grijs zolang er geen ontvanger staat.*
 
 ![Het venster Document e-mailen met het veld Ontvangers (1) en de knop E-mail versturen (2)](afbeeldingen/09-document-emailen.png)
 *Het venster **Document e-mailen**. 1: typ het e-mailadres bij **Ontvangers**. 2: klik op **E-mail
 versturen**.*
 
-**De documenten van een reservering naar de klant.** Dit venster opent met **Mail naar klant** in
-het venster na het ophalen (**Contract klaar**) en na het innemen (**Schadeformulier klaar**), en
-vanuit de reservering. Het heet **Documenten e-mailen naar klant** — *"Selecteer documenten,
-ontvanger en taal om naar de klant te sturen"*.
+**De documenten van een reservering naar de klant.** Dit venster opent met de knop **Mail naar
+klant**. Die knop staat in het venster na het ophalen (**Contract klaar**) en na het innemen
+(**Schadeformulier klaar**). Je kunt het venster ook vanuit de reservering openen. Het heet
+**Documenten e-mailen naar klant**. Je leest: *"Selecteer documenten, ontvanger en taal om naar de
+klant te sturen"*.
 
 Je vult in:
 
-1. **Selecteer documenten** — de documenten staan gegroepeerd onder **Contracten**,
-   **Schadechecks** en **Overige documenten**. Vink aan wat mee moet. Alles wat je aanvinkt gaat
-   in **één** e-mail als losse bijlagen.
-2. **E-mailadres ontvanger** — kies **Algemeen**, het adres van de klant zelf (*Klant: <adres>*),
-   **Facturen**, of **Aangepast e-mailadres** en typ het adres zelf. Het adres van de klant staat
-   er dus vanzelf bij, ook als de klant geen algemeen adres heeft.
-3. **E-mailsjabloon** — **Contract-e-mail**, **Schadecheck-e-mail** of
-   **Gecombineerde documenten-e-mail**. Vink je meer dan één document aan, dan springt de app
+1. **Selecteer documenten**. De documenten staan in groepen: **Contracten**, **Schadechecks** en
+   **Overige documenten**. Vink aan wat mee moet. Alles wat je aanvinkt, gaat in **één** e-mail.
+   Elk document is daarin een losse bijlage.
+2. **E-mailadres ontvanger**. Kies **Algemeen**, of het adres van de klant zelf (*Klant: <adres>*).
+   Je kunt ook **Facturen** kiezen. Of kies **Aangepast e-mailadres** en typ het adres zelf. Het
+   adres van de klant staat er dus vanzelf bij. Ook als de klant geen algemeen adres heeft.
+3. **E-mailsjabloon**. Kies **Contract-e-mail**, **Schadecheck-e-mail** of
+   **Gecombineerde documenten-e-mail**. Vink je meer dan één document aan? Dan springt de app
    vanzelf naar het gecombineerde sjabloon.
-4. **E-mailtaal** — **Nederlands** of **Engels**. Dit gaat alleen over de tekst van de e-mail.
+4. **E-mailtaal**. Kies **Nederlands** of **Engels**. Dit gaat alleen over de tekst van de e-mail.
    De documenten zelf zijn altijd Nederlands.
 5. **Onderwerp** en **Bericht** kun je aanpassen voordat je verstuurt.
 
-Dan klik je op **E-mail versturen**. Tijdens het versturen staat er *"Versturen..."*. Staat de knop
-grijs, dan staat er onder het venster wat er nog ontbreekt: *Nog nodig om te versturen:* met erachter
-*kies minstens één document*, *een geldig e-mailadres van de ontvanger* en/of *een onderwerp*.
+Klik daarna op **E-mail versturen**. Tijdens het versturen staat er *"Versturen..."*. Is de knop
+grijs? Dan staat onder het venster wat er nog ontbreekt. Je leest *Nog nodig om te versturen:* met
+erachter *kies minstens één document*, *een geldig e-mailadres van de ontvanger* en/of
+*een onderwerp*.
 
-Gaat het goed, dan sluit het venster met de melding:
+Gaat het goed? Dan sluit het venster met de melding:
 
 > **Gelukt** — *"E-mail succesvol verstuurd naar &lt;adres&gt; met 2 documenten bijgevoegd"*
 
-De app controleert vooraf drie dingen en weigert met een duidelijke melding:
+De app controleert vooraf drie dingen. Klopt er iets niet? Dan weigert de app met een duidelijke
+melding:
 
 | Melding | Wat je moet doen |
 |---|---|
-| **Ongeldig e-mailadres** — *"Voer een geldig e-mailadres in"* | Corrigeer het adres |
-| **Geen documenten** — *"Selecteer minstens één document om te versturen"* | Vink een document aan |
+| **Ongeldig e-mailadres**: *"Voer een geldig e-mailadres in"* | Verbeter het adres |
+| **Geen documenten**: *"Selecteer minstens één document om te versturen"* | Vink een document aan |
 | *"Geen e-mailadres ontvanger geselecteerd"* | Kies een ontvanger |
 
 > **Let op:** het venster blijft open als het versturen mislukt, en je leest dan in het Nederlands
@@ -131,140 +141,148 @@ De app controleert vooraf drie dingen en weigert met een duidelijke melding:
 
 ### Bij het document — dit is de plek die je moet gebruiken
 
-Open de reservering en dan **Reserveringsdocumenten**. Onder elk document staat de verzendstatus:
+Open de reservering. Open daarna **Reserveringsdocumenten**. Onder elk document staat de
+verzendstatus:
 
 - Groen: **Verzonden op 13-09-2026 aan klant@voorbeeld.nl**
 - Rood: **Verzenden mislukt — &lt;reden&gt;**
 
-Staat er niets onder een document, dan is het nooit verstuurd. Is een document meerdere keren
-verstuurd, dan zie je de **laatste** poging.
+Staat er niets onder een document? Dan is het nooit verstuurd. Is een document meerdere keren
+verstuurd? Dan zie je de **laatste** poging.
 
-Deze regel is het bewijs dat de klant zijn papieren heeft gekregen. Gebruik hem als een klant
-belt met "ik heb niks ontvangen".
+Deze regel is het bewijs dat de klant zijn papieren heeft gekregen. Belt een klant met "ik heb niks
+ontvangen"? Gebruik dan deze regel.
 
 ### Het scherm Communicatie
 
-Onder **Communicatie** staat een tabblad **E-maillogboek** — *Elke verstuurde en mislukte e-mail,
-de nieuwste bovenaan.* Sinds oktober 2026 toont het de **echte verzendgeschiedenis**. (Tot dan stonden
-er drie vaste voorbeeldregels uit maart 2024 in, die niets met jouw werk te maken hadden.)
+Onder **Communicatie** staat een tabblad **E-maillogboek**. De uitleg erbij is: *Elke verstuurde en
+mislukte e-mail, de nieuwste bovenaan.* Sinds oktober 2026 toont het de **echte
+verzendgeschiedenis**. (Tot die tijd stonden er drie vaste voorbeeldregels uit maart 2024 in. Die
+hadden niets met jouw werk te maken.)
 
-Per regel zie je het onderwerp, de datum en de tijd, de soort (**APK**, **Onderhoud**, **Aangepast**,
-**GPS-activatie**, **Document per e-mail** of **Overige e-mail**), de ontvanger — of, bij een hele
-verzendronde, *N ontvangers · X verstuurd, Y mislukt* — en een label **verzonden**, **mislukt** of
-**deels mislukt**. Bij een mislukking staat eronder **Reden van mislukking:**, in het Nederlands,
-bijvoorbeeld *De e-mailserver weigerde de verbinding.* of *Geen geschikt e-mailadres gevonden.* Bij een
-hele ronde staat per reden hoe vaak die voorkwam, bijvoorbeeld *2x Geen geschikt e-mailadres gevonden.*
-De oorspronkelijke tekst van de mailserver blijft bewaard als **Technische melding:** achter de
-Nederlandse zin; heb je hulp van een beheerder nodig, geef dan die tekst door. Een oudere regel die nog
-zonder vaste code is bewaard, toont de algemene zin *Verzenden mislukt.* met de bewaarde tekst
-eronder. Is er nog niets verstuurd, dan staat er *Er zijn nog geen e-mails verstuurd*; lukt
-het laden niet, dan staat er *Het e-maillogboek kon niet worden geladen. Probeer het later
-opnieuw.*
+Per regel zie je het onderwerp, de datum en de tijd. Je ziet ook de soort: **APK**, **Onderhoud**,
+**Aangepast**, **GPS-activatie**, **Document per e-mail** of **Overige e-mail**. En je ziet de
+ontvanger. Bij een hele verzendronde staat er *N ontvangers · X verstuurd, Y mislukt*. Tot slot
+staat er een label: **verzonden**, **mislukt** of **deels mislukt**. Bij een mislukking staat
+eronder **Reden van mislukking:**. Die reden staat in het Nederlands. Bijvoorbeeld *De e-mailserver
+weigerde de verbinding.* of *Geen geschikt e-mailadres gevonden.* Bij een hele ronde staat per reden
+hoe vaak die voorkwam. Bijvoorbeeld *2x Geen geschikt e-mailadres gevonden.* De oorspronkelijke
+tekst van de mailserver blijft bewaard. Die staat als **Technische melding:** achter de Nederlandse
+zin. Heb je hulp van een beheerder nodig? Geef dan die tekst door. Een oudere regel is soms nog
+zonder vaste code bewaard. Die toont de algemene zin *Verzenden mislukt.* met de bewaarde tekst
+eronder. Is er nog niets verstuurd? Dan staat er *Er zijn nog geen e-mails verstuurd*. Lukt het
+laden niet? Dan staat er *Het e-maillogboek kon niet worden geladen. Probeer het later opnieuw.*
 
-Achter elke regel staat de knop **Details**. Die opent **E-mail in het logboek** met het onderwerp,
-het resultaat, de soort, het tijdstip, de ontvanger (bij een ronde alle ontvangers en voertuigen),
-de reden in het Nederlands en de technische melding. Onderaan staat dat de inhoud van een verstuurde
-e-mail niet wordt bewaard: het logboek houdt alleen het resultaat bij. Wil je dezelfde mail opnieuw
-sturen, doe dat dan via **Meldingen versturen**.
+Achter elke regel staat de knop **Details**. Die opent **E-mail in het logboek**. Daar zie je het
+onderwerp, het resultaat, de soort en het tijdstip. Je ziet ook de ontvanger. Bij een ronde zie je
+alle ontvangers en voertuigen. Verder staan er de reden in het Nederlands en de technische melding.
+Onderaan staat dat de inhoud van een verstuurde e-mail niet wordt bewaard. Het logboek houdt alleen
+het resultaat bij. Wil je dezelfde mail opnieuw sturen? Doe dat dan via **Meldingen versturen**.
 
-Verstuur je vanuit **Communicatie**, dan staat de nieuwe regel meteen in het logboek; je hoeft de
-pagina niet meer te vernieuwen.
+Verstuur je vanuit **Communicatie**? Dan staat de nieuwe regel meteen in het logboek. Je hoeft de
+pagina niet te vernieuwen.
 
 ![Het scherm Communicatie met de vier tabbladen (1), de drie soorten berichten (2), het sjabloon (3) en de knop Voorvertonen & versturen (4)](afbeeldingen/09-meldingen-versturen.png)
-*Het scherm **Communicatie**, tabblad **Meldingen versturen**. 1 zijn de vier tabbladen. 2 kies je
-**APK-herinneringen**, **Onderhoud** of **Aangepast bericht**. 3 kies je het **E-mailsjabloon**. 4 is
-**Voorvertonen & versturen**; die knop wordt pas blauw als je een sjabloon en minstens één auto hebt
-gekozen.*
+*Het scherm **Communicatie**, tabblad **Meldingen versturen**. 1 zijn de vier tabbladen. Bij 2 kies
+je **APK-herinneringen**, **Onderhoud** of **Aangepast bericht**. Bij 3 kies je het
+**E-mailsjabloon**. 4 is **Voorvertonen & versturen**. Die knop wordt pas blauw als je een sjabloon
+en minstens één auto hebt gekozen.*
 
 ![Het tabblad E-maillogboek (1)](afbeeldingen/09-emaillogboek.png)
-*Het tabblad **E-maillogboek** (1): elke verstuurde en mislukte e-mail, de nieuwste bovenaan.*
+*Het tabblad **E-maillogboek** (1). Hier staat elke verstuurde en mislukte e-mail, de nieuwste
+bovenaan.*
 
 ![Het tabblad Analyse (1)](afbeeldingen/09-analyse.png)
-*Het tabblad **Analyse** (1): de aantallen verstuurd en mislukt, per soort.*
+*Het tabblad **Analyse** (1). Hier staan de aantallen verstuurd en mislukt, per soort.*
 
-Het tabblad **Analyse** rekent zijn cijfers uit diezelfde regels: **Verstuurde e-mails**,
-**Mislukte e-mails**, **Verzendrondes** en **Rondes met mislukkingen**, en per soort (**APK-meldingen**,
-**Onderhoudsherinneringen**, **Aangepaste berichten**, **Overige e-mails**) hoeveel er verstuurd en
-mislukt is. Een zin onderaan zegt wat niet meetelt: mislukkingen vóór het versturen (zoals een klant
-zonder e-mailadres) staan alleen bij hun ronde, en oudere verzendingen zonder regel per ontvanger
-tellen niet mee.
+Het tabblad **Analyse** rekent zijn cijfers uit diezelfde regels. Je ziet **Verstuurde e-mails**,
+**Mislukte e-mails**, **Verzendrondes** en **Rondes met mislukkingen**. Per soort zie je hoeveel er
+verstuurd en mislukt is: **APK-meldingen**, **Onderhoudsherinneringen**, **Aangepaste berichten**
+en **Overige e-mails**. Een zin onderaan zegt wat niet meetelt. Mislukkingen vóór het versturen,
+zoals een klant zonder e-mailadres, staan alleen bij hun ronde. Oudere verzendingen zonder regel
+per ontvanger tellen niet mee.
 
-Beide tabbladen vragen het recht **E-mailsjablonen beheren**; zonder dat recht staat er *Geen toegang
-tot deze gegevens*. Voor de vraag "heeft deze klant zijn papieren gekregen?" blijft de regel bij het
-document hierboven de plek die je gebruikt.
+Voor beide tabbladen heb je het recht **E-mailsjablonen beheren** nodig. Zonder dat recht staat er
+*Geen toegang tot deze gegevens*. Wil je weten of een klant zijn papieren heeft gekregen? Gebruik
+dan de regel bij het document, zoals hierboven staat.
 
 ### Het meldingencentrum
 
 Het belletje rechtsboven opent het **Meldingencentrum**. Daar komen gebeurtenissen uit het
-klantenportaal binnen — een nieuwe aanvraag, een reactie van een klant. Dit is geen
+klantenportaal binnen. Bijvoorbeeld een nieuwe aanvraag of een reactie van een klant. Dit is geen
 verzendstatus van e-mail.
 
 ---
 
 ## 9.5 Als versturen mislukt
 
-Mislukken gebeurt buiten de app: bij de mailserver of bij de ontvanger. De app vertaalt de reden
-naar een Nederlandse zin; de tekst van de mailserver zelf blijft in het logboek bewaard (9.4).
+Mislukken gebeurt buiten de app. Het gaat mis bij de mailserver of bij de ontvanger. Een
+mailserver is de computer die e-mail verstuurt en ontvangt. De app vertaalt de reden naar een
+Nederlandse zin. De tekst van de mailserver zelf blijft in het logboek bewaard (9.4).
 
 | Wat je ziet | Wat het betekent | Wat je doet |
 |---|---|---|
-| *Er is geen werkende e-mailconfiguratie voor dit soort e-mail. Controleer de e-mailinstellingen.* | Er is voor dit soort mail geen mailinstelling ingevuld | Beheerder: vul de mailinstellingen aan (hoofdstuk 10) |
+| *Er is geen werkende e-mailconfiguratie voor dit soort e-mail. Controleer de e-mailinstellingen.* | Voor dit soort mail is geen mailinstelling ingevuld | Beheerder: vul de mailinstellingen aan (hoofdstuk 10) |
 | *Inloggen bij de e-mailserver is mislukt: gebruikersnaam of wachtwoord klopt niet.* | De gebruikersnaam of het wachtwoord van de mailserver klopt niet | Beheerder |
 | *De e-mailprovider accepteert dit wachtwoord niet; inloggen met alleen een wachtwoord kan zijn uitgeschakeld.* | De mailprovider accepteert deze manier van inloggen niet meer | Beheerder |
-| *De e-mailserver weigerde de verbinding.* of *Er kon geen verbinding worden gemaakt met de e-mailserver.* | De mailserver is niet bereikbaar | Probeer later opnieuw; blijft het: beheerder |
-| *De verbinding met de e-mailserver duurde te lang.* | De mailserver reageerde niet op tijd | Probeer later opnieuw |
+| *De e-mailserver weigerde de verbinding.* of *Er kon geen verbinding worden gemaakt met de e-mailserver.* | De mailserver is niet bereikbaar | Probeer het later opnieuw. Blijft het misgaan? Dan de beheerder |
+| *De verbinding met de e-mailserver duurde te lang.* | De mailserver reageerde niet op tijd | Probeer het later opnieuw |
 | *De e-mailserver is niet gevonden; controleer de servernaam in de e-mailinstellingen.* | De naam van de mailserver klopt niet | Beheerder |
 | *De e-mailserver heeft het bericht geweigerd; controleer het adres van de ontvanger en de afzender.* | De ontvanger of het bericht is geweigerd | Controleer het e-mailadres |
 | *Geen geschikt e-mailadres gevonden.* | De klant heeft geen bruikbaar adres | Vul het e-mailadres van de klant aan (hoofdstuk 3) |
-| *Het adres of het onderwerp bevat een regeleinde en is daarom niet verstuurd.* | Er zit een regelovergang in het adres of onderwerp | Typ het opnieuw, zonder Enter |
+| *Het adres of het onderwerp bevat een regeleinde en is daarom niet verstuurd.* | Er zit een regelovergang in het adres of het onderwerp | Typ het opnieuw, zonder Enter |
 | *De e-mail kon niet verstuurd worden. Controleer de e-mailinstellingen onder Instellingen en probeer het opnieuw.* | Verzamelmelding bij het mailen van documenten | Zie de regels hierboven |
 
-**Wat je zelf kunt doen bij het mailen van documenten:** het venster blijft openstaan als het
-mislukt. Er is geen wachtrij en de app probeert het niet vanzelf opnieuw. Controleer het
-e-mailadres en klik nog een keer op **E-mail versturen**. Blijft het mislukken, dan ligt het aan
-de mailinstellingen en moet er een beheerder bij.
+**Wat je zelf kunt doen bij het mailen van documenten:** het venster blijft open als het mislukt.
+Er is geen wachtrij. De app probeert het niet vanzelf opnieuw. Controleer het e-mailadres. Klik
+daarna nog een keer op **E-mail versturen**. Blijft het mislukken? Dan ligt het aan de
+mailinstellingen. Er moet dan een beheerder bij.
 
 **Bij een portaaluitnodiging** krijg je: *"Account aangemaakt, maar de e-mail kon niet worden
-verstuurd. Controleer de e-mailinstellingen en stuur de uitnodiging opnieuw."* Het account is
-dan wél aangemaakt. Gebruik daarna de knop **Uitnodiging opnieuw sturen**.
+verstuurd. Controleer de e-mailinstellingen en stuur de uitnodiging opnieuw."* Het account is dan
+wel aangemaakt. Gebruik daarna de knop **Uitnodiging opnieuw sturen**.
 
-**Bij APK- en onderhoudsherinneringen en vrije berichten** (scherm **Communicatie**) zegt de melding
-na afloop eerlijk wat er gebeurd is. Er zijn drie uitkomsten:
+**Bij APK- en onderhoudsherinneringen en vrije berichten** (scherm **Communicatie**) zegt de
+melding na afloop eerlijk wat er gebeurd is. Dit zijn de mogelijke uitkomsten:
 
 | Melding | Betekent |
 |---|---|
-| **Meldingen verstuurd** — *3 e-mails verstuurd* | Alles is verzonden |
-| **Gedeeltelijk verstuurd** — *3 e-mails verstuurd, 2 e-mails mislukt. De redenen staan in het E-maillogboek.* | Een deel is niet aangekomen; kijk in het logboek (9.4) |
-| **Er is niets verstuurd** — *2 e-mails mislukt* met de reden erachter, in rood | Er is niets uitgegaan |
-| *Er was niemand om naar te mailen.* | Er was geen ontvanger met een bruikbaar adres; er is niets gemaild en ook niets mislukt |
+| **Meldingen verstuurd**: *3 e-mails verstuurd* | Alles is verzonden |
+| **Gedeeltelijk verstuurd**: *3 e-mails verstuurd, 2 e-mails mislukt. De redenen staan in het E-maillogboek.* | Een deel is niet aangekomen. Kijk in het logboek (9.4) |
+| **Er is niets verstuurd**: *2 e-mails mislukt* met de reden erachter, in rood | Er is niets uitgegaan |
+| *Er was niemand om naar te mailen.* | Er was geen ontvanger met een bruikbaar adres. Er is niets gemaild en ook niets mislukt |
 
-Vroeger stond er altijd **Meldingen succesvol verstuurd**, ook als er geen enkele mail uit was
-gegaan. Dat is verholpen. Bij **Er is niets verstuurd** blijven de ontvangers, het onderwerp en de
-tekst in het formulier staan, zodat je niet opnieuw hoeft te beginnen.
+Vroeger stond er altijd **Meldingen succesvol verstuurd**. Ook als er geen enkele mail was
+uitgegaan. Dat is verholpen. Bij **Er is niets verstuurd** blijven de ontvangers, het onderwerp en
+de tekst in het formulier staan. Je hoeft dus niet opnieuw te beginnen.
 
-**De voorvertoning is persoonlijk.** Klik je op **Voorvertonen & versturen naar … voertuigen**, dan
-laat het venster **E-mailvoorvertoning** de mail zien zoals één ontvanger hem krijgt: klik op een
-ontvanger en je ziet *Zo ziet <naam> de e-mail*, met zijn eigen kenteken en klantnaam en niet meer
-de voorbeeldwaarden. Een voertuig zonder huurder krijgt geen klantmail, maar een melding aan
-kantoor (*Zo ziet kantoor de melding over dit voertuig*). Staat er geen bruikbaar e-mailadres, dan staat
-er *Geen geschikt e-mailadres: wordt niet verstuurd. Kies een ander adres of een andere ontvanger.* Het
-adres dat je in de voorvertoning kiest, is ook het adres waarnaar echt verstuurd wordt. Is een
-veld voor een ontvanger leeg, dan staat er *Leeg voor deze ontvanger:* met de naam van het veld.
+**De voorvertoning is persoonlijk.** Een voorvertoning laat zien hoe de mail eruit gaat zien. Klik
+op **Voorvertonen & versturen naar … voertuigen**. Je ziet nu het venster **E-mailvoorvertoning**.
+Dat laat de mail zien zoals één ontvanger hem krijgt. Klik op een ontvanger. Je ziet dan *Zo ziet
+<naam> de e-mail*. Daarin staan zijn eigen kenteken en klantnaam, en niet meer de voorbeeldwaarden.
+Een voertuig zonder huurder krijgt geen klantmail. Dat voertuig krijgt een melding aan kantoor
+(*Zo ziet kantoor de melding over dit voertuig*). Is er geen bruikbaar e-mailadres? Dan staat er
+*Geen geschikt e-mailadres: wordt niet verstuurd. Kies een ander adres of een andere ontvanger.* Het
+adres dat je in de voorvertoning kiest, is ook het adres waarnaar de app echt verstuurt. Is een
+veld voor een ontvanger leeg? Dan staat er *Leeg voor deze ontvanger:* met de naam van het veld.
 
-**Veel ontvangers.** Verstuur je 25 e-mails of meer in één keer, dan staat er een waarschuwing **Let op: veel
-ontvangers**, en de verzendknop blijft grijs totdat je **Ik heb de tekst en de ontvangers
-gecontroleerd** hebt aangevinkt.
+![De knop Voorvertonen & versturen, van dichtbij](afbeeldingen/09-meldingen-versturen-k4.png)
+*Zo ziet de knop **Voorvertonen & versturen** eruit. Klik erop. Je ziet dan het venster **E-mailvoorvertoning**.*
 
-**Een grijze voorvertoonknop** heeft een regel eronder die zegt wat er nog ontbreekt: *Kies minstens één
-ontvanger (klant of voertuig) om te kunnen voorvertonen.* of *Vul een onderwerp en een bericht in, of
-kies een sjabloon, om te kunnen voorvertonen.*
+**Veel ontvangers.** Verstuur je 25 e-mails of meer in één keer? Dan zie je de waarschuwing
+**Let op: veel ontvangers**. De verzendknop blijft grijs. Hij werkt pas als je **Ik heb de tekst en
+de ontvangers gecontroleerd** hebt aangevinkt.
 
-Op de voertuigkaart luidt de foutmelding **Fout bij versturen APK-herinnering** — *"APK-herinnering
-versturen mislukt. Probeer het opnieuw."*
+**Een grijze voorvertoonknop** heeft een regel eronder. Die zegt wat er nog ontbreekt: *Kies
+minstens één ontvanger (klant of voertuig) om te kunnen voorvertonen.* of *Vul een onderwerp en
+een bericht in, of kies een sjabloon, om te kunnen voorvertonen.*
 
-**Onderhoudsmail die vanzelf uitgaat** en mislukt, zie je nergens in het scherm
-terug. Bel de klant als het belangrijk is dat het bericht aankomt. De bekeuringsmail start je zelf
-met **Klant informeren**; die meldt direct als hij niet is verstuurd.
+Op de voertuigkaart heet de foutmelding **Fout bij versturen APK-herinnering**. Je leest:
+*"APK-herinnering versturen mislukt. Probeer het opnieuw."*
+
+**Onderhoudsmail die vanzelf uitgaat** kan ook mislukken. Dat zie je nergens in het scherm terug.
+Is het belangrijk dat het bericht aankomt? Bel dan de klant. De bekeuringsmail start je zelf met
+**Klant informeren**. Die meldt direct als hij niet is verstuurd.
 
 ---
 
@@ -273,36 +291,41 @@ met **Klant informeren**; die meldt direct als hij niet is verstuurd.
 Alleen een beheerder komt hier. Ga via het menu rechtsboven naar
 **App-instellingen → tabblad E-mail & GPS**.
 
+![Het tabblad E-mail & GPS, van dichtbij](afbeeldingen/09-email-gps-instellingen-k1.png)
+*Zo ziet het tabblad **E-mail & GPS** eruit. Klik erop. Daarna zie je de mailinstellingen.*
+
 Onder **E-mailconfiguratie** kun je per doel een eigen mailserver instellen. De doelen zijn:
 **APK-herinneringen**, **Onderhoudsmeldingen**, **GPS/IEI-informatie**, **Documenten-e-mail**,
-**Aangepaste berichten** en **Standaard/Algemeen**. Wat je niet apart invult, valt terug op de
+**Aangepaste berichten** en **Standaard/Algemeen**. Wat je niet apart invult, gebruikt de
 standaardinstelling.
 
 Per instelling vul je in: **Afzender-e-mail**, **Afzendernaam**, **SMTP-host**, **SMTP-poort**,
-**SMTP-gebruikersnaam** en **SMTP-wachtwoord**. Daarna **Configuratie opslaan**.
+**SMTP-gebruikersnaam** en **SMTP-wachtwoord**. SMTP is de techniek waarmee een mailserver e-mail
+verstuurt. Klik daarna op **Configuratie opslaan**.
 
-Met de knop **Verbinding testen** controleer je of het werkt. De knop is uitgeschakeld zolang
-host, gebruikersnaam of wachtwoord leeg zijn. De test **stuurt geen echte e-mail** — hij logt
-alleen in op de mailserver. Onder de knop verschijnt het antwoord, groen of rood:
+Met de knop **Verbinding testen** controleer je of het werkt. De knop is uitgeschakeld zolang de
+host, de gebruikersnaam of het wachtwoord leeg is. De test **stuurt geen echte e-mail**. Hij logt
+alleen in op de mailserver. Onder de knop verschijnt het antwoord, in groen of rood:
 
 - Goed: *Connection successful. The SMTP server accepted the credentials.*
 - Velden leeg: *SMTP host, username and password are required to test the connection.*
-- Mislukt: de reden uit de tabel in 9.5, vaak met een tip erachter zoals *"Common ports: 587
+- Mislukt: de reden uit de tabel in 9.5. Vaak staat er een tip achter, zoals *"Common ports: 587
   (TLS), 465 (SSL), 25 (unencrypted)."*
 
-Is er nog niets ingevuld, dan staat er **Geen e-mailconfiguratie ingesteld**.
+Is er nog niets ingevuld? Dan staat er **Geen e-mailconfiguratie ingesteld**.
 
 ![App-instellingen, tabblad E-mail & GPS (1)](afbeeldingen/09-email-gps-instellingen.png)
-*Het tabblad **E-mail & GPS** (1) van de app-instellingen: per doel een mailserver, met **Verbinding
-testen**.*
+*Het tabblad **E-mail & GPS** (1) van de app-instellingen. Per doel staat er een mailserver, met
+**Verbinding testen**.*
 
-**De naam onder je mails.** De naam van het bedrijf in de mails (onderaan de herinneringen, in de portaalmails
-en als standaard afzendernaam) stel je niet hier in, maar bij **App-instellingen → tabblad Bedrijfsregels →
-Bedrijfsnaam** (hoofdstuk 10, paragraaf 10.3). Eén naam voor alle mails; zolang je niets opslaat, is het
-*Autolease Lam*. Een **Afzendernaam** die je hierboven bij een mailinstelling invult, gaat voor op de
+**De naam onder je mails.** De naam van het bedrijf staat in de mails. Je ziet hem onderaan de
+herinneringen, in de portaalmails en als standaard afzendernaam. Die naam stel je niet hier in. Je
+stelt hem in bij **App-instellingen → tabblad Bedrijfsregels → Bedrijfsnaam** (hoofdstuk 10,
+paragraaf 10.3). Het is één naam voor alle mails. Zolang je niets opslaat, is het *Autolease Lam*.
+Vul je hierboven bij een mailinstelling een **Afzendernaam** in? Dan gaat die voor op de
 bedrijfsnaam.
 
-Het opgeslagen wachtwoord wordt nooit teruggetoond: het veld is leeg als je de instelling later
+Het opgeslagen wachtwoord wordt nooit meer getoond. Het veld is leeg als je de instelling later
 weer opent. Dat is met opzet.
 
 ---
@@ -311,45 +334,56 @@ weer opent. Dat is met opzet.
 
 De teksten van de mails staan op twee plekken.
 
-**Voor documentmail:** App-instellingen → tabblad **Doc-e-mails**. Daar staan
-**Huurcontract E-mail**, **Schade Controle E-mail** en **Gecombineerde Documenten E-mail**, elk
-in een Engelse en een Nederlandse versie, met een **Onderwerp** en een **Bericht**. Opslaan doe
-je met **E-mailsjablonen opslaan**. Vereist het recht **Instellingen beheren**.
+**Voor documentmail:** ga naar App-instellingen → tabblad **Doc-e-mails**. Daar staan
+**Huurcontract E-mail**, **Schade Controle E-mail** en **Gecombineerde Documenten E-mail**. Elk
+sjabloon heeft een Engelse en een Nederlandse versie. Elke versie heeft een **Onderwerp** en een
+**Bericht**. Opslaan doe je met **E-mailsjablonen opslaan**. Hiervoor heb je het recht
+**Instellingen beheren** nodig.
+
+![Het tabblad Doc-e-mails, van dichtbij](afbeeldingen/09-doc-emails-k1.png)
+*Zo ziet het tabblad **Doc-e-mails** eruit. Klik erop. Daarna zie je de drie sjablonen voor documentmail.*
 
 ![App-instellingen, tabblad Doc-e-mails (1)](afbeeldingen/09-doc-emails.png)
-*Het tabblad **Doc-e-mails** (1): de teksten van de mails waarmee je documenten verstuurt.*
+*Het tabblad **Doc-e-mails** (1). Hier staan de teksten van de mails waarmee je documenten
+verstuurt.*
 
-**Voor APK, onderhoud en vrije berichten:** **Communicatie → Sjabloonbouwer**. Daar maak je met
-**Nieuw sjabloon** een sjabloon met een **Sjabloonnaam**, **E-mailonderwerp**,
-**Sjablooncategorie** (APK-herinneringen, Onderhoud, Aangepast) en **E-mailinhoud**. Met
-**Placeholders invoegen** zet je velden als het kenteken of de naam van de klant in de tekst.
-Vereist het recht **E-mailsjablonen beheren**.
+**Voor APK, onderhoud en vrije berichten:** ga naar **Communicatie → Sjabloonbouwer**. Klik op
+**Nieuw sjabloon**. Vul een **Sjabloonnaam**, een **E-mailonderwerp** en een **Sjablooncategorie**
+in. De categorie is APK-herinneringen, Onderhoud of Aangepast. Vul daarna de **E-mailinhoud** in.
+Met **Placeholders invoegen** zet je velden in de tekst, zoals het kenteken of de naam van de
+klant. Een placeholder is een plaatshouder. Dat is een vaste code die de app bij het versturen
+vervangt door de echte gegevens. Hiervoor heb je het recht **E-mailsjablonen beheren** nodig.
+
+![Het tabblad Sjabloonbouwer, van dichtbij](afbeeldingen/09-sjabloonbouwer-k1.png)
+*Zo ziet het tabblad **Sjabloonbouwer** eruit. Klik erop. Daarna zie je links de lijst met sjablonen en rechts het formulier.*
 
 ![Het tabblad Sjabloonbouwer (1) onder Communicatie](afbeeldingen/09-sjabloonbouwer.png)
-*Het tabblad **Sjabloonbouwer** (1): links de lijst met sjablonen, rechts het formulier.*
+*Het tabblad **Sjabloonbouwer** (1). Links staat de lijst met sjablonen. Rechts staat het
+formulier.*
 
-De plaatshouders worden bij het versturen automatisch ingevuld met de gegevens van de
-reservering en de klant. Je mag ze met één accolade (`{customerName}`) of met twee schrijven; beide
-werken, in elk scherm.
+De app vult de plaatshouders bij het versturen automatisch in. Daarvoor gebruikt de app de gegevens
+van de reservering en de klant. Je mag ze met één accolade schrijven (`{customerName}`) of met
+twee. Beide werken, in elk scherm.
 
-**Welk sjabloon je kunt kiezen.** Bij het versturen van **APK-herinneringen** zie je de sjablonen van
-de categorie APK en de algemene sjablonen; bij **Onderhoud** die van Onderhoud en de algemene; bij
-**Aangepast bericht** alle sjablonen behalve de vaste systeemsjablonen. De sjablonen voor het
-klantenportaal (uitnodiging, wachtwoord, onderhoud, wijziging) zie je daar nooit. In de
-**Sjabloonbouwer** staan ze wel, met een Nederlandse naam zoals *Portaal: uitnodiging*, het label
-**PORTAAL** en een eigen categorie in het filter. Je kunt zo'n portaalsjabloon bewerken en opslaan; een nieuw
-portaalsjabloon maak je er niet.
+**Welk sjabloon je kunt kiezen.** Verstuur je **APK-herinneringen**? Dan zie je de sjablonen van de
+categorie APK en de algemene sjablonen. Bij **Onderhoud** zie je die van Onderhoud en de algemene.
+Bij **Aangepast bericht** zie je alle sjablonen, behalve de vaste systeemsjablonen. De sjablonen
+voor het klantenportaal zie je daar nooit. Dat zijn de sjablonen voor uitnodiging, wachtwoord,
+onderhoud en wijziging. In de **Sjabloonbouwer** staan ze wel. Ze hebben een Nederlandse naam, zoals
+*Portaal: uitnodiging*, en het label **PORTAAL**. In het filter hebben ze een eigen categorie. Je
+kunt zo'n portaalsjabloon bewerken en opslaan. Een nieuw portaalsjabloon maak je er niet.
 
-**Vaste sjablonen hernoemen kan niet.** De systeemsjablonen (zoals de portaalsjablonen) hebben in de
-**Sjabloonbouwer** een naamveld dat grijs staat; je kunt hun tekst wel aanpassen, maar de naam
-blijft zoals hij is.
+**Vaste sjablonen hernoemen kan niet.** De systeemsjablonen, zoals de portaalsjablonen, hebben in
+de **Sjabloonbouwer** een grijs naamveld. Je kunt hun tekst wel aanpassen. De naam blijft zoals hij
+is.
 
-**Bewerken en dupliceren.** Klik je op **Bewerken** of op dupliceren bij een sjabloon, dan scrolt de
-pagina naar de sjabloonbouwer en staat de cursor in de naam. Een gedupliceerd sjabloon heet *<naam>
-(kopie)*. Na opslaan of verwijderen klopt de lijst direct.
+**Bewerken en dupliceren.** Dupliceren betekent: een kopie maken. Klik je op **Bewerken** of op
+dupliceren bij een sjabloon? Dan scrolt de pagina naar de sjabloonbouwer. De cursor staat dan in
+het naamveld. Een gedupliceerd sjabloon heet *<naam> (kopie)*. Na opslaan of verwijderen klopt de
+lijst direct.
 
-**Welke placeholders de app invult.** De bouwer biedt elf velden aan, en de app vult ze bij het versturen
-allemaal in, per ontvanger:
+**Welke placeholders de app invult.** De bouwer biedt elf velden aan. De app vult ze bij het
+versturen allemaal in, per ontvanger:
 
 | Placeholder | Wat erin komt |
 |---|---|
@@ -359,31 +393,32 @@ allemaal in, per ontvanger:
 | `{companyName}` (**Bedrijfsnaam**) | De bedrijfsnaam uit de app-instellingen (10.3) |
 | `{customerEmail}` (**E-mail klant**) | Het e-mailadres waarnaar dit bericht gaat |
 | `{customerPhone}` (**Telefoon klant**) | Het telefoonnummer van de klant |
-| `{reservationStart}`, `{reservationEnd}` (**Startdatum reservering**, **Einddatum reservering**) | De begin- en einddatum van de reservering waar het voertuig nu bij hoort, als dd-mm-jjjj |
-| `{maintenanceDate}` (**Onderhoudsdatum**) | Alleen bij de categorie **Onderhoud**: de laatste onderhoudsdatum van het voertuig, of anders de datum van het onderhoud dat de auto dekt of als eerste volgt |
+| `{reservationStart}`, `{reservationEnd}` (**Startdatum reservering**, **Einddatum reservering**) | De begindatum en de einddatum van de reservering waar het voertuig nu bij hoort. Geschreven als dd-mm-jjjj |
+| `{maintenanceDate}` (**Onderhoudsdatum**) | Alleen bij de categorie **Onderhoud**. De laatste onderhoudsdatum van het voertuig. Is die er niet? Dan de datum van het onderhoud dat de auto nu dekt, of anders het onderhoud dat als eerste volgt |
 
 Twee dingen om te weten:
 
-- **Wat er niet is, blijft leeg.** Heeft een voertuig geen huurder en dus geen reservering, dan zijn
-  `{reservationStart}` en `{reservationEnd}` leeg. Een placeholder waarvoor de app niets weet, wordt
-  leeg verstuurd, nooit als code in de tekst. De voorvertoning zegt per ontvanger wat
-  leeg blijft (*Leeg voor deze ontvanger: …*).
-- **`{maintenanceDate}` hoort bij Onderhoud.** Bij de categorieën **APK-herinneringen** en **Aangepast**
-  biedt de bouwer deze placeholder niet aan, en de app vult hem daar ook niet in. De app gebruikt de laatste
-  onderhoudsdatum van het voertuig, anders het onderhoud dat vandaag loopt, anders het eerstvolgende; de
-  voorvertoning toont dezelfde datum als de mail.
+- **Wat er niet is, blijft leeg.** Heeft een voertuig geen huurder? Dan heeft het ook geen
+  reservering. Dan zijn `{reservationStart}` en `{reservationEnd}` leeg. Weet de app niets voor een
+  placeholder? Dan verstuurt de app hem leeg. Er komt nooit code in de tekst. De voorvertoning zegt
+  per ontvanger wat leeg blijft (*Leeg voor deze ontvanger: …*).
+- **`{maintenanceDate}` hoort bij Onderhoud.** Bij de categorieën **APK-herinneringen** en
+  **Aangepast** biedt de bouwer deze placeholder niet aan. De app vult hem daar ook niet in. De app
+  gebruikt de laatste onderhoudsdatum van het voertuig. Is die er niet? Dan het onderhoud dat
+  vandaag loopt. Is dat er ook niet? Dan het eerstvolgende onderhoud. De voorvertoning toont
+  dezelfde datum als de mail.
 
-Een placeholder met een typefout, of een veld dat niet in de tabel staat, vult de app niet in: er komt een
-lege plek in de tekst. De voorvertoning waarschuwt daarvoor met *Deze placeholders worden nergens ingevuld en
-gaan zo naar de klant: …*. Lees dat als: dit veld blijft leeg. Een zin met een gat erin leest slecht, dus
-verbeter het veld voordat je verstuurt.
+Heeft een placeholder een typefout? Of staat het veld niet in de tabel? Dan vult de app het niet
+in. Er komt een lege plek in de tekst. De voorvertoning waarschuwt daarvoor met *Deze placeholders
+worden nergens ingevuld en gaan zo naar de klant: …*. Lees dat als: dit veld blijft leeg. Een zin
+met een gat erin leest slecht. Verbeter het veld dus voordat je verstuurt.
 
 ---
 
 ## 9.8 Wat de klant hoort bij een wijziging van kantoor
 
-Pas je iets aan een reservering aan, dan hoeft de klant dat niet zelf te ontdekken. De app stuurt
-bij deze drie gebeurtenissen automatisch een melding in het portaal **en** een e-mail:
+Pas je iets aan een reservering aan? Dan hoeft de klant dat niet zelf te ontdekken. Bij deze drie
+gebeurtenissen stuurt de app automatisch een melding in het portaal **en** een e-mail:
 
 | Wat je doet | Onderwerp van de mail |
 |---|---|
@@ -391,52 +426,51 @@ bij deze drie gebeurtenissen automatisch een melding in het portaal **en** een e
 | Een reservering annuleren of verwijderen | **Uw reservering is geannuleerd** |
 | Een document genereren dat voor de klant bestemd is | **Nieuw document beschikbaar** |
 
-Daarnaast bestaat de onderhoudsmail uit paragraaf 9.1, met zijn eigen zeven onderwerpen.
+Daarnaast bestaat de onderhoudsmail uit paragraaf 9.1. Die heeft zijn eigen zeven onderwerpen.
 
 Drie dingen om te weten:
 
-- Alleen een klant **met een portaalaccount** krijgt bericht. Heeft de klant geen account, dan blijft
-  bellen of zelf mailen nodig.
-- Wijzig je twee keer kort achter elkaar hetzelfde, dan krijgt de klant daar niet twee losse
+- Alleen een klant **met een portaalaccount** krijgt bericht. Heeft de klant geen account? Dan
+  moet je nog steeds bellen of zelf mailen.
+- Wijzig je twee keer kort achter elkaar hetzelfde? Dan krijgt de klant daar niet twee losse
   berichten over.
-- Gaat het versturen mis, dan mislukt jouw wijziging daar niet door. De wijziging staat gewoon
-  opgeslagen; controleer in dat geval het verzendoverzicht uit paragraaf 9.6.
+- Gaat het versturen mis? Dan mislukt jouw wijziging daar niet door. De wijziging staat gewoon
+  opgeslagen. Controleer in dat geval het verzendoverzicht uit paragraaf 9.6.
 
-Wat wél vanzelf gaat, staat in de tabel in 9.1: onderhoud, portaalaccounts en
-reacties op portaalaanvragen. Een bekeuringsmail gaat alleen uit als jij hem start.
+Wat wel vanzelf gaat, staat in de tabel in 9.1: onderhoud, portaalaccounts en reacties op
+portaalaanvragen. Een bekeuringsmail gaat alleen uit als jij hem start.
 
 ---
 
 ## 9.9 Facturen per e-mail ontvangen
 
-De app heeft een eigen postvak: **fakturenapp@lamgroep.nl**. Elke factuur die daar
-binnenkomt, leest de app zelf uit en boekt hij als kosten op het juiste voertuig.
-Vraag het onderhoudsbedrijf om dit adres als extra ontvanger (CC) op elke factuur te
-zetten. Zelf een factuur doorsturen vanaf een `@lamgroep.nl`-adres werkt hetzelfde.
+De app heeft een eigen postvak: **fakturenapp@lamgroep.nl**. Elke factuur die daar binnenkomt,
+leest de app zelf uit. De app boekt de factuur als kosten op het juiste voertuig. Vraag het
+onderhoudsbedrijf om dit adres op elke factuur als extra ontvanger (CC) te zetten. Zelf een
+factuur doorsturen vanaf een `@lamgroep.nl`-adres werkt hetzelfde.
 
 ### Wanneer boekt de app automatisch?
 
 Alleen als alles klopt:
 
-- de afzender staat in de lijst **Vertrouwde afzenders**, en de mail is volgens jullie
-  eigen mailserver ook echt van dat adres (zie **Instellen**, punt 4);
-- het is echt een factuur — een offerte, herinnering of creditnota wordt nooit vanzelf
-  geboekt;
-- er staat precies één kenteken op de factuur, en dat kenteken zit in de vloot;
-- de factuur is niet eerder binnengekomen (ook niet met een ander factuurnummer geschreven
-  of een andere schrijfwijze van de leverancier: hetzelfde factuurnummer met hetzelfde
-  totaalbedrag telt als dubbel);
-- de regels zijn echt van de factuur gelezen en tellen op tot het totaal (excl. of incl.
-  btw), op hooguit 1 euro na;
-- de factuurdatum is echt gelezen, ligt niet in de toekomst en is niet ouder dan 400 dagen.
+- De afzender staat in de lijst **Vertrouwde afzenders**. En de mail komt volgens jullie eigen
+  mailserver ook echt van dat adres (zie **Instellen**, punt 4).
+- Het is echt een factuur. Een offerte, herinnering of creditnota wordt nooit vanzelf geboekt.
+- Er staat precies één kenteken op de factuur. Dat kenteken zit in de vloot.
+- De factuur is niet eerder binnengekomen. Dat geldt ook als het factuurnummer anders is
+  geschreven. Of als de naam van de leverancier anders is geschreven. Hetzelfde factuurnummer met
+  hetzelfde totaalbedrag telt als dubbel.
+- De regels zijn echt van de factuur gelezen. Ze tellen op tot het totaal (zonder of met btw), op
+  hooguit 1 euro na.
+- De factuurdatum is echt gelezen. Die ligt niet in de toekomst en is niet ouder dan 400 dagen.
 
-Dan maakt de app één kostenregel per categorie (bijvoorbeeld Onderhoud en Remmen), hangt
-de factuur als bon aan elke regel en zet een melding in de bel:
+Dan maakt de app één kostenregel per categorie, bijvoorbeeld Onderhoud en Remmen. De factuur
+hangt als bon aan elke regel. En er komt een melding in de bel:
 "Factuur van Garage Jansen geboekt op V-123-XB".
 
-De bedragen worden geboekt **exclusief btw**. Staan de regels op de factuur inclusief btw, dan
-rekent de app ze terug naar exclusief btw (met het subtotaal, of het totaal min de btw). Elk
-bedragveld en elke kolom in de app heet daarom **Bedrag (excl. btw)**.
+De bedragen worden geboekt **exclusief btw**. Staan de regels op de factuur inclusief btw? Dan
+rekent de app ze terug naar exclusief btw. Daarvoor gebruikt de app het subtotaal, of het totaal
+min de btw. Elk bedragveld en elke kolom in de app heet daarom **Bedrag (excl. btw)**.
 
 > **Open het postvak niet met de hand.** De app haalt alleen ongelezen mail op. Lees je
 > een factuurmail in de webmail of in Outlook, dan is hij gelezen en ziet de app hem niet
@@ -444,120 +478,121 @@ bedragveld en elke kolom in de app heet daarom **Bedrag (excl. btw)**.
 
 ### Wat als de app twijfelt?
 
-Dan wordt er **niets geboekt**. Op de pagina **Kosten** staat naast **Factuur scannen** de
-knop **Ontvangen facturen**, met een getal erop zolang er facturen wachten. Klik erop voor
-het venster met de tabbladen **Te controleren**, **Geboekt** en **Afgewezen**. De factuur
-staat onder **Te controleren**, met de reden erbij:
+Dan wordt er **niets geboekt**. Op de pagina **Kosten** staat naast **Factuur scannen** de knop
+**Ontvangen facturen**. Op die knop staat een getal zolang er facturen wachten. Klik erop. Je ziet
+nu een venster met de tabbladen **Te controleren**, **Geboekt** en **Afgewezen**. De factuur staat
+onder **Te controleren**. De reden staat erbij:
 
 | Reden | Wat je doet |
 | --- | --- |
-| Onbekende afzender | Controleer of de factuur echt is. Zo ja: boeken, en zet de afzender in de lijst. |
+| Onbekende afzender | Controleer of de factuur echt is. Zo ja: boek hem, en zet de afzender in de lijst. |
 | Geen kenteken gevonden | Kies zelf het voertuig. |
-| Meerdere kentekens | Kies het voertuig waar de kosten op horen. Splitsen over voertuigen kan niet; boek dan met de hand. |
-| Kenteken niet in de vloot | Verkeerd gelezen of niet van ons. Kies het voertuig of wijs af. |
+| Meerdere kentekens | Kies het voertuig waar de kosten bij horen. Splitsen over voertuigen kan niet. Boek dan met de hand. |
+| Kenteken niet in de vloot | Verkeerd gelezen, of niet van ons. Kies het voertuig of wijs af. |
 | Mogelijk dubbel | Dezelfde factuur is al geboekt of wacht al. Meestal: afwijzen. |
-| Geen factuur (offerte, herinnering of creditnota) | De app las geen factuur maar iets anders. Klopt dat, wijs dan af. Is het tóch een factuur, controleer de regels en boek hem hier. |
-| Bedragen of datum kloppen niet | Kijk de regels en de factuurdatum na naast de factuur en verbeter ze. |
-| Uitlezen mislukt | Vul leverancier, datum en regels zelf in; de factuur staat ernaast. |
-| Geen bruikbare bijlage | De mail had geen PDF of foto. Vraag de factuur opnieuw op of wijs af. |
+| Geen factuur (offerte, herinnering of creditnota) | De app las geen factuur, maar iets anders. Klopt dat? Wijs dan af. Is het toch een factuur? Controleer dan de regels en boek hem hier. |
+| Bedragen of datum kloppen niet | Kijk de regels en de factuurdatum na naast de factuur. Verbeter ze. |
+| Uitlezen mislukt | Vul de leverancier, de datum en de regels zelf in. De factuur staat ernaast. |
+| Geen bruikbare bijlage | De mail had geen PDF of foto. Vraag de factuur opnieuw op, of wijs af. |
 
 ![Het venster Ontvangen facturen met Nu ophalen (1), Logboek (2) en de tabbladen Te controleren, Geboekt en Afgewezen (3)](afbeeldingen/09-ontvangen-facturen.png)
 *Het venster **Ontvangen facturen**. 1 is **Nu ophalen**. 2 is **Logboek**. 3 zijn de tabbladen **Te
 controleren**, **Geboekt** en **Afgewezen**.*
 
-Klik op **Controleren**. Links staat de factuur, rechts wat de app heeft gelezen. Pas aan
-wat niet klopt, kies het voertuig en klik op **Boeken**. Hoort de factuur niet in de app,
-klik dan op **Afwijzen** (met eventueel een korte notitie). Twee knoppen helpen daarbij:
-**Opnieuw uitlezen** laat de app de factuur nog een keer lezen (handig als een eerdere lezing fout
-was), en **Afzender vertrouwen** zet het afzenderadres op de lijst **Vertrouwde afzenders**, zodat
-de volgende facturen van die afzender vanzelf worden geboekt. Afgewezen en geboekte facturen
+Klik op **Controleren**. Links staat de factuur. Rechts staat wat de app heeft gelezen. Pas aan wat
+niet klopt. Kies het voertuig. Klik op **Boeken**. Hoort de factuur niet in de app? Klik dan op
+**Afwijzen**. Je kunt er een korte notitie bij zetten. Twee knoppen helpen daarbij.
+**Opnieuw uitlezen** laat de app de factuur nog een keer lezen. Dat is handig als een eerdere lezing
+fout was. **Afzender vertrouwen** zet het afzenderadres op de lijst **Vertrouwde afzenders**. De
+volgende facturen van die afzender worden dan vanzelf geboekt. Afgewezen en geboekte facturen
 blijven terug te vinden in de andere twee tabbladen. Wijs je iets af met de reden
-**Onbekende afzender** of **Geen bruikbare bijlage**, dan gooit de app het bestand meteen
-weg: dat is meestal reclame of spam en hoeft niet bewaard te blijven. Bij alle andere
-redenen blijft de bijlage staan.
+**Onbekende afzender** of **Geen bruikbare bijlage**? Dan gooit de app het bestand meteen weg. Dat
+is meestal reclame of spam. Dat hoeft niet bewaard te blijven. Bij alle andere redenen blijft de
+bijlage staan.
 
-Iedereen kan naar dit adres mailen. Van onbekende afzenders leest de app hooguit twintig
-bijlagen per dag uit; wat daarna binnenkomt, komt wél in de lijst maar wordt niet gelezen
-("Niet uitgelezen: de daglimiet voor onbekende afzenders is bereikt"). Ruim de map
-**Verwerkt** in de webmail af en toe leeg, dan blijft het postvak overzichtelijk.
+Iedereen kan naar dit adres mailen. Van onbekende afzenders leest de app hooguit twintig bijlagen
+per dag uit. Wat daarna binnenkomt, komt wel in de lijst. Maar het wordt niet gelezen. Je ziet dan
+"Niet uitgelezen: de daglimiet voor onbekende afzenders is bereikt". Maak de map **Verwerkt** in
+de webmail af en toe leeg. Dan blijft het postvak overzichtelijk.
 
-Een melding in de bel — "Factuur van ... wacht op controle" — opent dit venster meteen.
+Een melding in de bel ("Factuur van ... wacht op controle") opent dit venster meteen.
 
 ### Instellen
 
-**Instellingen, tabblad E-mail, kaart "Facturen per e-mail (inkomend)".** Hiervoor is het
+**Instellingen, tabblad E-mail, kaart "Facturen per e-mail (inkomend)".** Hiervoor heb je het
 recht *instellingen beheren* nodig.
 
-1. Vul de IMAP-server, de gebruikersnaam en het wachtwoord van het postvak in. Deze
-   gegevens staan in het beheerpaneel van de webhosting. Verbinding: TLS (poort 993).
-2. **Map na verwerking**: `Verwerkt`. De app verplaatst elke afgehandelde mail daarheen,
-   zodat het postvak leeg blijft. Werkt dat bij jullie provider niet, probeer dan
-   `INBOX.Verwerkt`. Leeg laten mag ook: de mail blijft dan staan als gelezen.
-3. **Vertrouwde afzenders**: één per regel. Een adres (`facturen@garage.nl`) of een heel
-   domein (`@garage.nl`). Zet er ook `@lamgroep.nl` in als je zelf facturen wilt doorsturen.
-4. **Naam van jullie mailserver (Authentication-Results)**: vul dit in vóór je de app
-   aanzet. Zonder die naam kan de app niet controleren of een mail écht van de afzender
-   komt, en wordt een mail die alleen maar zegt dat hij van een vertrouwde afzender komt
-   gewoon geboekt. De kaart waarschuwt daar in het geel voor zolang het veld leeg is.
+1. Vul de IMAP-server, de gebruikersnaam en het wachtwoord van het postvak in. IMAP is de techniek
+   waarmee de app het postvak leest. Deze gegevens staan in het beheerpaneel van de webhosting.
+   Verbinding: TLS (poort 993).
+2. **Map na verwerking**: `Verwerkt`. De app verplaatst elke afgehandelde mail naar die map. Zo
+   blijft het postvak leeg. Werkt dat niet bij jullie provider? Probeer dan `INBOX.Verwerkt`. Je
+   mag het veld ook leeg laten. De mail blijft dan staan als gelezen.
+3. **Vertrouwde afzenders**: één per regel. Dat kan een adres zijn (`facturen@garage.nl`) of een
+   heel domein (`@garage.nl`). Wil je zelf facturen doorsturen? Zet er dan ook `@lamgroep.nl` in.
+4. **Naam van jullie mailserver (Authentication-Results)**: vul dit in vóór je de app aanzet.
+   Zonder die naam kan de app niet controleren of een mail echt van de afzender komt. Een mail die
+   alleen maar zegt dat hij van een vertrouwde afzender komt, wordt dan gewoon geboekt. De kaart
+   waarschuwt daar in het geel voor zolang het veld leeg is.
 
-   Zo vind je de naam: stuur jezelf een testmail naar `fakturenapp@lamgroep.nl`, open
-   die mail in de webmail van de hosting en laat de kopregels (headers, "originele
-   bericht", "broncode") zien. Zoek de regel die begint met `Authentication-Results:`.
-   Wat daar direct achter staat, tot aan de eerste puntkomma, is de naam — bijvoorbeeld
-   `mx.voorbeeld.nl`. Die vul je hier in. Staat die regel er helemaal niet, vraag dan de
-   hostingpartij of de mailserver DMARC- en SPF-controle stempelt.
+   Zo vind je de naam. Stuur jezelf een testmail naar `fakturenapp@lamgroep.nl`. Open die mail in
+   de webmail van de hosting. Laat de kopregels zien. Die heten ook wel headers, "originele
+   bericht" of "broncode". Zoek de regel die begint met `Authentication-Results:`. Wat daar direct
+   achter staat, tot aan de eerste puntkomma, is de naam. Bijvoorbeeld `mx.voorbeeld.nl`. Die naam
+   vul je hier in. Staat die regel er helemaal niet? Vraag dan de hostingpartij of de mailserver
+   DMARC- en SPF-controle stempelt.
 
-   Let op: zodra deze naam is ingevuld, wordt een vertrouwde afzender die zijn post via
-   een ander (sub)domein verstuurt dan het domein in zijn afzenderadres, mogelijk niet
-   meer automatisch geboekt. Zulke facturen komen dan onder **Te controleren** te staan
-   met de reden "Onbekende afzender"; je boekt ze daar met één klik.
-5. Klik op **Verbinding testen**. Je ziet "Verbonden, 3 ongelezen" of de foutmelding van
-   de mailserver. Test je een ándere server dan de opgeslagen, vul dan het wachtwoord
-   opnieuw in: het opgeslagen wachtwoord wordt alleen voor de opgeslagen server gebruikt.
-6. Zet **Postvak automatisch uitlezen** aan en klik op **Opslaan**. De app kijkt daarna
-   elke 15 minuten (instelbaar). Met **Nu ophalen** hoef je daar niet op te wachten.
+   Let op. Soms verstuurt een vertrouwde afzender zijn post via een ander (sub)domein dan het
+   domein in zijn afzenderadres. Zodra deze naam is ingevuld, wordt zo'n factuur mogelijk niet meer
+   automatisch geboekt. Zulke facturen komen dan onder **Te controleren** te staan. De reden is
+   "Onbekende afzender". Je boekt ze daar met één klik.
+5. Klik op **Verbinding testen**. Je ziet "Verbonden, 3 ongelezen" of de foutmelding van de
+   mailserver. Test je een andere server dan de opgeslagen server? Vul dan het wachtwoord opnieuw
+   in. Het opgeslagen wachtwoord wordt alleen voor de opgeslagen server gebruikt.
+6. Zet **Postvak automatisch uitlezen** aan. Klik op **Opslaan**. De app kijkt daarna elke
+   15 minuten in het postvak. Die tijd kun je instellen. Met **Nu ophalen** hoef je daar niet op te
+   wachten.
 
-Wie de instellingen mag beheren, mag ook op **Nu ophalen** klikken en de status hier zien.
-Voor het boeken en afwijzen van facturen is het recht *kosten beheren* nodig.
+Wie de instellingen mag beheren, mag ook op **Nu ophalen** klikken. Die persoon ziet hier ook de
+status. Voor het boeken en afwijzen van facturen heb je het recht *kosten beheren* nodig.
 
 ### Het logboek
 
-Op dezelfde kaart staat naast **Nu ophalen** de knop **Logboek**. Die staat ook in het venster
-**Ontvangen facturen**, naast **Nu ophalen**, voor wie **Kosten beheren** of **Instellingen beheren**
-heeft. Het opent een venster met
-drie tabbladen dat laat zien wat de app uit het postvak heeft gehaald. Je verandert er
-niets mee; het is alleen om terug te kijken.
+Op dezelfde kaart staat naast **Nu ophalen** de knop **Logboek**. Die knop staat ook in het venster
+**Ontvangen facturen**, naast **Nu ophalen**. Daar zie je hem als je **Kosten beheren** of
+**Instellingen beheren** hebt. De knop opent een venster met drie tabbladen. Daar zie je wat de app
+uit het postvak heeft gehaald. Je verandert er niets mee. Het is alleen om terug te kijken.
 
-- **Facturen** — elke bijlage die de app als factuur heeft behandeld, met het resultaat
-  erbij (geboekt, te controleren met de reden, of afgewezen) en zo nodig de foutmelding.
-  Heb je het recht *kosten beheren*, dan kun je de PDF openen of doorklikken naar de lijst
+- **Facturen**. Elke bijlage die de app als factuur heeft behandeld. Het resultaat staat erbij:
+  geboekt, te controleren met de reden, of afgewezen. Zo nodig staat de foutmelding erbij. Heb je
+  het recht *kosten beheren*? Dan kun je de PDF openen. Je kunt ook doorklikken naar de lijst
   **Te controleren**.
-- **Overige mail** — mail waar geen factuur in zat, bijvoorbeeld zonder bijlage of met een
-  offerte of herinnering. Die mail blijft gewoon staan waar hij stond; er verandert niets
-  aan hoe je hem afhandelt.
-- **Ophaalrondes** — elke keer dat de app het postvak heeft uitgelezen, met hoe lang het
-  duurde, of het automatisch ging of dat iemand op **Nu ophalen** klikte, en wat het
-  opleverde. De schakelaar **Alleen rondes met mail of fouten** staat aan, zodat de
-  kwartieren waarin niets binnenkwam je niet in de weg zitten.
+- **Overige mail**. Mail waar geen factuur in zat. Bijvoorbeeld mail zonder bijlage, of met een
+  offerte of herinnering. Die mail blijft gewoon staan waar hij stond. Er verandert niets aan hoe
+  je hem afhandelt.
+- **Ophaalrondes**. Elke keer dat de app het postvak heeft uitgelezen. Je ziet hoe lang het
+  duurde. Je ziet of het automatisch ging, of dat iemand op **Nu ophalen** klikte. En je ziet wat
+  het opleverde. De schakelaar **Alleen rondes met mail of fouten** staat aan. Zo zitten de
+  kwartieren waarin niets binnenkwam je niet in de weg.
 
-Het zoekveld in de eerste twee tabbladen zoekt op de server, dus ook in oude mail. Je kunt
-zoeken op afzender, onderwerp, bestandsnaam, leverancier, factuurnummer, kenteken en
-foutmelding. Een kenteken mag je met of zonder streepjes typen. Ophaalrondes worden 90
-dagen bewaard en daarna vanzelf opgeruimd; rondes van vóór deze functie bestaan niet.
+Het zoekveld in de eerste twee tabbladen zoekt op de server. Het zoekt dus ook in oude mail. Je
+kunt zoeken op afzender, onderwerp, bestandsnaam, leverancier, factuurnummer, kenteken en
+foutmelding. Een kenteken mag je met of zonder streepjes typen. Ophaalrondes worden 90 dagen
+bewaard. Daarna ruimt de app ze vanzelf op. Rondes van vóór deze functie bestaan niet.
 
 ### Als het niet werkt
 
 - **"Ophalen mislukt" bij de knop, of de melding "Postvak facturen onbereikbaar"**: het
-  wachtwoord is gewijzigd of de mailserver is onbereikbaar. Test de verbinding bij de
+  wachtwoord is gewijzigd, of de mailserver is onbereikbaar. Test de verbinding bij de
   instellingen.
 - **Alles komt ter controle met "Uitlezen mislukt"**: de sleutel voor de AI-dienst
   (`GEMINI_API_KEY`) ontbreekt op de server. De instellingenkaart waarschuwt hiervoor.
 - **Een factuur is op het verkeerde voertuig geboekt**: verwijder de kostenregels bij dat
-  voertuig en voer ze met de hand opnieuw in bij het juiste voertuig (Kosten, knop
-  **Kosten vastleggen**). Opnieuw scannen kan niet: de app kent de factuur al en weigert
+  voertuig. Voer ze daarna met de hand opnieuw in bij het juiste voertuig. Dat doe je bij Kosten,
+  met de knop **Kosten vastleggen**. Opnieuw scannen kan niet. De app kent de factuur al en weigert
   hem als dubbel.
-- **Handmatig scannen zegt "Deze factuur is al geboekt"**: dat klopt dan ook. Dezelfde
-  factuur is al via de mail of een eerdere scan verwerkt. Kijk in het tabblad **Geboekt**.
-- **Een mail groter dan 30 MB**: die haalt de app niet op. Hij komt onder **Te controleren**
-  met de reden "Geen bruikbare bijlage" en een melding die dat zegt. Vraag de factuur
+- **Handmatig scannen zegt "Deze factuur is al geboekt"**: dat klopt dan ook. Dezelfde factuur is
+  al via de mail of een eerdere scan verwerkt. Kijk in het tabblad **Geboekt**.
+- **Een mail groter dan 30 MB**: die haalt de app niet op. De mail komt onder **Te controleren**
+  met de reden "Geen bruikbare bijlage". Er staat een melding bij die dat zegt. Vraag de factuur
   opnieuw op, of boek hem met de hand.

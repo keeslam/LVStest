@@ -5,8 +5,8 @@ Car Rental Manager
 Gebruikershandleiding
 Voor nieuwe medewerkers
 
-Versie: 1.1
-Datum: 17 oktober 2026
+Versie: 1.2
+Datum: 18 oktober 2026
 ```
 
 ---
@@ -31,9 +31,11 @@ exact de tekst die de app laat zien. Staat er in de app een Engels woord, dan st
 woord ook hier — dan weet je zeker dat je het goede knopje hebt.
 
 **De afbeeldingen.** Bij elke handeling staat een afbeelding van het scherm of het venster. De rode
-omlijningen met een nummer erop staan alleen in de handleiding, niet in de app: ze wijzen aan waar je
-moet klikken of typen, en de regel onder de afbeelding zegt wat elk nummer is. De namen en kentekens
-op de afbeeldingen zijn verzonnen testgegevens.
+omlijningen staan alleen in de handleiding, niet in de app. Ze wijzen aan waar je moet klikken of
+typen. Op het rode label staat een nummer en de naam van de knop of het veld, bijvoorbeeld
+**1 Klant toevoegen**. De regel onder de afbeelding zegt wat elk nummer is. Onder veel stappen staat
+ook een kleine afbeelding "van dichtbij": zo ziet precies die knop of dat veld eruit, en wat je
+daarna ziet. De namen en kentekens op de afbeeldingen zijn verzonnen testgegevens.
 
 **In de app.** Dezelfde handleiding staat in de app: klik rechtsboven op je naam en kies
 **Handleiding**. Daar kun je ook zoeken: typ een woord in het zoekveld boven de hoofdstukken en klik
@@ -79,28 +81,15 @@ Alle achttien hoofdstukken zijn af, met daarbij een overzicht van wat nieuw is (
 acceptatiechecklist (hoofdstuk 19). De schermafbeeldingen staan in de map `afbeeldingen/` en
 worden vanuit de hoofdstukken zelf getoond.
 
-**Versie 1.1, 17 oktober 2026.** Elk hoofdstuk is langs de app gelopen (de lijst van afwijkingen
-staat in `afwijkingen-2026-10-17.md`), de tekst is gecorrigeerd en elke handeling heeft nu een
-afbeelding met genummerde omlijningen. Nieuw sinds 12 oktober: de handleiding in de app met
-zoekfunctie, **Voertuig blokkeren** op de klantkaart, de nieuwe opzet van **Kosten**, klikbare rijen
-en sorteerbare kolomkoppen, het afdrukvoorbeeld bij **Rapporten**, de korte code op sleutellabels en
-een uitgebreider activiteitenlog (hoofdstuk 0). De afbeeldingen worden gemaakt met
-`node scripts/handleiding/run.mjs` tegen de testomgeving (zie `scripts/handleiding/lib.mjs`). Het
-PDF-bestand (`Gebruikershandleiding-Car-Rental-Manager-v1.1.pdf`) maak je opnieuw met
+**Versie 1.2, 18 oktober 2026.** Alle hoofdstukken zijn herschreven in eenvoudig Nederlands: korte
+zinnen, "je", steeds "klik op X, daarna zie je Y". Bij elke stap staat nu een afbeelding van dichtbij
+van de knop of het veld, met de naam op het rode label, en na een handeling een afbeelding van wat
+je dan ziet. Versie 1.1 (17 oktober 2026): elk hoofdstuk langs de app gelopen (de lijst van
+afwijkingen staat in `afwijkingen-2026-10-17.md`), tekst gecorrigeerd, afbeeldingen met genummerde
+omlijningen, de handleiding in de app met zoekfunctie, **Voertuig blokkeren** op de klantkaart, de
+nieuwe opzet van **Kosten**, klikbare rijen en sorteerbare kolomkoppen, het afdrukvoorbeeld bij
+**Rapporten**, de korte code op sleutellabels en een uitgebreider activiteitenlog (hoofdstuk 0). De
+afbeeldingen worden gemaakt met `node scripts/handleiding/run.mjs` tegen de testomgeving (zie
+`scripts/handleiding/lib.mjs` en `scripts/handleiding/run-all.sh`). Het PDF-bestand
+(`Gebruikershandleiding-Car-Rental-Manager-v1.2.pdf`) maak je opnieuw met
 `node scripts/build-manual-pdf.cjs`.
-
----
-
-## Wat er in versie 1.0 bewust níét staat
-
-- **Het klantenportaal vanaf de kant van de klant.** Wat de klant online ziet, valt buiten deze
-  handleiding. Hoofdstuk 2 en 3 leggen wel uit wat jij met portaalaanvragen en portaalaccounts
-  doet.
-- **Installatie en beheer van de server.** Dat is werk voor de beheerder.
-- **Kosten en rapporten als eigen hoofdstuk.** Die twee schermen staan kort beschreven in
-  hoofdstuk 2, paragraaf 2.8, en hun klikpaden in hoofdstuk 13.
-
-## Als er iets niet klopt
-
-Wijkt de app af van wat hier staat, geloof dan de app en meld het. De handleiding hoort de app
-te volgen, niet andersom.

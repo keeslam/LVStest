@@ -1,10 +1,11 @@
 # 16. Dagelijks werk
 
-Dit hoofdstuk beschrijft de aanbevolen gang door een werkdag: waar je 's ochtends begint, wat je
-doet als er tussendoor iets binnenkomt, en wat je aan het eind van de dag controleert.
+Dit hoofdstuk beschrijft hoe een werkdag het beste verloopt. Je leest waar je 's ochtends begint.
+Je leest wat je doet als er tussendoor iets binnenkomt. En je leest wat je aan het eind van de dag
+controleert.
 
-De volgorde is niet willekeurig. Bij elke stap die meer is dan een knopje staat erbij **waarom**
-het zo hoort — want de meeste fouten in dit systeem ontstaan niet door een verkeerde klik, maar
+De volgorde is niet zomaar gekozen. Bij elke stap die meer is dan een knopje staat erbij **waarom**
+het zo hoort. De meeste fouten in dit systeem komen namelijk niet door een verkeerde klik. Ze komen
 doordat iets in de verkeerde volgorde gebeurt.
 
 ---
@@ -13,16 +14,18 @@ doordat iets in de verkeerde volgorde gebeurt.
 
 > **Kijk op het Dashboard wat er speelt, en handel het af met de knop die de handeling start.**
 
-Het **Dashboard** vertelt je hoe het ervoor staat: hoeveel auto's vrij zijn, welke APK's verlopen,
-welke verhuringen achterstallig zijn en welke vervangers nog geen auto hebben. Het is een
-overzicht.
+Het **Dashboard** laat zien hoe het ervoor staat. Je ziet hoeveel auto's vrij zijn. Je ziet welke
+APK's verlopen. De APK is de verplichte keuring van een auto. Je ziet welke verhuringen
+achterstallig zijn. Achterstallig betekent: de auto had al terug moeten zijn. En je ziet welke
+vervangers nog geen auto hebben. Een vervanger is een auto voor een klant die zijn eigen auto
+tijdelijk mist. Het Dashboard is een overzicht.
 
-Het werk zelf doe je met een knop die meteen het juiste venster opent: **Ophalen starten** en
-**Innemen starten** bij de **Snelle acties**, **Voertuig toewijzen** bij een vervanger, en de
-reservering in de **Reserveringskalender**. Daar werk je uit.
+Het werk zelf doe je met een knop. Die knop opent meteen het juiste venster. Bij de **Snelle
+acties** staan **Ophalen starten** en **Innemen starten**. Bij een vervanger staat **Voertuig
+toewijzen**. In de **Reserveringskalender** staat de reservering. Daar werk je het af.
 
-Begin dus op het **Dashboard**, en loop daarna in een vaste volgorde de schermen langs waar het
-werk van vandaag staat: **Reserveringen**, **Onderhoud**, **Transporten** en **Klantenportaal**.
+Begin dus op het **Dashboard**. Loop daarna in een vaste volgorde de schermen langs waar het werk
+van vandaag staat: **Reserveringen**, **Onderhoud**, **Transporten** en **Klantenportaal**.
 
 ---
 
@@ -32,22 +35,22 @@ werk van vandaag staat: **Reserveringen**, **Onderhoud**, **Transporten** en **K
 
 Na het inloggen kom je op het **Dashboard**. Kijk naar vier dingen:
 
-1. **De back-upbalk bovenaan.** Staat er *Geen geverifieerde back-up bekend* of *Geen geverifieerde
-   back-up in … uur*, meld dat dan meteen bij de beheerder. Zelf oplossen hoef je niet, en negeren
-   moet je niet.
-2. **APK verloopt binnenkort.** Auto's met een APK die binnen twee maanden afloopt, met het aantal
-   dagen of *… d te laat*. Een auto met een verlopen APK mag niet de weg op.
-3. **Achterstallige verhuringen.** Auto's die niet op tijd zijn ingeleverd. Die loop je in stap 4
-   na.
-4. **Beheer vervangende voertuigen**, tabblad **Nog te bepalen**. Staat hier iets, dan is er een
-   vervanger niet afgehandeld. Dat doe je in stap 2.
+1. **De back-upbalk bovenaan.** Een back-up is een reservekopie van alle gegevens. Staat er *Geen
+   geverifieerde back-up bekend* of *Geen geverifieerde back-up in … uur*? Meld dat dan meteen bij
+   de beheerder. Je hoeft het niet zelf op te lossen. Maar negeren mag je het niet.
+2. **APK verloopt binnenkort.** Hier staan auto's waarvan de APK binnen twee maanden afloopt. Je
+   ziet het aantal dagen, of *… d te laat*. Een auto met een verlopen APK mag niet de weg op.
+3. **Achterstallige verhuringen.** Dit zijn auto's die niet op tijd zijn ingeleverd. Die loop je in
+   stap 4 na.
+4. **Beheer vervangende voertuigen**, tabblad **Nog te bepalen**. Staat hier iets? Dan is er een
+   vervanger nog niet afgehandeld. Dat doe je in stap 2.
 
 ### Stap 2 — Wijs de vervangers toe
 
-Op het **Dashboard**, in het blok **Beheer vervangende voertuigen**, staat op het tabblad **Nog te
-bepalen** per regel *Vervangend voertuig (nog te bepalen)* met de datum waarop hij nodig is.
-**Dit is het eerste wat je 's ochtends echt afhandelt.** Klik op **Voertuig toewijzen** en kies
-een auto.
+Ga op het **Dashboard** naar het blok **Beheer vervangende voertuigen**. Open het tabblad **Nog te
+bepalen**. Per regel staat daar *Vervangend voertuig (nog te bepalen)*. Daarachter staat de datum
+waarop de auto nodig is. **Dit is het eerste wat je 's ochtends echt afhandelt.** Klik op
+**Voertuig toewijzen**. Kies dan een auto.
 
 > **Waarom dit als eerste moet.** Een vervanger die nog niet is toegewezen, is een klant die
 > straks zonder auto staat. En hoe later op de dag je hem toewijst, hoe minder er nog vrij is —
@@ -56,37 +59,37 @@ een auto.
 
 ### Stap 3 — Kijk wat er vandaag meegaat, terugkomt en onderweg is
 
-**Reserveringen.** De **Reserveringskalender** opent op de huidige maand; ben je verder
-gebladerd, dan brengt de knop **Vandaag** je terug. Kijk in het vakje van vandaag: achter elk
-kenteken staat **uit** (de auto gaat vandaag mee) of **in** (hij komt vandaag terug), met de klant.
-Staan er meer dan vijf, klik dan op **+… meer**. Lees de kentekens even door, zodat je weet wat er
-staat te gebeuren als de eerste klant binnenloopt. Handel nu nog niets af — dat doe je op het
-moment dat de klant er is.
+**Reserveringen.** De **Reserveringskalender** opent op de huidige maand. Ben je verder
+gebladerd? Dan brengt de knop **Vandaag** je terug. Kijk in het vakje van vandaag. Achter elk
+kenteken staat **uit** of **in**. **uit** betekent: de auto gaat vandaag mee. **in** betekent: de
+auto komt vandaag terug. De naam van de klant staat erbij. Staan er meer dan vijf regels? Klik dan
+op **+… meer**. Lees de kentekens even door. Zo weet je wat er gaat gebeuren als de eerste klant
+binnenloopt. Handel nu nog niets af. Dat doe je op het moment dat de klant er is.
 
-**Onderhoud.** Heb je het recht **Onderhoud beheren**, open dan de **Onderhoudskalender** en kijk
-welke auto's vandaag naar de werkplaats gaan. Een label **Vervanger nodig** betekent dat er een
-klant op een vervanger wacht; kijk dan of die in stap 2 is afgehandeld.
+**Onderhoud.** Heb je het recht **Onderhoud beheren**? Open dan de **Onderhoudskalender**. Kijk
+welke auto's vandaag naar de werkplaats gaan. Zie je het label **Vervanger nodig**? Dan wacht er
+een klant op een vervanger. Kijk dan of die in stap 2 is afgehandeld.
 
-**Transporten.** Op het **Transportdashboard** zie je aan de tellers **Wacht op planning** en
-**Klaar voor levering** wat er nog geregeld of gereden moet worden.
+**Transporten.** Open het **Transportdashboard**. Kijk naar de tellers **Wacht op planning** en
+**Klaar voor levering**. Die laten zien wat er nog geregeld of gereden moet worden.
 
 ### Stap 4 — Loop de achterstallige verhuringen na
 
-Klik links op **Reserveringen** en daarna rechtsboven op de rode knop **… achterstallig**. Die
-knop staat er alleen als er iets achterstallig is. In het venster **Te late verhuren** staan de
-verhuringen die als opgehaald staan en waarvan de einddatum voorbij is.
+Klik links op **Reserveringen**. Klik daarna rechtsboven op de rode knop **… achterstallig**. Die
+knop staat er alleen als er iets achterstallig is. Het venster **Te late verhuren** opent. Daarin
+staan verhuringen die nog als opgehaald staan. De einddatum van die verhuringen is al voorbij.
 
-Per regel: het merk en model, het kenteken, de klant (met het telefoonnummer als dat bekend is),
-*Had ingeleverd moeten zijn: <datum>* en een rood label **… dag(en) te laat**, met de knop
-**Details bekijken**.
+Per regel zie je: het merk en model, het kenteken en de klant. Het telefoonnummer staat erbij als
+dat bekend is. Je ziet ook *Had ingeleverd moeten zijn: <datum>*. Daarnaast staat een rood label
+**… dag(en) te laat**. En je ziet de knop **Details bekijken**.
 
-Ga de lijst langs en vraag je per regel af: staat die auto werkelijk nog bij de klant?
+Ga de lijst langs. Vraag je bij elke regel af: staat die auto echt nog bij de klant?
 
-- **Staat hij er nog** — laat de regel staan. Bel eventueel de klant; het nummer staat erbij.
-- **Is hij al terug** — klik op **Details bekijken** en daarna op **Inleveren starten**, en sluit
+- **Staat hij er nog**? Laat de regel staan. Bel eventueel de klant. Het nummer staat erbij.
+- **Is hij al terug**? Klik op **Details bekijken**. Klik daarna op **Inleveren starten**. Sluit
   de huur alsnog af.
-- **Klopt er iets anders niet** — zoek de reservering op via het zoekveld bovenin en corrigeer
-  haar (hoofdstuk 5, paragraaf 5.4).
+- **Klopt er iets anders niet**? Zoek de reservering op via het zoekveld bovenin. Corrigeer de
+  reservering (hoofdstuk 5, paragraaf 5.4).
 
 > **Waarom de app dit niet zelf doet.** De app weet niet of een auto fysiek terug is. Zou hij deze
 > verhuringen automatisch afsluiten, dan zouden auto's die nog bij een klant staan opeens als vrij
@@ -99,8 +102,8 @@ Ga de lijst langs en vraag je per regel af: staat die auto werkelijk nog bij de 
 
 ### Stap 5 — Kijk of er portaalaanvragen zijn
 
-Open **Klantenportaal**. In het paneel **Aandacht nodig** staan de aanvragen en bekeuringen die om
-actie vragen. Een nieuwe aanvraag handel je af zoals in 16.3 staat.
+Open **Klantenportaal**. Kijk in het paneel **Aandacht nodig**. Daar staan de aanvragen en
+bekeuringen die om actie vragen. Een nieuwe aanvraag handel je af zoals in 16.3 staat.
 
 Daarmee is je ochtendronde klaar. Vijf schermen, een paar minuten.
 
@@ -110,14 +113,15 @@ Daarmee is je ochtendronde klaar. Vijf schermen, een paar minuten.
 
 ### Een klant komt zijn auto ophalen
 
-1. **Dashboard** → **Snelle acties** → **Ophalen starten** → scan het sleutellabel of typ het
-   kenteken. Het venster **Ophaalproces starten** opent.
-2. Controleer bovenin **Kenteken**, **Voertuig** en **Klant**. Is dit niet de goede regel, klik dan
-   op **Annuleren**.
+1. Ga naar **Dashboard** → **Snelle acties** → **Ophalen starten**. Scan het sleutellabel of typ
+   het kenteken. Het venster **Ophaalproces starten** opent.
+2. Controleer bovenin **Kenteken**, **Voertuig** en **Klant**. Is dit niet de goede regel? Klik
+   dan op **Annuleren**.
 3. **Contractnummer** staat al ingevuld. Laat het staan.
-4. Vul **Kilometerstand bij ophalen** in en zet **Brandstofniveau bij ophalen**.
-5. Maak eventueel een schadecheck.
-6. Klik op **Ophalen voltooien & contract genereren**.
+4. Vul **Kilometerstand bij ophalen** in. Zet **Brandstofniveau bij ophalen**.
+5. Maak eventueel een schadecheck. Een schadecheck is een overzicht van de schade aan de auto.
+6. Klik op **Ophalen voltooien & contract genereren**. Genereren betekent: de app maakt het
+   document zelf.
 
 De volledige uitleg staat in hoofdstuk 1, paragraaf 1.4.
 
@@ -132,24 +136,26 @@ De volledige uitleg staat in hoofdstuk 1, paragraaf 1.4.
 > Bij het ophalen is de huur definitief; dat is het goede moment.
 
 **Als de klant eerder is dan afgesproken,** vraagt de app: *De huur start eerder — datum
-aanpassen?* Antwoord **Ja, startdatum naar vandaag** als de huur vandaag ingaat. Dan kloppen de
-periode en de prijs. Antwoord **Nee, niet ophalen** als de klant de auto nog niet meekrijgt.
+aanpassen?* Gaat de huur vandaag in? Antwoord dan **Ja, startdatum naar vandaag**. Dan kloppen de
+periode en de prijs. Krijgt de klant de auto nog niet mee? Antwoord dan **Nee, niet ophalen**.
 
-**Als de auto in de werkplaats staat,** weigert de app de uitgifte met het venster **Uitgifte
-geblokkeerd**. Los eerst de werkplaatsstatus op; zie hieronder en hoofdstuk 11, paragraaf 11.11.
-Kan het echt niet wachten, dan kan alleen een beheerder de uitgifte met opgaaf van reden
-doorzetten.
+**Als de auto in de werkplaats staat,** weigert de app de uitgifte. Je ziet het venster **Uitgifte
+geblokkeerd**. Los eerst de werkplaatsstatus op. Zie hieronder en hoofdstuk 11, paragraaf 11.11.
+Kan het echt niet wachten? Dan kan alleen een beheerder de uitgifte doorzetten. De beheerder moet
+daarbij een reden opgeven.
 
 ### Een auto komt terug
 
-1. **Dashboard** → **Snelle acties** → **Innemen starten** → scan het sleutellabel of typ het
-   kenteken. Het venster **Inleverproces starten** opent. Opent het niet, dan staat de auto in de
-   app niet als opgehaald: zoek de reservering op via het zoekveld bovenin en kijk welke status
-   ze heeft.
+1. Ga naar **Dashboard** → **Snelle acties** → **Innemen starten**. Scan het sleutellabel of typ
+   het kenteken. Het venster **Inleverproces starten** opent. Opent het niet? Dan staat de auto in
+   de app niet als opgehaald. Zoek de reservering dan op via het zoekveld bovenin. Kijk welke
+   status ze heeft.
 2. Vul **Kilometerstand bij inleveren** in. Die mag niet lager zijn dan bij het ophalen.
 3. Zet **Brandstofniveau bij inleveren**.
-4. Maak een **Inlever-schadecheck** of upload een papieren check.
-5. Zet bijzonderheden — schade, ontbrekende sleutel, vuil — in **Aanvullende notities**.
+4. Maak een **Inlever-schadecheck**. Of upload een papieren check. Uploaden betekent: een bestand
+   van je computer in de app zetten.
+5. Zet bijzonderheden in **Aanvullende notities**. Denk aan schade, een ontbrekende sleutel of een
+   vuile auto.
 6. Klik op **Inleveren voltooien & schadecheck genereren**.
 
 > **Waarom je de huur afsluit op het moment dat de auto binnenkomt.** Met het afronden van de
@@ -163,23 +169,23 @@ doorzetten.
 > werkelijke inleverdatum wordt apart vastgelegd. Zo blijft zichtbaar wat er is afgesproken én wat
 > er is gebeurd — precies wat je nodig hebt als er later over nagerekend wordt.
 
-**Controleer voor je afrondt het kenteken en de klant.** Ging het mis, dan draai je de inname
-terug met **Overdracht terugdraaien** achter **Voltooid bekijken (…)** (hoofdstuk 11, paragraaf 11.13) —
-maar het scheelt een hoop uitzoekwerk om het in één keer goed te doen.
+**Controleer voor je afrondt het kenteken en de klant.** Ging het mis? Dan draai je de inname
+terug. Klik op **Voltooid bekijken (…)** en daarna op **Overdracht terugdraaien** (hoofdstuk 11,
+paragraaf 11.13). Maar het scheelt veel uitzoekwerk als je het in één keer goed doet.
 
 ### Een klant belt
 
-Vraag naar het **contractnummer** of het **kenteken** en typ dat in het zoekveld bovenaan. Je kunt
-ook de klantnaam gebruiken.
+Vraag naar het **contractnummer** of het **kenteken**. Typ dat in het zoekveld bovenaan. Je kunt
+ook de naam van de klant gebruiken.
 
 | De klant vraagt | Wat je doet |
 |---|---|
-| "Kan ik langer doorrijden?" | Open de reservering → **Datums wijzigen**. Is er al een contract, genereer het dan opnieuw. |
-| "Ik breng hem eerder terug" | Niets vooraf. Neem hem in op de dag dat hij er is. |
-| "Is er een auto vrij volgende week?" | Begin een **Nieuwe reservering**, vul eerst **Startdatum** en **Einddatum** in; daarna toont de app alleen de auto's die in die periode vrij zijn. |
-| "Ik heb schade" | Leg het vast in de notities van de reservering en plan zo nodig onderhoud in. |
-| "Ik heb een bekeuring gekregen" | **Klantenportaal** → tegel **Bekeuringen**. |
-| "Wat stond er ook alweer op mijn contract?" | Open de reservering en bekijk het document onder de reserveringsdocumenten. |
+| "Kan ik langer doorrijden?" | Open de reservering. Klik op **Datums wijzigen**. Is er al een contract? Genereer het dan opnieuw. |
+| "Ik breng hem eerder terug" | Doe nu niets. Neem de auto in op de dag dat hij er is. |
+| "Is er een auto vrij volgende week?" | Begin een **Nieuwe reservering**. Vul eerst **Startdatum** en **Einddatum** in. Daarna toont de app alleen de auto's die in die periode vrij zijn. |
+| "Ik heb schade" | Leg het vast in de notities van de reservering. Plan zo nodig onderhoud in. |
+| "Ik heb een bekeuring gekregen" | Ga naar **Klantenportaal** → tegel **Bekeuringen**. |
+| "Wat stond er ook alweer op mijn contract?" | Open de reservering. Bekijk het document onder de reserveringsdocumenten. |
 
 > **Waarom je bij een wijziging aan het contract denkt.** Verander je de datums, de prijs, het
 > voertuig of de klant, dan klopt het contract dat de klant heeft niet meer met wat er in de app
@@ -193,22 +199,23 @@ ook de klantnaam gebruiken.
 
 ### Een auto moet naar de werkplaats
 
-Dit is de werkstroom waarin de volgorde het meest uitmaakt.
+Bij deze taak is de volgorde het allerbelangrijkst.
 
 **De goede volgorde:**
 
-1. **Zet de auto eerst op onderhoud.** Bij de reservering: **Voertuig markeren voor onderhoud**,
-   met **Onderhoud nodig** of **Momenteel in onderhoud** en een servicenotitie. Of plan het blok
-   in via **Onderhoud** → **Onderhoud plannen**. Of scan het sleutellabel en kies **Onderhoud
-   inplannen**.
-2. **Wijs dan pas de vervanger toe.** Plan je het via **Onderhoud plannen**, dan doet de app dat in
-   hetzelfde venster: hij toont de verhuringen die in die periode op die auto staan en laat je per
-   verhuring een vervanger kiezen, **Nog te bepalen**, of *klant regelt zelf*.
-3. **Regel het transport** als de auto gehaald of gebracht moet worden: **Transporten** →
+1. **Zet de auto eerst op onderhoud.** Dat kan op drie manieren. Bij de reservering: klik op
+   **Voertuig markeren voor onderhoud**. Kies **Onderhoud nodig** of **Momenteel in onderhoud**.
+   Schrijf een servicenotitie. Of plan het blok in via **Onderhoud** → **Onderhoud plannen**. Of
+   scan het sleutellabel en kies **Onderhoud inplannen**.
+2. **Wijs dan pas de vervanger toe.** Plan je het via **Onderhoud plannen**? Dan doet de app dat in
+   hetzelfde venster. De app toont de verhuringen die in die periode op die auto staan. Per
+   verhuring kies je een vervanger, **Nog te bepalen**, of *klant regelt zelf*.
+3. **Regel het transport** als de auto gehaald of gebracht moet worden. Ga naar **Transporten** →
    **Nieuw transport**.
-4. **Rond het onderhoud af met één knop.** Gebruik **Terug van onderhoud** bij de reservering (of
-   **Terug uit onderhoud** op het scanscherm, dat bij een lopend onderhoud het venster **Onderhoud afronden** opent), met de inleverdatum en de kilometerstand. Dat
-   venster zet de auto terug én sluit de vervangende reservering in één keer.
+4. **Rond het onderhoud af met één knop.** Gebruik **Terug van onderhoud** bij de reservering. Of
+   gebruik **Terug uit onderhoud** op het scanscherm. Bij een lopend onderhoud opent die knop het
+   venster **Onderhoud afronden**. Vul de inleverdatum en de kilometerstand in. Dat venster zet de
+   auto terug. En het sluit de vervangende reservering in één keer.
 
 > **Waarom de auto éérst op onderhoud gaat en de vervanger daarna.** Zodra een auto op onderhoud
 > staat, telt hij nergens meer mee als **beschikbaar** en weigert de app hem mee te geven aan een
@@ -232,27 +239,28 @@ Dit is de werkstroom waarin de volgorde het meest uitmaakt.
 
 ### Er komt een portaalaanvraag binnen
 
-Je ziet het op drie plekken: het rode bolletje achter **Klantenportaal** in het menu, de
-portaaltegel bovenin het scherm, en het paneel **Aandacht nodig** op het scherm
+Het klantenportaal is de website waarop klanten zelf iets kunnen aanvragen. Een nieuwe aanvraag zie
+je op drie plekken. Je ziet het rode bolletje achter **Klantenportaal** in het menu. Je ziet de
+portaaltegel bovenin het scherm. En je ziet het paneel **Aandacht nodig** op het scherm
 **Klantenportaal**.
 
-1. Open **Klantenportaal** en klik in **Aandacht nodig** op de aanvraag, of klik op de tegel
+1. Open **Klantenportaal**. Klik in **Aandacht nodig** op de aanvraag. Of klik op de tegel
    **Aanvragen** en daarna op de regel. Het venster **Aanvraag #…** opent.
-2. Lees bovenaan het **type** — **Verlenging**, **Eerder inleveren**, **Schademelding**, **Vraag
-   over bekeuring**, **Huuraanvraag**, **Onderhoud/storing**, **Kilometerstand** of **Overig** —
-   en het **Bericht van klant**.
-3. Klik op **In behandeling nemen** als je het oppakt maar nog iets moet uitzoeken. De klant ziet
-   dan dat het loopt.
+2. Lees bovenaan het **type**. Dat is **Verlenging**, **Eerder inleveren**, **Schademelding**,
+   **Vraag over bekeuring**, **Huuraanvraag**, **Onderhoud/storing**, **Kilometerstand** of
+   **Overig**. Lees ook het **Bericht van klant**.
+3. Pak je de aanvraag op, maar moet je nog iets uitzoeken? Klik dan op **In behandeling nemen**.
+   De klant ziet dan dat het loopt.
 4. Handel af:
-   - **Goedkeuren (past reservering aan)** — bij een verlenging of een eerdere inlevering. De app
+   - **Goedkeuren (past reservering aan)**: bij een verlenging of een eerdere inlevering. De app
      past de reservering meteen aan.
-   - **Goedkeuren: reservering aanmaken** — bij een **Huuraanvraag**. Daarmee open je het venster
+   - **Goedkeuren: reservering aanmaken**: bij een **Huuraanvraag**. Daarmee open je het venster
      *Reservering aanmaken uit deze aanvraag*.
-   - **Beantwoorden en afhandelen** — als er alleen een antwoord nodig is.
-   - **Antwoord sturen (blijft open)** — als je iets terugvraagt en de aanvraag open wilt houden.
-   - **Afwijzen** — met een toelichting in **Antwoord aan klant**.
+   - **Beantwoorden en afhandelen**: als er alleen een antwoord nodig is.
+   - **Antwoord sturen (blijft open)**: als je iets terugvraagt en de aanvraag open wilt houden.
+   - **Afwijzen**: schrijf een toelichting in **Antwoord aan klant**.
 
-Botst de gevraagde periode met een andere boeking, dan staat dat in het venster als **Conflict met
+Botst de gevraagde periode met een andere boeking? Dan staat dat in het venster als **Conflict met
 reservering #…**.
 
 > **Waarom je aanvragen dezelfde dag aanraakt.** Een aanvraag die blijft staan, is een klant die
@@ -261,49 +269,49 @@ reservering #…**.
 
 ### Een transport
 
-**Transporten** toont het **Transportdashboard** met de tellers **Wacht op planning**, **Klaar
-voor levering**, **In uitvoering** en **Leveringen voltooid**.
+Klik op **Transporten**. Je ziet het **Transportdashboard**. Daar staan de tellers **Wacht op
+planning**, **Klaar voor levering**, **In uitvoering** en **Leveringen voltooid**.
 
 Werk per tabblad: **Voertuigwissel**, **Slepen**, **Terughalen**, **Levering** of **Overig**. Je
-kunt meerdere regels tegelijk aanvinken en ze in één keer verwerken met **Afdrukken** of
+kunt meerdere regels tegelijk aanvinken. Daarna verwerk je ze in één keer met **Afdrukken** of
 **Markeer voltooid**.
 
-Staat er bij een transport **Nog te bepalen** als vervangend voertuig, dan kun je de
-transportbrief niet afdrukken: de app meldt **Vervangend voertuig vereist**. Wijs eerst de
-vervanger toe.
+Staat er bij een transport **Nog te bepalen** als vervangend voertuig? Dan kun je de transportbrief
+niet afdrukken. De app meldt **Vervangend voertuig vereist**. Wijs eerst de vervanger toe.
 
 ---
 
 ## 16.4 Het einde van de dag
 
-Loop deze vijf punten af. Het kost vijf minuten en het voorkomt dat de ochtendploeg morgen met
+Loop deze vijf punten af. Het kost vijf minuten. En het voorkomt dat de ochtendploeg morgen met
 jouw open einden begint.
 
 **1. Is alles wat vandaag terugkwam ook ingenomen?**
-Ga naar **Reserveringen** en klik in het vakje van vandaag op elke regel met **in**. Staat er in
-**Reserveringsdetails** nog **Inleveren starten**, en is die auto wél binnen, neem hem dan alsnog
+Ga naar **Reserveringen**. Klik in het vakje van vandaag op elke regel met **in**. Staat er in
+**Reserveringsdetails** nog **Inleveren starten**? En is die auto wél binnen? Neem hem dan alsnog
 in.
 
 **2. Staat er nog een vervanger op "Nog te bepalen"?**
-Op het **Dashboard** onder **Beheer vervangende voertuigen** → tabblad **Nog te bepalen**.
+Kijk op het **Dashboard** onder **Beheer vervangende voertuigen** → tabblad **Nog te bepalen**.
 
 **3. Zijn de portaalaanvragen aangeraakt?**
-Het rode bolletje achter **Klantenportaal** hoort aan het eind van de dag weg te zijn, of de
-aanvragen die er nog staan moeten op **In behandeling** staan.
+Het rode bolletje achter **Klantenportaal** hoort aan het eind van de dag weg te zijn. Of de
+aanvragen die er nog staan, moeten op **In behandeling** staan.
 
 **4. Is er iets geannuleerd vandaag?**
-Zo ja: loop na of alles wat eraan hing ook echt is meegegaan. Het venster **Reservering
-annuleren** vraagt per transport, vervangingsreservering, placeholder en chauffeurstoewijzing of
-het mee moet — maar wat niemand heeft aangevinkt, staat er nog gewoon (hoofdstuk 5, paragraaf
-5.9).
+Zo ja: kijk na of alles wat eraan vastzat ook echt is meegegaan. Het venster **Reservering
+annuleren** vraagt per onderdeel of het mee moet. Die onderdelen zijn: het transport, de
+vervangingsreservering, de placeholder en de chauffeurstoewijzing. Een placeholder is een
+tijdelijke reservering die een plek vasthoudt. Maar wat niemand heeft aangevinkt, staat er nog
+gewoon (hoofdstuk 5, paragraaf 5.9).
 
 **5. Staat er iets op je eigen lijstje dat je "morgen" doet?**
-Zet dat als melding in het **Meldingencentrum**: klik op het belletje → **Nieuwe melding** met een
-titel, een datum en een prioriteit. Beter daar dan op een geeltje.
+Zet dat als melding in het **Meldingencentrum**. Klik op het belletje → **Nieuwe melding**. Vul
+een titel, een datum en een prioriteit in. Beter daar dan op een geeltje.
 
-**En: log uit.** Klik rechtsboven op je naam → **Uitloggen**. Laat je het scherm openstaan, dan
-loopt je sessie na een kwartier zonder handelingen af en ben je werk kwijt dat nog niet opgeslagen
-was.
+**En: log uit.** Klik rechtsboven op je naam → **Uitloggen**. Laat je het scherm openstaan? Dan
+loopt je sessie na een kwartier zonder handelingen af. Een sessie is de tijd dat je ingelogd bent.
+Werk dat nog niet opgeslagen was, ben je dan kwijt.
 
 ---
 
@@ -311,9 +319,9 @@ was.
 
 | Wat | Waar | Waarom |
 |---|---|---|
-| **APK verloopt binnenkort** doorlopen | **Dashboard** | Een auto met verlopen APK mag de weg niet op |
-| De achterstallige verhuringen helemaal langslopen, ook de oude regels | **Reserveringen** → **Lijstweergave** → tabblad **Achterstallig (…)** | Elke openstaande regel houdt een auto bezet |
-| Kijken of er een back-up is | **Dashboard**, de balk bovenaan | Zonder back-up is een fout niet terug te draaien |
+| **APK verloopt binnenkort** doorlopen | **Dashboard** | Een auto met een verlopen APK mag de weg niet op |
+| De achterstallige verhuringen helemaal langslopen, ook de oude regels | **Reserveringen** → **Lijstweergave** → tabblad **Achterstallig (…)** | Elke open regel houdt een auto bezet |
+| Kijken of er een back-up is | **Dashboard**, de balk bovenaan | Zonder back-up kun je een fout niet terugdraaien |
 | Nieuwe klanten controleren op dubbelen | **Klanten** → **Filters** | Eén klant op twee kaarten geeft eindeloos gedoe |
 
 ---
@@ -322,15 +330,15 @@ was.
 
 | Wanneer | Wat | Scherm |
 |---|---|---|
-| Ochtend | Back-up, APK en achterstallig checken | **Dashboard** |
+| Ochtend | Back-up, APK en achterstallig controleren | **Dashboard** |
 | Ochtend | Vervangers toewijzen | **Dashboard** → **Beheer vervangende voertuigen** → **Nog te bepalen** |
 | Ochtend | Zien wat er vandaag meegaat, terugkomt en onderweg is | **Reserveringen**, **Onderhoud**, **Transporten** |
 | Ochtend | Nog niet ingenomen huren nalopen | **Reserveringen** → **… achterstallig** |
 | Ochtend | Nieuwe portaalaanvragen bekijken | **Klantenportaal** → **Aandacht nodig** |
 | Overdag | Auto meegeven | **Dashboard** → **Snelle acties** → **Ophalen starten** |
-| Overdag | Auto terugnemen, huur sluit meteen | **Dashboard** → **Snelle acties** → **Innemen starten** |
+| Overdag | Auto terugnemen, de huur sluit meteen | **Dashboard** → **Snelle acties** → **Innemen starten** |
 | Overdag | Klantvragen | Zoekveld bovenaan |
-| Overdag | Eerst op onderhoud, dan vervanger | **Onderhoud** → **Onderhoud plannen** |
+| Overdag | Eerst op onderhoud, dan de vervanger | **Onderhoud** → **Onderhoud plannen** |
 | Overdag | Aanvragen beoordelen | **Klantenportaal** |
 | Eind van de dag | Vijf controlepunten | **Reserveringen**, **Dashboard**, **Klantenportaal** |
 | Eind van de dag | Uitloggen | Je naam rechtsboven |
