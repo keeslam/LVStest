@@ -298,6 +298,10 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
   const requirePortalUser: RequestHandler = async (req, res, next) => {
     const raw = req.user as unknown as PortalUser | undefined;
     if (!raw || !(req as any).isAuthenticated?.()) return portalError(res, 401, PORTAL_ERROR.NOT_AUTHENTICATED, "Not authenticated");
+    // Security review 2026-10-18 (Middel 4): only a session the portal itself wrote counts. A staff
+    // login that somehow reached a portal route must never be read as the portal account with the
+    // same number.
+    if ((req.session as any)?.passport?.user?.kind !== "portal") return portalError(res, 401, PORTAL_ERROR.NOT_AUTHENTICATED, "Not authenticated");
     const { ctx, code } = await loadContext(raw.id);
     if (!ctx) {
       req.logout(() => undefined);

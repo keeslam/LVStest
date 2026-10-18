@@ -198,7 +198,9 @@
     "userSavedDescription": "Utilizatorul „{{username}}” a fost salvat",
     "cannotDeleteSelf": "Nu vă puteți șterge propriul cont",
     "cannotDeleteLastAdmin": "Acesta este ultimul administrator activ; nu poate fi șters",
-    "lastAdmin": "Ultimul administrator activ nu poate fi șters, dezactivat sau mutat într-un alt rol"
+    "lastAdmin": "Ultimul administrator activ nu poate fi șters, dezactivat sau mutat într-un alt rol",
+    "permissionCeiling": "Puteți acorda doar drepturile pe care le aveți dumneavoastră.",
+    "adminAccountProtected": "Doar un administrator poate modifica sau șterge contul unui administrator."
   },
   "accessDenied": {
     "banner_one": "De la ultima autentificare ({{date}}), {{count}} angajat a încercat ceva pentru care nu are drept",

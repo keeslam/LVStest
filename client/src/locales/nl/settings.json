@@ -197,7 +197,9 @@
     "userSavedDescription": "Gebruiker \"{{username}}\" is opgeslagen",
     "cannotDeleteSelf": "Je kunt je eigen account niet verwijderen",
     "cannotDeleteLastAdmin": "Dit is de laatste actieve beheerder; die kan niet worden verwijderd",
-    "lastAdmin": "De laatste actieve beheerder kan niet worden verwijderd, gedeactiveerd of een andere rol krijgen"
+    "lastAdmin": "De laatste actieve beheerder kan niet worden verwijderd, gedeactiveerd of een andere rol krijgen",
+    "permissionCeiling": "U kunt alleen rechten geven die u zelf heeft.",
+    "adminAccountProtected": "Alleen een beheerder kan het account van een beheerder wijzigen of verwijderen."
   },
   "accessDenied": {
     "banner_one": "Sinds je vorige inlog ({{date}}) probeerde {{count}} medewerker iets waarvoor die geen recht heeft",

@@ -199,7 +199,9 @@
     "userSavedDescription": "Użytkownik \"{{username}}\" został zapisany",
     "cannotDeleteSelf": "Nie można usunąć własnego konta",
     "cannotDeleteLastAdmin": "To ostatni aktywny administrator; nie można go usunąć",
-    "lastAdmin": "Ostatniego aktywnego administratora nie można usunąć, dezaktywować ani przypisać mu innej roli"
+    "lastAdmin": "Ostatniego aktywnego administratora nie można usunąć, dezaktywować ani przypisać mu innej roli",
+    "permissionCeiling": "Mogą Państwo nadać tylko uprawnienia, które sami Państwo posiadają.",
+    "adminAccountProtected": "Tylko administrator może zmienić lub usunąć konto administratora."
   },
   "accessDenied": {
     "banner_one": "Od ostatniego logowania ({{date}}) {{count}} pracownik próbował wykonać czynność, do której nie ma uprawnień",

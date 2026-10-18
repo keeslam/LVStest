@@ -101,6 +101,17 @@ describe("FIX-J — Socket.IO and /health", () => {
     }
   }, 45_000);
 
+  it("security review 2026-10-18: a staff login is never read as a portal account via /API/PORTAL", async () => {
+    // Express matches routes regardless of case. The staff stack used to run on "/API/PORTAL/…"
+    // (its check was case-sensitive), and requirePortalUser then loaded the portal account with the
+    // staff user's number.
+    for (const url of ["/API/PORTAL/reservations", "/Api/Portal/documents"]) {
+      const res = await rawRequest(server.port, "GET", url, { headers: { cookie: cookies } });
+      expect(res.status).toBe(401);
+      expect(res.json().code).toBe("PORTAL_NOT_AUTHENTICATED");
+    }
+  }, 30_000);
+
   it("BUG-005: an authenticated socket receives only the id, never the record", async () => {
     const { socket, error } = await connect({ cookie: cookies });
     expect(error).toBeUndefined();

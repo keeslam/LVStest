@@ -198,7 +198,9 @@
     "userSavedDescription": "El usuario \"{{username}}\" se ha guardado",
     "cannotDeleteSelf": "No puede eliminar su propia cuenta",
     "cannotDeleteLastAdmin": "Este es el último administrador activo; no se puede eliminar",
-    "lastAdmin": "El último administrador activo no se puede eliminar, desactivar ni cambiar de rol"
+    "lastAdmin": "El último administrador activo no se puede eliminar, desactivar ni cambiar de rol",
+    "permissionCeiling": "Solo puede conceder permisos que usted mismo tiene.",
+    "adminAccountProtected": "Solo un administrador puede modificar o eliminar la cuenta de un administrador."
   },
   "accessDenied": {
     "banner_one": "Desde su último inicio de sesión ({{date}}) {{count}} empleado intentó hacer algo para lo que no tiene permiso",

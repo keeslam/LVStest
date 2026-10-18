@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { storage } from "../storage";
 import path from "path";
 import fs from "fs";
-import { validateAfterUpload } from "../utils/security/fileUploadSecurity";
+import { validateAfterUpload, sanitizeFilename } from "../utils/security/fileUploadSecurity";
 import { getRelativePath, resolveDocumentFilePath, unlinkStoredFile } from "../services/document-paths";
 import { resolveUploadsPath } from "../../shared/paths";
 import { hasPermission } from "../middleware/permissions.js";
@@ -10,6 +10,19 @@ import { UserPermission } from "../../shared/schema";
 import type { RouteDeps } from "./deps";
 import { readImageDimensions } from "../utils/image-dimensions";
 import { diagramImageProblem } from "../../shared/diagram-image";
+
+const DIAGRAM_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp"]);
+
+/**
+ * Security review 2026-10-18 (Middel 6): make and model come from the form and end up in a file
+ * name; "../" in them used to move the upload anywhere the server may write. Only safe characters
+ * survive, the extension must be an image's, and the result is always a bare name.
+ */
+export function diagramFileName(make: unknown, model: unknown, originalName: string, now = Date.now()): string {
+  const part = (value: unknown) => sanitizeFilename(String(value ?? "")).replace(/\./g, "_").slice(0, 60) || "diagram";
+  const ext = path.extname(originalName).toLowerCase();
+  return `${part(make)}-${part(model)}-${now}${DIAGRAM_EXTENSIONS.has(ext) ? ext : ".png"}`;
+}
 
 // Moved verbatim out of server/routes.ts (registerRoutes) - see git history for context.
 export function registerVehicleDiagramTemplateRoutes(app: Express, deps: RouteDeps): void {
@@ -222,8 +235,13 @@ export function registerVehicleDiagramTemplateRoutes(app: Express, deps: RouteDe
         }
         
         // Move new file to diagrams directory
-        const newFileName = `${req.body.make}-${req.body.model}-${Date.now()}${path.extname(req.file.originalname)}`;
+        const newFileName = diagramFileName(req.body.make, req.body.model, req.file.originalname);
         const newFilePath = path.join(diagramsDir, newFileName);
+        // And the belt to those braces: the target is inside the diagrams folder, or nothing happens.
+        if (path.relative(diagramsDir, newFilePath).startsWith("..") || path.dirname(newFilePath) !== diagramsDir) {
+          await fs.promises.unlink(req.file.path).catch(() => undefined);
+          return res.status(400).json({ message: "Invalid diagram name" });
+        }
         await fs.promises.rename(req.file.path, newFilePath);
         diagramPath = `uploads/vehicle-diagrams/${newFileName}`;
       }

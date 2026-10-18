@@ -197,7 +197,9 @@
     "userSavedDescription": "User \"{{username}}\" has been saved",
     "cannotDeleteSelf": "You cannot delete your own account",
     "cannotDeleteLastAdmin": "This is the last active administrator; it cannot be deleted",
-    "lastAdmin": "The last active administrator cannot be deleted, deactivated or given another role"
+    "lastAdmin": "The last active administrator cannot be deleted, deactivated or given another role",
+    "permissionCeiling": "You can only grant rights you hold yourself.",
+    "adminAccountProtected": "Only an administrator can change or remove an administrator's account."
   },
   "accessDenied": {
     "banner_one": "Since your previous login ({{date}}) {{count}} colleague tried something they have no right to do",

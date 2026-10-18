@@ -66,6 +66,10 @@ function userErrorText(error: unknown, fallbackKey: string, t: (key: string) => 
       return t('usersDialog.cannotDeleteSelf');
     case "LAST_ADMIN":
       return t('usersDialog.lastAdmin');
+    case "PERMISSION_CEILING":
+      return t('usersDialog.permissionCeiling');
+    case "ADMIN_ACCOUNT_PROTECTED":
+      return t('usersDialog.adminAccountProtected');
     default:
       return t(fallbackKey);
   }

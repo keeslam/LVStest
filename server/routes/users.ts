@@ -40,6 +40,34 @@ const lastAdminBody = () => ({
   code: "LAST_ADMIN",
 });
 
+/**
+ * Security review 2026-10-18 (Middel 5): "gebruikers beheren" is a right you hand a shift leader, not
+ * a back door to every other right. Someone who is not an administrator may only grant the rights
+ * they hold themselves (rights the account already had may stay), and may not touch an
+ * administrator's account at all. Returns the rights that go beyond that ceiling.
+ */
+function rightsBeyondCeiling(
+  caller: { role?: string | null; permissions?: string[] | null },
+  requested: unknown,
+  alreadyHeld: readonly string[] = [],
+): string[] {
+  if (caller.role === UserRole.ADMIN || !Array.isArray(requested)) return [];
+  const own = new Set(caller.permissions ?? []);
+  const had = new Set(alreadyHeld);
+  return requested.filter((p): p is string => typeof p === "string" && !own.has(p) && !had.has(p));
+}
+
+const ceilingBody = (rights: string[]) => ({
+  message: "You can only grant rights you hold yourself",
+  code: "PERMISSION_CEILING",
+  permissions: rights,
+});
+
+const adminTargetBody = () => ({
+  message: "Only an administrator can change or remove an administrator account",
+  code: "ADMIN_ACCOUNT_PROTECTED",
+});
+
 // Moved verbatim out of server/routes.ts (registerRoutes) - see git history for context.
 export function registerUserRoutes(app: Express, deps: RouteDeps): void {
   const { requireAuth } = deps;
@@ -303,6 +331,11 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
         return res.status(403).json({ message: "Only an administrator can create an administrator account" });
       }
 
+      const beyondOnCreate = rightsBeyondCeiling(req.user!, userData.permissions);
+      if (beyondOnCreate.length > 0) {
+        return res.status(403).json(ceilingBody(beyondOnCreate));
+      }
+
       // D12: checked after the 403 above, so rights are judged first.
       const weakness = passwordPolicyIssues(userData.password);
       if (weakness.length > 0) {
@@ -369,6 +402,11 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
+      }
+
+      // Security review 2026-10-18 (Middel 5): an administrator's account is changed by administrators only.
+      if (!isSelfUpdate && !isAdmin && user.role === UserRole.ADMIN) {
+        return res.status(403).json(adminTargetBody());
       }
       
       // BUG-063: the body is validated against a closed field list instead of
@@ -471,6 +509,10 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
         if (isSelfUpdate) {
           delete userData.role;
           delete userData.permissions;
+        }
+        const beyondOnUpdate = rightsBeyondCeiling(currentUser, userData.permissions, user.permissions ?? []);
+        if (beyondOnUpdate.length > 0) {
+          return res.status(403).json(ceilingBody(beyondOnUpdate));
         }
       }
       
@@ -583,6 +625,14 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       // Prevent deletion of the current user
       if (id === req.user!.id) {
         return res.status(400).json({ message: "Cannot delete your own account", code: "CANNOT_DELETE_SELF" });
+      }
+
+      // Security review 2026-10-18 (Middel 5): only an administrator removes an administrator.
+      if (req.user!.role !== UserRole.ADMIN) {
+        const target = await storage.getUser(id);
+        if (target?.role === UserRole.ADMIN) {
+          return res.status(403).json(adminTargetBody());
+        }
       }
       
       // D19: the last active administrator is refused (409); another admin may

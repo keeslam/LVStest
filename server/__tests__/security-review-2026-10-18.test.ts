@@ -127,6 +127,67 @@ describe("2 — the live connection only takes an active staff user", () => {
   });
 });
 
+describe("Middel 4 — a portal path is a portal path in any case", () => {
+  it("the staff stack steps aside for /API/PORTAL as well (the real request is in fix-j-socket.test.ts)", async () => {
+    const { isPortalPath, isPortalApiPath } = await import("../portal-paths");
+    expect(isPortalApiPath("/API/PORTAL/reservations")).toBe(true);
+    expect(isPortalPath("/Portaal/documenten")).toBe(true);
+    expect(isPortalApiPath("/api/portalx")).toBe(false);
+  });
+});
+
+describe("Middel 5 — 'gebruikers beheren' has a ceiling", () => {
+  let counter = 0;
+  const body = (permissions: string[], role = "user") => ({
+    username: `FIXT-user-sec1018-${Date.now().toString(36)}-${++counter}`,
+    password: "Nieuw-wachtwoord-2026!", fullName: "Nieuw", role, permissions, active: true,
+  });
+
+  it("a shift leader cannot hand out a right they do not hold", async () => {
+    const leader = await agentFor(["manage_users", "view_vehicles"]);
+    const refused = await leader.post("/api/users").send(body(["view_vehicles", "manage_backups"]));
+    expect(refused.status).toBe(403);
+    expect(refused.body).toMatchObject({ code: "PERMISSION_CEILING", permissions: ["manage_backups"] });
+    expect((await leader.post("/api/users").send(body(["view_vehicles"]))).status).toBe(201);
+  });
+
+  it("nor add one to a colleague, while rights the colleague already had may stay", async () => {
+    const leader = await agentFor(["manage_users", "view_vehicles"]);
+    const colleague = await agentFor(["view_customers"]);
+    const add = await leader.patch(`/api/users/${colleague.userId}`).send({ permissions: ["view_customers", "manage_backups"] });
+    expect(add.status).toBe(403);
+    expect(add.body.code).toBe("PERMISSION_CEILING");
+    const keep = await leader.patch(`/api/users/${colleague.userId}`).send({ permissions: ["view_customers", "view_vehicles"] });
+    expect(keep.status).toBe(200);
+  });
+
+  it("leaves an administrator's account alone: no change, no switching off, no delete", async () => {
+    const leader = await agentFor(["manage_users"]);
+    const otherAdmin = await agentFor("admin");
+    const patch = await leader.patch(`/api/users/${otherAdmin.userId}`).send({ active: false });
+    expect(patch.status).toBe(403);
+    expect(patch.body.code).toBe("ADMIN_ACCOUNT_PROTECTED");
+    expect((await leader.delete(`/api/users/${otherAdmin.userId}`)).body.code).toBe("ADMIN_ACCOUNT_PROTECTED");
+    const [still] = await db.select({ active: users.active }).from(users).where(eq(users.id, otherAdmin.userId));
+    expect(still.active).toBe(true);
+  });
+
+  it("an administrator may still grant anything", async () => {
+    expect((await admin.post("/api/users").send(body(["manage_backups"]))).status).toBe(201);
+  });
+});
+
+describe("Middel 6 — a diagram's file name is always a bare, safe name", () => {
+  it("strips paths and odd extensions out of make and model", async () => {
+    const { diagramFileName } = await import("../routes/vehicle-diagram-templates");
+    const name = diagramFileName("../../../../public", "..\\..\\evil", "x.html", 1);
+    expect(name).not.toMatch(/[\\/]/);
+    expect(name).not.toContain("..");
+    expect(name.endsWith(".png")).toBe(true);
+    expect(diagramFileName("Peugeot", "Boxer L2", "tekening.JPG", 5)).toBe("Peugeot-Boxer_L2-5.jpg");
+  });
+});
+
 describe("3 — switching an account off logs it out everywhere", () => {
   it("a switched-off account's open session stops working on its next request", async () => {
     const staff = await agentFor(["view_vehicles"]);
