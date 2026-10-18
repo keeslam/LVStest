@@ -98,8 +98,8 @@ export const steps = [
       const early = page.getByRole("alertdialog").filter({ hasText: /eerder/ }).last();
       if (await early.waitFor({ timeout: 8_000 }).then(() => true).catch(() => false)) {
         const yes = early.getByRole("button", { name: /Ja, startdatum naar vandaag/ });
-        // Geen foto: dit venster opent nu áchter het ophaalvenster (bekend probleem, zie hoofdstuk 16.2).
-        // De knop is wel aan te klikken, omdat de rest van het scherm dan niet reageert.
+        await page.waitForTimeout(600);
+        await shot(page, "16-huur-start-eerder", { clip: early, marks: [yes, early.getByRole("button", { name: /Nee, niet ophalen/ })] });
         await yes.click();
       }
 

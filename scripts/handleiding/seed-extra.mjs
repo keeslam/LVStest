@@ -91,7 +91,8 @@ try {
     console.log(`  ${INVOICES.length} facturen in het postvak gezet`);
   }
 
-  // 2. Bekeuringen: één die vanzelf aan de huur van de Proace koppelt, één zonder huur op dat moment.
+  // 2. Bekeuringen: één die vanzelf aan de huur van de Proace koppelt (die huur liep toen), en één op de
+  //    Crafter een dag vóór een geboekte huur: die koppelt niet vanzelf, de app stelt die huur wel voor.
   const fines = await api(page, "GET", "/api/fines").catch(() => []);
   const fineList = Array.isArray(fines) ? fines : fines.fines ?? fines.items ?? [];
   if (!fineList.length) {
@@ -100,7 +101,7 @@ try {
       description: "Snelheidsovertreding 12 km/u te hard, Maasboulevard Rotterdam", amount: "104",
     });
     await api(page, "POST", "/api/fines", {
-      licensePlate: "12-VKL-3", offenceAt: `${ymd(-60)}T15:05:00.000Z`, receivedAt: ymd(-2), reference: "CJIB-3001-2026-04502",
+      licensePlate: "12-VKL-3", offenceAt: `${ymd(-1)}T15:05:00.000Z`, receivedAt: ymd(-2), reference: "CJIB-3001-2026-04502",
       description: "Parkeren op een laad- en losplaats, Coolsingel Rotterdam", amount: "110",
     });
     console.log("  2 bekeuringen toegevoegd");
