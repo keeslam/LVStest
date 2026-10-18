@@ -1,7 +1,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { formatCurrency, formatDate, formatLicensePlate } from "@/lib/format-utils";
+import { formatLicensePlate } from "@/lib/format-utils";
 import type { PortalReservationDto, PortalVehicleDto, PortalDriverDto } from "@shared/portal-types";
 import type { PortalFineDto } from "@shared/fines";
 import { PortalRequestType, REQUEST_NEEDS, type PortalRequestTypeValue } from "@shared/portal-requests";
@@ -18,6 +18,7 @@ import { ReservationPicker } from "./reservation-picker";
 import { formatPortalDate } from "./reservation-card";
 import { officeToday, officeTomorrow } from "@/lib/office-date";
 import { vehicleName } from "@shared/vehicle-name";
+import { formatPortalCurrency, formatPortalDateMedium } from "@/lib/portal-format";
 
 export function RequestForm({ initialType, reservationId: initialReservation, fineId: initialFine, vehicleId: initialVehicle, startDate: initialStart, endDate: initialEnd, blockId, blockDate, onSubmitted }: { initialType?: PortalRequestTypeValue; reservationId?: number; fineId?: number; vehicleId?: number; startDate?: string; endDate?: string; blockId?: number; blockDate?: string; onSubmitted: (id: number) => void }) {
   const { t } = useTranslation("portal");
@@ -104,7 +105,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
           <Label htmlFor="rq-fine">{t("requests.form.fine")}</Label>
           <select id="rq-fine" className="w-full rounded-md border px-3 py-2 text-sm" value={fineId} onChange={(e) => setFineId(e.target.value)} required>
             <option value="">—</option>
-            {fines.map((f) => <option key={f.id} value={f.id}>#{f.id} {formatLicensePlate(f.licensePlate)} {formatDate(f.offenceAt)} {formatCurrency(f.totalAmount)}</option>)}
+            {fines.map((f) => <option key={f.id} value={f.id}>#{f.id} {formatLicensePlate(f.licensePlate)} {formatPortalDateMedium(f.offenceAt)} {formatPortalCurrency(f.totalAmount)}</option>)}
           </select>
         </div>
       )}

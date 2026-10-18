@@ -9,7 +9,7 @@ import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { SearchBox, usePortalSearch } from "./ui";
-import { formatDateNl } from "@/lib/format-date-nl";
+import { formatPortalDateTime } from "@/lib/portal-format";
 
 const UNREAD_KEY = ["portal", "/api/portal/notifications/unread-count"];
 const LIST_KEY = ["portal", "/api/portal/notifications"];
@@ -84,7 +84,7 @@ export function NotificationsBell({ dark = false }: { dark?: boolean }) {
                 <span className="min-w-0 flex-1">
                   <span className={`block text-sm ${n.isRead ? "" : "font-semibold"} text-[#0f172a]`}>{!n.isRead && <span className="sr-only">{t("notifications.unread")}: </span>}{n.title}</span>
                   <span className="block text-xs text-[#64748b]">{n.description}</span>
-                  <span className="mt-0.5 block text-[11px] text-[#94a3b8]">{formatDateNl(n.createdAt, "dd-MM-yyyy HH:mm")}</span>
+                  <span className="mt-0.5 block text-[11px] text-[#94a3b8]">{formatPortalDateTime(n.createdAt)}</span>
                 </span>
               </button>
             ))}

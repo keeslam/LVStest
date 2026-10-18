@@ -8,12 +8,11 @@ import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { DriverChip, ListCard, Plate, StatusBadge, daysUntil, toneFor } from "@/components/portal/ui";
 import { vehicleName } from "@shared/vehicle-name";
+import { formatPortalDate } from "@/lib/portal-format";
 
-export function formatPortalDate(value: string | null | undefined): string {
-  if (!value) return "";
-  const [y, m, d] = value.split("-");
-  return y && m && d ? `${d}-${m}-${y}` : value;
-}
+// The portal's day notation now lives with the other language-aware formatters; it stays exported
+// here because most portal screens import it from this file.
+export { formatPortalDate };
 
 /** One reservation in a list: vehicle, plate, period, driver, and a hint about what is coming up. */
 export function ReservationCard({ reservation, showPrice }: { reservation: PortalReservationDto; showPrice: boolean }) {

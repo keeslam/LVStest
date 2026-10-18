@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { format, parseISO, isValid } from "date-fns";
-import { nl, enGB } from "date-fns/locale";
 import { CalendarDays, Clock, X } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { dateFnsLocaleFor } from "@/lib/portal-format";
 
 const toIso = (d: Date | undefined) => (d ? format(d, "yyyy-MM-dd") : "");
 const fromIso = (s: string | undefined) => { if (!s) return undefined; const d = parseISO(s); return isValid(d) ? d : undefined; };
@@ -23,7 +23,7 @@ export function PeriodPicker({ start, end, onChange, allowOpenEnd = true, minDat
   allowOpenEnd?: boolean; minDate?: string; single?: boolean; id?: string; testId?: string; disableWeekends?: boolean;
 }) {
   const { t, i18n } = useTranslation("portal");
-  const locale = i18n.language?.startsWith("en") ? enGB : nl;
+  const locale = dateFnsLocaleFor(i18n.language);
   const [open, setOpen] = useState(false);
   const range: DateRange = useMemo(() => ({ from: fromIso(start), to: fromIso(end) }), [start, end]);
   const min = fromIso(minDate ?? todayIso())!;

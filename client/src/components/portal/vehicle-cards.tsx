@@ -12,8 +12,9 @@ import { PeriodPicker } from "./period-picker";
 import { EmptyState, Plate, SearchBox, Section, btnPrimary, usePortalSearch } from "./ui";
 import { officeToday } from "@/lib/office-date";
 import { vehicleName } from "@shared/vehicle-name";
+import { formatPortalNumber } from "@/lib/portal-format";
 
-const money = (v: string | null | undefined) => (v ? `€ ${Number(v).toLocaleString("nl-NL", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : null);
+const money = (v: string | null | undefined) => (v ? formatPortalNumber(Number(v), { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 2 }) : null);
 
 /**
  * The vehicles Lam Groep offers online, as far as this customer may rent them

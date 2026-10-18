@@ -10,7 +10,7 @@ import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { EmptyState, PageHeader, Plate, Section, btnPrimary } from "@/components/portal/ui";
 import { Button } from "@/components/ui/button";
 import { vehicleName } from "@shared/vehicle-name";
-import { formatDateNl } from "@/lib/format-date-nl";
+import { formatPortalDate } from "@/lib/portal-format";
 
 const KEY = ["portal", "/api/portal/fiscal/vehicles"] as const;
 
@@ -84,8 +84,8 @@ function UsageQuestions({ period, isAdmin }: { period: PortalFiscalPeriodDto; is
     period.confirmedByKind === "none"
       ? t("fiscal.notConfirmed")
       : period.confirmedByKind === "staff"
-        ? t("fiscal.confirmedByLam", { date: period.confirmedAt ? formatDateNl(period.confirmedAt, "dd-MM-yyyy") : "" })
-        : t("fiscal.confirmed", { name: t("fiscal.questions").toLowerCase() === "" ? "" : "u", date: period.confirmedAt ? formatDateNl(period.confirmedAt, "dd-MM-yyyy") : "" });
+        ? t("fiscal.confirmedByLam", { date: period.confirmedAt ? formatPortalDate(period.confirmedAt) : "" })
+        : t("fiscal.confirmed", { name: t("fiscal.questions").toLowerCase() === "" ? "" : "u", date: period.confirmedAt ? formatPortalDate(period.confirmedAt) : "" });
 
   return (
     <div className="rounded-md border border-[#e2e8f0] bg-white p-3" data-testid={`usage-form-${period.reservationId}`}>

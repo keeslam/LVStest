@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { formatPortalDate as formatDate } from "./reservation-card";
 import { DriverChip, Plate } from "./ui";
 import { vehicleName } from "@shared/vehicle-name";
+import { formatPortalDateMedium } from "@/lib/portal-format";
 
 /** Rows shown before the customer has to type. */
 const MAX_SHOWN = 6;
@@ -33,7 +34,7 @@ export function ReservationPicker({ reservations, value, onChange, testId = "res
   }, [reservations, q, qFlat]);
   const selected = value !== null ? reservations.find((r) => r.id === value) : undefined;
   const shown = matches.slice(0, MAX_SHOWN);
-  const period = (r: PortalReservationDto) => `${formatDate(r.startDate)} – ${r.endDate ? formatDate(r.endDate) : t("overview.openEnded")}`;
+  const period = (r: PortalReservationDto) => `${formatPortalDateMedium(r.startDate)} – ${r.endDate ? formatPortalDateMedium(r.endDate) : t("overview.openEnded")}`;
 
   if (selected) {
     return (

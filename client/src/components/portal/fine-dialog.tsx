@@ -1,4 +1,4 @@
-import { formatCurrency, formatDateTime, formatLicensePlate } from "@/lib/format-utils";
+import { formatLicensePlate } from "@/lib/format-utils";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useFilePreview } from "@/components/documents/use-file-preview";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { DetailRow } from "./reservation-dialog";
 import { btnPrimary } from "./ui";
+import { formatPortalCurrency, formatPortalDateTimeMedium } from "@/lib/portal-format";
 
 /** One fine as the customer sees it: what, when, how much, and a way to ask about it. */
 export function FineDialog({ id, onClose }: { id: number | null; onClose: () => void }) {
@@ -33,11 +34,11 @@ export function FineDialog({ id, onClose }: { id: number | null; onClose: () => 
           <div className="space-y-3">
             <dl className="space-y-1">
               <DetailRow label={t("fines.fields.plate")} value={formatLicensePlate(f.licensePlate)} />
-              <DetailRow label={t("fines.fields.offenceAt")} value={formatDateTime(f.offenceAt)} />
+              <DetailRow label={t("fines.fields.offenceAt")} value={formatPortalDateTimeMedium(f.offenceAt)} />
               <DetailRow label={t("fines.fields.description")} value={f.description} />
               <DetailRow label={t("fines.fields.reference")} value={f.reference} />
               <DetailRow label={t("fines.fields.driver")} value={f.driver?.displayName} />
-              <DetailRow label={t("fines.fields.amount")} value={formatCurrency(f.amount)} />
+              <DetailRow label={t("fines.fields.amount")} value={formatPortalCurrency(f.amount)} />
               <DetailRow label={t("fines.fields.note")} value={f.customerNote} />
             </dl>
             <div className="flex flex-wrap gap-2">

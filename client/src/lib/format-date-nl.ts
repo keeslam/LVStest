@@ -59,6 +59,9 @@ function toDate(value: string | Date | number | null | undefined): Date | null {
   return isValid(loose) ? loose : null;
 }
 
+/** The same reading of a value, for a formatter that writes it in another language (portal-format.ts). */
+export const toScreenDate = toDate;
+
 /**
  * Formats a date in Dutch. `pattern` is one of the house patterns, or a raw
  * `date-fns` pattern for the rare screen that needs its own.

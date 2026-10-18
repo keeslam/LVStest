@@ -8,6 +8,7 @@ import { formatLicensePlate } from "@/lib/format-utils";
 import { DriverChip, Plate, daysUntil } from "./ui";
 import { formatPortalDate } from "./reservation-card";
 import { vehicleName } from "@shared/vehicle-name";
+import { portalIntlLocale } from "@/lib/portal-format";
 
 /** "Onderhoud gepland op …" plus the change button or the 48-hour phone hint; shared by the card and the reservation dialog. */
 export function MaintenanceLine({ maintenance: m, serviceDue, canRequest }: { maintenance: PortalVehicleMaintenanceDto | null; serviceDue: "due" | "soon" | null; canRequest: boolean }) {
@@ -64,7 +65,7 @@ export function VehicleCard({ item }: { item: PortalMyVehicleDto }) {
       </button>
       <dl className="mt-3 grid gap-1 text-sm sm:grid-cols-2">
         {apkText && <div className={`inline-flex items-center gap-1.5 ${apkTone}`}><ShieldAlert className="h-4 w-4" />{apkText}</div>}
-        <div className="inline-flex items-center gap-1.5 text-[#334155]"><Gauge className="h-4 w-4" />{item.lastReportedMileage ? t("vehicles.mileageAt", { value: item.lastReportedMileage.value.toLocaleString("nl-NL"), date: formatPortalDate(item.lastReportedMileage.at.slice(0, 10)) }) : t("vehicles.noMileage")}</div>
+        <div className="inline-flex items-center gap-1.5 text-[#334155]"><Gauge className="h-4 w-4" />{item.lastReportedMileage ? t("vehicles.mileageAt", { value: item.lastReportedMileage.value.toLocaleString(portalIntlLocale()), date: formatPortalDate(item.lastReportedMileage.at.slice(0, 10)) }) : t("vehicles.noMileage")}</div>
       </dl>
       <div className="mt-3"><MaintenanceLine maintenance={item.maintenance} serviceDue={item.serviceDue} canRequest={canRequest} /></div>
       {canRequest && (

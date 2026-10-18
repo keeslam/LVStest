@@ -15,7 +15,6 @@ import { ChangeDriverDialog } from "@/components/portal/change-driver-dialog";
 import { MaintenanceLine } from "@/components/portal/vehicle-card";
 import { Plate, StatusBadge } from "./ui";
 import { vehicleName } from "@shared/vehicle-name";
-import { formatDateNl } from "@/lib/format-date-nl";
 import { HandoverBlock } from "./handover-block";
 
 type Detail = PortalReservationDto & {
@@ -104,7 +103,7 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
                   <li key={h.id} className="flex justify-between gap-2">
                     <span>{h.driverName ?? "—"}{h.note ? <span className="text-muted-foreground"> · {h.note}</span> : null}</span>
                     <span className="text-muted-foreground">
-                      {formatDateNl(h.assignedFrom, "dd-MM-yyyy")} – {h.assignedUntil ? formatDateNl(h.assignedUntil, "dd-MM-yyyy") : t("reservations.current")}
+                      {formatPortalDate(h.assignedFrom)} – {h.assignedUntil ? formatPortalDate(h.assignedUntil) : t("reservations.current")}
                     </span>
                   </li>
                 ))}

@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { formatCurrency, formatDateTime } from "@/lib/format-utils";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { portalFetch, portalQueryFn, PortalApiError } from "@/lib/portal-api";
@@ -13,8 +12,8 @@ import { formatLicensePlate } from "@shared/license-plate";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { formatDateNl } from "@/lib/format-date-nl";
 import { ListCard, Plate, StatusBadge, btnSecondary, toneFor, DriverChip } from "./ui";
+import { formatPortalCurrency, formatPortalDate, formatPortalDateTime, formatPortalDateTimeMedium } from "@/lib/portal-format";
 
 /** Rows shared by the list pages and the list dialogs, so both look the same. */
 
@@ -29,12 +28,12 @@ export function FineRow({ fine: f }: { fine: PortalFineDto }) {
           <Plate value={f.licensePlate} />
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#64748b] sm:text-sm">
-          <span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{formatDateTime(f.offenceAt)}</span>
+          <span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{formatPortalDateTimeMedium(f.offenceAt)}</span>
           {f.driver && <DriverChip name={f.driver.displayName} />}
         </div>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3">
-        <span className="text-base font-bold text-[#0f172a]">{formatCurrency(f.totalAmount)}</span>
+        <span className="text-base font-bold text-[#0f172a]">{formatPortalCurrency(f.totalAmount)}</span>
         <ChevronRight className="hidden h-4 w-4 text-[#94a3b8] sm:block" />
       </div>
     </ListCard>
@@ -49,7 +48,7 @@ export function RequestRow({ request: r }: { request: PortalRequestDto }) {
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="font-semibold text-[#0f172a]">{t(`requests.type.${r.type}`)}</span>
-          <span className="text-xs text-[#64748b]">#{r.id} · {formatDateNl(r.createdAt, "dd-MM-yyyy")}</span>
+          <span className="text-xs text-[#64748b]">#{r.id} · {formatPortalDate(r.createdAt)}</span>
         </div>
         <div className="mt-1 truncate text-xs text-[#64748b] sm:text-sm">{r.type === "booking" && (r.payload as { vehicleLabel?: string }).vehicleLabel ? `${(r.payload as { vehicleLabel?: string }).vehicleLabel} · ` : ""}{r.message.split("\n")[0].slice(0, 100)}</div>
         {r.staffReply && <div className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-[#0f6e56]"><MessageSquare className="h-3.5 w-3.5" />{t("requests.replied")}</div>}
@@ -85,11 +84,11 @@ export function DocumentRow({ document: d, showReservationLink = true }: { docum
         </span>
         <div className="min-w-0">
           <div className="line-clamp-2 text-sm font-semibold text-[#0f172a]" title={d.fileName}>{t(`documents.${d.kind}`)}{label ? ` · ${label}` : ""}</div>
-          <div className="truncate text-xs text-[#64748b]">{reservation?.contractNumber ? `${t("documents.contractNo", { nr: reservation.contractNumber })} · ` : ""}{formatDateNl(d.uploadDate, "dd-MM-yyyy")}</div>
+          <div className="truncate text-xs text-[#64748b]">{reservation?.contractNumber ? `${t("documents.contractNo", { nr: reservation.contractNumber })} · ` : ""}{formatPortalDate(d.uploadDate)}</div>
           {showReservationLink && d.reservationId && <button type="button" className="text-xs text-[#2a2f9c] underline" onClick={() => openReservation(d.reservationId!)}>{t("documents.openReservation")}</button>}
           {d.kind === "contract" && (
             d.ack
-              ? <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#e1f5ee] px-2 py-0.5 text-xs font-medium text-[#085041]" data-testid={`document-ack-${d.id}`}><CheckCircle2 className="h-3.5 w-3.5" />{t("documents.ackedBy", { name: d.ack.by, date: formatDateNl(d.ack.at, "dd-MM-yyyy HH:mm") })}</div>
+              ? <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#e1f5ee] px-2 py-0.5 text-xs font-medium text-[#085041]" data-testid={`document-ack-${d.id}`}><CheckCircle2 className="h-3.5 w-3.5" />{t("documents.ackedBy", { name: d.ack.by, date: formatPortalDateTime(d.ack.at) })}</div>
               : <button type="button" onClick={() => setConfirming(true)} disabled={ack.isPending} className="mt-1 inline-flex items-center gap-1 rounded-full border border-[#1d9e75] px-2 py-0.5 text-xs font-medium text-[#085041] hover:bg-[#e1f5ee]" data-testid={`button-ack-${d.id}`}><CheckCircle2 className="h-3.5 w-3.5" />{t("documents.ack")}</button>
           )}
         </div>
