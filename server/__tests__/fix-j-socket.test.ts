@@ -72,6 +72,35 @@ describe("FIX-J — Socket.IO and /health", () => {
     expect(String(error?.message)).toMatch(/unauthorized/i);
   }, 30_000);
 
+  it("security review 2026-10-18: a portal session renamed to connect.sid is refused", async () => {
+    // The portal keeps its sessions in the same table, signed with the same secret. A customer who
+    // put the value of his own portal.sid cookie under the staff cookie name used to be let in and
+    // hear every staff broadcast.
+    const { createTestCustomer, cleanupPortalTestData, TEST_EMAIL_DOMAIN } = await import("./portal-helpers");
+    const { portalStorage } = await import("../services/portal-storage");
+    try {
+      const customerId = (await createTestCustomer("Socket")).id;
+      const email = `socket-${Date.now().toString(36)}@${TEST_EMAIL_DOMAIN}`;
+      const account = await portalStorage.createPortalUser({ customerId, email, fullName: "Socket Klant", role: "admin" }, "t");
+      await portalStorage.updatePortalUser(account.id, { passwordHash: await hashPassword(password) });
+      const body = JSON.stringify({ email, password });
+      const login = await rawRequest(server.port, "POST", "/api/portal/login", {
+        body,
+        headers: { "content-type": "application/json", "content-length": String(Buffer.byteLength(body)) },
+      });
+      expect(login.status).toBe(200);
+      const portalSid = /(?:^|;\s*)portal\.sid=([^;]+)/.exec(collectCookies("", login))?.[1];
+      expect(portalSid).toBeTruthy();
+
+      const { socket, error } = await connect({ cookie: `connect.sid=${portalSid}` });
+      socket.close();
+      expect(error).toBeTruthy();
+      expect(String(error?.message)).toMatch(/unauthorized/i);
+    } finally {
+      await cleanupPortalTestData();
+    }
+  }, 45_000);
+
   it("BUG-005: an authenticated socket receives only the id, never the record", async () => {
     const { socket, error } = await connect({ cookie: cookies });
     expect(error).toBeUndefined();

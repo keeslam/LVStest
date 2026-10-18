@@ -7,6 +7,7 @@ import http from 'http';
 import express, { Request, Response, NextFunction } from "express";
 import { Server as SocketIOServer } from 'socket.io';
 import { setSocketInstance } from "./realtime-events";
+import { staffUserIdForSocket } from "./utils/security/socket-auth";
 import { registerRoutes } from "./routes";
 import { mountApiNotFound } from "./middleware/api-not-found";
 import { setupAuth } from "./auth";
@@ -267,10 +268,12 @@ function setupSocketIO(server: any) {
   // passport's user id has to be in that session.
   io.use((socket, next) => {
     const req = socket.request as any;
-    sessionMiddleware(req, {} as any, () => {
-      const userId = req.session?.passport?.user;
-      if (!userId) {
-        console.warn(`🚫 Socket.IO handshake refused (no staff session) from ${socket.handshake.address}`);
+    sessionMiddleware(req, {} as any, async () => {
+      // Security review 2026-10-18 (Hoog 2): a portal session (same table, same secret) or a
+      // deactivated staff account is refused; see staffUserIdForSocket.
+      const userId = await staffUserIdForSocket(req.session?.passport?.user);
+      if (userId === null) {
+        console.warn(`🚫 Socket.IO handshake refused (no active staff session) from ${socket.handshake.address}`);
         return next(new Error('unauthorized'));
       }
       (socket.data as any).userId = userId;

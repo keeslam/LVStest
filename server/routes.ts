@@ -131,6 +131,7 @@ import {
   isDangerousExtension,
   sanitizeFilename 
 } from "./utils/security/fileUploadSecurity";
+import { safeContentType, setSafeFileHeaders } from "./utils/portal-files";
 
 import { getRelativePath, resolveDocumentFilePath } from "./services/document-paths";
 import { resolveUploadsPath } from "../shared/paths";
@@ -3414,7 +3415,9 @@ export async function registerRoutes(app: Express): Promise<void> {
         const dateString = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
         const sanitizedOriginal = sanitizeFilename(file.originalname);
         const extension = path.extname(sanitizedOriginal);
-        const startDate = req.body.startDate || dateString;
+        // Security review 2026-10-18: the date goes into a file name, so only a plain YYYY-MM-DD gets in
+        // (a "../" here used to write the file outside the uploads directory).
+        const startDate = /^d{4}-d{2}-d{2}$/.test(String(req.body.startDate ?? "")) ? String(req.body.startDate) : dateString;
         
         // Get vehicle license plate
         const vehicleId = parseInt(req.body.vehicleId);
@@ -3449,9 +3452,23 @@ export async function registerRoutes(app: Express): Promise<void> {
     fileFilter: createSecureMulterFilter('document'),
   }));
   
+  /**
+   * Security review 2026-10-18 (Hoog 1): the damage check uploaded with a reservation is checked on
+   * its content, like every other upload; a file that is not what it claims is removed and refused
+   * before the reservation is touched. Answers 400 and returns false when it is refused.
+   */
+  async function damageCheckFileIsValid(req: Request, res: Response): Promise<boolean> {
+    if (!req.file) return true;
+    const check = await validateAfterUpload(req.file.path, req.file.originalname, req.file.mimetype, 'document');
+    if (check.valid) return true;
+    res.status(400).json({ message: check.error });
+    return false;
+  }
+
   // Create reservation with damage check upload
   app.post("/api/reservations", hasPermission(UserPermission.MANAGE_RESERVATIONS), damageCheckUpload.single('damageCheckFile'), async (req: Request, res: Response) => {
     try {
+      if (!(await damageCheckFileIsValid(req, res))) return;
       // Handle JSON data that comes through multer middleware
       let bodyData = req.body;
       if (req.body.body && typeof req.body.body === 'string') {
@@ -3811,7 +3828,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           fileName: req.file.originalname,
           filePath: getRelativePath(req.file.path),
           fileSize: req.file.size,
-          contentType: req.file.mimetype,
+          contentType: safeContentType(req.file.mimetype, req.file.originalname),
           createdBy: user ? user.username : `Reservation #${reservation.id}`,
           notes: `Damage check for reservation from ${reservationData.startDate} to ${reservationData.endDate}`
         };
@@ -4784,6 +4801,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Update reservation with damage check upload
   app.patch("/api/reservations/:id", hasPermission(UserPermission.MANAGE_RESERVATIONS), damageCheckUpload.single('damageCheckFile'), async (req: Request, res: Response) => {
     try {
+      if (!(await damageCheckFileIsValid(req, res))) return;
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid reservation ID" });
@@ -5102,7 +5120,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           fileName: req.file.originalname,
           filePath: getRelativePath(req.file.path),
           fileSize: req.file.size,
-          contentType: req.file.mimetype,
+          contentType: safeContentType(req.file.mimetype, req.file.originalname),
           createdBy: user ? user.username : `Reservation #${reservation.id} (Updated)`,
           notes: `Updated damage check for reservation from ${reservationData.startDate} to ${reservationData.endDate}`
         };
@@ -7029,9 +7047,12 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "Document file not found on disk" });
       }
 
-      // Set appropriate headers for inline viewing (not download)
-      res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
-      res.setHeader('Content-Type', document.contentType || 'application/octet-stream');
+
+      // Security review 2026-10-18 (Hoog 1): the type and disposition follow from the file name,
+      // never from what the uploader's browser claimed; nosniff + sandbox mean a disguised HTML or
+      // script file can never run as a page of this application.
+      const servedName = path.extname(document.fileName || "") ? document.fileName : path.basename(absolutePath);
+      setSafeFileHeaders(res, document.contentType, servedName, true, sanitizeFilename(servedName), { sandboxInline: false });
 
       // Serve the file
       res.sendFile(absolutePath, (err) => {
@@ -7079,9 +7100,12 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "Document file not found on disk" });
       }
 
-      // Set appropriate headers for download
-      res.setHeader('Content-Disposition', `attachment; filename="${document.fileName}"`);
-      res.setHeader('Content-Type', document.contentType || 'application/octet-stream');
+
+      // Security review 2026-10-18 (Hoog 1): the type and disposition follow from the file name,
+      // never from what the uploader's browser claimed; nosniff + sandbox mean a disguised HTML or
+      // script file can never run as a page of this application.
+      const servedName = path.extname(document.fileName || "") ? document.fileName : path.basename(absolutePath);
+      setSafeFileHeaders(res, document.contentType, servedName, false, sanitizeFilename(servedName), { sandboxInline: false });
 
       // Serve the file
       res.sendFile(absolutePath, (err) => {

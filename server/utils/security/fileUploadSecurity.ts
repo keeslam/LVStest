@@ -223,6 +223,16 @@ export class UploadRejectedError extends Error {
   }
 }
 
+/** Older spellings some browsers and scanners still send, mapped to the type they mean. */
+const MIME_ALIASES: Record<string, string> = {
+  'application/x-pdf': 'application/pdf',
+  'image/pjpeg': 'image/jpeg',
+  'image/jpg': 'image/jpeg',
+  'image/x-png': 'image/png',
+  // Windows names a .gz upload like this.
+  'application/x-gzip-compressed': 'application/gzip',
+};
+
 export function createSecureMulterFilter(
   allowedTypes: keyof typeof FILE_TYPE_CONFIGS | (keyof typeof FILE_TYPE_CONFIGS)[]
 ) {
@@ -246,10 +256,12 @@ export function createSecureMulterFilter(
         ext === allowedExt || filename.endsWith(allowedExt)
       );
       
-      const mimeAllowed = config.allowedMimeTypes.some(allowedMime => 
-        declaredMime === allowedMime || 
-        declaredMime.includes(allowedMime.split('/')[1]) ||
-        (allowedMime.includes('pdf') && declaredMime.includes('pdf'))
+      // Security review 2026-10-18 (Hoog 1): an exact match on the type itself (parameters after ';'
+      // ignored). This used to accept any type that merely *contained* 'pdf'/'png'/'jpeg', so
+      // 'text/html;x=pdf' passed and was later served back as HTML.
+      const baseMime = declaredMime.split(';')[0].trim().toLowerCase();
+      const mimeAllowed = config.allowedMimeTypes.some(allowedMime =>
+        baseMime === allowedMime || MIME_ALIASES[baseMime] === allowedMime
       );
       
       if (extAllowed && (mimeAllowed || declaredMime === 'application/octet-stream')) {

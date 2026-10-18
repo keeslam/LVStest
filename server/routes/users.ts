@@ -474,6 +474,15 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
         }
       }
       
+      // Security review 2026-10-18 (Hoog 3): an account that is switched off, or whose password
+      // someone else resets, is logged out everywhere at once. A user changing their own password
+      // here keeps the session they are using; their other sessions end.
+      const endSessionsAfterSave = async () => {
+        if (userData.active !== false && !userData.password) return;
+        const revoked = await revokeUserSessions(id, isSelfUpdate && userData.active !== false ? req.sessionID : undefined);
+        if (revoked > 0) console.log(`🔒 Ended ${revoked} session(s) of user ${id} after ${userData.active === false ? "deactivation" : "password reset"}`);
+      };
+
       // D19: demoting or deactivating an active administrator is checked against
       // the other active administrators, under a lock, in the same transaction
       // as the write. Everything else keeps the unguarded path below.
@@ -501,6 +510,7 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
             await storage.updateUserPassword(id, await hashPassword(newPassword));
           }
           const { password: _hidden, ...safeUser } = updatedUser;
+          await endSessionsAfterSave();
           realtimeEvents.users.updated(safeUser);
           return res.json(safeUser);
         } catch (error) {
@@ -530,6 +540,7 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
         
         // Don't send password back to client
         const { password: _, ...userWithoutPassword } = updatedUser;
+        await endSessionsAfterSave();
         
         // Broadcast real-time update
         realtimeEvents.users.updated(userWithoutPassword);
@@ -545,6 +556,7 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
         
         // Don't send password back to client
         const { password: _, ...userWithoutPassword } = updatedUser;
+        await endSessionsAfterSave();
         
         // Broadcast real-time update
         realtimeEvents.users.updated(userWithoutPassword);

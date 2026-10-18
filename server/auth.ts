@@ -275,6 +275,12 @@ export function setupAuth(app: Express) {
         }
         return done(null, false);
       }
+      // Security review 2026-10-18 (Hoog 3): a switched-off account is logged out on its very next
+      // request, wherever it is still signed in; switching it off used to change nothing until the
+      // session expired.
+      if (user.active === false) {
+        return done(null, false);
+      }
       
       // Remove excessive logging - only log in debug mode
       if (process.env.DEBUG === "auth" && process.env.NODE_ENV === "development") {
