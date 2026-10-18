@@ -20,7 +20,7 @@ const { execFileSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 const DIR = path.join(ROOT, 'docs', 'gebruikershandleiding');
-const OUT = path.join(DIR, 'Gebruikershandleiding-Car-Rental-Manager-v1.1.pdf');
+const OUT = path.join(DIR, 'Gebruikershandleiding-Car-Rental-Manager-v1.2.pdf');
 const CHROME = process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 
 const { marked } = require(process.env.MARKED_PATH ? path.join(process.env.MARKED_PATH, 'marked') : 'marked');
@@ -83,7 +83,7 @@ function main() {
     <section class="cover">
       <h1>Car Rental Manager</h1>
       <p class="sub">Gebruikershandleiding<br>Voor nieuwe medewerkers</p>
-      <p class="meta">Auto Lease LAM<br>Versie 1.1<br>17 oktober 2026</p>
+      <p class="meta">Auto Lease LAM<br>Versie 1.2<br>18 oktober 2026</p>
     </section>`);
 
   // The README body without its own title and version block, which the cover replaces.
