@@ -191,9 +191,11 @@ async function drawMarks(page, marks) {
           const yAbove = box.y - box.pad - 31;
           const yBelow = box.y + box.height + box.pad + 5;
           const above = roomAbove && (!hits(yAbove) || hits(yBelow));
+          // Valt het label links buiten beeld, dan links uitlijnen in plaats van rechts.
+          const fitsRight = right - w > 4;
           Object.assign(badge.style, {
             position: "absolute",
-            right: "-3px",
+            ...(fitsRight ? { right: "-3px" } : { left: "-3px" }),
             [above ? "top" : "bottom"]: "-31px",
             height: "26px",
             padding: "0 10px",

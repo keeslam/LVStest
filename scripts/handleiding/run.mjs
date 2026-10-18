@@ -12,7 +12,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { closeDialogs, launch, login as loginAs } from "./lib.mjs";
+import { VIEWPORT, closeDialogs, launch, login as loginAs } from "./lib.mjs";
 const login = (page) => loginAs(page, { username: process.env.HANDLEIDING_USER || "e2e-admin" });
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -36,6 +36,8 @@ try {
     for (const step of mod.steps) {
       if (filters.length && !filters.some((f) => step.name.startsWith(f) || step.name.includes(f))) continue;
       console.log(`▶ ${step.name}`);
+      // Elke stap begint op de gewone schermgrootte, ook als een vorige stap halverwege misging.
+      await page.setViewportSize(VIEWPORT);
       try {
         await step.run(page);
       } catch (error) {
