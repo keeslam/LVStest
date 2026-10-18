@@ -15,6 +15,7 @@ import { AddressLookupRow } from "@/components/ui/address-lookup-row";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, btnPrimary } from "./ui";
+import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, toSupportedLanguage } from "@shared/languages";
 
 const emptyDetails = () => Object.fromEntries(COMPANY_DETAIL_FIELDS.map((k) => [k, ""])) as Record<CompanyDetailField, string>;
 const detailsOf = (d?: Partial<Record<CompanyDetailField, string | null>>) => Object.fromEntries(COMPANY_DETAIL_FIELDS.map((k) => [k, d?.[k] ?? ""])) as Record<CompanyDetailField, string>;
@@ -214,9 +215,8 @@ export function PortalAccountDialog({ open, onClose }: { open: boolean; onClose:
               <div>
                 <Label htmlFor="acc-lang" className="flex items-center gap-1"><Globe className="h-3.5 w-3.5" />{t("account.language")}</Label>
                 <select id="acc-lang" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={language} onChange={(e) => setLanguage(e.target.value)} data-testid="select-account-language">
-                  <option value="">{t("account.languageDefault", { lang: t(`languages.${me?.languageOverride ? "nl" : me?.language ?? "nl"}`) })}</option>
-                  <option value="nl">{t("languages.nl")}</option>
-                  <option value="en">{t("languages.en")}</option>
+                  <option value="">{t("account.languageDefault", { lang: LANGUAGE_NAMES[me?.languageOverride ? "nl" : toSupportedLanguage(me?.language)] })}</option>
+                  {SUPPORTED_LANGUAGES.map((lang) => <option key={lang} value={lang} lang={lang}>{LANGUAGE_NAMES[lang]}</option>)}
                 </select>
                 <p className="mt-1 text-xs text-[#64748b]">{t("account.languageHint")}</p>
               </div>

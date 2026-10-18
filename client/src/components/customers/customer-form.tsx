@@ -11,6 +11,7 @@ import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { insertCustomerSchema } from "@shared/schema";
+import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES } from "@shared/languages";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -70,7 +71,8 @@ export const formSchema = insertCustomerSchema.extend({
   creditLimit: z.string().optional().or(z.literal("")),
   billingContactName: z.string().optional().or(z.literal("")),
   billingContactEmail: z.string().email(v("invalidEmail")).optional().or(z.literal("")),
-  billingContactPhone: z.string().optional().or(z.literal(""))
+  billingContactPhone: z.string().optional().or(z.literal("")),
+  preferredLanguage: z.enum(SUPPORTED_LANGUAGES).optional(),
 });
 
 // B-35 final wave item 2 — the two 409 debtor-number conflict codes only
@@ -691,10 +693,34 @@ export function CustomerForm({
                         </FormItem>
                       )}
                     />
+
+                    {/* The language of the customer's mails and, unless an account picks its own, of the portal. */}
+                    <FormField
+                      control={form.control}
+                      name="preferredLanguage"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t('driverForm.preferredLanguageLabel')}</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || "nl"}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-customer-language">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {SUPPORTED_LANGUAGES.map((lang) => (
+                                <SelectItem key={lang} value={lang}>{LANGUAGE_NAMES[lang]}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </div>
               </TabsContent>
-              
+
               {/* Company Information Tab */}
               <TabsContent value="company" className="space-y-6">
                 <div className="space-y-4">

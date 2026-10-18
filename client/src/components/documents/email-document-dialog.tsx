@@ -13,6 +13,8 @@ import { Mail, FileText, Loader2, AlertCircle } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isContractDocument, isDamageCheckDocument } from "@shared/document-types";
 import type { Document, Customer, Vehicle, Reservation, InteractiveDamageCheck } from "@shared/schema";
+import { LANGUAGE_LOCALES, LANGUAGE_NAMES, SUPPORTED_LANGUAGES, toSupportedLanguage, type SupportedLanguage } from "@shared/languages";
+import { withDocumentEmailDefaults } from "@/lib/document-email-templates";
 
 interface EmailDocumentDialogProps {
   open: boolean;
@@ -44,7 +46,8 @@ export function EmailDocumentDialog({
   const [selectedDocIds, setSelectedDocIds] = useState<number[]>([]);
   const [recipientEmail, setRecipientEmail] = useState("");
   const [customEmail, setCustomEmail] = useState("");
-  const [language, setLanguage] = useState<"en" | "nl">("nl");
+  // The mail goes out in the customer's preferred language unless staff pick another one.
+  const [language, setLanguage] = useState<SupportedLanguage>(() => toSupportedLanguage(customer?.preferredLanguage));
   const [templateType, setTemplateType] = useState<"contract" | "damage_check" | "combined">("contract");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
@@ -106,19 +109,19 @@ export function EmailDocumentDialog({
   useEffect(() => {
     if (!appSettings || !templateType) return;
     
+    // Nothing saved yet leaves the fields empty, as before. Once the templates are saved, a
+    // language added later (es, pt, it, ro, pl) that staff never filled in reads as its default text.
     const docTemplates = appSettings.find(s => s.key === 'document_email_templates');
-    if (docTemplates?.value && docTemplates.value[templateType]) {
-      const template = docTemplates.value[templateType][language];
-      if (template) {
-        setSubject(replacePlaceholders(template.subject));
-        setMessage(replacePlaceholders(template.message));
-      }
-    }
+    if (!docTemplates?.value) return;
+    const template = withDocumentEmailDefaults(docTemplates.value)[templateType][language];
+    setSubject(replacePlaceholders(template.subject));
+    setMessage(replacePlaceholders(template.message));
   }, [language, templateType, appSettings, customer, vehicle, reservation, relevantDamageCheck]);
 
-  // Set default recipient email when customer changes
+  // Set default recipient email and mail language when customer changes
   useEffect(() => {
     if (customer) {
+      setLanguage(toSupportedLanguage(customer.preferredLanguage));
       // Priority: emailGeneral > email (A-6-3: the plain address was never suggested)
       // > emailForInvoices > custom
       if (customer.emailGeneral) {
@@ -156,10 +159,10 @@ export function EmailDocumentDialog({
     // Reservation dates
     if (reservation) {
       const startDate = reservation.startDate 
-        ? new Date(reservation.startDate).toLocaleDateString(language === 'nl' ? 'nl-NL' : 'en-US')
+        ? new Date(reservation.startDate).toLocaleDateString(LANGUAGE_LOCALES[language])
         : '';
       const endDate = reservation.endDate 
-        ? new Date(reservation.endDate).toLocaleDateString(language === 'nl' ? 'nl-NL' : 'en-US')
+        ? new Date(reservation.endDate).toLocaleDateString(LANGUAGE_LOCALES[language])
         : '';
       result = result.replace(/{startDate}/g, startDate);
       result = result.replace(/{endDate}/g, endDate);
@@ -168,7 +171,7 @@ export function EmailDocumentDialog({
     // Damage check placeholders - only filled from a real check for this
     // reservation, so a template never goes out with invented figures.
     if (relevantDamageCheck) {
-      const locale = language === "nl" ? "nl-NL" : "en-US";
+      const locale = LANGUAGE_LOCALES[language];
       if (relevantDamageCheck.checkDate) {
         result = result.replace(/{checkDate}/g, new Date(relevantDamageCheck.checkDate).toLocaleDateString(locale));
       }
@@ -427,13 +430,14 @@ export function EmailDocumentDialog({
           {/* Language Selection */}
           <div className="space-y-3">
             <Label htmlFor="language" className="text-base font-semibold">{t('emailDialog.emailLanguage')}</Label>
-            <Select value={language} onValueChange={(val) => setLanguage(val as "en" | "nl")}>
+            <Select value={language} onValueChange={(val) => setLanguage(val as SupportedLanguage)}>
               <SelectTrigger id="language" data-testid="select-language">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="en">{t('emailDialog.english')}</SelectItem>
-                <SelectItem value="nl">{t('emailDialog.dutch')}</SelectItem>
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <SelectItem key={lang} value={lang}>{LANGUAGE_NAMES[lang]}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

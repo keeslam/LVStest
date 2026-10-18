@@ -22,8 +22,6 @@
     "combinedDocumentsEmail": "Combined Documents Email",
     "chooseTemplateHint": "Choose which template to use for this email",
     "emailLanguage": "Email Language",
-    "english": "English",
-    "dutch": "Dutch (Nederlands)",
     "subject": "Subject",
     "emailSubjectPlaceholder": "Email subject",
     "message": "Message",

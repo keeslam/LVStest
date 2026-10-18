@@ -1,6 +1,8 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
+import type { BackendModule, ReadCallback } from "i18next";
+import { SUPPORTED_LANGUAGES } from "@shared/languages";
 
 import commonNl from "./locales/nl/common.json";
 import navNl from "./locales/nl/nav.json";
@@ -44,7 +46,42 @@ import recycleBinEn from "./locales/en/recycleBin.json";
 // enough to review and edit without merge conflicts across pages.
 export const defaultNS = "common";
 
+// Dutch and English are bundled, so the app (and every test) has them at once. The other
+// languages are separate chunks, fetched the first time somebody switches to one; a
+// language is loaded whole, all namespaces in one go.
+const lazyLocaleFiles = import.meta.glob<{ default: Record<string, unknown> }>([
+  "./locales/*/*.json",
+  "!./locales/nl/*.json",
+  "!./locales/en/*.json",
+]);
+const lazyLanguageLoads = new Map<string, Promise<Map<string, Record<string, unknown>>>>();
+
+function loadLazyLanguage(lng: string): Promise<Map<string, Record<string, unknown>>> {
+  let load = lazyLanguageLoads.get(lng);
+  if (!load) {
+    const prefix = `./locales/${lng}/`;
+    const files = Object.entries(lazyLocaleFiles).filter(([path]) => path.startsWith(prefix));
+    load = Promise.all(files.map(async ([path, importFile]) => [path.slice(prefix.length, -".json".length), (await importFile()).default] as const))
+      .then((entries) => new Map(entries));
+    // A failed fetch (offline, a new deploy) may be retried on the next switch.
+    load.catch(() => lazyLanguageLoads.delete(lng));
+    lazyLanguageLoads.set(lng, load);
+  }
+  return load;
+}
+
+const lazyLocaleBackend: BackendModule = {
+  type: "backend",
+  init() {},
+  read(language: string, namespace: string, callback: ReadCallback) {
+    loadLazyLanguage(language)
+      .then((namespaces) => callback(null, namespaces.get(namespace) ?? {}))
+      .catch((error) => callback(error, false));
+  },
+};
+
 i18n
+  .use(lazyLocaleBackend)
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
@@ -90,8 +127,13 @@ i18n
         recycleBin: recycleBinEn,
       },
     },
-    // Dutch is the primary audience for this app; English stays available
-    // as a fallback so a missing key never renders blank.
+    // Only nl and en come from `resources`; the backend above fetches the rest.
+    partialBundledLanguages: true,
+    supportedLngs: [...SUPPORTED_LANGUAGES],
+    // "es-ES" or "pt-BR" is read as the language alone.
+    load: "languageOnly",
+    // Dutch is the primary audience for this app; a key a translation lacks
+    // falls back to Dutch, so it never renders blank.
     fallbackLng: "nl",
     lng: "nl",
     defaultNS,

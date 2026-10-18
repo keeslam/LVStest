@@ -29,6 +29,7 @@ import DamageCheckTemplateCanvasEditor from "@/pages/settings/damage-check-templ
 import { formatVehicleType } from "@/lib/format-utils";
 import { UserPermission } from "@shared/schema";
 import { useHasPermission } from "@/hooks/use-has-permission";
+import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, toSupportedLanguage, type SupportedLanguage } from "@shared/languages";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -557,7 +558,7 @@ function TemplateMetadataDialog({
   const [vehicleType, setVehicleType] = useState("");
   const [buildYearFrom, setBuildYearFrom] = useState("");
   const [buildYearTo, setBuildYearTo] = useState("");
-  const [language, setLanguage] = useState<"nl" | "en">("nl");
+  const [language, setLanguage] = useState<SupportedLanguage>("nl");
 
   useEffect(() => {
     if (!open) return;
@@ -568,7 +569,7 @@ function TemplateMetadataDialog({
     setVehicleType(template?.vehicleType || "");
     setBuildYearFrom(template?.buildYearFrom || "");
     setBuildYearTo(template?.buildYearTo || "");
-    setLanguage((template?.language as "nl" | "en") || "nl");
+    setLanguage(toSupportedLanguage(template?.language));
   }, [open, template]);
 
   const saveMutation = useMutation({
@@ -700,13 +701,14 @@ function TemplateMetadataDialog({
           </div>
           <div className="space-y-1">
             <Label htmlFor="tmd-language">{t('damageCheckTemplatesPage.languageLabel')}</Label>
-            <Select value={language} onValueChange={(v) => setLanguage(v as "nl" | "en")}>
+            <Select value={language} onValueChange={(v) => setLanguage(v as SupportedLanguage)}>
               <SelectTrigger id="tmd-language" data-testid="select-metadata-language">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="nl">{t('damageCheckTemplatesPage.dutchOption')}</SelectItem>
-                <SelectItem value="en">{t('damageCheckTemplatesPage.englishOption')}</SelectItem>
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <SelectItem key={lang} value={lang}>{LANGUAGE_NAMES[lang]}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

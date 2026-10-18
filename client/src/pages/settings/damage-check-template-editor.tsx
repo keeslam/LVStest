@@ -30,6 +30,7 @@ import {
   newId,
   defaultFieldFor,
 } from '@shared/damage-check-default-layout';
+import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, toSupportedLanguage, type SupportedLanguage } from "@shared/languages";
 
 interface DiagramTemplateSummary {
   id: number;
@@ -97,7 +98,7 @@ export default function DamageCheckTemplateCanvasEditor({
   const [confirmReplaceLayout, setConfirmReplaceLayout] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [language, setLanguage] = useState<'nl' | 'en'>('nl');
+  const [language, setLanguage] = useState<SupportedLanguage>('nl');
   const [headerText, setHeaderText] = useState('');
   const [footerText, setFooterText] = useState('');
   const [fields, setFields] = useState<CanvasField[]>([]);
@@ -177,7 +178,7 @@ export default function DamageCheckTemplateCanvasEditor({
     setCurrentId(t.id);
     setName(t.name);
     setDescription(t.description || '');
-    setLanguage((t.language as 'nl' | 'en') || 'nl');
+    setLanguage(toSupportedLanguage(t.language));
     setHeaderText(t.headerText || '');
     setFooterText(t.footerText || '');
     const f = Array.isArray(t.canvasFields) ? t.canvasFields : [];
@@ -835,11 +836,12 @@ export default function DamageCheckTemplateCanvasEditor({
               <div className="space-y-1.5"><Label className="text-xs">{t('templateEditorPage.descriptionLabel')}</Label><Input value={description} onChange={e => setDescription(e.target.value)} data-testid="input-template-description" /></div>
               <div className="space-y-1.5">
                 <Label className="text-xs">{t('templateEditorPage.languageLabel')}</Label>
-                <Select value={language} onValueChange={(v) => setLanguage(v as 'nl' | 'en')}>
+                <Select value={language} onValueChange={(v) => setLanguage(v as SupportedLanguage)}>
                   <SelectTrigger data-testid="select-language"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="nl">{t('templateEditorPage.dutchOption')}</SelectItem>
-                    <SelectItem value="en">{t('templateEditorPage.englishOption')}</SelectItem>
+                    {SUPPORTED_LANGUAGES.map((lang) => (
+                      <SelectItem key={lang} value={lang}>{LANGUAGE_NAMES[lang]}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

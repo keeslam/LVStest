@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { capitalizeName, formatLicensePlate } from "@/lib/format-utils";
 import { btnPrimary } from "./ui";
 import { vehicleName } from "@shared/vehicle-name";
+import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES } from "@shared/languages";
 
 const FIELDS = ["displayName", "email", "phone", "firstName", "lastName", "driverLicenseNumber", "licenseExpiry", "licenseOrigin", "preferredLanguage", "notes"] as const;
 type Field = typeof FIELDS[number];
@@ -136,8 +137,7 @@ export function DriverFormDialog({ driver, children, open: controlledOpen, onOpe
                 <div>
                   <Label htmlFor="drv-preferredLanguage">{t("fields.preferredLanguage")}</Label>
                   <select id="drv-preferredLanguage" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={values.preferredLanguage} onChange={(e) => set("preferredLanguage", e.target.value)} data-testid="select-driver-language">
-                    <option value="nl">{t("languages.nl")}</option>
-                    <option value="en">{t("languages.en")}</option>
+                    {SUPPORTED_LANGUAGES.map((lang) => <option key={lang} value={lang} lang={lang}>{LANGUAGE_NAMES[lang]}</option>)}
                   </select>
                 </div>
                 <div>

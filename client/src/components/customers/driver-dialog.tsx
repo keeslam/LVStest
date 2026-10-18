@@ -41,6 +41,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, toSupportedLanguage } from "@shared/languages";
 
 const driverFormSchema = insertDriverSchema.omit({
   customerId: true,
@@ -118,7 +119,7 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
       isPrimaryDriver: driver?.isPrimaryDriver ?? false,
       status: driver?.status ?? "active",
       notes: driver?.notes ?? "",
-      preferredLanguage: driver?.preferredLanguage ?? "nl",
+      preferredLanguage: toSupportedLanguage(driver?.preferredLanguage),
     },
   });
 
@@ -156,7 +157,7 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
       isPrimaryDriver: driver?.isPrimaryDriver ?? false,
       status: driver?.status ?? "active",
       notes: driver?.notes ?? "",
-      preferredLanguage: driver?.preferredLanguage ?? "nl",
+      preferredLanguage: toSupportedLanguage(driver?.preferredLanguage),
     });
     setSelectedFile(null);
   }, [open, driver, form, selectedFile]);
@@ -452,8 +453,9 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="nl">{t('common:language.dutch')}</SelectItem>
-                        <SelectItem value="en">{t('common:language.english')}</SelectItem>
+                        {SUPPORTED_LANGUAGES.map((lang) => (
+                          <SelectItem key={lang} value={lang}>{LANGUAGE_NAMES[lang]}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />

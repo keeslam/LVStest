@@ -18,6 +18,7 @@ import { UsersDialog } from "@/components/dialogs/users-dialog";
 import { ProfileDialog } from "@/components/dialogs/profile-dialog";
 import { SettingsDialog } from "@/components/settings/settings-dialog";
 import { ManualDialog } from "@/components/dialogs/manual-dialog";
+import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, toSupportedLanguage } from "@shared/languages";
 
 export function UserMenu() {
   const { user, logoutMutation } = useAuth();
@@ -81,9 +82,6 @@ export function UserMenu() {
     setSettingsDialogOpen(true);
   };
 
-  const toggleLanguage = () => {
-    i18n.changeLanguage(i18n.language === "nl" ? "en" : "nl");
-  };
 
   if (!user) return null;
 
@@ -121,14 +119,20 @@ export function UserMenu() {
                 {t('userMenu.profile')}
               </button>
 
-              <button
-                onClick={toggleLanguage}
-                className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left"
-                data-testid="menu-language"
-              >
-                <Languages className="mr-2 h-4 w-4" />
-                {i18n.language === 'nl' ? 'English' : 'Nederlands'}
-              </button>
+              <label className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                <Languages className="mr-2 h-4 w-4 shrink-0" />
+                <select
+                  aria-label={t('common:language.switchLanguage')}
+                  value={toSupportedLanguage(i18n.language)}
+                  onChange={(e) => i18n.changeLanguage(e.target.value)}
+                  className="w-full cursor-pointer bg-transparent text-sm focus:outline-none"
+                  data-testid="menu-language"
+                >
+                  {SUPPORTED_LANGUAGES.map((lang) => (
+                    <option key={lang} value={lang} lang={lang}>{LANGUAGE_NAMES[lang]}</option>
+                  ))}
+                </select>
+              </label>
 
               <button
                 onClick={() => {

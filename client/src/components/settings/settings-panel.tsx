@@ -54,6 +54,8 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { calculateDutchHolidays } from "@shared/holidays";
+import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES } from "@shared/languages";
+import { DOCUMENT_EMAIL_KINDS, withDocumentEmailDefaults, type DocumentEmailTemplates } from "@/lib/document-email-templates";
 
 interface EmailSetting {
   id: number;
@@ -224,39 +226,8 @@ export function SettingsPanel() {
   const [serviceReminderKm, setServiceReminderKm] = useState("1000");
   const [serviceReminderDays, setServiceReminderDays] = useState("30");
 
-  // Document Email Templates state
-  const [docEmailTemplates, setDocEmailTemplates] = useState({
-    contract: {
-      en: {
-        subject: "Your Rental Contract - {vehiclePlate}",
-        message: "Dear {customerName},\n\nPlease find attached your rental agreement for {vehiclePlate}.\n\nRental Period: {startDate} to {endDate}\n\nPlease review and keep this document for your records.\n\nBest regards,\nCar Rental Team"
-      },
-      nl: {
-        subject: "Uw Huurcontract - {vehiclePlate}",
-        message: "Beste {customerName},\n\nBijgevoegd vindt u uw huurovereenkomst voor {vehiclePlate}.\n\nHuurperiode: {startDate} tot {endDate}\n\nGelieve dit document te bewaren voor uw administratie.\n\nMet vriendelijke groet,\nAutoverhuur Team"
-      }
-    },
-    damage_check: {
-      en: {
-        subject: "Vehicle Inspection Report - {vehiclePlate}",
-        message: "Dear {customerName},\n\nPlease find attached the vehicle inspection report for {vehiclePlate}.\n\nRental Period: {startDate} to {endDate}\n\nPlease review the document carefully and contact us if you have any questions.\n\nBest regards,\nCar Rental Team"
-      },
-      nl: {
-        subject: "Schade Inspectierapport - {vehiclePlate}",
-        message: "Beste {customerName},\n\nBijgevoegd vindt u het schade inspectierapport voor {vehiclePlate}.\n\nHuurperiode: {startDate} tot {endDate}\n\nGelieve het document zorgvuldig door te nemen en contact op te nemen bij vragen.\n\nMet vriendelijke groet,\nAutoverhuur Team"
-      }
-    },
-    combined: {
-      en: {
-        subject: "Rental Documents - {vehiclePlate}",
-        message: "Dear {customerName},\n\nPlease find attached your rental documents for {vehiclePlate}:\n- Rental Contract\n- Vehicle Inspection Report\n\nRental Period: {startDate} to {endDate}\n\nPlease review all documents carefully and keep them for your records.\n\nBest regards,\nCar Rental Team"
-      },
-      nl: {
-        subject: "Huurdocumenten - {vehiclePlate}",
-        message: "Beste {customerName},\n\nBijgevoegd vindt u uw huurdocumenten voor {vehiclePlate}:\n- Huurovereenkomst\n- Schade Inspectierapport\n\nHuurperiode: {startDate} tot {endDate}\n\nGelieve alle documenten zorgvuldig door te nemen en te bewaren voor uw administratie.\n\nMet vriendelijke groet,\nAutoverhuur Team"
-      }
-    }
-  });
+  // Document Email Templates state: every kind in every language, defaults where nothing is saved yet.
+  const [docEmailTemplates, setDocEmailTemplates] = useState<DocumentEmailTemplates>(() => withDocumentEmailDefaults(undefined));
 
   // Fetch all app settings
   const { data: appSettings, isLoading: loadingSettings } = useQuery<AppSetting[]>({
@@ -475,7 +446,7 @@ export function SettingsPanel() {
     // Document Email Templates
     const docTemplates = appSettings.find(s => s.key === 'document_email_templates');
     if (docTemplates?.value) {
-      setDocEmailTemplates(docTemplates.value);
+      setDocEmailTemplates(withDocumentEmailDefaults(docTemplates.value));
     }
   }, [appSettings]);
 
@@ -1310,277 +1281,58 @@ export function SettingsPanel() {
                 </p>
               </div>
 
-              <Tabs defaultValue="en" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="en">{t('settingsPage.docEmails.englishTemplatesTab')}</TabsTrigger>
-                  <TabsTrigger value="nl">{t('settingsPage.docEmails.dutchTemplatesTab')}</TabsTrigger>
+              <Tabs defaultValue="nl" className="w-full">
+                <TabsList className="flex h-auto w-full flex-wrap justify-start">
+                  {SUPPORTED_LANGUAGES.map((lang) => (
+                    <TabsTrigger key={lang} value={lang} data-testid={`tab-doc-emails-${lang}`}>{LANGUAGE_NAMES[lang]}</TabsTrigger>
+                  ))}
                 </TabsList>
 
-                {/* English Templates */}
-                <TabsContent value="en" className="space-y-6 mt-6">
-                  {/* Contract Email - English */}
-                  <div className="space-y-4 border rounded-lg p-4 bg-gray-50">
-                    <h4 className="font-semibold text-lg flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      {t('settingsPage.docEmails.contractEmailEnglishTitle')}
-                    </h4>
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="contract-en-subject">{t('settingsPage.docEmails.subjectLineLabel')}</Label>
-                        <Input
-                          id="contract-en-subject"
-                          value={docEmailTemplates.contract.en.subject}
-                          onChange={(e) => setDocEmailTemplates(prev => ({
-                            ...prev,
-                            contract: {
-                              ...prev.contract,
-                              en: { ...prev.contract.en, subject: e.target.value }
-                            }
-                          }))}
-                          placeholder={t('settingsPage.docEmails.emailSubjectPlaceholder')}
-                          data-testid="input-contract-en-subject"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="contract-en-message">{t('settingsPage.docEmails.emailMessageLabel')}</Label>
-                        <Textarea
-                          id="contract-en-message"
-                          value={docEmailTemplates.contract.en.message}
-                          onChange={(e) => setDocEmailTemplates(prev => ({
-                            ...prev,
-                            contract: {
-                              ...prev.contract,
-                              en: { ...prev.contract.en, message: e.target.value }
-                            }
-                          }))}
-                          rows={6}
-                          placeholder={t('settingsPage.docEmails.emailMessageBodyPlaceholder')}
-                          data-testid="textarea-contract-en-message"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Damage Check Email - English */}
-                  <div className="space-y-4 border rounded-lg p-4 bg-gray-50">
-                    <h4 className="font-semibold text-lg flex items-center gap-2">
-                      <FileCheck className="h-4 w-4" />
-                      {t('settingsPage.docEmails.damageEmailEnglishTitle')}
-                    </h4>
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="damage-en-subject">{t('settingsPage.docEmails.subjectLineLabel')}</Label>
-                        <Input
-                          id="damage-en-subject"
-                          value={docEmailTemplates.damage_check.en.subject}
-                          onChange={(e) => setDocEmailTemplates(prev => ({
-                            ...prev,
-                            damage_check: {
-                              ...prev.damage_check,
-                              en: { ...prev.damage_check.en, subject: e.target.value }
-                            }
-                          }))}
-                          placeholder={t('settingsPage.docEmails.emailSubjectPlaceholder')}
-                          data-testid="input-damage-en-subject"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="damage-en-message">{t('settingsPage.docEmails.emailMessageLabel')}</Label>
-                        <Textarea
-                          id="damage-en-message"
-                          value={docEmailTemplates.damage_check.en.message}
-                          onChange={(e) => setDocEmailTemplates(prev => ({
-                            ...prev,
-                            damage_check: {
-                              ...prev.damage_check,
-                              en: { ...prev.damage_check.en, message: e.target.value }
-                            }
-                          }))}
-                          rows={6}
-                          placeholder={t('settingsPage.docEmails.emailMessageBodyPlaceholder')}
-                          data-testid="textarea-damage-en-message"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Combined Documents Email - English */}
-                  <div className="space-y-4 border rounded-lg p-4 bg-indigo-50">
-                    <h4 className="font-semibold text-lg flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      {t('settingsPage.docEmails.combinedEmailEnglishTitle')}
-                    </h4>
-                    <p className="text-sm text-gray-600">{t('settingsPage.docEmails.combinedUsedHint')}</p>
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="combined-en-subject">{t('settingsPage.docEmails.subjectLineLabel')}</Label>
-                        <Input
-                          id="combined-en-subject"
-                          value={docEmailTemplates.combined.en.subject}
-                          onChange={(e) => setDocEmailTemplates(prev => ({
-                            ...prev,
-                            combined: {
-                              ...prev.combined,
-                              en: { ...prev.combined.en, subject: e.target.value }
-                            }
-                          }))}
-                          placeholder={t('settingsPage.docEmails.emailSubjectPlaceholder')}
-                          data-testid="input-combined-en-subject"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="combined-en-message">{t('settingsPage.docEmails.emailMessageLabel')}</Label>
-                        <Textarea
-                          id="combined-en-message"
-                          value={docEmailTemplates.combined.en.message}
-                          onChange={(e) => setDocEmailTemplates(prev => ({
-                            ...prev,
-                            combined: {
-                              ...prev.combined,
-                              en: { ...prev.combined.en, message: e.target.value }
-                            }
-                          }))}
-                          rows={8}
-                          placeholder={t('settingsPage.docEmails.emailMessagePlaceholder')}
-                          data-testid="textarea-combined-en-message"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-
-                {/* Dutch Templates */}
-                <TabsContent value="nl" className="space-y-6 mt-6">
-                  {/* Contract Email - Dutch */}
-                  <div className="space-y-4 border rounded-lg p-4 bg-gray-50">
-                    <h4 className="font-semibold text-lg flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      {t('settingsPage.docEmails.contractEmailDutchTitle')}
-                    </h4>
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="contract-nl-subject">{t('settingsPage.docEmails.subjectLineLabel')}</Label>
-                        <Input
-                          id="contract-nl-subject"
-                          value={docEmailTemplates.contract.nl.subject}
-                          onChange={(e) => setDocEmailTemplates(prev => ({
-                            ...prev,
-                            contract: {
-                              ...prev.contract,
-                              nl: { ...prev.contract.nl, subject: e.target.value }
-                            }
-                          }))}
-                          placeholder={t('settingsPage.docEmails.emailSubjectPlaceholder')}
-                          data-testid="input-contract-nl-subject"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="contract-nl-message">{t('settingsPage.docEmails.emailMessageLabel')}</Label>
-                        <Textarea
-                          id="contract-nl-message"
-                          value={docEmailTemplates.contract.nl.message}
-                          onChange={(e) => setDocEmailTemplates(prev => ({
-                            ...prev,
-                            contract: {
-                              ...prev.contract,
-                              nl: { ...prev.contract.nl, message: e.target.value }
-                            }
-                          }))}
-                          rows={6}
-                          placeholder={t('settingsPage.docEmails.emailMessageBodyPlaceholder')}
-                          data-testid="textarea-contract-nl-message"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Damage Check Email - Dutch */}
-                  <div className="space-y-4 border rounded-lg p-4 bg-gray-50">
-                    <h4 className="font-semibold text-lg flex items-center gap-2">
-                      <FileCheck className="h-4 w-4" />
-                      {t('settingsPage.docEmails.damageEmailDutchTitle')}
-                    </h4>
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="damage-nl-subject">{t('settingsPage.docEmails.subjectLineLabel')}</Label>
-                        <Input
-                          id="damage-nl-subject"
-                          value={docEmailTemplates.damage_check.nl.subject}
-                          onChange={(e) => setDocEmailTemplates(prev => ({
-                            ...prev,
-                            damage_check: {
-                              ...prev.damage_check,
-                              nl: { ...prev.damage_check.nl, subject: e.target.value }
-                            }
-                          }))}
-                          placeholder={t('settingsPage.docEmails.emailSubjectPlaceholder')}
-                          data-testid="input-damage-nl-subject"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="damage-nl-message">{t('settingsPage.docEmails.emailMessageLabel')}</Label>
-                        <Textarea
-                          id="damage-nl-message"
-                          value={docEmailTemplates.damage_check.nl.message}
-                          onChange={(e) => setDocEmailTemplates(prev => ({
-                            ...prev,
-                            damage_check: {
-                              ...prev.damage_check,
-                              nl: { ...prev.damage_check.nl, message: e.target.value }
-                            }
-                          }))}
-                          rows={6}
-                          placeholder={t('settingsPage.docEmails.emailMessageBodyPlaceholder')}
-                          data-testid="textarea-damage-nl-message"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Combined Documents Email - Dutch */}
-                  <div className="space-y-4 border rounded-lg p-4 bg-indigo-50">
-                    <h4 className="font-semibold text-lg flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      {t('settingsPage.docEmails.combinedEmailDutchTitle')}
-                    </h4>
-                    <p className="text-sm text-gray-600">{t('settingsPage.docEmails.combinedUsedHintDutchTab')}</p>
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="combined-nl-subject">{t('settingsPage.docEmails.subjectLineLabel')}</Label>
-                        <Input
-                          id="combined-nl-subject"
-                          value={docEmailTemplates.combined.nl.subject}
-                          onChange={(e) => setDocEmailTemplates(prev => ({
-                            ...prev,
-                            combined: {
-                              ...prev.combined,
-                              nl: { ...prev.combined.nl, subject: e.target.value }
-                            }
-                          }))}
-                          placeholder={t('settingsPage.docEmails.emailSubjectPlaceholder')}
-                          data-testid="input-combined-nl-subject"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="combined-nl-message">{t('settingsPage.docEmails.emailMessageLabel')}</Label>
-                        <Textarea
-                          id="combined-nl-message"
-                          value={docEmailTemplates.combined.nl.message}
-                          onChange={(e) => setDocEmailTemplates(prev => ({
-                            ...prev,
-                            combined: {
-                              ...prev.combined,
-                              nl: { ...prev.combined.nl, message: e.target.value }
-                            }
-                          }))}
-                          rows={8}
-                          placeholder={t('settingsPage.docEmails.emailMessageBodyPlaceholder')}
-                          data-testid="textarea-combined-nl-message"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <TabsContent key={lang} value={lang} className="space-y-6 mt-6">
+                    {DOCUMENT_EMAIL_KINDS.map((kind) => {
+                      // The ids and test ids keep the names they had when there were only en and nl tabs.
+                      const idPart = kind === "damage_check" ? "damage" : kind;
+                      const update = (field: "subject" | "message", value: string) => setDocEmailTemplates(prev => ({
+                        ...prev,
+                        [kind]: { ...prev[kind], [lang]: { ...prev[kind][lang], [field]: value } },
+                      }));
+                      const titleKey = kind === "contract" ? "contractEmailTitle" : kind === "damage_check" ? "damageEmailTitle" : "combinedEmailTitle";
+                      return (
+                        <div key={kind} className={kind === "combined" ? "space-y-4 border rounded-lg p-4 bg-indigo-50" : "space-y-4 border rounded-lg p-4 bg-gray-50"}>
+                          <h4 className="font-semibold text-lg flex items-center gap-2">
+                            <FileText className="h-4 w-4" />
+                            {t(`settingsPage.docEmails.${titleKey}`, { language: LANGUAGE_NAMES[lang] })}
+                          </h4>
+                          {kind === "combined" && <p className="text-sm text-gray-600">{t('settingsPage.docEmails.combinedUsedHint')}</p>}
+                          <div className="space-y-3">
+                            <div>
+                              <Label htmlFor={`${idPart}-${lang}-subject`}>{t('settingsPage.docEmails.subjectLineLabel')}</Label>
+                              <Input
+                                id={`${idPart}-${lang}-subject`}
+                                value={docEmailTemplates[kind][lang].subject}
+                                onChange={(e) => update("subject", e.target.value)}
+                                placeholder={t('settingsPage.docEmails.emailSubjectPlaceholder')}
+                                data-testid={`input-${idPart}-${lang}-subject`}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`${idPart}-${lang}-message`}>{t('settingsPage.docEmails.emailMessageLabel')}</Label>
+                              <Textarea
+                                id={`${idPart}-${lang}-message`}
+                                value={docEmailTemplates[kind][lang].message}
+                                onChange={(e) => update("message", e.target.value)}
+                                rows={kind === "combined" ? 8 : 6}
+                                placeholder={t('settingsPage.docEmails.emailMessageBodyPlaceholder')}
+                                data-testid={`textarea-${idPart}-${lang}-message`}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </TabsContent>
+                ))}
               </Tabs>
 
               <Button

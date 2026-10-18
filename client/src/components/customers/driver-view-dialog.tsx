@@ -15,6 +15,7 @@ import { Driver, Reservation } from "@shared/schema";
 import { formatDate, formatPhoneNumber, formatReservationStatus, formatLicensePlate } from "@/lib/format-utils";
 import { User, Mail, Phone, CreditCard, Calendar, Car, FileText, Globe } from "lucide-react";
 import { RecordHistory } from "@/components/audit/record-history";
+import { LANGUAGE_NAMES, toSupportedLanguage } from "@shared/languages";
 
 interface DriverViewDialogProps {
   driver: Driver | null;
@@ -100,7 +101,7 @@ export function DriverViewDialog({ driver, activeReservation, open, onOpenChange
                   <Globe className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm" data-testid="text-driver-language">
                     {t('driverView.preferredLanguage', {
-                      language: driver.preferredLanguage === 'nl' ? t('common:language.dutch') : t('common:language.english')
+                      language: LANGUAGE_NAMES[toSupportedLanguage(driver.preferredLanguage)]
                     })}
                   </span>
                 </div>
