@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, UserRound } from "lucide-react";
+import { Search, UserRound, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { formatInOfficeZone } from "@/lib/office-timezone";
 
@@ -120,6 +121,22 @@ export function MoreFooter({ shown, total, onMore, testId }: { shown: number; to
       <button type="button" onClick={onMore} className="inline-flex items-center gap-1 rounded-full border border-[#e6e8f0] bg-white px-3 py-1 text-xs font-medium text-[#1a1d62] hover:bg-[#eef0fb]" data-testid={testId}>
         <Search className="h-3.5 w-3.5" />{t("overview.viewAll")}
       </button>
+    </div>
+  );
+}
+
+/** Rows per page of a long portal list (Kees, 2026-10-18: customers with 80-100 cars). */
+export const PORTAL_PAGE_SIZE = 20;
+
+/** "‹ Vorige · Pagina 2 van 5 · Volgende ›" under a long list; renders nothing for a single page. */
+export function Pager({ page, pages, onPage, testId = "pager" }: { page: number; pages: number; onPage: (page: number) => void; testId?: string }) {
+  const { t } = useTranslation("portal");
+  if (pages <= 1) return null;
+  return (
+    <div className="flex items-center justify-between gap-2 border-t border-[#e6e8f0] px-3 py-2 text-xs text-[#64748b] sm:px-4" data-testid={testId}>
+      <Button size="sm" variant="ghost" disabled={page === 0} onClick={() => onPage(page - 1)} data-testid="pager-prev"><ChevronLeft className="mr-1 h-4 w-4" />{t("lists.pager.prev")}</Button>
+      <span>{t("lists.pager.page", { page: page + 1, pages })}</span>
+      <Button size="sm" variant="ghost" disabled={page >= pages - 1} onClick={() => onPage(page + 1)} data-testid="pager-next">{t("lists.pager.next")}<ChevronRight className="ml-1 h-4 w-4" /></Button>
     </div>
   );
 }

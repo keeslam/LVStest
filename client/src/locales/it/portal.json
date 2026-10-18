@@ -187,9 +187,6 @@
       "search": "Cerca per targa, veicolo, tipo o data…",
       "showOld": "Mostra versioni precedenti",
       "showAllToSign": "Mostra tutti ({{n}})",
-      "prev": "Precedente",
-      "next": "Successiva",
-      "page": "Pagina {{page}} di {{pages}}",
       "col": {
         "date": "Data",
         "document": "Documento",
@@ -262,7 +259,20 @@
     "notGiven": "Non indicato",
     "noLicense": "Patente non indicata",
     "noExpiry": "validità sconosciuta",
-    "maskedHint": "Per motivi di privacy mostriamo solo le ultime cifre. Il numero completo è disponibile in Modificare."
+    "maskedHint": "Per motivi di privacy mostriamo solo le ultime cifre. Il numero completo è disponibile in Modificare.",
+    "filter": {
+      "active": "Attivi",
+      "driving": "Alla guida ora",
+      "noCar": "Senza veicolo",
+      "inactive": "Disattivati"
+    },
+    "col": {
+      "driver": "Conducente",
+      "car": "Veicolo",
+      "license": "Patente"
+    },
+    "noContact": "Nessuna e-mail o telefono",
+    "more": "Altre azioni per {{name}}"
   },
   "account": {
     "title": "Il mio account",
@@ -1328,7 +1338,12 @@
     "searchFines": "Cercare per descrizione, targa, conducente, riferimento…",
     "searchRequests": "Cercare per tipo, messaggio o numero…",
     "searchDocuments": "Cercare per nome del file o prenotazione…",
-    "searchDrivers": "Cercare per nome, e-mail, telefono o patente…"
+    "searchDrivers": "Cercare per nome, e-mail, telefono o patente…",
+    "pager": {
+      "prev": "Precedente",
+      "next": "Successiva",
+      "page": "Pagina {{page}} di {{pages}}"
+    }
   },
   "vehicles": {
     "title": "Disponibili per il noleggio",

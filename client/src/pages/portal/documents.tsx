@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { FileText, ShieldCheck, PenLine, Eye, Download, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
+import { FileText, ShieldCheck, PenLine, Eye, Download, CheckCircle2 } from "lucide-react";
 import type { PortalDocumentDto, PortalReservationDto } from "@shared/portal-types";
 import { vehicleName } from "@shared/vehicle-name";
 import { formatLicensePlate } from "@shared/license-plate";
@@ -14,10 +14,10 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { SignContractDialog } from "@/components/portal/sign-contract-dialog";
-import { EmptyState, PageHeader, Section, SearchBox, usePortalSearch, PortalLoading, PortalLoadError, btnPrimary, btnSecondary } from "@/components/portal/ui";
+import { EmptyState, PageHeader, Section, SearchBox, Pager, PORTAL_PAGE_SIZE, usePortalSearch, PortalLoading, PortalLoadError, btnPrimary, btnSecondary } from "@/components/portal/ui";
 
 /** Rows per page of the archive; a customer with 40-50 cars still gets a calm page. */
-export const DOCUMENTS_PAGE_SIZE = 20;
+export const DOCUMENTS_PAGE_SIZE = PORTAL_PAGE_SIZE;
 /** The to-sign list shows this many before "Toon alle". */
 const TO_SIGN_PREVIEW = 8;
 
@@ -180,13 +180,7 @@ export default function PortalDocumentsPage() {
                 );
               })}
             </div>
-            {pages > 1 && (
-              <div className="flex items-center justify-between gap-2 border-t border-[#e6e8f0] px-3 py-2 text-xs text-[#64748b] sm:px-4" data-testid="documents-pager">
-                <Button size="sm" variant="ghost" disabled={current === 0} onClick={() => setPage(current - 1)} data-testid="pager-prev"><ChevronLeft className="mr-1 h-4 w-4" />{t("documents.list.prev")}</Button>
-                <span>{t("documents.list.page", { page: current + 1, pages })}</span>
-                <Button size="sm" variant="ghost" disabled={current >= pages - 1} onClick={() => setPage(current + 1)} data-testid="pager-next">{t("documents.list.next")}<ChevronRight className="ml-1 h-4 w-4" /></Button>
-              </div>
-            )}
+            <Pager page={current} pages={pages} onPage={setPage} testId="documents-pager" />
           </div>
         )}
       </Section>

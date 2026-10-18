@@ -182,9 +182,6 @@
       "search": "Zoeken op kenteken, auto, soort of datum…",
       "showOld": "Oude versies tonen",
       "showAllToSign": "Toon alle {{n}}",
-      "prev": "Vorige",
-      "next": "Volgende",
-      "page": "Pagina {{page}} van {{pages}}",
       "col": {
         "date": "Datum",
         "document": "Document",
@@ -256,7 +253,20 @@
     "notGiven": "Niet opgegeven",
     "noLicense": "Rijbewijs niet opgegeven",
     "noExpiry": "geldigheid onbekend",
-    "maskedHint": "Om privacyredenen tonen we alleen de laatste cijfers. Het volledige nummer staat bij Bewerken."
+    "maskedHint": "Om privacyredenen tonen we alleen de laatste cijfers. Het volledige nummer staat bij Bewerken.",
+    "filter": {
+      "active": "Actief",
+      "driving": "Rijdt nu",
+      "noCar": "Zonder auto",
+      "inactive": "Gedeactiveerd"
+    },
+    "col": {
+      "driver": "Bestuurder",
+      "car": "Auto",
+      "license": "Rijbewijs"
+    },
+    "noContact": "Geen e-mail of telefoon",
+    "more": "Meer acties voor {{name}}"
   },
   "account": {
     "title": "Mijn account",
@@ -1319,7 +1329,12 @@
     "searchFines": "Zoeken op omschrijving, kenteken, bestuurder, kenmerk…",
     "searchRequests": "Zoeken op type, bericht of nummer…",
     "searchDocuments": "Zoeken op bestandsnaam of reservering…",
-    "searchDrivers": "Zoeken op naam, e-mail, telefoon of rijbewijs…"
+    "searchDrivers": "Zoeken op naam, e-mail, telefoon of rijbewijs…",
+    "pager": {
+      "prev": "Vorige",
+      "next": "Volgende",
+      "page": "Pagina {{page}} van {{pages}}"
+    }
   },
   "vehicles": {
     "title": "Beschikbaar om te huren",

@@ -187,9 +187,6 @@
       "search": "Pesquisar por matrícula, veículo, tipo ou data…",
       "showOld": "Mostrar versões antigas",
       "showAllToSign": "Mostrar todos ({{n}})",
-      "prev": "Anterior",
-      "next": "Seguinte",
-      "page": "Página {{page}} de {{pages}}",
       "col": {
         "date": "Data",
         "document": "Documento",
@@ -262,7 +259,20 @@
     "notGiven": "Não indicado",
     "noLicense": "Carta de condução não indicada",
     "noExpiry": "validade desconhecida",
-    "maskedHint": "Por motivos de privacidade, mostramos apenas os últimos algarismos. O número completo encontra-se em Editar."
+    "maskedHint": "Por motivos de privacidade, mostramos apenas os últimos algarismos. O número completo encontra-se em Editar.",
+    "filter": {
+      "active": "Ativos",
+      "driving": "A conduzir agora",
+      "noCar": "Sem veículo",
+      "inactive": "Desativados"
+    },
+    "col": {
+      "driver": "Condutor",
+      "car": "Veículo",
+      "license": "Carta de condução"
+    },
+    "noContact": "Sem e-mail nem telefone",
+    "more": "Mais ações para {{name}}"
   },
   "account": {
     "title": "A minha conta",
@@ -1328,7 +1338,12 @@
     "searchFines": "Pesquisar por descrição, matrícula, condutor, referência…",
     "searchRequests": "Pesquisar por tipo, mensagem ou número…",
     "searchDocuments": "Pesquisar por nome de ficheiro ou reserva…",
-    "searchDrivers": "Pesquisar por nome, e-mail, telefone ou carta de condução…"
+    "searchDrivers": "Pesquisar por nome, e-mail, telefone ou carta de condução…",
+    "pager": {
+      "prev": "Anterior",
+      "next": "Seguinte",
+      "page": "Página {{page}} de {{pages}}"
+    }
   },
   "vehicles": {
     "title": "Disponíveis para alugar",

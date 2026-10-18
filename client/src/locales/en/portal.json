@@ -182,9 +182,6 @@
       "search": "Search by plate, car, type or date…",
       "showOld": "Show old versions",
       "showAllToSign": "Show all {{n}}",
-      "prev": "Previous",
-      "next": "Next",
-      "page": "Page {{page}} of {{pages}}",
       "col": {
         "date": "Date",
         "document": "Document",
@@ -256,7 +253,20 @@
     "notGiven": "Not given",
     "noLicense": "Licence not given",
     "noExpiry": "expiry unknown",
-    "maskedHint": "For privacy only the last digits are shown. The full number is under Edit."
+    "maskedHint": "For privacy only the last digits are shown. The full number is under Edit.",
+    "filter": {
+      "active": "Active",
+      "driving": "Driving now",
+      "noCar": "Without a car",
+      "inactive": "Deactivated"
+    },
+    "col": {
+      "driver": "Driver",
+      "car": "Car",
+      "license": "Licence"
+    },
+    "noContact": "No e-mail or phone",
+    "more": "More actions for {{name}}"
   },
   "account": {
     "title": "My account",
@@ -1319,7 +1329,12 @@
     "searchFines": "Search by description, plate, driver, reference…",
     "searchRequests": "Search by type, message or number…",
     "searchDocuments": "Search by file name or reservation…",
-    "searchDrivers": "Search by name, e-mail, phone or licence…"
+    "searchDrivers": "Search by name, e-mail, phone or licence…",
+    "pager": {
+      "prev": "Previous",
+      "next": "Next",
+      "page": "Page {{page}} of {{pages}}"
+    }
   },
   "vehicles": {
     "title": "Available to rent",

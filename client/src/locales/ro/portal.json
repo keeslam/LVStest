@@ -187,9 +187,6 @@
       "search": "Căutați după număr, vehicul, tip sau dată…",
       "showOld": "Afișați versiunile vechi",
       "showAllToSign": "Afișați toate ({{n}})",
-      "prev": "Înapoi",
-      "next": "Înainte",
-      "page": "Pagina {{page}} din {{pages}}",
       "col": {
         "date": "Data",
         "document": "Document",
@@ -262,7 +259,20 @@
     "notGiven": "Nu a fost indicat",
     "noLicense": "Permis de conducere neindicat",
     "noExpiry": "valabilitate necunoscută",
-    "maskedHint": "Din motive de confidențialitate afișăm doar ultimele cifre. Numărul complet se află la Modifică."
+    "maskedHint": "Din motive de confidențialitate afișăm doar ultimele cifre. Numărul complet se află la Modifică.",
+    "filter": {
+      "active": "Activi",
+      "driving": "Conduc acum",
+      "noCar": "Fără vehicul",
+      "inactive": "Dezactivați"
+    },
+    "col": {
+      "driver": "Șofer",
+      "car": "Vehicul",
+      "license": "Permis"
+    },
+    "noContact": "Fără e-mail sau telefon",
+    "more": "Mai multe acțiuni pentru {{name}}"
   },
   "account": {
     "title": "Contul meu",
@@ -1328,7 +1338,12 @@
     "searchFines": "Căutați după descriere, număr de înmatriculare, șofer, număr de referință…",
     "searchRequests": "Căutați după tip, mesaj sau număr…",
     "searchDocuments": "Căutați după numele fișierului sau rezervare…",
-    "searchDrivers": "Căutați după nume, e-mail, telefon sau permis de conducere…"
+    "searchDrivers": "Căutați după nume, e-mail, telefon sau permis de conducere…",
+    "pager": {
+      "prev": "Înapoi",
+      "next": "Înainte",
+      "page": "Pagina {{page}} din {{pages}}"
+    }
   },
   "vehicles": {
     "title": "Disponibile pentru închiriere",

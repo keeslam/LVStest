@@ -187,9 +187,6 @@
       "search": "Buscar por matrícula, vehículo, tipo o fecha…",
       "showOld": "Mostrar versiones antiguas",
       "showAllToSign": "Mostrar los {{n}}",
-      "prev": "Anterior",
-      "next": "Siguiente",
-      "page": "Página {{page}} de {{pages}}",
       "col": {
         "date": "Fecha",
         "document": "Documento",
@@ -262,7 +259,20 @@
     "notGiven": "No indicado",
     "noLicense": "Permiso de conducir no indicado",
     "noExpiry": "validez desconocida",
-    "maskedHint": "Por motivos de privacidad solo mostramos las últimas cifras. El número completo está en Editar."
+    "maskedHint": "Por motivos de privacidad solo mostramos las últimas cifras. El número completo está en Editar.",
+    "filter": {
+      "active": "Activos",
+      "driving": "Conduciendo ahora",
+      "noCar": "Sin vehículo",
+      "inactive": "Desactivados"
+    },
+    "col": {
+      "driver": "Conductor",
+      "car": "Vehículo",
+      "license": "Permiso de conducir"
+    },
+    "noContact": "Sin correo ni teléfono",
+    "more": "Más acciones para {{name}}"
   },
   "account": {
     "title": "Mi cuenta",
@@ -1328,7 +1338,12 @@
     "searchFines": "Buscar por descripción, matrícula, conductor, referencia…",
     "searchRequests": "Buscar por tipo, mensaje o número…",
     "searchDocuments": "Buscar por nombre de archivo o reserva…",
-    "searchDrivers": "Buscar por nombre, correo electrónico, teléfono o permiso de conducir…"
+    "searchDrivers": "Buscar por nombre, correo electrónico, teléfono o permiso de conducir…",
+    "pager": {
+      "prev": "Anterior",
+      "next": "Siguiente",
+      "page": "Página {{page}} de {{pages}}"
+    }
   },
   "vehicles": {
     "title": "Disponibles para alquilar",

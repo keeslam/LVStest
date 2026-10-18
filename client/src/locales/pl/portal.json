@@ -192,9 +192,6 @@
       "search": "Szukaj po numerze, pojeździe, rodzaju lub dacie…",
       "showOld": "Pokaż starsze wersje",
       "showAllToSign": "Pokaż wszystkie ({{n}})",
-      "prev": "Poprzednia",
-      "next": "Następna",
-      "page": "Strona {{page}} z {{pages}}",
       "col": {
         "date": "Data",
         "document": "Dokument",
@@ -268,7 +265,20 @@
     "notGiven": "Nie podano",
     "noLicense": "Nie podano prawa jazdy",
     "noExpiry": "termin ważności nieznany",
-    "maskedHint": "Ze względu na prywatność pokazujemy tylko ostatnie cyfry. Pełny numer jest dostępny w opcji Edytuj."
+    "maskedHint": "Ze względu na prywatność pokazujemy tylko ostatnie cyfry. Pełny numer jest dostępny w opcji Edytuj.",
+    "filter": {
+      "active": "Aktywni",
+      "driving": "Jeżdżą teraz",
+      "noCar": "Bez pojazdu",
+      "inactive": "Dezaktywowani"
+    },
+    "col": {
+      "driver": "Kierowca",
+      "car": "Pojazd",
+      "license": "Prawo jazdy"
+    },
+    "noContact": "Brak e-maila i telefonu",
+    "more": "Więcej działań dla {{name}}"
   },
   "account": {
     "title": "Moje konto",
@@ -1337,7 +1347,12 @@
     "searchFines": "Szukaj według opisu, numeru rejestracyjnego, kierowcy, sygnatury…",
     "searchRequests": "Szukaj według typu, wiadomości lub numeru…",
     "searchDocuments": "Szukaj według nazwy pliku lub rezerwacji…",
-    "searchDrivers": "Szukaj według nazwy, e-maila, telefonu lub prawa jazdy…"
+    "searchDrivers": "Szukaj według nazwy, e-maila, telefonu lub prawa jazdy…",
+    "pager": {
+      "prev": "Poprzednia",
+      "next": "Następna",
+      "page": "Strona {{page}} z {{pages}}"
+    }
   },
   "vehicles": {
     "title": "Dostępne do wynajęcia",
