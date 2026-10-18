@@ -1352,6 +1352,11 @@
       "prev": "Poprzednia",
       "next": "Następna",
       "page": "Strona {{page}} z {{pages}}"
+    },
+    "filter": {
+      "open": "Otwarte",
+      "closed": "Zamknięte",
+      "all": "Wszystkie"
     }
   },
   "vehicles": {
@@ -1389,7 +1394,11 @@
     "changeTooLate": "Zmiana jest możliwa do 48 godzin wcześniej. Prosimy zadzwonić do Lam Groep: {{phone}}",
     "changePending": "Zgłoszono zmianę (#{{id}})",
     "requestPending": "Wyświetl zgłoszenie serwisowe #{{id}}",
-    "viewAll": "Wyświetl wszystko i wyszukaj"
+    "viewAll": "Wyświetl wszystko i wyszukaj",
+    "filter": {
+      "apk": "Przegląd w ciągu 30 dni",
+      "maintenance": "Serwis"
+    }
   },
   "period": {
     "pick": "Wybierz okres",

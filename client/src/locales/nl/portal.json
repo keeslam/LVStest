@@ -1334,6 +1334,11 @@
       "prev": "Vorige",
       "next": "Volgende",
       "page": "Pagina {{page}} van {{pages}}"
+    },
+    "filter": {
+      "open": "Open",
+      "closed": "Afgehandeld",
+      "all": "Alles"
     }
   },
   "vehicles": {
@@ -1371,7 +1376,11 @@
     "changeTooLate": "Wijzigen kan tot 48 uur van tevoren. Bel Lam Groep: {{phone}}",
     "changePending": "Wijziging aangevraagd (#{{id}})",
     "requestPending": "Onderhoudsmelding #{{id}} bekijken",
-    "viewAll": "Alles bekijken en zoeken"
+    "viewAll": "Alles bekijken en zoeken",
+    "filter": {
+      "apk": "APK binnen 30 dagen",
+      "maintenance": "Onderhoud"
+    }
   },
   "period": {
     "pick": "Kies een periode",

@@ -1343,6 +1343,11 @@
       "prev": "Anterior",
       "next": "Siguiente",
       "page": "Página {{page}} de {{pages}}"
+    },
+    "filter": {
+      "open": "Abiertos",
+      "closed": "Cerrados",
+      "all": "Todos"
     }
   },
   "vehicles": {
@@ -1380,7 +1385,11 @@
     "changeTooLate": "Se puede modificar hasta 48 horas antes. Llame a Lam Groep: {{phone}}",
     "changePending": "Modificación solicitada (#{{id}})",
     "requestPending": "Ver el aviso de mantenimiento #{{id}}",
-    "viewAll": "Ver todo y buscar"
+    "viewAll": "Ver todo y buscar",
+    "filter": {
+      "apk": "ITV en 30 días",
+      "maintenance": "Mantenimiento"
+    }
   },
   "period": {
     "pick": "Elija un periodo",

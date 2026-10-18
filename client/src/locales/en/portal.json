@@ -1334,6 +1334,11 @@
       "prev": "Previous",
       "next": "Next",
       "page": "Page {{page}} of {{pages}}"
+    },
+    "filter": {
+      "open": "Open",
+      "closed": "Closed",
+      "all": "All"
     }
   },
   "vehicles": {
@@ -1371,7 +1376,11 @@
     "changeTooLate": "Changes are possible until 48 hours before. Call Lam Groep: {{phone}}",
     "changePending": "Change requested (#{{id}})",
     "requestPending": "View maintenance report #{{id}}",
-    "viewAll": "View all and search"
+    "viewAll": "View all and search",
+    "filter": {
+      "apk": "MOT within 30 days",
+      "maintenance": "Maintenance"
+    }
   },
   "period": {
     "pick": "Choose a period",

@@ -6,10 +6,13 @@ import type { PortalReservationDto } from "@shared/portal-types";
 import { portalQueryFn } from "@/lib/portal-api";
 import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { ReservationCard } from "@/components/portal/reservation-card";
-import { EmptyState, PageHeader, SearchBox, usePortalSearch, PortalLoading, PortalLoadError } from "@/components/portal/ui";
+import { EmptyState, PageHeader, SearchBox, usePortalPages, usePortalSearch, PortalLoading, PortalLoadError } from "@/components/portal/ui";
 
 const FILTERS = ["active", "upcoming", "past", "all"] as const;
 type Filter = typeof FILTERS[number];
+
+const inFilter = (f: Filter, r: PortalReservationDto) =>
+  f === "all" ? true : f === "active" ? r.status === "picked_up" : f === "upcoming" ? r.status === "booked" : !["picked_up", "booked"].includes(r.status);
 
 export default function PortalReservationsPage() {
   const { t } = useTranslation("portal");
@@ -17,11 +20,11 @@ export default function PortalReservationsPage() {
   const [filter, setFilter] = useState<Filter>("active");
   const { query, setQuery, q, hit } = usePortalSearch();
   const { data = [], isLoading, isError, refetch } = useQuery<PortalReservationDto[]>({ queryKey: ["portal", "/api/portal/reservations"], queryFn: portalQueryFn });
+  const listed = data.filter((r) => inFilter(filter, r)).filter((r) => hit(r.vehicle?.brand, r.vehicle?.model, r.vehicle?.licensePlate, r.driver?.displayName, r.contractNumber, r.startDate, r.endDate));
+  // Kees, 2026-10-18: customers with 80-100 cars get the list a page at a time.
+  const { shown, pager } = usePortalPages(listed, `${filter}|${q}`, "reservations-pager");
   if (isLoading) return <PortalLoading />;
   if (isError) return <PortalLoadError onRetry={() => refetch()} />;
-  const matches = (r: PortalReservationDto) =>
-    filter === "all" ? true : filter === "active" ? r.status === "picked_up" : filter === "upcoming" ? r.status === "booked" : !["picked_up", "booked"].includes(r.status);
-  const shown = data.filter(matches).filter((r) => hit(r.vehicle?.brand, r.vehicle?.model, r.vehicle?.licensePlate, r.driver?.displayName, r.contractNumber, r.startDate, r.endDate));
 
   return (
     <div className="space-y-4">
@@ -32,13 +35,13 @@ export default function PortalReservationsPage() {
           <button key={f} type="button" role="tab" aria-selected={filter === f} onClick={() => setFilter(f)}
             className={`rounded-full px-3 py-1.5 text-sm transition-colors ${filter === f ? "bg-[#1a1d62] font-medium text-white" : "bg-white text-[#334155] ring-1 ring-[#e6e8f0] hover:bg-[#eef0fb]"}`}
             data-testid={`filter-${f}`}>
-            {t(`reservations.filters.${f}`)} <span className="opacity-70">({data.filter((r) => f === "all" ? true : f === "active" ? r.status === "picked_up" : f === "upcoming" ? r.status === "booked" : !["picked_up", "booked"].includes(r.status)).length})</span>
+            {t(`reservations.filters.${f}`)} <span className="opacity-70">({data.filter((r) => inFilter(f, r)).length})</span>
           </button>
         ))}
       </div>
-      {shown.length === 0
+      {listed.length === 0
         ? <EmptyState icon={<CalendarDays className="h-6 w-6" />} text={data.length === 0 ? t("reservations.empty") : q ? t("lists.noMatch") : t("reservations.emptyFilter")} />
-        : <div className="space-y-2">{shown.map((r) => <ReservationCard key={r.id} reservation={r} showPrice={Boolean(me?.settings.showPrices)} />)}</div>}
+        : <div className="space-y-2">{shown.map((r) => <ReservationCard key={r.id} reservation={r} showPrice={Boolean(me?.settings.showPrices)} />)}{pager}</div>}
     </div>
   );
 }

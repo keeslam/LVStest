@@ -1343,6 +1343,11 @@
       "prev": "Înapoi",
       "next": "Înainte",
       "page": "Pagina {{page}} din {{pages}}"
+    },
+    "filter": {
+      "open": "Deschise",
+      "closed": "Închise",
+      "all": "Toate"
     }
   },
   "vehicles": {
@@ -1380,7 +1385,11 @@
     "changeTooLate": "Modificarea este posibilă cu până la 48 de ore înainte. Sunați la Lam Groep: {{phone}}",
     "changePending": "Modificare solicitată (#{{id}})",
     "requestPending": "Vezi notificarea de mentenanță #{{id}}",
-    "viewAll": "Vezi tot și caută"
+    "viewAll": "Vezi tot și caută",
+    "filter": {
+      "apk": "ITP în 30 de zile",
+      "maintenance": "Întreținere"
+    }
   },
   "period": {
     "pick": "Alegeți o perioadă",

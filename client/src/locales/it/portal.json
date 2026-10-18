@@ -1343,6 +1343,11 @@
       "prev": "Precedente",
       "next": "Successiva",
       "page": "Pagina {{page}} di {{pages}}"
+    },
+    "filter": {
+      "open": "Aperti",
+      "closed": "Chiusi",
+      "all": "Tutti"
     }
   },
   "vehicles": {
@@ -1380,7 +1385,11 @@
     "changeTooLate": "La modifica è possibile fino a 48 ore prima. Telefoni a Lam Groep: {{phone}}",
     "changePending": "Modifica richiesta (#{{id}})",
     "requestPending": "Visualizzare la segnalazione di manutenzione #{{id}}",
-    "viewAll": "Vedere tutto e cercare"
+    "viewAll": "Vedere tutto e cercare",
+    "filter": {
+      "apk": "Revisione entro 30 giorni",
+      "maintenance": "Manutenzione"
+    }
   },
   "period": {
     "pick": "Scegliere un periodo",

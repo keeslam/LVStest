@@ -1343,6 +1343,11 @@
       "prev": "Anterior",
       "next": "Seguinte",
       "page": "Página {{page}} de {{pages}}"
+    },
+    "filter": {
+      "open": "Abertos",
+      "closed": "Concluídos",
+      "all": "Todos"
     }
   },
   "vehicles": {
@@ -1380,7 +1385,11 @@
     "changeTooLate": "É possível alterar até 48 horas antes. Telefone para a Lam Groep: {{phone}}",
     "changePending": "Alteração pedida (n.º {{id}})",
     "requestPending": "Ver comunicação de manutenção n.º {{id}}",
-    "viewAll": "Ver tudo e pesquisar"
+    "viewAll": "Ver tudo e pesquisar",
+    "filter": {
+      "apk": "Inspeção em 30 dias",
+      "maintenance": "Manutenção"
+    }
   },
   "period": {
     "pick": "Escolha um período",
