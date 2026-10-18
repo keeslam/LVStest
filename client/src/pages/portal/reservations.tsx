@@ -4,6 +4,10 @@ import { useTranslation } from "react-i18next";
 import { CalendarDays } from "lucide-react";
 import type { PortalReservationDto } from "@shared/portal-types";
 import { portalQueryFn } from "@/lib/portal-api";
+import { csvDate, csvNumber } from "@/lib/csv";
+import { vehicleName } from "@shared/vehicle-name";
+import { formatLicensePlate } from "@shared/license-plate";
+import { PortalExportButton } from "@/components/portal/export-button";
 import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { ReservationCard } from "@/components/portal/reservation-card";
 import { EmptyState, PageHeader, SearchBox, usePortalPages, usePortalSearch, PortalLoading, PortalLoadError } from "@/components/portal/ui";
@@ -23,12 +27,22 @@ export default function PortalReservationsPage() {
   const listed = data.filter((r) => inFilter(filter, r)).filter((r) => hit(r.vehicle?.brand, r.vehicle?.model, r.vehicle?.licensePlate, r.driver?.displayName, r.contractNumber, r.startDate, r.endDate));
   // Kees, 2026-10-18: customers with 80-100 cars get the list a page at a time.
   const { shown, pager } = usePortalPages(listed, `${filter}|${q}`, "reservations-pager");
+  // The export takes the whole filtered list, every page; the price only when the customer sees prices.
+  const showPrice = Boolean(me?.settings.showPrices);
+  const exportRows = () => ({
+    header: [t("export.col.reservation"), t("export.col.contract"), t("export.col.status"), t("export.col.plate"), t("export.col.car"), t("export.col.driver"), t("export.col.start"), t("export.col.end"), ...(showPrice ? [t("export.col.price")] : [])],
+    rows: listed.map((r) => [
+      r.id, r.contractNumber ?? "", t(`reservations.status.${r.status}`, { defaultValue: r.status }), formatLicensePlate(r.vehicle?.licensePlate),
+      r.vehicle ? vehicleName(r.vehicle.brand, r.vehicle.model) : "", r.driver?.displayName ?? "", csvDate(r.startDate), csvDate(r.endDate),
+      ...(showPrice ? [csvNumber(r.totalPrice)] : []),
+    ]),
+  });
   if (isLoading) return <PortalLoading />;
   if (isError) return <PortalLoadError onRetry={() => refetch()} />;
 
   return (
     <div className="space-y-4">
-      <PageHeader title={t("reservations.title")} subtitle={t("reservations.count", { count: data.length })} />
+      <PageHeader title={t("reservations.title")} subtitle={t("reservations.count", { count: data.length })} action={data.length > 0 ? <PortalExportButton list="reservations" rows={exportRows} /> : undefined} />
       <SearchBox value={query} onChange={setQuery} placeholder={t("lists.search")} />
       <div className="flex flex-wrap gap-1.5" role="tablist" aria-label={t("reservations.title")}>
         {FILTERS.map((f) => (

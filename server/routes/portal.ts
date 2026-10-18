@@ -304,6 +304,17 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     res.json({ by: ack.name, at: ack.ackedAt.toISOString() });
   });
 
+  // ---- exports (Kees, 2026-10-18) -----------------------------------------------------------------
+  // The CSV is built in the browser from what the customer already sees; this only writes down who
+  // exported which list and how many rows, like the office's own activity log does for staff exports.
+  app.post("/api/portal/exports", requirePortalUser, async (req, res) => {
+    const parsed = z.object({ list: z.enum(["vehicles", "drivers", "reservations"]), rows: z.number().int().min(0).max(100_000) }).safeParse(req.body);
+    if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Invalid export");
+    if (parsed.data.list === "drivers" && ctxOf(req).user.role !== "admin") return portalError(res, 403, PORTAL_ERROR.ROLE_FORBIDDEN, "Not allowed for your role");
+    await logPortalActivity(req, "export", { details: parsed.data });
+    res.json({ ok: true });
+  });
+
   // ---- notifications for the customer -------------------------------------------------------
   // A driver account only hears about the rentals it drives: null = no restriction (admin accounts).
   async function driverReservationIds(ctx: PortalRequestContext): Promise<Set<number> | null> {

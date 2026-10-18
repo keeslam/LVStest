@@ -640,7 +640,8 @@
         "request_message_staff": "Message from staff",
         "request_replied": "Request answered",
         "company_details_updated": "Company details updated",
-        "company_name_requested": "Company name change requested"
+        "company_name_requested": "Company name change requested",
+        "export": "List exported (CSV)"
       },
       "detailKeys": {
         "by": "by",
@@ -663,7 +664,9 @@
         "country": "country",
         "billingAddress": "billing address",
         "billingPostalCode": "billing postal code",
-        "billingCity": "billing city"
+        "billingCity": "billing city",
+        "list": "list",
+        "rows": "rows"
       },
       "entities": {
         "request": "Request",
@@ -1616,5 +1619,42 @@
       "awayDone": "Collected from"
     },
     "on": "on {{date}}"
+  },
+  "export": {
+    "button": "Export (CSV)",
+    "file": {
+      "vehicles": "vehicles",
+      "drivers": "drivers",
+      "reservations": "reservations"
+    },
+    "active": "Active",
+    "service": {
+      "due": "Service due",
+      "soon": "Service soon"
+    },
+    "col": {
+      "plate": "Licence plate",
+      "brand": "Make",
+      "model": "Model",
+      "car": "Vehicle",
+      "driver": "Driver",
+      "apk": "MOT until",
+      "mileage": "Mileage",
+      "since": "In use since",
+      "until": "Until",
+      "maintenance": "Maintenance",
+      "reservation": "Reservation",
+      "contract": "Contract number",
+      "status": "Status",
+      "start": "Start",
+      "end": "End",
+      "price": "Price",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "license": "Driving licence (last 4)",
+      "licenseExpiry": "Licence valid until",
+      "carNow": "Current vehicle"
+    }
   }
 }

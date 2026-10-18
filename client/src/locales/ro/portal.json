@@ -646,7 +646,8 @@
         "request_message_staff": "Mesaj de la un angajat",
         "request_replied": "Solicitare cu răspuns",
         "company_details_updated": "Datele firmei actualizate",
-        "company_name_requested": "Modificarea numelui firmei solicitată"
+        "company_name_requested": "Modificarea numelui firmei solicitată",
+        "export": "Listă exportată (CSV)"
       },
       "detailKeys": {
         "by": "de către",
@@ -669,7 +670,9 @@
         "country": "țară",
         "billingAddress": "adresa de facturare",
         "billingPostalCode": "codul poștal de facturare",
-        "billingCity": "localitatea de facturare"
+        "billingCity": "localitatea de facturare",
+        "list": "listă",
+        "rows": "rânduri"
       },
       "entities": {
         "request": "Solicitare",
@@ -1628,5 +1631,42 @@
       "awayDone": "Ridicat de la"
     },
     "on": "pe {{date}}"
+  },
+  "export": {
+    "button": "Exportă (CSV)",
+    "file": {
+      "vehicles": "vehicule",
+      "drivers": "soferi",
+      "reservations": "rezervari"
+    },
+    "active": "Activ",
+    "service": {
+      "due": "Service necesar",
+      "soon": "Service în curând"
+    },
+    "col": {
+      "plate": "Număr de înmatriculare",
+      "brand": "Marcă",
+      "model": "Model",
+      "car": "Vehicul",
+      "driver": "Șofer",
+      "apk": "ITP până la",
+      "mileage": "Kilometraj",
+      "since": "În folosință din",
+      "until": "Până la",
+      "maintenance": "Întreținere",
+      "reservation": "Rezervare",
+      "contract": "Număr contract",
+      "status": "Stare",
+      "start": "Început",
+      "end": "Sfârșit",
+      "price": "Preț",
+      "name": "Nume",
+      "email": "E-mail",
+      "phone": "Telefon",
+      "license": "Permis de conducere (ultimele 4)",
+      "licenseExpiry": "Permis valabil până la",
+      "carNow": "Vehicul actual"
+    }
   }
 }

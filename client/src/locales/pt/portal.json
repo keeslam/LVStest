@@ -646,7 +646,8 @@
         "request_message_staff": "Mensagem de um colaborador",
         "request_replied": "Pedido respondido",
         "company_details_updated": "Dados da empresa atualizados",
-        "company_name_requested": "Alteração do nome da empresa pedida"
+        "company_name_requested": "Alteração do nome da empresa pedida",
+        "export": "Lista exportada (CSV)"
       },
       "detailKeys": {
         "by": "por",
@@ -669,7 +670,9 @@
         "country": "país",
         "billingAddress": "morada de faturação",
         "billingPostalCode": "código postal de faturação",
-        "billingCity": "localidade de faturação"
+        "billingCity": "localidade de faturação",
+        "list": "lista",
+        "rows": "linhas"
       },
       "entities": {
         "request": "Pedido",
@@ -1628,5 +1631,42 @@
       "awayDone": "Recolhido em"
     },
     "on": "em {{date}}"
+  },
+  "export": {
+    "button": "Exportar (CSV)",
+    "file": {
+      "vehicles": "veiculos",
+      "drivers": "condutores",
+      "reservations": "reservas"
+    },
+    "active": "Ativo",
+    "service": {
+      "due": "Manutenção necessária",
+      "soon": "Manutenção em breve"
+    },
+    "col": {
+      "plate": "Matrícula",
+      "brand": "Marca",
+      "model": "Modelo",
+      "car": "Veículo",
+      "driver": "Condutor",
+      "apk": "Inspeção até",
+      "mileage": "Quilometragem",
+      "since": "Em uso desde",
+      "until": "Até",
+      "maintenance": "Manutenção",
+      "reservation": "Reserva",
+      "contract": "Número do contrato",
+      "status": "Estado",
+      "start": "Início",
+      "end": "Fim",
+      "price": "Preço",
+      "name": "Nome",
+      "email": "E-mail",
+      "phone": "Telefone",
+      "license": "Carta de condução (últimos 4)",
+      "licenseExpiry": "Carta válida até",
+      "carNow": "Veículo atual"
+    }
   }
 }

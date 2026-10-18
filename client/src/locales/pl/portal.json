@@ -652,7 +652,8 @@
         "request_message_staff": "Wiadomość od pracownika",
         "request_replied": "Wniosek rozpatrzony",
         "company_details_updated": "Dane firmy zaktualizowane",
-        "company_name_requested": "Zgłoszono zmianę nazwy firmy"
+        "company_name_requested": "Zgłoszono zmianę nazwy firmy",
+        "export": "Wyeksportowano listę (CSV)"
       },
       "detailKeys": {
         "by": "przez",
@@ -675,7 +676,9 @@
         "country": "kraj",
         "billingAddress": "adres do faktur",
         "billingPostalCode": "kod pocztowy do faktur",
-        "billingCity": "miejscowość do faktur"
+        "billingCity": "miejscowość do faktur",
+        "list": "lista",
+        "rows": "wiersze"
       },
       "entities": {
         "request": "Wniosek",
@@ -1640,5 +1643,42 @@
       "awayDone": "Odebrano od"
     },
     "on": "dnia {{date}}"
+  },
+  "export": {
+    "button": "Eksportuj (CSV)",
+    "file": {
+      "vehicles": "pojazdy",
+      "drivers": "kierowcy",
+      "reservations": "rezerwacje"
+    },
+    "active": "Aktywny",
+    "service": {
+      "due": "Wymagany serwis",
+      "soon": "Serwis wkrótce"
+    },
+    "col": {
+      "plate": "Numer rejestracyjny",
+      "brand": "Marka",
+      "model": "Model",
+      "car": "Pojazd",
+      "driver": "Kierowca",
+      "apk": "Przegląd do",
+      "mileage": "Przebieg",
+      "since": "W użyciu od",
+      "until": "Do",
+      "maintenance": "Serwis",
+      "reservation": "Rezerwacja",
+      "contract": "Numer umowy",
+      "status": "Status",
+      "start": "Początek",
+      "end": "Koniec",
+      "price": "Cena",
+      "name": "Imię i nazwisko",
+      "email": "E-mail",
+      "phone": "Telefon",
+      "license": "Prawo jazdy (ostatnie 4)",
+      "licenseExpiry": "Prawo jazdy ważne do",
+      "carNow": "Obecny pojazd"
+    }
   }
 }

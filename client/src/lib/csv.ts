@@ -18,7 +18,7 @@ import { toOfficeWallClock } from "./office-timezone";
 import { notifyFileReady } from "./file-ready";
 import { reportClientAction } from "./audit-events";
 
-type Cell = string | number | null | undefined;
+export type Cell = string | number | null | undefined;
 
 const BOM = "﻿";
 
@@ -70,10 +70,11 @@ export function csvFileName(subject: string, today: string = officeToday()): str
 }
 
 /**
- * Builds the file, hands it to the browser as a download and tells the user
- * what was made. Returns the file name.
+ * Builds the file, hands it to the browser as a download and tells the user what was made, without
+ * reporting it anywhere. The customer portal uses this and reports to its own activity log; staff
+ * screens use downloadCsv below. Returns the file name.
  */
-export function downloadCsv(subject: string, header: string[], rows: Cell[][], today?: string): string {
+export function saveCsvFile(subject: string, header: string[], rows: Cell[][], today?: string): string {
   const name = csvFileName(subject, today);
   const blob = new Blob([csvText(header, rows)], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -85,7 +86,16 @@ export function downloadCsv(subject: string, header: string[], rows: Cell[][], t
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   notifyFileReady(name, blob.size);
-  // Every CSV leaves through here, so this is the one place the export is
+  return name;
+}
+
+/**
+ * Builds the file, hands it to the browser as a download and tells the user
+ * what was made. Returns the file name.
+ */
+export function downloadCsv(subject: string, header: string[], rows: Cell[][], today?: string): string {
+  const name = saveCsvFile(subject, header, rows, today);
+  // Every staff CSV leaves through here, so this is the one place the export is
   // reported to the activity log ("who exported the fines, and when").
   reportClientAction("report.export", { details: { file: name, rows: rows.length } });
   return name;

@@ -646,7 +646,8 @@
         "request_message_staff": "Messaggio di un collaboratore",
         "request_replied": "Richiesta evasa",
         "company_details_updated": "Dati aziendali aggiornati",
-        "company_name_requested": "Modifica della ragione sociale richiesta"
+        "company_name_requested": "Modifica della ragione sociale richiesta",
+        "export": "Elenco esportato (CSV)"
       },
       "detailKeys": {
         "by": "da",
@@ -669,7 +670,9 @@
         "country": "Paese",
         "billingAddress": "indirizzo di fatturazione",
         "billingPostalCode": "CAP di fatturazione",
-        "billingCity": "località di fatturazione"
+        "billingCity": "località di fatturazione",
+        "list": "elenco",
+        "rows": "righe"
       },
       "entities": {
         "request": "Richiesta",
@@ -1628,5 +1631,42 @@
       "awayDone": "Ritirata presso"
     },
     "on": "il {{date}}"
+  },
+  "export": {
+    "button": "Esporta (CSV)",
+    "file": {
+      "vehicles": "veicoli",
+      "drivers": "conducenti",
+      "reservations": "prenotazioni"
+    },
+    "active": "Attivo",
+    "service": {
+      "due": "Manutenzione necessaria",
+      "soon": "Manutenzione a breve"
+    },
+    "col": {
+      "plate": "Targa",
+      "brand": "Marca",
+      "model": "Modello",
+      "car": "Veicolo",
+      "driver": "Conducente",
+      "apk": "Revisione fino al",
+      "mileage": "Chilometraggio",
+      "since": "In uso dal",
+      "until": "Fino al",
+      "maintenance": "Manutenzione",
+      "reservation": "Prenotazione",
+      "contract": "Numero di contratto",
+      "status": "Stato",
+      "start": "Inizio",
+      "end": "Fine",
+      "price": "Prezzo",
+      "name": "Nome",
+      "email": "E-mail",
+      "phone": "Telefono",
+      "license": "Patente (ultime 4)",
+      "licenseExpiry": "Patente valida fino al",
+      "carNow": "Veicolo attuale"
+    }
   }
 }

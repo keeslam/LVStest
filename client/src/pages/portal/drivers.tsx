@@ -6,6 +6,9 @@ import { Users, UserPlus, Car, Receipt, History, FileText, MoreHorizontal, Penci
 import type { PortalDriverDto, PortalReservationDto } from "@shared/portal-types";
 import type { PortalFineDto } from "@shared/fines";
 import { portalFetch, portalQueryFn } from "@/lib/portal-api";
+import { csvDate } from "@/lib/csv";
+import { formatLicensePlate } from "@shared/license-plate";
+import { PortalExportButton } from "@/components/portal/export-button";
 import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { Button } from "@/components/ui/button";
@@ -76,6 +79,14 @@ export default function PortalDriversPage() {
   const listed = sorted
     .filter((d) => (q ? true : matches[filter](d)))
     .filter((d) => hit(d.displayName, d.firstName, d.lastName, d.email, d.phone, d.driverLicenseNumber, ...carsOf(reservations, d.id).map((r) => r.vehicle?.licensePlate)));
+  // The export takes the whole filtered list, every page; the licence number stays masked as on screen.
+  const exportRows = () => ({
+    header: [t("export.col.name"), t("export.col.email"), t("export.col.phone"), t("export.col.license"), t("export.col.licenseExpiry"), t("export.col.status"), t("export.col.carNow")],
+    rows: listed.map((d) => [
+      d.displayName, d.email ?? "", d.phone ?? "", d.driverLicenseNumber ? maskLicence(d.driverLicenseNumber) : "", csvDate(d.licenseExpiry),
+      d.status === "active" ? t("export.active") : t("drivers.inactive"), drivingNow(d.id).map((r) => (r.vehicle ? formatLicensePlate(r.vehicle.licensePlate) : `#${r.id}`)).join(", "),
+    ]),
+  });
   const pages = Math.max(1, Math.ceil(listed.length / PORTAL_PAGE_SIZE));
   const current = Math.min(page, pages - 1);
   const shown = listed.slice(current * PORTAL_PAGE_SIZE, (current + 1) * PORTAL_PAGE_SIZE);
@@ -90,7 +101,7 @@ export default function PortalDriversPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title={t("drivers.title")} subtitle={t("drivers.count", { active, total: data.length })} action={addButton} />
+      <PageHeader title={t("drivers.title")} subtitle={t("drivers.count", { active, total: data.length })} action={<div className="flex flex-wrap gap-2">{data.length > 0 && <PortalExportButton list="drivers" rows={exportRows} />}{addButton}</div>} />
       {data.length > 0 && (
         <div className="space-y-2">
           <SearchBox value={query} onChange={(v) => { setQuery(v); setPage(0); }} placeholder={t("lists.searchDrivers")} />
