@@ -32,6 +32,7 @@ import { listMyVehicles } from "../services/portal-vehicles";
 import { findPortalCustomerForBlock, canCustomerChangeMaintenance } from "../services/portal-maintenance-events";
 import { installAsyncErrorHandling } from "../middleware/asyncHandler.js";
 import { vehicleName } from "../../shared/vehicle-name";
+import { SUPPORTED_LANGUAGES } from "../../shared/languages";
 
 export function toFineDto(f: FineListRow): PortalFineDto {
   return {
@@ -110,7 +111,7 @@ const driverInputSchema = z.object({
   driverLicenseNumber: z.string().trim().max(50).nullable().optional(),
   licenseExpiry: z.string().trim().max(20).nullable().optional(),
   licenseOrigin: z.string().trim().max(100).nullable().optional(),
-  preferredLanguage: z.enum(["nl", "en"]).nullable().optional(),
+  preferredLanguage: z.enum(SUPPORTED_LANGUAGES).nullable().optional(),
   notes: z.string().trim().max(2000).nullable().optional(),
   status: z.enum(["active", "inactive"]).optional(),
 });

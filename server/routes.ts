@@ -61,6 +61,7 @@ import {
   reservationStatusForSpareStatus,
 } from "../shared/transport-spare-status";
 import { hasRemarks } from "../shared/remark-confirmation";
+import { toSupportedLanguage } from "../shared/languages";
 import { findCustomerDuplicates, findDriverDuplicates } from "./services/duplicate-detection";
 import {
   MAX_IMPORT_BATCH,
@@ -8248,7 +8249,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           isPrimaryDriver: true,
           status: 'active' as const,
           notes: 'Migrated from customer record',
-          preferredLanguage: customer.preferredLanguage || 'nl',
+          preferredLanguage: toSupportedLanguage(customer.preferredLanguage),
           createdBy: username,
           createdByUser: userId
         };

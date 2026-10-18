@@ -28,6 +28,7 @@ import { PortalUserRole, type PortalUser, type PortalCustomerSettings, type Port
 import { COMPANY_DETAIL_FIELDS, type PortalCompanyDetails } from "../shared/portal-company";
 import { requestsStorage } from "./services/portal-requests-storage";
 import { PORTAL_ERROR, type PortalErrorCode, type PortalMe, type PortalSettingsFlags, type PortalCompanyEmails } from "../shared/portal-types";
+import { SUPPORTED_LANGUAGES, isSupportedLanguage, toSupportedLanguage } from "../shared/languages";
 
 /** Staff read the notification text, so the changed fields are named in words, not by column name. */
 const COMPANY_EMAIL_LABEL: Record<string, string> = {
@@ -102,7 +103,7 @@ export function settingsFlags(s: PortalCustomerSettings, user?: Pick<PortalUser,
 
 async function buildMe(ctx: PortalRequestContext): Promise<PortalMe> {
   const [customer, config] = await Promise.all([storage.getCustomer(ctx.customerId), getPortalConfig()]);
-  const languageOverride = ctx.user.language === "en" || ctx.user.language === "nl" ? ctx.user.language : null;
+  const languageOverride = isSupportedLanguage(ctx.user.language) ? ctx.user.language : null;
   const company: PortalCompanyEmails | undefined = ctx.user.role === "admin" && customer
     ? { email: customer.email ?? null, emailForMOT: customer.emailForMOT ?? null, emailForInvoices: customer.emailForInvoices ?? null, emailGeneral: customer.emailGeneral ?? null }
     : undefined;
@@ -111,7 +112,7 @@ async function buildMe(ctx: PortalRequestContext): Promise<PortalMe> {
     role: ctx.user.role as "admin" | "driver", driverId: ctx.user.driverId,
     customerId: ctx.customerId,
     customerName: customer?.companyName || customer?.name || "",
-    language: languageOverride ?? (customer?.preferredLanguage === "en" ? "en" : "nl"),
+    language: languageOverride ?? toSupportedLanguage(customer?.preferredLanguage),
     languageOverride,
     pendingEmail: ctx.user.pendingEmail && ctx.user.emailChangeExpiresAt && ctx.user.emailChangeExpiresAt.getTime() > Date.now() ? ctx.user.pendingEmail : null,
     company,
@@ -372,7 +373,7 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
   });
 
   app.patch("/api/portal/me", requirePortalUser, async (req, res) => {
-    const parsed = z.object({ fullName: z.string().trim().min(1).max(200).optional(), language: z.enum(["nl", "en"]).nullable().optional() }).safeParse(req.body);
+    const parsed = z.object({ fullName: z.string().trim().min(1).max(200).optional(), language: z.enum(SUPPORTED_LANGUAGES).nullable().optional() }).safeParse(req.body);
     if (!parsed.success || (parsed.data.fullName === undefined && parsed.data.language === undefined)) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Nothing to save");
     const patch: Record<string, unknown> = { updatedBy: req.portalUser!.user.email };
     if (parsed.data.fullName !== undefined) patch.fullName = parsed.data.fullName;

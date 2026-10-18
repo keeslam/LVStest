@@ -4,6 +4,7 @@
 import type { PortalCompanyDetails } from './portal-company';
 import type { PortalHandover } from './portal-handover';
 import type { AccountMailKey, CompanyMailPreferences } from './portal-mail-preferences';
+import type { SupportedLanguage } from './languages';
 
 export const PORTAL_ERROR = {
   NOT_AUTHENTICATED: 'PORTAL_NOT_AUTHENTICATED',
@@ -66,9 +67,9 @@ export interface PortalMe {
   customerId: number;
   customerName: string;
   /** Language the portal shows: the account's own choice, else the customer's preferred language. */
-  language: 'nl' | 'en';
+  language: SupportedLanguage;
   /** The account's own choice; null = follow the customer. */
-  languageOverride: 'nl' | 'en' | null;
+  languageOverride: SupportedLanguage | null;
   /** New e-mail address waiting for confirmation, if any. */
   pendingEmail: string | null;
   /** The company's contact addresses; only sent to admin accounts, who may edit them. */

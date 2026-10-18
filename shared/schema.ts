@@ -6,6 +6,7 @@ import { z } from "zod";
 // by the client sink guard and this schema.
 import { isSafeHttpUrl, SAFE_URL_MESSAGE, isLocalOrNetworkPath, LOCAL_PATH_MESSAGE } from "./safe-url";
 import type { InboxParsedInvoice } from "./invoice-inbox";
+import { SUPPORTED_LANGUAGES } from "./languages";
 
 // User Roles enum
 export const UserRole = {
@@ -506,7 +507,7 @@ export const customers = pgTable("customers", {
   notes: text("notes"),
   
   // Multi-language support
-  preferredLanguage: text("preferred_language").default("nl").notNull(), // 'nl' | 'en'
+  preferredLanguage: text("preferred_language").default("nl").notNull(), // one of SUPPORTED_LANGUAGES (shared/languages.ts)
   
   // Corporate/Business features
   customerType: text("customer_type").default("business").notNull(), // 'business' | 'individual'
@@ -566,6 +567,7 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   primaryContactEmail: optionalEmail,
   secondaryContactEmail: optionalEmail,
   billingContactEmail: optionalEmail,
+  preferredLanguage: z.enum(SUPPORTED_LANGUAGES).optional(),
 });
 
 // Drivers table - for managing multiple drivers per customer/company
@@ -595,7 +597,7 @@ export const drivers = pgTable("drivers", {
   
   // Additional info
   notes: text("notes"),
-  preferredLanguage: text("preferred_language").default("nl"), // 'nl' | 'en'
+  preferredLanguage: text("preferred_language").default("nl"), // one of SUPPORTED_LANGUAGES (shared/languages.ts)
   
   // Tracking
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -612,6 +614,8 @@ export const insertDriverSchema = createInsertSchema(drivers).omit({
   updatedAt: true,
   createdByUser: true,
   updatedByUser: true,
+}).extend({
+  preferredLanguage: z.enum(SUPPORTED_LANGUAGES).nullable().optional(),
 });
 
 export type Driver = typeof drivers.$inferSelect;
