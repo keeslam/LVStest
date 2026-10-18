@@ -442,3 +442,18 @@ Kees gaf akkoord; opgelost in commit 55c8e9af:
 - **Punt 3 — uitgeschakeld account:** zo'n account is direct uitgelogd. Ook een wachtwoordreset door een beheerder beëindigt de open sessies.
 
 Nog open: punten 4 t/m 12, en bij punt 6 de voertuigtekening (`make`/`model` in `fs.rename`).
+
+## Status Middel-punten (18 oktober 2026, later)
+
+Kees gaf akkoord; opgelost in commit c932276e:
+- **Punt 4:**
+  - de app herkent een portaaladres nu ook in hoofdletters (`/API/PORTAL/...`);
+  - het portaal accepteert alleen een sessie die het zelf heeft gemaakt.
+- **Punt 5:** wie geen beheerder is, kan:
+  - alleen rechten geven die hij zelf heeft;
+  - geen beheerdersaccount wijzigen, uitschakelen of verwijderen.
+- **Punt 6:** de bestandsnaam van een voertuigtekening wordt opgeschoond en moet in de map met tekeningen blijven.
+
+Nog open:
+- de punten Laag (7 t/m 12);
+- een eigen sessiegeheim en een eigen sessietabel voor het portaal. Dat besluit ligt bij Kees, omdat het alle klanten één keer uitlogt.
