@@ -85,7 +85,8 @@ export function WorkshopBlockedDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px]" data-testid="dialog-workshop-blocked">
+      {/* z-[70]: this opens from the pickup dialog, whose content sits at z-[60]. */}
+      <DialogContent className="sm:max-w-[520px] z-[70]" data-testid="dialog-workshop-blocked">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-600" />

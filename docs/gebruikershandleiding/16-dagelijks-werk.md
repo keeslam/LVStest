@@ -221,13 +221,9 @@ klant.
 Haalt de klant de auto op vóór de startdatum van de reservering? Dan vraagt de app eerst **De huur
 start eerder — datum aanpassen?**
 
-> **Bekend probleem (oktober 2026).** Deze vraag opent nu áchter het venster **Ophaalproces
-> starten**. Je ziet dan alleen dat het scherm donkerder wordt. Druk op **Esc**. De vraag sluit dan
-> als **Nee, niet ophalen** en er verandert niets. Komt de klant echt eerder? Zet dan eerst de
-> startdatum op vandaag met **Datums wijzigen** (16.3). Start daarna het ophalen opnieuw. Hetzelfde
-> probleem hebben de vensters **Dubbel contractnummer** en **Uitgifte geblokkeerd**. Bij een dubbel
-> nummer: druk op **Esc** en typ een ander contractnummer. Bij een geblokkeerde uitgifte: druk op
-> **Esc** en los eerst de werkplaatsstatus op (16.4).
+![De vraag De huur start eerder met Ja, startdatum naar vandaag (1) en Nee, niet ophalen (2)](afbeeldingen/16-huur-start-eerder.png)
+*De vraag **De huur start eerder — datum aanpassen?**: 1 **Ja, startdatum naar vandaag**, 2 **Nee,
+niet ophalen**.*
 
 - Gaat de huur vandaag in? Klik dan op **Ja, startdatum naar vandaag**. De startdatum wordt vandaag.
   De app rekent de prijs opnieuw uit. In de notities van de reservering komt een regel dat de huur
@@ -805,11 +801,13 @@ Bekeuringen hebben geen eigen plek in het menu. Je komt er via het klantenportaa
    ![De knop Nieuwe bekeuring, van dichtbij](afbeeldingen/20-bekeuringen-k5.png)
    *Zo ziet de knop **Nieuwe bekeuring** eruit. Klik erop.*
 3. Was er op dat moment precies één huur van die auto? Dan koppelt de app de bekeuring zelf aan die
-   klant. Je ziet dan **Gekoppeld**. Staat er **Niet gekoppeld**? Kies dan onder de melding een
-   reservering, of zoek de **Klant**. Klik op **Koppelen**. Je ziet *Bekeuring gekoppeld.*
+   klant. Je ziet dan **Gekoppeld**. Staat er **Niet gekoppeld**? Open de bekeuring. De app stelt de
+   huren rond die datum voor. Klik op de goede huur, of zoek de klant bij **Klant zoeken…**. Klik
+   daarna op **Koppelen**. Je ziet *Bekeuring gekoppeld.*
 
-   ![Het venster Bekeuring met de gekozen klant (1), Toelichting voor klant (2) en Koppelen (3)](afbeeldingen/20-bekeuring-koppelen.png)
-   *Het venster **Bekeuring #1**: 1 de gekozen klant, 2 **Toelichting voor klant**, 3 **Koppelen**.*
+   ![Het venster Bekeuring met een voorgestelde huur (1), Klant zoeken (2) en Koppelen (3)](afbeeldingen/20-bekeuring-koppelen.png)
+   *Het venster van een bekeuring die niet vanzelf gekoppeld is: 1 een voorgestelde huur, 2 **Klant
+   zoeken…**, 3 **Koppelen**.*
 
    ![De knop Koppelen, van dichtbij](afbeeldingen/20-bekeuring-koppelen-k3.png)
    *Zo ziet de knop **Koppelen** eruit. Klik erop als de goede klant er staat.*

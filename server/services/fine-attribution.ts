@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { reservations, customers, drivers, vehicles, reservationDriverAssignments, type Fine } from "../../shared/schema";
 import { and, asc, desc, eq, gte, inArray, isNull, lte, ne, or, sql } from "drizzle-orm";
-import { finesStorage } from "./fines-storage";
+import { finesStorage, normalizedVehiclePlate } from "./fines-storage";
 import { portalStorage } from "./portal-storage";
 import { normalizeLicensePlate } from "../../shared/fines";
 import { customerDisplayName } from "./customer-display-name";
@@ -42,7 +42,7 @@ export async function findCandidates(licensePlate: string, offenceAt: Date): Pro
     .leftJoin(customers, eq(reservations.customerId, customers.id))
     .leftJoin(drivers, eq(reservations.driverId, drivers.id))
     .where(and(
-      eq(vehicles.licensePlate, plate),
+      eq(normalizedVehiclePlate, plate),
       isNull(reservations.deletedAt),
       inArray(reservations.type, ["standard", "replacement"]),
       ne(reservations.status, "cancelled"),

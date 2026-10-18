@@ -1,12 +1,19 @@
 import { db } from "../db";
 import { fines, customers, drivers, vehicles, deletedRecords, type Fine } from "../../shared/schema";
 import { and, desc, eq, gte, inArray, lte, sql, type SQL } from "drizzle-orm";
-import { CUSTOMER_VISIBLE_FINE_STATUSES, LEGACY_FINE_STATUSES, type LegacyFineStatusCounts, type FineStatusValue } from "../../shared/fines";
+import { CUSTOMER_VISIBLE_FINE_STATUSES, LEGACY_FINE_STATUSES, normalizeLicensePlate, type LegacyFineStatusCounts, type FineStatusValue } from "../../shared/fines";
 import type { PortalScope } from "./portal-storage";
 import { customerDisplayName } from "./customer-display-name";
 
 export type FineListRow = Fine & { customerName: string | null; driverName: string | null };
 export type InsertFineRow = typeof fines.$inferInsert;
+
+/**
+ * A vehicle's plate in the form fines are stored in (shared/fines.ts normalizeLicensePlate: upper
+ * case, no spaces or dashes). Vehicles keep the plate as typed ("65-PRC-8"), so comparing a fine's
+ * plate ("65PRC8") with vehicles.license_plate directly never matches.
+ */
+export const normalizedVehiclePlate = sql<string>`upper(regexp_replace(${vehicles.licensePlate}, '[[:space:]-]+', '', 'g'))`;
 
 export interface FineFilters { status?: string; customerId?: number; licensePlate?: string; from?: string; to?: string; importFileId?: number }
 
@@ -90,7 +97,7 @@ export const finesStorage = {
     return deleted.length > 0;
   },
   async getVehicleByPlate(licensePlate: string): Promise<{ id: number; brand: string; model: string } | undefined> {
-    const [row] = await db.select({ id: vehicles.id, brand: vehicles.brand, model: vehicles.model }).from(vehicles).where(eq(vehicles.licensePlate, licensePlate)).limit(1);
+    const [row] = await db.select({ id: vehicles.id, brand: vehicles.brand, model: vehicles.model }).from(vehicles).where(eq(normalizedVehiclePlate, normalizeLicensePlate(licensePlate))).limit(1);
     return row;
   },
   async findByReference(reference: string): Promise<Fine | undefined> {

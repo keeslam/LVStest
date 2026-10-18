@@ -401,24 +401,32 @@ in **App-instellingen**, op het tabblad **Klantenportaal**, bij **CJIB-koppeling
 
 ### Een bekeuring aan een klant koppelen
 
-Koppelen betekent: je zegt bij welke klant de bekeuring hoort. Het is de bedoeling dat de app zelf de
-reservering op het moment van de overtreding voorstelt. Dat werkt op dit moment niet. De app vindt
-geen reserveringen bij het kenteken. Je kiest de klant daarom zelf.
+Koppelen betekent: je zegt bij welke klant de bekeuring hoort. Meestal doet de app dat zelf. Had
+precies één huur de auto op het moment van de overtreding? Dan koppelt de app de bekeuring meteen
+aan die huur, die klant en de bestuurder van dat moment. In de lijst staat hij dan op **Gekoppeld**.
+
+Staat een bekeuring op **Niet gekoppeld**? Dan was er op dat moment geen huur, of waren er twee. Je
+koppelt hem dan zelf:
 
 1. Open de bekeuring. In het venster staat *Niet automatisch gekoppeld. Kies hieronder de klant (en
-   eventueel de reservering/bestuurder).* Daaronder staat *Geen reserveringen gevonden voor dit
-   kenteken. Kies een klant.*
-2. Zoek zelf uit wie de auto had. Open daarvoor de reservering van die auto op de datum van de
-   overtreding (zie [hoofdstuk 5](05-reserveringen.md)).
-3. Klik bij **Klant** op het veld. Typ de naam of het nummer van de klant in **Klant zoeken…**. Klik
-   op de juiste klant. Je ziet nu een vinkje voor de naam.
+   eventueel de reservering/bestuurder).*
+2. Daaronder stelt de app huren voor. Onder **Reserveringen op het moment van de overtreding** staan
+   huren die toen liepen. Onder **Reserveringen rond die datum** staan huren van een paar dagen ervoor
+   of erna. Dat is handig als een auto te laat is ingeleverd. Klik op de goede huur. De app vult dan
+   de klant, de reservering en de bestuurder in.
 
-   ![Het venster Bekeuring #1 met de gekozen klant (1), Toelichting voor klant (2) en Koppelen (3)](afbeeldingen/20-bekeuring-koppelen.png)
-   *Het venster **Bekeuring #1** met status **Niet gekoppeld**: 1 **Gekozen klant**, 2 **Toelichting
-   voor klant**, 3 **Koppelen**.*
+   ![Het venster van een bekeuring met een voorgestelde huur (1), Klant zoeken (2) en Koppelen (3)](afbeeldingen/20-bekeuring-koppelen.png)
+   *Een bekeuring die niet vanzelf gekoppeld is: 1 een voorgestelde huur, 2 **Klant zoeken…**, 3
+   **Koppelen**.*
 
-   ![De gekozen klant, van dichtbij](afbeeldingen/20-bekeuring-koppelen-k1.png)
-   *Zo ziet de gekozen klant eruit. Klopt het niet? Klik op **Wijzigen** en kies opnieuw.*
+   ![Een voorgestelde huur, van dichtbij](afbeeldingen/20-bekeuring-koppelen-k1.png)
+   *Zo ziet een voorgestelde huur eruit. Klik erop als het de goede is.*
+3. Staat de goede huur er niet bij? Of zegt de app *Geen reserveringen gevonden voor dit kenteken.
+   Kies een klant.*? Typ dan de naam of het nummer van de klant in **Klant zoeken…**. Klik op de
+   juiste klant. Je ziet nu een vinkje voor de naam.
+
+   ![Het veld Klant zoeken, van dichtbij](afbeeldingen/20-bekeuring-koppelen-k2.png)
+   *Zo ziet het veld **Klant zoeken…** eruit. Typ de naam of het debiteurnummer.*
 4. Weet je wie er reed? Kies dan de **Bestuurder (optioneel)**. Weet je het niet? Laat het veld leeg.
 5. Wil je de klant iets uitleggen? Typ dat bij **Toelichting voor klant**. De klant ziet die tekst
    in het portaal. **Interne notities** ziet de klant niet.
@@ -430,10 +438,6 @@ geen reserveringen bij het kenteken. Je kiest de klant daarom zelf.
 Zie je het veld **Klant** niet? Dan mis je het recht **Klanten bekijken**. Er staat dan *Om een klant
 aan deze bekeuring te koppelen heb je ook het recht Klanten bekijken nodig.*
 
-Vindt de app wel een reservering? Dan zie je onder **Reserveringen op het moment van de overtreding**
-of **Reserveringen rond die datum** een knop per reservering. Klik op de juiste. Daarna is de
-bekeuring gekoppeld.
-
 ### De klant informeren
 
 Koppelen stuurt de klant geen e-mail. Invoeren, inlezen en importeren ook niet. De klant ziet een
@@ -441,8 +445,8 @@ gekoppelde bekeuring wel meteen in het portaal. Wil je de klant een e-mail sture
 
 1. Open de gekoppelde bekeuring.
 
-   ![Het venster Bekeuring #1 met status Gekoppeld en de knop Klant informeren (1)](afbeeldingen/20-bekeuring-gekoppeld.png)
-   *Het venster **Bekeuring #1** met status **Gekoppeld**: 1 **Klant informeren**.*
+   ![Het venster van een bekeuring met status Gekoppeld en de knop Klant informeren (1)](afbeeldingen/20-bekeuring-gekoppeld.png)
+   *Een bekeuring met status **Gekoppeld**: 1 **Klant informeren**.*
 2. Klik op **Klant informeren**. Je ziet nu het venster **Klant informeren?** Daarin staat naar welk
    e-mailadres de mail gaat.
 

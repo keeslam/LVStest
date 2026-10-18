@@ -569,12 +569,6 @@ blijft dat scherm staan, klaar voor de volgende scan.
 
 ### Zes dingen die de app kan vragen, melden of weigeren
 
-> **Bekend probleem (oktober 2026).** De vensters bij punt 2 (**De huur start eerder**), punt 3
-> (**Dubbel contractnummer**) en punt 5 (**Uitgifte geblokkeerd**) openen nu áchter het venster
-> **Ophaalproces starten**. Je ziet dan alleen dat het scherm donkerder wordt. Druk op **Esc** om de
-> vraag te sluiten. Wat je daarna doet, staat in hoofdstuk 16, paragraaf 16.2, onder *Als de huur
-> eerder begint*.
-
 **1. Voertuigopmerkingen.** Is de opmerking bij de auto veranderd sinds het laatste bevestigde
 ophalen? Of is het een nieuwe opmerking? Dan zie je eerst **Voertuigopmerkingen -
 Ophaalwaarschuwing** met de tekst *BELANGRIJK: Bekijk deze opmerkingen voordat het voertuig

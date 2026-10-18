@@ -126,25 +126,26 @@ export const steps = [
   {
     name: "20-bekeuring-koppelen",
     async run(page) {
+      // De Crafter-bekeuring valt vlak vóór een huur: de app koppelt niet zelf, maar stelt die huur voor.
       await page.setViewportSize({ width: 1280, height: 1400 });
       await goto(page, "/fines");
       await closeDialogs(page);
       await settle(page);
-      await page.getByText("Snelheidsovertreding 12 km/u").first().click();
+      await page.getByText("Parkeren op een laad- en losplaats").first().click();
       const dlg = dialog(page, /Bekeuring #/);
       await dlg.waitFor();
       await settle(page);
-      const search = dlg.getByRole("textbox", { name: "Klant zoeken…" });
-      await search.fill("Hoveniers");
-      await page.waitForTimeout(600);
-      await dlg.getByText("Hoveniersbedrijf Groen").first().click();
-      await page.waitForTimeout(600);
+      const near = dlg.getByText(/Reserveringen (rond die datum|op het moment van de overtreding)/).first();
+      await near.waitFor({ timeout: 10_000 });
+      const suggestion = near.locator("xpath=following::button[1]");
       const link = dlg.getByRole("button", { name: "Koppelen" });
-      await link.scrollIntoViewIfNeeded();
+      await near.scrollIntoViewIfNeeded();
       await shot(page, "20-bekeuring-koppelen", {
         clip: dlg,
-        marks: [{ locator: dlg.getByRole("button", { name: "Wijzigen" }).first().locator("xpath=.."), text: "Gekozen klant" }, dlg.getByRole("textbox", { name: "Toelichting voor klant" }), link],
+        marks: [{ locator: suggestion, text: "Voorgestelde huur" }, { locator: dlg.getByRole("textbox", { name: "Klant zoeken…" }), text: "Of klant zoeken" }, link],
       });
+      await suggestion.click();
+      await page.waitForTimeout(500);
       await link.click();
       await page.waitForTimeout(1200);
       await settle(page);
