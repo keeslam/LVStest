@@ -1,5 +1,5 @@
 /** Hoofdstuk 3 (Klanten): lijst, klantkaart, toevoegen, chauffeurs, portaal, verwijderen, blokkeren. */
-import { dialog, goto, settle, shot } from "./lib.mjs";
+import { api, dialog, goto, settle, shot } from "./lib.mjs";
 
 const NEW_CUSTOMER = "Slagerij De Wit";
 
@@ -53,9 +53,20 @@ export const steps = [
   {
     name: "03-klant-toevoegen-basis",
     async run(page) {
+      // Herhaalbaar: een eerder aangemaakte Slagerij De Wit eerst weghalen, anders komt er geen groene melding.
+      const existing = (await api(page, "GET", "/api/customers")).filter((c) => c.name?.toLowerCase() === NEW_CUSTOMER.toLowerCase());
+      for (const c of existing) await api(page, "DELETE", `/api/customers/${c.id}`).catch(() => {});
+      // Een verwijderde klant houdt zijn debiteurnummer vast in de prullenbak; alleen in de
+      // testdatabase: die prullenbakregel definitief weghalen, zodat 10027 weer vrij is.
+      const bin = await api(page, "GET", "/api/deleted-records?type=customer").catch(() => []);
+      const rows = Array.isArray(bin) ? bin : bin?.records ?? bin?.items ?? [];
+      for (const row of rows.filter((r) => JSON.stringify(r).toLowerCase().includes(NEW_CUSTOMER.toLowerCase()))) {
+        await api(page, "DELETE", `/api/deleted-records/${row.id}`).catch(() => {});
+      }
+      const debtorNumber = "10027";
       const dlg = await openAddCustomer(page);
       await dlg.getByRole("textbox", { name: "Volledige naam" }).fill(NEW_CUSTOMER);
-      await dlg.getByRole("textbox", { name: "Debiteurnummer" }).fill("10027");
+      await dlg.getByRole("textbox", { name: "Debiteurnummer" }).fill(debtorNumber);
       await dlg.getByRole("textbox", { name: "Postcode" }).fill("3011 AD");
       await dlg.getByRole("textbox", { name: "Huisnummer" }).fill("4");
       await page.waitForTimeout(1500);
@@ -86,9 +97,15 @@ export const steps = [
         marks: [dlg.getByRole("textbox", { name: "Bedrijfsnaam" }), dlg.getByRole("textbox", { name: /Kamer van Koophandel/ }), dlg.getByRole("button", { name: "Klant toevoegen" })],
       });
       await dlg.getByRole("button", { name: "Klant toevoegen" }).click();
-      await page.getByText("Klant succesvol aangemaakt").waitFor({ timeout: 10_000 }).catch(() => {});
+      // De groene melding verdwijnt na een paar seconden: meteen vastleggen, niet eerst wachten tot de pagina stil is.
+      // De tekst staat ook in een onzichtbare voorleesregel; alleen de zichtbare melding markeren.
+      const toast = page.getByText("Klant succesvol aangemaakt", { exact: true }).locator("visible=true").first();
+      await toast.waitFor({ timeout: 10_000 });
+      // De melding schuift linksonder in beeld; even wachten tot hij stilstaat.
+      await page.waitForTimeout(450);
+      const card = toast.locator("xpath=ancestor::li[1]");
+      await shot(page, "03-klant-aangemaakt", { box: { x: 0, y: 640, width: 640, height: 260 }, marks: [{ locator: card, text: "Melding" }] });
       await settle(page);
-      await shot(page, "03-klant-aangemaakt", { box: { x: 640, y: 560, width: 640, height: 240 } }).catch(() => {});
     },
   },
   {
@@ -110,7 +127,10 @@ export const steps = [
       await dlg.getByRole("button", { name: "Bewerken" }).click();
       const edit = dialog(page, "Klant bewerken");
       await edit.waitFor();
+      // Het venster is hoger dan 900 px; anders vallen de tabbladen buiten beeld.
+      await page.setViewportSize({ width: 1280, height: 1400 });
       await shot(page, "03-klant-bewerken", { clip: edit, marks: [edit.getByRole("tablist"), edit.getByRole("button", { name: "Klant bijwerken" })] });
+      await page.setViewportSize({ width: 1280, height: 900 });
     },
   },
   {
@@ -127,10 +147,13 @@ export const steps = [
       const add = dialog(page, "Chauffeur toevoegen");
       await add.waitFor();
       await add.getByRole("textbox", { name: /Weergavenaam/ }).fill("Fatima Yilmaz");
+      // Het venster is hoger dan 900 px; anders valt Weergavenaam buiten beeld.
+      await page.setViewportSize({ width: 1280, height: 1400 });
       await shot(page, "03-chauffeur-toevoegen", {
         clip: add,
         marks: [add.getByRole("textbox", { name: /Weergavenaam/ }), add.getByRole("button", { name: "Chauffeur toevoegen" })],
       });
+      await page.setViewportSize({ width: 1280, height: 900 });
     },
   },
   {
@@ -177,7 +200,7 @@ export const steps = [
       await block.getByRole("textbox", { name: /Reden/ }).fill("Te hoog voor de garagedeur van deze klant");
       await shot(page, "03-voertuig-blokkeren", {
         clip: block,
-        marks: [block.getByRole("button", { name: "Voertuig" }), block.getByRole("textbox", { name: /Reden/ }), block.getByRole("button", { name: "Blokkeren", exact: true })],
+        marks: [{ locator: block.getByRole("button", { name: "Voertuig" }), text: "Voertuig" }, block.getByRole("textbox", { name: /Reden/ }), block.getByRole("button", { name: "Blokkeren", exact: true })],
       });
       await block.getByRole("button", { name: "Annuleren" }).click();
       await page.waitForTimeout(400);
@@ -202,10 +225,24 @@ export const steps = [
       await shot(page, "03-klant-verwijderen", { clip: dlg, marks: [dlg.getByRole("textbox").first(), dlg.getByRole("button", { name: "Klant verwijderen" })] });
       await page.keyboard.press("Escape");
       await page.waitForTimeout(300);
+      // Een lege prullenbak zegt weinig: zet er een testklant in (zonder reserveringen).
+      const old = "Verhuisbedrijf Oud";
+      const bin0 = await api(page, "GET", "/api/deleted-records?type=customer").catch(() => []);
+      const rows0 = Array.isArray(bin0) ? bin0 : bin0?.records ?? bin0?.items ?? [];
+      if (!rows0.some((r) => JSON.stringify(r).includes(old))) {
+        const made = await api(page, "POST", "/api/customers", { name: old, customerType: "business", companyName: old, city: "Schiedam" });
+        await api(page, "DELETE", `/api/customers/${made.id ?? made.customer?.id}`);
+        await page.reload();
+        await settle(page);
+      }
       await page.getByRole("button", { name: "Verwijderde klanten" }).click();
       const bin = dialog(page);
       await bin.waitFor();
-      await shot(page, "03-verwijderde-klanten", { clip: bin });
+      await settle(page);
+      await shot(page, "03-verwijderde-klanten", {
+        clip: bin,
+        marks: [bin.getByRole("button", { name: "Terugzetten" }).first(), bin.getByRole("button", { name: /Definitief verwijderen/ }).first()],
+      });
     },
   },
 ];

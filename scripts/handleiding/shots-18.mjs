@@ -44,9 +44,12 @@ export const steps = [
       await scan(page, "ZZ-00-ZZ");
       await shot(page, "18-geen-match", { box: { x: 256, y: 60, width: 1024, height: 360 } });
       await scan(page, "65-PRC-8");
-      const recent = page.getByText("Recente scans").first();
+      // Het blok staat ingeklapt; openklappen zodat de regels te zien zijn.
+      const recent = page.getByRole("button", { name: /Recente scans/ }).first();
       await recent.scrollIntoViewIfNeeded();
-      await shot(page, "18-recente-scans", { fullPage: true });
+      if ((await recent.getAttribute("aria-expanded")) !== "true") await recent.click();
+      await page.waitForTimeout(500);
+      await shot(page, "18-recente-scans", { fullPage: true, marks: [recent] });
     },
   },
   {
@@ -77,7 +80,7 @@ export const steps = [
       await input.fill(sprinter.barcode);
       await input.press("Enter");
       await page.waitForTimeout(800);
-      await shot(page, "18-sleutelkast-audit", { clip: dlg, marks: [input, dlg.getByRole("button", { name: "Audit afronden" })] });
+      await shot(page, "18-sleutelkast-audit", { clip: dlg, marks: [{ locator: input, text: "Scanveld" }, dlg.getByRole("button", { name: "Audit afronden" })] });
       await dlg.getByRole("button", { name: "Audit afronden" }).click();
       await page.waitForTimeout(800);
       await shot(page, "18-sleutelkast-audit-uitslag", { clip: dlg });

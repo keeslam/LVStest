@@ -57,7 +57,7 @@ export const steps = [
         clip: form,
         marks: [
           form.getByRole("combobox", { name: "Type" }),
-          form.getByRole("button", { name: /78-MST-9|Zoek en selecteer een voertuig/ }),
+          { locator: form.getByRole("button", { name: /78-MST-9|Zoek en selecteer een voertuig/ }), text: "Voertuig" },
           form.getByRole("checkbox", { name: "Vervangend voertuig vereist" }),
           form.getByRole("textbox", { name: "Geplande datum" }),
         ],

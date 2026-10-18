@@ -96,7 +96,8 @@ const OVERLAY_ATTR = "data-handleiding-overlay";
 
 /**
  * Tekent een rode omlijning (met nummer) om elk element. `marks` is een lijst
- * van Playwright-locators of `{ locator, label }`.
+ * van Playwright-locators of `{ locator, label, text, pad }`; `text` vervangt de
+ * automatisch gevonden naam van de knop of het veld in het rode label.
  */
 async function drawMarks(page, marks) {
   // Eerst alles in beeld scrollen (de laatste scroll telt), dan pas de posities
@@ -108,6 +109,7 @@ async function drawMarks(page, marks) {
     return {
       target: locator.first(),
       label: isLocator ? undefined : mark.label,
+      text: isLocator ? undefined : mark.text,
       pad: (isLocator ? undefined : mark.pad) ?? 4,
     };
   });
@@ -116,7 +118,7 @@ async function drawMarks(page, marks) {
   const viewport = page.viewportSize();
   const boxes = [];
   let number = 0;
-  for (const [index, { target, label, pad }] of targets.entries()) {
+  for (const [index, { target, label, text: fixedText, pad }] of targets.entries()) {
     const box = await target.boundingBox();
     if (!box) throw new Error(`Markering ${index + 1} (${label ?? ""}): element niet zichtbaar`);
     const inside = box.y >= 0 && box.y + box.height <= viewport.height && box.x >= 0 && box.x + box.width <= viewport.width;
@@ -125,7 +127,37 @@ async function drawMarks(page, marks) {
       continue;
     }
     number += 1;
-    boxes.push({ ...box, label: label ?? String(number), pad });
+    // De naam van de knop of het veld komt in het rode label, naast het nummer,
+    // zodat het plaatje zelf zegt waar je klikt.
+    const text = fixedText ?? await target
+      .evaluate((el) => {
+        const first = (s) => (s || "").split("\n").map((x) => x.trim()).filter(Boolean)[0] || "";
+        const tag = el.tagName.toLowerCase();
+        const role = el.getAttribute("role") || "";
+        if (role === "tablist") return "tabbladen";
+        // Velden en keuzelijsten: de naam van het veld (het label erboven), niet de ingevulde waarde.
+        if (tag === "input" || tag === "textarea" || role === "combobox") {
+          const byLabels = el.labels && el.labels[0] ? first(el.labels[0].innerText) : "";
+          const byFor = el.id ? first(document.querySelector(`label[for="${CSS.escape(el.id)}"]`)?.innerText) : "";
+          // Een label in de buurt telt alleen als dat stuk van de pagina maar één veld bevat;
+          // anders pakt een zoekveld het label van de keuzelijst ernaast ("Sorteren op:").
+          let byNear = "";
+          let node = el;
+          for (let i = 0; i < 4 && node && !byNear; i += 1) {
+            node = node.parentElement;
+            const label = node?.querySelector("label");
+            const fields = node ? node.querySelectorAll("input, textarea, [role=combobox], select").length : 0;
+            if (label && fields === 1) byNear = first(label.innerText);
+            if (fields > 1) break;
+          }
+          const aria = el.getAttribute("aria-label") || "";
+          return byLabels || byFor || byNear || aria || el.getAttribute("placeholder") || "typ hier";
+        }
+        return first(el.innerText) || el.getAttribute("aria-label") || "";
+      })
+      .catch(() => "");
+    const short = text.length > 28 ? `${text.slice(0, 27)}…` : text;
+    boxes.push({ ...box, label: label ?? String(number), text: short, pad });
   }
   await page.evaluate(
     ({ boxes, attr }) => {
@@ -147,19 +179,29 @@ async function drawMarks(page, marks) {
         });
         if (box.label) {
           const badge = document.createElement("span");
-          badge.textContent = box.label;
+          badge.textContent = box.text ? `${box.label}  ${box.text}` : box.label;
+          // Rechtsboven het vakje (daar staat zelden het veldlabel). Eronder als er boven geen
+          // ruimte is, of als het label daar over een ander gemarkeerd vakje zou vallen
+          // (knoppenrijen die omlopen).
+          const text = badge.textContent;
+          const w = text.length * 8.5 + 20;
+          const right = box.x + box.width + box.pad + 3;
+          const hits = (y) => boxes.some((o) => o !== box && right > o.x - o.pad && right - w < o.x + o.width + o.pad && y + 26 > o.y - o.pad && y < o.y + o.height + o.pad);
+          const roomAbove = box.y - box.pad > 34;
+          const yAbove = box.y - box.pad - 31;
+          const yBelow = box.y + box.height + box.pad + 5;
+          const above = roomAbove && (!hits(yAbove) || hits(yBelow));
           Object.assign(badge.style, {
             position: "absolute",
-            left: "-14px",
-            top: "-14px",
-            minWidth: "26px",
+            right: "-3px",
+            [above ? "top" : "bottom"]: "-31px",
             height: "26px",
-            padding: "0 6px",
+            padding: "0 10px",
             borderRadius: "13px",
             background: "#dc2626",
             color: "#fff",
             font: "bold 15px/26px Arial, sans-serif",
-            textAlign: "center",
+            whiteSpace: "nowrap",
             boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
             boxSizing: "border-box",
           });
@@ -170,6 +212,7 @@ async function drawMarks(page, marks) {
     },
     { boxes, attr: OVERLAY_ATTR },
   );
+  return boxes;
 }
 
 async function clearMarks(page) {
@@ -182,12 +225,24 @@ async function clearMarks(page) {
  *  - `marks`: elementen die rood omlijnd worden, genummerd in volgorde.
  *  - `fullPage`: de hele pagina in plaats van het venster.
  */
-export async function shot(page, name, { clip, box, marks = [], fullPage = false, pad = 12 } = {}) {
+export async function shot(page, name, { clip, box, marks = [], fullPage = false, pad = 12, closeups = true } = {}) {
   if (!/^[0-9]{2}-[a-z0-9-]+$/.test(name)) throw new Error(`Ongeldige bestandsnaam: ${name}`);
   fs.mkdirSync(OUT_DIR, { recursive: true });
   await settle(page);
-  if (marks.length) await drawMarks(page, marks);
+  const boxes = marks.length ? await drawMarks(page, marks) : [];
   const file = path.join(OUT_DIR, `${name}.png`);
+  // Van elk gemarkeerd element ook een uitvergroting: <name>-k<n>.png.
+  if (closeups && boxes.length) {
+    const viewport = page.viewportSize();
+    for (const [i, b] of boxes.entries()) {
+      const margin = 48;
+      const x = Math.max(0, b.x - margin);
+      const y = Math.max(0, b.y - margin);
+      const width = Math.min(viewport.width - x, b.width + margin * 2);
+      const height = Math.min(viewport.height - y, b.height + margin * 2);
+      await page.screenshot({ path: path.join(OUT_DIR, `${name}-k${i + 1}.png`), clip: { x, y, width, height } });
+    }
+  }
   if (box) {
     const viewport = page.viewportSize();
     const x = Math.max(0, box.x);

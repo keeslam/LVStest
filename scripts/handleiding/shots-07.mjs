@@ -46,6 +46,8 @@ export const steps = [
     name: "07-onderhoud-plannen",
     async run(page) {
       // Een APK-keuring voor de Ducato (APK verlopen), zonder klant: geen tweede stap.
+      // Het venster is hoger dan 900 px; anders wordt de bovenkant afgesneden.
+      await page.setViewportSize({ width: 1280, height: 1400 });
       const form = await openPlan(page);
       await pickVehicle(page, form, "Ducato", "43-DCT-6");
       await pickOption(page, form.getByRole("combobox", { name: "Onderhoudstype" }), /APK-keuring/);
@@ -55,7 +57,7 @@ export const steps = [
       await shot(page, "07-onderhoud-plannen", {
         clip: form,
         marks: [
-          form.getByRole("button", { name: /43-DCT-6|Selecteer een voertuig/ }),
+          { locator: form.getByRole("button", { name: /43-DCT-6|Selecteer een voertuig/ }), text: "Voertuig" },
           form.getByRole("combobox", { name: "Onderhoudstype" }),
           form.getByRole("textbox", { name: "Geplande datum" }),
           form.getByRole("spinbutton", { name: "Duur (dagen)" }),
@@ -63,6 +65,7 @@ export const steps = [
           form.getByRole("button", { name: "Onderhoud plannen" }),
         ],
       });
+      await page.setViewportSize({ width: 1280, height: 900 });
       await form.getByRole("button", { name: "Onderhoud plannen" }).click();
       await settle(page);
       await closeDialogs(page);

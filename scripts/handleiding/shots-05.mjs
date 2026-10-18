@@ -1,5 +1,5 @@
 /** Hoofdstuk 5 (Reserveringen): kalender, lijst, boeken, openen, wijzigen, ophalen, innemen, annuleren, terugdraaien. */
-import { closeDialogs, dialog, goto, settle, shot, ymd } from "./lib.mjs";
+import { api, closeDialogs, dialog, goto, settle, shot, ymd } from "./lib.mjs";
 
 const CRAFTER = "12-VKL-3"; // vandaag geboekt voor Bakkerij Van Dijk; wordt in dit hoofdstuk opgehaald
 const TRANSIT = "56-TRN-7"; // staat uit bij Pieter Bakker; wordt in dit hoofdstuk ingenomen
@@ -81,9 +81,17 @@ export const steps = [
       await page.getByRole("button", { name: "Nieuwe reservering" }).click();
       const form = dialog(page, "Nieuwe reservering");
       await form.waitFor();
-      await form.getByRole("textbox", { name: "Startdatum", exact: true }).fill(ymd(50));
-      await form.getByRole("textbox", { name: "Einddatum", exact: true }).fill(ymd(53));
-      await page.waitForTimeout(600);
+      // Het formulier zet de datums terug op vandaag zodra zijn gegevens binnen zijn; eerst laten
+      // uitladen, dan invullen en nakijken of de datums zijn blijven staan.
+      await settle(page);
+      const startField = form.getByRole("textbox", { name: "Startdatum", exact: true });
+      const endField = form.getByRole("textbox", { name: "Einddatum", exact: true });
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        await startField.fill(ymd(50));
+        await endField.fill(ymd(53));
+        await page.waitForTimeout(700);
+        if ((await startField.inputValue()) === ymd(50) && (await endField.inputValue()) === ymd(53)) break;
+      }
       await shot(page, "05-nieuwe-reservering-stap1", {
         clip: form,
         marks: [form.getByRole("textbox", { name: "Startdatum", exact: true }), form.getByRole("textbox", { name: "Einddatum", exact: true }), form.getByRole("checkbox", { name: "Huur zonder einddatum" })],
@@ -101,7 +109,9 @@ export const steps = [
       await page.keyboard.type("Hoveniers");
       await page.waitForTimeout(600);
       await shot(page, "05-nieuwe-reservering-klant", { clip: formCss });
-      await page.getByText("Hoveniersbedrijf Groen").locator("visible=true").last().click();
+      // De hele keuzeregel (role=option), niet de naam zelf: die staat ook als bedrijfslabel in de regel.
+      // CSS-locator: het venster zet de keuzelijst voor de toegankelijkheidsboom op verborgen.
+      await page.locator('[role="option"]').filter({ hasText: "Hoveniersbedrijf Groen" }).first().click();
       await page.waitForTimeout(600);
       await settle(page);
       const create = form.getByRole("button", { name: "Reservering aanmaken" });
@@ -334,11 +344,28 @@ export const steps = [
       await settle(page);
       await shot(page, "05-administratie", { clip: admin });
       await closeDialogs(page);
+      // Een lege prullenbak zegt weinig: zet er een geannuleerde testboeking in.
+      const bin = await api(page, "GET", "/api/deleted-records?type=reservation").catch(() => []);
+      const binRows = Array.isArray(bin) ? bin : bin?.records ?? bin?.items ?? [];
+      if (!binRows.length) {
+        const [vehicles, customers] = await Promise.all([api(page, "GET", "/api/vehicles"), api(page, "GET", "/api/customers")]);
+        const vehicle = vehicles.find((v) => v.licensePlate === "56-TRN-7");
+        const customer = customers.find((c) => c.name === "Garage Visser");
+        const made = await api(page, "POST", "/api/reservations", {
+          vehicleId: vehicle.id, customerId: customer.id, startDate: ymd(70), endDate: ymd(72), status: "booked", type: "standard", totalPrice: "180",
+        });
+        await api(page, "DELETE", `/api/reservations/${made.id ?? made.reservation?.id}`);
+        await page.reload();
+        await settle(page);
+      }
       await page.getByRole("button", { name: "Verwijderde reserveringen" }).click();
-      const bin = dialog(page);
-      await bin.waitFor();
+      const binDialog = dialog(page);
+      await binDialog.waitFor();
       await settle(page);
-      await shot(page, "05-verwijderde-reserveringen", { clip: bin });
+      await shot(page, "05-verwijderde-reserveringen", {
+        clip: binDialog,
+        marks: [binDialog.getByRole("button", { name: "Terugzetten" }).first(), binDialog.getByRole("button", { name: /Definitief verwijderen/ }).first()],
+      });
     },
   },
 ];
