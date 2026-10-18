@@ -8,6 +8,7 @@ import fs from "fs";
 import multer from "multer";
 import { z } from "zod";
 import { registerPortalFiscalRoutes } from "./portal-fiscal";
+import { registerPortalColleagueRoutes } from "./portal-colleagues";
 import { addressLookupHandler } from "./address-lookup";
 import { addressLookupLimiter, portalSignLimiter } from "../middleware/security/rateLimiter.js";
 import { signingStates, sha256OfDocument, signContract, signedCopyIntegrity } from "../services/contract-signing";
@@ -141,6 +142,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
   const ctxOf = (req: Request) => req.portalUser!;
   // Fiscal mobility check (docs/fiscaal): the customer side, in this same realm.
   registerPortalFiscalRoutes(app, { requirePortalUser });
+  registerPortalColleagueRoutes(app, { requirePortalUser });
   // Same lookup as the staff app, behind the portal session.
   app.get("/api/portal/address-lookup", requirePortalUser, addressLookupLimiter, addressLookupHandler);
 

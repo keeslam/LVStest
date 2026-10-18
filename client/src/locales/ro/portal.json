@@ -344,7 +344,26 @@
       "billingCity": "Localitate"
     },
     "confirmPassword": "Parola dumneavoastră, pentru confirmare",
-    "confirmPasswordHint": "Este necesară deoarece aceste adrese stabilesc unde ajung facturile, amenzile și mesajele despre APK."
+    "confirmPasswordHint": "Este necesară deoarece aceste adrese stabilesc unde ajung facturile, amenzile și mesajele despre APK.",
+    "tabColleagues": "Colegi",
+    "colleagues": {
+      "help": "Invitați colegi ca administrator sau șofer. Un coleg nu primește niciodată mai multe drepturi decât aveți dumneavoastră. Lam Groep primește o notificare.",
+      "invite": "Invitați un coleg",
+      "role": "Rol",
+      "send": "Trimiteți invitația",
+      "invited": "Invitație trimisă către {{email}}",
+      "inviteNotSent": "Cont creat, dar invitația nu a putut fi trimisă prin e-mail. Încercați din nou mai târziu.",
+      "resent": "Invitație trimisă din nou",
+      "resend": "Invitați din nou",
+      "block": "Blocați",
+      "unblock": "Permiteți din nou",
+      "blocked": "blocat",
+      "pending": "invitație în așteptare",
+      "activeStatus": "activ",
+      "you": "dumneavoastră",
+      "pickDriver": "Alegeți șoferul pentru acest cont",
+      "ceiling": "Noul coleg primește aceleași restricții ca propriul dumneavoastră cont."
+    }
   },
   "errors": {
     "PORTAL_NOT_AUTHENTICATED": "Nu sunteți autentificat.",
@@ -376,7 +395,8 @@
     "PORTAL_INVALID_SIGNATURE": "Mai întâi semnați în casetă.",
     "PORTAL_CANCEL_TOO_LATE": "Puteți anula până cu 48 de ore înainte de început. Vă rugăm să ne contactați.",
     "PORTAL_CANCEL_NOT_ALLOWED": "Această rezervare nu poate fi anulată prin portal.",
-    "PORTAL_FILE_TOO_LARGE": "Fișierul depășește 10 MB."
+    "PORTAL_FILE_TOO_LARGE": "Fișierul depășește 10 MB.",
+    "PORTAL_DRIVER_HAS_ACCOUNT": "Acest șofer are deja un cont."
   },
   "admin": {
     "navLabel": "Portal pentru clienți",
@@ -609,12 +629,14 @@
         "driverFiscalVisibilityEnabled": "Un șofer își vede propria situație fiscală, nu pe cea a colegilor.",
         "mailReservationChanges": "Dezactivat: nu se trimite e-mail la adresa clientului când o rezervare este mutată sau anulată. Notificarea de sub clopoțel rămâne.",
         "mailMaintenance": "Dezactivat: nu se trimit e-mailuri despre mentenanță la adresa clientului. Notificarea de sub clopoțel rămâne.",
-        "mailDocuments": "Dezactivat: nu se trimite e-mail că un document este disponibil. Documentul este totuși în portal."
+        "mailDocuments": "Dezactivat: nu se trimite e-mail că un document este disponibil. Documentul este totuși în portal.",
+        "canInviteColleagues": "Un administrator al clientului poate invita și bloca singur colegi (administratori și șoferi), niciodată cu mai multe drepturi decât ale sale. Primiți o notificare pentru fiecare invitație."
       },
       "mailTitle": "E-mailuri către adresa firmei",
       "mailReservationChanges": "E-mail la rezervare modificată sau anulată",
       "mailMaintenance": "E-mail despre mentenanță",
-      "mailDocuments": "E-mail la document nou"
+      "mailDocuments": "E-mail la document nou",
+      "canInviteColleagues": "Poate invita colegi"
     },
     "activity": {
       "title": "Activitate în portal",
@@ -651,7 +673,11 @@
         "company_details_updated": "Datele firmei actualizate",
         "company_name_requested": "Modificarea numelui firmei solicitată",
         "export": "Listă exportată (CSV)",
-        "document_uploaded": "Document încărcat"
+        "document_uploaded": "Document încărcat",
+        "colleague_invited": "Coleg invitat",
+        "colleague_blocked": "Coleg blocat",
+        "colleague_unblocked": "Coleg permis din nou",
+        "colleague_invite_resent": "Invitație coleg retrimisă"
       },
       "detailKeys": {
         "by": "de către",

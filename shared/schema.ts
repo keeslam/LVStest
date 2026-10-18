@@ -698,6 +698,8 @@ export const portalCustomerSettings = pgTable("portal_customer_settings", {
   canViewContracts: boolean("can_view_contracts").notNull().default(true),
   showPrices: boolean("show_prices").notNull().default(false),
   canReturn: boolean("can_return").notNull().default(true),
+  // Admin accounts invite and block colleagues themselves (Kees, 2026-10-18); the office can switch it off.
+  canInviteColleagues: boolean("can_invite_colleagues").notNull().default(true),
   // Company-wide e-mail switches, set by an admin account in the portal. Only the e-mail is
   // affected: the bell notification in the portal is always written.
   mailReservationChanges: boolean("mail_reservation_changes").notNull().default(true),

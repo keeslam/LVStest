@@ -338,7 +338,26 @@
       "billingCity": "Plaats"
     },
     "confirmPassword": "Uw wachtwoord ter bevestiging",
-    "confirmPasswordHint": "Nodig omdat deze adressen bepalen waar facturen, bekeuringen en APK-berichten naartoe gaan."
+    "confirmPasswordHint": "Nodig omdat deze adressen bepalen waar facturen, bekeuringen en APK-berichten naartoe gaan.",
+    "tabColleagues": "Collega's",
+    "colleagues": {
+      "help": "Nodig collega's uit als beheerder of bestuurder. Een collega krijgt nooit meer rechten dan u zelf heeft. Lam Groep krijgt een melding.",
+      "invite": "Collega uitnodigen",
+      "role": "Rol",
+      "send": "Uitnodiging versturen",
+      "invited": "Uitnodiging verstuurd naar {{email}}",
+      "inviteNotSent": "Account aangemaakt, maar de uitnodiging kon niet worden gemaild. Probeer later opnieuw.",
+      "resent": "Uitnodiging opnieuw verstuurd",
+      "resend": "Opnieuw uitnodigen",
+      "block": "Blokkeren",
+      "unblock": "Weer toelaten",
+      "blocked": "geblokkeerd",
+      "pending": "uitnodiging open",
+      "activeStatus": "actief",
+      "you": "u",
+      "pickDriver": "Kies de bestuurder voor dit account",
+      "ceiling": "De nieuwe collega krijgt dezelfde beperkingen als uw eigen account."
+    }
   },
   "errors": {
     "PORTAL_NOT_AUTHENTICATED": "U bent niet ingelogd.",
@@ -370,7 +389,8 @@
     "PORTAL_INVALID_SIGNATURE": "Zet eerst uw handtekening in het vak.",
     "PORTAL_CANCEL_TOO_LATE": "Annuleren kan tot 48 uur voor de start. Neem contact met ons op.",
     "PORTAL_CANCEL_NOT_ALLOWED": "Deze reservering kan niet via het portaal worden geannuleerd.",
-    "PORTAL_FILE_TOO_LARGE": "Het bestand is groter dan 10 MB."
+    "PORTAL_FILE_TOO_LARGE": "Het bestand is groter dan 10 MB.",
+    "PORTAL_DRIVER_HAS_ACCOUNT": "Deze bestuurder heeft al een account."
   },
   "admin": {
     "navLabel": "Klantenportaal",
@@ -603,12 +623,14 @@
         "driverFiscalVisibilityEnabled": "Een bestuurder ziet de eigen fiscale status, niet die van collega's.",
         "mailReservationChanges": "Uit: er gaat geen e-mail naar het klantadres als een reservering wordt verplaatst of geannuleerd. De melding onder het belletje blijft staan.",
         "mailMaintenance": "Uit: geen onderhoudsmails naar het klantadres. De melding onder het belletje blijft staan.",
-        "mailDocuments": "Uit: geen e-mail dat er een document klaarstaat. Het document staat wel in het portaal."
+        "mailDocuments": "Uit: geen e-mail dat er een document klaarstaat. Het document staat wel in het portaal.",
+        "canInviteColleagues": "Een beheerder van de klant kan zelf collega's (beheerders en bestuurders) uitnodigen en blokkeren, nooit met meer rechten dan zichzelf. U krijgt van elke uitnodiging een melding."
       },
       "mailTitle": "E-mails naar het bedrijfsadres",
       "mailReservationChanges": "Mail bij gewijzigde of geannuleerde reservering",
       "mailMaintenance": "Mail over onderhoud",
-      "mailDocuments": "Mail bij nieuw document"
+      "mailDocuments": "Mail bij nieuw document",
+      "canInviteColleagues": "Mag collega's uitnodigen"
     },
     "activity": {
       "title": "Activiteit in het portaal",
@@ -645,7 +667,11 @@
         "company_details_updated": "Bedrijfsgegevens bijgewerkt",
         "company_name_requested": "Wijziging bedrijfsnaam aangevraagd",
         "export": "Lijst geëxporteerd (CSV)",
-        "document_uploaded": "Document geüpload"
+        "document_uploaded": "Document geüpload",
+        "colleague_invited": "Collega uitgenodigd",
+        "colleague_blocked": "Collega geblokkeerd",
+        "colleague_unblocked": "Collega weer toegelaten",
+        "colleague_invite_resent": "Uitnodiging collega opnieuw verstuurd"
       },
       "detailKeys": {
         "by": "door",

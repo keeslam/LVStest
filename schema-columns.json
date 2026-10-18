@@ -4179,6 +4179,13 @@
         "default": "true"
       },
       {
+        "name": "can_invite_colleagues",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "true"
+      },
+      {
         "name": "mail_reservation_changes",
         "type": "boolean",
         "notNull": true,

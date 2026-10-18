@@ -350,7 +350,26 @@
       "billingCity": "Miejscowość"
     },
     "confirmPassword": "Państwa hasło w celu potwierdzenia",
-    "confirmPasswordHint": "Jest to wymagane, ponieważ te adresy określają, dokąd trafiają faktury, mandaty i wiadomości dotyczące APK."
+    "confirmPasswordHint": "Jest to wymagane, ponieważ te adresy określają, dokąd trafiają faktury, mandaty i wiadomości dotyczące APK.",
+    "tabColleagues": "Współpracownicy",
+    "colleagues": {
+      "help": "Zaproś współpracowników jako administratora lub kierowcę. Współpracownik nigdy nie dostaje więcej uprawnień niż Ty. Lam Groep otrzymuje powiadomienie.",
+      "invite": "Zaproś współpracownika",
+      "role": "Rola",
+      "send": "Wyślij zaproszenie",
+      "invited": "Zaproszenie wysłane do {{email}}",
+      "inviteNotSent": "Konto utworzone, ale nie udało się wysłać zaproszenia e-mailem. Spróbuj ponownie później.",
+      "resent": "Zaproszenie wysłane ponownie",
+      "resend": "Zaproś ponownie",
+      "block": "Zablokuj",
+      "unblock": "Odblokuj",
+      "blocked": "zablokowany",
+      "pending": "zaproszenie oczekuje",
+      "activeStatus": "aktywny",
+      "you": "Ty",
+      "pickDriver": "Wybierz kierowcę dla tego konta",
+      "ceiling": "Nowy współpracownik otrzymuje te same ograniczenia co Twoje konto."
+    }
   },
   "errors": {
     "PORTAL_NOT_AUTHENTICATED": "Nie jesteś zalogowany(-a).",
@@ -382,7 +401,8 @@
     "PORTAL_INVALID_SIGNATURE": "Prosimy najpierw złożyć podpis w polu.",
     "PORTAL_CANCEL_TOO_LATE": "Anulować można do 48 godzin przed rozpoczęciem. Prosimy o kontakt.",
     "PORTAL_CANCEL_NOT_ALLOWED": "Tej rezerwacji nie można anulować przez portal.",
-    "PORTAL_FILE_TOO_LARGE": "Plik jest większy niż 10 MB."
+    "PORTAL_FILE_TOO_LARGE": "Plik jest większy niż 10 MB.",
+    "PORTAL_DRIVER_HAS_ACCOUNT": "Ten kierowca ma już konto."
   },
   "admin": {
     "navLabel": "Portal klienta",
@@ -615,12 +635,14 @@
         "driverFiscalVisibilityEnabled": "Kierowca widzi własny status podatkowy, a nie status współpracowników.",
         "mailReservationChanges": "Wyłączone: nie jest wysyłana wiadomość e-mail na adres klienta, gdy rezerwacja zostanie przesunięta lub anulowana. Powiadomienie pod ikoną dzwonka pozostaje.",
         "mailMaintenance": "Wyłączone: brak wiadomości e-mail o serwisie na adres klienta. Powiadomienie pod ikoną dzwonka pozostaje.",
-        "mailDocuments": "Wyłączone: brak wiadomości e-mail o gotowym dokumencie. Dokument jest mimo to dostępny w portalu."
+        "mailDocuments": "Wyłączone: brak wiadomości e-mail o gotowym dokumencie. Dokument jest mimo to dostępny w portalu.",
+        "canInviteColleagues": "Administrator klienta może sam zapraszać i blokować współpracowników (administratorów i kierowców), nigdy z większymi uprawnieniami niż własne. Otrzymujesz powiadomienie o każdym zaproszeniu."
       },
       "mailTitle": "Wiadomości e-mail na adres firmy",
       "mailReservationChanges": "Wiadomość o zmienionej lub anulowanej rezerwacji",
       "mailMaintenance": "Wiadomość o serwisie",
-      "mailDocuments": "Wiadomość o nowym dokumencie"
+      "mailDocuments": "Wiadomość o nowym dokumencie",
+      "canInviteColleagues": "Może zapraszać współpracowników"
     },
     "activity": {
       "title": "Aktywność w portalu",
@@ -657,7 +679,11 @@
         "company_details_updated": "Dane firmy zaktualizowane",
         "company_name_requested": "Zgłoszono zmianę nazwy firmy",
         "export": "Wyeksportowano listę (CSV)",
-        "document_uploaded": "Przesłano dokument"
+        "document_uploaded": "Przesłano dokument",
+        "colleague_invited": "Zaproszono współpracownika",
+        "colleague_blocked": "Zablokowano współpracownika",
+        "colleague_unblocked": "Odblokowano współpracownika",
+        "colleague_invite_resent": "Ponownie wysłano zaproszenie współpracownika"
       },
       "detailKeys": {
         "by": "przez",

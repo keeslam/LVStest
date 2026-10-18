@@ -344,7 +344,26 @@
       "billingCity": "Localidad"
     },
     "confirmPassword": "Su contraseña, para confirmar",
-    "confirmPasswordHint": "Es necesaria porque estas direcciones determinan adónde se envían las facturas, las multas y los avisos de la APK."
+    "confirmPasswordHint": "Es necesaria porque estas direcciones determinan adónde se envían las facturas, las multas y los avisos de la APK.",
+    "tabColleagues": "Compañeros",
+    "colleagues": {
+      "help": "Invite a compañeros como administrador o conductor. Un compañero nunca recibe más derechos que usted. Lam Groep recibe un aviso.",
+      "invite": "Invitar a un compañero",
+      "role": "Función",
+      "send": "Enviar invitación",
+      "invited": "Invitación enviada a {{email}}",
+      "inviteNotSent": "Cuenta creada, pero no se pudo enviar la invitación por correo. Inténtelo más tarde.",
+      "resent": "Invitación enviada de nuevo",
+      "resend": "Invitar de nuevo",
+      "block": "Bloquear",
+      "unblock": "Permitir de nuevo",
+      "blocked": "bloqueado",
+      "pending": "invitación pendiente",
+      "activeStatus": "activo",
+      "you": "usted",
+      "pickDriver": "Elija el conductor para esta cuenta",
+      "ceiling": "El nuevo compañero recibe las mismas restricciones que su propia cuenta."
+    }
   },
   "errors": {
     "PORTAL_NOT_AUTHENTICATED": "No ha iniciado sesión.",
@@ -376,7 +395,8 @@
     "PORTAL_INVALID_SIGNATURE": "Primero firme en el recuadro.",
     "PORTAL_CANCEL_TOO_LATE": "Puede cancelar hasta 48 horas antes del inicio. Póngase en contacto con nosotros.",
     "PORTAL_CANCEL_NOT_ALLOWED": "Esta reserva no se puede cancelar a través del portal.",
-    "PORTAL_FILE_TOO_LARGE": "El archivo supera los 10 MB."
+    "PORTAL_FILE_TOO_LARGE": "El archivo supera los 10 MB.",
+    "PORTAL_DRIVER_HAS_ACCOUNT": "Este conductor ya tiene una cuenta."
   },
   "admin": {
     "navLabel": "Portal de clientes",
@@ -609,12 +629,14 @@
         "driverFiscalVisibilityEnabled": "Un conductor ve su propia situación fiscal, no la de sus compañeros.",
         "mailReservationChanges": "Desactivado: no se envía ningún correo a la dirección del cliente cuando se traslada o cancela una reserva. El aviso bajo la campana se mantiene.",
         "mailMaintenance": "Desactivado: no se envían correos de mantenimiento a la dirección del cliente. El aviso bajo la campana se mantiene.",
-        "mailDocuments": "Desactivado: no se envía ningún correo cuando hay un documento disponible. El documento sí aparece en el portal."
+        "mailDocuments": "Desactivado: no se envía ningún correo cuando hay un documento disponible. El documento sí aparece en el portal.",
+        "canInviteColleagues": "Un administrador del cliente puede invitar y bloquear a compañeros (administradores y conductores), nunca con más derechos que los suyos. Recibe un aviso de cada invitación."
       },
       "mailTitle": "Correos a la dirección de la empresa",
       "mailReservationChanges": "Correo al modificar o cancelar una reserva",
       "mailMaintenance": "Correo sobre mantenimiento",
-      "mailDocuments": "Correo al haber un nuevo documento"
+      "mailDocuments": "Correo al haber un nuevo documento",
+      "canInviteColleagues": "Puede invitar a compañeros"
     },
     "activity": {
       "title": "Actividad en el portal",
@@ -651,7 +673,11 @@
         "company_details_updated": "Datos de la empresa actualizados",
         "company_name_requested": "Cambio del nombre de la empresa solicitado",
         "export": "Lista exportada (CSV)",
-        "document_uploaded": "Documento subido"
+        "document_uploaded": "Documento subido",
+        "colleague_invited": "Compañero invitado",
+        "colleague_blocked": "Compañero bloqueado",
+        "colleague_unblocked": "Compañero permitido de nuevo",
+        "colleague_invite_resent": "Invitación de compañero reenviada"
       },
       "detailKeys": {
         "by": "por",

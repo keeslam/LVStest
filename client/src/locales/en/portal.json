@@ -338,7 +338,26 @@
       "billingCity": "City"
     },
     "confirmPassword": "Your password to confirm",
-    "confirmPasswordHint": "Needed because these addresses decide where invoices, fines and MOT messages are sent."
+    "confirmPasswordHint": "Needed because these addresses decide where invoices, fines and MOT messages are sent.",
+    "tabColleagues": "Colleagues",
+    "colleagues": {
+      "help": "Invite colleagues as administrator or driver. A colleague never gets more rights than you have. Lam Groep is notified.",
+      "invite": "Invite colleague",
+      "role": "Role",
+      "send": "Send invitation",
+      "invited": "Invitation sent to {{email}}",
+      "inviteNotSent": "Account created, but the invitation could not be emailed. Please try again later.",
+      "resent": "Invitation sent again",
+      "resend": "Invite again",
+      "block": "Block",
+      "unblock": "Allow again",
+      "blocked": "blocked",
+      "pending": "invitation open",
+      "activeStatus": "active",
+      "you": "you",
+      "pickDriver": "Choose the driver for this account",
+      "ceiling": "The new colleague gets the same restrictions as your own account."
+    }
   },
   "errors": {
     "PORTAL_NOT_AUTHENTICATED": "You are not logged in.",
@@ -370,7 +389,8 @@
     "PORTAL_INVALID_SIGNATURE": "Please sign in the box first.",
     "PORTAL_CANCEL_TOO_LATE": "You can cancel until 48 hours before the start. Please contact us.",
     "PORTAL_CANCEL_NOT_ALLOWED": "This reservation cannot be cancelled through the portal.",
-    "PORTAL_FILE_TOO_LARGE": "The file is larger than 10 MB."
+    "PORTAL_FILE_TOO_LARGE": "The file is larger than 10 MB.",
+    "PORTAL_DRIVER_HAS_ACCOUNT": "This driver already has an account."
   },
   "admin": {
     "navLabel": "Customer portal",
@@ -603,12 +623,14 @@
         "driverFiscalVisibilityEnabled": "A driver sees their own fiscal status, not their colleagues'.",
         "mailReservationChanges": "Off: no e-mail goes to the customer's address when a rental is moved or cancelled. The bell notification stays.",
         "mailMaintenance": "Off: no maintenance e-mails to the customer's address. The bell notification stays.",
-        "mailDocuments": "Off: no e-mail that a document is waiting. The document is still in the portal."
+        "mailDocuments": "Off: no e-mail that a document is waiting. The document is still in the portal.",
+        "canInviteColleagues": "An administrator of the customer can invite and block colleagues (administrators and drivers) themselves, never with more rights than their own. You are notified of every invitation."
       },
       "mailTitle": "E-mails to the company address",
       "mailReservationChanges": "E-mail when a rental is moved or cancelled",
       "mailMaintenance": "E-mail about maintenance",
-      "mailDocuments": "E-mail when a document is available"
+      "mailDocuments": "E-mail when a document is available",
+      "canInviteColleagues": "May invite colleagues"
     },
     "activity": {
       "title": "Activity in the portal",
@@ -645,7 +667,11 @@
         "company_details_updated": "Company details updated",
         "company_name_requested": "Company name change requested",
         "export": "List exported (CSV)",
-        "document_uploaded": "Document uploaded"
+        "document_uploaded": "Document uploaded",
+        "colleague_invited": "Colleague invited",
+        "colleague_blocked": "Colleague blocked",
+        "colleague_unblocked": "Colleague allowed again",
+        "colleague_invite_resent": "Colleague invitation sent again"
       },
       "detailKeys": {
         "by": "by",

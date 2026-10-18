@@ -30,6 +30,7 @@ export const PORTAL_ERROR = {
   CANCEL_TOO_LATE: 'PORTAL_CANCEL_TOO_LATE',
   CANCEL_NOT_ALLOWED: 'PORTAL_CANCEL_NOT_ALLOWED',
   FILE_TOO_LARGE: 'PORTAL_FILE_TOO_LARGE',
+  DRIVER_HAS_ACCOUNT: 'PORTAL_DRIVER_HAS_ACCOUNT',
   EMAIL_IN_USE: 'PORTAL_EMAIL_IN_USE',
   REQUEST_INVALID_PERIOD: 'PORTAL_REQUEST_INVALID_PERIOD',
   ATTACHMENT_LIMIT: 'PORTAL_ATTACHMENT_LIMIT',
@@ -58,6 +59,8 @@ export interface PortalSettingsFlags {
   fiscalWarningsEnabled: boolean;
   fiscalReportsEnabled: boolean;
   driverFiscalVisibilityEnabled: boolean;
+  /** An admin account may invite and block colleagues (Kees, 2026-10-18); the office can switch it off per customer. */
+  canInviteColleagues: boolean;
 }
 
 /** Features that can be switched per customer and, on top of that, restricted per account. */
@@ -126,6 +129,21 @@ export interface PortalReservationDto {
   serviceDue?: 'due' | 'soon' | null;
   /** Detail view only: whether the customer can still ask to cancel. */
   cancellation?: PortalCancellationDto;
+}
+
+/** A colleague's portal account as an admin of the same company sees it (Kees, 2026-10-18). */
+export interface PortalColleagueDto {
+  id: number;
+  fullName: string;
+  email: string;
+  role: 'admin' | 'driver';
+  driver: { id: number; displayName: string } | null;
+  active: boolean;
+  /** Has set a password. */
+  activated: boolean;
+  invitePending: boolean;
+  lastSeenAt: string | null;
+  isSelf: boolean;
 }
 
 /**

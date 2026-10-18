@@ -98,6 +98,8 @@ export function settingsFlags(s: PortalCustomerSettings, user?: Pick<PortalUser,
     fiscalWarningsEnabled: s.fiscalWarningsEnabled,
     fiscalReportsEnabled: s.fiscalReportsEnabled,
     driverFiscalVisibilityEnabled: s.driverFiscalVisibilityEnabled,
+    // Customer-level only; the routes also require the admin role.
+    canInviteColleagues: s.canInviteColleagues,
   };
 }
 

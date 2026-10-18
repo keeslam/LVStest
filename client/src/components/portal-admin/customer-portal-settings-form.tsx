@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
-const FLAGS = ["portalEnabled", "canBook", "canManageDrivers", "canSubmitRequests", "canReturn", "canViewFines", "canViewContracts", "showPrices"] as const;
+const FLAGS = ["portalEnabled", "canBook", "canManageDrivers", "canSubmitRequests", "canReturn", "canViewFines", "canViewContracts", "showPrices", "canInviteColleagues"] as const;
 // Fiscal mobility check (docs/fiscaal §1.8): visibility and notifications for this customer; never a fiscal parameter.
 const FISCAL_FLAGS = ["fiscalMobilityEnabled", "pseudoEindheffingEnabled", "fiscalDashboardEnabled", "fiscalWarningsEnabled", "fiscalReportsEnabled", "driverFiscalVisibilityEnabled"] as const;
 

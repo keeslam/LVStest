@@ -1801,6 +1801,7 @@ async function runMigrations() {
     await addColumnIfNotExists('portal_users', 'email_change_expires_at', 'TIMESTAMPTZ');
     await addColumnIfNotExists('portal_users', 'known_devices', "JSONB NOT NULL DEFAULT '[]'::jsonb");
     await addColumnIfNotExists('portal_customer_settings', 'can_return', 'BOOLEAN NOT NULL DEFAULT true');
+    await addColumnIfNotExists('portal_customer_settings', 'can_invite_colleagues', 'BOOLEAN NOT NULL DEFAULT true');
 
     await createTableIfNotExists('portal_customer_settings', `
       CREATE TABLE portal_customer_settings (

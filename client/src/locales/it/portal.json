@@ -344,7 +344,26 @@
       "billingCity": "Località"
     },
     "confirmPassword": "La Sua password, per conferma",
-    "confirmPasswordHint": "Necessaria perché questi indirizzi stabiliscono dove vengono inviate fatture, multe e comunicazioni sull’APK."
+    "confirmPasswordHint": "Necessaria perché questi indirizzi stabiliscono dove vengono inviate fatture, multe e comunicazioni sull’APK.",
+    "tabColleagues": "Colleghi",
+    "colleagues": {
+      "help": "Invita colleghi come amministratore o conducente. Un collega non riceve mai più diritti di quelli che hai tu. Lam Groep riceve un avviso.",
+      "invite": "Invita collega",
+      "role": "Ruolo",
+      "send": "Invia invito",
+      "invited": "Invito inviato a {{email}}",
+      "inviteNotSent": "Account creato, ma non è stato possibile inviare l'invito per e-mail. Riprova più tardi.",
+      "resent": "Invito inviato di nuovo",
+      "resend": "Invita di nuovo",
+      "block": "Blocca",
+      "unblock": "Riammetti",
+      "blocked": "bloccato",
+      "pending": "invito in sospeso",
+      "activeStatus": "attivo",
+      "you": "tu",
+      "pickDriver": "Scegli il conducente per questo account",
+      "ceiling": "Il nuovo collega riceve le stesse limitazioni del tuo account."
+    }
   },
   "errors": {
     "PORTAL_NOT_AUTHENTICATED": "Non ha effettuato l’accesso.",
@@ -376,7 +395,8 @@
     "PORTAL_INVALID_SIGNATURE": "Firmi prima nel riquadro.",
     "PORTAL_CANCEL_TOO_LATE": "Puoi annullare fino a 48 ore prima dell'inizio. Contattaci.",
     "PORTAL_CANCEL_NOT_ALLOWED": "Questa prenotazione non può essere annullata tramite il portale.",
-    "PORTAL_FILE_TOO_LARGE": "Il file supera i 10 MB."
+    "PORTAL_FILE_TOO_LARGE": "Il file supera i 10 MB.",
+    "PORTAL_DRIVER_HAS_ACCOUNT": "Questo conducente ha già un account."
   },
   "admin": {
     "navLabel": "Portale clienti",
@@ -609,12 +629,14 @@
         "driverFiscalVisibilityEnabled": "Un conducente vede il proprio stato fiscale, non quello dei colleghi.",
         "mailReservationChanges": "Disattivato: nessuna e-mail all’indirizzo del cliente quando una prenotazione viene spostata o annullata. La notifica sotto la campanella resta.",
         "mailMaintenance": "Disattivato: nessuna e-mail di manutenzione all’indirizzo del cliente. La notifica sotto la campanella resta.",
-        "mailDocuments": "Disattivato: nessuna e-mail per avvisare che un documento è disponibile. Il documento è comunque presente nel portale."
+        "mailDocuments": "Disattivato: nessuna e-mail per avvisare che un documento è disponibile. Il documento è comunque presente nel portale.",
+        "canInviteColleagues": "Un amministratore del cliente può invitare e bloccare colleghi (amministratori e conducenti), mai con più diritti dei propri. Ricevi un avviso per ogni invito."
       },
       "mailTitle": "E-mail all’indirizzo aziendale",
       "mailReservationChanges": "E-mail per prenotazione modificata o annullata",
       "mailMaintenance": "E-mail sulla manutenzione",
-      "mailDocuments": "E-mail per nuovo documento"
+      "mailDocuments": "E-mail per nuovo documento",
+      "canInviteColleagues": "Può invitare colleghi"
     },
     "activity": {
       "title": "Attività nel portale",
@@ -651,7 +673,11 @@
         "company_details_updated": "Dati aziendali aggiornati",
         "company_name_requested": "Modifica della ragione sociale richiesta",
         "export": "Elenco esportato (CSV)",
-        "document_uploaded": "Documento caricato"
+        "document_uploaded": "Documento caricato",
+        "colleague_invited": "Collega invitato",
+        "colleague_blocked": "Collega bloccato",
+        "colleague_unblocked": "Collega riammesso",
+        "colleague_invite_resent": "Invito al collega inviato di nuovo"
       },
       "detailKeys": {
         "by": "da",

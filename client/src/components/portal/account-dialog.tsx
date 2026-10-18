@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { BellRing, Building2, Globe, KeyRound, Mail, User, X } from "lucide-react";
+import { BellRing, Building2, Globe, KeyRound, Mail, User, Users, X } from "lucide-react";
+import { ColleaguesPanel } from "./colleagues-panel";
 import type { PortalCompanyEmails } from "@shared/portal-types";
 import { COMPANY_DETAIL_FIELDS, type CompanyDetailField } from "@shared/portal-company";
 import { composeStreetLine, splitStreetLine, type AddressLookupQuery, type AddressLookupResult } from "@shared/address";
@@ -190,6 +191,7 @@ export function PortalAccountDialog({ open, onClose }: { open: boolean; onClose:
       <div>{body}</div>
     </TabsContent>
   );
+  const canInviteColleagues = me?.role === "admin" && Boolean(me.settings.canInviteColleagues);
   const tabClass = "flex-1 gap-1.5 whitespace-nowrap rounded-none border-b-2 border-transparent px-3 py-2.5 text-sm font-medium text-[#64748b] data-[state=active]:border-[#f59e0b] data-[state=active]:bg-transparent data-[state=active]:text-[#1a1d62] data-[state=active]:shadow-none";
 
   return (
@@ -207,6 +209,7 @@ export function PortalAccountDialog({ open, onClose }: { open: boolean; onClose:
             <TabsTrigger value="security" className={tabClass} data-testid="tab-account-security"><KeyRound className="h-4 w-4" />{t("account.tabSecurity")}</TabsTrigger>
             <TabsTrigger value="mail" className={tabClass} data-testid="tab-account-mail"><BellRing className="h-4 w-4" />{t("account.tabMail")}</TabsTrigger>
             {me?.company && <TabsTrigger value="company" className={tabClass} data-testid="tab-account-company"><Building2 className="h-4 w-4" />{t("account.tabCompany")}</TabsTrigger>}
+            {canInviteColleagues && <TabsTrigger value="colleagues" className={tabClass} data-testid="tab-account-colleagues"><Users className="h-4 w-4" />{t("account.tabColleagues")}</TabsTrigger>}
           </TabsList>
 
           {panel("profile", <User className="h-4 w-4" />, t("account.sectionProfile"), null, (
@@ -335,6 +338,8 @@ export function PortalAccountDialog({ open, onClose }: { open: boolean; onClose:
               </form>
             </div>
           ))}
+          {/* Kees, 2026-10-18: admins invite and block colleagues; the office can switch this off per customer. */}
+          {canInviteColleagues && panel("colleagues", <Users className="h-4 w-4" />, t("account.tabColleagues"), t("account.colleagues.help"), <ColleaguesPanel />)}
         </Tabs>
       </DialogContent>
     </Dialog>
