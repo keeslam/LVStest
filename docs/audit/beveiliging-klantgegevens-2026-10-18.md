@@ -427,3 +427,18 @@ Wat de nieuwe functie zelf aan beveiliging meebrengt:
 - De klant krijgt een mail met een link, nooit de PDF zelf.
 
 Let op bij productie: het IP-adres op de handtekening is pas het echte adres van de klant als `TRUST_PROXY_HOPS` in Coolify goed staat. Anders staat er het adres van de proxy.
+
+## Status Hoog-punten (18 oktober 2026, later)
+
+Kees gaf akkoord; opgelost in commit 55c8e9af:
+- **Punt 1 — documenten:**
+  - kantoor krijgt een document nu met een type dat de server bepaalt, met nosniff;
+  - alleen PDF en afbeeldingen openen in het venster, al het andere wordt een download met sandbox;
+  - een inline PDF krijgt geen sandbox, zodat afdrukken uit het voorbeeld blijft werken;
+  - de schadecheck bij een reservering wordt op inhoud gecontroleerd;
+  - de datum in de bestandsnaam van de schadecheck wordt gecontroleerd;
+  - het uploadfilter vergelijkt het type exact. Dat dicht ook het schadecheck-deel van punt 6.
+- **Punt 2 — live-verbinding:** alleen een actieve medewerker kan verbinden. Een portaalsessie wordt geweigerd. Het eigen geheim en de eigen sessietabel voor het portaal zijn níet ingevoerd: dat logt alle klanten één keer uit. Dat besluit ligt nog bij Kees.
+- **Punt 3 — uitgeschakeld account:** zo'n account is direct uitgelogd. Ook een wachtwoordreset door een beheerder beëindigt de open sessies.
+
+Nog open: punten 4 t/m 12, en bij punt 6 de voertuigtekening (`make`/`model` in `fs.rename`).
