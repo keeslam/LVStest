@@ -363,6 +363,19 @@
       "you": "você",
       "pickDriver": "Escolha o condutor para esta conta",
       "ceiling": "O novo colega recebe as mesmas restrições que a sua própria conta."
+    },
+    "sessions": {
+      "title": "Dispositivos com sessão iniciada",
+      "help": "Tem sessão iniciada aqui neste momento. Não reconhece um dispositivo? Termine a sessão e altere a sua palavra-passe.",
+      "signOut": "Terminar sessão",
+      "signOutOthers": "Terminar sessão nos outros",
+      "thisDevice": "Este dispositivo",
+      "unknown": "Dispositivo desconhecido",
+      "since": "sessão iniciada {{date}}",
+      "lastActive": "última atividade {{date}}",
+      "signedOut_one": "{{count}} dispositivo desligado",
+      "signedOut_many": "{{count}} de dispositivos desligados",
+      "signedOut_other": "{{count}} dispositivos desligados"
     }
   },
   "errors": {
@@ -677,7 +690,8 @@
         "colleague_invited": "Colega convidado",
         "colleague_blocked": "Colega bloqueado",
         "colleague_unblocked": "Colega permitido novamente",
-        "colleague_invite_resent": "Convite de colega reenviado"
+        "colleague_invite_resent": "Convite de colega reenviado",
+        "sessions_signed_out": "Sessão terminada noutros dispositivos"
       },
       "detailKeys": {
         "by": "por",

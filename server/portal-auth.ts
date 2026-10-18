@@ -18,7 +18,8 @@ import {
 import { portalStorage, type PortalScope } from "./services/portal-storage";
 import { sendPortalInvite, sendEmailChangeMail, sendEmailChangedNotice, sendNewDeviceMail } from "./services/portal-mail";
 import { getPortalConfig } from "./services/portal-config";
-import { createHmac, randomBytes } from "crypto";
+import { createHash, createHmac, randomBytes } from "crypto";
+import { describeUserAgent } from "../shared/user-agent";
 import { notifyStaffOfPortalEvent } from "./services/portal-notifications";
 import { hashInviteToken } from "./services/portal-tokens";
 import { ACCOUNT_MAIL_KEYS, accountMailEnabled } from "../shared/portal-mail-preferences";
@@ -27,7 +28,7 @@ import { PortalRequestType } from "../shared/portal-requests";
 import { PortalUserRole, type PortalUser, type PortalCustomerSettings, type PortalKnownDevice } from "../shared/schema";
 import { COMPANY_DETAIL_FIELDS, type PortalCompanyDetails } from "../shared/portal-company";
 import { requestsStorage } from "./services/portal-requests-storage";
-import { PORTAL_ERROR, type PortalErrorCode, type PortalMe, type PortalSettingsFlags, type PortalCompanyEmails } from "../shared/portal-types";
+import { PORTAL_ERROR, type PortalErrorCode, type PortalMe, type PortalSettingsFlags, type PortalCompanyEmails, type PortalSessionDto } from "../shared/portal-types";
 import { SUPPORTED_LANGUAGES, isSupportedLanguage, toSupportedLanguage } from "../shared/languages";
 
 /** Staff read the notification text, so the changed fields are named in words, not by column name. */
@@ -267,6 +268,51 @@ export async function revokePortalSessionsExcept(portalUserId: number, exceptSes
   return result.rowCount ?? 0;
 }
 
+/**
+ * Logged-in devices (Kees, 2026-10-18). A session remembers the browser and address it was opened
+ * from; the list is read from the session store, so it is exactly what is still valid. The public id is
+ * a hash of the session id: the real id is the cookie and never leaves the server.
+ */
+const sessionKey = (sid: string) => createHash("sha256").update(sid).digest("hex").slice(0, 24);
+/** At login, or (signedInAt null) for a session that was opened before devices were recorded. */
+function markSessionDevice(req: Request, signedIn = true): void {
+  (req.session as unknown as { device?: unknown }).device = {
+    ua: (req.get("user-agent") || "").slice(0, 300), ip: req.ip ?? null, signedInAt: signedIn ? new Date().toISOString() : null,
+  };
+}
+export async function listPortalSessions(portalUserId: number, currentSid?: string): Promise<PortalSessionDto[]> {
+  await ensurePortalSessionTable();
+  const result = await pool.query(
+    `select sid, sess, expire from ${PORTAL_SESSION_TABLE}
+       where sess -> 'passport' -> 'user' ->> 'kind' = 'portal'
+         and sess -> 'passport' -> 'user' ->> 'id' = $1
+         and expire > now()
+       order by expire desc`,
+    [String(portalUserId)],
+  );
+  return result.rows.map((row: { sid: string; sess: any; expire: Date }) => {
+    const device = row.sess?.device ?? {};
+    const { browser, os } = describeUserAgent(device.ua);
+    return {
+      id: sessionKey(row.sid), current: row.sid === currentSid, browser, os, ip: device.ip ?? null,
+      signedInAt: device.signedInAt ?? null,
+      // The session is rolling: it expires an hour after the last request.
+      lastActiveAt: new Date(new Date(row.expire).getTime() - PORTAL_SESSION_MAX_AGE).toISOString(),
+    };
+  });
+}
+async function revokePortalSessionByKey(portalUserId: number, key: string): Promise<boolean> {
+  await ensurePortalSessionTable();
+  const rows = (await pool.query(
+    `select sid from ${PORTAL_SESSION_TABLE} where sess -> 'passport' -> 'user' ->> 'kind' = 'portal' and sess -> 'passport' -> 'user' ->> 'id' = $1`,
+    [String(portalUserId)],
+  )).rows as Array<{ sid: string }>;
+  const match = rows.find((r) => sessionKey(r.sid) === key);
+  if (!match) return false;
+  await pool.query(`delete from ${PORTAL_SESSION_TABLE} where sid = $1`, [match.sid]);
+  return true;
+}
+
 const passwordSchema = z.string().min(PORTAL_PASSWORD_MIN, `Password must be at least ${PORTAL_PASSWORD_MIN} characters`);
 
 export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandler } {
@@ -354,6 +400,7 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
     }
     req.portalUser = ctx;
     touchLastSeen(ctx.user.id);
+    if (!(req.session as unknown as { device?: unknown }).device) markSessionDevice(req, false);
     next();
   };
 
@@ -395,6 +442,7 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
           await settleLoginAttempt(gate.attemptId, { success: true });
           await clearFailedAttempts(lockKey);
           await rememberDevice(req, res, user);
+          markSessionDevice(req);
           await portalStorage.updatePortalUser(user.id, { lastLoginAt: new Date() });
           req.portalUser = ctx;
           await logPortalActivity(req, "login");
@@ -590,6 +638,25 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
     res.status(201).json(await buildMe(fresh!));
   });
 
+  // ---- logged-in devices (Kees, 2026-10-18) ----------------------------------------------------------
+  app.get("/api/portal/me/sessions", requirePortalUser, async (req, res) => {
+    res.json(await listPortalSessions(req.portalUser!.user.id, req.sessionID));
+  });
+  // Sign out every other browser; this one stays logged in.
+  app.post("/api/portal/me/sessions/sign-out-others", requirePortalUser, async (req, res) => {
+    const count = await revokePortalSessionsExcept(req.portalUser!.user.id, req.sessionID);
+    await logPortalActivity(req, "sessions_signed_out", { details: { count } });
+    res.json({ count, sessions: await listPortalSessions(req.portalUser!.user.id, req.sessionID) });
+  });
+  app.delete("/api/portal/me/sessions/:id", requirePortalUser, async (req, res) => {
+    const key = String(req.params.id);
+    if (!/^[0-9a-f]{24}$/.test(key)) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Session not found");
+    if (key === sessionKey(req.sessionID)) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Use log out for this browser");
+    if (!(await revokePortalSessionByKey(req.portalUser!.user.id, key))) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Session not found");
+    await logPortalActivity(req, "sessions_signed_out", { details: { count: 1 } });
+    res.json(await listPortalSessions(req.portalUser!.user.id, req.sessionID));
+  });
+
   app.post("/api/portal/me/password", requirePortalUser, async (req, res) => {
     const parsed = z.object({ currentPassword: z.string().min(1), newPassword: passwordSchema }).safeParse(req.body);
     if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, parsed.error.errors[0]?.message ?? "Invalid input");
@@ -663,6 +730,7 @@ function forgotAllowed(email: string): boolean {
       req.login(ctx.user as unknown as Express.User, async (loginErr: any) => {
         if (loginErr) return next(loginErr);
         req.portalUser = ctx;
+        markSessionDevice(req);
         await logPortalActivity(req, "activate");
         res.json(await buildMe(ctx));
       });

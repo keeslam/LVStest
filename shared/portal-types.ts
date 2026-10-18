@@ -131,6 +131,19 @@ export interface PortalReservationDto {
   cancellation?: PortalCancellationDto;
 }
 
+/** One browser this account is logged in with right now (Kees, 2026-10-18). */
+export interface PortalSessionDto {
+  /** A hash of the session id: enough to sign it out, useless as a cookie. */
+  id: string;
+  current: boolean;
+  browser: string | null;
+  os: string | null;
+  ip: string | null;
+  /** Null for a session from before devices were recorded. */
+  signedInAt: string | null;
+  lastActiveAt: string;
+}
+
 /** A colleague's portal account as an admin of the same company sees it (Kees, 2026-10-18). */
 export interface PortalColleagueDto {
   id: number;

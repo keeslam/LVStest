@@ -357,6 +357,18 @@
       "you": "u",
       "pickDriver": "Kies de bestuurder voor dit account",
       "ceiling": "De nieuwe collega krijgt dezelfde beperkingen als uw eigen account."
+    },
+    "sessions": {
+      "title": "Ingelogde apparaten",
+      "help": "Hier bent u nu ingelogd. Herkent u een apparaat niet? Log het uit en wijzig uw wachtwoord.",
+      "signOut": "Uitloggen",
+      "signOutOthers": "Overal anders uitloggen",
+      "thisDevice": "Dit apparaat",
+      "unknown": "Onbekend apparaat",
+      "since": "ingelogd {{date}}",
+      "lastActive": "laatst actief {{date}}",
+      "signedOut_one": "{{count}} apparaat uitgelogd",
+      "signedOut_other": "{{count}} apparaten uitgelogd"
     }
   },
   "errors": {
@@ -671,7 +683,8 @@
         "colleague_invited": "Collega uitgenodigd",
         "colleague_blocked": "Collega geblokkeerd",
         "colleague_unblocked": "Collega weer toegelaten",
-        "colleague_invite_resent": "Uitnodiging collega opnieuw verstuurd"
+        "colleague_invite_resent": "Uitnodiging collega opnieuw verstuurd",
+        "sessions_signed_out": "Andere apparaten uitgelogd"
       },
       "detailKeys": {
         "by": "door",

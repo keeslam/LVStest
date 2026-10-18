@@ -363,6 +363,19 @@
       "you": "tu",
       "pickDriver": "Scegli il conducente per questo account",
       "ceiling": "Il nuovo collega riceve le stesse limitazioni del tuo account."
+    },
+    "sessions": {
+      "title": "Dispositivi connessi",
+      "help": "Sei connesso qui in questo momento. Non riconosci un dispositivo? Disconnettilo e cambia la password.",
+      "signOut": "Esci",
+      "signOutOthers": "Esci da tutti gli altri",
+      "thisDevice": "Questo dispositivo",
+      "unknown": "Dispositivo sconosciuto",
+      "since": "accesso {{date}}",
+      "lastActive": "ultima attività {{date}}",
+      "signedOut_one": "{{count}} dispositivo disconnesso",
+      "signedOut_many": "{{count}} di dispositivi disconnessi",
+      "signedOut_other": "{{count}} dispositivi disconnessi"
     }
   },
   "errors": {
@@ -677,7 +690,8 @@
         "colleague_invited": "Collega invitato",
         "colleague_blocked": "Collega bloccato",
         "colleague_unblocked": "Collega riammesso",
-        "colleague_invite_resent": "Invito al collega inviato di nuovo"
+        "colleague_invite_resent": "Invito al collega inviato di nuovo",
+        "sessions_signed_out": "Altri dispositivi disconnessi"
       },
       "detailKeys": {
         "by": "da",

@@ -369,6 +369,20 @@
       "you": "Ty",
       "pickDriver": "Wybierz kierowcę dla tego konta",
       "ceiling": "Nowy współpracownik otrzymuje te same ograniczenia co Twoje konto."
+    },
+    "sessions": {
+      "title": "Zalogowane urządzenia",
+      "help": "Tutaj jesteś teraz zalogowany. Nie rozpoznajesz urządzenia? Wyloguj je i zmień hasło.",
+      "signOut": "Wyloguj",
+      "signOutOthers": "Wyloguj wszędzie indziej",
+      "thisDevice": "To urządzenie",
+      "unknown": "Nieznane urządzenie",
+      "since": "zalogowano {{date}}",
+      "lastActive": "ostatnia aktywność {{date}}",
+      "signedOut_one": "Wylogowano {{count}} urządzenie",
+      "signedOut_few": "Wylogowano {{count}} urządzenia",
+      "signedOut_many": "Wylogowano {{count}} urządzeń",
+      "signedOut_other": "Wylogowano {{count}} urządzenia"
     }
   },
   "errors": {
@@ -683,7 +697,8 @@
         "colleague_invited": "Zaproszono współpracownika",
         "colleague_blocked": "Zablokowano współpracownika",
         "colleague_unblocked": "Odblokowano współpracownika",
-        "colleague_invite_resent": "Ponownie wysłano zaproszenie współpracownika"
+        "colleague_invite_resent": "Ponownie wysłano zaproszenie współpracownika",
+        "sessions_signed_out": "Wylogowano inne urządzenia"
       },
       "detailKeys": {
         "by": "przez",

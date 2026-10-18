@@ -357,6 +357,18 @@
       "you": "you",
       "pickDriver": "Choose the driver for this account",
       "ceiling": "The new colleague gets the same restrictions as your own account."
+    },
+    "sessions": {
+      "title": "Logged-in devices",
+      "help": "You are logged in here right now. Don't recognise a device? Sign it out and change your password.",
+      "signOut": "Sign out",
+      "signOutOthers": "Sign out everywhere else",
+      "thisDevice": "This device",
+      "unknown": "Unknown device",
+      "since": "signed in {{date}}",
+      "lastActive": "last active {{date}}",
+      "signedOut_one": "{{count}} device signed out",
+      "signedOut_other": "{{count}} devices signed out"
     }
   },
   "errors": {
@@ -671,7 +683,8 @@
         "colleague_invited": "Colleague invited",
         "colleague_blocked": "Colleague blocked",
         "colleague_unblocked": "Colleague allowed again",
-        "colleague_invite_resent": "Colleague invitation sent again"
+        "colleague_invite_resent": "Colleague invitation sent again",
+        "sessions_signed_out": "Other devices signed out"
       },
       "detailKeys": {
         "by": "by",

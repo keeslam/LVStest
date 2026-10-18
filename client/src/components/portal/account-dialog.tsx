@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { BellRing, Building2, Globe, KeyRound, Mail, User, Users, X } from "lucide-react";
 import { ColleaguesPanel } from "./colleagues-panel";
+import { SessionsPanel } from "./sessions-panel";
 import type { PortalCompanyEmails } from "@shared/portal-types";
 import { COMPANY_DETAIL_FIELDS, type CompanyDetailField } from "@shared/portal-company";
 import { composeStreetLine, splitStreetLine, type AddressLookupQuery, type AddressLookupResult } from "@shared/address";
@@ -258,6 +259,8 @@ export function PortalAccountDialog({ open, onClose }: { open: boolean; onClose:
                 <div><Label htmlFor="acc-new">{t("fields.newPassword")}</Label><Input id="acc-new" type="password" autoComplete="new-password" minLength={10} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required /></div>
                 <Button type="submit" size="sm" variant="outline">{t("actions.save")}</Button>
               </form>
+              {/* Kees, 2026-10-18: where this account is logged in, and signing out the others. */}
+              <div className="sm:col-span-2"><SessionsPanel /></div>
             </div>
           ))}
 

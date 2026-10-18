@@ -363,6 +363,19 @@
       "you": "dumneavoastră",
       "pickDriver": "Alegeți șoferul pentru acest cont",
       "ceiling": "Noul coleg primește aceleași restricții ca propriul dumneavoastră cont."
+    },
+    "sessions": {
+      "title": "Dispozitive conectate",
+      "help": "Sunteți conectat aici în acest moment. Nu recunoașteți un dispozitiv? Deconectați-l și schimbați parola.",
+      "signOut": "Deconectare",
+      "signOutOthers": "Deconectare de pe celelalte",
+      "thisDevice": "Acest dispozitiv",
+      "unknown": "Dispozitiv necunoscut",
+      "since": "conectat {{date}}",
+      "lastActive": "ultima activitate {{date}}",
+      "signedOut_one": "{{count}} dispozitiv deconectat",
+      "signedOut_few": "{{count}} dispozitive deconectate",
+      "signedOut_other": "{{count}} de dispozitive deconectate"
     }
   },
   "errors": {
@@ -677,7 +690,8 @@
         "colleague_invited": "Coleg invitat",
         "colleague_blocked": "Coleg blocat",
         "colleague_unblocked": "Coleg permis din nou",
-        "colleague_invite_resent": "Invitație coleg retrimisă"
+        "colleague_invite_resent": "Invitație coleg retrimisă",
+        "sessions_signed_out": "Alte dispozitive deconectate"
       },
       "detailKeys": {
         "by": "de către",
