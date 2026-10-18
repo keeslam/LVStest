@@ -11,8 +11,12 @@ import { EMAIL_FAILURE_CODES as FAILURE, withFailureCode } from '../../shared/em
 import { 
   getApkReminderTemplate, 
   getMaintenanceReminderTemplate,
-  getCustomMessageTemplate 
+  getCustomMessageTemplate,
+  defaultMaintenanceType,
+  unknownApkDate,
 } from '../utils/email-templates-i18n.js';
+import { formatDateForLanguage } from '../utils/locale-format.js';
+import { toSupportedLanguage } from '../../shared/languages.js';
 import { getCompanyName } from '../services/company-name.js';
 
 // Helper function to replace placeholders in template strings. Audit A-13-6:
@@ -30,9 +34,9 @@ function replacePlaceholders(text: string, data: PlaceholderData, transform?: (v
   return fillPlaceholders(text, values, { unknown: 'blank', transform });
 }
 
-/** A yyyy-MM-dd (or timestamp) date as dd-mm-jjjj; empty when there is none. */
-function dutchDate(value: string | null | undefined): string {
-  return value ? formatDateNL(value) : '';
+/** A yyyy-MM-dd (or timestamp) date in the customer's notation (dd-mm-jjjj in Dutch); empty when there is none. */
+function customerDate(value: string | null | undefined, language: string): string {
+  return value ? formatDateForLanguage(value, language) : '';
 }
 
 // Format license plate consistently using Dutch license plate patterns
@@ -308,6 +312,9 @@ router.post('/send', async (req, res) => {
       try {
         let emailContent;
 
+        // The customer's preferred language: the wording of the mail and the notation of its dates.
+        const customerLanguage = toSupportedLanguage(customer?.preferredLanguage);
+
         // Prepare placeholder data
         const formattedPlate = vehicle ? formatLicensePlate(vehicle.licensePlate) : '';
         const placeholderData = {
@@ -315,27 +322,24 @@ router.post('/send', async (req, res) => {
           vehiclePlate: formattedPlate,
           vehicleBrand: vehicle?.brand || '',
           vehicleModel: vehicle?.model || '',
-          apkDate: vehicle?.apkDate ? new Date(vehicle.apkDate).toLocaleDateString('nl-NL') : '',
+          apkDate: customerDate(vehicle?.apkDate, customerLanguage),
           // D15
           companyName: senderName,
           customerEmail: selectedEmail,
           customerPhone: customer?.phone || '',
-          reservationStart: dutchDate(data.reservation?.startDate),
-          reservationEnd: dutchDate(data.reservation?.endDate),
+          reservationStart: customerDate(data.reservation?.startDate, customerLanguage),
+          reservationEnd: customerDate(data.reservation?.endDate, customerLanguage),
           maintenanceDate: templateCategory === 'maintenance' && vehicle
-            ? dutchDate(await maintenanceDateForVehicle(vehicle))
+            ? customerDate(await maintenanceDateForVehicle(vehicle), customerLanguage)
             : '',
         };
-
-        // Get customer's preferred language
-        const customerLanguage = (customer?.preferredLanguage || 'nl') as 'nl' | 'en';
 
         switch (template) {
           case 'apk':
             emailContent = getApkReminderTemplate(
               placeholderData.customerName,
               formattedPlate,
-              placeholderData.apkDate || 'Unknown',
+              placeholderData.apkDate || unknownApkDate(customerLanguage),
               customerLanguage,
               senderName
             );
@@ -344,7 +348,7 @@ router.post('/send', async (req, res) => {
             emailContent = getMaintenanceReminderTemplate(
               placeholderData.customerName,
               formattedPlate,
-              'Regular Service', // You could make this dynamic based on vehicle data
+              defaultMaintenanceType(customerLanguage),
               customerLanguage,
               senderName
             );
