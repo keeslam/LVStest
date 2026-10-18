@@ -241,6 +241,21 @@ describe("A-13-7 / A-13-8 - Edit and Duplicate, and the sample text", () => {
     expect(within(card).getByText("Portaal: uitnodiging")).toBeInTheDocument();
     expect(within(card).getByText("PORTAAL")).toBeInTheDocument();
   });
+
+  it("a portal template in another language carries that language's name, and the language filter narrows the portal rows only", async () => {
+    templates.push({ id: 5, name: "portal_invite.es", subject: "Su cuenta", content: "<p>Estimado/a {{name}}:</p>", category: "portal", createdAt: "2026-10-01T10:00:00.000Z" });
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole("tab", { name: "Sjabloonbouwer" }));
+    expect(within(await screen.findByTestId("template-card-5")).getByText("Portaal: uitnodiging (Español)")).toBeInTheDocument();
+
+    await user.click(screen.getByTestId("select-template-language"));
+    await user.click(await screen.findByRole("option", { name: "Español" }));
+    await waitFor(() => expect(screen.queryByTestId("template-card-2")).not.toBeInTheDocument());
+    expect(screen.getByTestId("template-card-5")).toBeInTheDocument();
+    // A template staff wrote themselves has no language and stays in the list.
+    expect(screen.getByTestId("template-card-1")).toBeInTheDocument();
+  });
 });
 
 describe("A-13-9 / A-13-10 - counts, plural and the reason a button is off", () => {

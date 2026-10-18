@@ -6,7 +6,7 @@
  * their own category and the free ones, and never a system template.
  */
 import { describe, it, expect } from "vitest";
-import { isSystemTemplate, templatesForMode, systemTemplateLabelKey } from "./communication-templates";
+import { isSystemTemplate, templatesForMode, systemTemplateLabelKey, systemTemplateParts, systemTemplateLanguage } from "./communication-templates";
 
 const T = (id: number, name: string, category: string | null) => ({ id, name, subject: "s", content: "c", category });
 
@@ -30,6 +30,18 @@ describe("system templates", () => {
   it("have a label key per known name, built from the stored name", () => {
     expect(systemTemplateLabelKey("portal_invite")).toBe("customerCommunications.templates.systemNames.portal_invite");
     expect(systemTemplateLabelKey("Algemeen bericht")).toBeNull();
+  });
+
+  it("read the language from the name: bare is Dutch, a suffix is that language", () => {
+    expect(systemTemplateParts("portal_invite")).toEqual({ base: "portal_invite", language: "nl" });
+    expect(systemTemplateParts("portal_invite.es")).toEqual({ base: "portal_invite", language: "es" });
+    expect(systemTemplateLabelKey("portal_fine_linked.pl")).toBe("customerCommunications.templates.systemNames.portal_fine_linked");
+    expect(systemTemplateLanguage("portal_maintenance.pt")).toBe("pt");
+    // Unknown suffixes and staff templates have no language.
+    expect(systemTemplateParts("portal_invite.de")).toBeNull();
+    expect(systemTemplateParts("portal_invite.nl")).toBeNull();
+    expect(systemTemplateLanguage("Algemeen bericht")).toBeNull();
+    expect(isSystemTemplate(T(10, "portal_invite.ro", "portal"))).toBe(true);
   });
 });
 

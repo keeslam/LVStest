@@ -94,7 +94,7 @@ export async function onMaintenanceBlockChanged(before: Reservation | null, afte
       link: `/voertuigen?block=${block.id}`, dedupeTag: tag, dedupeDays: 365,
     });
     if (!created) return null;
-    try { await sendMaintenanceMail(target.customerId, { plate: vehicle.licensePlate, car, event: TITLE[event], date, endDate }); } catch (e) { console.error("maintenance mail failed:", e); }
+    try { await sendMaintenanceMail(target.customerId, { plate: vehicle.licensePlate, car, event, date, endDate }); } catch (e) { console.error("maintenance mail failed:", e); }
     return event;
   } catch (e) {
     console.error("onMaintenanceBlockChanged failed:", e);
@@ -199,7 +199,7 @@ export async function onRentalVehicleChanged(
               notified = true;
               try {
                 await sendMaintenanceMail(before.customerId, {
-                  plate: vehicle.licensePlate, car, event: TITLE.maintenance_unlinked,
+                  plate: vehicle.licensePlate, car, event: "maintenance_unlinked",
                   date: block.startDate, endDate: block.endDate ?? null,
                 });
               } catch (e) { console.error("maintenance unlinked mail failed:", e); }
@@ -233,7 +233,7 @@ export async function onReplacementAssigned(replacement: Reservation): Promise<b
       link: `/reserveringen/${replacement.id}`, dedupeTag: `spare:${replacement.id}:${replacement.vehicleId}`, dedupeDays: 365,
     });
     if (!created) return false;
-    try { await sendMaintenanceMail(rental.customerId, { plate: spare.licensePlate, car, event: "Vervangend vervoer staat klaar", date: replacement.startDate, endDate: replacement.endDate ?? null }); } catch (e) { console.error("replacement mail failed:", e); }
+    try { await sendMaintenanceMail(rental.customerId, { plate: spare.licensePlate, car, event: "replacement_ready", date: replacement.startDate, endDate: replacement.endDate ?? null }); } catch (e) { console.error("replacement mail failed:", e); }
     return true;
   } catch (e) {
     console.error("onReplacementAssigned failed:", e);

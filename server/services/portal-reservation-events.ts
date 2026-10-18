@@ -23,7 +23,9 @@ import { storage } from "../storage";
 import { customerNotifications } from "./portal-customer-notifications";
 import { portalStorage } from "./portal-storage";
 import { PORTAL_TEMPLATE, sendPortalCustomerMail } from "./portal-mail";
-import { formatDateNL } from "../utils/dutch-format";
+import { formatDateForLanguage } from "../utils/locale-format";
+import { PORTAL_MAIL_PHRASES } from "./portal-mail-texts";
+import type { SupportedLanguage } from "../../shared/languages";
 import { isContractDocument, isDamageCheckDocument } from "../../shared/document-types";
 import { portalCompanyName } from "./company-name";
 import { vehicleName } from "../../shared/vehicle-name";
@@ -40,21 +42,45 @@ async function hasPortalAccount(customerId: number): Promise<boolean> {
   return Boolean(row);
 }
 
-/** B-18: `12-10-2026 t/m 17-10-2026`, `12-10-2026` for one day, `vanaf …` when open-ended. */
-function period(startDate: string | null | undefined, endDate: string | null | undefined): string {
-  const start = formatDateNL(startDate ?? null);
+/**
+ * B-18: `12-10-2026 t/m 17-10-2026`, `12-10-2026` for one day, `vanaf …` when open-ended. A mail
+ * passes the recipient's language and gets that language's dates and words; the in-app notice is Dutch.
+ */
+function period(startDate: string | null | undefined, endDate: string | null | undefined, language: SupportedLanguage = "nl"): string {
+  const phrases = PORTAL_MAIL_PHRASES[language];
+  const start = formatDateForLanguage(startDate ?? null, language);
   if (!start) return "";
-  if (!endDate) return `vanaf ${start}`;
-  const end = formatDateNL(endDate);
-  return !end || end === start ? start : `${start} t/m ${end}`;
+  if (!endDate) return phrases.periodFrom(start);
+  const end = formatDateForLanguage(endDate, language);
+  return !end || end === start ? start : phrases.periodRange(start, end);
 }
 
-/** `Volkswagen Caddy (AB-123-C)`, or a sentence saying no car is assigned yet. */
-async function describeVehicle(vehicleId: number | null | undefined): Promise<{ text: string; plate: string | null }> {
-  if (vehicleId == null) return { text: "nog geen auto toegewezen", plate: null };
+type DescribedVehicle = { name: string | null; plate: string | null };
+
+/** `Volkswagen Caddy (AB-123-C)`; `name` is null when no car is assigned yet. */
+async function describeVehicle(vehicleId: number | null | undefined): Promise<DescribedVehicle> {
+  if (vehicleId == null) return { name: null, plate: null };
   const vehicle = await storage.getVehicle(vehicleId);
-  if (!vehicle) return { text: "nog geen auto toegewezen", plate: null };
-  return { text: `${vehicleName(vehicle.brand, vehicle.model)} (${vehicle.licensePlate})`, plate: vehicle.licensePlate };
+  if (!vehicle) return { name: null, plate: null };
+  return { name: `${vehicleName(vehicle.brand, vehicle.model)} (${vehicle.licensePlate})`, plate: vehicle.licensePlate };
+}
+
+/** The car as a mail or notice writes it, with "no car assigned yet" in that language. */
+function carText(car: DescribedVehicle, language: SupportedLanguage = "nl"): string {
+  return car.name ?? PORTAL_MAIL_PHRASES[language].noCar;
+}
+
+/** The sentences saying what moved, in one language. */
+function describeChanges(b: Reservation, a: Reservation, oldCar: DescribedVehicle, newCar: DescribedVehicle, language: SupportedLanguage = "nl"): string {
+  const phrases = PORTAL_MAIL_PHRASES[language];
+  const changes: string[] = [];
+  if (b.startDate !== a.startDate || (b.endDate ?? "") !== (a.endDate ?? "")) {
+    changes.push(phrases.periodChanged(period(a.startDate, a.endDate, language), period(b.startDate, b.endDate, language)));
+  }
+  if ((b.vehicleId ?? null) !== (a.vehicleId ?? null)) {
+    changes.push(phrases.vehicleChanged(carText(newCar, language), carText(oldCar, language)));
+  }
+  return changes.join(" ");
 }
 
 function classify(before: Reservation | null, after: Reservation | null): ReservationCustomerEvent | null {
@@ -104,7 +130,7 @@ export async function onReservationChangedByStaff(
         customerId,
         type: "reservation_cancelled",
         title: `Reservering geannuleerd: ${car.plate ?? `#${row.id}`}`,
-        description: `${portalCompanyName()} heeft uw reservering voor ${car.text}${when ? ` van ${when}` : ""} geannuleerd. Neem contact op met ${portalCompanyName()} als dit niet klopt.`,
+        description: `${portalCompanyName()} heeft uw reservering voor ${carText(car)}${when ? ` van ${when}` : ""} geannuleerd. Neem contact op met ${portalCompanyName()} als dit niet klopt.`,
         link,
         // One tag for the whole reservation: cancel-then-delete is one message.
         dedupeTag: `res:${row.id}:cancelled`,
@@ -112,9 +138,9 @@ export async function onReservationChangedByStaff(
       });
       if (!created) return null;
       try {
-        await sendPortalCustomerMail(customerId, PORTAL_TEMPLATE.RESERVATION_CANCELLED, {
-          plate: car.plate ?? `#${row.id}`, car: car.text, period: when,
-        }, "/reserveringen");
+        await sendPortalCustomerMail(customerId, PORTAL_TEMPLATE.RESERVATION_CANCELLED, (language) => ({
+          plate: car.plate ?? `#${row.id}`, car: carText(car, language), period: period(source.startDate, source.endDate, language),
+        }), "/reserveringen");
       } catch (e) { console.error("reservation cancelled mail failed:", e); }
       return event;
     }
@@ -122,18 +148,11 @@ export async function onReservationChangedByStaff(
     const b = before!, a = after!;
     const oldCar = await describeVehicle(b.vehicleId);
     const newCar = await describeVehicle(a.vehicleId);
-    const changes: string[] = [];
-    if (b.startDate !== a.startDate || (b.endDate ?? "") !== (a.endDate ?? "")) {
-      changes.push(`De periode is nu ${period(a.startDate, a.endDate)} (was ${period(b.startDate, b.endDate)}).`);
-    }
-    if ((b.vehicleId ?? null) !== (a.vehicleId ?? null)) {
-      changes.push(`U rijdt nu in ${newCar.text} in plaats van ${oldCar.text}.`);
-    }
     const created = await customerNotifications.notify({
       customerId,
       type: "reservation_changed",
       title: `Reservering gewijzigd: ${newCar.plate ?? `#${row.id}`}`,
-      description: `${portalCompanyName()} heeft uw reservering aangepast. ${changes.join(" ")}`,
+      description: `${portalCompanyName()} heeft uw reservering aangepast. ${describeChanges(b, a, oldCar, newCar)}`,
       link,
       // The new values are part of the tag: saving the same edit again is the
       // same news, moving the rental once more is not.
@@ -142,10 +161,10 @@ export async function onReservationChangedByStaff(
     });
     if (!created) return null;
     try {
-      await sendPortalCustomerMail(customerId, PORTAL_TEMPLATE.RESERVATION_CHANGED, {
-        plate: newCar.plate ?? `#${row.id}`, car: newCar.text,
-        period: period(a.startDate, a.endDate), changes: changes.join(" "),
-      }, `/reserveringen/${row.id}`);
+      await sendPortalCustomerMail(customerId, PORTAL_TEMPLATE.RESERVATION_CHANGED, (language) => ({
+        plate: newCar.plate ?? `#${row.id}`, car: carText(newCar, language),
+        period: period(a.startDate, a.endDate, language), changes: describeChanges(b, a, oldCar, newCar, language),
+      }), `/reserveringen/${row.id}`);
     } catch (e) { console.error("reservation changed mail failed:", e); }
     return event;
   } catch (e) {
@@ -154,10 +173,11 @@ export async function onReservationChangedByStaff(
   }
 }
 
-/** What the portal calls the document, in the customer's own words. */
-function documentLabel(documentType?: string | null): string | null {
-  if (isContractDocument(documentType)) return "Huurcontract";
-  if (isDamageCheckDocument(documentType)) return "Schadecontrole";
+/** What the portal calls the document, in the customer's own words (and language, for a mail). */
+function documentLabel(documentType?: string | null, language: SupportedLanguage = "nl"): string | null {
+  const labels = PORTAL_MAIL_PHRASES[language].document;
+  if (isContractDocument(documentType)) return labels.contract;
+  if (isDamageCheckDocument(documentType)) return labels.damageCheck;
   return null;
 }
 
@@ -195,9 +215,10 @@ export async function onDocumentAvailable(doc: Document | null | undefined): Pro
     });
     if (!created) return false;
     try {
-      await sendPortalCustomerMail(rental.customerId, PORTAL_TEMPLATE.DOCUMENT_AVAILABLE, {
-        document: label, fileName: doc.fileName, car: car.text, period: when,
-      }, "/documenten");
+      await sendPortalCustomerMail(rental.customerId, PORTAL_TEMPLATE.DOCUMENT_AVAILABLE, (language) => ({
+        document: documentLabel(doc.documentType, language) ?? label, fileName: doc.fileName,
+        car: carText(car, language), period: period(rental.startDate, rental.endDate, language),
+      }), "/documenten");
     } catch (e) { console.error("document available mail failed:", e); }
     return true;
   } catch (e) {

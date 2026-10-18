@@ -4,12 +4,15 @@
  *
  * The table `email_templates` holds two kinds of rows: the templates staff write
  * in the Sjabloonbouwer (category apk, maintenance or custom) and the eleven
- * system templates of the customer portal (`portal_invite`, ...; category
- * `portal`, seeded by `server/services/portal-mail.ts`). The system ones are
+ * system templates of the customer portal (`portal_invite`, one row per language
+ * such as `portal_invite.es`; category `portal`, seeded by
+ * `server/services/portal-mail.ts`). The system ones are
  * edited in the Sjabloonbouwer, but they are written for one purpose each and
  * with `{{name}}`-style placeholders; offering them as an APK reminder sends a
  * customer a portal invitation.
  */
+
+import { isSupportedLanguage, type SupportedLanguage } from "@shared/languages";
 
 export type SendMode = "apk" | "maintenance" | "custom";
 
@@ -38,11 +41,27 @@ export function isSystemTemplate(template: TemplateLike): boolean {
   return template.category === "portal" || /^portal_/.test(template.name);
 }
 
+/**
+ * A system template's base name and language. Every language has its own row (Kees, 2026-10-18):
+ * Dutch keeps the bare name (`portal_invite`), another language adds its code (`portal_invite.es`).
+ * Null for a name that is not a system template.
+ */
+export function systemTemplateParts(name: string): { base: string; language: SupportedLanguage } | null {
+  const [base, suffix, ...rest] = name.split(".");
+  if (rest.length > 0 || !(SYSTEM_TEMPLATE_NAMES as readonly string[]).includes(base)) return null;
+  if (suffix === undefined) return { base, language: "nl" };
+  return isSupportedLanguage(suffix) && suffix !== "nl" ? { base, language: suffix } : null;
+}
+
 /** i18n key (notifications namespace) of a system template's Dutch name, or null for any other template. */
 export function systemTemplateLabelKey(name: string): string | null {
-  return (SYSTEM_TEMPLATE_NAMES as readonly string[]).includes(name)
-    ? `customerCommunications.templates.systemNames.${name}`
-    : null;
+  const parts = systemTemplateParts(name);
+  return parts ? `customerCommunications.templates.systemNames.${parts.base}` : null;
+}
+
+/** The language of a system template's row; null for a template staff wrote themselves. */
+export function systemTemplateLanguage(name: string): SupportedLanguage | null {
+  return systemTemplateParts(name)?.language ?? null;
 }
 
 /**

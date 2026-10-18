@@ -416,6 +416,8 @@
       "copySuffix": "(kopie)",
       "categoryPortal": "PORTAAL",
       "categoryPortalShort": "Portaal",
+      "languageFilterPlaceholder": "Taal",
+      "languageAll": "Alle talen",
       "systemNames": {
         "portal_invite": "Portaal: uitnodiging",
         "portal_password_reset": "Portaal: wachtwoord opnieuw instellen",

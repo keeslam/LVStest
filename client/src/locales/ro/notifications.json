@@ -426,6 +426,8 @@
       "copySuffix": "(copie)",
       "categoryPortal": "PORTAL",
       "categoryPortalShort": "Portal",
+      "languageFilterPlaceholder": "Limbă",
+      "languageAll": "Toate limbile",
       "systemNames": {
         "portal_invite": "Portal: invitație",
         "portal_password_reset": "Portal: resetarea parolei",

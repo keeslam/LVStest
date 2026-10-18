@@ -23,7 +23,8 @@ import { formatLicensePlate, plateMatches, formatVehicleType, formatDate } from 
 import { formatDateNl, formatDateTimeNl } from "@/lib/format-date-nl";
 import { fillPlaceholders, placeholderKeysForCategory } from "@shared/message-placeholders";
 import { COMPANY_NAME_KEY, companyNameFromSetting } from "@shared/company-name";
-import { templatesForMode, isSystemTemplate, systemTemplateLabelKey, htmlToPlainText } from "@/lib/communication-templates";
+import { templatesForMode, isSystemTemplate, systemTemplateLabelKey, systemTemplateLanguage, htmlToPlainText } from "@/lib/communication-templates";
+import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, type SupportedLanguage } from "@shared/languages";
 import {
   buildRecipients, renderForRecipient, emptyPlaceholders, unsupportedPlaceholders, MASS_SEND_THRESHOLD,
   type PreviewRecipient, type EmailField,
@@ -146,6 +147,7 @@ export default function CustomerCommunications() {
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
   const [templateSearchQuery, setTemplateSearchQuery] = useState<string>("");
   const [templateCategoryFilter, setTemplateCategoryFilter] = useState<'all' | 'apk' | 'maintenance' | 'custom' | 'portal'>('all');
+  const [templateLanguageFilter, setTemplateLanguageFilter] = useState<'all' | SupportedLanguage>('all');
   const [templatePreviewDialog, setTemplatePreviewDialog] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<any>(null);
   const [selectedTemplateForPreview, setSelectedTemplateForPreview] = useState<any>(null);
@@ -581,8 +583,12 @@ export default function CustomerCommunications() {
       template.subject.toLowerCase().includes(templateSearchQuery.toLowerCase());
     
     const matchesCategory = templateCategoryFilter === 'all' || template.category === templateCategoryFilter;
-    
-    return matchesSearch && matchesCategory;
+
+    // The language filter narrows the portal templates (one row per language); a template staff wrote stays visible.
+    const language = systemTemplateLanguage(template.name);
+    const matchesLanguage = templateLanguageFilter === 'all' || language === null || language === templateLanguageFilter;
+
+    return matchesSearch && matchesCategory && matchesLanguage;
   });
 
   const getCategoryBadgeColor = (category: string) => {
@@ -666,10 +672,13 @@ export default function CustomerCommunications() {
     }
   };
 
-  // The Dutch name of a system template, the stored name of any other.
+  // The Dutch name of a system template, the stored name of any other. A portal template in another
+  // language than Dutch carries that language's own name: "Portaal: uitnodiging (Español)".
   const templateDisplayName = (template: { name: string }) => {
     const key = systemTemplateLabelKey(template.name);
-    return key ? t(key) : template.name;
+    if (!key) return template.name;
+    const language = systemTemplateLanguage(template.name);
+    return language && language !== 'nl' ? `${t(key)} (${LANGUAGE_NAMES[language]})` : t(key);
   };
 
   // Brings the builder form into view and puts the cursor in its first field:
@@ -2006,6 +2015,17 @@ export default function CustomerCommunications() {
                         <SelectItem value="maintenance">{t('customerCommunications.templates.categoryMaintenance')}</SelectItem>
                         <SelectItem value="custom">{t('customerCommunications.templates.categoryCustom')}</SelectItem>
                         <SelectItem value="portal">{t('customerCommunications.templates.categoryPortalShort')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={templateLanguageFilter} onValueChange={(value: string) => setTemplateLanguageFilter(value as 'all' | SupportedLanguage)}>
+                      <SelectTrigger className="w-36" data-testid="select-template-language" aria-label={t('customerCommunications.templates.languageFilterPlaceholder')}>
+                        <SelectValue placeholder={t('customerCommunications.templates.languageFilterPlaceholder')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">{t('customerCommunications.templates.languageAll')}</SelectItem>
+                        {SUPPORTED_LANGUAGES.map((language) => (
+                          <SelectItem key={language} value={language}>{LANGUAGE_NAMES[language]}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

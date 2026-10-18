@@ -416,6 +416,8 @@
       "copySuffix": "(copy)",
       "categoryPortal": "PORTAL",
       "categoryPortalShort": "Portal",
+      "languageFilterPlaceholder": "Language",
+      "languageAll": "All languages",
       "systemNames": {
         "portal_invite": "Portal: invitation",
         "portal_password_reset": "Portal: password reset",

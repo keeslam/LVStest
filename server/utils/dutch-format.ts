@@ -99,7 +99,7 @@ export function formatLongDateTimeNL(value: DateLike): string {
   return `${formatLongDateNL(clock.date)} ${clock.hh}:${clock.mi}`;
 }
 
-function toNumber(value: unknown): number | null {
+export function toNumber(value: unknown): number | null {
   if (value === null || value === undefined || value === '') return null;
   if (typeof value === 'number') return Number.isFinite(value) ? value : null;
   const cleaned = String(value).replace(/[^\d.,-]/g, '').replace(/\.(?=\d{3}\b)/g, '').replace(',', '.');
