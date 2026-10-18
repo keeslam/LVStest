@@ -923,17 +923,20 @@ export const portalDocumentAcks = pgTable("portal_document_acks", {
 export type PortalDocumentAck = typeof portalDocumentAcks.$inferSelect;
 
 /**
- * A contract signed in the customer portal (Kees, 2026-10-18): the audit trail of one signature.
+ * A contract or damage form signed in the customer portal (Kees, 2026-10-18): the audit trail of one signature.
  *
  * `documentId` is the unsigned contract that was signed (one signature per document, enforced by the
  * unique index), `signedDocumentId` the PDF the server made from it (original pages plus a signature
  * page). Both hashes are SHA-256 of the file bytes at signing time; staff and portal compare them with
  * the file on disk to show that nothing changed afterwards. Rows are never updated except to fill
- * `signedDocumentId` once, and never deleted: the document links fall back to null when a document
- * is purged, the hashes and names stay.
+ * `signedDocumentId` once and to note that the office has seen it (`seenAt`/`seenBy`, the dashboard),
+ * and never deleted: the document links fall back to null when a document is purged, the hashes and
+ * names stay.
  */
 export const portalContractSignatures = pgTable("portal_contract_signatures", {
   id: serial("id").primaryKey(),
+  /** "contract" or "damage_check" (shared/contract-signing.ts). */
+  documentKind: text("document_kind").notNull().default("contract"),
   documentId: integer("document_id").references(() => documents.id, { onDelete: "set null" }),
   signedDocumentId: integer("signed_document_id").references(() => documents.id, { onDelete: "set null" }),
   reservationId: integer("reservation_id").notNull(),
@@ -950,6 +953,8 @@ export const portalContractSignatures = pgTable("portal_contract_signatures", {
   originalVersion: integer("original_version"),
   originalSha256: text("original_sha256").notNull(),
   signedSha256: text("signed_sha256").notNull(),
+  seenAt: timestamp("seen_at", { withTimezone: true }),
+  seenBy: text("seen_by"),
 }, (table) => ({
   documentIdx: uniqueIndex("portal_contract_signatures_document_idx").on(table.documentId),
   reservationIdx: index("portal_contract_signatures_reservation_idx").on(table.reservationId),

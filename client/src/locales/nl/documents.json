@@ -801,7 +801,7 @@
     "hashSigned": "SHA-256 getekend",
     "original": "Origineel",
     "signedFile": "Getekend bestand",
-    "openSigned": "Getekend contract openen",
+    "openSigned": "Getekend exemplaar openen",
     "integrity": {
       "intact": "onveranderd",
       "changed": "GEWIJZIGD na tekenen",

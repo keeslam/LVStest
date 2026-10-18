@@ -166,12 +166,21 @@
       "padLabel": "Caixa para assinar",
       "padHint": "Assine na caixa com o dedo, uma caneta ou o rato.",
       "agree": "Li o contrato e concordo. Assino em nome da minha empresa.",
-      "recorded": "Registamos o seu nome, a data e a hora, o seu endereço IP e o browser, e uma impressão digital do contrato. Depois de assinado, o contrato já não pode mudar.",
+      "recorded": "Registamos o seu nome, a data e a hora, o seu endereço IP e o browser, e uma impressão digital do documento. Depois de assinado, o documento já não pode mudar.",
       "submit": "Assinar e enviar",
       "done": "O contrato foi assinado. Encontra a cópia assinada nos seus documentos.",
       "adminOnly": "Só um administrador da sua empresa pode assinar este contrato.",
-      "notSignable": "Este contrato já não pode ser assinado."
-    }
+      "notSignable": "Este contrato já não pode ser assinado.",
+      "titleDamage": "Assinar relatório de danos",
+      "introDamage": "Leia o relatório de danos, escreva o seu nome e assine. Depois enviamos o relatório assinado para o nosso escritório.",
+      "step1Damage": "1. Leia o relatório de danos",
+      "previewTitleDamage": "Relatório de danos",
+      "agreeDamage": "Li o relatório de danos e concordo com o estado do veículo nele registado. Assino em nome da minha empresa.",
+      "doneDamage": "O relatório de danos foi assinado. Encontra a cópia assinada nos seus documentos.",
+      "adminOnlyDamage": "Só um administrador da sua empresa pode assinar este relatório de danos.",
+      "notSignableDamage": "Este relatório de danos já não pode ser assinado."
+    },
+    "signedDamageCheck": "Relatório de danos assinado"
   },
   "drivers": {
     "title": "Condutores",
@@ -330,9 +339,9 @@
     "PORTAL_MAINTENANCE_WEEKEND": "Escolha um dia útil: a oficina está fechada ao fim de semana.",
     "PORTAL_RATE_LIMITED": "Demasiados pedidos num curto espaço de tempo. Tente novamente dentro de um quarto de hora.",
     "PORTAL_TOO_MANY_OPEN": "Tem já muitos pedidos em aberto. Aguarde que alguns sejam tratados ou retire um.",
-    "PORTAL_ALREADY_SIGNED": "Este contrato já foi assinado.",
-    "PORTAL_NOT_SIGNABLE": "Existe uma versão mais recente deste contrato ou a reserva está encerrada. Atualize a página.",
-    "PORTAL_DOCUMENT_CHANGED": "O contrato acabou de mudar. Abra-o novamente e assine.",
+    "PORTAL_ALREADY_SIGNED": "Este documento já foi assinado.",
+    "PORTAL_NOT_SIGNABLE": "Existe uma versão mais recente deste documento ou a reserva está encerrada. Atualize a página.",
+    "PORTAL_DOCUMENT_CHANGED": "O documento acabou de mudar. Abra-o novamente e assine.",
     "PORTAL_INVALID_SIGNATURE": "Assine primeiro na caixa."
   },
   "admin": {
@@ -346,7 +355,8 @@
       "fines": "Multas",
       "requests": "Pedidos",
       "blacklist": "Lista negra",
-      "maintenance": "Manutenção"
+      "maintenance": "Manutenção",
+      "signatures": "Assinados"
     },
     "dashboard": {
       "inviteAccount": "Convidar conta",
@@ -369,7 +379,9 @@
         "offeredOnline": "disponibilizadas online",
         "blocks": "bloqueios",
         "activitySub": "Últimas ações no portal",
-        "maintenanceSub": "notificações e marcadores de posição"
+        "maintenanceSub": "notificações e marcadores de posição",
+        "signedNew": "novos assinados",
+        "signedPlusAwaiting": "novos · {{n}} a aguardar assinatura"
       },
       "attention": {
         "title": "Requer atenção",
@@ -380,7 +392,9 @@
         "unlinked": "Não associada",
         "stale": "A aguardar há muito tempo",
         "soon": "Começa em breve",
-        "from": "a partir de {{date}}"
+        "from": "a partir de {{date}}",
+        "signed": "{{document}} assinado · {{customer}}",
+        "signedBadge": "Assinado"
       },
       "notifications": {
         "title": "Notificações",
@@ -1120,7 +1134,31 @@
       "search": "Pesquisar…",
       "noMatch": "Nada encontrado."
     },
-    "customerTabNote": "Atualizado através do portal do cliente por {{name}} em {{date}}: {{fields}}"
+    "customerTabNote": "Atualizado através do portal do cliente por {{name}} em {{date}}: {{fields}}",
+    "signatures": {
+      "signedTitle": "Devolvidos assinados",
+      "signedEmpty": "Ainda nada foi assinado através do portal.",
+      "awaitingTitle": "A aguardar assinatura",
+      "awaitingHint": "Contratos e relatórios de danos que o cliente pode assinar no portal mas ainda não assinou.",
+      "awaitingEmpty": "Nada aguarda assinatura.",
+      "new": "Novo",
+      "seenBy": "Visto por {{name}}",
+      "markSeen": "Visto",
+      "open": "Abrir",
+      "kind": {
+        "contract": "Contrato",
+        "damage_check": "Relatório de danos"
+      },
+      "col": {
+        "signedAt": "Assinado em",
+        "customer": "Cliente",
+        "document": "Documento",
+        "plate": "Matrícula",
+        "signer": "Assinado por",
+        "status": "Estado",
+        "since": "Pronto desde"
+      }
+    }
   },
   "fines": {
     "title": "Multas",
@@ -1411,13 +1449,13 @@
         "title": "Nova mensagem no pedido n.º {{id}}"
       },
       "contract_to_sign": {
-        "title": "Contrato pronto para assinar",
-        "description": "Tem um contrato pronto para assinar ({{fileName}}), para o seu aluguer de {{period}}.",
-        "descriptionNoPeriod": "Tem um contrato pronto para assinar ({{fileName}})."
+        "title": "{{document}} pronto para assinar",
+        "description": "Tem um documento pronto para assinar: {{document}} ({{fileName}}), para o seu aluguer de {{period}}.",
+        "descriptionNoPeriod": "Tem um documento pronto para assinar: {{document}} ({{fileName}})."
       },
       "contract_signed": {
-        "title": "Contrato assinado: {{plate}}",
-        "description": "{{signer}} assinou o contrato em {{at}}. O contrato assinado está nos seus documentos."
+        "title": "{{document}} assinado: {{plate}}",
+        "description": "{{signer}} assinou em {{at}}: {{document}}. A cópia assinada está nos seus documentos."
       }
     },
     "words": {

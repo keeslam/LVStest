@@ -11,7 +11,8 @@ import { registerPortalFiscalRoutes } from "./portal-fiscal";
 import { addressLookupHandler } from "./address-lookup";
 import { addressLookupLimiter, portalSignLimiter } from "../middleware/security/rateLimiter.js";
 import { signingStates, sha256OfDocument, signContract, signedCopyIntegrity } from "../services/contract-signing";
-import { signContractSchema } from "../../shared/contract-signing";
+import { signContractSchema, SIGNABLE_LABEL_NL } from "../../shared/contract-signing";
+import { PORTAL_MAIL_PHRASES } from "../services/portal-mail-texts";
 import { sendContractSignedMails } from "../services/portal-mail";
 import { AuditLogger } from "../utils/security/auditLogger";
 import { formatDateForLanguage, formatDateTimeForLanguage } from "../utils/locale-format";
@@ -206,14 +207,14 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     res.json(dto);
   });
 
-  // ---- signing a contract (Kees, 2026-10-18) -------------------------------------------------
+  // ---- signing a contract or damage form (Kees, 2026-10-18) ------------------------------------
   // Every route looks the document up through getDocumentForCustomer, so another customer's id is a
   // 404 exactly like an id that does not exist. Only administrators sign; drivers may look.
   app.get("/api/portal/documents/:id/signing", requirePortalUser, requireFeature("canViewContracts"), async (req, res) => {
     const id = idParam(req, res); if (id === null) return;
     const ctx = ctxOf(req);
     const doc = await portalStorage.getDocumentForCustomer(id, ctx.customerId, ctx.scope);
-    if (!doc || doc.kind !== "contract") return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Document not found");
+    if (!doc) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Document not found");
     const state = (await signingStates([doc, ...(await portalStorage.listDocumentsForCustomer(ctx.customerId, ctx.scope)).filter((d) => d.id !== doc.id && d.reservationId === doc.reservationId)])).get(doc.id);
     const sha256 = await sha256OfDocument(doc);
     if (!state || !sha256) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Document not found");
@@ -231,7 +232,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     const parsed = signContractSchema.safeParse(req.body);
     if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Name, agreement, signature and document fingerprint are required");
     const doc = await portalStorage.getDocumentForCustomer(id, ctx.customerId, ctx.scope);
-    if (!doc || doc.kind !== "contract") return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Document not found");
+    if (!doc) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Document not found");
     const customer = await storage.getCustomer(ctx.customerId);
     const userAgent = req.get("user-agent") ?? null;
     const result = await signContract({
@@ -243,7 +244,8 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
       await logPortalActivity(req, "contract_sign_refused", { entity: "document", entityId: id, details: { code: result.code } });
       return portalError(res, result.status, result.code === "FILE_MISSING" ? PORTAL_ERROR.NOT_FOUND : PORTAL_ERROR[result.code], result.message);
     }
-    const { signature, signedDocument } = result;
+    const { signature, signedDocument, kind } = result;
+    const labelNl = SIGNABLE_LABEL_NL[kind];
     // From here the signature exists. Logging and telling people about it must never turn a signed
     // contract into an error for the customer: each step stands on its own.
     const safely = async (what: string, step: () => Promise<unknown>) => {
@@ -263,19 +265,20 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     const plate = reservation?.vehicle?.licensePlate ?? `#${doc.reservationId}`;
     await safely("staff notification", () => notifyStaffOfPortalEvent({
       kind: "portal_contract_signed",
-      title: `Contract getekend: ${plate}`,
-      description: `${signature.signerName} (${ctx.user.email}) heeft het contract van reservering #${doc.reservationId} digitaal getekend in het klantenportaal.`,
+      title: `${labelNl} getekend: ${plate}`,
+      description: `${signature.signerName} (${ctx.user.email}) heeft het ${labelNl.toLowerCase()} van reservering #${doc.reservationId} digitaal getekend in het klantenportaal.`,
       link: `/reservations/edit/${doc.reservationId}`, customerId: ctx.customerId,
     }));
     await safely("customer notification", () => customerNotifications.notify({
       customerId: ctx.customerId, type: "contract_signed",
-      title: `Contract getekend: ${plate}`,
-      description: `${signature.signerName} heeft het contract digitaal getekend. Het getekende contract staat bij uw documenten.`,
-      params: { plate, signer: signature.signerName, at: signature.signedAt.toISOString() },
+      title: `${labelNl} getekend: ${plate}`,
+      description: `${signature.signerName} heeft het ${labelNl.toLowerCase()} digitaal getekend. Het getekende exemplaar staat bij uw documenten.`,
+      params: { plate, signer: signature.signerName, at: signature.signedAt.toISOString(), documentKind: kind === "contract" ? "contract" : "damageCheck" },
       link: "/documenten", dedupeTag: `signed:${signature.id}`, dedupeDays: 365,
     }));
     await safely("mail", () => sendContractSignedMails(ctx.customerId, ctx.user, (language) => ({
       plate, signer: signature.signerName,
+      document: PORTAL_MAIL_PHRASES[language].document[kind === "contract" ? "contract" : "damageCheck"],
       at: formatDateTimeForLanguage(signature.signedAt, language, officeTimeZone()),
       car: reservation?.vehicle ? `${vehicleName(reservation.vehicle.brand, reservation.vehicle.model)} ${reservation.vehicle.licensePlate}` : "-",
       period: [reservation?.startDate, reservation?.endDate].filter(Boolean).map((d) => formatDateForLanguage(d!, language)).join(" - ") || "-",

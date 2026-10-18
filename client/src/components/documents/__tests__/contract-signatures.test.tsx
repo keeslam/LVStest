@@ -9,7 +9,7 @@ import { ContractSignatureBadge, ContractSignaturesPanel } from "@/components/do
 import type { ContractSignatureDto } from "@shared/contract-signing";
 
 const signature = (integrity: ContractSignatureDto["integrity"]): ContractSignatureDto => ({
-  id: 3, documentId: 41, signedDocumentId: 42, reservationId: 7, signerName: "Jan Klant", signerEmail: "jan@example.test",
+  id: 3, documentKind: "contract", documentId: 41, signedDocumentId: 42, reservationId: 7, signerName: "Jan Klant", signerEmail: "jan@example.test",
   signedAt: "2026-10-18T12:30:00.000Z", ip: "203.0.113.9", userAgent: "Mozilla/5.0 Test", consentVersion: "2026-10-18",
   originalFileName: "contract.pdf", originalVersion: 2, originalSha256: "a".repeat(64), signedSha256: "b".repeat(64), integrity,
 });

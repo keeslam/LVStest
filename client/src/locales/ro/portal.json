@@ -166,12 +166,21 @@
       "padLabel": "Caseta pentru semnătură",
       "padHint": "Semnați în casetă cu degetul, un creion sau mouse-ul.",
       "agree": "Am citit contractul și sunt de acord. Semnez în numele companiei mele.",
-      "recorded": "Înregistrăm numele dumneavoastră, data și ora, adresa IP și browserul, precum și o amprentă digitală a contractului. După semnare, contractul nu se mai poate schimba.",
+      "recorded": "Înregistrăm numele dumneavoastră, data și ora, adresa IP și browserul, precum și o amprentă digitală a documentului. După semnare, documentul nu se mai poate schimba.",
       "submit": "Semnați și trimiteți",
       "done": "Contractul a fost semnat. Găsiți exemplarul semnat la documentele dumneavoastră.",
       "adminOnly": "Doar un administrator al companiei dumneavoastră poate semna acest contract.",
-      "notSignable": "Acest contract nu mai poate fi semnat."
-    }
+      "notSignable": "Acest contract nu mai poate fi semnat.",
+      "titleDamage": "Semnarea raportului de daune",
+      "introDamage": "Citiți raportul de daune, introduceți numele și semnați. Apoi trimitem raportul semnat la biroul nostru.",
+      "step1Damage": "1. Citiți raportul de daune",
+      "previewTitleDamage": "Raport de daune",
+      "agreeDamage": "Am citit raportul de daune și sunt de acord cu starea vehiculului consemnată în el. Semnez în numele companiei mele.",
+      "doneDamage": "Raportul de daune a fost semnat. Găsiți exemplarul semnat la documentele dumneavoastră.",
+      "adminOnlyDamage": "Doar un administrator al companiei dumneavoastră poate semna acest raport de daune.",
+      "notSignableDamage": "Acest raport de daune nu mai poate fi semnat."
+    },
+    "signedDamageCheck": "Raport de daune semnat"
   },
   "drivers": {
     "title": "Șoferi",
@@ -330,9 +339,9 @@
     "PORTAL_MAINTENANCE_WEEKEND": "Alegeți o zi lucrătoare: atelierul este închis în weekend.",
     "PORTAL_RATE_LIMITED": "Prea multe cereri într-un timp scurt. Încercați din nou peste un sfert de oră.",
     "PORTAL_TOO_MANY_OPEN": "Aveți deja multe solicitări deschise. Așteptați să fie tratate câteva sau retrageți una.",
-    "PORTAL_ALREADY_SIGNED": "Acest contract a fost deja semnat.",
-    "PORTAL_NOT_SIGNABLE": "Există o versiune mai nouă a acestui contract sau rezervarea este închisă. Reîmprospătați pagina.",
-    "PORTAL_DOCUMENT_CHANGED": "Contractul tocmai s-a schimbat. Deschideți-l din nou și apoi semnați.",
+    "PORTAL_ALREADY_SIGNED": "Acest document a fost deja semnat.",
+    "PORTAL_NOT_SIGNABLE": "Există o versiune mai nouă a acestui document sau rezervarea este închisă. Reîmprospătați pagina.",
+    "PORTAL_DOCUMENT_CHANGED": "Documentul tocmai s-a schimbat. Deschideți-l din nou și apoi semnați.",
     "PORTAL_INVALID_SIGNATURE": "Mai întâi semnați în casetă."
   },
   "admin": {
@@ -346,7 +355,8 @@
       "fines": "Amenzi",
       "requests": "Solicitări",
       "blacklist": "Listă neagră",
-      "maintenance": "Mentenanță"
+      "maintenance": "Mentenanță",
+      "signatures": "Semnate"
     },
     "dashboard": {
       "inviteAccount": "Invită un cont",
@@ -369,7 +379,9 @@
         "offeredOnline": "oferite online",
         "blocks": "blocări",
         "activitySub": "Ultimele acțiuni din portal",
-        "maintenanceSub": "notificări și substituenți"
+        "maintenanceSub": "notificări și substituenți",
+        "signedNew": "semnate noi",
+        "signedPlusAwaiting": "noi · {{n}} așteaptă semnătura"
       },
       "attention": {
         "title": "Necesită atenție",
@@ -380,7 +392,9 @@
         "unlinked": "Neasociată",
         "stale": "Așteaptă de mult",
         "soon": "Începe în curând",
-        "from": "din {{date}}"
+        "from": "din {{date}}",
+        "signed": "{{document}} semnat · {{customer}}",
+        "signedBadge": "Semnat"
       },
       "notifications": {
         "title": "Notificări",
@@ -1120,7 +1134,31 @@
       "search": "Căutare…",
       "noMatch": "Nimic găsit."
     },
-    "customerTabNote": "Actualizat prin portalul pentru clienți de {{name}} la {{date}}: {{fields}}"
+    "customerTabNote": "Actualizat prin portalul pentru clienți de {{name}} la {{date}}: {{fields}}",
+    "signatures": {
+      "signedTitle": "Returnate semnate",
+      "signedEmpty": "Încă nu s-a semnat nimic prin portal.",
+      "awaitingTitle": "Așteaptă semnătura",
+      "awaitingHint": "Contracte și rapoarte de daune pe care clientul le poate semna în portal, dar încă nu le-a semnat.",
+      "awaitingEmpty": "Nimic nu așteaptă semnătura.",
+      "new": "Nou",
+      "seenBy": "Văzut de {{name}}",
+      "markSeen": "Văzut",
+      "open": "Deschide",
+      "kind": {
+        "contract": "Contract",
+        "damage_check": "Raport de daune"
+      },
+      "col": {
+        "signedAt": "Semnat la",
+        "customer": "Client",
+        "document": "Document",
+        "plate": "Număr de înmatriculare",
+        "signer": "Semnat de",
+        "status": "Stare",
+        "since": "Gata din"
+      }
+    }
   },
   "fines": {
     "title": "Amenzi",
@@ -1411,13 +1449,13 @@
         "title": "Mesaj nou la solicitarea nr. {{id}}"
       },
       "contract_to_sign": {
-        "title": "Contract gata de semnat",
-        "description": "Un contract vă așteaptă semnătura ({{fileName}}), pentru închirierea din {{period}}.",
-        "descriptionNoPeriod": "Un contract vă așteaptă semnătura ({{fileName}})."
+        "title": "{{document}} gata de semnat",
+        "description": "Un document vă așteaptă semnătura: {{document}} ({{fileName}}), pentru închirierea din {{period}}.",
+        "descriptionNoPeriod": "Un document vă așteaptă semnătura: {{document}} ({{fileName}})."
       },
       "contract_signed": {
-        "title": "Contract semnat: {{plate}}",
-        "description": "{{signer}} a semnat contractul la {{at}}. Contractul semnat se află la documentele dumneavoastră."
+        "title": "{{document}} semnat: {{plate}}",
+        "description": "{{signer}} a semnat la {{at}}: {{document}}. Exemplarul semnat se află la documentele dumneavoastră."
       }
     },
     "words": {

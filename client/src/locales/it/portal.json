@@ -166,12 +166,21 @@
       "padLabel": "Riquadro per firmare",
       "padHint": "Firmi nel riquadro con il dito, una penna o il mouse.",
       "agree": "Ho letto il contratto e sono d'accordo. Firmo a nome della mia azienda.",
-      "recorded": "Registriamo il Suo nome, la data e l'ora, il Suo indirizzo IP e il browser, e un'impronta digitale del contratto. Dopo la firma il contratto non può più cambiare.",
+      "recorded": "Registriamo il Suo nome, la data e l'ora, il Suo indirizzo IP e il browser, e un'impronta digitale del documento. Dopo la firma il documento non può più cambiare.",
       "submit": "Firma e invia",
       "done": "Il contratto è firmato. Trova la copia firmata tra i Suoi documenti.",
       "adminOnly": "Solo un amministratore della Sua azienda può firmare questo contratto.",
-      "notSignable": "Questo contratto non può più essere firmato."
-    }
+      "notSignable": "Questo contratto non può più essere firmato.",
+      "titleDamage": "Firmare il verbale danni",
+      "introDamage": "Legga il verbale danni, inserisca il Suo nome e firmi. Poi inviamo il verbale firmato al nostro ufficio.",
+      "step1Damage": "1. Legga il verbale danni",
+      "previewTitleDamage": "Verbale danni",
+      "agreeDamage": "Ho letto il verbale danni e concordo con lo stato del veicolo in esso riportato. Firmo a nome della mia azienda.",
+      "doneDamage": "Il verbale danni è firmato. Trova la copia firmata tra i Suoi documenti.",
+      "adminOnlyDamage": "Solo un amministratore della Sua azienda può firmare questo verbale danni.",
+      "notSignableDamage": "Questo verbale danni non può più essere firmato."
+    },
+    "signedDamageCheck": "Verbale danni firmato"
   },
   "drivers": {
     "title": "Conducenti",
@@ -330,9 +339,9 @@
     "PORTAL_MAINTENANCE_WEEKEND": "Scelga un giorno feriale: l’officina è chiusa nel fine settimana.",
     "PORTAL_RATE_LIMITED": "Troppe richieste in poco tempo. Riprovi tra un quarto d’ora.",
     "PORTAL_TOO_MANY_OPEN": "Ha già molte richieste in sospeso. Attenda che alcune vengano gestite oppure ne ritiri una.",
-    "PORTAL_ALREADY_SIGNED": "Questo contratto è già stato firmato.",
-    "PORTAL_NOT_SIGNABLE": "Esiste una versione più recente di questo contratto oppure la prenotazione è chiusa. Aggiorni la pagina.",
-    "PORTAL_DOCUMENT_CHANGED": "Il contratto è appena cambiato. Lo apra di nuovo e poi firmi.",
+    "PORTAL_ALREADY_SIGNED": "Questo documento è già stato firmato.",
+    "PORTAL_NOT_SIGNABLE": "Esiste una versione più recente di questo documento oppure la prenotazione è chiusa. Aggiorni la pagina.",
+    "PORTAL_DOCUMENT_CHANGED": "Il documento è appena cambiato. Lo apra di nuovo e poi firmi.",
     "PORTAL_INVALID_SIGNATURE": "Firmi prima nel riquadro."
   },
   "admin": {
@@ -346,7 +355,8 @@
       "fines": "Multe",
       "requests": "Richieste",
       "blacklist": "Lista nera",
-      "maintenance": "Manutenzione"
+      "maintenance": "Manutenzione",
+      "signatures": "Firmati"
     },
     "dashboard": {
       "inviteAccount": "Invitare un account",
@@ -369,7 +379,9 @@
         "offeredOnline": "offerti online",
         "blocks": "blocchi",
         "activitySub": "Ultime azioni nel portale",
-        "maintenanceSub": "segnalazioni e segnaposto"
+        "maintenanceSub": "segnalazioni e segnaposto",
+        "signedNew": "nuovi firmati",
+        "signedPlusAwaiting": "nuovi · {{n}} in attesa di firma"
       },
       "attention": {
         "title": "Richiede attenzione",
@@ -380,7 +392,9 @@
         "unlinked": "Non collegata",
         "stale": "In attesa da tempo",
         "soon": "Inizia a breve",
-        "from": "dal {{date}}"
+        "from": "dal {{date}}",
+        "signed": "{{document}} firmato · {{customer}}",
+        "signedBadge": "Firmato"
       },
       "notifications": {
         "title": "Notifiche",
@@ -1120,7 +1134,31 @@
       "search": "Cercare…",
       "noMatch": "Nessun risultato."
     },
-    "customerTabNote": "Aggiornato tramite il portale clienti da {{name}} il {{date}}: {{fields}}"
+    "customerTabNote": "Aggiornato tramite il portale clienti da {{name}} il {{date}}: {{fields}}",
+    "signatures": {
+      "signedTitle": "Tornati firmati",
+      "signedEmpty": "Nulla è stato ancora firmato tramite il portale.",
+      "awaitingTitle": "In attesa di firma",
+      "awaitingHint": "Contratti e verbali danni che il cliente può firmare nel portale ma non ha ancora firmato.",
+      "awaitingEmpty": "Nulla è in attesa di firma.",
+      "new": "Nuovo",
+      "seenBy": "Visto da {{name}}",
+      "markSeen": "Visto",
+      "open": "Apri",
+      "kind": {
+        "contract": "Contratto",
+        "damage_check": "Verbale danni"
+      },
+      "col": {
+        "signedAt": "Firmato il",
+        "customer": "Cliente",
+        "document": "Documento",
+        "plate": "Targa",
+        "signer": "Firmato da",
+        "status": "Stato",
+        "since": "Pronto dal"
+      }
+    }
   },
   "fines": {
     "title": "Multe",
@@ -1411,13 +1449,13 @@
         "title": "Nuovo messaggio sulla richiesta n. {{id}}"
       },
       "contract_to_sign": {
-        "title": "Contratto pronto da firmare",
-        "description": "Un contratto è pronto per la Sua firma ({{fileName}}), per il noleggio del {{period}}.",
-        "descriptionNoPeriod": "Un contratto è pronto per la Sua firma ({{fileName}})."
+        "title": "{{document}} pronto da firmare",
+        "description": "Un documento è pronto per la Sua firma: {{document}} ({{fileName}}), per il noleggio del {{period}}.",
+        "descriptionNoPeriod": "Un documento è pronto per la Sua firma: {{document}} ({{fileName}})."
       },
       "contract_signed": {
-        "title": "Contratto firmato: {{plate}}",
-        "description": "{{signer}} ha firmato il contratto il {{at}}. Il contratto firmato si trova tra i Suoi documenti."
+        "title": "{{document}} firmato: {{plate}}",
+        "description": "{{signer}} ha firmato il {{at}}: {{document}}. La copia firmata si trova tra i Suoi documenti."
       }
     },
     "words": {

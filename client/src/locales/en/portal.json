@@ -161,12 +161,21 @@
       "padLabel": "Box to sign in",
       "padHint": "Sign in the box with your finger, pen or mouse.",
       "agree": "I have read the contract and agree. I sign on behalf of my company.",
-      "recorded": "We record your name, the date and time, your IP address and browser, and a digital fingerprint of the contract. After signing, the contract can no longer change.",
+      "recorded": "We record your name, the date and time, your IP address and browser, and a digital fingerprint of the document. After signing, the document can no longer change.",
       "submit": "Sign and send",
       "done": "The contract has been signed. You will find the signed copy with your documents.",
       "adminOnly": "Only an administrator of your company can sign this contract.",
-      "notSignable": "This contract can no longer be signed."
-    }
+      "notSignable": "This contract can no longer be signed.",
+      "titleDamage": "Sign damage report",
+      "introDamage": "Read the damage report, enter your name and sign. We then send the signed damage report back to our office.",
+      "step1Damage": "1. Read the damage report",
+      "previewTitleDamage": "Damage report",
+      "agreeDamage": "I have read the damage report and agree with the condition of the car as recorded. I sign on behalf of my company.",
+      "doneDamage": "The damage report has been signed. You will find the signed copy with your documents.",
+      "adminOnlyDamage": "Only an administrator of your company can sign this damage report.",
+      "notSignableDamage": "This damage report can no longer be signed."
+    },
+    "signedDamageCheck": "Signed damage report"
   },
   "drivers": {
     "title": "Drivers",
@@ -324,9 +333,9 @@
     "PORTAL_MAINTENANCE_WEEKEND": "Choose a weekday: the workshop is closed at weekends.",
     "PORTAL_RATE_LIMITED": "Too many requests in a short time. Please try again in a quarter of an hour.",
     "PORTAL_TOO_MANY_OPEN": "You already have many open requests. Wait until some are handled or withdraw one.",
-    "PORTAL_ALREADY_SIGNED": "This contract has already been signed.",
-    "PORTAL_NOT_SIGNABLE": "There is a newer version of this contract, or the reservation is closed. Please refresh the page.",
-    "PORTAL_DOCUMENT_CHANGED": "The contract has just changed. Open it again, then sign.",
+    "PORTAL_ALREADY_SIGNED": "This document has already been signed.",
+    "PORTAL_NOT_SIGNABLE": "There is a newer version of this document, or the reservation is closed. Please refresh the page.",
+    "PORTAL_DOCUMENT_CHANGED": "The document has just changed. Open it again, then sign.",
     "PORTAL_INVALID_SIGNATURE": "Please sign in the box first."
   },
   "admin": {
@@ -340,7 +349,8 @@
       "fines": "Fines",
       "requests": "Requests",
       "blacklist": "Blacklist",
-      "maintenance": "Maintenance"
+      "maintenance": "Maintenance",
+      "signatures": "Signed"
     },
     "dashboard": {
       "inviteAccount": "Invite account",
@@ -363,7 +373,9 @@
         "offeredOnline": "offered online",
         "blocks": "blocks",
         "activitySub": "Latest actions in the portal",
-        "maintenanceSub": "reports and placeholders"
+        "maintenanceSub": "reports and placeholders",
+        "signedNew": "newly signed",
+        "signedPlusAwaiting": "new · {{n}} awaiting signature"
       },
       "attention": {
         "title": "Needs attention",
@@ -374,7 +386,9 @@
         "unlinked": "Not linked",
         "stale": "Waiting long",
         "soon": "Starts soon",
-        "from": "from {{date}}"
+        "from": "from {{date}}",
+        "signed": "{{document}} signed · {{customer}}",
+        "signedBadge": "Signed"
       },
       "notifications": {
         "title": "Notifications",
@@ -1112,7 +1126,31 @@
       "search": "Search…",
       "noMatch": "Nothing found."
     },
-    "customerTabNote": "Updated through the customer portal by {{name}} on {{date}}: {{fields}}"
+    "customerTabNote": "Updated through the customer portal by {{name}} on {{date}}: {{fields}}",
+    "signatures": {
+      "signedTitle": "Returned signed",
+      "signedEmpty": "Nothing has been signed through the portal yet.",
+      "awaitingTitle": "Awaiting signature",
+      "awaitingHint": "Contracts and damage reports the customer can sign in the portal but has not signed yet.",
+      "awaitingEmpty": "Nothing is awaiting a signature.",
+      "new": "New",
+      "seenBy": "Seen by {{name}}",
+      "markSeen": "Seen",
+      "open": "Open",
+      "kind": {
+        "contract": "Contract",
+        "damage_check": "Damage report"
+      },
+      "col": {
+        "signedAt": "Signed on",
+        "customer": "Customer",
+        "document": "Document",
+        "plate": "Licence plate",
+        "signer": "Signed by",
+        "status": "Status",
+        "since": "Ready since"
+      }
+    }
   },
   "fines": {
     "title": "Fines",
@@ -1402,13 +1440,13 @@
         "title": "New message on request #{{id}}"
       },
       "contract_to_sign": {
-        "title": "Contract ready to sign",
-        "description": "A contract is ready for you to sign ({{fileName}}), for your rental {{period}}.",
-        "descriptionNoPeriod": "A contract is ready for you to sign ({{fileName}})."
+        "title": "{{document}} ready to sign",
+        "description": "A document is ready for you to sign: {{document}} ({{fileName}}), for your rental {{period}}.",
+        "descriptionNoPeriod": "A document is ready for you to sign: {{document}} ({{fileName}})."
       },
       "contract_signed": {
-        "title": "Contract signed: {{plate}}",
-        "description": "{{signer}} signed the contract on {{at}}. The signed contract is with your documents."
+        "title": "{{document}} signed: {{plate}}",
+        "description": "{{signer}} signed on {{at}}: {{document}}. The signed copy is with your documents."
       }
     },
     "words": {

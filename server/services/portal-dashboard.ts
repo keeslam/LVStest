@@ -5,6 +5,7 @@ import { portalStorage } from "./portal-storage";
 import { requestsStorage } from "./portal-requests-storage";
 import type { PortalDashboard } from "../../shared/portal-types";
 import { customerDisplayName } from "./customer-display-name";
+import { listAwaitingSignature, listSignedDocuments } from "./contract-signing";
 
 /** Days ahead the "upcoming pickups/returns" panel looks. */
 export const DASHBOARD_WINDOW_DAYS = 14;
@@ -33,7 +34,7 @@ export async function getPortalDashboard(): Promise<PortalDashboard> {
   const today = isoDay(0);
   const horizon = isoDay(DASHBOARD_WINDOW_DAYS);
 
-  const [overview, requests, unlinked, notes, upcomingRows, [vehiclesOnline], [inProgress], [blacklistEntries], [placeholdersFromPortal]] = await Promise.all([
+  const [overview, requests, unlinked, notes, upcomingRows, [vehiclesOnline], [inProgress], [blacklistEntries], [placeholdersFromPortal], unseenSigned, awaitingSignature] = await Promise.all([
     portalStorage.listCustomersOverview(),
     requestsStorage.listRequests({}),
     db.select().from(fines).where(eq(fines.status, "new")).orderBy(desc(fines.offenceAt)).limit(ATTENTION_LIMIT),
@@ -61,6 +62,9 @@ export async function getPortalDashboard(): Promise<PortalDashboard> {
     db.select({ n: sql<number>`count(*)::int` }).from(reservations)
       .where(and(eq(reservations.type, "replacement"), eq(reservations.placeholderSpare, true), isNull(reservations.deletedAt),
         sql`exists (select 1 from reservations b where b.affected_rental_id = ${reservations.replacementForReservationId} and b.portal_request_id is not null and b.deleted_at is null and b.maintenance_status is distinct from 'out')`)),
+    // Kees, 2026-10-18: what came back signed and has not been looked at, and what still waits for a signature.
+    listSignedDocuments({ onlyUnseen: true, limit: ATTENTION_LIMIT }),
+    listAwaitingSignature(500),
   ]);
 
   const staleBefore = new Date(Date.now() - STALE_REQUEST_DAYS * 86_400_000);
@@ -98,6 +102,8 @@ export async function getPortalDashboard(): Promise<PortalDashboard> {
       blacklistEntries: blacklistEntries?.n ?? 0,
       unreadNotifications: notes.filter((n) => !n.isRead).length,
       maintenance: openRequests.filter((r) => r.type === "maintenance" || r.type === "maintenance_change").length + (placeholdersFromPortal?.n ?? 0),
+      signedNew: unseenSigned.length,
+      awaitingSignature: awaitingSignature.length,
     },
     attention: {
       requests: openRequests.slice(0, ATTENTION_LIMIT).map((r) => ({
@@ -107,6 +113,7 @@ export async function getPortalDashboard(): Promise<PortalDashboard> {
         urgency: urgencyOf(r),
       })),
       fines: unlinked.map((f) => ({ id: f.id, licensePlate: f.licensePlate, description: f.description, totalAmount: f.totalAmount, offenceAt: f.offenceAt.toISOString() })),
+      signatures: unseenSigned,
     },
     notifications: notes.map((n) => ({
       id: n.id, type: n.type, title: n.title, description: n.description, link: n.link ?? "", isRead: n.isRead, createdAt: n.createdAt.toISOString(),

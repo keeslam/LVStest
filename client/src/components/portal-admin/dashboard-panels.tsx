@@ -2,7 +2,8 @@ import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
-import { AlertCircle, Bell, CalendarClock, Users, ArrowDownToLine, ArrowUpFromLine, Inbox, Receipt, UserCircle, Car, Ban, History, ChevronRight, Wrench } from "lucide-react";
+import { AlertCircle, Bell, CalendarClock, Users, ArrowDownToLine, ArrowUpFromLine, Inbox, Receipt, UserCircle, Car, Ban, History, ChevronRight, Wrench, FileSignature } from "lucide-react";
+import { useMarkSignatureSeen } from "./signatures-table";
 import type { PortalDashboard } from "@shared/portal-types";
 import { apiRequest } from "@/lib/queryClient";
 import { formatLicensePlate, formatDate } from "@/lib/format-utils";
@@ -91,16 +92,16 @@ function dayLabel(iso: string, t: (k: string) => string): string {
 // the number says whether it needs a look. They replace a row of buttons, and the
 // grid folds from four columns on desktop to two on a phone.
 
-type SectionKind = "requests" | "fines" | "customers" | "accounts" | "vehicles" | "blacklist" | "activity" | "maintenance";
+type SectionKind = "requests" | "fines" | "customers" | "accounts" | "vehicles" | "blacklist" | "activity" | "maintenance" | "signatures";
 const SECTION_ICON: Record<SectionKind, ReactNode> = {
   requests: <Inbox className="h-5 w-5" />, fines: <Receipt className="h-5 w-5" />, customers: <Users className="h-5 w-5" />,
   accounts: <UserCircle className="h-5 w-5" />, vehicles: <Car className="h-5 w-5" />, blacklist: <Ban className="h-5 w-5" />, activity: <History className="h-5 w-5" />,
-  maintenance: <Wrench className="h-5 w-5" />,
+  maintenance: <Wrench className="h-5 w-5" />, signatures: <FileSignature className="h-5 w-5" />,
 };
 const SECTION_TONE: Record<SectionKind, string> = {
   requests: "bg-amber-100 text-amber-800", fines: "bg-red-100 text-red-800", customers: "bg-emerald-100 text-emerald-800",
   accounts: "bg-sky-100 text-sky-800", vehicles: "bg-indigo-100 text-indigo-800", blacklist: "bg-slate-200 text-slate-800", activity: "bg-violet-100 text-violet-800",
-  maintenance: "bg-orange-100 text-orange-800",
+  maintenance: "bg-orange-100 text-orange-800", signatures: "bg-teal-100 text-teal-800",
 };
 
 function SectionTile({ kind, value, sub, alert, onClick }: { kind: SectionKind; value?: number; sub: string; alert?: boolean; onClick: () => void }) {
@@ -129,6 +130,10 @@ export function DashboardTiles({ counts, canViewFines }: { counts: PortalDashboa
       <SectionTile kind="requests" value={counts.newRequests} alert={counts.newRequests > 0}
         sub={counts.inProgressRequests > 0 ? t("admin.dashboard.tiles.newPlusInProgress", { n: counts.inProgressRequests }) : t("admin.dashboard.tiles.new")}
         onClick={() => openPortalListDialog("requests")} />
+      {/* Kees, 2026-10-18: contracts and damage forms that came back signed through the portal. */}
+      <SectionTile kind="signatures" value={counts.signedNew} alert={counts.signedNew > 0}
+        sub={counts.awaitingSignature > 0 ? t("admin.dashboard.tiles.signedPlusAwaiting", { n: counts.awaitingSignature }) : t("admin.dashboard.tiles.signedNew")}
+        onClick={() => openPortalListDialog("signatures")} />
       <SectionTile kind="maintenance" value={counts.maintenance} alert={counts.maintenance > 0} sub={t("admin.dashboard.tiles.maintenanceSub")}
         onClick={() => openPortalListDialog("requests", { types: ["maintenance", "maintenance_change"] })} />
       {canViewFines && (
@@ -147,11 +152,25 @@ export function DashboardTiles({ counts, canViewFines }: { counts: PortalDashboa
 
 export function AttentionPanel({ attention, canViewFines }: { attention: PortalDashboard["attention"]; canViewFines: boolean }) {
   const { t } = useTranslation("portal");
-  const { openPortalRequestDialog, openFineDialog, openPortalListDialog } = useGlobalDialog();
+  const { openPortalRequestDialog, openFineDialog, openPortalListDialog, openReservationDialog } = useGlobalDialog();
+  const seen = useMarkSignatureSeen();
   const fines = canViewFines ? attention.fines : [];
-  type Item = { kind: "request"; r: PortalDashboard["attention"]["requests"][number] } | { kind: "fine"; f: PortalDashboard["attention"]["fines"][number] };
-  const items: Item[] = [...attention.requests.map((r) => ({ kind: "request" as const, r })), ...fines.map((f) => ({ kind: "fine" as const, f }))];
-  const renderItem = (i: Item) => i.kind === "request" ? (
+  type Signed = PortalDashboard["attention"]["signatures"][number];
+  type Item = { kind: "request"; r: PortalDashboard["attention"]["requests"][number] } | { kind: "fine"; f: PortalDashboard["attention"]["fines"][number] } | { kind: "signed"; s: Signed };
+  // Signed documents first: they came in from the customer and only need a look.
+  const items: Item[] = [
+    ...(attention.signatures ?? []).map((s) => ({ kind: "signed" as const, s })),
+    ...attention.requests.map((r) => ({ kind: "request" as const, r })), ...fines.map((f) => ({ kind: "fine" as const, f })),
+  ];
+  const renderItem = (i: Item) => i.kind === "signed" ? (
+    <Row onClick={() => { seen.mutate(i.s.id); openReservationDialog(i.s.reservationId); }} testId={`attention-signed-${i.s.id}`}>
+      <div className="min-w-0">
+        <div className="truncate">{t("admin.dashboard.attention.signed", { document: t(`admin.signatures.kind.${i.s.documentKind}`), customer: i.s.customerName })}</div>
+        <div className="truncate text-xs text-muted-foreground">{i.s.licensePlate ? formatLicensePlate(i.s.licensePlate) : `#${i.s.reservationId}`} · {i.s.signerName} · {ago(i.s.signedAt, t)}</div>
+      </div>
+      <Badge className="bg-emerald-600 hover:bg-emerald-600">{t("admin.dashboard.attention.signedBadge")}</Badge>
+    </Row>
+  ) : i.kind === "request" ? (
     <Row onClick={() => openPortalRequestDialog(i.r.id)} testId={`attention-request-${i.r.id}`}>
       <div className="min-w-0">
         <div className="truncate">{t(`admin.requests.type.${i.r.type}`, { defaultValue: i.r.type })} · {i.r.customerName}</div>
@@ -177,9 +196,11 @@ export function AttentionPanel({ attention, canViewFines }: { attention: PortalD
         <Button size="sm" variant="ghost" onClick={() => openPortalListDialog("requests")}>{t("admin.dashboard.attention.allRequests")}</Button>
         {canViewFines && <Button size="sm" variant="ghost" onClick={() => openPortalListDialog("fines")}>{t("admin.dashboard.attention.allFines")}</Button>}
       </div>}>
-      <PreviewList items={items} keyOf={(i) => i.kind === "request" ? `r${i.r.id}` : `f${i.f.id}`} render={renderItem} testId="attention"
+      <PreviewList items={items} keyOf={(i) => i.kind === "signed" ? `s${i.s.id}` : i.kind === "request" ? `r${i.r.id}` : `f${i.f.id}`} render={renderItem} testId="attention"
         title={t("admin.dashboard.attention.title")} empty={t("admin.dashboard.attention.empty")}
-        searchOf={(i) => i.kind === "request"
+        searchOf={(i) => i.kind === "signed"
+          ? [i.s.customerName, i.s.licensePlate, i.s.signerName, t(`admin.signatures.kind.${i.s.documentKind}`), i.s.reservationId]
+          : i.kind === "request"
           ? [i.r.id, i.r.customerName, t(`admin.requests.type.${i.r.type}`), i.r.reservationLabel, i.r.status, i.r.startDate]
           : [i.f.id, i.f.licensePlate, i.f.description, i.f.totalAmount]} />
     </Panel>

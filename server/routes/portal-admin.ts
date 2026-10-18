@@ -9,6 +9,7 @@ import { requestsStorage } from "../services/portal-requests-storage";
 import { sendPortalInvite } from "../services/portal-mail";
 import { getPortalConfig, savePortalConfig } from "../services/portal-config";
 import { getPortalDashboard } from "../services/portal-dashboard";
+import { listAwaitingSignature, listSignedDocuments, markSignatureSeen } from "../services/contract-signing";
 import { AuditLogger } from "../utils/security/auditLogger";
 import type { RouteDeps } from "./deps";
 
@@ -144,6 +145,20 @@ export function registerPortalAdminRoutes(app: Express, _deps: RouteDeps): void 
   // ---- dashboard: counters, attention items, notifications, upcoming ----------
   app.get("/api/portal-admin/dashboard", canView, async (_req, res) => {
     res.json(await getPortalDashboard());
+  });
+
+  // ---- documents signed in the portal (Kees, 2026-10-18): the "Getekend" tile and its list ------
+  app.get("/api/portal-admin/signatures", canView, async (_req, res) => {
+    const [signed, awaiting] = await Promise.all([listSignedDocuments({ limit: 200 }), listAwaitingSignature(200)]);
+    res.json({ signed, awaiting });
+  });
+
+  /** "Gezien": the signed document leaves the attention list and the tile's count. */
+  app.post("/api/portal-admin/signatures/:id/seen", canView, async (req, res) => {
+    const id = intParam(req, res, "id"); if (id === null) return;
+    const ok = await markSignatureSeen(id, req.user?.username ?? "staff");
+    if (!ok) return res.status(404).json({ message: "Signature not found" });
+    res.json({ ok: true });
   });
 
   app.post("/api/portal-admin/notifications/:id/read", canView, async (req, res) => {

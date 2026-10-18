@@ -22,6 +22,7 @@ import { resolveDocumentFilePath } from "../services/document-paths";
 import { getUploadsDir } from "../../shared/paths";
 import { eq, like } from "drizzle-orm";
 import contractSignaturesRoutes from "../routes/contract-signatures";
+import { registerPortalAdminRoutes } from "../routes/portal-admin";
 import { sha256 } from "../services/contract-signing";
 import { customerNotifications } from "../services/portal-customer-notifications";
 import { agentFor, anonAgent, cleanupFixtureUsers } from "./helpers/app";
@@ -59,14 +60,14 @@ async function contractPdf(label: string): Promise<Buffer> {
 }
 
 let fileCounter = 0;
-async function createContract(reservationId: number, vehicleId: number, opts: { version?: number; isStale?: boolean } = {}) {
+async function createContract(reservationId: number, vehicleId: number, opts: { version?: number; isStale?: boolean; documentType?: string } = {}) {
   fs.mkdirSync(TEST_DIR, { recursive: true });
   fileCounter += 1;
   const bytes = await contractPdf(`${reservationId}-${fileCounter}`);
   const file = path.join(TEST_DIR, `contract-${Date.now()}-${fileCounter}.pdf`);
   fs.writeFileSync(file, bytes);
   const [row] = await db.insert(documents).values({
-    reservationId, vehicleId, documentType: "Contract (Unsigned)", fileName: path.basename(file),
+    reservationId, vehicleId, documentType: opts.documentType ?? "Contract (Unsigned)", fileName: path.basename(file),
     filePath: path.relative(process.cwd(), file).split(path.sep).join("/"), fileSize: bytes.length, contentType: "application/pdf",
     version: opts.version ?? 1, isStale: opts.isStale ?? false,
   }).returning();
@@ -192,7 +193,7 @@ describe("signing a contract in the portal", () => {
       expect(row.ip).toBeTruthy();
 
       // Customer mail with a link, never the PDF.
-      const mails = sendEmail.mock.calls.map((c) => c[0] as { to: string; subject: string; html: string; attachments?: unknown }).filter((m) => m.subject.startsWith("Contract getekend"));
+      const mails = sendEmail.mock.calls.map((c) => c[0] as { to: string; subject: string; html: string; attachments?: unknown }).filter((m) => m.subject.startsWith("Getekend:"));
       // The company address and the account that signed (a different address here).
       expect(mails.map((m) => m.to).sort()).toEqual([`signa@${TEST_EMAIL_DOMAIN}`, `sign-a-admin@${TEST_EMAIL_DOMAIN}`].sort());
       for (const m of mails) { expect(m.attachments).toBeUndefined(); expect(m.html).toContain("/portaal/documenten"); }
@@ -250,6 +251,61 @@ describe("signing a contract in the portal", () => {
     } finally {
       spy.mockRestore();
     }
+  });
+
+  describe("a damage form, and the office dashboard (Kees, 2026-10-18)", () => {
+    const dashboard = buildStaffTestApp([UserPermission.VIEW_PORTAL], (a) => registerPortalAdminRoutes(a, { requireAuth: (_r: any, _s: any, n: any) => n() } as any));
+    const outsider = buildStaffTestApp([UserPermission.VIEW_VEHICLES], (a) => registerPortalAdminRoutes(a, { requireAuth: (_r: any, _s: any, n: any) => n() } as any));
+    let damage: Awaited<ReturnType<typeof createContract>>;
+    let signatureId: number;
+
+    beforeAll(async () => {
+      const res3 = (await createTestReservation({ customerId: customerA, vehicleId: vehicleA, status: "picked_up", startDate: "2098-01-01", endDate: "2098-01-20" })).id;
+      damage = await createContract(res3, vehicleA, { documentType: "Damage Check (Unsigned)" });
+    });
+
+    it("shows the damage form as waiting for a signature, to the office and to the customer", async () => {
+      const list = await request(dashboard).get("/api/portal-admin/signatures");
+      expect(list.status).toBe(200);
+      expect(list.body.awaiting).toEqual(expect.arrayContaining([expect.objectContaining({ documentId: damage.doc.id, documentKind: "damage_check" })]));
+      const a = await login(`sign-a-admin@${TEST_EMAIL_DOMAIN}`);
+      const docs = (await a.agent.get("/api/portal/documents")).body as Array<{ id: number; signing: { status: string } | null }>;
+      expect(docs.find((d) => d.id === damage.doc.id)?.signing?.status).toBe("to_sign");
+    });
+
+    it("signs the damage form into a 'Damage Check (Signed)' copy", async () => {
+      const a = await login(`sign-a-admin@${TEST_EMAIL_DOMAIN}`);
+      const res = await a.sign(damage.doc.id, body(damage.sha));
+      expect(res.status).toBe(201);
+      const [signed] = await db.select().from(documents).where(eq(documents.id, res.body.signedDocumentId));
+      expect(signed.documentType).toBe("Damage Check (Signed)");
+      const [row] = await db.select().from(portalContractSignatures).where(eq(portalContractSignatures.documentId, damage.doc.id));
+      expect(row.documentKind).toBe("damage_check");
+      signatureId = row.id;
+    });
+
+    it("puts it on the dashboard until somebody has seen it", async () => {
+      const before = (await request(dashboard).get("/api/portal-admin/dashboard")).body;
+      expect(before.counts.signedNew).toBeGreaterThanOrEqual(1);
+      expect(before.attention.signatures.map((s: { id: number }) => s.id)).toContain(signatureId);
+      const list = (await request(dashboard).get("/api/portal-admin/signatures")).body;
+      expect(list.awaiting.map((r: { documentId: number }) => r.documentId)).not.toContain(damage.doc.id);
+      expect(list.signed.find((r: { id: number }) => r.id === signatureId)).toMatchObject({ documentKind: "damage_check", signerName: "Jan Klant", seenAt: null });
+
+      expect((await request(dashboard).post(`/api/portal-admin/signatures/${signatureId}/seen`)).status).toBe(200);
+      const after = (await request(dashboard).get("/api/portal-admin/dashboard")).body;
+      expect(after.counts.signedNew).toBe(before.counts.signedNew - 1);
+      expect(after.attention.signatures.map((s: { id: number }) => s.id)).not.toContain(signatureId);
+      const row = (await request(dashboard).get("/api/portal-admin/signatures")).body.signed.find((r: { id: number }) => r.id === signatureId);
+      expect(row).toMatchObject({ seenBy: "staff-test" });
+      expect(row.seenAt).toBeTruthy();
+    });
+
+    it("is closed to staff without the portal right", async () => {
+      expect((await request(outsider).get("/api/portal-admin/signatures")).status).toBe(403);
+      expect((await request(outsider).post(`/api/portal-admin/signatures/${signatureId}/seen`)).status).toBe(403);
+      expect((await request(dashboard).post("/api/portal-admin/signatures/999999999/seen")).status).toBe(404);
+    });
   });
 
   it("two signatures at the same moment: exactly one wins, one signed PDF", async () => {

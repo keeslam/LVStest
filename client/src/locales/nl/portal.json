@@ -161,12 +161,21 @@
       "padLabel": "Vak om te tekenen",
       "padHint": "Teken met uw vinger, pen of muis in het vak.",
       "agree": "Ik heb het contract gelezen en ga akkoord. Ik teken namens mijn bedrijf.",
-      "recorded": "Wij leggen vast: uw naam, de datum en tijd, uw IP-adres en browser, en een digitale vingerafdruk van het contract. Na het tekenen kan het contract niet meer veranderen.",
+      "recorded": "Wij leggen vast: uw naam, de datum en tijd, uw IP-adres en browser, en een digitale vingerafdruk van het document. Na het tekenen kan het document niet meer veranderen.",
       "submit": "Tekenen en versturen",
       "done": "Het contract is getekend. U vindt het getekende exemplaar bij uw documenten.",
       "adminOnly": "Alleen een beheerder van uw bedrijf kan dit contract tekenen.",
-      "notSignable": "Dit contract kan niet (meer) getekend worden."
-    }
+      "notSignable": "Dit contract kan niet (meer) getekend worden.",
+      "titleDamage": "Schadeformulier tekenen",
+      "introDamage": "Lees het schadeformulier, vul uw naam in en zet uw handtekening. Daarna sturen wij het getekende schadeformulier terug naar ons kantoor.",
+      "step1Damage": "1. Lees het schadeformulier",
+      "previewTitleDamage": "Schadeformulier",
+      "agreeDamage": "Ik heb het schadeformulier gelezen en ga akkoord met de staat van de auto zoals die erop staat. Ik teken namens mijn bedrijf.",
+      "doneDamage": "Het schadeformulier is getekend. U vindt het getekende exemplaar bij uw documenten.",
+      "adminOnlyDamage": "Alleen een beheerder van uw bedrijf kan dit schadeformulier tekenen.",
+      "notSignableDamage": "Dit schadeformulier kan niet (meer) getekend worden."
+    },
+    "signedDamageCheck": "Getekend schadeformulier"
   },
   "drivers": {
     "title": "Bestuurders",
@@ -324,9 +333,9 @@
     "PORTAL_MAINTENANCE_WEEKEND": "Kies een doordeweekse dag: de werkplaats is in het weekend gesloten.",
     "PORTAL_RATE_LIMITED": "Te veel verzoeken in korte tijd. Probeer het over een kwartier opnieuw.",
     "PORTAL_TOO_MANY_OPEN": "U heeft al veel openstaande aanvragen. Wacht tot een aantal is afgehandeld of trek er een in.",
-    "PORTAL_ALREADY_SIGNED": "Dit contract is al getekend.",
-    "PORTAL_NOT_SIGNABLE": "Er is een nieuwere versie van dit contract, of de reservering is afgesloten. Vernieuw de pagina.",
-    "PORTAL_DOCUMENT_CHANGED": "Het contract is net gewijzigd. Open het opnieuw en teken dan.",
+    "PORTAL_ALREADY_SIGNED": "Dit document is al getekend.",
+    "PORTAL_NOT_SIGNABLE": "Er is een nieuwere versie van dit document, of de reservering is afgesloten. Vernieuw de pagina.",
+    "PORTAL_DOCUMENT_CHANGED": "Het document is net gewijzigd. Open het opnieuw en teken dan.",
     "PORTAL_INVALID_SIGNATURE": "Zet eerst uw handtekening in het vak."
   },
   "admin": {
@@ -340,7 +349,8 @@
       "fines": "Bekeuringen",
       "requests": "Aanvragen",
       "blacklist": "Blacklist",
-      "maintenance": "Onderhoud"
+      "maintenance": "Onderhoud",
+      "signatures": "Getekend"
     },
     "dashboard": {
       "inviteAccount": "Account uitnodigen",
@@ -363,7 +373,9 @@
         "offeredOnline": "online aangeboden",
         "blocks": "blokkades",
         "activitySub": "Laatste acties in het portaal",
-        "maintenanceSub": "meldingen en placeholders"
+        "maintenanceSub": "meldingen en placeholders",
+        "signedNew": "nieuw getekend",
+        "signedPlusAwaiting": "nieuw · {{n}} wachten op handtekening"
       },
       "attention": {
         "title": "Aandacht nodig",
@@ -374,7 +386,9 @@
         "unlinked": "Niet gekoppeld",
         "stale": "Wacht al lang",
         "soon": "Start binnenkort",
-        "from": "vanaf {{date}}"
+        "from": "vanaf {{date}}",
+        "signed": "{{document}} getekend · {{customer}}",
+        "signedBadge": "Getekend"
       },
       "notifications": {
         "title": "Meldingen",
@@ -1112,7 +1126,31 @@
       "search": "Zoeken…",
       "noMatch": "Niets gevonden."
     },
-    "customerTabNote": "Via het klantenportaal bijgewerkt door {{name}} op {{date}}: {{fields}}"
+    "customerTabNote": "Via het klantenportaal bijgewerkt door {{name}} op {{date}}: {{fields}}",
+    "signatures": {
+      "signedTitle": "Getekend teruggekomen",
+      "signedEmpty": "Er is nog niets getekend via het portaal.",
+      "awaitingTitle": "Wacht op handtekening",
+      "awaitingHint": "Contracten en schadeformulieren die de klant in het portaal kan tekenen, maar nog niet heeft getekend.",
+      "awaitingEmpty": "Er wacht niets op een handtekening.",
+      "new": "Nieuw",
+      "seenBy": "Gezien door {{name}}",
+      "markSeen": "Gezien",
+      "open": "Openen",
+      "kind": {
+        "contract": "Contract",
+        "damage_check": "Schadeformulier"
+      },
+      "col": {
+        "signedAt": "Getekend op",
+        "customer": "Klant",
+        "document": "Document",
+        "plate": "Kenteken",
+        "signer": "Getekend door",
+        "status": "Status",
+        "since": "Klaar sinds"
+      }
+    }
   },
   "fines": {
     "title": "Bekeuringen",
@@ -1402,13 +1440,13 @@
         "title": "Nieuw bericht bij aanvraag #{{id}}"
       },
       "contract_to_sign": {
-        "title": "Contract klaar om te tekenen",
-        "description": "Er staat een contract voor u klaar om te tekenen ({{fileName}}), bij uw huur van {{period}}.",
-        "descriptionNoPeriod": "Er staat een contract voor u klaar om te tekenen ({{fileName}})."
+        "title": "{{document}} klaar om te tekenen",
+        "description": "Er staat een document voor u klaar om te tekenen: {{document}} ({{fileName}}), bij uw huur van {{period}}.",
+        "descriptionNoPeriod": "Er staat een document voor u klaar om te tekenen: {{document}} ({{fileName}})."
       },
       "contract_signed": {
-        "title": "Contract getekend: {{plate}}",
-        "description": "{{signer}} heeft het contract getekend op {{at}}. Het getekende contract staat bij uw documenten."
+        "title": "{{document}} getekend: {{plate}}",
+        "description": "{{signer}} heeft op {{at}} getekend: {{document}}. Het getekende exemplaar staat bij uw documenten."
       }
     },
     "words": {

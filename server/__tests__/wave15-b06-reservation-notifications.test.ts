@@ -134,7 +134,7 @@ describe("B-06 — kantoorwijzigingen bereiken de portaalklant", () => {
     const rows = (await mine("contract_to_sign")).filter((n) => n.description.includes("contract.pdf"));
     expect(rows).toHaveLength(1);
     expect(rows[0].link).toBe("/documenten");
-    expect(rows[0].title).toBe("Contract klaar om te tekenen");
+    expect(rows[0].title).toBe("Huurcontract klaar om te tekenen");
     expect(rows[0].params).toMatchObject({ documentKind: "contract", fileName: "contract.pdf" });
   });
 

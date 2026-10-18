@@ -128,7 +128,15 @@ describe("the sign dialog", () => {
     draw();
     await userEvent.click(screen.getByTestId("checkbox-sign-agree"));
     await userEvent.click(submit);
-    await waitFor(() => expect(toast).toHaveBeenCalledWith(expect.objectContaining({ title: expect.stringMatching(/Het contract is net gewijzigd/), variant: "destructive" })));
+    await waitFor(() => expect(toast).toHaveBeenCalledWith(expect.objectContaining({ title: expect.stringMatching(/Het document is net gewijzigd/), variant: "destructive" })));
+  });
+
+  it("speaks of a damage form when that is what is signed", async () => {
+    portalFetch.mockResolvedValue(info);
+    setup("admin").wrap(<SignContractDialog document={doc({ status: "to_sign" }, { kind: "damage_check", documentType: "Damage Check (Unsigned)" })} onClose={() => {}} />);
+    await screen.findByTestId("button-sign-submit");
+    expect(screen.getByTestId("sign-contract-dialog")).toHaveTextContent("Schadeformulier tekenen");
+    expect(screen.getByTestId("sign-contract-dialog")).toHaveTextContent("akkoord met de staat van de auto");
   });
 
   it("says only an administrator can sign when the server says so", async () => {

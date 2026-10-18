@@ -26,6 +26,8 @@ export function SignContractDialog({ document: d, onClose }: { document: PortalD
   const [agree, setAgree] = useState(false);
   const [hasInk, setHasInk] = useState(false);
   const open = d !== null;
+  // The same steps for a contract and a damage form; only the words differ.
+  const k = (key: string) => t(d?.kind === "damage_check" ? `documents.sign.${key}Damage` : `documents.sign.${key}`);
   const { data: info, isLoading, isError } = useQuery<PortalSigningInfoDto>({
     queryKey: ["portal", `/api/portal/documents/${d?.id}/signing`], queryFn: portalQueryFn, enabled: open, staleTime: 0,
   });
@@ -44,7 +46,7 @@ export function SignContractDialog({ document: d, onClose }: { document: PortalD
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["portal"] });
-      toast({ title: t("documents.sign.done") });
+      toast({ title: k("done") });
       onClose();
     },
     onError: async (e) => {
@@ -61,20 +63,20 @@ export function SignContractDialog({ document: d, onClose }: { document: PortalD
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[95vh] max-w-3xl overflow-y-auto" data-testid="sign-contract-dialog">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><PenLine className="h-5 w-5" />{t("documents.sign.title")}</DialogTitle>
-          <DialogDescription>{t("documents.sign.intro")}</DialogDescription>
+          <DialogTitle className="flex items-center gap-2"><PenLine className="h-5 w-5" />{k("title")}</DialogTitle>
+          <DialogDescription>{k("intro")}</DialogDescription>
         </DialogHeader>
         {isError ? <p className="p-4 text-center text-sm text-muted-foreground">{t("errors.PORTAL_NOT_FOUND")}</p>
           : isLoading || !info ? <div className="flex justify-center p-6"><Loader2 className="h-5 w-5 animate-spin" /></div>
-          : !info.canSign ? <p className="rounded-lg bg-[#f1f5f9] p-4 text-sm text-[#334155]" data-testid="sign-not-allowed">{info.status === "to_sign" ? t("documents.sign.adminOnly") : t("documents.sign.notSignable")}</p>
+          : !info.canSign ? <p className="rounded-lg bg-[#f1f5f9] p-4 text-sm text-[#334155]" data-testid="sign-not-allowed">{info.status === "to_sign" ? k("adminOnly") : k("notSignable")}</p>
           : (
             <div className="space-y-4">
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-[#0f172a]">{t("documents.sign.step1")}</span>
+                  <span className="text-sm font-semibold text-[#0f172a]">{k("step1")}</span>
                   <a href={url} target="_blank" rel="noopener" className="inline-flex items-center gap-1 text-xs text-[#2a2f9c] underline"><ExternalLink className="h-3.5 w-3.5" />{t("documents.sign.openFull")}</a>
                 </div>
-                <iframe src={url} title={t("documents.sign.previewTitle")} className="h-[45vh] w-full rounded-lg border border-[#e6e8f0]" data-testid="sign-contract-preview" />
+                <iframe src={url} title={k("previewTitle")} className="h-[45vh] w-full rounded-lg border border-[#e6e8f0]" data-testid="sign-contract-preview" />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="sign-name" className="font-semibold">{t("documents.sign.step2")}</Label>
@@ -90,7 +92,7 @@ export function SignContractDialog({ document: d, onClose }: { document: PortalD
               </div>
               <label className="flex items-start gap-2 text-sm text-[#0f172a]">
                 <Checkbox checked={agree} onCheckedChange={(v) => setAgree(v === true)} className="mt-0.5" data-testid="checkbox-sign-agree" />
-                <span>{t("documents.sign.agree")}</span>
+                <span>{k("agree")}</span>
               </label>
               <p className="flex items-start gap-1.5 text-xs text-[#64748b]"><Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />{t("documents.sign.recorded")}</p>
               <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

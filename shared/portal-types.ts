@@ -2,6 +2,7 @@
 // schema.ts so the client never has to import Drizzle table objects.
 
 import type { PortalCompanyDetails } from './portal-company';
+import type { SignedDocumentRow } from './contract-signing';
 import type { PortalHandover } from './portal-handover';
 import type { AccountMailKey, CompanyMailPreferences } from './portal-mail-preferences';
 import type { SupportedLanguage } from './languages';
@@ -303,6 +304,10 @@ export interface PortalDashboard {
     unreadNotifications: number;
     /** Open maintenance and maintenance-change requests plus placeholder spares from portal blocks that still need a car. */
     maintenance: number;
+    /** Contracts and damage forms signed in the portal that the office has not marked as seen. */
+    signedNew: number;
+    /** Current unsigned contracts and damage forms of portal customers that nobody signed yet. */
+    awaitingSignature: number;
   };
   attention: {
     requests: Array<{
@@ -313,6 +318,8 @@ export interface PortalDashboard {
       urgency: 'stale' | 'soon' | null;
     }>;
     fines: Array<{ id: number; licensePlate: string; description: string; totalAmount: string; offenceAt: string }>;
+    /** Signed in the portal and not yet seen by the office. */
+    signatures: SignedDocumentRow[];
   };
   notifications: Array<{ id: number; type: string; title: string; description: string; link: string; isRead: boolean; createdAt: string }>;
   upcoming: Array<{

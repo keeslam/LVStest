@@ -166,12 +166,21 @@
       "padLabel": "Recuadro para firmar",
       "padHint": "Firme en el recuadro con el dedo, un lápiz o el ratón.",
       "agree": "He leído el contrato y estoy de acuerdo. Firmo en nombre de mi empresa.",
-      "recorded": "Registramos su nombre, la fecha y la hora, su dirección IP y su navegador, y una huella digital del contrato. Una vez firmado, el contrato ya no puede cambiar.",
+      "recorded": "Registramos su nombre, la fecha y la hora, su dirección IP y su navegador, y una huella digital del documento. Una vez firmado, el documento ya no puede cambiar.",
       "submit": "Firmar y enviar",
       "done": "El contrato está firmado. Encontrará la copia firmada en sus documentos.",
       "adminOnly": "Solo un administrador de su empresa puede firmar este contrato.",
-      "notSignable": "Este contrato ya no se puede firmar."
-    }
+      "notSignable": "Este contrato ya no se puede firmar.",
+      "titleDamage": "Firmar informe de daños",
+      "introDamage": "Lea el informe de daños, escriba su nombre y firme. Después enviamos el informe firmado a nuestra oficina.",
+      "step1Damage": "1. Lea el informe de daños",
+      "previewTitleDamage": "Informe de daños",
+      "agreeDamage": "He leído el informe de daños y estoy de acuerdo con el estado del vehículo que figura en él. Firmo en nombre de mi empresa.",
+      "doneDamage": "El informe de daños está firmado. Encontrará la copia firmada en sus documentos.",
+      "adminOnlyDamage": "Solo un administrador de su empresa puede firmar este informe de daños.",
+      "notSignableDamage": "Este informe de daños ya no se puede firmar."
+    },
+    "signedDamageCheck": "Informe de daños firmado"
   },
   "drivers": {
     "title": "Conductores",
@@ -330,9 +339,9 @@
     "PORTAL_MAINTENANCE_WEEKEND": "Elija un día laborable: el taller está cerrado el fin de semana.",
     "PORTAL_RATE_LIMITED": "Demasiadas solicitudes en poco tiempo. Inténtelo de nuevo dentro de un cuarto de hora.",
     "PORTAL_TOO_MANY_OPEN": "Ya tiene muchas solicitudes pendientes. Espere a que se tramiten algunas o retire alguna.",
-    "PORTAL_ALREADY_SIGNED": "Este contrato ya está firmado.",
-    "PORTAL_NOT_SIGNABLE": "Existe una versión más reciente de este contrato o la reserva está cerrada. Actualice la página.",
-    "PORTAL_DOCUMENT_CHANGED": "El contrato acaba de cambiar. Ábralo de nuevo y firme.",
+    "PORTAL_ALREADY_SIGNED": "Este documento ya está firmado.",
+    "PORTAL_NOT_SIGNABLE": "Existe una versión más reciente de este documento o la reserva está cerrada. Actualice la página.",
+    "PORTAL_DOCUMENT_CHANGED": "El documento acaba de cambiar. Ábralo de nuevo y firme.",
     "PORTAL_INVALID_SIGNATURE": "Primero firme en el recuadro."
   },
   "admin": {
@@ -346,7 +355,8 @@
       "fines": "Multas",
       "requests": "Solicitudes",
       "blacklist": "Lista negra",
-      "maintenance": "Mantenimiento"
+      "maintenance": "Mantenimiento",
+      "signatures": "Firmados"
     },
     "dashboard": {
       "inviteAccount": "Invitar a una cuenta",
@@ -369,7 +379,9 @@
         "offeredOnline": "ofrecidos en línea",
         "blocks": "bloqueos",
         "activitySub": "Últimas acciones en el portal",
-        "maintenanceSub": "avisos y reservas provisionales"
+        "maintenanceSub": "avisos y reservas provisionales",
+        "signedNew": "firmados nuevos",
+        "signedPlusAwaiting": "nuevos · {{n}} pendientes de firma"
       },
       "attention": {
         "title": "Requiere atención",
@@ -380,7 +392,9 @@
         "unlinked": "Sin vincular",
         "stale": "Espera desde hace tiempo",
         "soon": "Empieza pronto",
-        "from": "desde el {{date}}"
+        "from": "desde el {{date}}",
+        "signed": "{{document}} firmado · {{customer}}",
+        "signedBadge": "Firmado"
       },
       "notifications": {
         "title": "Avisos",
@@ -1120,7 +1134,31 @@
       "search": "Buscar…",
       "noMatch": "No se ha encontrado nada."
     },
-    "customerTabNote": "Actualizado a través del portal de clientes por {{name}} el {{date}}: {{fields}}"
+    "customerTabNote": "Actualizado a través del portal de clientes por {{name}} el {{date}}: {{fields}}",
+    "signatures": {
+      "signedTitle": "Devueltos firmados",
+      "signedEmpty": "Todavía no se ha firmado nada a través del portal.",
+      "awaitingTitle": "Pendiente de firma",
+      "awaitingHint": "Contratos e informes de daños que el cliente puede firmar en el portal pero aún no ha firmado.",
+      "awaitingEmpty": "No hay nada pendiente de firma.",
+      "new": "Nuevo",
+      "seenBy": "Visto por {{name}}",
+      "markSeen": "Visto",
+      "open": "Abrir",
+      "kind": {
+        "contract": "Contrato",
+        "damage_check": "Informe de daños"
+      },
+      "col": {
+        "signedAt": "Firmado el",
+        "customer": "Cliente",
+        "document": "Documento",
+        "plate": "Matrícula",
+        "signer": "Firmado por",
+        "status": "Estado",
+        "since": "Listo desde"
+      }
+    }
   },
   "fines": {
     "title": "Multas",
@@ -1411,13 +1449,13 @@
         "title": "Nuevo mensaje en la solicitud n.º {{id}}"
       },
       "contract_to_sign": {
-        "title": "Contrato listo para firmar",
-        "description": "Tiene un contrato listo para firmar ({{fileName}}), para su alquiler del {{period}}.",
-        "descriptionNoPeriod": "Tiene un contrato listo para firmar ({{fileName}})."
+        "title": "{{document}} listo para firmar",
+        "description": "Tiene un documento listo para firmar: {{document}} ({{fileName}}), para su alquiler del {{period}}.",
+        "descriptionNoPeriod": "Tiene un documento listo para firmar: {{document}} ({{fileName}})."
       },
       "contract_signed": {
-        "title": "Contrato firmado: {{plate}}",
-        "description": "{{signer}} firmó el contrato el {{at}}. El contrato firmado está en sus documentos."
+        "title": "{{document}} firmado: {{plate}}",
+        "description": "{{signer}} firmó el {{at}}: {{document}}. La copia firmada está en sus documentos."
       }
     },
     "words": {

@@ -3971,6 +3971,13 @@
         "default": null
       },
       {
+        "name": "document_kind",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": "'contract'"
+      },
+      {
         "name": "document_id",
         "type": "integer",
         "notNull": false,
@@ -4079,6 +4086,20 @@
         "name": "signed_sha256",
         "type": "text",
         "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "seen_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "seen_by",
+        "type": "text",
+        "notNull": false,
         "primary": false,
         "default": null
       }

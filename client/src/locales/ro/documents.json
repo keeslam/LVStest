@@ -813,7 +813,7 @@
     "hashSigned": "SHA-256 semnat",
     "original": "Original",
     "signedFile": "Fișier semnat",
-    "openSigned": "Deschide contractul semnat",
+    "openSigned": "Deschide exemplarul semnat",
     "integrity": {
       "intact": "nemodificat",
       "changed": "MODIFICAT după semnare",

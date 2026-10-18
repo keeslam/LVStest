@@ -200,10 +200,10 @@ export async function registerGeneratedDocument(
         .returning();
       return row;
     }).then((row) => {
-      // Kees, 2026-10-18: a new unsigned contract can be signed in the portal right away, so the
+      // Kees, 2026-10-18: a new unsigned contract or damage form can be signed in the portal right away, so the
       // customer hears about it (B-06 event 4; createDocument does the same for uploads). Lazy for the
       // same reason as there: the notification service reaches back into storage.
-      if (documentType === DOCUMENT_TYPE_CONTRACT_UNSIGNED && reservationId !== null) {
+      if ((documentType === DOCUMENT_TYPE_CONTRACT_UNSIGNED || documentType === DOCUMENT_TYPE_DAMAGE_CHECK_UNSIGNED) && reservationId !== null) {
         void import("./portal-reservation-events")
           .then((m) => m.onDocumentAvailable(row))
           .catch((e) => console.error("contract notification failed:", e));

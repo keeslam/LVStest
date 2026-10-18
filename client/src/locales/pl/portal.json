@@ -171,12 +171,21 @@
       "padLabel": "Pole na podpis",
       "padHint": "Prosimy podpisać się w polu palcem, rysikiem lub myszą.",
       "agree": "Przeczytałem(-am) umowę i akceptuję ją. Podpisuję w imieniu mojej firmy.",
-      "recorded": "Zapisujemy imię i nazwisko, datę i godzinę, adres IP i przeglądarkę oraz cyfrowy odcisk umowy. Po podpisaniu umowa nie może się już zmienić.",
+      "recorded": "Zapisujemy imię i nazwisko, datę i godzinę, adres IP i przeglądarkę oraz cyfrowy odcisk dokumentu. Po podpisaniu dokument nie może się już zmienić.",
       "submit": "Podpisz i wyślij",
       "done": "Umowa została podpisana. Podpisany egzemplarz znajdą Państwo w dokumentach.",
       "adminOnly": "Tę umowę może podpisać tylko administrator Państwa firmy.",
-      "notSignable": "Tej umowy nie można już podpisać."
-    }
+      "notSignable": "Tej umowy nie można już podpisać.",
+      "titleDamage": "Podpisanie protokołu szkód",
+      "introDamage": "Prosimy przeczytać protokół szkód, wpisać imię i nazwisko oraz złożyć podpis. Następnie przesyłamy podpisany protokół do naszego biura.",
+      "step1Damage": "1. Przeczytaj protokół szkód",
+      "previewTitleDamage": "Protokół szkód",
+      "agreeDamage": "Przeczytałem(-am) protokół szkód i zgadzam się z opisanym w nim stanem pojazdu. Podpisuję w imieniu mojej firmy.",
+      "doneDamage": "Protokół szkód został podpisany. Podpisany egzemplarz znajdą Państwo w dokumentach.",
+      "adminOnlyDamage": "Ten protokół szkód może podpisać tylko administrator Państwa firmy.",
+      "notSignableDamage": "Tego protokołu szkód nie można już podpisać."
+    },
+    "signedDamageCheck": "Podpisany protokół szkód"
   },
   "drivers": {
     "title": "Kierowcy",
@@ -336,9 +345,9 @@
     "PORTAL_MAINTENANCE_WEEKEND": "Wybierz dzień roboczy: warsztat jest zamknięty w weekendy.",
     "PORTAL_RATE_LIMITED": "Zbyt wiele żądań w krótkim czasie. Spróbuj ponownie za kwadrans.",
     "PORTAL_TOO_MANY_OPEN": "Mają Państwo już wiele otwartych wniosków. Poczekaj, aż część zostanie rozpatrzona, lub wycofaj któryś z nich.",
-    "PORTAL_ALREADY_SIGNED": "Ta umowa została już podpisana.",
-    "PORTAL_NOT_SIGNABLE": "Istnieje nowsza wersja tej umowy lub rezerwacja jest zamknięta. Prosimy odświeżyć stronę.",
-    "PORTAL_DOCUMENT_CHANGED": "Umowa właśnie się zmieniła. Prosimy otworzyć ją ponownie i podpisać.",
+    "PORTAL_ALREADY_SIGNED": "Ten dokument został już podpisany.",
+    "PORTAL_NOT_SIGNABLE": "Istnieje nowsza wersja tego dokumentu lub rezerwacja jest zamknięta. Prosimy odświeżyć stronę.",
+    "PORTAL_DOCUMENT_CHANGED": "Dokument właśnie się zmienił. Prosimy otworzyć go ponownie i podpisać.",
     "PORTAL_INVALID_SIGNATURE": "Prosimy najpierw złożyć podpis w polu."
   },
   "admin": {
@@ -352,7 +361,8 @@
       "fines": "Mandaty",
       "requests": "Wnioski",
       "blacklist": "Czarna lista",
-      "maintenance": "Serwis"
+      "maintenance": "Serwis",
+      "signatures": "Podpisane"
     },
     "dashboard": {
       "inviteAccount": "Zaproś do konta",
@@ -375,7 +385,9 @@
         "offeredOnline": "oferowane online",
         "blocks": "blokady",
         "activitySub": "Ostatnie działania w portalu",
-        "maintenanceSub": "zgłoszenia i rezerwacje zastępcze"
+        "maintenanceSub": "zgłoszenia i rezerwacje zastępcze",
+        "signedNew": "nowo podpisane",
+        "signedPlusAwaiting": "nowe · {{n}} czeka na podpis"
       },
       "attention": {
         "title": "Wymaga uwagi",
@@ -386,7 +398,9 @@
         "unlinked": "Niepowiązany",
         "stale": "Czeka już długo",
         "soon": "Wkrótce się zaczyna",
-        "from": "od {{date}}"
+        "from": "od {{date}}",
+        "signed": "Podpisano: {{document}} · {{customer}}",
+        "signedBadge": "Podpisane"
       },
       "notifications": {
         "title": "Powiadomienia",
@@ -1128,7 +1142,31 @@
       "search": "Szukaj…",
       "noMatch": "Nic nie znaleziono."
     },
-    "customerTabNote": "Zaktualizowano przez portal klienta przez {{name}} dnia {{date}}: {{fields}}"
+    "customerTabNote": "Zaktualizowano przez portal klienta przez {{name}} dnia {{date}}: {{fields}}",
+    "signatures": {
+      "signedTitle": "Wróciły podpisane",
+      "signedEmpty": "Nic nie zostało jeszcze podpisane przez portal.",
+      "awaitingTitle": "Czeka na podpis",
+      "awaitingHint": "Umowy i protokoły szkód, które klient może podpisać w portalu, ale jeszcze ich nie podpisał.",
+      "awaitingEmpty": "Nic nie czeka na podpis.",
+      "new": "Nowe",
+      "seenBy": "Widział(a): {{name}}",
+      "markSeen": "Widziane",
+      "open": "Otwórz",
+      "kind": {
+        "contract": "Umowa",
+        "damage_check": "Protokół szkód"
+      },
+      "col": {
+        "signedAt": "Podpisano",
+        "customer": "Klient",
+        "document": "Dokument",
+        "plate": "Numer rejestracyjny",
+        "signer": "Podpisał(a)",
+        "status": "Status",
+        "since": "Gotowe od"
+      }
+    }
   },
   "fines": {
     "title": "Mandaty",
@@ -1420,13 +1458,13 @@
         "title": "Nowa wiadomość w zgłoszeniu nr {{id}}"
       },
       "contract_to_sign": {
-        "title": "Umowa gotowa do podpisu",
-        "description": "Umowa czeka na Państwa podpis ({{fileName}}), dotyczy najmu w okresie {{period}}.",
-        "descriptionNoPeriod": "Umowa czeka na Państwa podpis ({{fileName}})."
+        "title": "Do podpisu: {{document}}",
+        "description": "Dokument czeka na Państwa podpis: {{document}} ({{fileName}}), dotyczy najmu w okresie {{period}}.",
+        "descriptionNoPeriod": "Dokument czeka na Państwa podpis: {{document}} ({{fileName}})."
       },
       "contract_signed": {
-        "title": "Umowa podpisana: {{plate}}",
-        "description": "{{signer}} podpisał(a) umowę w dniu {{at}}. Podpisana umowa jest w Państwa dokumentach."
+        "title": "Podpisano: {{document}} ({{plate}})",
+        "description": "{{signer}} podpisał(a) w dniu {{at}}: {{document}}. Podpisany egzemplarz jest w Państwa dokumentach."
       }
     },
     "words": {

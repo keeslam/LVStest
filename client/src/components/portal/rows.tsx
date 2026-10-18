@@ -91,7 +91,7 @@ export function DocumentRow({ document: d, showReservationLink = true }: { docum
           {d.kind === "contract" ? <FileText className="h-5 w-5" /> : <ShieldCheck className="h-5 w-5" />}
         </span>
         <div className="min-w-0">
-          <div className="line-clamp-2 text-sm font-semibold text-[#0f172a]" title={d.fileName}>{sign?.status === "signed_copy" ? t("documents.signedContract") : t(`documents.${d.kind}`)}{label ? ` · ${label}` : ""}</div>
+          <div className="line-clamp-2 text-sm font-semibold text-[#0f172a]" title={d.fileName}>{sign?.status === "signed_copy" ? t(d.kind === "damage_check" ? "documents.signedDamageCheck" : "documents.signedContract") : t(`documents.${d.kind}`)}{label ? ` · ${label}` : ""}</div>
           <div className="truncate text-xs text-[#64748b]">{reservation?.contractNumber ? `${t("documents.contractNo", { nr: reservation.contractNumber })} · ` : ""}{formatPortalDate(d.uploadDate)}</div>
           {showReservationLink && d.reservationId && <button type="button" className="text-xs text-[#2a2f9c] underline" onClick={() => openReservation(d.reservationId!)}>{t("documents.openReservation")}</button>}
           {sign?.status === "signed" && <div className="mt-1 flex w-fit items-center gap-1 rounded-full bg-[#e1f5ee] px-2 py-0.5 text-xs font-medium text-[#085041]" data-testid={`document-signed-${d.id}`}><FileSignature className="h-3.5 w-3.5" />{t("documents.signedBy", { name: sign.signedBy, date: sign.signedAt ? formatPortalDateTime(sign.signedAt) : "" })}</div>}

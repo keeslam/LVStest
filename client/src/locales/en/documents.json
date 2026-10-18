@@ -801,7 +801,7 @@
     "hashSigned": "SHA-256 signed",
     "original": "Original",
     "signedFile": "Signed file",
-    "openSigned": "Open signed contract",
+    "openSigned": "Open signed copy",
     "integrity": {
       "intact": "unchanged",
       "changed": "CHANGED after signing",

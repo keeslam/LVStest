@@ -1,36 +1,38 @@
 /**
- * Signing a contract in the customer portal (Kees, 2026-10-18).
+ * Signing a contract or a damage form in the customer portal (Kees, 2026-10-18).
  *
  * The customer draws a signature, types a name and agrees; the server then makes a new PDF: the
- * contract exactly as it was shown, plus one page with the signature, the name, the time, the IP
+ * document exactly as it was shown, plus one page with the signature, the name, the time, the IP
  * address and the SHA-256 of the original. That PDF is registered on the reservation as
- * "Contract (Signed)", so the office finds it where a scanned signed contract always was.
+ * "Contract (Signed)" or "Damage Check (Signed)", so the office finds it where a scanned signed copy
+ * always was, and the Klantenportaal dashboard lists it until somebody has seen it.
  *
  * What makes it trustworthy:
  *  - the signer sends the hash of the file they were shown; a different file on disk is refused,
- *    so nobody signs a contract that changed while the page was open;
- *  - only the current version can be signed (not stale, no newer unsigned contract);
+ *    so nobody signs a document that changed while the page was open;
+ *  - only the current version can be signed (not stale, no newer unsigned document of that kind);
  *  - one signature per document, enforced by a unique index before any file is written;
  *  - the audit row keeps both hashes, so staff and portal can show that the files did not change.
  */
 import crypto from "crypto";
 import fs from "fs";
-import { eq, inArray, or } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { db } from "../db";
-import { documents, reservations, portalContractSignatures, type Document, type PortalContractSignature } from "../../shared/schema";
+import { customers, documents, portalUsers, reservations, vehicles, portalContractSignatures, type Document, type PortalContractSignature } from "../../shared/schema";
 import {
-  CONSENT_STATEMENT_NL, CONSENT_VERSION, DOCUMENT_TYPE_CONTRACT_SIGNED, MIN_SIGNATURE_BYTES, MAX_SIGNATURE_BYTES,
-  isSignedContractType, isUnsignedContractType,
-  type ContractSignatureDto, type ContractSigningStatus, type SignatureIntegrity, type SignContractInput,
+  CONSENT_STATEMENT_NL, CONSENT_VERSION, MIN_SIGNATURE_BYTES, MAX_SIGNATURE_BYTES, SIGNABLE_LABEL_NL,
+  signedKindOf, signedTypeFor, unsignedKindOf,
+  type AwaitingSignatureRow, type ContractSignatureDto, type ContractSigningStatus, type SignableKind, type SignatureIntegrity,
+  type SignContractInput, type SignedDocumentRow,
 } from "../../shared/contract-signing";
-import { isContractDocument } from "../../shared/document-types";
 import { resolveDocumentFilePath } from "./document-paths";
 import { registerGeneratedDocument } from "./document-registry";
 import { sanitizeForWinAnsi, wrapTextToWidth } from "../utils/pdf-text";
 import { formatDateTimeForLanguage } from "../utils/locale-format";
 import { officeTimeZone } from "./office-time";
 import { portalCompanyName } from "./company-name";
+import { customerDisplayName } from "./customer-display-name";
 
 export function sha256(bytes: Buffer): string {
   return crypto.createHash("sha256").update(bytes).digest("hex");
@@ -54,15 +56,19 @@ export interface SigningState {
   signedDocumentId?: number | null;
 }
 
-/** The newest current unsigned contract per reservation: the only one that can be signed. */
-function currentUnsignedIds(rows: Array<Pick<Document, "id" | "reservationId" | "documentType" | "isStale" | "version" | "uploadDate">>): Set<number> {
-  const best = new Map<number, (typeof rows)[number]>();
+type DocumentRef = Pick<Document, "id" | "reservationId" | "documentType" | "isStale" | "version" | "uploadDate">;
+
+/** The newest current unsigned document per reservation and kind: the only one that can be signed. */
+function currentUnsignedIds(rows: DocumentRef[]): Set<number> {
+  const best = new Map<string, DocumentRef>();
   for (const d of rows) {
-    if (d.reservationId == null || d.isStale || !isUnsignedContractType(d.documentType)) continue;
-    const prev = best.get(d.reservationId);
+    const kind = unsignedKindOf(d.documentType);
+    if (d.reservationId == null || d.isStale || !kind) continue;
+    const key = `${d.reservationId}:${kind}`;
+    const prev = best.get(key);
     const newer = !prev || (d.version ?? 1) > (prev.version ?? 1)
       || ((d.version ?? 1) === (prev.version ?? 1) && new Date(d.uploadDate).getTime() > new Date(prev.uploadDate).getTime());
-    if (newer) best.set(d.reservationId, d);
+    if (newer) best.set(key, d);
   }
   return new Set([...best.values()].map((d) => d.id));
 }
@@ -70,27 +76,26 @@ function currentUnsignedIds(rows: Array<Pick<Document, "id" | "reservationId" | 
 const NOT_SIGNABLE_RESERVATION = ["cancelled"];
 
 /**
- * Where each contract of a customer stands. `docs` are the customer's own documents (already scoped
- * by the caller); a document that is not a contract gets no entry.
+ * Where each contract and damage form of a customer stands. `docs` are the customer's own documents
+ * (already scoped by the caller); any other document gets no entry.
  */
 export async function signingStates(docs: Document[]): Promise<Map<number, SigningState>> {
   const out = new Map<number, SigningState>();
-  const contracts = docs.filter((d) => isContractDocument(d.documentType));
-  if (contracts.length === 0) return out;
-  const ids = contracts.map((d) => d.id);
+  const signable = docs.filter((d) => unsignedKindOf(d.documentType) || signedKindOf(d.documentType));
+  if (signable.length === 0) return out;
+  const ids = signable.map((d) => d.id);
   const signatures = await db.select().from(portalContractSignatures)
     .where(or(inArray(portalContractSignatures.documentId, ids), inArray(portalContractSignatures.signedDocumentId, ids)));
   const byOriginal = new Map(signatures.filter((s) => s.documentId != null).map((s) => [s.documentId!, s]));
-  const reservationIds = [...new Set(contracts.map((d) => d.reservationId).filter((id): id is number => id != null))];
+  const reservationIds = [...new Set(signable.map((d) => d.reservationId).filter((id): id is number => id != null))];
   const statuses = reservationIds.length
     ? new Map((await db.select({ id: reservations.id, status: reservations.status, deletedAt: reservations.deletedAt }).from(reservations).where(inArray(reservations.id, reservationIds)))
       .map((r) => [r.id, r]))
     : new Map();
-  const current = currentUnsignedIds(contracts);
+  const current = currentUnsignedIds(signable);
 
-  for (const d of contracts) {
-    if (isSignedContractType(d.documentType)) { out.set(d.id, { status: "signed_copy" }); continue; }
-    if (!isUnsignedContractType(d.documentType)) continue;
+  for (const d of signable) {
+    if (signedKindOf(d.documentType)) { out.set(d.id, { status: "signed_copy" }); continue; }
     const signature = byOriginal.get(d.id);
     if (signature) {
       out.set(d.id, { status: "signed", signedBy: signature.signerName, signedAt: signature.signedAt.toISOString(), signedDocumentId: signature.signedDocumentId });
@@ -104,7 +109,7 @@ export async function signingStates(docs: Document[]): Promise<Map<number, Signi
 }
 
 export type SignRefusal = { ok: false; status: number; code: "ALREADY_SIGNED" | "NOT_SIGNABLE" | "DOCUMENT_CHANGED" | "INVALID_SIGNATURE" | "FILE_MISSING"; message: string };
-export type SignResult = { ok: true; signature: PortalContractSignature; signedDocument: Document } | SignRefusal;
+export type SignResult = { ok: true; signature: PortalContractSignature; signedDocument: Document; kind: SignableKind } | SignRefusal;
 
 /** The PNG bytes of a drawn signature, or null when it is not a usable PNG of a sane size. */
 export function signaturePngBytes(dataUrl: string): Buffer | null {
@@ -117,6 +122,7 @@ export function signaturePngBytes(dataUrl: string): Buffer | null {
 }
 
 export interface SignaturePageInfo {
+  kind: SignableKind;
   signerName: string;
   signerEmail: string;
   companyName: string | null;
@@ -131,7 +137,7 @@ export interface SignaturePageInfo {
   portalOwner: string;
 }
 
-/** The contract as it was, plus one page that records the signature. */
+/** The document as it was, plus one page that records the signature. */
 export async function buildSignedPdf(original: Buffer, signaturePng: Buffer, info: SignaturePageInfo): Promise<Buffer> {
   const pdf = await PDFDocument.load(original);
   const font = await pdf.embedFont(StandardFonts.Helvetica);
@@ -159,11 +165,12 @@ export async function buildSignedPdf(original: Buffer, signaturePng: Buffer, inf
     }
     y -= 2;
   };
+  const label = SIGNABLE_LABEL_NL[info.kind];
 
   text("Digitale ondertekening", { size: 18, bold: true });
   text("Digital signature", { size: 10, color: [0.4, 0.4, 0.5] });
   y -= 10;
-  text(CONSENT_STATEMENT_NL);
+  text(CONSENT_STATEMENT_NL[info.kind]);
   y -= 10;
 
   const when = formatDateTimeForLanguage(info.signedAt, "nl", officeTimeZone());
@@ -172,7 +179,7 @@ export async function buildSignedPdf(original: Buffer, signaturePng: Buffer, inf
   row("Namens", info.companyName);
   row("Datum en tijd", `${when} (${officeTimeZone()})`);
   row("Reservering", `#${info.reservationId}${info.contractNumber ? `, contract ${info.contractNumber}` : ""}`);
-  row("Document", `${info.originalFileName}${info.originalVersion ? ` (versie ${info.originalVersion})` : ""}`);
+  row(label, `${info.originalFileName}${info.originalVersion ? ` (versie ${info.originalVersion})` : ""}`);
   row("IP-adres", info.ip);
   row("Browser", info.userAgent ? info.userAgent.slice(0, 300) : null);
   row("SHA-256 origineel", info.originalSha256);
@@ -187,10 +194,10 @@ export async function buildSignedPdf(original: Buffer, signaturePng: Buffer, inf
   page.drawImage(image, { x: left + 12, y: y - h - 6, width: w, height: h });
   y -= h + 30;
 
-  text(`Ondertekend via het klantenportaal van ${info.portalOwner}. Deze pagina hoort bij het contract hiervoor; `
-    + "de SHA-256-code hierboven is de digitale vingerafdruk van dat contract op het moment van ondertekenen.", { size: 8, color: [0.4, 0.4, 0.5] });
+  text(`Ondertekend via het klantenportaal van ${info.portalOwner}. Deze pagina hoort bij het document hiervoor; `
+    + "de SHA-256-code hierboven is de digitale vingerafdruk van dat document op het moment van ondertekenen.", { size: 8, color: [0.4, 0.4, 0.5] });
 
-  pdf.setSubject(`Digitaal ondertekend contract, reservering #${info.reservationId}`);
+  pdf.setSubject(`Digitaal ondertekend: ${label.toLowerCase()}, reservering #${info.reservationId}`);
   pdf.setKeywords(["signed", `sha256:${info.originalSha256}`]);
   pdf.setModificationDate(info.signedAt);
   return Buffer.from(await pdf.save());
@@ -211,19 +218,20 @@ export async function signContract(args: {
   language: string | null;
 }): Promise<SignResult> {
   const { doc, input } = args;
-  if (!isUnsignedContractType(doc.documentType) || doc.reservationId == null) {
+  const kind = unsignedKindOf(doc.documentType);
+  if (!kind || doc.reservationId == null) {
     return { ok: false, status: 409, code: "NOT_SIGNABLE", message: "This document cannot be signed." };
   }
-  const state = (await signingStates([doc, ...(await siblingContracts(doc))])).get(doc.id);
-  if (state?.status === "signed") return { ok: false, status: 409, code: "ALREADY_SIGNED", message: "This contract has already been signed." };
-  if (state?.status !== "to_sign") return { ok: false, status: 409, code: "NOT_SIGNABLE", message: "A newer version of this contract exists, or the reservation is closed." };
+  const state = (await signingStates([doc, ...(await siblingDocuments(doc))])).get(doc.id);
+  if (state?.status === "signed") return { ok: false, status: 409, code: "ALREADY_SIGNED", message: "This document has already been signed." };
+  if (state?.status !== "to_sign") return { ok: false, status: 409, code: "NOT_SIGNABLE", message: "A newer version of this document exists, or the reservation is closed." };
 
   const file = resolveDocumentFilePath(doc.filePath);
-  if (!file) return { ok: false, status: 404, code: "FILE_MISSING", message: "The contract file is not available." };
+  if (!file) return { ok: false, status: 404, code: "FILE_MISSING", message: "The document file is not available." };
   const original = await fs.promises.readFile(file);
   const originalSha256 = sha256(original);
   if (originalSha256 !== input.documentSha256) {
-    return { ok: false, status: 409, code: "DOCUMENT_CHANGED", message: "The contract changed after it was opened. Open it again before signing." };
+    return { ok: false, status: 409, code: "DOCUMENT_CHANGED", message: "The document changed after it was opened. Open it again before signing." };
   }
   const png = signaturePngBytes(input.signature);
   if (!png) return { ok: false, status: 400, code: "INVALID_SIGNATURE", message: "The signature is empty or not a valid image." };
@@ -233,30 +241,30 @@ export async function signContract(args: {
   let signedBytes: Buffer;
   try {
     signedBytes = await buildSignedPdf(original, png, {
-      signerName: input.name, signerEmail: args.signer.email, companyName: args.companyName,
+      kind, signerName: input.name, signerEmail: args.signer.email, companyName: args.companyName,
       reservationId: doc.reservationId, contractNumber: reservation?.contractNumber ?? null,
       originalFileName: doc.fileName, originalVersion: doc.version ?? null, originalSha256,
       signedAt, ip: args.ip, userAgent: args.userAgent, portalOwner: portalCompanyName(),
     });
   } catch (e) {
-    console.error("signed contract PDF could not be built:", (e as Error).message);
-    return { ok: false, status: 400, code: "INVALID_SIGNATURE", message: "The signature could not be placed on the contract." };
+    console.error("signed PDF could not be built:", (e as Error).message);
+    return { ok: false, status: 400, code: "INVALID_SIGNATURE", message: "The signature could not be placed on the document." };
   }
   const signedSha256 = sha256(signedBytes);
 
   // The audit row first: the unique index on document_id makes a second signer stop here, before any file exists.
   const [signature] = await db.insert(portalContractSignatures).values({
-    documentId: doc.id, reservationId: doc.reservationId, customerId: args.customerId, portalUserId: args.signer.id,
+    documentKind: kind, documentId: doc.id, reservationId: doc.reservationId, customerId: args.customerId, portalUserId: args.signer.id,
     signerName: input.name, signerEmail: args.signer.email, signedAt, ip: args.ip, userAgent: args.userAgent?.slice(0, 500) ?? null,
     language: args.language, consentVersion: CONSENT_VERSION,
     originalFileName: doc.fileName, originalVersion: doc.version ?? null, originalSha256, signedSha256,
   }).onConflictDoNothing().returning();
-  if (!signature) return { ok: false, status: 409, code: "ALREADY_SIGNED", message: "This contract has already been signed." };
+  if (!signature) return { ok: false, status: 409, code: "ALREADY_SIGNED", message: "This document has already been signed." };
 
   let signedDocument: Document;
   try {
     signedDocument = await registerGeneratedDocument({
-      documentType: DOCUMENT_TYPE_CONTRACT_SIGNED, bytes: signedBytes,
+      documentType: signedTypeFor(kind), bytes: signedBytes,
       vehicleId: doc.vehicleId ?? reservation?.vehicleId ?? null, reservationId: doc.reservationId,
       createdBy: `portaal: ${input.name}`,
       notes: `Digitaal ondertekend in het klantenportaal door ${input.name} (document #${doc.id}, SHA-256 ${originalSha256})`,
@@ -269,14 +277,14 @@ export async function signContract(args: {
   }
   const [linked] = await db.update(portalContractSignatures).set({ signedDocumentId: signedDocument.id })
     .where(eq(portalContractSignatures.id, signature.id)).returning();
-  return { ok: true, signature: linked ?? signature, signedDocument };
+  return { ok: true, signature: linked ?? signature, signedDocument, kind };
 }
 
-/** The other contracts of the same reservation, so "is this the current version" can be answered. */
-async function siblingContracts(doc: Document): Promise<Document[]> {
+/** The other signable documents of the same reservation, so "is this the current version" can be answered. */
+async function siblingDocuments(doc: Document): Promise<Document[]> {
   if (doc.reservationId == null) return [];
   const rows = await db.select().from(documents).where(eq(documents.reservationId, doc.reservationId));
-  return rows.filter((d) => d.id !== doc.id && isContractDocument(d.documentType));
+  return rows.filter((d) => d.id !== doc.id && (unsignedKindOf(d.documentType) || signedKindOf(d.documentType)));
 }
 
 /** True when a document is the original or the result of a portal signature: it must not be changed or deleted. */
@@ -301,9 +309,11 @@ export async function signedCopyIntegrity(documentId: number): Promise<Signature
   return integrityOf(documentId, row.signedSha256);
 }
 
+const kindOf = (value: string | null | undefined): SignableKind => (value === "damage_check" ? "damage_check" : "contract");
+
 export function toSignatureDto(row: PortalContractSignature, integrity: ContractSignatureDto["integrity"]): ContractSignatureDto {
   return {
-    id: row.id, documentId: row.documentId, signedDocumentId: row.signedDocumentId, reservationId: row.reservationId,
+    id: row.id, documentKind: kindOf(row.documentKind), documentId: row.documentId, signedDocumentId: row.signedDocumentId, reservationId: row.reservationId,
     signerName: row.signerName, signerEmail: row.signerEmail, signedAt: row.signedAt.toISOString(),
     ip: row.ip, userAgent: row.userAgent, consentVersion: row.consentVersion,
     originalFileName: row.originalFileName, originalVersion: row.originalVersion,
@@ -322,3 +332,65 @@ export async function listSignaturesForReservation(reservationId: number): Promi
   })));
 }
 
+// ---- the Klantenportaal dashboard (Kees, 2026-10-18) ------------------------------------------
+
+/** Documents that came back signed, newest first; `onlyUnseen` = what the office has not looked at yet. */
+export async function listSignedDocuments(opts: { onlyUnseen?: boolean; limit?: number } = {}): Promise<SignedDocumentRow[]> {
+  const rows = await db.select({
+    s: portalContractSignatures, customerName: customerDisplayName(), licensePlate: vehicles.licensePlate,
+  }).from(portalContractSignatures)
+    .innerJoin(customers, eq(portalContractSignatures.customerId, customers.id))
+    .leftJoin(reservations, eq(portalContractSignatures.reservationId, reservations.id))
+    .leftJoin(vehicles, eq(reservations.vehicleId, vehicles.id))
+    .where(opts.onlyUnseen ? isNull(portalContractSignatures.seenAt) : undefined)
+    .orderBy(desc(portalContractSignatures.signedAt), desc(portalContractSignatures.id))
+    .limit(opts.limit ?? 200);
+  return rows.map(({ s, customerName, licensePlate }) => ({
+    id: s.id, documentKind: kindOf(s.documentKind), reservationId: s.reservationId, customerId: s.customerId,
+    customerName, licensePlate: licensePlate ?? null, signerName: s.signerName, signedAt: s.signedAt.toISOString(),
+    signedDocumentId: s.signedDocumentId, seenAt: s.seenAt ? s.seenAt.toISOString() : null, seenBy: s.seenBy,
+  }));
+}
+
+/** Notes that the office has seen a signed document; the first one counts. False when there is no such row. */
+export async function markSignatureSeen(id: number, username: string): Promise<boolean> {
+  const [exists] = await db.select({ id: portalContractSignatures.id }).from(portalContractSignatures).where(eq(portalContractSignatures.id, id));
+  if (!exists) return false;
+  await db.update(portalContractSignatures).set({ seenAt: new Date(), seenBy: username })
+    .where(and(eq(portalContractSignatures.id, id), isNull(portalContractSignatures.seenAt)));
+  return true;
+}
+
+/**
+ * Current unsigned contracts and damage forms of portal customers that nobody has signed yet: what the
+ * portal shows as "Tekenen". Only running or booked rentals; the newest version per reservation and kind.
+ */
+export async function listAwaitingSignature(limit = 200): Promise<AwaitingSignatureRow[]> {
+  const rows = await db.select({
+    id: documents.id, documentType: documents.documentType, reservationId: documents.reservationId, isStale: documents.isStale,
+    version: documents.version, uploadDate: documents.uploadDate,
+    customerId: reservations.customerId, customerName: customerDisplayName(), licensePlate: vehicles.licensePlate,
+  }).from(documents)
+    .innerJoin(reservations, eq(documents.reservationId, reservations.id))
+    .innerJoin(customers, eq(reservations.customerId, customers.id))
+    .leftJoin(vehicles, eq(reservations.vehicleId, vehicles.id))
+    .where(and(
+      inArray(documents.documentType, ["Contract (Unsigned)", "Damage Check (Unsigned)"]),
+      inArray(reservations.status, ["booked", "picked_up"]),
+      isNull(reservations.deletedAt),
+      sql`exists (select 1 from ${portalUsers} pu where pu.customer_id = ${customers.id})`,
+    ));
+  const current = currentUnsignedIds(rows);
+  const candidates = rows.filter((r) => current.has(r.id));
+  if (candidates.length === 0) return [];
+  const signed = new Set((await db.select({ id: portalContractSignatures.documentId }).from(portalContractSignatures)
+    .where(inArray(portalContractSignatures.documentId, candidates.map((r) => r.id)))).map((r) => r.id));
+  return candidates
+    .filter((r) => !signed.has(r.id))
+    .sort((a, b) => new Date(a.uploadDate).getTime() - new Date(b.uploadDate).getTime())
+    .slice(0, limit)
+    .map((r) => ({
+      documentId: r.id, documentKind: unsignedKindOf(r.documentType) ?? "contract", reservationId: r.reservationId!,
+      customerId: r.customerId!, customerName: r.customerName, licensePlate: r.licensePlate ?? null, since: new Date(r.uploadDate).toISOString(),
+    }));
+}

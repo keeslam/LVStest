@@ -154,11 +154,11 @@ export const DEFAULT_TEMPLATES: Array<{ name: string; subject: string; content: 
   },
   {
     name: PORTAL_TEMPLATE.CONTRACT_SIGNED,
-    subject: "Contract getekend: {{plate}}",
+    subject: "Getekend: {{document}} ({{plate}})",
     content: `<p>Beste {{name}},</p>
-<p>{{signer}} heeft op {{at}} het contract voor {{company}} digitaal getekend.</p>
+<p>{{signer}} heeft op {{at}} voor {{company}} digitaal getekend: {{document}}.</p>
 <p>Auto: {{car}}<br>Periode: {{period}}</p>
-<p>Het getekende contract staat in het klantenportaal: <a href="{{link}}">{{link}}</a></p>
+<p>Het getekende exemplaar staat in het klantenportaal: <a href="{{link}}">{{link}}</a></p>
 <p>Heeft u dit niet gedaan? Neem dan direct contact op met {{companyName}}.</p>
 <p>Met vriendelijke groet,<br>{{companyName}}</p>`,
   },

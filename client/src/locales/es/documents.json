@@ -813,7 +813,7 @@
     "hashSigned": "SHA-256 firmado",
     "original": "Original",
     "signedFile": "Archivo firmado",
-    "openSigned": "Abrir contrato firmado",
+    "openSigned": "Abrir copia firmada",
     "integrity": {
       "intact": "sin cambios",
       "changed": "MODIFICADO tras la firma",

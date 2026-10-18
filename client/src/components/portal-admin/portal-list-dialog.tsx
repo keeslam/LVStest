@@ -8,6 +8,7 @@ import { ActivityTable } from "./activity-table";
 import { RequestsTable } from "./requests-table";
 import { BlacklistTable } from "./blacklist-table";
 import { FinesTable } from "@/components/fines/fines-table";
+import { SignaturesTable } from "./signatures-table";
 
 /**
  * One wide dialog for every portal-admin list (customers, accounts, requests,
@@ -32,6 +33,7 @@ export function PortalListDialog() {
           {kind === "vehicles" && <OnlineVehiclesTable />}
           {kind === "activity" && <ActivityTable limit={200} />}
           {kind === "blacklist" && <BlacklistTable key={plate ?? ""} initialPlate={plate} />}
+          {kind === "signatures" && <SignaturesTable />}
         </div>
       </DialogContent>
     </Dialog>

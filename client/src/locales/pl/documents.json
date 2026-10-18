@@ -825,7 +825,7 @@
     "hashSigned": "SHA-256 podpisanego",
     "original": "Oryginał",
     "signedFile": "Podpisany plik",
-    "openSigned": "Otwórz podpisaną umowę",
+    "openSigned": "Otwórz podpisany egzemplarz",
     "integrity": {
       "intact": "bez zmian",
       "changed": "ZMIENIONY po podpisaniu",
