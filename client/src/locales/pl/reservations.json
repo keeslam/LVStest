@@ -269,8 +269,8 @@
     "handoverResult": {
       "contractReadyTitle": "Umowa gotowa",
       "contractFailedTitle": "Nie udało się utworzyć umowy",
-      "damageCheckReadyTitle": "Formularz uszkodzeń gotowy",
-      "damageCheckFailedTitle": "Nie udało się utworzyć formularza uszkodzeń",
+      "damageCheckReadyTitle": "Kontrola uszkodzeń gotowa",
+      "damageCheckFailedTitle": "Nie udało się utworzyć kontroli uszkodzeń",
       "readyDescription": "Utworzono plik {{fileName}}. Wydrukuj go lub wyślij od razu e-mailem do klienta.",
       "failedDescription": "Czynność została zapisana, ale dokument nie został utworzony. Spróbuj ponownie lub sprawdź szablony.",
       "print": "Drukuj",

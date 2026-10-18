@@ -230,7 +230,7 @@
         "system": "Sarcină de sistem",
         "backup": "Copie de rezervă",
         "interactive-damage-check": "Verificare daune",
-        "damage-check-template": "Șablon de formular de daune",
+        "damage-check-template": "Șablon de verificare a daunelor",
         "fine-import": "Import de amenzi",
         "fiscal-assessment": "Evaluare fiscală",
         "fiscal-report": "Raport fiscal",
@@ -274,7 +274,7 @@
           "mark-needs-service": "Marcat ca necesitând mentenanță",
           "return-from-service": "Revenit din mentenanță",
           "contract-pdf": "PDF-ul contractului deschis",
-          "damage-check-pdf": "PDF-ul formularului de daune deschis"
+          "damage-check-pdf": "PDF-ul verificării de daune deschis"
         },
         "vehicle": {
           "mileage": "Kilometraj modificat",
@@ -284,7 +284,7 @@
           "toggle-registration": "Înmatricularea pe nume modificată",
           "fiscal-profile": "Profil fiscal modificat",
           "blacklist": "Adăugat pe lista neagră",
-          "damage-check-pdf": "PDF-ul formularului de daune deschis"
+          "damage-check-pdf": "PDF-ul verificării de daune deschis"
         },
         "document": {
           "email": "Document trimis prin e-mail",

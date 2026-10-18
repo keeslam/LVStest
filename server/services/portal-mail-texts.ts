@@ -590,7 +590,7 @@ export const PORTAL_MAIL_PHRASES: Record<SupportedLanguage, PortalMailPhrases> =
     noCar: "nog geen auto toegewezen",
     periodChanged: (now, was) => `De periode is nu ${now} (was ${was}).`,
     vehicleChanged: (now, was) => `U rijdt nu in ${now} in plaats van ${was}.`,
-    document: { contract: "Huurcontract", damageCheck: "Schadecontrole" },
+    document: { contract: "Huurcontract", damageCheck: "Schadecheck" },
   },
   en: {
     requestType: { extension: "extension", early_return: "early return", damage: "damage report", fine_question: "question about a fine", company_name_change: "company name change", other: "other" },
@@ -686,6 +686,6 @@ export const PORTAL_MAIL_PHRASES: Record<SupportedLanguage, PortalMailPhrases> =
     noCar: "samochód nie został jeszcze przydzielony",
     periodChanged: (now, was) => `Okres to teraz ${now} (wcześniej: ${was}).`,
     vehicleChanged: (now, was) => `Państwa samochód to teraz ${now} (wcześniej: ${was}).`,
-    document: { contract: "Umowa najmu", damageCheck: "Protokół szkód" },
+    document: { contract: "Umowa najmu", damageCheck: "Kontrola uszkodzeń" },
   },
 };

@@ -140,11 +140,11 @@
     "title": "Umowy i dokumenty",
     "empty": "Nie ma jeszcze dokumentów.",
     "contract": "Umowa",
-    "damage_check": "Formularz uszkodzeń",
+    "damage_check": "Kontrola uszkodzeń",
     "reservation": "Rezerwacja #{{id}}",
     "open": "Otwórz",
     "noPreview": "Tego typu pliku nie można tu wyświetlić. Użyj opcji Pobierz.",
-    "subtitle": "Umowy i formularze uszkodzeń według rezerwacji.",
+    "subtitle": "Umowy i kontrole uszkodzeń według rezerwacji.",
     "other": "Pozostałe dokumenty",
     "openReservation": "Wyświetl rezerwację",
     "ack": "Zapoznano się i zaakceptowano",
@@ -176,16 +176,16 @@
       "done": "Umowa została podpisana. Podpisany egzemplarz znajdą Państwo w dokumentach.",
       "adminOnly": "Tę umowę może podpisać tylko administrator Państwa firmy.",
       "notSignable": "Tej umowy nie można już podpisać.",
-      "titleDamage": "Podpisanie protokołu szkód",
-      "introDamage": "Prosimy przeczytać protokół szkód, wpisać imię i nazwisko oraz złożyć podpis. Następnie przesyłamy podpisany protokół do naszego biura.",
-      "step1Damage": "1. Przeczytaj protokół szkód",
-      "previewTitleDamage": "Protokół szkód",
-      "agreeDamage": "Przeczytałem(-am) protokół szkód i zgadzam się z opisanym w nim stanem pojazdu. Podpisuję w imieniu mojej firmy.",
-      "doneDamage": "Protokół szkód został podpisany. Podpisany egzemplarz znajdą Państwo w dokumentach.",
-      "adminOnlyDamage": "Ten protokół szkód może podpisać tylko administrator Państwa firmy.",
-      "notSignableDamage": "Tego protokołu szkód nie można już podpisać."
+      "titleDamage": "Podpisanie kontroli uszkodzeń",
+      "introDamage": "Prosimy przeczytać kontrolę uszkodzeń, wpisać imię i nazwisko oraz złożyć podpis. Następnie przesyłamy podpisaną kontrolę do naszego biura.",
+      "step1Damage": "1. Przeczytaj kontrolę uszkodzeń",
+      "previewTitleDamage": "Kontrola uszkodzeń",
+      "agreeDamage": "Przeczytałem(-am) kontrolę uszkodzeń i zgadzam się z opisanym w niej stanem pojazdu. Podpisuję w imieniu mojej firmy.",
+      "doneDamage": "Kontrola uszkodzeń została podpisana. Podpisany egzemplarz znajdą Państwo w dokumentach.",
+      "adminOnlyDamage": "Tę kontrolę uszkodzeń może podpisać tylko administrator Państwa firmy.",
+      "notSignableDamage": "Tej kontroli uszkodzeń nie można już podpisać."
     },
-    "signedDamageCheck": "Podpisany protokół szkód"
+    "signedDamageCheck": "Podpisana kontrola uszkodzeń"
   },
   "drivers": {
     "title": "Kierowcy",
@@ -546,7 +546,7 @@
       "canManageDrivers": "Może zarządzać kierowcami",
       "canSubmitRequests": "Może składać wnioski",
       "canViewFines": "Widzi mandaty",
-      "canViewContracts": "Widzi umowy i formularze uszkodzeń",
+      "canViewContracts": "Widzi umowy i kontrole uszkodzeń",
       "showPrices": "Widzi ceny",
       "internalNotes": "Notatki wewnętrzne (czego potrzebuje ten klient?)",
       "saved": "Ustawienia zapisane.",
@@ -571,7 +571,7 @@
         "canSubmitRequests": "Przedłużanie, zgłaszanie szkód i zadawanie pytań przez portal.",
         "canReturn": "Klient może składać wnioski o wcześniejszy zwrot samochodu.",
         "canViewFines": "Klient widzi mandaty swoich pojazdów.",
-        "canViewContracts": "Klient widzi umowy i formularze uszkodzeń swoich rezerwacji.",
+        "canViewContracts": "Klient widzi umowy i kontrole uszkodzeń swoich rezerwacji.",
         "showPrices": "Wyłączone: klient nie widzi kwot w portalu.",
         "fiscalMobilityEnabled": "Przełącznik główny: bez niego system nie ocenia klienta, a pozostałe przełączniki podatkowe nie działają.",
         "pseudoEindheffingEnabled": "System ocenia dla każdego okresu, czy ma zastosowanie pseudo-eindheffing (pseudo-podatek końcowy).",
@@ -1152,7 +1152,7 @@
       "signedTitle": "Wróciły podpisane",
       "signedEmpty": "Nic nie zostało jeszcze podpisane przez portal.",
       "awaitingTitle": "Czeka na podpis",
-      "awaitingHint": "Umowy i protokoły szkód, które klient może podpisać w portalu, ale jeszcze ich nie podpisał.",
+      "awaitingHint": "Umowy i kontrole uszkodzeń, które klient może podpisać w portalu, ale jeszcze ich nie podpisał.",
       "awaitingEmpty": "Nic nie czeka na podpis.",
       "new": "Nowe",
       "seenBy": "Widział(a): {{name}}",
@@ -1160,7 +1160,7 @@
       "open": "Otwórz",
       "kind": {
         "contract": "Umowa",
-        "damage_check": "Protokół szkód"
+        "damage_check": "Kontrola uszkodzeń"
       },
       "col": {
         "signedAt": "Podpisano",
@@ -1479,7 +1479,7 @@
       "changesPeriod": "Okres to teraz {{period}} (wcześniej: {{oldPeriod}}).",
       "changesVehicle": "Państwa samochód to teraz {{car}} (wcześniej: {{oldCar}}).",
       "documentContract": "Umowa najmu",
-      "documentDamageCheck": "Protokół szkód"
+      "documentDamageCheck": "Kontrola uszkodzeń"
     }
   },
   "thread": {

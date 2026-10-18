@@ -145,7 +145,7 @@ describe("OPT-005 — het contract vanuit de ophaaldialoog", () => {
     withClient(
       <HandoverResultDialog open onOpenChange={() => {}} reservation={reservation} document={null} kind="damageCheck" />,
     );
-    expect(screen.getByText("Schadeformulier kon niet gemaakt worden")).toBeInTheDocument();
+    expect(screen.getByText("Schadecheck kon niet gemaakt worden")).toBeInTheDocument();
     expect(screen.queryByTestId("button-handover-retry")).toBeNull();
   });
 

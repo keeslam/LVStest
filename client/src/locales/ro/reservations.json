@@ -269,8 +269,8 @@
     "handoverResult": {
       "contractReadyTitle": "Contract gata",
       "contractFailedTitle": "Contractul nu a putut fi creat",
-      "damageCheckReadyTitle": "Formularul de daune este gata",
-      "damageCheckFailedTitle": "Formularul de daune nu a putut fi creat",
+      "damageCheckReadyTitle": "Verificarea de daune este gata",
+      "damageCheckFailedTitle": "Verificarea de daune nu a putut fi creată",
       "readyDescription": "{{fileName}} a fost creat. Imprimați-l sau trimiteți-l direct prin e-mail clientului.",
       "failedDescription": "Operațiunea a fost consemnată, dar documentul nu a fost creat. Încercați din nou sau verificați șabloanele.",
       "print": "Imprimare",

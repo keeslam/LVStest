@@ -135,7 +135,7 @@ describe("the sign dialog", () => {
     portalFetch.mockResolvedValue(info);
     setup("admin").wrap(<SignContractDialog document={doc({ status: "to_sign" }, { kind: "damage_check", documentType: "Damage Check (Unsigned)" })} onClose={() => {}} />);
     await screen.findByTestId("button-sign-submit");
-    expect(screen.getByTestId("sign-contract-dialog")).toHaveTextContent("Schadeformulier tekenen");
+    expect(screen.getByTestId("sign-contract-dialog")).toHaveTextContent("Schadecheck tekenen");
     expect(screen.getByTestId("sign-contract-dialog")).toHaveTextContent("akkoord met de staat van de auto");
   });
 

@@ -135,11 +135,11 @@
     "title": "Contratti e documenti",
     "empty": "Non ci sono ancora documenti.",
     "contract": "Contratto",
-    "damage_check": "Modulo dei danni",
+    "damage_check": "Controllo danni",
     "reservation": "Prenotazione #{{id}}",
     "open": "Aprire",
     "noPreview": "Questo tipo di file non può essere mostrato qui. Utilizzi Scaricare.",
-    "subtitle": "Contratti e moduli dei danni per prenotazione.",
+    "subtitle": "Contratti e controlli danni per prenotazione.",
     "other": "Altri documenti",
     "openReservation": "Visualizzare la prenotazione",
     "ack": "Visto e approvato",
@@ -171,16 +171,16 @@
       "done": "Il contratto è firmato. Trova la copia firmata tra i Suoi documenti.",
       "adminOnly": "Solo un amministratore della Sua azienda può firmare questo contratto.",
       "notSignable": "Questo contratto non può più essere firmato.",
-      "titleDamage": "Firmare il verbale danni",
-      "introDamage": "Legga il verbale danni, inserisca il Suo nome e firmi. Poi inviamo il verbale firmato al nostro ufficio.",
-      "step1Damage": "1. Legga il verbale danni",
-      "previewTitleDamage": "Verbale danni",
-      "agreeDamage": "Ho letto il verbale danni e concordo con lo stato del veicolo in esso riportato. Firmo a nome della mia azienda.",
-      "doneDamage": "Il verbale danni è firmato. Trova la copia firmata tra i Suoi documenti.",
-      "adminOnlyDamage": "Solo un amministratore della Sua azienda può firmare questo verbale danni.",
-      "notSignableDamage": "Questo verbale danni non può più essere firmato."
+      "titleDamage": "Firmare il controllo danni",
+      "introDamage": "Legga il controllo danni, inserisca il Suo nome e firmi. Poi inviamo il controllo firmato al nostro ufficio.",
+      "step1Damage": "1. Legga il controllo danni",
+      "previewTitleDamage": "Controllo danni",
+      "agreeDamage": "Ho letto il controllo danni e concordo con lo stato del veicolo in esso riportato. Firmo a nome della mia azienda.",
+      "doneDamage": "Il controllo danni è firmato. Trova la copia firmata tra i Suoi documenti.",
+      "adminOnlyDamage": "Solo un amministratore della Sua azienda può firmare questo controllo danni.",
+      "notSignableDamage": "Questo controllo danni non può più essere firmato."
     },
-    "signedDamageCheck": "Verbale danni firmato"
+    "signedDamageCheck": "Controllo danni firmato"
   },
   "drivers": {
     "title": "Conducenti",
@@ -540,7 +540,7 @@
       "canManageDrivers": "Può gestire i conducenti",
       "canSubmitRequests": "Può inviare richieste",
       "canViewFines": "Vede le multe",
-      "canViewContracts": "Vede contratti e moduli dei danni",
+      "canViewContracts": "Vede contratti e controlli danni",
       "showPrices": "Vede i prezzi",
       "internalNotes": "Note interne (di che cosa ha bisogno questo cliente?)",
       "saved": "Impostazioni salvate.",
@@ -565,7 +565,7 @@
         "canSubmitRequests": "Prorogare, segnalare danni e porre domande tramite il portale.",
         "canReturn": "Il cliente può richiedere di riconsegnare un’auto in anticipo.",
         "canViewFines": "Il cliente vede le multe dei propri veicoli.",
-        "canViewContracts": "Il cliente vede i contratti e i moduli dei danni delle proprie prenotazioni.",
+        "canViewContracts": "Il cliente vede i contratti e i controlli danni delle proprie prenotazioni.",
         "showPrices": "Disattivato: il cliente non vede importi nel portale.",
         "fiscalMobilityEnabled": "Interruttore principale: senza di esso il sistema non valuta il cliente e gli altri interruttori fiscali non funzionano.",
         "pseudoEindheffingEnabled": "Il sistema valuta per ogni periodo se l’imposizione finale fittizia (pseudo-eindheffing) è applicabile.",
@@ -1144,7 +1144,7 @@
       "signedTitle": "Tornati firmati",
       "signedEmpty": "Nulla è stato ancora firmato tramite il portale.",
       "awaitingTitle": "In attesa di firma",
-      "awaitingHint": "Contratti e verbali danni che il cliente può firmare nel portale ma non ha ancora firmato.",
+      "awaitingHint": "Contratti e controlli danni che il cliente può firmare nel portale ma non ha ancora firmato.",
       "awaitingEmpty": "Nulla è in attesa di firma.",
       "new": "Nuovo",
       "seenBy": "Visto da {{name}}",
@@ -1152,7 +1152,7 @@
       "open": "Apri",
       "kind": {
         "contract": "Contratto",
-        "damage_check": "Verbale danni"
+        "damage_check": "Controllo danni"
       },
       "col": {
         "signedAt": "Firmato il",

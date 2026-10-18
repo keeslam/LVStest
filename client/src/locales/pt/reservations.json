@@ -269,8 +269,8 @@
     "handoverResult": {
       "contractReadyTitle": "Contrato pronto",
       "contractFailedTitle": "Não foi possível criar o contrato",
-      "damageCheckReadyTitle": "Formulário de danos pronto",
-      "damageCheckFailedTitle": "Não foi possível criar o formulário de danos",
+      "damageCheckReadyTitle": "Inspeção de danos pronta",
+      "damageCheckFailedTitle": "Não foi possível criar a inspeção de danos",
       "readyDescription": "{{fileName}} foi criado. Imprima-o ou envie-o por e-mail diretamente ao cliente.",
       "failedDescription": "A operação foi registada, mas o documento não foi criado. Tente novamente ou verifique os modelos.",
       "print": "Imprimir",

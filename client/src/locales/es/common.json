@@ -230,7 +230,7 @@
         "system": "Tarea del sistema",
         "backup": "Copia de seguridad",
         "interactive-damage-check": "Control de daños",
-        "damage-check-template": "Plantilla del formulario de daños",
+        "damage-check-template": "Plantilla de la inspección de daños",
         "fine-import": "Importación de multas",
         "fiscal-assessment": "Evaluación fiscal",
         "fiscal-report": "Informe fiscal",
@@ -274,7 +274,7 @@
           "mark-needs-service": "Marcado como pendiente de mantenimiento",
           "return-from-service": "Regreso del mantenimiento",
           "contract-pdf": "PDF del contrato abierto",
-          "damage-check-pdf": "PDF del formulario de daños abierto"
+          "damage-check-pdf": "PDF de la inspección de daños abierto"
         },
         "vehicle": {
           "mileage": "Kilometraje modificado",
@@ -284,7 +284,7 @@
           "toggle-registration": "Titularidad modificada",
           "fiscal-profile": "Perfil fiscal modificado",
           "blacklist": "Añadido a la lista negra",
-          "damage-check-pdf": "PDF del formulario de daños abierto"
+          "damage-check-pdf": "PDF de la inspección de daños abierto"
         },
         "document": {
           "email": "Documento enviado por correo",

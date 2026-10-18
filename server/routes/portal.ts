@@ -266,13 +266,13 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     await safely("staff notification", () => notifyStaffOfPortalEvent({
       kind: "portal_contract_signed",
       title: `${labelNl} getekend: ${plate}`,
-      description: `${signature.signerName} (${ctx.user.email}) heeft het ${labelNl.toLowerCase()} van reservering #${doc.reservationId} digitaal getekend in het klantenportaal.`,
+      description: `${signature.signerName} (${ctx.user.email}) heeft ${kind === "contract" ? "het contract" : "de schadecheck"} van reservering #${doc.reservationId} digitaal getekend in het klantenportaal.`,
       link: `/reservations/edit/${doc.reservationId}`, customerId: ctx.customerId,
     }));
     await safely("customer notification", () => customerNotifications.notify({
       customerId: ctx.customerId, type: "contract_signed",
       title: `${labelNl} getekend: ${plate}`,
-      description: `${signature.signerName} heeft het ${labelNl.toLowerCase()} digitaal getekend. Het getekende exemplaar staat bij uw documenten.`,
+      description: `${signature.signerName} heeft ${kind === "contract" ? "het contract" : "de schadecheck"} digitaal getekend. Het getekende exemplaar staat bij uw documenten.`,
       params: { plate, signer: signature.signerName, at: signature.signedAt.toISOString(), documentKind: kind === "contract" ? "contract" : "damageCheck" },
       link: "/documenten", dedupeTag: `signed:${signature.id}`, dedupeDays: 365,
     }));

@@ -1421,7 +1421,7 @@ interface ReturnDialogProps {
   onOpenChange: (open: boolean) => void;
   reservation: Reservation;
   onSuccess?: () => void | Promise<void>;
-  /** A-6-5: see PickupDialogProps.onResultClosed - the "Schadeformulier klaar" window lives here. */
+  /** A-6-5: see PickupDialogProps.onResultClosed - the "Schadecheck klaar" window lives here. */
   onResultClosed?: () => void;
 }
 
@@ -1610,7 +1610,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess, onRes
 
   return (
     <>
-    {/* OPT-005 - "Schadeformulier klaar" met Afdrukken / Mail naar klant. */}
+    {/* OPT-005 - "Schadecheck klaar" met Afdrukken / Mail naar klant. */}
     {handoverResult && (
       <HandoverResultDialog
         open

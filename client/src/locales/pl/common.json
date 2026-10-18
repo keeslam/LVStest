@@ -234,7 +234,7 @@
         "system": "Zadanie systemowe",
         "backup": "Kopia zapasowa",
         "interactive-damage-check": "Kontrola uszkodzeń",
-        "damage-check-template": "Szablon formularza uszkodzeń",
+        "damage-check-template": "Szablon kontroli uszkodzeń",
         "fine-import": "Import mandatów",
         "fiscal-assessment": "Ocena podatkowa",
         "fiscal-report": "Raport podatkowy",
@@ -278,7 +278,7 @@
           "mark-needs-service": "Oznaczono jako wymagający serwisu",
           "return-from-service": "Powrót z serwisu",
           "contract-pdf": "Otwarto PDF umowy",
-          "damage-check-pdf": "Otwarto PDF formularza uszkodzeń"
+          "damage-check-pdf": "Otwarto PDF kontroli uszkodzeń"
         },
         "vehicle": {
           "mileage": "Zmieniono przebieg",
@@ -288,7 +288,7 @@
           "toggle-registration": "Zmieniono rejestrację na firmę",
           "fiscal-profile": "Zmieniono profil podatkowy",
           "blacklist": "Dodano do czarnej listy",
-          "damage-check-pdf": "Otwarto PDF formularza uszkodzeń"
+          "damage-check-pdf": "Otwarto PDF kontroli uszkodzeń"
         },
         "document": {
           "email": "Dokument wysłano e-mailem",

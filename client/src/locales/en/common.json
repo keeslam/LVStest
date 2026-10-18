@@ -226,7 +226,7 @@
         "system": "System job",
         "backup": "Backup",
         "interactive-damage-check": "Damage check",
-        "damage-check-template": "Damage form template",
+        "damage-check-template": "Damage check template",
         "fine-import": "Fine import",
         "fiscal-assessment": "Fiscal assessment",
         "fiscal-report": "Fiscal report",
@@ -270,7 +270,7 @@
           "mark-needs-service": "Marked as needing service",
           "return-from-service": "Returned from service",
           "contract-pdf": "Contract PDF opened",
-          "damage-check-pdf": "Damage form PDF opened"
+          "damage-check-pdf": "Damage check PDF opened"
         },
         "vehicle": {
           "mileage": "Mileage changed",
@@ -280,7 +280,7 @@
           "toggle-registration": "Registration changed",
           "fiscal-profile": "Fiscal profile changed",
           "blacklist": "Added to the blacklist",
-          "damage-check-pdf": "Damage form PDF opened"
+          "damage-check-pdf": "Damage check PDF opened"
         },
         "document": {
           "email": "Document emailed",

@@ -130,11 +130,11 @@
     "title": "Contracts and documents",
     "empty": "There are no documents yet.",
     "contract": "Contract",
-    "damage_check": "Damage report",
+    "damage_check": "Damage check",
     "reservation": "Reservation #{{id}}",
     "open": "Open",
     "noPreview": "This file type cannot be shown here. Use Download.",
-    "subtitle": "Contracts and damage forms per reservation.",
+    "subtitle": "Contracts and damage checks per reservation.",
     "other": "Other documents",
     "openReservation": "View reservation",
     "ack": "Seen and agreed",
@@ -166,16 +166,16 @@
       "done": "The contract has been signed. You will find the signed copy with your documents.",
       "adminOnly": "Only an administrator of your company can sign this contract.",
       "notSignable": "This contract can no longer be signed.",
-      "titleDamage": "Sign damage report",
-      "introDamage": "Read the damage report, enter your name and sign. We then send the signed damage report back to our office.",
-      "step1Damage": "1. Read the damage report",
-      "previewTitleDamage": "Damage report",
-      "agreeDamage": "I have read the damage report and agree with the condition of the car as recorded. I sign on behalf of my company.",
-      "doneDamage": "The damage report has been signed. You will find the signed copy with your documents.",
-      "adminOnlyDamage": "Only an administrator of your company can sign this damage report.",
-      "notSignableDamage": "This damage report can no longer be signed."
+      "titleDamage": "Sign damage check",
+      "introDamage": "Read the damage check, enter your name and sign. We then send the signed damage check back to our office.",
+      "step1Damage": "1. Read the damage check",
+      "previewTitleDamage": "Damage check",
+      "agreeDamage": "I have read the damage check and agree with the condition of the car as recorded in it. I sign on behalf of my company.",
+      "doneDamage": "The damage check has been signed. You will find the signed copy with your documents.",
+      "adminOnlyDamage": "Only an administrator of your company can sign this damage check.",
+      "notSignableDamage": "This damage check can no longer be signed."
     },
-    "signedDamageCheck": "Signed damage report"
+    "signedDamageCheck": "Signed damage check"
   },
   "drivers": {
     "title": "Drivers",
@@ -534,7 +534,7 @@
       "canManageDrivers": "May manage drivers",
       "canSubmitRequests": "May submit requests",
       "canViewFines": "Sees fines",
-      "canViewContracts": "Sees contracts and damage reports",
+      "canViewContracts": "Sees contracts and damage checks",
       "showPrices": "Sees prices",
       "internalNotes": "Internal notes (what does this customer need?)",
       "saved": "Settings saved.",
@@ -559,7 +559,7 @@
         "canSubmitRequests": "Extending, reporting damage and asking questions through the portal.",
         "canReturn": "The customer can request to return a car early.",
         "canViewFines": "The customer sees the fines for their vehicles.",
-        "canViewContracts": "The customer sees contracts and damage forms of their reservations.",
+        "canViewContracts": "The customer sees contracts and damage checks of their reservations.",
         "showPrices": "Off: the customer sees no amounts in the portal.",
         "fiscalMobilityEnabled": "Main switch: without it the system does not assess this customer and the other fiscal switches do nothing.",
         "pseudoEindheffingEnabled": "The system assesses per period whether the pseudo final levy applies.",
@@ -1136,7 +1136,7 @@
       "signedTitle": "Returned signed",
       "signedEmpty": "Nothing has been signed through the portal yet.",
       "awaitingTitle": "Awaiting signature",
-      "awaitingHint": "Contracts and damage reports the customer can sign in the portal but has not signed yet.",
+      "awaitingHint": "Contracts and damage checks the customer can sign in the portal but has not signed yet.",
       "awaitingEmpty": "Nothing is awaiting a signature.",
       "new": "New",
       "seenBy": "Seen by {{name}}",
@@ -1144,7 +1144,7 @@
       "open": "Open",
       "kind": {
         "contract": "Contract",
-        "damage_check": "Damage report"
+        "damage_check": "Damage check"
       },
       "col": {
         "signedAt": "Signed on",

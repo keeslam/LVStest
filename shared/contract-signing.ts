@@ -23,11 +23,13 @@ export const CONSENT_VERSION = "2026-10-18";
 /** The statement on the signature page (Dutch, the language of the documents). */
 export const CONSENT_STATEMENT_NL: Record<SignableKind, string> = {
   contract: "De ondertekenaar verklaart het contract te hebben gelezen en gaat akkoord met de inhoud ervan.",
-  damage_check: "De ondertekenaar verklaart het schadeformulier te hebben gelezen en gaat akkoord met de vastgelegde staat van het voertuig.",
+  damage_check: "De ondertekenaar verklaart de schadecheck te hebben gelezen en gaat akkoord met de vastgelegde staat van het voertuig.",
 };
 
 /** What the document is called on the signature page and in staff notices. */
-export const SIGNABLE_LABEL_NL: Record<SignableKind, string> = { contract: "Contract", damage_check: "Schadeformulier" };
+// A "schadecheck" is the check of the car at pickup or return; a "schadeformulier" is the accident
+// claim form, a different document (Kees, 2026-10-18).
+export const SIGNABLE_LABEL_NL: Record<SignableKind, string> = { contract: "Contract", damage_check: "Schadecheck" };
 
 /** A drawn signature as a PNG data URL; small on purpose (a signature pad of a few hundred pixels). */
 export const MAX_SIGNATURE_BYTES = 200 * 1024;

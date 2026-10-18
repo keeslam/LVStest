@@ -135,11 +135,11 @@
     "title": "Contratos e documentos",
     "empty": "Ainda não existem documentos.",
     "contract": "Contrato",
-    "damage_check": "Formulário de danos",
+    "damage_check": "Inspeção de danos",
     "reservation": "Reserva n.º {{id}}",
     "open": "Abrir",
     "noPreview": "Este tipo de ficheiro não pode ser apresentado aqui. Utilize Descarregar.",
-    "subtitle": "Contratos e formulários de danos por reserva.",
+    "subtitle": "Contratos e inspeções de danos por reserva.",
     "other": "Outros documentos",
     "openReservation": "Ver reserva",
     "ack": "Visto e de acordo",
@@ -171,16 +171,16 @@
       "done": "O contrato foi assinado. Encontra a cópia assinada nos seus documentos.",
       "adminOnly": "Só um administrador da sua empresa pode assinar este contrato.",
       "notSignable": "Este contrato já não pode ser assinado.",
-      "titleDamage": "Assinar relatório de danos",
-      "introDamage": "Leia o relatório de danos, escreva o seu nome e assine. Depois enviamos o relatório assinado para o nosso escritório.",
-      "step1Damage": "1. Leia o relatório de danos",
-      "previewTitleDamage": "Relatório de danos",
-      "agreeDamage": "Li o relatório de danos e concordo com o estado do veículo nele registado. Assino em nome da minha empresa.",
-      "doneDamage": "O relatório de danos foi assinado. Encontra a cópia assinada nos seus documentos.",
-      "adminOnlyDamage": "Só um administrador da sua empresa pode assinar este relatório de danos.",
-      "notSignableDamage": "Este relatório de danos já não pode ser assinado."
+      "titleDamage": "Assinar a inspeção de danos",
+      "introDamage": "Leia a inspeção de danos, escreva o seu nome e assine. Depois enviamos a inspeção assinada para o nosso escritório.",
+      "step1Damage": "1. Leia a inspeção de danos",
+      "previewTitleDamage": "Inspeção de danos",
+      "agreeDamage": "Li a inspeção de danos e concordo com o estado do veículo nela registado. Assino em nome da minha empresa.",
+      "doneDamage": "A inspeção de danos foi assinada. Encontra a cópia assinada nos seus documentos.",
+      "adminOnlyDamage": "Só um administrador da sua empresa pode assinar esta inspeção de danos.",
+      "notSignableDamage": "Esta inspeção de danos já não pode ser assinada."
     },
-    "signedDamageCheck": "Relatório de danos assinado"
+    "signedDamageCheck": "Inspeção de danos assinada"
   },
   "drivers": {
     "title": "Condutores",
@@ -540,7 +540,7 @@
       "canManageDrivers": "Pode gerir condutores",
       "canSubmitRequests": "Pode submeter pedidos",
       "canViewFines": "Vê multas",
-      "canViewContracts": "Vê contratos e formulários de danos",
+      "canViewContracts": "Vê contratos e inspeções de danos",
       "showPrices": "Vê preços",
       "internalNotes": "Notas internas (de que necessita este cliente?)",
       "saved": "Definições guardadas.",
@@ -565,7 +565,7 @@
         "canSubmitRequests": "Prolongar, comunicar danos e colocar questões através do portal.",
         "canReturn": "O cliente pode pedir para devolver um automóvel mais cedo.",
         "canViewFines": "O cliente vê as multas das suas viaturas.",
-        "canViewContracts": "O cliente vê os contratos e os formulários de danos das suas reservas.",
+        "canViewContracts": "O cliente vê os contratos e as inspeções de danos das suas reservas.",
         "showPrices": "Desativado: o cliente não vê montantes no portal.",
         "fiscalMobilityEnabled": "Interruptor principal: sem ele, o sistema não avalia o cliente e os restantes interruptores fiscais não funcionam.",
         "pseudoEindheffingEnabled": "O sistema avalia, por período, se o pseudo-eindheffing (tributação final fictícia) é aplicável.",
@@ -1144,7 +1144,7 @@
       "signedTitle": "Devolvidos assinados",
       "signedEmpty": "Ainda nada foi assinado através do portal.",
       "awaitingTitle": "A aguardar assinatura",
-      "awaitingHint": "Contratos e relatórios de danos que o cliente pode assinar no portal mas ainda não assinou.",
+      "awaitingHint": "Contratos e inspeções de danos que o cliente pode assinar no portal mas ainda não assinou.",
       "awaitingEmpty": "Nada aguarda assinatura.",
       "new": "Novo",
       "seenBy": "Visto por {{name}}",
@@ -1152,7 +1152,7 @@
       "open": "Abrir",
       "kind": {
         "contract": "Contrato",
-        "damage_check": "Relatório de danos"
+        "damage_check": "Inspeção de danos"
       },
       "col": {
         "signedAt": "Assinado em",

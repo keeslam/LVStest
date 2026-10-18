@@ -226,7 +226,7 @@
         "system": "Systeemtaak",
         "backup": "Back-up",
         "interactive-damage-check": "Schadecheck",
-        "damage-check-template": "Schadeformulier-sjabloon",
+        "damage-check-template": "Schadecheck-sjabloon",
         "fine-import": "Boete-import",
         "fiscal-assessment": "Fiscale beoordeling",
         "fiscal-report": "Fiscaal rapport",
@@ -270,7 +270,7 @@
           "mark-needs-service": "Gemarkeerd als onderhoud nodig",
           "return-from-service": "Terug uit onderhoud",
           "contract-pdf": "Contract-PDF geopend",
-          "damage-check-pdf": "Schadeformulier-PDF geopend"
+          "damage-check-pdf": "Schadecheck-PDF geopend"
         },
         "vehicle": {
           "mileage": "Kilometerstand gewijzigd",
@@ -280,7 +280,7 @@
           "toggle-registration": "Tenaamstelling gewijzigd",
           "fiscal-profile": "Fiscaal profiel gewijzigd",
           "blacklist": "Op de zwarte lijst gezet",
-          "damage-check-pdf": "Schadeformulier-PDF geopend"
+          "damage-check-pdf": "Schadecheck-PDF geopend"
         },
         "document": {
           "email": "Document gemaild",

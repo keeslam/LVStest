@@ -135,11 +135,11 @@
     "title": "Contratos y documentos",
     "empty": "Todavía no hay documentos.",
     "contract": "Contrato",
-    "damage_check": "Formulario de daños",
+    "damage_check": "Inspección de daños",
     "reservation": "Reserva n.º {{id}}",
     "open": "Abrir",
     "noPreview": "Este tipo de archivo no se puede mostrar aquí. Utilice Descargar.",
-    "subtitle": "Contratos y formularios de daños por reserva.",
+    "subtitle": "Contratos e inspecciones de daños por reserva.",
     "other": "Otros documentos",
     "openReservation": "Ver la reserva",
     "ack": "Visto y conforme",
@@ -171,16 +171,16 @@
       "done": "El contrato está firmado. Encontrará la copia firmada en sus documentos.",
       "adminOnly": "Solo un administrador de su empresa puede firmar este contrato.",
       "notSignable": "Este contrato ya no se puede firmar.",
-      "titleDamage": "Firmar informe de daños",
-      "introDamage": "Lea el informe de daños, escriba su nombre y firme. Después enviamos el informe firmado a nuestra oficina.",
-      "step1Damage": "1. Lea el informe de daños",
-      "previewTitleDamage": "Informe de daños",
-      "agreeDamage": "He leído el informe de daños y estoy de acuerdo con el estado del vehículo que figura en él. Firmo en nombre de mi empresa.",
-      "doneDamage": "El informe de daños está firmado. Encontrará la copia firmada en sus documentos.",
-      "adminOnlyDamage": "Solo un administrador de su empresa puede firmar este informe de daños.",
-      "notSignableDamage": "Este informe de daños ya no se puede firmar."
+      "titleDamage": "Firmar la inspección de daños",
+      "introDamage": "Lea la inspección de daños, escriba su nombre y firme. Después enviamos la inspección firmada a nuestra oficina.",
+      "step1Damage": "1. Lea la inspección de daños",
+      "previewTitleDamage": "Inspección de daños",
+      "agreeDamage": "He leído la inspección de daños y estoy de acuerdo con el estado del vehículo que figura en ella. Firmo en nombre de mi empresa.",
+      "doneDamage": "La inspección de daños está firmada. Encontrará la copia firmada en sus documentos.",
+      "adminOnlyDamage": "Solo un administrador de su empresa puede firmar esta inspección de daños.",
+      "notSignableDamage": "Esta inspección de daños ya no se puede firmar."
     },
-    "signedDamageCheck": "Informe de daños firmado"
+    "signedDamageCheck": "Inspección de daños firmada"
   },
   "drivers": {
     "title": "Conductores",
@@ -540,7 +540,7 @@
       "canManageDrivers": "Puede gestionar conductores",
       "canSubmitRequests": "Puede enviar solicitudes",
       "canViewFines": "Ve las multas",
-      "canViewContracts": "Ve los contratos y formularios de daños",
+      "canViewContracts": "Ve los contratos y las inspecciones de daños",
       "showPrices": "Ve los precios",
       "internalNotes": "Notas internas (¿qué necesita este cliente?)",
       "saved": "Ajustes guardados.",
@@ -565,7 +565,7 @@
         "canSubmitRequests": "Ampliar, notificar daños y hacer preguntas a través del portal.",
         "canReturn": "El cliente puede solicitar la devolución anticipada de un coche.",
         "canViewFines": "El cliente ve las multas de sus vehículos.",
-        "canViewContracts": "El cliente ve los contratos y formularios de daños de sus reservas.",
+        "canViewContracts": "El cliente ve los contratos y las inspecciones de daños de sus reservas.",
         "showPrices": "Desactivado: el cliente no ve importes en el portal.",
         "fiscalMobilityEnabled": "Interruptor principal: sin él, el sistema no evalúa al cliente y los demás interruptores fiscales no funcionan.",
         "pseudoEindheffingEnabled": "El sistema evalúa por periodo si se aplica el gravamen final ficticio (pseudo-eindheffing).",
@@ -1144,7 +1144,7 @@
       "signedTitle": "Devueltos firmados",
       "signedEmpty": "Todavía no se ha firmado nada a través del portal.",
       "awaitingTitle": "Pendiente de firma",
-      "awaitingHint": "Contratos e informes de daños que el cliente puede firmar en el portal pero aún no ha firmado.",
+      "awaitingHint": "Contratos e inspecciones de daños que el cliente puede firmar en el portal pero aún no ha firmado.",
       "awaitingEmpty": "No hay nada pendiente de firma.",
       "new": "Nuevo",
       "seenBy": "Visto por {{name}}",
@@ -1152,7 +1152,7 @@
       "open": "Abrir",
       "kind": {
         "contract": "Contrato",
-        "damage_check": "Informe de daños"
+        "damage_check": "Inspección de daños"
       },
       "col": {
         "signedAt": "Firmado el",

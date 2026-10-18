@@ -47,7 +47,7 @@ describe("'Aandacht nodig'", () => {
     const attention = { requests: [], fines: [], signatures: [signedRow()] } as PortalDashboard["attention"];
     wrap(<AttentionPanel attention={attention} canViewFines />);
     const row = screen.getByTestId("attention-signed-11");
-    expect(row).toHaveTextContent("Schadeformulier getekend · Klant 179 B.V.");
+    expect(row).toHaveTextContent("Schadecheck getekend · Klant 179 B.V.");
     expect(row).toHaveTextContent("11-ZSZ-3");
     await userEvent.click(row);
     expect(apiRequest).toHaveBeenCalledWith("POST", "/api/portal-admin/signatures/11/seen");

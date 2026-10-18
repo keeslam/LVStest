@@ -135,11 +135,11 @@
     "title": "Contracte și documente",
     "empty": "Nu există încă documente.",
     "contract": "Contract",
-    "damage_check": "Formular de daune",
+    "damage_check": "Verificare daune",
     "reservation": "Rezervarea #{{id}}",
     "open": "Deschide",
     "noPreview": "Acest tip de fișier nu poate fi afișat aici. Folosiți Descarcă.",
-    "subtitle": "Contracte și formulare de daune, pe rezervare.",
+    "subtitle": "Contracte și verificări de daune, pe rezervare.",
     "other": "Alte documente",
     "openReservation": "Vezi rezervarea",
     "ack": "Citit și de acord",
@@ -171,16 +171,16 @@
       "done": "Contractul a fost semnat. Găsiți exemplarul semnat la documentele dumneavoastră.",
       "adminOnly": "Doar un administrator al companiei dumneavoastră poate semna acest contract.",
       "notSignable": "Acest contract nu mai poate fi semnat.",
-      "titleDamage": "Semnarea raportului de daune",
-      "introDamage": "Citiți raportul de daune, introduceți numele și semnați. Apoi trimitem raportul semnat la biroul nostru.",
-      "step1Damage": "1. Citiți raportul de daune",
-      "previewTitleDamage": "Raport de daune",
-      "agreeDamage": "Am citit raportul de daune și sunt de acord cu starea vehiculului consemnată în el. Semnez în numele companiei mele.",
-      "doneDamage": "Raportul de daune a fost semnat. Găsiți exemplarul semnat la documentele dumneavoastră.",
-      "adminOnlyDamage": "Doar un administrator al companiei dumneavoastră poate semna acest raport de daune.",
-      "notSignableDamage": "Acest raport de daune nu mai poate fi semnat."
+      "titleDamage": "Semnarea verificării de daune",
+      "introDamage": "Citiți verificarea de daune, introduceți numele și semnați. Apoi trimitem verificarea semnată la biroul nostru.",
+      "step1Damage": "1. Citiți verificarea de daune",
+      "previewTitleDamage": "Verificare daune",
+      "agreeDamage": "Am citit verificarea de daune și sunt de acord cu starea vehiculului consemnată în ea. Semnez în numele companiei mele.",
+      "doneDamage": "Verificarea de daune a fost semnată. Găsiți exemplarul semnat la documentele dumneavoastră.",
+      "adminOnlyDamage": "Doar un administrator al companiei dumneavoastră poate semna această verificare de daune.",
+      "notSignableDamage": "Această verificare de daune nu mai poate fi semnată."
     },
-    "signedDamageCheck": "Raport de daune semnat"
+    "signedDamageCheck": "Verificare daune semnată"
   },
   "drivers": {
     "title": "Șoferi",
@@ -540,7 +540,7 @@
       "canManageDrivers": "Poate gestiona șoferii",
       "canSubmitRequests": "Poate trimite solicitări",
       "canViewFines": "Vede amenzile",
-      "canViewContracts": "Vede contractele și formularele de daune",
+      "canViewContracts": "Vede contractele și verificările de daune",
       "showPrices": "Vede prețurile",
       "internalNotes": "Notițe interne (de ce are nevoie acest client?)",
       "saved": "Setările au fost salvate.",
@@ -565,7 +565,7 @@
         "canSubmitRequests": "Prelungire, raportarea daunelor și întrebări prin portal.",
         "canReturn": "Clientul poate solicita returnarea anticipată a unui autoturism.",
         "canViewFines": "Clientul vede amenzile vehiculelor sale.",
-        "canViewContracts": "Clientul vede contractele și formularele de daune ale rezervărilor sale.",
+        "canViewContracts": "Clientul vede contractele și verificările de daune ale rezervărilor sale.",
         "showPrices": "Dezactivat: clientul nu vede nicio sumă în portal.",
         "fiscalMobilityEnabled": "Comutator principal: fără acesta, sistemul nu evaluează clientul și celelalte comutatoare fiscale nu funcționează.",
         "pseudoEindheffingEnabled": "Sistemul evaluează, pentru fiecare perioadă, dacă se aplică impozitul final pseudo.",
@@ -1144,7 +1144,7 @@
       "signedTitle": "Returnate semnate",
       "signedEmpty": "Încă nu s-a semnat nimic prin portal.",
       "awaitingTitle": "Așteaptă semnătura",
-      "awaitingHint": "Contracte și rapoarte de daune pe care clientul le poate semna în portal, dar încă nu le-a semnat.",
+      "awaitingHint": "Contracte și verificări de daune pe care clientul le poate semna în portal, dar încă nu le-a semnat.",
       "awaitingEmpty": "Nimic nu așteaptă semnătura.",
       "new": "Nou",
       "seenBy": "Văzut de {{name}}",
@@ -1152,7 +1152,7 @@
       "open": "Deschide",
       "kind": {
         "contract": "Contract",
-        "damage_check": "Raport de daune"
+        "damage_check": "Verificare daune"
       },
       "col": {
         "signedAt": "Semnat la",
