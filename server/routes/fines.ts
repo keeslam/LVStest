@@ -336,6 +336,7 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
         await customerNotifications.notify({
           customerId: fine.customerId, type: "fine_linked", title: `Nieuwe bekeuring: ${fine.licensePlate}`,
           description: `${fine.description} · € ${fine.amount}`, link: `/bekeuringen/${id}`, dedupeTag: `fine:${id}`, dedupeDays: 365,
+          params: { plate: fine.licensePlate, description: fine.description, amount: fine.amount },
         });
       } catch (e) { console.error("fine linked notification failed:", e); }
       // The mail is out: a failing date stamp must not turn the answer into a 500 or skip the audit line.

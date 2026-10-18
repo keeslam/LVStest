@@ -6,6 +6,7 @@ import { customerDisplayName } from "./customer-display-name";
 import { portalCompanyName } from "./company-name";
 import { formatDateNL } from "../utils/dutch-format";
 import { vehicleName } from "../../shared/vehicle-name";
+import type { PortalNotificationParams } from "../../shared/portal-types";
 
 /** How far ahead the customer hears about an APK that is about to expire. */
 export const APK_WARNING_DAYS = 30;
@@ -17,6 +18,8 @@ export interface CustomerNotificationInput {
   type: string;
   title: string;
   description: string;
+  /** What the notice is about, so the portal can word it in the reader's language (the Dutch title and description stay as fallback). */
+  params?: PortalNotificationParams;
   /** Portal-relative link, e.g. /aanvragen/12 or /reserveringen/5. */
   link?: string;
   /** Same tag + customer within `dedupeDays` days: do not create again (used by the scanners). */
@@ -41,7 +44,7 @@ export const customerNotifications = {
     }
     const [row] = await db.insert(portalNotifications).values({
       customerId: input.customerId, portalUserId: input.portalUserId ?? null, type: input.type,
-      title: input.title, description: input.description, link: input.link ?? null, dedupeTag: input.dedupeTag ?? null,
+      title: input.title, description: input.description, params: input.params ?? null, link: input.link ?? null, dedupeTag: input.dedupeTag ?? null,
     }).returning();
     return row;
   },
@@ -161,6 +164,7 @@ export async function scanVehicleAlertsForPortal(): Promise<{ apk: number; servi
         description: expired
           ? `De APK van ${car} is verlopen op ${formatDateNL(r.apkDate)}. Neem contact op met ${portalCompanyName()} om een keuring in te plannen.`
           : `De APK van ${car} verloopt op ${formatDateNL(r.apkDate)}. ${portalCompanyName()} plant de keuring; houd rekening met een moment zonder de auto.`,
+        params: { plate: r.plate, car, apkDate: r.apkDate, company: portalCompanyName() },
         link: `/reserveringen/${r.reservationId}`, dedupeTag: `apk:${r.vehicleId}:${r.apkDate}`, dedupeDays: 30,
       });
       if (created) apk += 1;
@@ -171,6 +175,7 @@ export async function scanVehicleAlertsForPortal(): Promise<{ apk: number; servi
         customerId: r.customerId, type: due.serviceDue.isServiceDue ? "service_due" : "service_due_soon",
         title: due.serviceDue.isServiceDue ? `Onderhoud nodig: ${r.plate}` : `Onderhoud komt eraan: ${r.plate}`,
         description: `${car} is ${due.serviceDue.isServiceDue ? "toe aan" : "bijna toe aan"} een onderhoudsbeurt. ${portalCompanyName()} neemt contact op om dit in te plannen; u kunt ook zelf een onderhoudsmelding doen via een aanvraag.`,
+        params: { plate: r.plate, car, company: portalCompanyName() },
         link: `/reserveringen/${r.reservationId}`, dedupeTag: `service:${r.vehicleId}:${due.serviceDue.isServiceDue ? "due" : "soon"}`, dedupeDays: 30,
       });
       if (created) service += 1;

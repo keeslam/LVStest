@@ -1292,7 +1292,98 @@
     "search": "Zoek in meldingen…",
     "empty": "Geen meldingen. Hier ziet u antwoorden op aanvragen, nieuwe bekeuringen en waarschuwingen over APK en onderhoud.",
     "titleUnread": "Meldingen, {{count}} ongelezen",
-    "unread": "Ongelezen"
+    "unread": "Ongelezen",
+    "kinds": {
+      "maintenance_planned": {
+        "title": "Onderhoud gepland: {{plate}}",
+        "description": "{{car}} ({{plate}}) staat ingepland voor onderhoud op {{date}}. Breng de auto op de afgesproken dag naar {{company}}.",
+        "descriptionRange": "{{car}} ({{plate}}) staat ingepland voor onderhoud op {{date}} tot en met {{endDate}}. Breng de auto op de afgesproken dag naar {{company}}."
+      },
+      "maintenance_moved": {
+        "title": "Onderhoud verplaatst: {{plate}}",
+        "description": "Het onderhoud van {{car}} ({{plate}}) is verplaatst naar {{date}}.",
+        "descriptionRange": "Het onderhoud van {{car}} ({{plate}}) is verplaatst naar {{date}} tot en met {{endDate}}."
+      },
+      "maintenance_in": {
+        "title": "Auto in onderhoud: {{plate}}",
+        "description": "{{car}} ({{plate}}) is bij {{company}} in onderhoud."
+      },
+      "maintenance_out": {
+        "title": "Onderhoud klaar: {{plate}}",
+        "description": "{{car}} ({{plate}}) is klaar en kan worden opgehaald."
+      },
+      "maintenance_cancelled": {
+        "title": "Onderhoud vervalt: {{plate}}",
+        "description": "Het geplande onderhoud van {{car}} ({{plate}}) op {{date}} gaat niet door. {{company}} neemt contact op voor een nieuwe datum."
+      },
+      "maintenance_unlinked": {
+        "title": "Onderhoud hoort niet meer bij uw huur: {{plate}}",
+        "description": "Het onderhoud van {{car}} ({{plate}}) op {{date}} hoort niet meer bij uw huur: u rijdt inmiddels in een andere auto. Het eventueel gereserveerde vervangend vervoer vervalt daarmee. {{company}} neemt contact op als er voor uw huidige auto onderhoud nodig is."
+      },
+      "replacement_ready": {
+        "title": "Vervangend vervoer: {{plate}}",
+        "description": "{{car}} ({{plate}}) staat voor u klaar als vervangend vervoer vanaf {{date}}. Neem uw rijbewijs mee bij het ophalen.",
+        "descriptionRange": "{{car}} ({{plate}}) staat voor u klaar als vervangend vervoer vanaf {{date}} tot en met {{endDate}}. Neem uw rijbewijs mee bij het ophalen."
+      },
+      "reservation_cancelled": {
+        "title": "Reservering geannuleerd: {{plate}}",
+        "description": "{{company}} heeft uw reservering voor {{car}} van {{period}} geannuleerd. Neem contact op met {{company}} als dit niet klopt.",
+        "descriptionNoPeriod": "{{company}} heeft uw reservering voor {{car}} geannuleerd. Neem contact op met {{company}} als dit niet klopt."
+      },
+      "reservation_changed": {
+        "title": "Reservering gewijzigd: {{plate}}",
+        "description": "{{company}} heeft uw reservering aangepast. {{changes}}"
+      },
+      "document_available": {
+        "title": "Nieuw document: {{document}}",
+        "description": "Er staat een nieuw document voor u klaar in het klantenportaal: {{document}} ({{fileName}}), bij uw huur van {{period}}. U kunt het daar bekijken en downloaden.",
+        "descriptionNoPeriod": "Er staat een nieuw document voor u klaar in het klantenportaal: {{document}} ({{fileName}}). U kunt het daar bekijken en downloaden."
+      },
+      "apk_due": {
+        "title": "APK verloopt binnenkort: {{plate}}",
+        "description": "De APK van {{car}} verloopt op {{apkDate}}. {{company}} plant de keuring; houd rekening met een moment zonder de auto."
+      },
+      "apk_expired": {
+        "title": "APK verlopen: {{plate}}",
+        "description": "De APK van {{car}} is verlopen op {{apkDate}}. Neem contact op met {{company}} om een keuring in te plannen."
+      },
+      "service_due": {
+        "title": "Onderhoud nodig: {{plate}}",
+        "description": "{{car}} is toe aan een onderhoudsbeurt. {{company}} neemt contact op om dit in te plannen; u kunt ook zelf een onderhoudsmelding doen via een aanvraag."
+      },
+      "service_due_soon": {
+        "title": "Onderhoud komt eraan: {{plate}}",
+        "description": "{{car}} is bijna toe aan een onderhoudsbeurt. {{company}} neemt contact op om dit in te plannen; u kunt ook zelf een onderhoudsmelding doen via een aanvraag."
+      },
+      "fine_linked": {
+        "title": "Nieuwe bekeuring: {{plate}}",
+        "description": "{{description}} · {{amount}}"
+      },
+      "request_done": {
+        "title": "Aanvraag #{{id}} afgehandeld",
+        "description": "{{company}} heeft uw aanvraag #{{id}} afgehandeld."
+      },
+      "request_rejected": {
+        "title": "Aanvraag #{{id}} afgewezen",
+        "description": "{{company}} heeft uw aanvraag #{{id}} afgewezen."
+      },
+      "request_in_progress": {
+        "title": "Aanvraag #{{id}} in behandeling",
+        "description": "{{company}} heeft uw aanvraag #{{id}} in behandeling genomen."
+      },
+      "request_message": {
+        "title": "Nieuw bericht bij aanvraag #{{id}}"
+      }
+    },
+    "words": {
+      "noCar": "nog geen auto toegewezen",
+      "periodFrom": "vanaf {{start}}",
+      "periodRange": "{{start}} t/m {{end}}",
+      "changesPeriod": "De periode is nu {{period}} (was {{oldPeriod}}).",
+      "changesVehicle": "U rijdt nu in {{car}} in plaats van {{oldCar}}.",
+      "documentContract": "Huurcontract",
+      "documentDamageCheck": "Schadecontrole"
+    }
   },
   "thread": {
     "title": "Berichten",

@@ -1301,7 +1301,98 @@
     "search": "Buscar en los avisos…",
     "empty": "No hay avisos. Aquí verá las respuestas a sus solicitudes, las multas nuevas y las advertencias sobre la APK y el mantenimiento.",
     "titleUnread": "Avisos, {{count}} sin leer",
-    "unread": "Sin leer"
+    "unread": "Sin leer",
+    "kinds": {
+      "maintenance_planned": {
+        "title": "Mantenimiento programado: {{plate}}",
+        "description": "{{car}} ({{plate}}) tiene programado un mantenimiento el {{date}}. Lleve el vehículo a {{company}} el día acordado.",
+        "descriptionRange": "{{car}} ({{plate}}) tiene programado un mantenimiento del {{date}} al {{endDate}}, ambos inclusive. Lleve el vehículo a {{company}} el día acordado."
+      },
+      "maintenance_moved": {
+        "title": "Mantenimiento reprogramado: {{plate}}",
+        "description": "El mantenimiento de {{car}} ({{plate}}) se ha trasladado al {{date}}.",
+        "descriptionRange": "El mantenimiento de {{car}} ({{plate}}) se ha trasladado del {{date}} al {{endDate}}, ambos inclusive."
+      },
+      "maintenance_in": {
+        "title": "Vehículo en mantenimiento: {{plate}}",
+        "description": "{{car}} ({{plate}}) está en mantenimiento en {{company}}."
+      },
+      "maintenance_out": {
+        "title": "Mantenimiento finalizado: {{plate}}",
+        "description": "{{car}} ({{plate}}) está listo y puede recogerse."
+      },
+      "maintenance_cancelled": {
+        "title": "Mantenimiento anulado: {{plate}}",
+        "description": "El mantenimiento previsto de {{car}} ({{plate}}) el {{date}} no se realizará. {{company}} se pondrá en contacto con usted para fijar una nueva fecha."
+      },
+      "maintenance_unlinked": {
+        "title": "El mantenimiento ya no corresponde a su alquiler: {{plate}}",
+        "description": "El mantenimiento de {{car}} ({{plate}}) del {{date}} ya no corresponde a su alquiler: ahora conduce otro vehículo. El vehículo de sustitución que se hubiera reservado queda anulado. {{company}} se pondrá en contacto con usted si su vehículo actual necesita mantenimiento."
+      },
+      "replacement_ready": {
+        "title": "Vehículo de sustitución: {{plate}}",
+        "description": "{{car}} ({{plate}}) le espera como vehículo de sustitución desde el {{date}}. Traiga su permiso de conducir al recogerlo.",
+        "descriptionRange": "{{car}} ({{plate}}) le espera como vehículo de sustitución del {{date}} al {{endDate}}, ambos inclusive. Traiga su permiso de conducir al recogerlo."
+      },
+      "reservation_cancelled": {
+        "title": "Reserva cancelada: {{plate}}",
+        "description": "{{company}} ha cancelado su reserva de {{car}} ({{period}}). Póngase en contacto con {{company}} si no es correcto.",
+        "descriptionNoPeriod": "{{company}} ha cancelado su reserva de {{car}}. Póngase en contacto con {{company}} si no es correcto."
+      },
+      "reservation_changed": {
+        "title": "Reserva modificada: {{plate}}",
+        "description": "{{company}} ha modificado su reserva. {{changes}}"
+      },
+      "document_available": {
+        "title": "Nuevo documento: {{document}}",
+        "description": "Tiene un nuevo documento en el portal de clientes: {{document}} ({{fileName}}), de su alquiler {{period}}. Puede consultarlo y descargarlo allí.",
+        "descriptionNoPeriod": "Tiene un nuevo documento en el portal de clientes: {{document}} ({{fileName}}). Puede consultarlo y descargarlo allí."
+      },
+      "apk_due": {
+        "title": "La ITV (APK) caduca pronto: {{plate}}",
+        "description": "La ITV (APK) de {{car}} caduca el {{apkDate}}. {{company}} programa la inspección; cuente con un momento sin el vehículo."
+      },
+      "apk_expired": {
+        "title": "ITV (APK) caducada: {{plate}}",
+        "description": "La ITV (APK) de {{car}} caducó el {{apkDate}}. Póngase en contacto con {{company}} para programar una inspección."
+      },
+      "service_due": {
+        "title": "Mantenimiento necesario: {{plate}}",
+        "description": "{{car}} necesita una revisión. {{company}} se pondrá en contacto con usted para programarla; también puede comunicarlo usted mismo mediante una solicitud."
+      },
+      "service_due_soon": {
+        "title": "Próxima revisión: {{plate}}",
+        "description": "{{car}} necesitará pronto una revisión. {{company}} se pondrá en contacto con usted para programarla; también puede comunicarlo usted mismo mediante una solicitud."
+      },
+      "fine_linked": {
+        "title": "Nueva multa: {{plate}}",
+        "description": "{{description}} · {{amount}}"
+      },
+      "request_done": {
+        "title": "Solicitud n.º {{id}} resuelta",
+        "description": "{{company}} ha resuelto su solicitud n.º {{id}}."
+      },
+      "request_rejected": {
+        "title": "Solicitud n.º {{id}} rechazada",
+        "description": "{{company}} ha rechazado su solicitud n.º {{id}}."
+      },
+      "request_in_progress": {
+        "title": "Solicitud n.º {{id}} en tramitación",
+        "description": "{{company}} está tramitando su solicitud n.º {{id}}."
+      },
+      "request_message": {
+        "title": "Nuevo mensaje en la solicitud n.º {{id}}"
+      }
+    },
+    "words": {
+      "noCar": "aún no se ha asignado ningún vehículo",
+      "periodFrom": "desde el {{start}}",
+      "periodRange": "del {{start}} al {{end}}",
+      "changesPeriod": "El periodo es ahora {{period}} (antes: {{oldPeriod}}).",
+      "changesVehicle": "Su vehículo es ahora {{car}} (antes: {{oldCar}}).",
+      "documentContract": "Contrato de alquiler",
+      "documentDamageCheck": "Inspección de daños"
+    }
   },
   "thread": {
     "title": "Mensajes",

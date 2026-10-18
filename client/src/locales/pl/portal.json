@@ -1310,7 +1310,98 @@
     "search": "Szukaj w powiadomieniach…",
     "empty": "Brak powiadomień. Tutaj zobaczą Państwo odpowiedzi na wnioski, nowe mandaty oraz ostrzeżenia dotyczące APK i serwisu.",
     "titleUnread": "Powiadomienia, nieprzeczytane: {{count}}",
-    "unread": "Nieprzeczytane"
+    "unread": "Nieprzeczytane",
+    "kinds": {
+      "maintenance_planned": {
+        "title": "Zaplanowano serwis: {{plate}}",
+        "description": "{{car}} ({{plate}}) ma zaplanowany serwis na {{date}}. Prosimy dostarczyć samochód do {{company}} w uzgodnionym dniu.",
+        "descriptionRange": "{{car}} ({{plate}}) ma zaplanowany serwis od {{date}} do {{endDate}} włącznie. Prosimy dostarczyć samochód do {{company}} w uzgodnionym dniu."
+      },
+      "maintenance_moved": {
+        "title": "Przesunięto termin serwisu: {{plate}}",
+        "description": "Serwis {{car}} ({{plate}}) został przeniesiony na {{date}}.",
+        "descriptionRange": "Serwis {{car}} ({{plate}}) został przeniesiony na okres od {{date}} do {{endDate}} włącznie."
+      },
+      "maintenance_in": {
+        "title": "Samochód w serwisie: {{plate}}",
+        "description": "{{car}} ({{plate}}) jest w serwisie w {{company}}."
+      },
+      "maintenance_out": {
+        "title": "Serwis zakończony: {{plate}}",
+        "description": "{{car}} ({{plate}}) jest gotowy do odbioru."
+      },
+      "maintenance_cancelled": {
+        "title": "Serwis odwołany: {{plate}}",
+        "description": "Zaplanowany serwis {{car}} ({{plate}}) w dniu {{date}} się nie odbędzie. {{company}} skontaktuje się w sprawie nowego terminu."
+      },
+      "maintenance_unlinked": {
+        "title": "Serwis nie dotyczy już Państwa najmu: {{plate}}",
+        "description": "Serwis {{car}} ({{plate}}) w dniu {{date}} nie dotyczy już Państwa najmu: jeżdżą Państwo teraz innym samochodem. Ewentualnie zarezerwowany pojazd zastępczy zostaje anulowany. {{company}} skontaktuje się, jeśli Państwa obecny samochód będzie wymagał serwisu."
+      },
+      "replacement_ready": {
+        "title": "Pojazd zastępczy: {{plate}}",
+        "description": "{{car}} ({{plate}}) czeka na Państwa jako pojazd zastępczy od {{date}}. Prosimy zabrać prawo jazdy przy odbiorze.",
+        "descriptionRange": "{{car}} ({{plate}}) czeka na Państwa jako pojazd zastępczy od {{date}} do {{endDate}} włącznie. Prosimy zabrać prawo jazdy przy odbiorze."
+      },
+      "reservation_cancelled": {
+        "title": "Rezerwacja anulowana: {{plate}}",
+        "description": "Państwa rezerwacja {{car}} ({{period}}) została anulowana przez {{company}}. Jeśli to pomyłka, prosimy o kontakt z {{company}}.",
+        "descriptionNoPeriod": "Państwa rezerwacja {{car}} została anulowana przez {{company}}. Jeśli to pomyłka, prosimy o kontakt z {{company}}."
+      },
+      "reservation_changed": {
+        "title": "Rezerwacja zmieniona: {{plate}}",
+        "description": "Państwa rezerwacja została zmieniona przez {{company}}. {{changes}}"
+      },
+      "document_available": {
+        "title": "Nowy dokument: {{document}}",
+        "description": "W portalu klienta czeka na Państwa nowy dokument: {{document}} ({{fileName}}), do najmu {{period}}. Można go tam obejrzeć i pobrać.",
+        "descriptionNoPeriod": "W portalu klienta czeka na Państwa nowy dokument: {{document}} ({{fileName}}). Można go tam obejrzeć i pobrać."
+      },
+      "apk_due": {
+        "title": "Przegląd (APK) wkrótce wygasa: {{plate}}",
+        "description": "Przegląd techniczny (APK) {{car}} wygasa {{apkDate}}. {{company}} zaplanuje przegląd; prosimy liczyć się z krótką przerwą bez samochodu."
+      },
+      "apk_expired": {
+        "title": "Przegląd (APK) wygasł: {{plate}}",
+        "description": "Przegląd techniczny (APK) {{car}} wygasł {{apkDate}}. Prosimy o kontakt z {{company}} w celu umówienia przeglądu."
+      },
+      "service_due": {
+        "title": "Potrzebny serwis: {{plate}}",
+        "description": "{{car}} wymaga przeglądu serwisowego. {{company}} skontaktuje się, aby go zaplanować; można też zgłosić to samodzielnie przez zgłoszenie."
+      },
+      "service_due_soon": {
+        "title": "Zbliża się serwis: {{plate}}",
+        "description": "{{car}} wkrótce będzie wymagał przeglądu serwisowego. {{company}} skontaktuje się, aby go zaplanować; można też zgłosić to samodzielnie przez zgłoszenie."
+      },
+      "fine_linked": {
+        "title": "Nowy mandat: {{plate}}",
+        "description": "{{description}} · {{amount}}"
+      },
+      "request_done": {
+        "title": "Zgłoszenie nr {{id}} zakończone",
+        "description": "Państwa zgłoszenie nr {{id}} zostało zakończone przez {{company}}."
+      },
+      "request_rejected": {
+        "title": "Zgłoszenie nr {{id}} odrzucone",
+        "description": "Państwa zgłoszenie nr {{id}} zostało odrzucone przez {{company}}."
+      },
+      "request_in_progress": {
+        "title": "Zgłoszenie nr {{id}} w realizacji",
+        "description": "Państwa zgłoszenie nr {{id}} jest w realizacji w {{company}}."
+      },
+      "request_message": {
+        "title": "Nowa wiadomość w zgłoszeniu nr {{id}}"
+      }
+    },
+    "words": {
+      "noCar": "samochód nie został jeszcze przydzielony",
+      "periodFrom": "od {{start}}",
+      "periodRange": "{{start}} – {{end}}",
+      "changesPeriod": "Okres to teraz {{period}} (wcześniej: {{oldPeriod}}).",
+      "changesVehicle": "Państwa samochód to teraz {{car}} (wcześniej: {{oldCar}}).",
+      "documentContract": "Umowa najmu",
+      "documentDamageCheck": "Protokół szkód"
+    }
   },
   "thread": {
     "title": "Wiadomości",

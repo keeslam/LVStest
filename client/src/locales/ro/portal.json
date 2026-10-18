@@ -1301,7 +1301,98 @@
     "search": "Căutați în notificări…",
     "empty": "Nicio notificare. Aici vedeți răspunsurile la solicitări, amenzile noi și avertismentele despre APK și mentenanță.",
     "titleUnread": "Notificări, {{count}} necitite",
-    "unread": "Necitite"
+    "unread": "Necitite",
+    "kinds": {
+      "maintenance_planned": {
+        "title": "Mentenanță programată: {{plate}}",
+        "description": "{{car}} ({{plate}}) are mentenanța programată pe {{date}}. Aduceți mașina la {{company}} în ziua stabilită.",
+        "descriptionRange": "{{car}} ({{plate}}) are mentenanța programată între {{date}} și {{endDate}} inclusiv. Aduceți mașina la {{company}} în ziua stabilită."
+      },
+      "maintenance_moved": {
+        "title": "Mentenanță reprogramată: {{plate}}",
+        "description": "Mentenanța pentru {{car}} ({{plate}}) a fost mutată pe {{date}}.",
+        "descriptionRange": "Mentenanța pentru {{car}} ({{plate}}) a fost mutată între {{date}} și {{endDate}} inclusiv."
+      },
+      "maintenance_in": {
+        "title": "Mașina este în mentenanță: {{plate}}",
+        "description": "{{car}} ({{plate}}) este în mentenanță la {{company}}."
+      },
+      "maintenance_out": {
+        "title": "Mentenanță finalizată: {{plate}}",
+        "description": "{{car}} ({{plate}}) este gata și poate fi ridicată."
+      },
+      "maintenance_cancelled": {
+        "title": "Mentenanța nu mai are loc: {{plate}}",
+        "description": "Mentenanța planificată pentru {{car}} ({{plate}}) pe {{date}} nu mai are loc. {{company}} vă va contacta pentru o nouă dată."
+      },
+      "maintenance_unlinked": {
+        "title": "Mentenanța nu mai ține de închirierea dumneavoastră: {{plate}}",
+        "description": "Mentenanța pentru {{car}} ({{plate}}) din {{date}} nu mai ține de închirierea dumneavoastră: acum conduceți altă mașină. Vehiculul de înlocuire rezervat, dacă există, se anulează. {{company}} vă va contacta dacă mașina dumneavoastră actuală are nevoie de mentenanță."
+      },
+      "replacement_ready": {
+        "title": "Vehicul de înlocuire: {{plate}}",
+        "description": "{{car}} ({{plate}}) vă așteaptă ca vehicul de înlocuire începând cu {{date}}. Aduceți permisul de conducere la ridicare.",
+        "descriptionRange": "{{car}} ({{plate}}) vă așteaptă ca vehicul de înlocuire între {{date}} și {{endDate}} inclusiv. Aduceți permisul de conducere la ridicare."
+      },
+      "reservation_cancelled": {
+        "title": "Rezervare anulată: {{plate}}",
+        "description": "{{company}} a anulat rezervarea dumneavoastră pentru {{car}} ({{period}}). Contactați {{company}} dacă nu este corect.",
+        "descriptionNoPeriod": "{{company}} a anulat rezervarea dumneavoastră pentru {{car}}. Contactați {{company}} dacă nu este corect."
+      },
+      "reservation_changed": {
+        "title": "Rezervare modificată: {{plate}}",
+        "description": "{{company}} a modificat rezervarea dumneavoastră. {{changes}}"
+      },
+      "document_available": {
+        "title": "Document nou: {{document}}",
+        "description": "Un document nou vă așteaptă în portalul clienților: {{document}} ({{fileName}}), pentru închirierea {{period}}. Îl puteți vedea și descărca acolo.",
+        "descriptionNoPeriod": "Un document nou vă așteaptă în portalul clienților: {{document}} ({{fileName}}). Îl puteți vedea și descărca acolo."
+      },
+      "apk_due": {
+        "title": "ITP-ul (APK) expiră în curând: {{plate}}",
+        "description": "ITP-ul (APK) pentru {{car}} expiră pe {{apkDate}}. {{company}} programează inspecția; luați în calcul un interval fără mașină."
+      },
+      "apk_expired": {
+        "title": "ITP (APK) expirat: {{plate}}",
+        "description": "ITP-ul (APK) pentru {{car}} a expirat pe {{apkDate}}. Contactați {{company}} pentru a programa o inspecție."
+      },
+      "service_due": {
+        "title": "Revizie necesară: {{plate}}",
+        "description": "{{car}} are nevoie de o revizie. {{company}} vă va contacta pentru programare; puteți semnala și dumneavoastră printr-o solicitare."
+      },
+      "service_due_soon": {
+        "title": "Revizie în curând: {{plate}}",
+        "description": "{{car}} va avea nevoie în curând de o revizie. {{company}} vă va contacta pentru programare; puteți semnala și dumneavoastră printr-o solicitare."
+      },
+      "fine_linked": {
+        "title": "Amendă nouă: {{plate}}",
+        "description": "{{description}} · {{amount}}"
+      },
+      "request_done": {
+        "title": "Solicitarea nr. {{id}} rezolvată",
+        "description": "{{company}} a rezolvat solicitarea dumneavoastră nr. {{id}}."
+      },
+      "request_rejected": {
+        "title": "Solicitarea nr. {{id}} respinsă",
+        "description": "{{company}} a respins solicitarea dumneavoastră nr. {{id}}."
+      },
+      "request_in_progress": {
+        "title": "Solicitarea nr. {{id}} în lucru",
+        "description": "{{company}} lucrează la solicitarea dumneavoastră nr. {{id}}."
+      },
+      "request_message": {
+        "title": "Mesaj nou la solicitarea nr. {{id}}"
+      }
+    },
+    "words": {
+      "noCar": "încă nu a fost alocată nicio mașină",
+      "periodFrom": "începând cu {{start}}",
+      "periodRange": "{{start}} – {{end}}",
+      "changesPeriod": "Perioada este acum {{period}} (înainte: {{oldPeriod}}).",
+      "changesVehicle": "Mașina dumneavoastră este acum {{car}} (înainte: {{oldCar}}).",
+      "documentContract": "Contract de închiriere",
+      "documentDamageCheck": "Verificare daune"
+    }
   },
   "thread": {
     "title": "Mesaje",

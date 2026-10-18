@@ -55,6 +55,8 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
       customerId, type: `request_${status}`,
       title: `Aanvraag #${id} ${STATUS_LABEL[status] ?? status}`,
       description: reply ? reply.slice(0, 300) : `${portalCompanyName()} heeft uw aanvraag #${id} ${STATUS_LABEL[status] ?? status}.`,
+      // The staff reply is shown as written; the portal words only the title and the reply-less sentence.
+      params: { id, reply: reply ? reply.slice(0, 300) : null, company: portalCompanyName() },
       link: `/aanvragen/${id}`,
     });
     // BUG-155: whether the customer actually got the mail is part of the
@@ -107,7 +109,7 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     if (!parsed.success) return res.status(400).json({ message: "Message is required" });
     const msg = await requestsStorage.addMessage({ requestId: id, author: "staff", authorName: actor(req), body: parsed.data.body });
     if (row.status === "new") await requestsStorage.updateRequest(id, { status: "in_progress", handledBy: actor(req) });
-    await customerNotifications.notify({ customerId: row.customerId, type: "request_message", title: `Nieuw bericht bij aanvraag #${id}`, description: parsed.data.body.slice(0, 300), link: `/aanvragen/${id}` });
+    await customerNotifications.notify({ customerId: row.customerId, type: "request_message", title: `Nieuw bericht bij aanvraag #${id}`, description: parsed.data.body.slice(0, 300), params: { id }, link: `/aanvragen/${id}` });
     await portalStorage.logActivity({ customerId: row.customerId, action: "request_message_staff", entity: "request", entityId: id, details: { by: actor(req) } });
     res.status(201).json({ id: msg.id, author: "staff", authorName: msg.authorName, body: msg.body, createdAt: msg.createdAt.toISOString() });
   });

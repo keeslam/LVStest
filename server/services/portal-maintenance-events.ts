@@ -91,6 +91,7 @@ export async function onMaintenanceBlockChanged(before: Reservation | null, afte
     }[event];
     const created = await customerNotifications.notify({
       customerId: target.customerId, type: event, title: `${TITLE[event]}: ${vehicle.licensePlate}`, description,
+      params: { plate: vehicle.licensePlate, car, date, endDate, company: portalCompanyName() },
       link: `/voertuigen?block=${block.id}`, dedupeTag: tag, dedupeDays: 365,
     });
     if (!created) return null;
@@ -191,6 +192,7 @@ export async function onRentalVehicleChanged(
               type: "maintenance_unlinked",
               title: `${TITLE.maintenance_unlinked}: ${vehicle.licensePlate}`,
               description: unlinkedDescription(car, vehicle.licensePlate, block.startDate),
+              params: { plate: vehicle.licensePlate, car, date: block.startDate, company: portalCompanyName() },
               link: `/reserveringen/${before.id}`,
               dedupeTag: `maint:${block.id}:unlinked:${before.id}`,
               dedupeDays: 365,
@@ -230,6 +232,7 @@ export async function onReplacementAssigned(replacement: Reservation): Promise<b
     const created = await customerNotifications.notify({
       customerId: rental.customerId, type: "replacement_ready", title: `Vervangend vervoer: ${spare.licensePlate}`,
       description: `${car} (${spare.licensePlate}) staat voor u klaar als vervangend vervoer vanaf ${replacement.startDate}${replacement.endDate ? ` tot en met ${replacement.endDate}` : ""}. Neem uw rijbewijs mee bij het ophalen.`,
+      params: { plate: spare.licensePlate, car, date: replacement.startDate, endDate: replacement.endDate ?? null },
       link: `/reserveringen/${replacement.id}`, dedupeTag: `spare:${replacement.id}:${replacement.vehicleId}`, dedupeDays: 365,
     });
     if (!created) return false;

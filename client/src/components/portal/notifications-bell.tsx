@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { SearchBox, usePortalSearch } from "./ui";
 import { formatPortalDateTime } from "@/lib/portal-format";
+import { portalNotificationText } from "@/lib/portal-notification-text";
 
 const UNREAD_KEY = ["portal", "/api/portal/notifications/unread-count"];
 const LIST_KEY = ["portal", "/api/portal/notifications"];
@@ -35,7 +36,7 @@ const toneFor = (type: string) => type === "maintenance_cancelled" || type.start
  * Clicking a notification marks it read and opens the thing it is about.
  */
 export function NotificationsBell({ dark = false }: { dark?: boolean }) {
-  const { t } = useTranslation("portal");
+  const { t, i18n } = useTranslation("portal");
   const queryClient = useQueryClient();
   const { openRequest, openReservation, openFine } = usePortalDialogs();
   const [, navigate] = useLocation();
@@ -57,7 +58,9 @@ export function NotificationsBell({ dark = false }: { dark?: boolean }) {
     if (m[1] === "aanvragen") openRequest(id); else if (m[1] === "reserveringen") openReservation(id); else openFine(id);
   };
   const count = unread?.count ?? 0;
-  const shown = items.filter((n) => hit(n.title, n.description));
+  // Worded in the language the portal is shown in now; older notices keep their stored Dutch text.
+  const worded = items.map((n) => ({ ...n, ...portalNotificationText(n, t, (key) => i18n.exists(key, { ns: "portal" })) }));
+  const shown = worded.filter((n) => hit(n.title, n.description));
 
   return (
     <>

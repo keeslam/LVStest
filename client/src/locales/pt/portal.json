@@ -1301,7 +1301,98 @@
     "search": "Pesquisar nas notificações…",
     "empty": "Sem notificações. Aqui vê as respostas aos pedidos, as novas multas e os avisos sobre a APK e a manutenção.",
     "titleUnread": "Notificações, {{count}} por ler",
-    "unread": "Por ler"
+    "unread": "Por ler",
+    "kinds": {
+      "maintenance_planned": {
+        "title": "Manutenção agendada: {{plate}}",
+        "description": "{{car}} ({{plate}}) tem manutenção agendada para {{date}}. Leve o veículo a {{company}} no dia combinado.",
+        "descriptionRange": "{{car}} ({{plate}}) tem manutenção agendada de {{date}} a {{endDate}}, inclusive. Leve o veículo a {{company}} no dia combinado."
+      },
+      "maintenance_moved": {
+        "title": "Manutenção reagendada: {{plate}}",
+        "description": "A manutenção de {{car}} ({{plate}}) foi mudada para {{date}}.",
+        "descriptionRange": "A manutenção de {{car}} ({{plate}}) foi mudada para {{date}} a {{endDate}}, inclusive."
+      },
+      "maintenance_in": {
+        "title": "Veículo em manutenção: {{plate}}",
+        "description": "{{car}} ({{plate}}) está em manutenção em {{company}}."
+      },
+      "maintenance_out": {
+        "title": "Manutenção concluída: {{plate}}",
+        "description": "{{car}} ({{plate}}) está pronto e pode ser levantado."
+      },
+      "maintenance_cancelled": {
+        "title": "Manutenção cancelada: {{plate}}",
+        "description": "A manutenção prevista de {{car}} ({{plate}}) em {{date}} não se realiza. {{company}} entrará em contacto para marcar uma nova data."
+      },
+      "maintenance_unlinked": {
+        "title": "A manutenção já não diz respeito ao seu aluguer: {{plate}}",
+        "description": "A manutenção de {{car}} ({{plate}}) em {{date}} já não diz respeito ao seu aluguer: conduz agora outro veículo. O veículo de substituição eventualmente reservado é cancelado. {{company}} entrará em contacto se o seu veículo atual precisar de manutenção."
+      },
+      "replacement_ready": {
+        "title": "Veículo de substituição: {{plate}}",
+        "description": "{{car}} ({{plate}}) está pronto para si como veículo de substituição a partir de {{date}}. Traga a sua carta de condução quando o vier levantar.",
+        "descriptionRange": "{{car}} ({{plate}}) está pronto para si como veículo de substituição de {{date}} a {{endDate}}, inclusive. Traga a sua carta de condução quando o vier levantar."
+      },
+      "reservation_cancelled": {
+        "title": "Reserva cancelada: {{plate}}",
+        "description": "{{company}} cancelou a sua reserva de {{car}} ({{period}}). Contacte {{company}} se isto não estiver correto.",
+        "descriptionNoPeriod": "{{company}} cancelou a sua reserva de {{car}}. Contacte {{company}} se isto não estiver correto."
+      },
+      "reservation_changed": {
+        "title": "Reserva alterada: {{plate}}",
+        "description": "{{company}} alterou a sua reserva. {{changes}}"
+      },
+      "document_available": {
+        "title": "Novo documento: {{document}}",
+        "description": "Tem um novo documento à sua espera no portal de clientes: {{document}} ({{fileName}}), do seu aluguer {{period}}. Pode consultá-lo e descarregá-lo lá.",
+        "descriptionNoPeriod": "Tem um novo documento à sua espera no portal de clientes: {{document}} ({{fileName}}). Pode consultá-lo e descarregá-lo lá."
+      },
+      "apk_due": {
+        "title": "A inspeção (APK) expira em breve: {{plate}}",
+        "description": "A inspeção periódica (APK) de {{car}} expira em {{apkDate}}. {{company}} agenda a inspeção; conte com um momento sem o veículo."
+      },
+      "apk_expired": {
+        "title": "Inspeção (APK) expirada: {{plate}}",
+        "description": "A inspeção periódica (APK) de {{car}} expirou em {{apkDate}}. Contacte {{company}} para agendar uma inspeção."
+      },
+      "service_due": {
+        "title": "Revisão necessária: {{plate}}",
+        "description": "{{car}} precisa de uma revisão. {{company}} entrará em contacto para a agendar; também pode comunicá-lo através de um pedido."
+      },
+      "service_due_soon": {
+        "title": "Revisão em breve: {{plate}}",
+        "description": "{{car}} vai precisar em breve de uma revisão. {{company}} entrará em contacto para a agendar; também pode comunicá-lo através de um pedido."
+      },
+      "fine_linked": {
+        "title": "Nova coima: {{plate}}",
+        "description": "{{description}} · {{amount}}"
+      },
+      "request_done": {
+        "title": "Pedido n.º {{id}} concluído",
+        "description": "{{company}} concluiu o seu pedido n.º {{id}}."
+      },
+      "request_rejected": {
+        "title": "Pedido n.º {{id}} recusado",
+        "description": "{{company}} recusou o seu pedido n.º {{id}}."
+      },
+      "request_in_progress": {
+        "title": "Pedido n.º {{id}} em tratamento",
+        "description": "{{company}} está a tratar o seu pedido n.º {{id}}."
+      },
+      "request_message": {
+        "title": "Nova mensagem no pedido n.º {{id}}"
+      }
+    },
+    "words": {
+      "noCar": "ainda sem veículo atribuído",
+      "periodFrom": "a partir de {{start}}",
+      "periodRange": "de {{start}} a {{end}}",
+      "changesPeriod": "O período é agora {{period}} (antes: {{oldPeriod}}).",
+      "changesVehicle": "O seu veículo é agora {{car}} (antes: {{oldCar}}).",
+      "documentContract": "Contrato de aluguer",
+      "documentDamageCheck": "Inspeção de danos"
+    }
   },
   "thread": {
     "title": "Mensagens",

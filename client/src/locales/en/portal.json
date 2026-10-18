@@ -1292,7 +1292,98 @@
     "search": "Search notifications…",
     "empty": "No notifications. Replies to requests, new fines and APK/service warnings show up here.",
     "titleUnread": "Notifications, {{count}} unread",
-    "unread": "Unread"
+    "unread": "Unread",
+    "kinds": {
+      "maintenance_planned": {
+        "title": "Maintenance scheduled: {{plate}}",
+        "description": "{{car}} ({{plate}}) is scheduled for maintenance on {{date}}. Please bring the car to {{company}} on the agreed day.",
+        "descriptionRange": "{{car}} ({{plate}}) is scheduled for maintenance from {{date}} up to and including {{endDate}}. Please bring the car to {{company}} on the agreed day."
+      },
+      "maintenance_moved": {
+        "title": "Maintenance rescheduled: {{plate}}",
+        "description": "The maintenance of {{car}} ({{plate}}) has been moved to {{date}}.",
+        "descriptionRange": "The maintenance of {{car}} ({{plate}}) has been moved to {{date}} up to and including {{endDate}}."
+      },
+      "maintenance_in": {
+        "title": "Car in for maintenance: {{plate}}",
+        "description": "{{car}} ({{plate}}) is in for maintenance at {{company}}."
+      },
+      "maintenance_out": {
+        "title": "Maintenance completed: {{plate}}",
+        "description": "{{car}} ({{plate}}) is ready and can be collected."
+      },
+      "maintenance_cancelled": {
+        "title": "Maintenance cancelled: {{plate}}",
+        "description": "The planned maintenance of {{car}} ({{plate}}) on {{date}} will not go ahead. {{company}} will contact you about a new date."
+      },
+      "maintenance_unlinked": {
+        "title": "Maintenance no longer part of your rental: {{plate}}",
+        "description": "The maintenance of {{car}} ({{plate}}) on {{date}} is no longer part of your rental: you now drive another car. Any replacement vehicle that was reserved is cancelled with it. {{company}} will contact you if your current car needs maintenance."
+      },
+      "replacement_ready": {
+        "title": "Replacement vehicle: {{plate}}",
+        "description": "{{car}} ({{plate}}) is ready for you as a replacement vehicle from {{date}}. Please bring your driving licence when you collect it.",
+        "descriptionRange": "{{car}} ({{plate}}) is ready for you as a replacement vehicle from {{date}} up to and including {{endDate}}. Please bring your driving licence when you collect it."
+      },
+      "reservation_cancelled": {
+        "title": "Reservation cancelled: {{plate}}",
+        "description": "{{company}} has cancelled your reservation for {{car}} for {{period}}. Please contact {{company}} if this is not right.",
+        "descriptionNoPeriod": "{{company}} has cancelled your reservation for {{car}}. Please contact {{company}} if this is not right."
+      },
+      "reservation_changed": {
+        "title": "Reservation changed: {{plate}}",
+        "description": "{{company}} has changed your reservation. {{changes}}"
+      },
+      "document_available": {
+        "title": "New document: {{document}}",
+        "description": "A new document is waiting for you in the customer portal: {{document}} ({{fileName}}), for your rental {{period}}. You can view and download it there.",
+        "descriptionNoPeriod": "A new document is waiting for you in the customer portal: {{document}} ({{fileName}}). You can view and download it there."
+      },
+      "apk_due": {
+        "title": "APK expires soon: {{plate}}",
+        "description": "The APK (Dutch MOT) of {{car}} expires on {{apkDate}}. {{company}} schedules the inspection; expect a moment without the car."
+      },
+      "apk_expired": {
+        "title": "APK expired: {{plate}}",
+        "description": "The APK (Dutch MOT) of {{car}} expired on {{apkDate}}. Please contact {{company}} to schedule an inspection."
+      },
+      "service_due": {
+        "title": "Service needed: {{plate}}",
+        "description": "{{car}} is due for a service. {{company}} will contact you to schedule it; you can also report it yourself through a request."
+      },
+      "service_due_soon": {
+        "title": "Service coming up: {{plate}}",
+        "description": "{{car}} is almost due for a service. {{company}} will contact you to schedule it; you can also report it yourself through a request."
+      },
+      "fine_linked": {
+        "title": "New traffic fine: {{plate}}",
+        "description": "{{description}} · {{amount}}"
+      },
+      "request_done": {
+        "title": "Request #{{id}} completed",
+        "description": "{{company}} has completed your request #{{id}}."
+      },
+      "request_rejected": {
+        "title": "Request #{{id}} rejected",
+        "description": "{{company}} has rejected your request #{{id}}."
+      },
+      "request_in_progress": {
+        "title": "Request #{{id}} in progress",
+        "description": "{{company}} is now handling your request #{{id}}."
+      },
+      "request_message": {
+        "title": "New message on request #{{id}}"
+      }
+    },
+    "words": {
+      "noCar": "no car assigned yet",
+      "periodFrom": "from {{start}}",
+      "periodRange": "{{start}} to {{end}}",
+      "changesPeriod": "The period is now {{period}} (was {{oldPeriod}}).",
+      "changesVehicle": "Your car is now {{car}} (was {{oldCar}}).",
+      "documentContract": "Rental contract",
+      "documentDamageCheck": "Damage check"
+    }
   },
   "thread": {
     "title": "Messages",

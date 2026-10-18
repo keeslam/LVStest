@@ -1301,7 +1301,98 @@
     "search": "Cercare nelle notifiche…",
     "empty": "Nessuna notifica. Qui vedrà le risposte alle richieste, le nuove multe e gli avvisi su APK e manutenzione.",
     "titleUnread": "Notifiche, {{count}} non lette",
-    "unread": "Non lette"
+    "unread": "Non lette",
+    "kinds": {
+      "maintenance_planned": {
+        "title": "Manutenzione programmata: {{plate}}",
+        "description": "{{car}} ({{plate}}) ha una manutenzione programmata il {{date}}. Porti l'auto da {{company}} nel giorno concordato.",
+        "descriptionRange": "{{car}} ({{plate}}) ha una manutenzione programmata dal {{date}} al {{endDate}} incluso. Porti l'auto da {{company}} nel giorno concordato."
+      },
+      "maintenance_moved": {
+        "title": "Manutenzione spostata: {{plate}}",
+        "description": "La manutenzione di {{car}} ({{plate}}) è stata spostata al {{date}}.",
+        "descriptionRange": "La manutenzione di {{car}} ({{plate}}) è stata spostata dal {{date}} al {{endDate}} incluso."
+      },
+      "maintenance_in": {
+        "title": "Auto in manutenzione: {{plate}}",
+        "description": "{{car}} ({{plate}}) è in manutenzione presso {{company}}."
+      },
+      "maintenance_out": {
+        "title": "Manutenzione completata: {{plate}}",
+        "description": "{{car}} ({{plate}}) è pronta e può essere ritirata."
+      },
+      "maintenance_cancelled": {
+        "title": "Manutenzione annullata: {{plate}}",
+        "description": "La manutenzione prevista di {{car}} ({{plate}}) il {{date}} non avrà luogo. {{company}} La contatterà per una nuova data."
+      },
+      "maintenance_unlinked": {
+        "title": "La manutenzione non riguarda più il Suo noleggio: {{plate}}",
+        "description": "La manutenzione di {{car}} ({{plate}}) del {{date}} non riguarda più il Suo noleggio: ora guida un'altra auto. L'eventuale veicolo sostitutivo prenotato viene annullato. {{company}} La contatterà se la Sua auto attuale ha bisogno di manutenzione."
+      },
+      "replacement_ready": {
+        "title": "Veicolo sostitutivo: {{plate}}",
+        "description": "{{car}} ({{plate}}) è pronta per Lei come veicolo sostitutivo dal {{date}}. Porti la patente al ritiro.",
+        "descriptionRange": "{{car}} ({{plate}}) è pronta per Lei come veicolo sostitutivo dal {{date}} al {{endDate}} incluso. Porti la patente al ritiro."
+      },
+      "reservation_cancelled": {
+        "title": "Prenotazione annullata: {{plate}}",
+        "description": "{{company}} ha annullato la Sua prenotazione di {{car}} ({{period}}). Contatti {{company}} se non è corretto.",
+        "descriptionNoPeriod": "{{company}} ha annullato la Sua prenotazione di {{car}}. Contatti {{company}} se non è corretto."
+      },
+      "reservation_changed": {
+        "title": "Prenotazione modificata: {{plate}}",
+        "description": "{{company}} ha modificato la Sua prenotazione. {{changes}}"
+      },
+      "document_available": {
+        "title": "Nuovo documento: {{document}}",
+        "description": "Un nuovo documento La attende nel portale clienti: {{document}} ({{fileName}}), per il Suo noleggio {{period}}. Può visualizzarlo e scaricarlo lì.",
+        "descriptionNoPeriod": "Un nuovo documento La attende nel portale clienti: {{document}} ({{fileName}}). Può visualizzarlo e scaricarlo lì."
+      },
+      "apk_due": {
+        "title": "La revisione (APK) scade a breve: {{plate}}",
+        "description": "La revisione (APK) di {{car}} scade il {{apkDate}}. {{company}} programma il controllo; consideri un momento senza l'auto."
+      },
+      "apk_expired": {
+        "title": "Revisione (APK) scaduta: {{plate}}",
+        "description": "La revisione (APK) di {{car}} è scaduta il {{apkDate}}. Contatti {{company}} per programmare un controllo."
+      },
+      "service_due": {
+        "title": "Tagliando necessario: {{plate}}",
+        "description": "{{car}} deve fare il tagliando. {{company}} La contatterà per programmarlo; può anche segnalarlo Lei con una richiesta."
+      },
+      "service_due_soon": {
+        "title": "Tagliando in arrivo: {{plate}}",
+        "description": "{{car}} dovrà presto fare il tagliando. {{company}} La contatterà per programmarlo; può anche segnalarlo Lei con una richiesta."
+      },
+      "fine_linked": {
+        "title": "Nuova multa: {{plate}}",
+        "description": "{{description}} · {{amount}}"
+      },
+      "request_done": {
+        "title": "Richiesta n. {{id}} evasa",
+        "description": "{{company}} ha evaso la Sua richiesta n. {{id}}."
+      },
+      "request_rejected": {
+        "title": "Richiesta n. {{id}} respinta",
+        "description": "{{company}} ha respinto la Sua richiesta n. {{id}}."
+      },
+      "request_in_progress": {
+        "title": "Richiesta n. {{id}} in lavorazione",
+        "description": "{{company}} sta lavorando alla Sua richiesta n. {{id}}."
+      },
+      "request_message": {
+        "title": "Nuovo messaggio sulla richiesta n. {{id}}"
+      }
+    },
+    "words": {
+      "noCar": "nessuna auto ancora assegnata",
+      "periodFrom": "dal {{start}}",
+      "periodRange": "dal {{start}} al {{end}}",
+      "changesPeriod": "Il periodo ora è {{period}} (prima: {{oldPeriod}}).",
+      "changesVehicle": "La Sua auto ora è {{car}} (prima: {{oldCar}}).",
+      "documentContract": "Contratto di noleggio",
+      "documentDamageCheck": "Controllo danni"
+    }
   },
   "thread": {
     "title": "Messaggi",

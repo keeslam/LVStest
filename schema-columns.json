@@ -4226,6 +4226,13 @@
         "default": null
       },
       {
+        "name": "params",
+        "type": "jsonb",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
         "name": "link",
         "type": "text",
         "notNull": false,

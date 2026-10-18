@@ -201,11 +201,16 @@ export interface PortalDocumentDto {
   ack: { by: string; at: string } | null;
 }
 
+/** The values a portal notification is about (plate, dates, car...), so the portal can word it in the reader's language. */
+export type PortalNotificationParams = Record<string, string | number | boolean | null>;
+
 export interface PortalNotificationDto {
   id: number;
   type: string;
   title: string;
   description: string;
+  /** Null on rows written before the portal words notices itself; those show title and description as stored (Dutch). */
+  params: PortalNotificationParams | null;
   link: string | null;
   isRead: boolean;
   createdAt: string;

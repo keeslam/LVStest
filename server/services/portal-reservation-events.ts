@@ -131,6 +131,7 @@ export async function onReservationChangedByStaff(
         type: "reservation_cancelled",
         title: `Reservering geannuleerd: ${car.plate ?? `#${row.id}`}`,
         description: `${portalCompanyName()} heeft uw reservering voor ${carText(car)}${when ? ` van ${when}` : ""} geannuleerd. Neem contact op met ${portalCompanyName()} als dit niet klopt.`,
+        params: { plate: car.plate ?? `#${row.id}`, car: car.name, startDate: source.startDate ?? null, endDate: source.endDate ?? null, company: portalCompanyName() },
         link,
         // One tag for the whole reservation: cancel-then-delete is one message.
         dedupeTag: `res:${row.id}:cancelled`,
@@ -153,6 +154,13 @@ export async function onReservationChangedByStaff(
       type: "reservation_changed",
       title: `Reservering gewijzigd: ${newCar.plate ?? `#${row.id}`}`,
       description: `${portalCompanyName()} heeft uw reservering aangepast. ${describeChanges(b, a, oldCar, newCar)}`,
+      params: {
+        plate: newCar.plate ?? `#${row.id}`, car: newCar.name, oldCar: oldCar.name,
+        startDate: a.startDate ?? null, endDate: a.endDate ?? null, oldStartDate: b.startDate ?? null, oldEndDate: b.endDate ?? null,
+        datesChanged: b.startDate !== a.startDate || (b.endDate ?? "") !== (a.endDate ?? ""),
+        vehicleChanged: (b.vehicleId ?? null) !== (a.vehicleId ?? null),
+        company: portalCompanyName(),
+      },
       link,
       // The new values are part of the tag: saving the same edit again is the
       // same news, moving the rental once more is not.
@@ -209,6 +217,10 @@ export async function onDocumentAvailable(doc: Document | null | undefined): Pro
       type: "document_available",
       title: `Nieuw document: ${label}`,
       description: `Er staat een nieuw document voor u klaar in het klantenportaal: ${label} (${doc.fileName})${when ? `, bij uw huur van ${when}` : ""}. U kunt het daar bekijken en downloaden.`,
+      params: {
+        documentKind: isContractDocument(doc.documentType) ? "contract" : "damageCheck",
+        fileName: doc.fileName, startDate: rental.startDate ?? null, endDate: rental.endDate ?? null,
+      },
       link: "/documenten",
       dedupeTag: `doc:${doc.id}`,
       dedupeDays: 365,

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { isSafeHttpUrl, SAFE_URL_MESSAGE, isLocalOrNetworkPath, LOCAL_PATH_MESSAGE } from "./safe-url";
 import type { InboxParsedInvoice } from "./invoice-inbox";
 import { SUPPORTED_LANGUAGES } from "./languages";
+import type { PortalNotificationParams } from "./portal-types";
 
 // User Roles enum
 export const UserRole = {
@@ -900,6 +901,8 @@ export const portalNotifications = pgTable("portal_notifications", {
   type: text("type").notNull(),
   title: text("title").notNull(),
   description: text("description").notNull(),
+  /** What the notice is about (plate, dates, car...), so the portal words it in the reader's language; null on older rows, which show title/description as stored. */
+  params: jsonb("params").$type<PortalNotificationParams>(),
   link: text("link"),
   dedupeTag: text("dedupe_tag"),
   isRead: boolean("is_read").notNull().default(false),

@@ -233,7 +233,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
   app.get("/api/portal/notifications", requirePortalUser, async (req, res) => {
     const ctx = ctxOf(req);
     const rows = await customerNotifications.listForUser(ctx.customerId, ctx.user.id, 100, await notificationViewer(ctx));
-    res.json(rows.map((n) => ({ id: n.id, type: n.type, title: n.title, description: n.description, link: n.link, isRead: n.isRead, createdAt: n.createdAt.toISOString() })));
+    res.json(rows.map((n) => ({ id: n.id, type: n.type, title: n.title, description: n.description, params: n.params ?? null, link: n.link, isRead: n.isRead, createdAt: n.createdAt.toISOString() })));
   });
   app.get("/api/portal/notifications/unread-count", requirePortalUser, async (req, res) => {
     const ctx = ctxOf(req);
