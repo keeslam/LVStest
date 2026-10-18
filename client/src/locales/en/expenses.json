@@ -237,6 +237,12 @@
     "categoryDialogDescription_other": "{{count}} expenses in the current selection",
     "amountColumnHeaderShort": "Amount excl. VAT",
     "dialogSearchPlaceholder": "Search within this category...",
+    "dialogViewByVehicle": "Per vehicle",
+    "vehicleDialogSearchPlaceholder": "Search this vehicle's expenses...",
+    "dateRange": "{{from}} to {{to}}",
+    "openVehicleCosts": "View all expenses of {{plate}}",
+    "vehicleCount_one": "{{count}} vehicle",
+    "vehicleCount_other": "{{count}} vehicles",
     "sortLabel": "Sort",
     "sortOptions": {
       "date_desc": "Date (newest first)",

@@ -226,8 +226,19 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
     res.json(await storage.getExpenseSummary(filters, Number(recentRaw)));
   });
 
+  /**
+   * Kosten (2026-10-18): the selection per vehicle, newest cost first, for the
+   * category sections and dialogs (one row per vehicle). Same filters as the list.
+   */
+  app.get("/api/expenses/by-vehicle", hasPermission(UserPermission.MANAGE_EXPENSES), async (req, res) => {
+    noStore(res);
+    const filters = readExpenseFilters(req, res);
+    if (!filters) return;
+    res.json(await storage.getExpenseVehicleGroups(filters));
+  });
+
   // Get all expenses
-  app.get("/api/expenses", hasPermission(UserPermission.MANAGE_EXPENSES), async (req, res) => {
+  app.get("/api/expenses",hasPermission(UserPermission.MANAGE_EXPENSES), async (req, res) => {
     noStore(res);
     const filters = readExpenseFilters(req, res);
     if (!filters) return;

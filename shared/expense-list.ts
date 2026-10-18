@@ -39,6 +39,25 @@ export interface ExpenseSummary {
   byCategory: ExpenseCategoryGroup[];
 }
 
+/**
+ * Kosten (2026-10-18): one row per vehicle within a selection (usually one
+ * category), so a vehicle with ten fuel bills shows once with the count and sum.
+ */
+export interface ExpenseVehicleGroup {
+  vehicleId: number;
+  licensePlate: string | null;
+  brand: string | null;
+  model: string | null;
+  count: number;
+  /** Euros, rounded to cents, over every cost of this vehicle in the selection. */
+  amount: number;
+  /** YYYY-MM-DD of the oldest and the newest cost. */
+  firstDate: string;
+  lastDate: string;
+  /** The description of the newest cost. */
+  lastDescription: string | null;
+}
+
 /** The choices for the pickers: every vehicle that has an expense, and every category in use. */
 export interface ExpenseFacets {
   vehicles: Array<{ id: number; licensePlate: string; brand: string; model: string }>;

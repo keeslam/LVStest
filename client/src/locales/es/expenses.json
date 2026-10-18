@@ -242,6 +242,13 @@
     "categoryDialogDescription_other": "{{count}} gastos en la selección actual",
     "amountColumnHeaderShort": "Importe sin IVA",
     "dialogSearchPlaceholder": "Buscar en esta categoría...",
+    "dialogViewByVehicle": "Por vehículo",
+    "vehicleDialogSearchPlaceholder": "Buscar en los gastos de este vehículo...",
+    "dateRange": "Del {{from}} al {{to}}",
+    "openVehicleCosts": "Ver todos los gastos de {{plate}}",
+    "vehicleCount_one": "{{count}} vehículo",
+    "vehicleCount_many": "{{count}} vehículos",
+    "vehicleCount_other": "{{count}} vehículos",
     "sortLabel": "Ordenar",
     "sortOptions": {
       "date_desc": "Fecha (más recientes primero)",

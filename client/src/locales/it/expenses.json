@@ -242,6 +242,13 @@
     "categoryDialogDescription_other": "{{count}} voci di costo nella selezione corrente",
     "amountColumnHeaderShort": "Importo IVA escl.",
     "dialogSearchPlaceholder": "Cerca in questa categoria...",
+    "dialogViewByVehicle": "Per veicolo",
+    "vehicleDialogSearchPlaceholder": "Cerca nelle spese di questo veicolo...",
+    "dateRange": "Dal {{from}} al {{to}}",
+    "openVehicleCosts": "Vedi tutte le spese di {{plate}}",
+    "vehicleCount_one": "{{count}} veicolo",
+    "vehicleCount_many": "{{count}} veicoli",
+    "vehicleCount_other": "{{count}} veicoli",
     "sortLabel": "Ordinamento",
     "sortOptions": {
       "date_desc": "Data (prima le più recenti)",

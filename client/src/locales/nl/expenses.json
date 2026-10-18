@@ -237,6 +237,12 @@
     "categoryDialogDescription_other": "{{count}} kostenposten in de huidige selectie",
     "amountColumnHeaderShort": "Bedrag excl. btw",
     "dialogSearchPlaceholder": "Zoeken in deze categorie...",
+    "dialogViewByVehicle": "Per voertuig",
+    "vehicleDialogSearchPlaceholder": "Zoeken in de kosten van dit voertuig...",
+    "dateRange": "{{from}} t/m {{to}}",
+    "openVehicleCosts": "Alle kosten van {{plate}} bekijken",
+    "vehicleCount_one": "{{count}} voertuig",
+    "vehicleCount_other": "{{count}} voertuigen",
     "sortLabel": "Sorteren",
     "sortOptions": {
       "date_desc": "Datum (nieuwste eerst)",

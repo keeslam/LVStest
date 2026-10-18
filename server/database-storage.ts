@@ -118,7 +118,7 @@ import { db, type DbTransaction } from "./db";
 import { eq, ne, and, gte, lte, asc, desc, sql, inArray, not, or, ilike, isNull, isNotNull, getTableColumns, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { COLLECTION_LEG_REASON } from "../shared/portal-handover";
-import { IStorage, type CompleteMaintenanceResult, type CompleteMaintenanceFile, type ExpenseFilters, type ExpenseListOptions, type ExpenseSortKey, type ExpensePage, type ExpenseSummary, type ExpenseFacets } from "./storage";
+import { IStorage, type CompleteMaintenanceResult, type CompleteMaintenanceFile, type ExpenseFilters, type ExpenseListOptions, type ExpenseSortKey, type ExpensePage, type ExpenseSummary, type ExpenseFacets, type ExpenseVehicleGroup } from "./storage";
 import { getRelativePath } from "./services/document-paths";
 import { formatVehicleBarcode, parseBarcode, normalizeScannedCode, expandShortKeyCode } from "../shared/barcode";
 // besluiten B-16 + B-07: one day count and one total, shared with the form.
@@ -3471,6 +3471,33 @@ export class DatabaseStorage implements IStorage {
       totalAmount: Math.round(byCategory.reduce((cents, g) => cents + Math.round(g.amount * 100), 0)) / 100,
       byCategory,
     };
+  }
+
+  /**
+   * Kosten (2026-10-18): the selection per vehicle, so a category section shows a
+   * vehicle once with its count and sum instead of a row per bill. The newest
+   * cost's description comes along for a vehicle with one cost.
+   */
+  async getExpenseVehicleGroups(filters: ExpenseFilters): Promise<ExpenseVehicleGroup[]> {
+    const lastDate = sql<string>`max(${expenses.date})`;
+    const rows = await db
+      .select({
+        vehicleId: expenses.vehicleId,
+        licensePlate: sql<string | null>`max(${vehicles.licensePlate})`,
+        brand: sql<string | null>`max(${vehicles.brand})`,
+        model: sql<string | null>`max(${vehicles.model})`,
+        count: sql<number>`count(*)::int`,
+        cents: sql<number>`coalesce(sum(round(${expenses.amount}::numeric * 100)), 0)::bigint`,
+        firstDate: sql<string>`min(${expenses.date})`,
+        lastDate,
+        lastDescription: sql<string | null>`(array_agg(${expenses.description} order by ${expenses.date} desc, ${expenses.id} desc))[1]`,
+      })
+      .from(expenses)
+      .leftJoin(vehicles, eq(expenses.vehicleId, vehicles.id))
+      .where(this.expenseConditions(filters))
+      .groupBy(expenses.vehicleId)
+      .orderBy(desc(lastDate), sql`max(${vehicles.licensePlate})`, asc(expenses.vehicleId));
+    return rows.map(({ cents, ...row }) => ({ ...row, count: Number(row.count), amount: Number(cents) / 100 }));
   }
 
   async getExpenseFacets(): Promise<ExpenseFacets> {

@@ -112,7 +112,7 @@ export const EXPENSE_COLUMN_CLASSES = {
  * the browser while `total` and `totalAmount` cover the whole selection. A
  * change of filter or sort jumps back to page 1.
  */
-export function ExpenseListTable({ filters, onDelete, testId = "expenses", initialPageSize = 50, className, sort: controlledSort, onSortChange }: {
+export function ExpenseListTable({ filters, onDelete, testId = "expenses", initialPageSize = 50, className, sort: controlledSort, onSortChange, showCategory = true }: {
   filters: ExpenseListFilters;
   onDelete?: (expense: Expense) => void;
   testId?: string;
@@ -121,6 +121,8 @@ export function ExpenseListTable({ filters, onDelete, testId = "expenses", initi
   /** Hand in both to keep the sort outside (the category dialog has a sort picker in its header). */
   sort?: SortState<ExpenseSortKey>;
   onSortChange?: (sort: SortState<ExpenseSortKey>) => void;
+  /** Off in a dialog for one category, where every row is of that category already. */
+  showCategory?: boolean;
 }) {
   const { t } = useTranslation(["expenses", "common"]);
   const [ownSort, setOwnSort] = useState<SortState<ExpenseSortKey>>(DEFAULT_EXPENSE_SORT);
@@ -172,14 +174,14 @@ export function ExpenseListTable({ filters, onDelete, testId = "expenses", initi
             <TableRow>
               {head("date", t("expenses:indexPage.dateColumnHeader"), EXPENSE_COLUMN_CLASSES.date)}
               {head("plate", t("expenses:indexPage.vehicleColumnHeader"), EXPENSE_COLUMN_CLASSES.plate)}
-              {head("category", t("expenses:indexPage.categoryColumnHeader"), EXPENSE_COLUMN_CLASSES.category)}
+              {showCategory && head("category", t("expenses:indexPage.categoryColumnHeader"), EXPENSE_COLUMN_CLASSES.category)}
               {head("description", t("expenses:indexPage.descriptionColumnHeader"), EXPENSE_COLUMN_CLASSES.description)}
               {head("amount", t("expenses:indexPage.amountColumnHeaderShort"), cn(EXPENSE_COLUMN_CLASSES.amount, "[&>button]:ml-auto [&>button]:flex-row-reverse"))}
               <TableHead className={EXPENSE_COLUMN_CLASSES.actions} />
             </TableRow>
           </TableHeader>
           <TableBody>
-            <ExpenseRows rows={data?.rows ?? []} onDelete={onDelete} />
+            <ExpenseRows rows={data?.rows ?? []} onDelete={onDelete} showCategory={showCategory} />
           </TableBody>
         </Table>
       </div>

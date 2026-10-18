@@ -242,6 +242,13 @@
     "categoryDialogDescription_other": "{{count}} despesas na seleção atual",
     "amountColumnHeaderShort": "Montante sem IVA",
     "dialogSearchPlaceholder": "Pesquisar nesta categoria...",
+    "dialogViewByVehicle": "Por veículo",
+    "vehicleDialogSearchPlaceholder": "Pesquisar nas despesas deste veículo...",
+    "dateRange": "De {{from}} a {{to}}",
+    "openVehicleCosts": "Ver todas as despesas de {{plate}}",
+    "vehicleCount_one": "{{count}} veículo",
+    "vehicleCount_many": "{{count}} veículos",
+    "vehicleCount_other": "{{count}} veículos",
     "sortLabel": "Ordenar",
     "sortOptions": {
       "date_desc": "Data (mais recentes primeiro)",

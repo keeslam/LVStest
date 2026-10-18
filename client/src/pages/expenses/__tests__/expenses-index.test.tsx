@@ -1,6 +1,6 @@
 /**
  * Kostenoverzicht (2026-10-16) for thousands of rows: a section per category
- * with its newest five and a dialog for the rest, or one paged and sortable
+ * with one row per vehicle (2026-10-18) and a dialog for the rest, or one paged and sortable
  * table; the server does the sorting, paging and summing, so the page only
  * ever asks for one page while counts and sums span the whole selection; the
  * CSV export takes the whole selection, not the page.
@@ -87,6 +87,16 @@ beforeEach(() => {
         .sort((a, b) => b.amount - a.amount);
       return json({ total: rows.length, totalAmount: cents(rows) / 100, byCategory });
     }
+    if (url.pathname === "/api/expenses/by-vehicle") {
+      // Newest first already: one group per vehicle, its first row is its newest.
+      const groups = new Map<number, Row[]>();
+      for (const r of select(params)) groups.set(r.vehicleId, [...(groups.get(r.vehicleId) ?? []), r]);
+      return json([...groups.values()].map((items) => ({
+        vehicleId: items[0].vehicleId, licensePlate: items[0].vehicle.licensePlate, brand: "Opel", model: "Vivaro",
+        count: items.length, amount: cents(items) / 100,
+        firstDate: items[items.length - 1].date, lastDate: items[0].date, lastDescription: items[0].description,
+      })));
+    }
     if (url.pathname === "/api/expenses") {
       const rows = select(params);
       if (!params.has("page") && !params.has("pageSize")) return json(rows);
@@ -109,30 +119,36 @@ function renderPage() {
 }
 const lastListRequest = () => requested.filter((r) => r.startsWith("/api/expenses?")).pop() ?? "";
 const lastSummaryRequest = () => requested.filter((r) => r.startsWith("/api/expenses/summary")).pop() ?? "";
+const lastByVehicleRequest = () => requested.filter((r) => r.startsWith("/api/expenses/by-vehicle")).pop() ?? "";
+const euros = (c: number) => (c / 100).toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const dutchDate = (iso: string) => iso.split("-").reverse().join("-");
+/** The fixture rows of one category on one vehicle. */
+const rowsOf = (category: string, vehicleId: number) => ROWS.filter((r) => r.category === category && r.vehicleId === vehicleId);
 
 describe("Kostenoverzicht per categorie", () => {
-  it("shows a folded section per category; a click unfolds at most five rows, the sum over the whole category, and a button for the rest", async () => {
+  it("shows a folded section per category; a click unfolds one row per vehicle, the sum over the whole category, and a button for the rest", async () => {
     const user = userEvent.setup();
     renderPage();
     const fuel = await screen.findByTestId("expense-section-fuel");
     const fuelRows = ROWS.filter((r) => r.category === "fuel");
     // Folded: headline with count and sum, no rows.
-    expect(within(fuel).queryAllByTestId(/^section-fuel-expense-/)).toHaveLength(0);
+    expect(within(fuel).queryAllByTestId(/^section-fuel-vehicle-/)).toHaveLength(0);
     expect(within(fuel).getByTestId("button-expense-section-toggle-fuel")).toHaveAttribute("aria-expanded", "false");
     await user.click(within(fuel).getByTestId("button-expense-section-toggle-fuel"));
     expect(within(fuel).getByTestId("button-expense-section-toggle-fuel")).toHaveAttribute("aria-expanded", "true");
-    expect(within(fuel).getAllByTestId(/^section-fuel-expense-/)).toHaveLength(5);
+    // 58 fuel costs on three vehicles: three rows.
+    await waitFor(() => expect(within(fuel).getAllByTestId(/^section-fuel-vehicle-\d+$/)).toHaveLength(3));
     expect(within(fuel).getByText(`(${fuelRows.length} kostenposten)`)).toBeInTheDocument();
     expect(within(fuel).getByTestId("expense-section-total-fuel")).toHaveTextContent("5.481,00");
     expect(within(fuel).getByTestId("button-expense-section-all-fuel")).toHaveTextContent(`Alle ${fuelRows.length} tonen`);
     // Five tyres rows: every one is on screen once unfolded, so no button. A second click folds again.
     const tires = screen.getByTestId("expense-section-tires");
     await user.click(within(tires).getByTestId("button-expense-section-toggle-tires"));
-    expect(within(tires).getAllByTestId(/^section-tires-expense-/)).toHaveLength(5);
+    await waitFor(() => expect(within(tires).getAllByTestId(/^section-tires-vehicle-\d+$/)).toHaveLength(3));
     expect(within(tires).queryByTestId("button-expense-section-all-tires")).toBeNull();
     await user.click(within(tires).getByTestId("button-expense-section-toggle-tires"));
-    expect(within(tires).queryAllByTestId(/^section-tires-expense-/)).toHaveLength(0);
-    expect(within(fuel).getAllByTestId(/^section-fuel-expense-/)).toHaveLength(5);
+    expect(within(tires).queryAllByTestId(/^section-tires-vehicle-/)).toHaveLength(0);
+    expect(within(fuel).getAllByTestId(/^section-fuel-vehicle-\d+$/)).toHaveLength(3);
     // The page never asked for the whole list.
     expect(requested.some((r) => r === "/api/expenses")).toBe(false);
     // The count and sum above the sections span the whole selection.
@@ -140,13 +156,14 @@ describe("Kostenoverzicht per categorie", () => {
     expect(screen.getByTestId("expense-total")).toHaveTextContent("10.890,00");
   });
 
-  it("opens the whole category in a dialog with a paged table, scoped to that category", async () => {
+  it("opens the whole category in a dialog with a paged table of every cost, scoped to that category", async () => {
     const user = userEvent.setup();
     renderPage();
     await user.click(await screen.findByTestId("button-expense-section-toggle-toll"));
     await user.click(await screen.findByTestId("button-expense-section-all-toll"));
     const dialog = await screen.findByTestId("expense-category-dialog");
     expect(within(dialog).getByRole("heading", { name: "Tol" })).toBeInTheDocument();
+    await user.click(within(dialog).getByTestId("button-dialog-view-expenses"));
     await waitFor(() => expect(within(dialog).getAllByTestId(/^row-expense-/)).toHaveLength(25));
     expect(lastListRequest()).toContain("category=toll");
     expect(lastListRequest()).toContain("page=1");
@@ -165,6 +182,7 @@ describe("zoeken en sorteren in de kop van de categoriedialoog", () => {
     await user.click(await screen.findByTestId("button-expense-section-toggle-fuel"));
     await user.click(await screen.findByTestId("button-expense-section-all-fuel"));
     const dialog = await screen.findByTestId("expense-category-dialog");
+    await user.click(within(dialog).getByTestId("button-dialog-view-expenses"));
     await waitFor(() => expect(within(dialog).getAllByTestId(/^row-expense-/)).toHaveLength(25));
     await user.type(within(dialog).getByTestId("expense-dialog-search"), "Post 1");
     await waitFor(() => expect(lastListRequest()).toContain("category=fuel&q=Post+1&sort=date&dir=desc&page=1"));
@@ -178,6 +196,83 @@ describe("zoeken en sorteren in de kop van de categoriedialoog", () => {
     await user.click(within(dialog).getByTestId("sort-expenses-fuel-date"));
     await waitFor(() => expect(lastListRequest()).toContain("sort=date&dir=desc"));
     expect((within(dialog).getByTestId("expense-dialog-sort") as HTMLSelectElement).value).toBe("date:desc");
+  });
+});
+
+describe("één regel per voertuig binnen een categorie", () => {
+  it("a vehicle shows once with its count, sum and newest date; a click opens all its costs with search and sortable headers", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByTestId("button-expense-section-toggle-fuel"));
+    const own = rowsOf("fuel", 1);
+    const row = await screen.findByTestId("section-fuel-vehicle-1");
+    expect(row).toHaveTextContent("AA-001-B");
+    expect(row).toHaveTextContent(`${own.length} kostenposten`);
+    expect(row).toHaveTextContent(euros(cents(own)));
+    const newest = own.map((r) => r.date).sort().pop()!;
+    expect(row).toHaveTextContent(dutchDate(newest));
+    // The range is in the tooltip of the date.
+    const oldest = own.map((r) => r.date).sort()[0];
+    expect(within(row).getByTitle(`${dutchDate(oldest)} t/m ${dutchDate(newest)}`)).toBeInTheDocument();
+    expect(lastByVehicleRequest()).toContain("category=fuel");
+
+    await user.click(row);
+    const dialog = await screen.findByTestId("expense-vehicle-dialog");
+    expect(within(dialog).getByRole("heading")).toHaveTextContent("AA-001-B");
+    await waitFor(() => expect(within(dialog).getAllByTestId(/^row-expense-/)).toHaveLength(Math.min(25, own.length)));
+    expect(lastListRequest()).toContain("vehicleId=1&category=fuel");
+    // Every row is of this vehicle and this category, so there is no category column.
+    expect(within(dialog).queryByTestId("sort-expenses-fuel-vehicle-1-category")).toBeNull();
+    for (const r of within(dialog).getAllByTestId(/^row-expense-/)) expect(r).toHaveTextContent("AA-001-B");
+
+    // The column headers sort, both ways, with the arrow on the active column.
+    await user.click(within(dialog).getByTestId("sort-expenses-fuel-vehicle-1-amount"));
+    await waitFor(() => expect(lastListRequest()).toContain("vehicleId=1&category=fuel&sort=amount&dir=asc"));
+    expect(within(dialog).getByTestId("sort-expenses-fuel-vehicle-1-amount").closest("th")).toHaveAttribute("aria-sort", "ascending");
+    const cheapest = own.slice().sort((a, b) => Number(a.amount) - Number(b.amount))[0];
+    await waitFor(() => expect(within(dialog).getAllByTestId(/^row-expense-/)[0]).toHaveTextContent(cheapest.description));
+    await user.click(within(dialog).getByTestId("sort-expenses-fuel-vehicle-1-amount"));
+    await waitFor(() => expect(lastListRequest()).toContain("sort=amount&dir=desc"));
+    expect(within(dialog).getByTestId("sort-expenses-fuel-vehicle-1-amount").closest("th")).toHaveAttribute("aria-sort", "descending");
+    expect((within(dialog).getByTestId("expense-vehicle-dialog-sort") as HTMLSelectElement).value).toBe("amount:desc");
+
+    // The search box narrows within this vehicle and category.
+    await user.type(within(dialog).getByTestId("expense-vehicle-dialog-search"), "Post 1");
+    await waitFor(() => expect(lastListRequest()).toContain("vehicleId=1&category=fuel&q=Post+1&sort=amount&dir=desc"));
+    const matches = own.filter((r) => r.description.includes("Post 1")).length;
+    await waitFor(() => expect(within(dialog).getByTestId("expenses-fuel-vehicle-1-rows-shown")).toHaveTextContent(`${matches} van ${matches} getoond`));
+  });
+
+  it("the category dialog lists every vehicle once; its headers sort the rows and its search goes to the server", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByTestId("button-expense-section-toggle-fuel"));
+    await user.click(await screen.findByTestId("button-expense-section-all-fuel"));
+    const dialog = await screen.findByTestId("expense-category-dialog");
+    expect(within(dialog).getByTestId("button-dialog-view-vehicles")).toHaveAttribute("aria-pressed", "true");
+    const plates = () => within(dialog).getAllByTestId(/^vehicles-fuel-row-\d+$/).map((r) => r.getAttribute("data-testid")!.split("-").pop());
+    await waitFor(() => expect(plates()).toHaveLength(3));
+    expect(within(dialog).getByTestId("vehicles-fuel-count")).toHaveTextContent("3 voertuigen");
+
+    const byAmount = [1, 2, 3].sort((a, b) => cents(rowsOf("fuel", a)) - cents(rowsOf("fuel", b))).map(String);
+    await user.click(within(dialog).getByTestId("sort-vehicles-fuel-amount"));
+    expect(plates()).toEqual(byAmount);
+    expect(within(dialog).getByTestId("sort-vehicles-fuel-amount").closest("th")).toHaveAttribute("aria-sort", "ascending");
+    await user.click(within(dialog).getByTestId("sort-vehicles-fuel-amount"));
+    expect(plates()).toEqual(byAmount.slice().reverse());
+    expect(within(dialog).getByTestId("sort-vehicles-fuel-amount").closest("th")).toHaveAttribute("aria-sort", "descending");
+    await user.click(within(dialog).getByTestId("sort-vehicles-fuel-plate"));
+    expect(plates()).toEqual(["1", "2", "3"]);
+    await user.click(within(dialog).getByTestId("sort-vehicles-fuel-plate"));
+    expect(plates()).toEqual(["3", "2", "1"]);
+
+    await user.type(within(dialog).getByTestId("expense-dialog-search"), "Post 11");
+    await waitFor(() => expect(lastByVehicleRequest()).toContain("category=fuel&q=Post+11"));
+    // A vehicle from the dialog opens with the dialog search already in its own search box.
+    await waitFor(() => expect(plates().length).toBeGreaterThan(0));
+    await user.click(within(dialog).getAllByTestId(/^vehicles-fuel-row-\d+$/)[0]);
+    const vehicleDialog = await screen.findByTestId("expense-vehicle-dialog");
+    expect((within(vehicleDialog).getByTestId("expense-vehicle-dialog-search") as HTMLInputElement).value).toBe("Post 11");
   });
 });
 

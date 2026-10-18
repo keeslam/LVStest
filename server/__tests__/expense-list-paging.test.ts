@@ -132,6 +132,23 @@ describe("GET /api/expenses paging, sorting, search and totals", () => {
     expect((await get("/api/expenses/summary?recent=21")).status).toBe(400);
   });
 
+  it("by-vehicle sums the selection per vehicle: count, sum, oldest and newest date, newest description", async () => {
+    const res = await get(`/api/expenses/by-vehicle?category=fuel&q=pt-pg`);
+    expect(res.status).toBe(200);
+    // The search on the plate keeps only this file's vehicles; B has no fuel.
+    const groups = res.body as Array<Record<string, unknown>>;
+    expect(groups).toHaveLength(1);
+    expect(groups[0]).toMatchObject({ vehicleId: vehicleA, licensePlate: "PT-PG-A", count: 3, firstDate: "2026-09-01", lastDate: "2026-09-09", lastDescription: "stofzuigen" });
+    expect(groups[0].amount).toBeCloseTo(60.1, 2);
+
+    // Without a category, newest vehicle first; the category is matched in any casing.
+    const both = await get(`/api/expenses/by-vehicle?q=pt-pg`);
+    expect(both.body.map((g: any) => g.licensePlate)).toEqual(["PT-PG-B", "PT-PG-A"]);
+    const toll = await get(`/api/expenses/by-vehicle?${mine()}${vehicleA}&category=toll`);
+    expect(toll.body[0]).toMatchObject({ count: 2, lastDescription: "tol A4" });
+    expect((await get("/api/expenses/by-vehicle?from=gisteren")).status).toBe(400);
+  });
+
   it("the facets list every vehicle with an expense and every category in use", async () => {
     const res = await get("/api/expenses/facets");
     expect(res.status).toBe(200);
@@ -147,5 +164,6 @@ describe("GET /api/expenses paging, sorting, search and totals", () => {
     expect((await get("/api/expenses?page=1", outsider)).status).toBe(403);
     expect((await get("/api/expenses/summary", outsider)).status).toBe(403);
     expect((await get("/api/expenses/facets", outsider)).status).toBe(403);
+    expect((await get("/api/expenses/by-vehicle", outsider)).status).toBe(403);
   });
 });

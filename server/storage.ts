@@ -76,8 +76,8 @@ export interface ExpenseFilters {
   q?: string;
 }
 
-import { EXPENSE_SORT_KEYS, type ExpenseSortKey, type ExpensePage, type ExpenseSummary, type ExpenseFacets } from "../shared/expense-list";
-export { EXPENSE_SORT_KEYS, type ExpenseSortKey, type ExpensePage, type ExpenseSummary, type ExpenseFacets };
+import { EXPENSE_SORT_KEYS, type ExpenseSortKey, type ExpensePage, type ExpenseSummary, type ExpenseFacets, type ExpenseVehicleGroup } from "../shared/expense-list";
+export { EXPENSE_SORT_KEYS, type ExpenseSortKey, type ExpensePage, type ExpenseSummary, type ExpenseFacets, type ExpenseVehicleGroup };
 
 export interface ExpenseListOptions {
   sort?: ExpenseSortKey;
@@ -233,6 +233,8 @@ export interface IStorage {
   getExpensePage(filters: ExpenseFilters, options: Required<ExpenseListOptions>): Promise<ExpensePage>;
   getExpenseSummary(filters: ExpenseFilters, recentPerCategory: number): Promise<ExpenseSummary>;
   getExpenseFacets(): Promise<ExpenseFacets>;
+  /** The selection summed per vehicle, newest cost first: one row per vehicle. */
+  getExpenseVehicleGroups(filters: ExpenseFilters): Promise<ExpenseVehicleGroup[]>;
   getExpense(id: number): Promise<Expense | undefined>;
   // `tx`: write inside the caller's transaction (the fuel-status route books the
   // expense together with the vehicle update).

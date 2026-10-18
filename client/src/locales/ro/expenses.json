@@ -242,6 +242,13 @@
     "categoryDialogDescription_other": "{{count}} de cheltuieli în selecția curentă",
     "amountColumnHeaderShort": "Sumă fără TVA",
     "dialogSearchPlaceholder": "Căutați în această categorie...",
+    "dialogViewByVehicle": "Pe vehicul",
+    "vehicleDialogSearchPlaceholder": "Căutați în cheltuielile acestui vehicul...",
+    "dateRange": "{{from}} – {{to}}",
+    "openVehicleCosts": "Vedeți toate cheltuielile pentru {{plate}}",
+    "vehicleCount_one": "{{count}} vehicul",
+    "vehicleCount_few": "{{count}} vehicule",
+    "vehicleCount_other": "{{count}} de vehicule",
     "sortLabel": "Sortare",
     "sortOptions": {
       "date_desc": "Data (cele mai noi primele)",
