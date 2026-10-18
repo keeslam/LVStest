@@ -241,6 +241,16 @@ describe("één regel per voertuig binnen een categorie", () => {
     await waitFor(() => expect(lastListRequest()).toContain("vehicleId=1&category=fuel&q=Post+1&sort=amount&dir=desc"));
     const matches = own.filter((r) => r.description.includes("Post 1")).length;
     await waitFor(() => expect(within(dialog).getByTestId("expenses-fuel-vehicle-1-rows-shown")).toHaveTextContent(`${matches} van ${matches} getoond`));
+
+    // A click on a cost opens that cost; the delete button only asks to delete.
+    openExpenseDialog.mockClear();
+    const costRow = within(dialog).getAllByTestId(/^row-expense-/)[0];
+    const costId = Number(costRow.getAttribute("data-testid")!.split("-").pop());
+    await user.click(within(costRow).getByText(ROWS.find((r) => r.id === costId)!.description));
+    expect(openExpenseDialog).toHaveBeenCalledWith(costId);
+    openExpenseDialog.mockClear();
+    await user.click(within(costRow).getByTestId(`button-delete-expense-${costId}`));
+    expect(openExpenseDialog).not.toHaveBeenCalled();
   });
 
   it("the category dialog lists every vehicle once; its headers sort the rows and its search goes to the server", async () => {

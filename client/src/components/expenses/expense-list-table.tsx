@@ -43,7 +43,8 @@ const defaultDir = (key: ExpenseSortKey): SortDirection => (key === "date" ? "de
  * One compact row per expense: a short date, the plate in bold with the
  * brand and model small beside it, the category as a badge, the description
  * cut off with the full text as a tooltip, and the amount right-aligned in
- * tabular figures. The same rows serve the paged list and the category sections.
+ * tabular figures. A click anywhere on the row opens the cost (2026-10-18).
+ * The same rows serve the paged list and the dialogs.
  */
 export function ExpenseRows({ rows, onDelete, testIdPrefix = "row-expense", showCategory = true }: {
   rows: Expense[];
@@ -57,7 +58,7 @@ export function ExpenseRows({ rows, onDelete, testIdPrefix = "row-expense", show
   return (
     <>
       {rows.map((expense) => (
-        <TableRow key={expense.id} className="[&>td]:py-1.5" data-testid={`${testIdPrefix}-${expense.id}`}>
+        <TableRow key={expense.id} className="cursor-pointer [&>td]:py-1.5" onClick={() => openExpenseDialog(expense.id)} data-testid={`${testIdPrefix}-${expense.id}`}>
           <TableCell className="whitespace-nowrap tabular-nums text-muted-foreground">{formatDateNl(expense.date, "short")}</TableCell>
           <TableCell className="max-w-0">
               {expense.vehicle ? (
@@ -80,11 +81,11 @@ export function ExpenseRows({ rows, onDelete, testIdPrefix = "row-expense", show
           </TableCell>
           <TableCell className="whitespace-nowrap text-right">
             <div className="flex justify-end gap-0.5">
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openExpenseDialog(expense.id)} aria-label={t("common:actions.view")} title={t("common:actions.view")} data-testid={`button-view-expense-${expense.id}`}>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); openExpenseDialog(expense.id); }} aria-label={t("common:actions.view")} title={t("common:actions.view")} data-testid={`button-view-expense-${expense.id}`}>
                 <Eye className="h-4 w-4" />
               </Button>
               {onDelete && (
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => onDelete(expense)} aria-label={t("expenses:detailsPage.deleteButton")} title={t("expenses:detailsPage.deleteButton")} data-testid={`button-delete-expense-${expense.id}`}>
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600 hover:bg-red-50 hover:text-red-700" onClick={(e) => { e.stopPropagation(); onDelete(expense); }} aria-label={t("expenses:detailsPage.deleteButton")} title={t("expenses:detailsPage.deleteButton")} data-testid={`button-delete-expense-${expense.id}`}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               )}
