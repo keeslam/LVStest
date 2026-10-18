@@ -32,6 +32,11 @@ export interface ConfirmDialogProps {
   confirmTestId?: string;
   /** Extra content between the description and the buttons (a warning box with its own checkbox). */
   children?: ReactNode;
+  /**
+   * Extra classes for the dialog content. A confirm that opens on top of a dialog with a raised
+   * layer (the pickup and return dialogs sit at z-[60]) passes "z-[70]" here, or it renders behind it.
+   */
+  contentClassName?: string;
 }
 
 export function ConfirmDialog({
@@ -48,6 +53,7 @@ export function ConfirmDialog({
   confirmDisabled = false,
   confirmTestId,
   children,
+  contentClassName,
 }: ConfirmDialogProps) {
   const { t } = useTranslation("common");
   const finalConfirmLabel = confirmLabel ?? t('actions.confirm');
@@ -92,7 +98,7 @@ export function ConfirmDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
-      <AlertDialogContent data-testid="confirm-dialog">
+      <AlertDialogContent data-testid="confirm-dialog" className={contentClassName}>
         <AlertDialogHeader>
           <div className="flex items-center gap-3">
             {getIcon()}

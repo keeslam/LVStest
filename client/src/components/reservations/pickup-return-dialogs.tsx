@@ -1169,7 +1169,8 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
 
       {/* Duplicate Contract Number Warning Dialog */}
       <Dialog open={showDuplicateWarning} onOpenChange={setShowDuplicateWarning}>
-        <DialogContent className="max-w-md">
+        {/* z-[70]: above the pickup dialog's z-[60] content, or the warning opens behind it. */}
+        <DialogContent className="max-w-md z-[70]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-amber-600">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1231,6 +1232,8 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
           nothing; answering yes sends the same pickup again with the
           confirmation, and the start date (and the price, per B-07) follow. */}
       <ConfirmDialog
+        // z-[70]: opens on top of this dialog's own z-[60] content (see the note there).
+        contentClassName="z-[70]"
         open={earlyPickup !== null}
         onOpenChange={(open) => { if (!open) setEarlyPickup(null); }}
         variant="warning"
@@ -1348,6 +1351,8 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
 
       {/* Delete Pickup Damage Check Confirmation Dialog */}
       <ConfirmDialog
+        // z-[70]: opens on top of this dialog's own z-[60] content (see the note there).
+        contentClassName="z-[70]"
         open={deletePickupDamageCheckDialogOpen}
         onOpenChange={setDeletePickupDamageCheckDialogOpen}
         title={t('pickupReturn.pickup.deletePickupDamageCheckTitle')}
@@ -1378,6 +1383,8 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
 
       {/* Delete Pickup Paper Damage Check Confirmation Dialog */}
       <ConfirmDialog
+        // z-[70]: opens on top of this dialog's own z-[60] content (see the note there).
+        contentClassName="z-[70]"
         open={deletePickupPaperCheckDialogOpen}
         onOpenChange={setDeletePickupPaperCheckDialogOpen}
         title={t('pickupReturn.common.deletePaperDamageCheckDialogTitle')}
@@ -2097,6 +2104,8 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess, onRes
 
       {/* Delete Return Damage Check Confirmation Dialog */}
       <ConfirmDialog
+        // z-[70]: opens on top of this dialog's own z-[60] content (see the note there).
+        contentClassName="z-[70]"
         open={deleteReturnDamageCheckDialogOpen}
         onOpenChange={setDeleteReturnDamageCheckDialogOpen}
         title={t('pickupReturn.return.deleteReturnDamageCheckTitle')}
@@ -2127,6 +2136,8 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess, onRes
 
       {/* Delete Return Paper Damage Check Confirmation Dialog */}
       <ConfirmDialog
+        // z-[70]: opens on top of this dialog's own z-[60] content (see the note there).
+        contentClassName="z-[70]"
         open={deleteReturnPaperCheckDialogOpen}
         onOpenChange={setDeleteReturnPaperCheckDialogOpen}
         title={t('pickupReturn.common.deletePaperDamageCheckDialogTitle')}
