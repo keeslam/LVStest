@@ -240,8 +240,11 @@ Je krijgt geen melding. De auto is er simpelweg niet.
     **Bezorgadres**, **Stad**, **Postcode** en eventueel **Bezorgnotities** in. Halen wij de auto
     aan het einde bij de klant op? Zet dan ook **Ophaalservice bij inleveren** aan. Vul het
     **Ophaaladres** in. Dat mag een andere plek zijn dan het bezorgadres. Met **Zelfde als
-    bezorgadres** vul je het in één klik in. Beide diensten maken meteen een transport aan. Een
-    transport is een rit: bezorgen, en **Terughalen** op de einddatum. Wijzig je het adres of de
+    bezorgadres** vul je het in één klik in. Beide diensten maken bij het opslaan vanzelf een
+    transport aan. Een transport is een rit. **Bezorgservice vereist** maakt een transport van het
+    type **Levering** op de startdatum. **Ophaalservice bij inleveren** maakt een transport
+    **Terughalen** op de einddatum. Huurt de klant zonder einddatum? Dan maakt de app dat
+    transport pas als er een einddatum is. Wijzig je het adres of de
     einddatum? Dan verandert het transport mee. Zet je de dienst uit? Dan wordt dat transport
     geannuleerd. Zonder deze twee diensten gaat de klant ervan uit dat hij de auto bij ons aan de
     zaak ophaalt en inlevert. Wat de klant ervan ziet, staat in [paragraaf 3.7](03-klanten.md).
@@ -342,8 +345,8 @@ wijzigen**, 4 **Reservering annuleren**. Daarnaast **Bewerken**, **Verwijderen**
 huur **Ophalen starten**.*
 
 **Reservering annuleren** staat er alleen zolang de reservering nog loopt. Is de huur al
-**Voltooid** of **Geannuleerd**? Dan verdwijnt de knop. **Datums wijzigen** staat er alleen zolang
-de huur nog niet is opgehaald.
+**Voltooid** of **Geannuleerd**? Dan verdwijnt de knop. **Datums wijzigen** staat er altijd. Ook
+bij een huur die al is opgehaald of afgesloten. Lees daarom de waarschuwing in 5.5.
 
 > **Onthoud:** wil je snel alleen de datums, de klant of de auto corrigeren, of wil je de huur
 > annuleren, zoek de reservering dan op via het **zoekveld bovenin**. Vanuit de kalender krijg je
@@ -431,7 +434,9 @@ starten**, 3 **Overdracht terugdraaien** (5.14).*
 *Het venster **Contractnummer bewerken**: typ een nummer en wacht op **Beschikbaar**.*
 
 **Na elke wijziging:** is er al een contract gemaakt? Dan krijgt dat het oranje label
-**Verouderd**. Klik op **Opnieuw genereren**. Geef de klant de nieuwe versie (hoofdstuk 8).
+**Verouderd**. Ga naar **Documenten** → **Documentbibliotheek**. Klik daar bij het contract op
+**Opnieuw genereren**. In de reservering zelf staat die knop niet. Geef de klant de nieuwe versie
+(hoofdstuk 8, paragraaf 8.6).
 
 ---
 
@@ -525,6 +530,11 @@ de knoppen **Afdrukken**, **Mail naar klant** en **Sluiten**.
 ![Het venster Contract klaar met Afdrukken (1) en Mail naar klant (2)](afbeeldingen/05-contract-klaar.png)
 *Het venster **Contract klaar**: 1 **Afdrukken**, 2 **Mail naar klant**.*
 
+> **Startte je het ophalen vanuit de kalender?** Dan kan **Contract klaar** achter het
+> reserveringsvenster terechtkomen. Je ziet het dan niet. Sluit dan het reserveringsvenster. Nu zie
+> je **Contract klaar** wel. Dit is een bekende fout in de app. Vanaf het scanscherm en met **Nu
+> ophalen** gebeurt dit niet.
+
 **Dit zie je daarna.** De auto staat nu bij de klant. In de lijst **Voertuigen** heeft hij de status
 **Verhuurd**. In de kalender heeft de reservering de kleur van een opgehaalde huur.
 
@@ -535,8 +545,10 @@ de knoppen **Afdrukken**, **Mail naar klant** en **Sluiten**.
 *De kalender na het ophalen: de reservering (1) staat er nog, nu als opgehaalde huur.*
 
 De melding noemt het contract alleen als het er ook echt is. Lukt het maken van het contract niet?
-Dan staat er alleen *Voertuig succesvol opgehaald.* Kijk dan in hoofdstuk 8 hoe je het contract
-alsnog maakt. De auto is dan wel opgehaald.
+Dan staat er alleen *Voertuig succesvol opgehaald.* Je ziet dan het venster **Contract kon niet
+gemaakt worden**. Klik meteen op **Opnieuw proberen**. Sluit dat venster niet eerst. Er is daarna
+nergens een andere knop om het contract te maken (hoofdstuk 8, paragraaf 8.4). De auto is wel
+opgehaald.
 
 **Mail naar klant** stelt eerst het e-mailadres van de klant zelf voor. Dat is het adres op de
 klantkaart. Daarna volgen de andere adressen van de klant. Staat de verzendknop grijs? Dan staat
@@ -557,10 +569,18 @@ blijft dat scherm staan, klaar voor de volgende scan.
 
 ### Zes dingen die de app kan vragen, melden of weigeren
 
-**1. Voertuigopmerkingen.** Staan er opmerkingen bij de auto? Dan zie je eerst
-**Voertuigopmerkingen - Ophaalwaarschuwing** met de tekst *BELANGRIJK: Bekijk deze opmerkingen
-voordat het voertuig vertrekt:*. Lees de opmerkingen. Bespreek ze met de klant. Klik dan op **Ik
-bevestig & ga door**.
+> **Bekend probleem (oktober 2026).** De vensters bij punt 2 (**De huur start eerder**), punt 3
+> (**Dubbel contractnummer**) en punt 5 (**Uitgifte geblokkeerd**) openen nu áchter het venster
+> **Ophaalproces starten**. Je ziet dan alleen dat het scherm donkerder wordt. Druk op **Esc** om de
+> vraag te sluiten. Wat je daarna doet, staat in hoofdstuk 16, paragraaf 16.2, onder *Als de huur
+> eerder begint*.
+
+**1. Voertuigopmerkingen.** Is de opmerking bij de auto veranderd sinds het laatste bevestigde
+ophalen? Of is het een nieuwe opmerking? Dan zie je eerst **Voertuigopmerkingen -
+Ophaalwaarschuwing** met de tekst *BELANGRIJK: Bekijk deze opmerkingen voordat het voertuig
+vertrekt:*. Lees de opmerkingen. Bespreek ze met de klant. Klik dan op **Ik bevestig & ga door**.
+Is de opmerking niet veranderd? Dan komt deze vraag niet. Je ziet in het ophaalvenster dan een
+groen blok **Voertuigopmerkingen bevestigd** met de opmerking erin. Lees hem toch even.
 
 ![Het venster Voertuigopmerkingen - Ophaalwaarschuwing met de opmerking en de knop Ik bevestig & ga door (1)](afbeeldingen/05-voertuigopmerkingen-ophalen.png)
 *De ophaalwaarschuwing: lees de opmerking en klik op **Ik bevestig & ga door** (1).*
@@ -664,12 +684,17 @@ schadecheck gegenereerd.*
    *Zo ziet het veld **Brandstofniveau bij inleveren** eruit. Wijzig het alleen als de tank anders
    staat dan bij het ophalen.*
 5. Maak eventueel een schadecheck met **Inlever-schadecheck aanmaken**. Of upload een **Papieren
-   check**.
+   check**. Doe dit vóór je op **Inleveren voltooien & schadecheck genereren** klikt. Sla de check
+   eerst op met **Check opslaan**. Het schadeformulier neemt de laatst opgeslagen check van deze
+   reservering over. Een check die je pas na het afronden maakt, staat er niet op.
 
    ![De knop Inlever-schadecheck aanmaken, van dichtbij](afbeeldingen/05-inleverproces-k4.png)
    *Zo ziet de knop **Inlever-schadecheck aanmaken** eruit. Klik erop als je een schadecheck wilt
    maken.*
 6. Zet schade, een ontbrekende sleutel of een vuile auto in **Aanvullende notities (optioneel)**.
+   Kosten doorbelasten aan de klant kan hier niet. Het venster heeft daar geen veld voor. Leg een
+   reparatie vast als kostenpost met de categorie **Schade**. Het doorbelasten regel je buiten de
+   app.
 7. Klik op **Inleveren voltooien & schadecheck genereren**.
 
    ![De blauwe knop Inleveren voltooien & schadecheck genereren, van dichtbij](afbeeldingen/05-inleverproces-k5.png)
@@ -686,6 +711,10 @@ gegenereerd.* Daarna zie je **Schadeformulier klaar**. Daarin staan de bestandsn
 
 ![Het venster Schadeformulier klaar met Afdrukken (1) en Mail naar klant (2)](afbeeldingen/05-schadeformulier-klaar.png)
 *Het venster **Schadeformulier klaar**: 1 **Afdrukken**, 2 **Mail naar klant**.*
+
+> **Startte je het inleveren vanuit de kalender?** Dan kan **Schadeformulier klaar** achter het
+> reserveringsvenster terechtkomen. Je ziet het dan niet. Sluit dan het reserveringsvenster. Nu zie
+> je **Schadeformulier klaar** wel. Dit is een bekende fout in de app.
 
 ### Wat er nu automatisch gebeurt
 
@@ -1003,7 +1032,8 @@ Hoort er een vervangend voertuig bij de huur? Dan gaat ook zijn status een stap 
 - De **begin- en einddatum en de totaalprijs blijven staan** zoals ze op dat moment zijn. Liet je
   bij het ophalen de startdatum naar vandaag schuiven (5.7)? Dan blijft die verschuiving staan.
 - **Documenten worden nooit verwijderd.** Ze krijgen het label **Verouderd** (hoofdstuk 8,
-  paragraaf 8.6). Met **Opnieuw genereren** maak je ze opnieuw.
+  paragraaf 8.6). Met **Opnieuw genereren** in **Documenten** → **Documentbibliotheek** maak je
+  ze opnieuw.
 - In de **notities** van de reservering komt een regel als *[TERUGGEDRAAID 2026-10-10
   gebruikersnaam] picked_up → booked*. Wat er al stond, blijft staan.
 - Wie het deed en wat de voorvertoning toen zei, staat in het activiteitenlog (hoofdstuk 10,

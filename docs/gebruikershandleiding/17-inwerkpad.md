@@ -147,7 +147,7 @@ blokkade niet.
 
 Dit is de kern van het werk. Neem er de tijd voor.
 
-**Lezen:** hoofdstuk 1, paragraaf 1.4, en hoofdstuk 16 (Dagelijks werk), paragrafen 16.2 en 16.3.
+**Lezen:** hoofdstuk 1, paragraaf 1.4, en hoofdstuk 16 (Werkstromen), paragrafen 16.1 en 16.2.
 
 **Doen:**
 
@@ -195,7 +195,7 @@ document herkennen. En je weet wanneer je zelf de klant moet bellen.
 ## 17.9 Stap 7 — Week 2: onderhoud, vervangers en transport
 
 **Lezen:** hoofdstuk 7 (Onderhoud) en hoofdstuk 6 (Transport). Lees daarna nog eens het stuk over
-de werkplaats in hoofdstuk 16, paragraaf 16.3.
+de werkplaats in hoofdstuk 16, paragraaf 16.4.
 
 **Doen:**
 
@@ -262,7 +262,7 @@ gericht stellen. Dat is beter dan melden dat "het niet werkt".
 
 ## 17.12 Stap 10 — Week 3: een hele dag zelf
 
-**Lezen:** hoofdstuk 16 (Dagelijks werk) nog één keer, helemaal. En hoofdstuk 18 (Barcode en
+**Lezen:** hoofdstuk 16 (Werkstromen) nog één keer, helemaal. En hoofdstuk 18 (Barcode en
 scannen). Dat is het laatste hoofdstuk van deze handleiding.
 
 **Doen:**

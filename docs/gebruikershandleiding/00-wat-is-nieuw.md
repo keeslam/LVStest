@@ -227,7 +227,7 @@ Staat een knop er niet? Of is hij grijs? Klik of tik er dan op. De app zegt welk
 
 9. **Na de uitrol heb je een kort lijstje.** Sla de bedrijfsnaam op. Controleer de tijdzone. Controleer
    de RDW-typen en pas ze toe. Lees het opstartlog. Vertel de collega's over de wachtwoordregel. Je kunt
-   het lijstje afvinken onder "Na de uitrol (beheerder)" in [hoofdstuk 19](19-acceptatiechecklist.md).
+   het lijstje afvinken onder "Na de uitrol (beheerder)" in [hoofdstuk 22](22-acceptatiechecklist.md).
 
 ---
 
@@ -290,4 +290,4 @@ gezien. Ze zaten in een eerder deel van het werk.
 - De schermafbeeldingen zijn op 17 oktober 2026 opnieuw gemaakt met testgegevens. De namen en
   kentekens erop zijn verzonnen.
 - Zie je in de app iets anders dan hier staat? Geloof dan de app en meld het.
-- Wil je alles zelf uitproberen? Doorloop dan [de acceptatiechecklist](19-acceptatiechecklist.md).
+- Wil je alles zelf uitproberen? Doorloop dan [de acceptatiechecklist](22-acceptatiechecklist.md).

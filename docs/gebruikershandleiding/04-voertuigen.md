@@ -407,6 +407,9 @@ aan? Dan weigert de app het ophalen. Je ziet dan het venster **Uitgifte geblokke
 
 Dat is bewust. Een auto die kapot naar binnen ging, mag er niet stilletjes weer uitkomen. Je
 zet de vlag om met **Voertuig markeren voor onderhoud** en **Terug van onderhoud** (hoofdstuk 7).
+Die knoppen staan niet op de voertuigkaart. Ze staan in een reservering: **Reserveringsdetails** →
+blok **Voertuigservice**. Op de voertuigkaart staat alleen **Beschikbaarheidsstatus** → **Wijzigen** →
+**Reparatie nodig**. Dat is de beschikbaarheid uit A, niet de werkplaatsstatus.
 Of je doet het vanaf het scanscherm met **Onderhoud inplannen** en **Terug uit onderhoud** (hoofdstuk 18).
 
 > **Terug uit onderhoud doet het hele rondje.** De werkplaatsstatus gaat eraf, het onderhoudsblok

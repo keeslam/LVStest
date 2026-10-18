@@ -93,20 +93,23 @@ Open het voertuig. Ga naar het tabblad **Documenten**. Je ziet alleen wat bij de
 Open de reservering via het zoekveld bovenin. Scrol naar het kopje **Documenten**. Scrollen is de
 pagina naar beneden schuiven. Bij het kopje staan knoppen om snel iets te uploaden:
 **+ Contract (ondertekend)**, **+ Schaderapport foto**, **+ Schaderapport PDF** en **+ Overig**.
-Daaronder staat **Geüploade documenten**. Dat zijn de contracten en schadechecks van deze huur. Hier
-zie je ook of een document gemaild is.
+Daaronder staat **Geüploade documenten**. Dat zijn de contracten en schadechecks van deze huur. Of
+een document gemaild is, zie je hier niet. Die regel (*Verzonden op … aan …*) staat alleen in het
+venster **Reserveringsdocumenten**. Dat venster open je alleen vanuit een onderhoudsblok, met
+**Documenten uploaden**. Bij een gewone huur zie je het dus niet.
 
 ![Het blok Documenten in het reserveringsvenster met de uploadknop Contract (ondertekend) (1) en het gemaakte contract (2)](afbeeldingen/08-reserveringsdocumenten.png)
 *Het blok **Documenten** in de reservering. 1 is **+ Contract (ondertekend)**. Daarmee upload je het
 getekende exemplaar. 2 is het contract dat de app bij het ophalen heeft gemaakt.*
 
-De kopjes boven de groepen in dit venster staan in het Nederlands. De omschrijvingen eronder ook.
-Je ziet **Contract (niet ondertekend)**, **Contract (ondertekend)**, **Schadecheck (ophalen)**,
-**Schadecheck (inleveren)** en **Transportrapport**. Dat geldt ook in de documentbibliotheek, op
-de voertuigkaart en in de lijst met documenten bij de reservering. Kentekens in de titels staan
-met streepjes. De opmerking bij een document is ook Nederlands. Bijvoorbeeld *Automatisch
-aangemaakt contract (niet ondertekend) voor reservering #3366*. Het opgeslagen bestand zelf
-verandert hier niet door. Alleen wat je op het scherm leest, is anders.
+In de **Documentbibliotheek** staan de documenttypen in het Nederlands. De omschrijvingen eronder
+ook. Je ziet **Contract (niet ondertekend)**, **Contract (ondertekend)**, **Schadecheck (ophalen)**,
+**Schadecheck (inleveren)** en **Transportrapport**. Kentekens in de titels staan met streepjes. De
+opmerking bij een document is ook Nederlands. Bijvoorbeeld *Automatisch aangemaakt contract (niet
+ondertekend) voor reservering #3366*. In de reserveringsvensters staat het type nog in het Engels.
+Onder **Geüploade documenten** lees je bijvoorbeeld *Contract (Unsigned)* of *Damage Check*. Op de
+voertuigkaart is dat ook zo. Het is hetzelfde document. Het opgeslagen bestand zelf verandert hier
+niet door. Alleen wat je op het scherm leest, is anders.
 
 ---
 
@@ -118,7 +121,9 @@ Genereren betekent: de app maakt het document zelf. Meestal hoef je niets te doe
 wordt gemaakt als je het ophalen afrondt met **Ophalen voltooien & contract genereren**. De
 schadecheck wordt gemaakt bij **Inleveren voltooien & schadecheck genereren**.
 
-Direct daarna zie je een venster met de uitslag:
+Direct daarna zie je een venster met de uitslag. Startte je het ophalen of inleveren vanuit de
+kalender? Dan kan dat venster achter het reserveringsvenster terechtkomen. Sluit dan het
+reserveringsvenster. Daarna zie je de uitslag wel. Dit is een bekende fout in de app.
 
 - **Contract klaar**. Je leest: *"&lt;bestandsnaam&gt; is aangemaakt. Print het of mail het direct naar de
   klant."* Er staan twee knoppen bij: **Afdrukken** en **Mail naar klant**.
@@ -129,8 +134,10 @@ Direct daarna zie je een venster met de uitslag:
   controleer de sjablonen."* In beide gevallen staat de knop **Opnieuw proberen** erbij.
 
 Het ophalen zelf is in beide gevallen wel verwerkt. Een mislukt contract betekent niet dat de auto
-niet is meegegeven. Het betekent alleen dat er geen PDF is. Klik op **Opnieuw proberen**. Of maak
-het contract later alsnog vanuit de reservering.
+niet is meegegeven. Het betekent alleen dat er geen PDF is. Klik meteen op **Opnieuw proberen**.
+Sluit het venster niet eerst. In de reservering staat geen knop om het contract later alsnog te
+maken. Ook **Opnieuw genereren** (8.6) helpt dan niet, want die knop heeft een bestaand contract
+nodig.
 
 > **De archivering bewaart nooit een kapot bestand.** Mislukt het maken van het contract, dan
 > schrijft de app ook geen half of ongeldig bestand naar de documentbibliotheek voor die poging.
@@ -154,7 +161,8 @@ In de documentbibliotheek heeft elk document dezelfde vijf knoppen:
 
 ![Een document in de bibliotheek met Bekijken (1), Downloaden (2), Afdrukken (3), E-mailen (4), Verwijderen (5) en Opnieuw genereren (6)](afbeeldingen/08-documentknoppen.png)
 *De knoppen bij een document: 1 **Bekijken**, 2 **Downloaden**, 3 **Afdrukken**, 4 **E-mailen**, 5
-**Verwijderen**. Bij een verouderd contract staat er ook 6 **Opnieuw genereren** (zie 8.6).*
+**Verwijderen**. Bij een contract dat de app zelf maakte, staat er ook 6 **Opnieuw genereren** (zie
+8.6).*
 
 Klik je op afdrukken? Dan zie je de melding *"Afdrukken gestart — Het afdrukvenster zou nu open
 moeten zijn. De pop-up sluit automatisch."* Lukt dat niet? Dan krijg je een van deze twee meldingen:
@@ -351,8 +359,9 @@ app vervangt het ook niet stilletjes. Wat ooit is afgedrukt of gemaild, blijft t
 
 ### Bewust een nieuwe versie maken
 
-Naast een verouderd document staat de knop **Opnieuw genereren**. Die maakt een nieuwe versie met
-de gegevens zoals ze nu zijn. Tijdens het maken staat er *"Bezig met genereren…"*. Daarna krijg je
+Bij elk contract dat de app zelf maakte, staat de knop **Opnieuw genereren**. Ook als het contract
+niet verouderd is. Klik er dus alleen op als het nodig is. De knop maakt een nieuwe versie met de
+gegevens zoals ze nu zijn. Tijdens het maken staat er *"Bezig met genereren…"*. Daarna krijg je
 de melding:
 
 > **Nieuwe versie aangemaakt** — *"Versie 2 van &lt;bestandsnaam&gt; staat nu in het dossier. De oude
@@ -361,13 +370,16 @@ de melding:
 De oude versie houdt zijn label **Verouderd**. De nieuwe versie heeft geen label. Lukt het niet?
 Dan staat er **Opnieuw genereren is niet gelukt** met de reden erbij.
 
-De knop **Opnieuw genereren** staat op twee plekken. Hij staat in de **Documentbibliotheek** en in
-het venster **Reserveringsdocumenten**.
+Je vindt **Opnieuw genereren** in **Documenten** → **Documentbibliotheek**. Klap de auto open en
+daarna de groep **Contracten**. In de reserveringsvensters en op de voertuigkaart staat de knop
+niet. Alleen het venster **Reserveringsdocumenten** heeft hem ook. Dat venster open je alleen vanuit
+een onderhoudsblok (8.3).
 
 ### Waar de knop niet staat
 
 **Opnieuw genereren** zie je alleen bij documenten die de app zelf kan namaken. Dat zijn het
-huurcontract en de schadecheck van een reservering. Bij een geüpload document staat de knop er
+huurcontract en de niet-ondertekende schadecheck van een reservering. Het schadeformulier dat de
+app bij het inleveren maakt, hoort daar niet bij. Bij een geüpload document staat de knop er
 niet. Ook niet bij een transportrapport, en niet bij een document zonder reservering. De app heeft
 dan niets om het document opnieuw mee op te bouwen.
 
@@ -432,6 +444,6 @@ Dat is geen storing. Vraag een beheerder om het vinkje aan te zetten (hoofdstuk 
   reservering.
 - **Bekijken · Downloaden · Afdrukken · E-mailen · Verwijderen** staan bij elk document.
 - Verandert de reservering? Dan krijgt het document het label **Verouderd**. Jij beslist wanneer
-  er een nieuwe versie komt, met **Opnieuw genereren**.
+  er een nieuwe versie komt, met **Opnieuw genereren** in de **Documentbibliotheek**.
 - Het oude document verdwijnt nooit.
 - Een sjabloon zonder velden wordt geweigerd. Zo houdt de app een leeg contract tegen.

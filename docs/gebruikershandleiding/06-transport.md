@@ -181,13 +181,23 @@ altijd dezelfde:
 - het **Voertuig** is de auto die weggaat;
 - het **Vervangend voertuig** is de auto die ervoor in de plaats komt.
 
-Het transport verandert niets aan de auto's zelf. Het legt alleen de beweging vast. Wat er met de
-lopende huur en het onderhoud moet gebeuren, regel je in hoofdstuk 5 en 7.
+Het transport legt de beweging vast. Twee dingen veranderen daarbij vanzelf. Kies je een
+vervangend voertuig? Dan maakt de app een reservering op die auto. Zo kan hij niet dubbel geboekt
+worden. Zet je **Pech- of onderhoudswissel** aan? Dan verandert de werkplaatsstatus van de auto
+(zie hieronder). Wat er verder met de lopende huur en het onderhoud moet gebeuren, regel je in
+hoofdstuk 5 en 7.
 
 Is de wissel voor onze eigen rekening? Bijvoorbeeld bij pech of onderhoud. Zet dan **Pech- of
 onderhoudswissel** aan. Er staat bij: *Onze eigen kosten, niet die van de klant — standaard niet
 gefactureerd.* Wil je de wissel toch aan de klant doorbelasten? Zet dan daarnaast ook
 **Doorbelasten aan klant** aan.
+
+> **Pech- of onderhoudswissel verandert de werkplaatsstatus.** Sla je het transport op met dit
+> vinkje aan? Dan zet de app de auto meteen op **Onderhoud nodig**. Dat is de werkplaatsstatus
+> (hoofdstuk 7, paragraaf 7.5). De auto kan dan niet worden uitgegeven. Rond je het transport af?
+> Of annuleer je het? Dan haalt de app de werkplaatsstatus er weer af. Dat gebeurt ook als de auto
+> nog in de werkplaats staat. Staat hij er nog? Zet hem dan opnieuw op onderhoud (hoofdstuk 7).
+> Bij een extern voertuig verandert er niets, want dat staat niet in ons wagenpark.
 
 ---
 

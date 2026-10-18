@@ -243,8 +243,9 @@ vinkje voor rapporten? Dan toont het scherm **Rapporten** voor jou alleen de fis
 knop **Fiscale check** (hoofdstuk 15, paragraaf 15.4).
 
 **Een bekeuring openen.** Klik op een regel. Het venster toont het bedrag, de **Administratiekosten**
-en het **Totaal**. Ook zie je de klant, de reservering en de bestuurder. Wijzig je de
-administratiekosten en klik je op **Opslaan**? Dan blijft dat bedrag echt bewaard. Bedragen staan
+en het **Totaal**. Ook zie je de klant, de reservering en de bestuurder. De administratiekosten pas je
+hier niet aan. Ze komen uit **App-instellingen** (hoofdstuk 10). Hoe je een bekeuring invoert en koppelt,
+staat in [hoofdstuk 20](20-klantenportaal-en-bekeuringen.md). Bedragen staan
 als € 95,00. Tijden staan zonder seconden. Kentekens staan met streepjes. Dat geldt ook in het
 klantenportaal en in de mail aan de klant. Elke handeling meldt zichzelf met een eigen zin:
 *Bekeuring opgeslagen.*, *Bekeuring gekoppeld.*, *Bekeuring ontkoppeld.*, *Bekeuring geannuleerd.*
@@ -340,8 +341,8 @@ scherm) en **Onderhoud plannen**. In de kalender staan de werkplaatsafspraken en
 
 **Kosten**: het scherm **Kostenbeheer** met **Factuur scannen** en **Kosten registreren**.
 Daaronder staan het **Kostenoverzicht** (*Bekijk en beheer alle voertuiggerelateerde kosten*) en de
-**Kostensamenvatting**. Kosten heeft geen eigen hoofdstuk. De klikpaden staan in hoofdstuk 13,
-paragraaf 13.10. Kosten vastleggen met de auto in je hand staat in hoofdstuk 18. Wat je moet weten:
+**Kostensamenvatting**. Alles over kosten en facturen, stap voor stap, staat in
+[hoofdstuk 19](19-kosten-en-facturen.md). Kosten vastleggen met de auto in je hand staat in hoofdstuk 18. Wat je moet weten:
 
 - **Filters bovenaan, twee weergaven eronder.** Filteren betekent: alleen de regels tonen die bij
   je keuze passen. Boven de lijst filter je op **Voertuig** (typ het kenteken met of zonder

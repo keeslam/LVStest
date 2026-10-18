@@ -71,6 +71,11 @@ Is er niets op die dag? Dan staat er *Geen onderhoudsevenementen gepland voor de
 
 ## 7.2 Onderhoud plannen
 
+**Wie het mag.** Om onderhoud te plannen heb je het vinkje **Reserveringen beheren** nodig.
+**Onderhoud beheren** alleen is niet genoeg. Zonder **Reserveringen beheren** staat de knop
+**Onderhoud plannen** grijs. Dat geldt ook voor de tegel **Onderhoud inplannen** op het scanscherm.
+Geef een werkplaatsaccount dat zelf plant dus ook **Reserveringen beheren**.
+
 1. Klik rechtsboven op **Onderhoud plannen**. Je ziet nu het venster **Onderhoud plannen**. Daar
    staat de uitleg *Meld pech, plan reparaties of onderhoud voor je voertuigen. Ideaal wanneer een
    voertuig direct aandacht nodig heeft of versleten onderdelen heeft.*
@@ -389,11 +394,15 @@ vervangende reservering is beëindigd.* Je hoeft de auto daarna niet meer zelf v
 
 Onderhoud dat verderop in de kalender staat, blijft gewoon staan.
 
-> **De werkplaatsstatus verdwijnt niet vanzelf bij een huur of een transport.** Niet bij het innemen
-> van een huur en niet bij het afronden van een transport. Dat is met opzet: een auto die kapot naar
-> binnen ging, mag er niet stilletjes weer uitkomen. Je geeft hem vrij met één van deze twee knoppen
-> — of door het onderhoud zelf af te ronden met **Afronden** (7.6): dat is een bewuste handeling van
-> de werkplaats en haalt de status er wél af.
+> **De werkplaatsstatus verdwijnt niet vanzelf bij het innemen van een huur.** Dat is met opzet.
+> Een auto die kapot naar binnen ging, mag er niet stilletjes weer uitkomen. Je geeft hem vrij met
+> één van deze twee knoppen. Of je rondt het onderhoud zelf af met **Afronden** (7.6). Dat is een
+> bewuste handeling van de werkplaats. Die haalt de status er wél af.
+>
+> **Een transport met Pech- of onderhoudswissel werkt anders.** Sla je zo'n transport op? Dan zet
+> de app de auto meteen op **Onderhoud nodig**. Rond je dat transport af, of annuleer je het? Dan
+> haalt de app de werkplaatsstatus er weer af. Dat gebeurt ook als de auto nog in de werkplaats
+> staat. Staat hij er nog? Zet hem dan opnieuw op onderhoud. Zie hoofdstuk 6, paragraaf 6.3.
 
 ---
 
@@ -480,8 +489,9 @@ Alles gebeurt in één keer, of helemaal niet:
 - **Het blok sluit.** De **Afrondingsdatum** wordt de einddatum van het blok. De begindatum blijft
   staan, want het werk is begonnen toen het begon. Een afrondingsdatum vóór de begindatum wordt
   geweigerd.
-- **De voertuigkaart wordt bijgewerkt:** de **APK-datum** en de **kilometerstand**, als je ze hebt
-  ingevuld. Is de categorie **Gepland onderhoud**? Dan wordt ook de **laatste servicedatum** gelijk
+- **De voertuigkaart wordt bijgewerkt:** de **APK-datum** en de **kilometerstand**. Beide velden
+  staan vooraf ingevuld. Wat erin staat, wordt opgeslagen. Ook als je er niets aan veranderde. Alleen
+  een leeg veld APK-datum laat de APK-datum van de auto met rust. Is de categorie **Gepland onderhoud**? Dan wordt ook de **laatste servicedatum** gelijk
   aan de afrondingsdatum. Vulde je een kilometerstand in? Dan wordt de laatste servicestand gelijk aan
   die kilometerstand.
 - **Het APK-formulier wordt een document**, bij de auto én bij het blok. Het documenttype is *APK
@@ -601,7 +611,8 @@ of geannuleerd blok heeft geen van beide knoppen. De twee knoppen vragen elk een
 *Het tabblad **Vervangers**: klik op **Toewijzen** (1) om een auto aan een placeholder te geven.*
 
 Heb je het vinkje niet? Dan staat de knop er wel, maar grijs. Tik of klik erop. De app zegt dan welk
-vinkje je mist (hoofdstuk 15, paragraaf 15.9). Een werkplaatsprofiel heeft beide vinkjes.
+vinkje je mist (hoofdstuk 15, paragraaf 15.9). Geef een werkplaatsaccount daarom beide vinkjes.
+Moet het ook onderhoud plannen? Dan heeft het ook **Reserveringen beheren** nodig (7.2).
 
 **Verwijderen of annuleren wist ook de reparatiestand.** Zet je een blok op **Binnen**? Dan krijgt
 de auto **Reparatie nodig**. De app onthoudt welk blok dat deed. Verwijder je dat blok daarna, of
@@ -676,7 +687,7 @@ verzetten. Die aanvragen komen bij jou terecht.
 |---|---|
 | **Inplannen in de onderhoudskalender** | Een nieuwe storingsmelding die je inplant |
 | **Onderhoud verplaatsen** | Een verzoek om een bestaande afspraak te verzetten |
-| **Antwoord sturen (blijft open)** | Je hebt een vraag of wilt iets melden. De aanvraag blijft openstaan |
+| **Antwoord mailen (blijft open)** | Je hebt een vraag of wilt iets melden. De aanvraag blijft openstaan |
 | **Afwijzen** | De aanvraag gaat niet door |
 
 6. Kies je een van de eerste twee? Dan klapt een klein formulier open. Vul de **Datum** in

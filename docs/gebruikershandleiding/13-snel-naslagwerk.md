@@ -193,6 +193,8 @@ Zie hoofdstuk 8.
 
 ## 13.10 Kosten
 
+Uitleg met plaatjes: [hoofdstuk 19](19-kosten-en-facturen.md).
+
 | Wat je wilt | Klikpad |
 |---|---|
 | Kosten vastleggen | **Kosten** → **Kosten registreren** (hetzelfde venster ook vanaf het Dashboard; een voertuig is verplicht) |
@@ -213,6 +215,8 @@ Zie hoofdstuk 2, paragraaf 2.8.
 
 ## 13.11 Klantenportaal en bekeuringen
 
+Uitleg met plaatjes: [hoofdstuk 20](20-klantenportaal-en-bekeuringen.md).
+
 | Wat je wilt | Klikpad |
 |---|---|
 | Het beheer van het klantenportaal openen | **Klantenportaal** |
@@ -220,7 +224,7 @@ Zie hoofdstuk 2, paragraaf 2.8.
 | Een aanvraag oppakken zonder hem meteen af te handelen | In het aanvraagvenster → **In behandeling nemen** |
 | Een verlenging goedkeuren | In het aanvraagvenster → **Goedkeuren (past reservering aan)** |
 | Een huuraanvraag omzetten in een reservering | In het aanvraagvenster → **Goedkeuren: reservering aanmaken** |
-| Alleen een antwoord sturen | In het aanvraagvenster → **Beantwoorden en afhandelen**, of **Antwoord sturen (blijft open)** |
+| Alleen een antwoord sturen | In het aanvraagvenster → **Beantwoorden en afhandelen**, of **Antwoord mailen (blijft open)** |
 | Een klant toegang geven tot het portaal | **Klantenportaal** → **Account uitnodigen** |
 | Een bekeuring invoeren | **Klantenportaal** → tegel **Bekeuringen** → **Nieuwe bekeuring** |
 | Een bekeuringsbrief inlezen | **Klantenportaal** → **Brieven scannen** |
@@ -252,6 +256,8 @@ Zie hoofdstuk 9.
 ---
 
 ## 13.13 Rapporten
+
+Uitleg met plaatjes: [hoofdstuk 21](21-rapporten.md).
 
 | Wat je wilt | Klikpad |
 |---|---|

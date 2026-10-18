@@ -5,7 +5,7 @@ Car Rental Manager
 Gebruikershandleiding
 Voor nieuwe medewerkers
 
-Versie: 1.2
+Versie: 1.3
 Datum: 18 oktober 2026
 ```
 
@@ -43,11 +43,14 @@ op een treffer.
 
 ## Hoe je deze handleiding gebruikt
 
+- **Begin hier: [hoofdstuk 16, Werkstromen](16-dagelijks-werk.md).** Daar staat het werk van begin
+  tot eind, in de volgorde waarin je het echt doet: een verhuur, een auto naar de werkplaats, een nieuwe
+  auto, een factuur, een bekeuring, een aanvraag van een klant. Bij elke stap staat een plaatje.
+- Ben je vandaag begonnen? Lees hoofdstuk 1 en 2, daarna hoofdstuk 16, en werk dan hoofdstuk 17 af.
+- Wil je alles over één scherm weten? Kijk in de hoofdstukken 3 tot en met 10 en 18 tot en met 21.
+- Zoek je één handeling? Kijk in hoofdstuk 13, het snel naslagwerk, of zoek in de app.
 - Wil je weten wat er sinds de laatste uitrol anders werkt? Hoofdstuk 0.
-- Wil je alles zelf uitproberen en afvinken? Hoofdstuk 19, de acceptatiechecklist.
-- Ben je vandaag begonnen? Lees hoofdstuk 1 en 2, en werk daarna hoofdstuk 17 af.
-- Zoek je één handeling? Kijk in hoofdstuk 13, het snel naslagwerk.
-- Wil je weten hoe een werkdag hoort te lopen? Hoofdstuk 16.
+- Wil je alles zelf uitproberen en afvinken? Hoofdstuk 22, de acceptatiechecklist.
 - Snap je een woord niet? Hoofdstuk 14, de woordenlijst.
 
 ---
@@ -72,14 +75,23 @@ op een treffer.
 | 13 | [Snel naslagwerk](13-snel-naslagwerk.md) | Elke veelgebruikte taak als één regel klikpad |
 | 14 | [Woordenlijst](14-woordenlijst.md) | De woorden die de app gebruikt, uitgelegd |
 | 15 | [Rollen en rechten](15-rollen-en-rechten.md) | Wie wat mag, en wat je ziet als je een recht mist |
-| 16 | [Dagelijks werk](16-dagelijks-werk.md) | De ochtend, de dag, het einde van de dag |
+| 16 | [Werkstromen: zo werk je met de app](16-dagelijks-werk.md) | Het werk van begin tot eind, stap voor stap met plaatjes: verhuur, werkplaats, nieuwe auto, facturen, bekeuringen, aanvragen, de werkdag |
 | 17 | [Inwerkpad](17-inwerkpad.md) | In welke volgorde je dit leert, met oefeningen |
 | 18 | [Barcode en scannen](18-barcode-en-scannen.md) | Sleutellabels scannen, doorwerken vanaf het scanscherm, de sleutelkast-audit |
-| 19 | [Acceptatiechecklist](19-acceptatiechecklist.md) | Een afvinkbare lijst van alles wat de app doet, hoofdstuk voor hoofdstuk, om zelf uit te proberen |
+| 19 | [Kosten en facturen](19-kosten-en-facturen.md) | Kosten registreren, facturen per e-mail controleren en boeken, factuur scannen |
+| 20 | [Klantenportaal en bekeuringen](20-klantenportaal-en-bekeuringen.md) | Aanvragen van klanten afhandelen, portaalaccounts, bekeuringen invoeren en koppelen, de fiscale check |
+| 21 | [Rapporten](21-rapporten.md) | Rapporten bekijken en afdrukken, een eigen rapport bouwen, onderhoudskosten analyseren |
+| 22 | [Acceptatiechecklist](22-acceptatiechecklist.md) | Een afvinkbare lijst van alles wat de app doet, hoofdstuk voor hoofdstuk, om zelf uit te proberen |
 
-Alle achttien hoofdstukken zijn af, met daarbij een overzicht van wat nieuw is (hoofdstuk 0) en een
-acceptatiechecklist (hoofdstuk 19). De schermafbeeldingen staan in de map `afbeeldingen/` en
+Alle eenentwintig hoofdstukken zijn af, met daarbij een overzicht van wat nieuw is (hoofdstuk 0) en een
+acceptatiechecklist (hoofdstuk 22). De schermafbeeldingen staan in de map `afbeeldingen/` en
 worden vanuit de hoofdstukken zelf getoond.
+
+**Versie 1.3, 18 oktober 2026.** Hoofdstuk 16 is nu het hoofdstuk met de werkstromen: het werk van
+begin tot eind in de volgorde waarin je het doet, bij elke stap een plaatje. Nieuw zijn hoofdstuk 19
+(Kosten en facturen), 20 (Klantenportaal en bekeuringen) en 21 (Rapporten); de acceptatiechecklist is
+hoofdstuk 22 geworden. Een aantal beschrijvingen in hoofdstuk 4 tot en met 8 is rechtgezet waar de app
+anders werkt dan er stond.
 
 **Versie 1.2, 18 oktober 2026.** Alle hoofdstukken zijn herschreven in eenvoudig Nederlands: korte
 zinnen, "je", steeds "klik op X, daarna zie je Y". Bij elke stap staat nu een afbeelding van dichtbij
@@ -91,5 +103,5 @@ nieuwe opzet van **Kosten**, klikbare rijen en sorteerbare kolomkoppen, het afdr
 **Rapporten**, de korte code op sleutellabels en een uitgebreider activiteitenlog (hoofdstuk 0). De
 afbeeldingen worden gemaakt met `node scripts/handleiding/run.mjs` tegen de testomgeving (zie
 `scripts/handleiding/lib.mjs` en `scripts/handleiding/run-all.sh`). Het PDF-bestand
-(`Gebruikershandleiding-Car-Rental-Manager-v1.2.pdf`) maak je opnieuw met
+(`Gebruikershandleiding-Car-Rental-Manager-v1.3.pdf`) maak je opnieuw met
 `node scripts/build-manual-pdf.cjs`.

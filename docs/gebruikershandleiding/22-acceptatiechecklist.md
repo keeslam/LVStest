@@ -1,7 +1,7 @@
-# 19. Acceptatiechecklist
+# 22. Acceptatiechecklist
 
 Met deze lijst loop je de hele app zelf na. Dat doe je voordat je de app vrijgeeft, of nadat hij is
-uitgerold. De lijst volgt de handleiding hoofdstuk voor hoofdstuk (1 tot en met 18). Alles wat de
+uitgerold. De lijst volgt de handleiding hoofdstuk voor hoofdstuk (1 tot en met 21). Alles wat de
 handleiding over de app zegt, probeer je hier één keer zelf uit. Daarna vink je het af.
 
 Elke regel is op dezelfde manier opgebouwd. Eerst staat **wat je test**. Dan het **klikpad en wat je
@@ -663,7 +663,7 @@ paragraaf 15.7.
 - [ ] **In behandeling nemen.** Klik op de knop. Verwacht: de status verandert. (hfst 7.9)
 - [ ] **Inplannen.** Klik op **Inplannen in de onderhoudskalender**. Vul **Datum** (*Alleen werkdagen (ma t/m vr)*), **Duur (dagen)** en **Soort** in. Vul **Notitie voor de klant** in. Klik op **Inplannen en bevestigen**. Verwacht: **Onderhoud #… staat in de kalender**. (hfst 7.9)
 - [ ] **Verplaatsen.** Klik op **Onderhoud verplaatsen** → **Verplaatsen en bevestigen**. Verwacht: **Onderhoud #… is verplaatst**. (hfst 7.9)
-- [ ] **Antwoord sturen en afwijzen.** Klik op **Antwoord sturen (blijft open)**. Klik op **Afwijzen** zonder tekst. Verwacht: *Vul een antwoord in.* (hfst 7.9)
+- [ ] **Antwoord sturen en afwijzen.** Klik op **Antwoord mailen (blijft open)**. Klik op **Afwijzen** zonder tekst. Verwacht: *Vul een antwoord in.* (hfst 7.9)
 - [ ] **Geen Beantwoorden en afhandelen bij onderhoud.** Verwacht: de tip *Een onderhoudsmelding kan alleen worden afgehandeld via Inplannen (zet het in de kalender) of Afwijzen.* (hfst 7.9)
 
 ---
@@ -956,10 +956,10 @@ Het naslagwerk is een lijst klikpaden. Deze regels controleren dat de klikpaden 
 - [ ] **13.9 Documenten.** Volg de paden: alle documenten, per auto, per huur, uploaden (ook via **Scannen** → **Document uploaden**), zoeken, afdrukken, downloaden, mailen, **Opnieuw genereren** en de sjablonen. (hfst 13.9)
 - [ ] **13.10 Kosten.** Volg de paden: kosten vastleggen (ook vanaf het Dashboard en via **Scannen** → **Kosten registreren**), filteren, **Exporteren (CSV)**, **Logboek**, **Verwijderde kostenposten** → **Terugzetten**, **Factuur scannen**, kosten van één auto en **Recente kosten** → **Alles bekijken**. **(nieuw: prullenbak Kosten)** (hfst 13.10)
 - [ ] **13.11 Klantenportaal en bekeuringen.** Volg elk pad. Zie ook de aparte regels hieronder. (hfst 13.11)
-- [ ] **Aanvraag oppakken.** Klik in het aanvraagvenster op **In behandeling nemen**. (hfst 13.11, 16.3)
-- [ ] **Verlenging goedkeuren.** Klik op **Goedkeuren (past reservering aan)**. Verwacht: de reservering is meteen aangepast. (hfst 13.11, 16.3)
-- [ ] **Van een huuraanvraag een boeking maken.** Klik op **Goedkeuren: reservering aanmaken**. Verwacht: *Reservering aanmaken uit deze aanvraag*. (hfst 13.11, 16.3)
-- [ ] **Alleen antwoorden.** Klik op **Beantwoorden en afhandelen**, of op **Antwoord sturen (blijft open)**. Botst de gevraagde periode? Dan zie je **Conflict met reservering #…**. (hfst 13.11, 16.3)
+- [ ] **Aanvraag oppakken.** Klik in het aanvraagvenster op **In behandeling nemen**. (hfst 13.11, 16.8)
+- [ ] **Verlenging goedkeuren.** Klik op **Goedkeuren (past reservering aan)**. Verwacht: de reservering is meteen aangepast. (hfst 13.11, 16.8)
+- [ ] **Van een huuraanvraag een boeking maken.** Klik op **Goedkeuren: reservering aanmaken**. Verwacht: *Reservering aanmaken uit deze aanvraag*. (hfst 13.11, 16.8)
+- [ ] **Alleen antwoorden.** Klik op **Beantwoorden en afhandelen**, of op **Antwoord mailen (blijft open)**. Botst de gevraagde periode? Dan zie je **Conflict met reservering #…**. (hfst 13.11, 16.8)
 - [ ] **Een klant een portaalaccount geven.** Ga naar **Klantenportaal** → **Account uitnodigen**. (hfst 13.11)
 - [ ] **Een bekeuring invoeren en inlezen.** Klik op de tegel **Bekeuringen** → **Nieuwe bekeuring**. Probeer ook **Brieven scannen**. Verwacht: een geregistreerde bekeuring zonder mail. **(nieuw)** (hfst 13.11)
 - [ ] **De hele lijst met bekeuringen openen.** [kantoor met Boetes bekijken] Ga naar **Klantenportaal** → knop **Bekeuringen**. Verwacht: de lijst opent. Zonder Boetes-vinkje is de knop grijs. Het ontbrekende vinkje wordt genoemd. (hfst 13.11)
@@ -1015,36 +1015,37 @@ Het naslagwerk is een lijst klikpaden. Deze regels controleren dat de klikpaden 
 
 ---
 
-## Hoofdstuk 16 — Dagelijks werk
+## Hoofdstuk 16 — Werkstromen
 
 Doe dit als een echte werkdag. Het liefst met twee collega's.
 
 ### De ochtend
 
-- [ ] **Stap 1: het Dashboard lezen.** Bekijk de back-upbalk, **APK verloopt binnenkort**, **Achterstallige verhuringen** en **Beheer vervangende voertuigen** → **Nog te bepalen**. (hfst 16.2)
-- [ ] **Stap 2: vervangers toewijzen.** Klik op **Voertuig toewijzen** bij een regel op **Nog te bepalen**. (hfst 16.2)
-- [ ] **Stap 3: wat er vandaag meegaat.** Bekijk **Reserveringen** (vandaag: **uit**/**in**, **+… meer**, **Vandaag**). Bekijk **Onderhoud** (label **Vervanger nodig**). Bekijk **Transporten** (tellers **Wacht op planning** en **Klaar voor levering**). (hfst 16.2)
-- [ ] **Stap 4: achterstallig nalopen.** Klik op **… achterstallig**. Kies per regel: laten staan, **Details bekijken** → **Inleveren starten**, of corrigeren. (hfst 16.2)
-- [ ] **Stap 5: portaalaanvragen.** Ga naar **Klantenportaal** → **Aandacht nodig**. (hfst 16.2)
+- [ ] **Stap 1: het Dashboard lezen.** Bekijk de back-upbalk, **APK verloopt binnenkort**, **Achterstallige verhuringen** en **Beheer vervangende voertuigen** → **Nog te bepalen**. (hfst 16.1)
+- [ ] **Stap 2: vervangers toewijzen.** Klik op **Voertuig toewijzen** bij een regel op **Nog te bepalen**. (hfst 16.1)
+- [ ] **Stap 3: wat er vandaag meegaat.** Bekijk **Reserveringen** (vandaag: **uit**/**in**, **+… meer**, **Vandaag**). Bekijk **Onderhoud** (label **Vervanger nodig**). Bekijk **Transporten** (tellers **Wacht op planning** en **Klaar voor levering**). (hfst 16.1)
+- [ ] **Stap 4: achterstallig nalopen.** Klik op **… achterstallig**. Kies per regel: laten staan, **Details bekijken** → **Inleveren starten**, of corrigeren. (hfst 16.1)
+- [ ] **Stap 5: portaalaanvragen.** Ga naar **Klantenportaal** → **Aandacht nodig**. (hfst 16.1)
 
 ### Tijdens de dag
 
-- [ ] **Een klant komt ophalen.** Volg de zes stappen in 16.3. Controleer de eerdere startdatum, de werkplaats-melding en de volgorde. (hfst 16.3)
-- [ ] **Een auto komt terug.** Volg de zes stappen. De huur sluit meteen. Controleer het kenteken en de klant vóór je afrondt. (hfst 16.3)
+- [ ] **Een klant komt ophalen.** Volg de stappen in 16.2. Controleer de eerdere startdatum, de werkplaats-melding en de volgorde. (hfst 16.2)
+- [ ] **Een auto komt terug.** Volg de zes stappen. De huur sluit meteen. Controleer het kenteken en de klant vóór je afrondt. (hfst 16.2)
 - [ ] **Een klant belt.** Zoek op contractnummer. Probeer: langer doorrijden (**Datums wijzigen**), een vrije auto volgende week (eerst datums), schade (notities) en een bekeuring (**Klantenportaal** → **Bekeuringen**). (hfst 16.3)
-- [ ] **Een auto moet naar de werkplaats.** Houd de goede volgorde aan. Zet de auto eerst op onderhoud (**Voertuig markeren voor onderhoud**, of **Onderhoud plannen**, of scan → **Onderhoud inplannen**). Regel dan de vervanger. Regel dan het transport. Rond af met **Terug van onderhoud** (of **Afronden**). Vergeet je een keuze? Dan zie je **Ontbrekende toewijzingen vervangend voertuig**. **(nieuw: Afronden)** (hfst 16.3)
-- [ ] **Een portaalaanvraag komt binnen.** Kijk naar het rode bolletje, de portaaltegel en **Aandacht nodig**. De soorten zijn **Verlenging**, **Eerder inleveren**, **Schademelding**, **Vraag over bekeuring**, **Huuraanvraag**, **Onderhoud/storing**, **Kilometerstand** en **Overig**. Handel af met de vijf knoppen. **Afwijzen** vraagt een toelichting in **Antwoord aan klant**. (hfst 16.3)
-- [ ] **Een transport.** Bekijk de tabbladen. Probeer meerdere regels in één keer. Verwacht: **Vervangend voertuig vereist** als er geen vervanger is toegewezen. (hfst 16.3)
+- [ ] **Een auto moet naar de werkplaats.** Houd de goede volgorde aan. Zet de auto eerst op onderhoud (**Voertuig markeren voor onderhoud**, of **Onderhoud plannen**, of scan → **Onderhoud inplannen**). Regel dan de vervanger. Regel dan het transport. Rond af met **Terug van onderhoud** (of **Afronden**). Vergeet je een keuze? Dan zie je **Ontbrekende toewijzingen vervangend voertuig**. **(nieuw: Afronden)** (hfst 16.4)
+- [ ] **Een portaalaanvraag komt binnen.** Kijk naar het rode bolletje, de portaaltegel en **Aandacht nodig**. De soorten zijn **Verlenging**, **Eerder inleveren**, **Schademelding**, **Vraag over bekeuring**, **Huuraanvraag**, **Onderhoud/storing**, **Kilometerstand** en **Overig**. Handel af met de vijf knoppen. **Afwijzen** vraagt een toelichting in **Antwoord aan klant**. (hfst 16.8)
+- [ ] **Een transport.** Bekijk de tabbladen. Probeer meerdere regels in één keer. Verwacht: **Vervangend voertuig vereist** als er geen vervanger is toegewezen. (hfst 16.4)
+- [ ] **Een nieuwe auto in de vloot.** Volg 16.5: **Voertuig toevoegen** → kenteken → **Opzoeken**, opslaan, daarna het sleutellabel afdrukken. Verwacht: *Voertuiggegevens gevonden*, en het label met de barcode van de auto. (hfst 16.5)
 
 ### Het einde van de dag
 
-- [ ] **1. Alles ingenomen?** Loop in het vakje van vandaag elke regel met **in** na. (hfst 16.4)
-- [ ] **2. Vervangers.** Controleer dat er geen rij meer op **Nog te bepalen** staat. (hfst 16.4)
-- [ ] **3. Portaalaanvragen aangeraakt.** Controleer dat het rode bolletje weg is, of dat de aanvragen op **In behandeling** staan. (hfst 16.4)
-- [ ] **4. Geannuleerd?** Controleer dat alles wat eraan hing, is meegegaan. (hfst 16.4)
-- [ ] **5. Wat morgen moet.** Klik op het belletje → **Nieuwe melding**. Vul een titel, datum en prioriteit in. (hfst 16.4)
-- [ ] **Uitloggen.** Log uit. (hfst 16.4)
-- [ ] **Eén keer per week.** Controleer **APK verloopt binnenkort**, de achterstallige verhuringen (ook de oude), de back-up en nieuwe klanten op dubbelen. (hfst 16.5)
+- [ ] **1. Alles ingenomen?** Loop in het vakje van vandaag elke regel met **in** na. (hfst 16.9)
+- [ ] **2. Vervangers.** Controleer dat er geen rij meer op **Nog te bepalen** staat. (hfst 16.9)
+- [ ] **3. Portaalaanvragen aangeraakt.** Controleer dat het rode bolletje weg is, of dat de aanvragen op **In behandeling** staan. (hfst 16.9)
+- [ ] **4. Geannuleerd?** Controleer dat alles wat eraan hing, is meegegaan. (hfst 16.9)
+- [ ] **5. Wat morgen moet.** Klik op het belletje → **Nieuwe melding**. Vul een titel, datum en prioriteit in. (hfst 16.9)
+- [ ] **Uitloggen.** Log uit. (hfst 16.9)
+- [ ] **Eén keer per week.** Controleer **APK verloopt binnenkort**, de achterstallige verhuringen (ook de oude), de back-up en nieuwe klanten op dubbelen. (hfst 16.9)
 
 ---
 
@@ -1113,6 +1114,111 @@ Het inwerkpad is voor een nieuwe medewerker. Loop met een testaccount de "Doen"-
 - [ ] **Stickers op de DYMO-tape.** Ga naar **Barcodeboek**. Zet **Labelsjabloon** op **DYMO-tape (labelmaker, staand)**. Vink twee auto's aan. Klik op **Stickers afdrukken**. Verwacht: **Afdrukvenster geopend** met de tekst *Het afdrukvenster van je browser is geopend voor 2 tapelabels. …* Er komen twee labels na elkaar uit de labelmaker. (hfst 18.9)
 - [ ] **Barcode opnieuw genereren.** Verwacht de waarschuwing **Barcode opnieuw genereren?** met de tekst *De oude barcode (<code>) werkt daarna niet meer. …* Daarna staat er **Nieuwe barcode: <code>**. Doe dit alleen op een oefenauto. (hfst 18.9)
 - [ ] **Barcodeboek.** Ga naar **Voertuigen** → **Barcodeboek**. Verwacht: *Druk alle voertuigbarcodes af voor in een map of klapper.* Verder **Labelsjabloon**, een zoekveld, **Alle statussen**, **Alles selecteren**, **Selectie wissen** en *… geselecteerd*. De afdrukknoppen zijn **Selectie afdrukken** / **Gefilterde afdrukken (…)** / **Alles afdrukken (…)** en **Stickers afdrukken**. De kop is *Barcodeboek — Auto Lease LAM*. Bij een pop-upblokkade staat er *Je browser heeft afdrukken geblokkeerd. Gebruik de downloadknop en druk handmatig af.* (hfst 18.9)
+
+---
+
+## Hoofdstuk 19 — Kosten en facturen
+
+Alle bedragen in dit hoofdstuk zijn **exclusief btw**. Gebruik een oefenauto en verzonnen bonnen.
+
+### Het scherm Kostenbeheer
+
+- [ ] **Kostenbeheer openen.** [werkplaats] Klik in het menu op **Kosten**. Verwacht: het scherm **Kostenbeheer** met bovenaan **Verwijderde kostenposten**, **Ontvangen facturen**, **Factuur scannen** en **Kosten registreren**. Links staat het **Kostenoverzicht**. Rechts staat de **Kostensamenvatting** met **Totale kosten** en **Per categorie**. (hfst 19.1)
+- [ ] **Rechten.** [kijker] Kijk in het menu. Verwacht: **Kosten** staat er niet. [werkplaats] Klik op **Verwijderde kostenposten**. Verwacht: zonder **Prullenbak beheren** is **Terugzetten** grijs. (hfst 19.7, 19.8)
+- [ ] **Filteren.** Kies bij **Voertuig** een kenteken. Typ het zonder streepjes. Vul **Van** en **Tot en met** in. Kies bij **Categorie** **Banden**. Typ een woord uit een omschrijving in *Zoeken op kenteken, merk, categorie of omschrijving...*. Verwacht: alleen de kosten die passen. Beide dagen tellen mee. Onder de filters staat het aantal en het totaal, zoals *11 kostenposten · totaal € 2.856,85*. De **Kostensamenvatting** rekent met je filters mee. (hfst 19.1)
+- [ ] **Snelknoppen, Filters wissen en exporteren.** Klik op **Deze maand**, **Vorige maand** en **Dit jaar**. Verwacht: de datums staan meteen goed. **Filters wissen** zie je pas als er een filter aan staat. Daarmee staat alles weer terug. Zet een filter aan en klik op **Exporteren (CSV)**. Verwacht: een bestand met alleen de kosten die je nu ziet. (hfst 19.1)
+- [ ] **Per categorie en Alle kosten.** Open het scherm. Verwacht: **Per categorie** staat aan. Elke categorie is een ingeklapte regel met het aantal en het totaal. Klik op **Banden**. Verwacht: de vijf nieuwste kostenposten. Zijn het er meer, dan staat er **Alle N tonen**. Dat venster heeft een eigen zoekveld en **Sorteren**. Klik op **Alle kosten**. Verwacht: de kolommen **Datum**, **Voertuig**, **Categorie**, **Omschrijving** en **Bedrag (excl. btw)**. Een klik op een kolomkop sorteert. (hfst 19.1)
+- [ ] **Kostendetails en bewerken.** Klik op het oogje op een regel. Verwacht: **Kostendetails** met de datum, de categorie, het bedrag, het voertuig, de omschrijving, de bon en wie de post maakte of veranderde. Klik op **Kosten bewerken**. Pas iets aan. Klik op **Kosten bijwerken**. Verwacht: *Kosten succesvol bijgewerkt*. (hfst 19.1)
+
+### Kosten registreren
+
+- [ ] **Het venster.** Klik op **Kosten registreren**. Verwacht: **Nieuwe kosten toevoegen** met *Registreer nieuwe kosten voor je wagenpark*. Bij **Voertuig** staat *Een voertuig is verplicht: elke kostenpost hoort bij één voertuig.* Het bedrag heet **Bedrag (€, excl. btw)**. Bij **Datum** staat vandaag. **Categorie** biedt Onderhoud, Banden, Remmen, Schade, Brandstof, Verzekering, Registratie, Schoonmaak, Parkeren, Tol, Accessoires en Overig. Zonder voertuig kun je niet opslaan. (hfst 19.2)
+- [ ] **Bon en opslaan.** Klik bij **Bon** op **Bestand uploaden**. Kies een PDF, PNG, JPG of GIF (tot 25 MB). Probeer ook het tabblad **URL**. Klik op **Kosten registreren**. Verwacht: *Kosten succesvol geregistreerd*. De kostenpost staat meteen in het **Kostenoverzicht**. (hfst 19.2)
+- [ ] **Andere ingangen.** Open het venster via **Dashboard** → **Kosten registreren**, de voertuigkaart → tabblad **Kosten** → **Kosten toevoegen**, **Reserveringsdetails** → **Kosten toevoegen** en **Scannen** → tegel **Kosten registreren**. Verwacht: steeds hetzelfde venster. Vanaf de voertuigkaart en het scanscherm staat het voertuig al ingevuld. (hfst 19.2)
+- [ ] **Tanken maakt zelf een kostenpost.** [alleen Voertuigen beheren] Klik bij een auto op **Tanken**. Vul **Tankkosten (€)** in. Verwacht: *Brandstofstatus bijgewerkt; kostenpost van € x geboekt*. Bij **Kosten** staat een post **Brandstof**. Voer hem niet nog een keer in. Anders staat hij er dubbel. (hfst 19.2, 19.8)
+
+### Facturen per e-mail
+
+- [ ] **Ontvangen facturen en Nu ophalen.** [kantoor] Klik op **Ontvangen facturen**. Verwacht: het getal op de knop is het aantal dat op controle wacht. Er zijn drie tabbladen: **Te controleren** (met de kolom **Reden**, zoals *Onbekende afzender* of *Geen kenteken gevonden*), **Geboekt** (met **Bekijken**) en **Afgewezen**. Klik op **Nu ophalen**. Verwacht: bijvoorbeeld *2 mail(s) opgehaald: 1 geboekt, 1 ter controle*. Rechts staat wanneer de app voor het laatst keek. (hfst 19.3)
+- [ ] **Logboek.** Klik op **Logboek**. Verwacht: de tabbladen **Facturen** (met **Resultaat**, **PDF openen** en **Naar controleren**), **Overige mail** en **Ophaalrondes**. De schakelaar **Alleen rondes met mail of fouten** staat aan. **Meer laden** toont oudere regels. Je kunt hier niets veranderen. (hfst 19.3)
+- [ ] **Als de functie uit staat.** Verwacht: *Facturen per e-mail staat uit. Zet het aan bij Instellingen, tabblad E-mail.* **Nu ophalen** is grijs. Facturen die al binnen waren, kun je nog controleren. [beheerder] Aanzetten gaat via **App-instellingen** → **E-mail & GPS** (smal scherm: **E-mail**) → **Facturen per e-mail (inkomend)** → **Postvak automatisch uitlezen** → **Opslaan**. (hfst 19.3)
+
+### Een factuur controleren en boeken
+
+- [ ] **Factuur controleren.** Klik op **Controleren** bij een factuur. Verwacht: **Factuur controleren**. Links staat de factuur. Rechts staan **Leverancier**, **Factuurnummer**, **Factuurdatum** en **Voertuig** met *Gevonden kentekens:*. Elke regel heeft **Omschrijving**, **Bedrag (excl. btw)** en **Categorie**. Er zijn **Alles selecteren** en **Regel toevoegen**. Haal het voertuig weg, of alle vinkjes, of het bedrag van een gekozen regel. Verwacht: **Boeken** is grijs. (hfst 19.4)
+- [ ] **Boeken.** Laat **Eén kostenregel per categorie** aan. Klik op **Boeken**. Verwacht: bijvoorbeeld *1 kostenregel(s) geboekt*. De factuur staat onder **Geboekt**. De kostenposten staan in het **Kostenoverzicht**, met de factuur als bon. Regels met dezelfde categorie zijn één kostenpost. Een tweede keer boeken op een andere auto kan niet. Verkeerde auto? Verwijder de posten (19.7) en registreer ze zelf bij de goede auto. (hfst 19.4)
+- [ ] **Afzender vertrouwen.** [beheerder] Open een factuur van een testafzender. Klik op **Afzender vertrouwen**. Verwacht: *&lt;adres&gt; wordt voortaan automatisch verwerkt*. [kantoor] Verwacht: zonder **Instellingen beheren** zie je deze knop niet. Klik nooit op deze knop bij een onbekende afzender. (hfst 19.4, 19.8)
+- [ ] **Afwijzen en opnieuw uitlezen.** Pas bij een factuur een veld aan. Klik op **Opnieuw uitlezen**. Verwacht: *Factuur opnieuw uitgelezen*. Je eigen aanpassing is weg. Typ bij **Waarom afwijzen? (optioneel)** een reden. Klik op **Afwijzen**. Verwacht: *Factuur afgewezen*. De factuur staat onder **Afgewezen**. Er is niets geboekt. (hfst 19.4)
+- [ ] **Factuur zelf scannen.** Klik op **Factuur scannen**. Verwacht: *Upload een PDF-factuur om kosten automatisch te herkennen en te categoriseren*. Alleen een PDF werkt. Kies de PDF en klik op **Factuur scannen**. Verwacht: *Factuur succesvol gescand*, en bij een kenteken uit de vloot *Voertuig automatisch geselecteerd*. Klik op **n kostenposten aanmaken**. Verwacht: *Kosten succesvol aangemaakt*. Bij **Ontvangen facturen** staat *handmatige scan*. Scan dezelfde PDF nog eens. Verwacht: *Deze factuur is al geboekt.* of *Deze factuur staat al bij Ontvangen facturen ter controle. Boek hem daar.* (hfst 19.5)
+- [ ] **Schade.** Registreer een post met de categorie **Schade**. Zet het reserveringsnummer in de **Omschrijving**. Verwacht: de app koppelt de post niet aan de schadecheck of de klant. Er is geen knop om schade door te rekenen aan de klant. De post telt in de rapporten als eigen kosten. (hfst 19.6)
+- [ ] **Verwijderen en terugzetten.** [kantoor] Klik op het rode prullenbakje op een oefenpost. Verwacht: **Weet je het zeker?** met *Deze kostenpost gaat naar de prullenbak; terugzetten kan via Prullenbak op de pagina Kosten.* Klik op **Verwijderen**. Verwacht: *Kosten verwijderd*. Open **Verwijderde kostenposten**. Verwacht: het zoekveld *Zoeken op omschrijving of naam…* en per regel wanneer en door wie. Klik op **Terugzetten**. Verwacht: **Teruggezet**, met de bon erbij. Was de auto intussen verwijderd? Verwacht: *Let op: het voertuig van deze kostenpost bestaat niet meer. …* (hfst 19.7)
+
+---
+
+## Hoofdstuk 20 — Klantenportaal en bekeuringen
+
+Stuur geen echte mail naar een klant. Gebruik een oefenklant met je eigen e-mailadres.
+
+### Het scherm en de aanvragen
+
+- [ ] **Klantenportaal beheren.** [balie] Klik in het menu op **Klantenportaal**. Verwacht: **Klantenportaal beheren** met rechtsboven **Bekeuringen**, **Fiscale check** (alleen met **Fiscaal bekijken**), **Brieven scannen** en **Account uitnodigen**. Er zijn acht tegels: **Aanvragen**, **Onderhoud**, **Bekeuringen**, **Klanten**, **Accounts**, **Voertuigen online**, **Blacklist** en **Activiteit**. Een tegel met een gele rand vraagt om actie. Het rode bolletje in het menu telt de nieuwe aanvragen en de ongelezen meldingen samen. (hfst 20.1)
+- [ ] **Aandacht nodig en Meldingen.** Verwacht: in **Aandacht nodig** een blauw label **Nieuw** bij een aanvraag en een rood label **Niet gekoppeld** bij een bekeuring. Soms staat er *Start binnenkort* of *Wacht al lang*. Een klik op een regel opent de aanvraag of de bekeuring. Bij **Meldingen** staat zonder meldingen *Nog geen meldingen vanuit het portaal.* Klik op **Alles gelezen**. Verwacht: het rode bolletje wordt kleiner. **Aankomende reserveringen** toont *Ophalen en inleveren in de komende 14 dagen*. (hfst 20.1)
+- [ ] **Aanvraag openen en een bericht plaatsen.** [kantoor] Open een aanvraag. Verwacht: **Aanvraag #<nummer>** met het soort, de klant, **Bericht van klant** en **Bijlagen**. **In behandeling nemen** staat er alleen zolang de status **Nieuw** is. Typ een vraag onder **Berichten met de klant**. Klik op **Bericht plaatsen**. Verwacht: het bericht staat in de draad. Er gaat geen e-mail uit. De aanvraag blijft open. (hfst 20.2)
+- [ ] **Standaardantwoord en leeg afwijzen.** Klik achter **Standaardantwoord invullen** op **Ontvangen**, **Akkoord** of **Afwijzing**. Verwacht: de tekst komt in **Antwoord aan klant**. Je kunt hem aanpassen. Maak het vak leeg. Klik op **Afwijzen**. Verwacht: *Vul een antwoord in.* (hfst 20.2)
+- [ ] **Verlenging goedkeuren.** Open een verlenging. Verwacht: **Reservering** en **Gevraagde nieuwe einddatum**. Klik op **Goedkeuren (past reservering aan)**. Verwacht: de reservering heeft de nieuwe einddatum. Het contract staat op **Verouderd**. De klant krijgt een melding en een e-mail. (hfst 20.2)
+- [ ] **Bekend: je eigen tekst gaat niet mee.** Typ een eigen tekst in **Antwoord aan klant**. Klik op **Goedkeuren (past reservering aan)**. Verwacht: de app meldt *Antwoord verstuurd.* De klant krijgt toch het vaste standaardbericht, niet jouw tekst. Plaats extra uitleg eerst met **Bericht plaatsen**. (hfst 20.2)
+- [ ] **Beantwoorden en afhandelen bij een verlenging.** Klik bij een verlenging op **Beantwoorden en afhandelen**. Verwacht: de aanvraag is gesloten, maar de reservering is niet veranderd. Keur een **Eerder inleveren** goed. Verwacht: de einddatum is eerder. De auto moet je nog aan de balie innemen. (hfst 20.2)
+- [ ] **Huuraanvraag.** Open een huuraanvraag. Klik op **Goedkeuren: reservering aanmaken**. Verwacht: het blok **Reservering aanmaken uit deze aanvraag** met **Periode**, **Ophaaltijd**, **Inlevertijd** en **Voertuig**. Een bezette auto heeft het rode label **Bezet in deze periode**. Eronder staat **Zelfde type, vrij**. Onderaan staat *Wordt geboekt: …*. Laat **Geen bestuurder (later toewijzen)** staan. Klik op **Reservering aanmaken en goedkeuren**. Verwacht: *Reservering #… aangemaakt; de klant is geïnformeerd.* De reservering opent vanzelf. Met **Antwoord mailen (blijft open)** blijft de aanvraag open. (hfst 20.2)
+- [ ] **Onderhoudsmelding.** Open een **Onderhoud/storing**. Lees **Melding van de klant**. Klik op **Inplannen in de onderhoudskalender** (bij verzetten: **Onderhoud verplaatsen**). Vul **Datum**, **Duur (dagen)**, **Soort** en **Notitie voor de klant** in. Klik op **Inplannen en bevestigen**. Verwacht: *Onderhoud #… staat in de kalender*. Vroeg de klant vervangend vervoer en valt de datum in de huur? Verwacht: *Er wordt een vervanger-placeholder aangemaakt; wijs later een auto toe in de onderhoudskalender.* Valt de datum buiten de huur? Verwacht: geen placeholder. (hfst 20.2)
+- [ ] **Bedrijfsnaam en overige aanvragen.** Open een wijziging van de bedrijfsnaam. Verwacht: **Gevraagde bedrijfsnaam** en **Goedkeuren (past de bedrijfsnaam aan)**. Afsluiten zonder goedkeuren of **Afwijzen** kan niet. Open een **Schademelding**, **Vraag over bekeuring**, **Kilometerstand** of **Overig**. Klik op **Ontvangen** → **Beantwoorden en afhandelen**. Verwacht: de aanvraag is klaar. (hfst 20.2)
+- [ ] **Account uitnodigen.** Klik op **Account uitnodigen**. Verwacht: het venster **Portaalaccount** met **Klant**, **E-mailadres**, **Naam**, **Rol** en **Rechten voor dit account**. Bij de rol **Bestuurder** staat ook **Gekoppelde bestuurder**. Vul je eigen e-mailadres in. Klik op **Uitnodigen**. Verwacht: *Uitnodiging verstuurd naar …*. Bij de tegel **Accounts** staan **Bewerken en rechten**, **Uitnodiging opnieuw sturen**, **Wachtwoord-reset sturen**, **Blokkeren** / **Deblokkeren** en **Verwijderen**. (hfst 20.3)
+
+### Bekeuringen
+
+- [ ] **Het scherm Bekeuringen.** Kijk in het menu. Verwacht: er is geen menu-item **Bekeuringen**. Klik op **Klantenportaal** → **Bekeuringen**. Verwacht: **Exporteren (CSV)**, **Prullenbak**, **CJIB-importen**, **Brieven scannen** en **Nieuwe bekeuring**. Er zijn een zoekveld, **Alle statussen**, **Kenteken**, **Van** en **Tot**. De kolommen zijn **Kenteken**, **Datum/tijd**, **Omschrijving**, **Klant**, **Bestuurder**, **Bedrag** en **Status**. Het bedrag is inclusief administratiekosten. (hfst 20.4)
+- [ ] **Eén bekeuring invoeren.** [kantoor] Klik op **Nieuwe bekeuring**. Verwacht: **Brief scannen** is grijs zolang je geen brief koos. Kies bij **Brief (PDF/JPG/PNG)** een brief. Klik op **Brief scannen**. Verwacht: *Brief lezen…* en daarna *Brief gelezen. Controleer de velden en sla op.* Een onzeker veld heeft een oranje rand met *Onzeker gelezen: …*. Verplicht zijn **Kenteken**, **Datum en tijd overtreding**, **Bedrag (€)** en **Omschrijving**. Klik op **Opslaan**. Verwacht: **Bekeuring #<nummer>** opent. Voer hetzelfde kenmerk nog eens in. Verwacht: *Kenmerk bestaat al: bekeuring #…* met **Openen**. (hfst 20.4)
+- [ ] **Bekend: geen reservering gevonden.** Open een nieuwe bekeuring op een kenteken dat op die datum verhuurd was. Verwacht (zo werkt het nu): *Niet automatisch gekoppeld. Kies hieronder de klant (en eventueel de reservering/bestuurder).* en *Geen reserveringen gevonden voor dit kenteken. Kies een klant.* De status is **Niet gekoppeld**. Je koppelt zelf. Noteer het als de app wel een reservering voorstelt. (hfst 20.4)
+- [ ] **Koppelen.** Zoek in de reservering wie de auto had. Klik bij **Klant** in **Klant zoeken…**. Kies de klant. Verwacht: een vinkje voor de naam, met **Wijzigen**. Laat **Bestuurder (optioneel)** leeg of kies er een. Typ een **Toelichting voor klant**. Klik op **Koppelen**. Verwacht: *Bekeuring gekoppeld.* en bovenaan **Gekoppeld**. De klant krijgt geen e-mail. Zonder **Klanten bekijken** staat er *Om een klant aan deze bekeuring te koppelen heb je ook het recht Klanten bekijken nodig.* (hfst 20.4)
+- [ ] **Brieven scannen en CJIB-importen.** Klik op **Brieven scannen**. Sleep twee brieven in het vak. Verwacht: **Bekeuringsbrieven importeren** met per regel *Wachten*, *Lezen…*, *Klaar*, *Dubbel* of *Mislukt*. Een dubbele brief is niet aangevinkt. De kolom **Koppeling** zegt wat de app wil doen. Klik op **Aanmaken (n)**. Verwacht: hoeveel er zijn aangemaakt en gekoppeld. Open **CJIB-importen**. Verwacht: **Nu ophalen** is grijs zonder verbinding met het CJIB. **Bestand uploaden** werkt wel. (hfst 20.4)
+- [ ] **Klant informeren.** Open een gekoppelde bekeuring van een oefenklant met je eigen adres. Klik op **Klant informeren**. Verwacht: **Klant informeren?** met het e-mailadres en **Nee, niet sturen**. Verstuur. Verwacht: *Klant geïnformeerd.*, in het venster *Klant geïnformeerd op <datum>*, en de knop heet nu **Opnieuw informeren**. Bij een klant zonder e-mailadres: *Deze klant heeft geen e-mailadres, dus er is niets verstuurd.* Bij portaal uit: *Het portaal staat uit voor deze klant, dus er is niets verstuurd.* (hfst 20.4)
+- [ ] **Wijzigen, annuleren en de prullenbak.** [kantoor] Klik op **Opslaan**, **Ontkoppelen**, **Bekeuring annuleren** (veilige keuze **Nee, laten staan**) en **Heractiveren**. Verwacht: *Bekeuring opgeslagen.*, *Bekeuring ontkoppeld.*, de status **Geannuleerd** en *Bekeuring heractiveerd.* De **Administratiekosten** kun je hier niet wijzigen. Klik op **Verwijderen**. Verwacht: *Bekeuring naar de prullenbak verplaatst*. Klik op **Prullenbak**. Verwacht: **Verwijderde bekeuringen** met **Terugzetten**. (hfst 20.4)
+- [ ] **Wat de klant ziet.** Log in het portaal in met een oefenaccount. Verwacht: alleen bekeuringen op **Gekoppeld** en alleen als **Ziet bekeuringen** aan staat. Er staat *Het doorbelasten aan uw bestuurder regelt u zelf.* Klik op **Vraag stellen over deze bekeuring**. Verwacht: in **Aandacht nodig** komt een aanvraag **Vraag over bekeuring**. (hfst 20.4)
+- [ ] **Fiscale check.** [beheerder] Klik op **Klantenportaal** → **Fiscale check**. Verwacht: **Fiscale check: overzicht** met bovenaan de regelversie en tegels zoals **Niet van toepassing**, **Van toepassing**, **Handmatige beoordeling nodig** en **Gegevens ontbreken**. Onderaan staan **Open perioden**, **Nog niet beoordeeld** en **Open beoordelingszaken**. Zonder versie staat er *Geen regelversie beschikbaar* en blijven de tegels op 0. Je kunt hier niets invullen. [balie] Verwacht: zonder **Fiscaal bekijken** geen knop **Fiscale check**. (hfst 20.5, 20.6)
+
+---
+
+## Hoofdstuk 21 — Rapporten
+
+### Het scherm Rapporten
+
+- [ ] **Rapporten openen.** [beheerder] Klik in het menu op **Rapporten**. Verwacht: *Genereer en analyseer rapporten voor je autoverhuurbedrijf*. Rechtsboven staan **Afdrukken: APK**, **Afdrukken: Garantie**, **Afdrukken: Kosten**, **Afdrukken: Benutting** en **Afdrukken: Klanten**. Er zijn twee tegels: **Aangepaste rapportbouwer** (*Bouw aangepaste rapporten met filters en aggregaties.*) en **Analyse onderhoudskosten** (*Analyseer voertuigonderhoudskosten en trends.*). (hfst 21.1)
+- [ ] **Datumbereik en snelknoppen.** Verwacht: bij openen staan de laatste 30 dagen ingesteld. Klik op **Alle gegevens (verleden & toekomst)**, **Deze maand** en **Volgende maand**. Verwacht: even *Cijfers worden bijgewerkt...*. Daarna een regel zoals *Alle cijfers op deze pagina gelden voor 18 sep. 2026 tot 18 okt. 2026 en de hele vloot (9 voertuigen).* **Gem. kosten per voertuig** deelt door de hele vloot, ook door auto's die niet verhuurd waren. (hfst 21.1)
+- [ ] **Voertuig, Kostencategorie en Filters herstellen.** Typ bij **Voertuig** een kenteken zonder streepjes, of een merk. Open **Kostencategorie**. Verwacht: alleen categorieën die in de gegevens voorkomen. Klik op **Filters herstellen**. Verwacht: de laatste 30 dagen, **Alle voertuigen** en **Alle categorieën**. (hfst 21.1)
+- [ ] **De tabbladen.** Verwacht: **Operaties**, **Kosten**, **Voertuigen**, **Klanten**, **Transporten**, **Financieel** en **Fiscaal**. Op **Operaties** staan **Voertuigbenutting**, **Totale kosten** en **Gem. kosten per voertuig**, met de grafieken **Voertuigbenutting**, **Kosten per categorie** en **Kostentrends**. Op **Voertuigen** kun je in het **APK-keuring overzicht** en het **Garantiestatus overzicht** zoeken en op status filteren. (hfst 21.1)
+- [ ] **Het categoriefilter geldt niet overal.** Kies **Kostencategorie** **Banden**. Open **Financieel**, **Fiscaal**, **Transporten** en het APK-overzicht. Verwacht: daar staat *Het categoriefilter (Banden) geldt niet voor dit tabblad.* (hfst 21.1)
+
+### Afdrukken
+
+- [ ] **Een vast rapport afdrukken.** Klik op **Afdrukken: Kosten**. Verwacht: **Rapport afdrukken: Kostenrapport** met *Documentvoorvertoning*, en onderaan **Sluiten** en **Afdrukken**. De periode bovenaan klopt met je filters. Klik op **Afdrukken**. Verwacht: het afdrukvenster van de browser. Probeer de andere knoppen. Verwacht: **APK-vervalrapport**, **Garantievervalrapport**, **Voertuigbenuttingsrapport** en **Klantimpactanalyserapport**. Dat laatste telt alleen klanten met een reservering in de periode. (hfst 21.2)
+- [ ] **Bekend: Afdrukken: huidig tabblad.** Open elk tabblad. Verwacht: op elk tabblad behalve **Operaties** staat **Afdrukken: huidig tabblad**. Hij werkt alleen op **Kosten** en **Transporten**. Op **Voertuigen**, **Klanten**, **Financieel** en **Fiscaal** krijg je een leeg voorbeeld met *Rapportinhoud niet beschikbaar*. Klik dan op **Sluiten**. (hfst 21.2)
+- [ ] **Transporten afdrukken.** Open **Transporten**. Verwacht: **Totale tolkosten**, **Openstaande klantfacturatie**, **Vermelde transporten** en de lijst **Voertuigtransporten**, met **Alle types** en **Alle statussen**. Zonder vinkje heet de knop **Afdrukken Alle**. Vink twee regels aan. Verwacht: **Afdrukken Geselecteerd (2)**. Klik erop. Verwacht: het **Voertuigtransportenrapport**. (hfst 21.5)
+
+### De rapportbouwer
+
+- [ ] **Bron en kolommen.** Klik op **Aangepaste rapportbouwer**. Verwacht: het tabblad **Bouwer** met de **Gegevensbronnen** **Voertuigen**, **Klanten**, **Reserveringen**, **Kosten** en **Chauffeurs**. Vink **Voertuigen** aan. Klik op **+ Kenteken**. Verwacht: het veld staat onder **Kolommen**. Het kruisje haalt het weer weg. **Rapport uitvoeren** is grijs zolang er geen kolom is. (hfst 21.3)
+- [ ] **Bekend: maar vijf velden per bron.** Kijk onder **Voertuigen**. Verwacht: vijf velden en daaronder bijvoorbeeld *+8 meer...*. **Kilometerstand** en **APK-datum** kun je niet als kolom kiezen. Je kunt er wel op filteren. (hfst 21.3)
+- [ ] **Filter toevoegen.** Klik op **Filter toevoegen**. Verwacht: **Veld**, **Operator** en **Waarde**. Kies **Merk**, **is gelijk aan** en *Ford*. Klik op **Filter toevoegen**. Verwacht: het filter staat bij **Filters (1)**. **Annuleren** sluit zonder filter. (hfst 21.3)
+- [ ] **Rapport uitvoeren en exporteren.** Klik op **Rapport uitvoeren**. Verwacht: *Rapport succesvol uitgevoerd* en het venster **Rapportresultaten** met bijvoorbeeld *9 resultaten gevonden*. Klik op **Exporteren naar CSV**. Verwacht: *Bestand gemaakt* en het bestand in je map Downloads. Klik op **Afdrukken**. Verwacht: eerst een afdrukvoorbeeld. (hfst 21.3)
+- [ ] **Opslaan.** Klik op **Opslaan**. Verwacht: **Rapport opslaan** met **Rapportnaam \*** en **Omschrijving**. Klik op **Rapport opslaan**. Verwacht: *Rapport succesvol opgeslagen*. Met alleen **Rapporten bekijken** zijn **Opslaan** en het prullenbakje grijs. (hfst 21.3, 21.6)
+- [ ] **Opgeslagen rapporten.** Klik op **Opgeslagen rapporten**. Verwacht: per rapport het aantal kolommen en filters. **Uitvoeren** opent meteen **Rapportresultaten**. Het prullenbakje vraagt **Rapport verwijderen?** Doe dit alleen op je eigen oefenrapport. (hfst 21.3)
+- [ ] **Bekend: Bewerken neemt de naam niet over.** Klik op **Bewerken** bij een opgeslagen rapport. Klik daarna op **Opslaan**. Verwacht: het naamveld is leeg. Na opslaan staat er een nieuw rapport bij. Het oude rapport staat er nog. (hfst 21.3)
+
+### Onderhoudskosten, Financieel en Fiscaal
+
+- [ ] **Analyse onderhoudskosten.** Klik op **Analyse onderhoudskosten**. Verwacht: rechtsboven **Alle tijd** (ook **Afgelopen jaar**, **Afgelopen 6 maanden**, **Afgelopen 3 maanden**, **Afgelopen maand**) en **Alle merken**. Deze keuze staat los van de **Rapportfilters**. De tellers zijn **Totale kosten**, **Gem. per voertuig**, **Kosten per km** en **Totaal aantal kostenposten**. De tabbladen zijn **Overzicht**, **Merkvergelijking**, **Voertuigdetails** en **Trends** (maanden in het Nederlands). (hfst 21.4)
+- [ ] **Wat de analyse telt.** Verwacht: alleen **Onderhoud**, **Banden** en **Remmen**. Schade, brandstof, tol en parkeren tellen niet mee. Kies **Afgelopen jaar**. Verwacht: bij **Kosten per km** een streepje met *alleen bij Alle tijd: de kilometerstand is een totaal*. Een merk met minder dan drie kostenregels of twee auto's krijgt **Onvoldoende gegevens**. (hfst 21.4)
+- [ ] **Financieel en Fiscaal.** Open **Financieel**. Verwacht: **Omzet**, **Kosten**, **Marge** en **Gereden km**, de grafiek **Omzet versus kosten per voertuig**, de tabel **Kosten en opbrengst per voertuig** en **Kilometers per maand**. De marge telt altijd alle kosten, ook met een categoriefilter. Open **Fiscaal**. Verwacht: **Fiscale check per maand** met **Jaar**, **Klant** (of **Alle klanten**), **Totalen**, **Per klant**, **CSV downloaden** en *Dit is geen fiscaal advies.* (hfst 21.5)
+- [ ] **Rechten per tabblad.** Gebruik een account met **Rapporten bekijken** maar zonder **Kosten beheren**. Open **Kosten**. Verwacht: *Geen toegang tot deze gegevens*, met de naam van het recht dat je mist. Zonder **Fiscaal bekijken** is er geen tabblad **Fiscaal**. Een account met alleen **Fiscaal bekijken** ziet op **Rapporten** alleen de fiscale check, zonder afdrukknoppen en tegels. (hfst 21.6)
 
 ---
 

@@ -589,7 +589,7 @@ bewaard. Daarna ruimt de app ze vanzelf op. Rondes van vóór deze functie besta
   (`GEMINI_API_KEY`) ontbreekt op de server. De instellingenkaart waarschuwt hiervoor.
 - **Een factuur is op het verkeerde voertuig geboekt**: verwijder de kostenregels bij dat
   voertuig. Voer ze daarna met de hand opnieuw in bij het juiste voertuig. Dat doe je bij Kosten,
-  met de knop **Kosten vastleggen**. Opnieuw scannen kan niet. De app kent de factuur al en weigert
+  met de knop **Kosten registreren** (hoofdstuk 19). Opnieuw scannen kan niet. De app kent de factuur al en weigert
   hem als dubbel.
 - **Handmatig scannen zegt "Deze factuur is al geboekt"**: dat klopt dan ook. Dezelfde factuur is
   al via de mail of een eerdere scan verwerkt. Kijk in het tabblad **Geboekt**.
