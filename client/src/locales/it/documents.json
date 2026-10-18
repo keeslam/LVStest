@@ -783,7 +783,8 @@
       "damageCheckReturn": "Controllo dei danni (restituzione)",
       "damageCheckUnsigned": "Controllo dei danni (non firmato)",
       "transportReport": "Rapporto di trasporto",
-      "editedVersion": "{{type}} - modificato (versione precedente {{stamp}})"
+      "editedVersion": "{{type}} - modificato (versione precedente {{stamp}})",
+      "customerUpload": "Caricamento cliente"
     },
     "notes": {
       "damageCheckAtReturn": "Controllo dei danni registrato alla restituzione della prenotazione n. {{id}}",

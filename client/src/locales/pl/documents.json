@@ -795,7 +795,8 @@
       "damageCheckReturn": "Kontrola szkód (zwrot)",
       "damageCheckUnsigned": "Kontrola szkód (niepodpisana)",
       "transportReport": "Raport transportu",
-      "editedVersion": "{{type}} - edytowano (poprzednia wersja {{stamp}})"
+      "editedVersion": "{{type}} - edytowano (poprzednia wersja {{stamp}})",
+      "customerUpload": "Plik klienta"
     },
     "notes": {
       "damageCheckAtReturn": "Kontrola szkód zapisana przy zwrocie rezerwacji #{{id}}",

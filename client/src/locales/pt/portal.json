@@ -375,7 +375,8 @@
     "PORTAL_DOCUMENT_CHANGED": "O documento acabou de mudar. Abra-o novamente e assine.",
     "PORTAL_INVALID_SIGNATURE": "Assine primeiro na caixa.",
     "PORTAL_CANCEL_TOO_LATE": "Pode cancelar até 48 horas antes do início. Contacte-nos.",
-    "PORTAL_CANCEL_NOT_ALLOWED": "Esta reserva não pode ser cancelada através do portal."
+    "PORTAL_CANCEL_NOT_ALLOWED": "Esta reserva não pode ser cancelada através do portal.",
+    "PORTAL_FILE_TOO_LARGE": "O ficheiro tem mais de 10 MB."
   },
   "admin": {
     "navLabel": "Portal do cliente",
@@ -649,7 +650,8 @@
         "request_replied": "Pedido respondido",
         "company_details_updated": "Dados da empresa atualizados",
         "company_name_requested": "Alteração do nome da empresa pedida",
-        "export": "Lista exportada (CSV)"
+        "export": "Lista exportada (CSV)",
+        "document_uploaded": "Documento enviado"
       },
       "detailKeys": {
         "by": "por",
@@ -1682,5 +1684,17 @@
       "licenseExpiry": "Carta válida até",
       "carNow": "Veículo atual"
     }
+  },
+  "uploads": {
+    "title": "Os seus documentos ({{count}})",
+    "add": "Adicionar documento",
+    "description": "Descrição",
+    "descriptionPlaceholder": "Ex.: foto do dano, talão de combustível",
+    "file": "Ficheiro",
+    "hint": "PDF, JPG ou PNG, até 10 MB.",
+    "send": "Enviar",
+    "cancel": "Cancelar",
+    "sent": "Documento enviado para a Lam Groep",
+    "wrongType": "Apenas PDF, JPG ou PNG."
   }
 }

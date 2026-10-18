@@ -1285,5 +1285,6 @@
       "savedTitle": "Pojazd zmieniony",
       "failedTitle": "Nie udało się zmienić pojazdu"
     }
-  }
+  },
+  "customerUpload": "Plik klienta"
 }

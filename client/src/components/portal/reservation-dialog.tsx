@@ -17,6 +17,7 @@ import { MaintenanceLine } from "@/components/portal/vehicle-card";
 import { Plate, StatusBadge } from "./ui";
 import { vehicleName } from "@shared/vehicle-name";
 import { HandoverBlock } from "./handover-block";
+import { ReservationUploads } from "./reservation-uploads";
 
 type Detail = PortalReservationDto & {
   driverHistory: Array<{ id: number; driverId: number | null; driverName: string | null; assignedFrom: string; assignedUntil: string | null; note: string | null }>;
@@ -103,6 +104,8 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
                 <div className="space-y-2" data-testid="reservation-fines">{linkedFines.map((f) => <FineRow key={f.id} fine={f} />)}</div>
               </div>
             )}
+            {/* Kees, 2026-10-18: the customer adds a PDF or photo to the reservation themself. */}
+            <ReservationUploads reservationId={r.id} canUpload={r.status !== "cancelled"} />
             {r.driverHistory.length > 0 && <div>
               <h3 className="mb-1 text-sm font-semibold">{t("reservations.driverHistory")}</h3>
               <ul className="space-y-1 rounded-md border p-3 text-sm">

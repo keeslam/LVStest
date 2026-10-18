@@ -783,7 +783,8 @@
       "damageCheckReturn": "Verificação de danos (devolução)",
       "damageCheckUnsigned": "Verificação de danos (não assinada)",
       "transportReport": "Relatório de transporte",
-      "editedVersion": "{{type}} - editado (versão anterior {{stamp}})"
+      "editedVersion": "{{type}} - editado (versão anterior {{stamp}})",
+      "customerUpload": "Envio do cliente"
     },
     "notes": {
       "damageCheckAtReturn": "Verificação de danos registada na devolução da reserva n.º {{id}}",

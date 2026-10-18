@@ -375,7 +375,8 @@
     "PORTAL_DOCUMENT_CHANGED": "Documentul tocmai s-a schimbat. Deschideți-l din nou și apoi semnați.",
     "PORTAL_INVALID_SIGNATURE": "Mai întâi semnați în casetă.",
     "PORTAL_CANCEL_TOO_LATE": "Puteți anula până cu 48 de ore înainte de început. Vă rugăm să ne contactați.",
-    "PORTAL_CANCEL_NOT_ALLOWED": "Această rezervare nu poate fi anulată prin portal."
+    "PORTAL_CANCEL_NOT_ALLOWED": "Această rezervare nu poate fi anulată prin portal.",
+    "PORTAL_FILE_TOO_LARGE": "Fișierul depășește 10 MB."
   },
   "admin": {
     "navLabel": "Portal pentru clienți",
@@ -649,7 +650,8 @@
         "request_replied": "Solicitare cu răspuns",
         "company_details_updated": "Datele firmei actualizate",
         "company_name_requested": "Modificarea numelui firmei solicitată",
-        "export": "Listă exportată (CSV)"
+        "export": "Listă exportată (CSV)",
+        "document_uploaded": "Document încărcat"
       },
       "detailKeys": {
         "by": "de către",
@@ -1682,5 +1684,17 @@
       "licenseExpiry": "Permis valabil până la",
       "carNow": "Vehicul actual"
     }
+  },
+  "uploads": {
+    "title": "Documentele dumneavoastră ({{count}})",
+    "add": "Adaugă document",
+    "description": "Descriere",
+    "descriptionPlaceholder": "De ex. fotografia daunei, bon de carburant",
+    "file": "Fișier",
+    "hint": "PDF, JPG sau PNG, maximum 10 MB.",
+    "send": "Încarcă",
+    "cancel": "Renunță",
+    "sent": "Document trimis către Lam Groep",
+    "wrongType": "Doar PDF, JPG sau PNG."
   }
 }

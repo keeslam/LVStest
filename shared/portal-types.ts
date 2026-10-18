@@ -29,6 +29,7 @@ export const PORTAL_ERROR = {
   MAINTENANCE_WEEKEND: 'PORTAL_MAINTENANCE_WEEKEND',
   CANCEL_TOO_LATE: 'PORTAL_CANCEL_TOO_LATE',
   CANCEL_NOT_ALLOWED: 'PORTAL_CANCEL_NOT_ALLOWED',
+  FILE_TOO_LARGE: 'PORTAL_FILE_TOO_LARGE',
   EMAIL_IN_USE: 'PORTAL_EMAIL_IN_USE',
   REQUEST_INVALID_PERIOD: 'PORTAL_REQUEST_INVALID_PERIOD',
   ATTACHMENT_LIMIT: 'PORTAL_ATTACHMENT_LIMIT',
@@ -125,6 +126,25 @@ export interface PortalReservationDto {
   serviceDue?: 'due' | 'soon' | null;
   /** Detail view only: whether the customer can still ask to cancel. */
   cancellation?: PortalCancellationDto;
+}
+
+/**
+ * A document the customer uploaded to one of their reservations (Kees, 2026-10-18). Stored in the
+ * office's documents table under this type, so staff find it with the reservation's other documents;
+ * the description is kept in documents.notes.
+ */
+export const CUSTOMER_UPLOAD_DOCUMENT_TYPE = 'Customer Upload';
+/** PDF, JPG or PNG up to 10 MB. */
+export const CUSTOMER_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
+
+export interface PortalUploadDto {
+  id: number;
+  reservationId: number;
+  fileName: string;
+  contentType: string;
+  fileSize: number;
+  description: string;
+  uploadedAt: string;
 }
 
 /**

@@ -1,4 +1,5 @@
 import { notifyFileReady } from "@/lib/file-ready";
+import { CUSTOMER_UPLOAD_DOCUMENT_TYPE } from "@shared/portal-types";
 import { describeApiError } from "@/lib/api-error";
 import { v } from "@/lib/zod-i18n";
 import { useState, useEffect, useMemo, useRef } from "react";
@@ -2465,7 +2466,9 @@ export function ReservationForm({
                                   <FileText className="h-4 w-4 text-gray-600" />
                                 )}
                                 <div className="text-left">
-                                  <div className="text-xs font-semibold truncate max-w-[150px]">{doc.documentType}</div>
+                                  <div className="text-xs font-semibold truncate max-w-[150px]">{doc.documentType === CUSTOMER_UPLOAD_DOCUMENT_TYPE ? t("customerUpload") : doc.documentType}</div>
+                                    {/* Kees, 2026-10-18: what the customer wrote with their upload. */}
+                                    {doc.documentType === CUSTOMER_UPLOAD_DOCUMENT_TYPE && doc.notes && <div className="text-[10px] text-gray-600 truncate max-w-[150px]" title={doc.notes}>{doc.notes}</div>}
                                   <ContractSignatureBadge documentId={doc.id} signatures={contractSignatures} />
                                   <div className="text-[10px] text-gray-500 truncate max-w-[150px]">
                                     {doc.documentType?.startsWith('Damage Check')

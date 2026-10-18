@@ -1273,5 +1273,6 @@
       "savedTitle": "Vehicul schimbat",
       "failedTitle": "Schimbarea vehiculului a eșuat"
     }
-  }
+  },
+  "customerUpload": "Încărcare client"
 }

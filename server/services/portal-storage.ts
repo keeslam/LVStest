@@ -8,6 +8,7 @@ import {
 } from "../../shared/schema";
 import { and, desc, eq, exists, inArray, isNull, or, sql, type SQL } from "drizzle-orm";
 import { isContractDocument, isDamageCheckDocument } from "../../shared/document-types";
+import { CUSTOMER_UPLOAD_DOCUMENT_TYPE } from "../../shared/portal-types";
 import { customerDisplayName, customerDisplayNameFor } from "./customer-display-name";
 
 /** Set for driver-role users: restricts to reservations they were assigned to. */
@@ -240,6 +241,20 @@ export const portalStorage = {
     const reservation = await portalStorage.getReservationForCustomer(doc.reservationId, customerId, scope);
     if (!reservation) return undefined;
     return classify(doc) ?? undefined;
+  },
+
+  // ---- documents the customer uploaded (Kees, 2026-10-18) ------------------------------------------
+  /** The customer's own uploads on one reservation; the caller has checked the reservation is theirs. */
+  async listUploadsForReservation(reservationId: number): Promise<Document[]> {
+    return db.select().from(documents)
+      .where(and(eq(documents.reservationId, reservationId), eq(documents.documentType, CUSTOMER_UPLOAD_DOCUMENT_TYPE)))
+      .orderBy(desc(documents.uploadDate));
+  },
+  /** One upload, only when it sits on a reservation this customer (and, for a driver, this driver) may see. */
+  async getUploadForCustomer(id: number, customerId: number, scope: PortalScope): Promise<Document | undefined> {
+    const [doc] = await db.select().from(documents).where(and(eq(documents.id, id), eq(documents.documentType, CUSTOMER_UPLOAD_DOCUMENT_TYPE)));
+    if (!doc || doc.reservationId == null) return undefined;
+    return (await portalStorage.getReservationForCustomer(doc.reservationId, customerId, scope)) ? doc : undefined;
   },
 
   // ---- drivers (always scoped) ----------------------------------------------

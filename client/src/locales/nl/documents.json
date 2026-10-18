@@ -771,7 +771,8 @@
       "damageCheckReturn": "Schadecheck (inleveren)",
       "damageCheckUnsigned": "Schadecheck (niet ondertekend)",
       "transportReport": "Transportrapport",
-      "editedVersion": "{{type}} - bewerkt (vorige versie {{stamp}})"
+      "editedVersion": "{{type}} - bewerkt (vorige versie {{stamp}})",
+      "customerUpload": "Upload klant"
     },
     "notes": {
       "damageCheckAtReturn": "Schadecheck vastgelegd bij het inleveren van reservering #{{id}}",

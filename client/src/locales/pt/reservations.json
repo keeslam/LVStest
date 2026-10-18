@@ -1273,5 +1273,6 @@
       "savedTitle": "Veículo alterado",
       "failedTitle": "Não foi possível alterar o veículo"
     }
-  }
+  },
+  "customerUpload": "Envio do cliente"
 }

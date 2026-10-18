@@ -783,7 +783,8 @@
       "damageCheckReturn": "Verificarea daunelor (returnare)",
       "damageCheckUnsigned": "Verificarea daunelor (nesemnată)",
       "transportReport": "Raport de transport",
-      "editedVersion": "{{type}} - editat (versiunea anterioară {{stamp}})"
+      "editedVersion": "{{type}} - editat (versiunea anterioară {{stamp}})",
+      "customerUpload": "Încărcare client"
     },
     "notes": {
       "damageCheckAtReturn": "Verificarea daunelor înregistrată la returnarea rezervării #{{id}}",

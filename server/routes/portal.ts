@@ -29,6 +29,9 @@ import { notifyStaffOfPortalEvent } from "../services/portal-notifications";
 import { resolveDocumentFilePath, getRelativePath } from "../services/document-paths";
 import { createSecureMulterFilter, sanitizeFilename, validateAfterUpload } from "../utils/security/fileUploadSecurity";
 import { storage } from "../storage";
+import { CUSTOMER_UPLOAD_DOCUMENT_TYPE, CUSTOMER_UPLOAD_MAX_BYTES, type PortalUploadDto } from "../../shared/portal-types";
+import { realtimeEvents } from "../realtime-events";
+import type { Document } from "../../shared/schema";
 import { PORTAL_ERROR, type PortalReservationDto, type PortalDocumentDto, type PortalDriverDto, type PortalSigningInfoDto } from "../../shared/portal-types";
 import type { Driver } from "../../shared/schema";
 import { finesStorage, type FineListRow } from "../services/fines-storage";
@@ -366,6 +369,96 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
       await AuditLogger.log({ username: `portaal:${ctx.user.email}`, action: "portal.signed_contract_changed", resourceType: "document", resourceId: String(id), status: "failure", details: { customerId: ctx.customerId } });
       return portalError(res, 409, PORTAL_ERROR.DOCUMENT_CHANGED, "This signed contract no longer matches its signature. Please contact us.");
     }
+    await logPortalActivity(req, "document_downloaded", { entity: "document", entityId: id });
+    setSafeFileHeaders(res, doc.contentType, doc.fileName, req.query.inline === "1", sanitizeFilename(doc.fileName));
+    streamFile(file, res);
+  });
+
+  // ---- documents the customer uploads (Kees, 2026-10-18) -------------------------------------------
+  // PDF, JPG or PNG up to 10 MB with a description, on a reservation the user may see: an admin any of
+  // the company's, a driver only their own car (the portal scope). The file lands in the office's
+  // documents next to the reservation's contract, under <uploads>/<PLATE>/customer_upload/; staff
+  // are told. The content is checked, not just the name.
+  const toUploadDto = (d: Document): PortalUploadDto => ({
+    id: d.id, reservationId: d.reservationId!, fileName: d.fileName, contentType: d.contentType, fileSize: d.fileSize,
+    description: d.notes ?? "", uploadedAt: new Date(d.uploadDate).toISOString(),
+  });
+  const customerUpload = sanitizeUploadedFields(multer({
+    storage: multer.diskStorage({
+      destination: (_req, _file, cb) => {
+        const dir = path.join(uploadsDir, "portal-uploads", "incoming");
+        fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+      },
+      filename: (req, file, cb) => {
+        const ext = path.extname(sanitizeFilename(file.originalname)).toLowerCase();
+        cb(null, `upload_c${req.portalUser?.customerId ?? "portal"}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}${ext}`);
+      },
+    }),
+    limits: { fileSize: CUSTOMER_UPLOAD_MAX_BYTES, files: 1 },
+    fileFilter: createSecureMulterFilter("document"),
+  }));
+
+  app.get("/api/portal/reservations/:id/uploads", requirePortalUser, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const ctx = ctxOf(req);
+    if (!(await portalStorage.getReservationForCustomer(id, ctx.customerId, ctx.scope))) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Reservation not found");
+    res.json((await portalStorage.listUploadsForReservation(id)).map(toUploadDto));
+  });
+
+  app.post("/api/portal/reservations/:id/uploads", requirePortalUser,
+    (req, res, next) => customerUpload.single("file")(req, res, (err: any) => {
+      if (!err) return next();
+      if (err?.code === "LIMIT_FILE_SIZE") return portalError(res, 400, PORTAL_ERROR.FILE_TOO_LARGE, "The file is larger than 10 MB");
+      return portalError(res, 400, PORTAL_ERROR.VALIDATION, err?.message ?? "Invalid file");
+    }),
+    async (req, res) => {
+      const file = req.file;
+      const discard = () => { if (file) fs.rmSync(file.path, { force: true }); };
+      const id = idParam(req, res); if (id === null) { discard(); return; }
+      const ctx = ctxOf(req);
+      const reservation = await portalStorage.getReservationForCustomer(id, ctx.customerId, ctx.scope);
+      if (!reservation) { discard(); return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Reservation not found"); }
+      if (reservation.status === "cancelled") { discard(); return portalError(res, 400, PORTAL_ERROR.VALIDATION, "This reservation is cancelled"); }
+      if (!file) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "No file uploaded");
+      const description = z.string().trim().min(1).max(300).safeParse(req.body?.description);
+      if (!description.success) { discard(); return portalError(res, 400, PORTAL_ERROR.VALIDATION, "A description is required"); }
+      const check = await validateAfterUpload(file.path, file.originalname, file.mimetype, "document");
+      if (!check.valid) { discard(); return portalError(res, 400, PORTAL_ERROR.VALIDATION, check.error ?? "Invalid file"); }
+
+      // Filed like the office's own documents: per plate, then per type.
+      const plate = (reservation.vehicle?.licensePlate ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+      const folder = path.join(uploadsDir, plate || "portal-uploads", "customer_upload");
+      fs.mkdirSync(folder, { recursive: true });
+      const ext = path.extname(file.path);
+      const stored = path.join(folder, `${plate || `RES${id}`}_CustomerUpload_${new Date().toISOString().slice(0, 10)}_${Date.now()}${ext}`);
+      fs.renameSync(file.path, stored);
+      const doc = await storage.createDocument({
+        vehicleId: reservation.vehicleId ?? null, reservationId: id, documentType: CUSTOMER_UPLOAD_DOCUMENT_TYPE,
+        fileName: sanitizeFilename(file.originalname), filePath: getRelativePath(stored), fileSize: file.size,
+        contentType: check.detectedMimeType ?? file.mimetype, notes: description.data, createdBy: `portaal:${ctx.user.email}`,
+      } as any);
+      realtimeEvents.documents.created(doc);
+      await logPortalActivity(req, "document_uploaded", { entity: "document", entityId: doc.id, details: { reservationId: id, fileName: doc.fileName } });
+      await AuditLogger.log({
+        username: `portaal:${ctx.user.email}`, action: "portal.document_uploaded", resourceType: "document", resourceId: String(doc.id),
+        details: { customerId: ctx.customerId, reservationId: id, fileName: doc.fileName, fileSize: doc.fileSize }, ipAddress: req.ip, userAgent: req.get("user-agent") ?? undefined,
+      }).catch((e: Error) => console.error("portal upload audit failed:", e.message));
+      const customer = await storage.getCustomer(ctx.customerId);
+      await notifyStaffOfPortalEvent({
+        kind: "portal_document_upload",
+        title: `Document van klant${reservation.vehicle?.licensePlate ? ` (${reservation.vehicle.licensePlate})` : ""}: ${customer?.companyName || customer?.name || ctx.customerId}`,
+        description: `${description.data} · ${doc.fileName}`.slice(0, 200), link: `/reservations/edit/${id}`, customerId: ctx.customerId,
+      });
+      res.status(201).json(toUploadDto(doc));
+    });
+
+  app.get("/api/portal/uploads/:id/file", requirePortalUser, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const ctx = ctxOf(req);
+    const doc = await portalStorage.getUploadForCustomer(id, ctx.customerId, ctx.scope);
+    const file = doc ? resolveDocumentFilePath(doc.filePath) : null;
+    if (!doc || !file) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Document not found");
     await logPortalActivity(req, "document_downloaded", { entity: "document", entityId: id });
     setSafeFileHeaders(res, doc.contentType, doc.fileName, req.query.inline === "1", sanitizeFilename(doc.fileName));
     streamFile(file, res);

@@ -37,6 +37,7 @@ export const DOCUMENT_TYPE_LABEL_KEYS: Record<string, string> = {
   "Damage Check (Return)": "documentLabels.type.damageCheckReturn",
   "Damage Check (Unsigned)": "documentLabels.type.damageCheckUnsigned",
   "transport_report": "documentLabels.type.transportReport",
+  "Customer Upload": "documentLabels.type.customerUpload",
 };
 
 const EDITED_VERSION = /^(.*?) - Edited \(Previous Version (.+)\)$/;

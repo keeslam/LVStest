@@ -369,7 +369,8 @@
     "PORTAL_DOCUMENT_CHANGED": "Het document is net gewijzigd. Open het opnieuw en teken dan.",
     "PORTAL_INVALID_SIGNATURE": "Zet eerst uw handtekening in het vak.",
     "PORTAL_CANCEL_TOO_LATE": "Annuleren kan tot 48 uur voor de start. Neem contact met ons op.",
-    "PORTAL_CANCEL_NOT_ALLOWED": "Deze reservering kan niet via het portaal worden geannuleerd."
+    "PORTAL_CANCEL_NOT_ALLOWED": "Deze reservering kan niet via het portaal worden geannuleerd.",
+    "PORTAL_FILE_TOO_LARGE": "Het bestand is groter dan 10 MB."
   },
   "admin": {
     "navLabel": "Klantenportaal",
@@ -643,7 +644,8 @@
         "request_replied": "Aanvraag beantwoord",
         "company_details_updated": "Bedrijfsgegevens bijgewerkt",
         "company_name_requested": "Wijziging bedrijfsnaam aangevraagd",
-        "export": "Lijst geëxporteerd (CSV)"
+        "export": "Lijst geëxporteerd (CSV)",
+        "document_uploaded": "Document geüpload"
       },
       "detailKeys": {
         "by": "door",
@@ -1670,5 +1672,17 @@
       "licenseExpiry": "Rijbewijs geldig tot",
       "carNow": "Auto nu"
     }
+  },
+  "uploads": {
+    "title": "Uw documenten ({{count}})",
+    "add": "Document toevoegen",
+    "description": "Omschrijving",
+    "descriptionPlaceholder": "Bijv. foto van de schade, tankbon",
+    "file": "Bestand",
+    "hint": "PDF, JPG of PNG, maximaal 10 MB.",
+    "send": "Uploaden",
+    "cancel": "Annuleren",
+    "sent": "Document verstuurd naar Lam Groep",
+    "wrongType": "Alleen PDF, JPG of PNG."
   }
 }

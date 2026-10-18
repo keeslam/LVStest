@@ -375,7 +375,8 @@
     "PORTAL_DOCUMENT_CHANGED": "Il documento è appena cambiato. Lo apra di nuovo e poi firmi.",
     "PORTAL_INVALID_SIGNATURE": "Firmi prima nel riquadro.",
     "PORTAL_CANCEL_TOO_LATE": "Puoi annullare fino a 48 ore prima dell'inizio. Contattaci.",
-    "PORTAL_CANCEL_NOT_ALLOWED": "Questa prenotazione non può essere annullata tramite il portale."
+    "PORTAL_CANCEL_NOT_ALLOWED": "Questa prenotazione non può essere annullata tramite il portale.",
+    "PORTAL_FILE_TOO_LARGE": "Il file supera i 10 MB."
   },
   "admin": {
     "navLabel": "Portale clienti",
@@ -649,7 +650,8 @@
         "request_replied": "Richiesta evasa",
         "company_details_updated": "Dati aziendali aggiornati",
         "company_name_requested": "Modifica della ragione sociale richiesta",
-        "export": "Elenco esportato (CSV)"
+        "export": "Elenco esportato (CSV)",
+        "document_uploaded": "Documento caricato"
       },
       "detailKeys": {
         "by": "da",
@@ -1682,5 +1684,17 @@
       "licenseExpiry": "Patente valida fino al",
       "carNow": "Veicolo attuale"
     }
+  },
+  "uploads": {
+    "title": "I tuoi documenti ({{count}})",
+    "add": "Aggiungi documento",
+    "description": "Descrizione",
+    "descriptionPlaceholder": "Ad es. foto del danno, scontrino carburante",
+    "file": "File",
+    "hint": "PDF, JPG o PNG, massimo 10 MB.",
+    "send": "Carica",
+    "cancel": "Annulla",
+    "sent": "Documento inviato a Lam Groep",
+    "wrongType": "Solo PDF, JPG o PNG."
   }
 }

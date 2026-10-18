@@ -1,4 +1,5 @@
 import { describeApiError } from "@/lib/api-error";
+import { CUSTOMER_UPLOAD_DOCUMENT_TYPE } from "@shared/portal-types";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -639,7 +640,9 @@ export function ReservationViewDialog({
                                     <FileText className="h-4 w-4 text-gray-600" />
                                   )}
                                   <div className="text-left">
-                                    <div className="text-xs font-semibold truncate max-w-[150px]">{doc.documentType}</div>
+                                    <div className="text-xs font-semibold truncate max-w-[150px]">{doc.documentType === CUSTOMER_UPLOAD_DOCUMENT_TYPE ? t("customerUpload") : doc.documentType}</div>
+                                    {/* Kees, 2026-10-18: what the customer wrote with their upload. */}
+                                    {doc.documentType === CUSTOMER_UPLOAD_DOCUMENT_TYPE && doc.notes && <div className="text-[10px] text-gray-600 truncate max-w-[150px]" title={doc.notes}>{doc.notes}</div>}
                                     {/* A-6-4: a document the server marked stale (e.g. after a reversal) says so here too. */}
                                     <StaleDocumentBadge document={doc} />
                                     <ContractSignatureBadge documentId={doc.id} signatures={contractSignatures} />
@@ -788,7 +791,9 @@ export function ReservationViewDialog({
                                     <FileText className="h-4 w-4 text-gray-600" />
                                   )}
                                   <div className="text-left">
-                                    <div className="text-xs font-semibold truncate max-w-[150px]">{doc.documentType}</div>
+                                    <div className="text-xs font-semibold truncate max-w-[150px]">{doc.documentType === CUSTOMER_UPLOAD_DOCUMENT_TYPE ? t("customerUpload") : doc.documentType}</div>
+                                    {/* Kees, 2026-10-18: what the customer wrote with their upload. */}
+                                    {doc.documentType === CUSTOMER_UPLOAD_DOCUMENT_TYPE && doc.notes && <div className="text-[10px] text-gray-600 truncate max-w-[150px]" title={doc.notes}>{doc.notes}</div>}
                                     {/* A-6-4: a document the server marked stale (e.g. after a reversal) says so here too. */}
                                     <StaleDocumentBadge document={doc} />
                                     <ContractSignatureBadge documentId={doc.id} signatures={contractSignatures} />

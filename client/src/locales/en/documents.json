@@ -771,7 +771,8 @@
       "damageCheckReturn": "Damage check (return)",
       "damageCheckUnsigned": "Damage check (unsigned)",
       "transportReport": "Transport report",
-      "editedVersion": "{{type}} - edited (previous version {{stamp}})"
+      "editedVersion": "{{type}} - edited (previous version {{stamp}})",
+      "customerUpload": "Customer upload"
     },
     "notes": {
       "damageCheckAtReturn": "Damage check recorded at return of reservation #{{id}}",
