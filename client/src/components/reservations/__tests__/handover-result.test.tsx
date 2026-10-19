@@ -103,8 +103,9 @@ describe("OPT-005 — het contract vanuit de ophaaldialoog", () => {
       <HandoverResultDialog open onOpenChange={() => {}} reservation={reservation} document={contract} kind="contract" />,
     );
     await user.click(screen.getByTestId("button-handover-print"));
+    // intent=print: the server logs the request as a print, not a view (audit-events.printUrl).
     expect(openMock).toHaveBeenCalledWith(
-      "/api/documents/view/501",
+      "/api/documents/view/501?intent=print",
       "documentPrintWindow",
       expect.any(String),
     );

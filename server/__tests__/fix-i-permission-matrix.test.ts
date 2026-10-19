@@ -57,6 +57,12 @@ const AUTHENTICATED_ONLY_ROUTES = new Set([
   "GET /api/barcode-label-templates",
   "GET /api/barcode-label-templates/default",
   "GET /api/barcode-label-templates/:id",
+  // The in-app manual (handleiding): every logged-in staff member may read it, whatever their rights
+  // (Kees, 2026-10-19). Reads only; the chapters and pictures are the same for everyone.
+  "GET /api/manual",
+  "GET /api/manual/zoek",
+  "GET /api/manual/:chapter",
+  "GET /api/manual/afbeeldingen/:file",
 ]);
 
 interface Registration {
@@ -109,6 +115,7 @@ describe("FIX-I — default deny over the whole router", () => {
   it("the allowlists themselves stay small", async () => {
     // A guard against the easy fix: silencing the test by growing the list.
     expect(PUBLIC_ROUTES.size).toBeLessThanOrEqual(6);
-    expect(AUTHENTICATED_ONLY_ROUTES.size).toBeLessThanOrEqual(24);
+    // 24 plus the four read-only manual routes (2026-10-19).
+    expect(AUTHENTICATED_ONLY_ROUTES.size).toBeLessThanOrEqual(28);
   });
 });
