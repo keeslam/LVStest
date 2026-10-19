@@ -1021,7 +1021,46 @@
         "testNeedsHost": "Completați un server (gazdă) pentru a testa conexiunea sau a prelua acum."
       },
       "exportCsv": "Exportă (CSV)",
-      "pageTitle": "Amenzi"
+      "pageTitle": "Amenzi",
+      "bulk": {
+        "notify": "Informează clientul",
+        "cancel": "Anulează",
+        "clear": "Golește selecția",
+        "selectAll": "Selectează tot",
+        "select": "Selectează {{plate}}",
+        "failed": "Acțiunea în bloc a eșuat.",
+        "confirmCancel": "Amenzile alese primesc starea Anulată. Puteți reactiva o amendă mai târziu.",
+        "confirmNotify": "Se trimit prin e-mail doar amenzile asociate ({{linked}} dintre cele alese). Clientul primește un e-mail și o notificare în portal pentru fiecare amendă.",
+        "reasons": {
+          "FINE_NOT_LINKED": "neasociată",
+          "FINE_NOT_FOUND": "negăsită",
+          "ALREADY_CANCELLED": "deja anulată",
+          "CANNOT_CANCEL": "nu poate fi anulată",
+          "NO_EMAIL": "fără adresă de e-mail",
+          "MAIL_FAILED": "e-mail eșuat",
+          "FAILED": "eroare",
+          "NO_CUSTOMER": "fără client",
+          "PORTAL_DISABLED": "e-mail dezactivat pentru acest client"
+        },
+        "selected_one": "{{count}} amendă selectată",
+        "selected_few": "{{count}} amenzi selectate",
+        "selected_other": "{{count}} de amenzi selectate",
+        "notifiedTitle_one": "{{count}} client informat",
+        "notifiedTitle_few": "{{count}} clienți informați",
+        "notifiedTitle_other": "{{count}} de clienți informați",
+        "cancelledTitle_one": "{{count}} amendă anulată",
+        "cancelledTitle_few": "{{count}} amenzi anulate",
+        "cancelledTitle_other": "{{count}} de amenzi anulate",
+        "skipped_one": "{{count}} omisă",
+        "skipped_few": "{{count}} omise",
+        "skipped_other": "{{count}} omise",
+        "confirmCancelTitle_one": "Anulați {{count}} amendă?",
+        "confirmCancelTitle_few": "Anulați {{count}} amenzi?",
+        "confirmCancelTitle_other": "Anulați {{count}} de amenzi?",
+        "confirmNotifyTitle_one": "Informați clientul despre {{count}} amendă?",
+        "confirmNotifyTitle_few": "Informați clienții despre {{count}} amenzi?",
+        "confirmNotifyTitle_other": "Informați clienții despre {{count}} de amenzi?"
+      }
     },
     "requests": {
       "title": "Solicitări",

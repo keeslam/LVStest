@@ -1014,7 +1014,40 @@
         "testNeedsHost": "Enter a server (host) to test the connection or fetch now."
       },
       "exportCsv": "Export (CSV)",
-      "pageTitle": "Fines"
+      "pageTitle": "Fines",
+      "bulk": {
+        "notify": "Inform customer",
+        "cancel": "Cancel",
+        "clear": "Clear selection",
+        "selectAll": "Select all",
+        "select": "Select {{plate}}",
+        "failed": "The bulk action failed.",
+        "confirmCancel": "The chosen fines get the status Cancelled. You can reactivate a fine later.",
+        "confirmNotify": "Only linked fines are emailed ({{linked}} of those chosen). The customer gets an email and a portal notification per fine.",
+        "reasons": {
+          "FINE_NOT_LINKED": "not linked",
+          "FINE_NOT_FOUND": "not found",
+          "ALREADY_CANCELLED": "already cancelled",
+          "CANNOT_CANCEL": "cannot be cancelled",
+          "NO_EMAIL": "no email address",
+          "MAIL_FAILED": "email failed",
+          "FAILED": "error",
+          "NO_CUSTOMER": "no customer",
+          "PORTAL_DISABLED": "mail off for this customer"
+        },
+        "selected_one": "{{count}} fine selected",
+        "selected_other": "{{count}} fines selected",
+        "notifiedTitle_one": "{{count}} customer informed",
+        "notifiedTitle_other": "{{count}} customers informed",
+        "cancelledTitle_one": "{{count}} fine cancelled",
+        "cancelledTitle_other": "{{count}} fines cancelled",
+        "skipped_one": "{{count}} skipped",
+        "skipped_other": "{{count}} skipped",
+        "confirmCancelTitle_one": "Cancel {{count}} fine?",
+        "confirmCancelTitle_other": "Cancel {{count}} fines?",
+        "confirmNotifyTitle_one": "Inform the customer about {{count}} fine?",
+        "confirmNotifyTitle_other": "Inform customers about {{count}} fines?"
+      }
     },
     "requests": {
       "title": "Requests",

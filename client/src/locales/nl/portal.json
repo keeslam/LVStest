@@ -1014,7 +1014,40 @@
         "testNeedsHost": "Vul een server (host) in om de verbinding te testen of nu op te halen."
       },
       "exportCsv": "Exporteren (CSV)",
-      "pageTitle": "Bekeuringen"
+      "pageTitle": "Bekeuringen",
+      "bulk": {
+        "notify": "Klant informeren",
+        "cancel": "Annuleren",
+        "clear": "Selectie wissen",
+        "selectAll": "Alles selecteren",
+        "select": "Selecteer {{plate}}",
+        "failed": "De bulkactie is mislukt.",
+        "confirmCancel": "De gekozen bekeuringen krijgen de status Geannuleerd. Je kunt een bekeuring later weer activeren.",
+        "confirmNotify": "Alleen gekoppelde bekeuringen worden gemaild ({{linked}} van de gekozen). De klant krijgt per bekeuring een mail en een melding in het portaal.",
+        "reasons": {
+          "FINE_NOT_LINKED": "niet gekoppeld",
+          "FINE_NOT_FOUND": "niet gevonden",
+          "ALREADY_CANCELLED": "al geannuleerd",
+          "CANNOT_CANCEL": "kan niet geannuleerd worden",
+          "NO_EMAIL": "geen e-mailadres",
+          "MAIL_FAILED": "mail mislukt",
+          "FAILED": "fout",
+          "NO_CUSTOMER": "geen klant",
+          "PORTAL_DISABLED": "mail uit voor deze klant"
+        },
+        "selected_one": "{{count}} bekeuring gekozen",
+        "selected_other": "{{count}} bekeuringen gekozen",
+        "notifiedTitle_one": "{{count}} klant geïnformeerd",
+        "notifiedTitle_other": "{{count}} klanten geïnformeerd",
+        "cancelledTitle_one": "{{count}} bekeuring geannuleerd",
+        "cancelledTitle_other": "{{count}} bekeuringen geannuleerd",
+        "skipped_one": "{{count}} overgeslagen",
+        "skipped_other": "{{count}} overgeslagen",
+        "confirmCancelTitle_one": "{{count}} bekeuring annuleren?",
+        "confirmCancelTitle_other": "{{count}} bekeuringen annuleren?",
+        "confirmNotifyTitle_one": "Klant informeren over {{count}} bekeuring?",
+        "confirmNotifyTitle_other": "Klanten informeren over {{count}} bekeuringen?"
+      }
     },
     "requests": {
       "title": "Aanvragen",

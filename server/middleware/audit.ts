@@ -192,6 +192,8 @@ const SELF_LOGGED: Array<{ method: string; pattern: RegExp }> = [
   // D17: applying the RDW type plan writes one `vehicle.type-remap` row per vehicle itself, and
   // the check only stores a plan. Neither is a `vehicle.create`.
   { method: 'POST', pattern: /^\/api\/vehicles\/rdw-type-remap\/(check|apply)$/ },
+  // The fines bulk bar writes one row per fine itself (fine.notify-customer / fine.status).
+  { method: 'POST', pattern: /^\/api\/fines\/bulk$/ },
   // The client's own print/export reports: the route writes the row it describes.
   { method: 'POST', pattern: /^\/api\/audit-events$/ },
 ];

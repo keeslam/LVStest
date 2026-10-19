@@ -320,11 +320,14 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
 
   // B-41 D10: the one place the customer hears about a fine. Create, CJIB import and manual link send nothing;
   // staff press "Klant informeren" in the fine's detail. Answers {sent, reason?}; a refusal to send is not an HTTP error.
-  app.post("/api/fines/:id/notify-customer", canManage, async (req, res) => {
-    const id = idParam(req, res); if (id === null) return;
+  /**
+   * Tells the customer about one linked fine: mail, portal bell, date stamp, audit line. Used by the
+   * fine dialog and by the bulk bar (Kees, 2026-10-19). Answers why when it did not send.
+   */
+  async function notifyCustomerOfFine(req: Request, id: number): Promise<{ sent: true } | { sent: false; reason: string; status: number; code?: string }> {
     const fine = await finesStorage.getFine(id);
-    if (!fine) return res.status(404).json({ message: "Fine not found", code: "FINE_NOT_FOUND" });
-    if (fine.status !== "linked") return res.status(400).json({ message: "Only a linked fine can be announced to its customer", code: "FINE_NOT_LINKED" });
+    if (!fine) return { sent: false, reason: "FINE_NOT_FOUND", status: 404, code: "FINE_NOT_FOUND" };
+    if (fine.status !== "linked") return { sent: false, reason: "FINE_NOT_LINKED", status: 400, code: "FINE_NOT_LINKED" };
     let result: Awaited<ReturnType<typeof sendFineLinkedMailDetailed>>;
     try { result = await sendFineLinkedMailDetailed(id); } catch (e) {
       console.error("fine linked mail failed:", e);
@@ -345,7 +348,48 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
       }
     }
     await AuditLogger.logFromRequest(req, "fine.notify-customer", "fine", id, result.sent ? { sent: true } : { sent: false, reason: result.reason });
+    return result.sent ? { sent: true } : { sent: false, reason: String(result.reason ?? "MAIL_FAILED"), status: 200 };
+  }
+
+  app.post("/api/fines/:id/notify-customer", canManage, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const result = await notifyCustomerOfFine(req, id);
+    if (!result.sent && result.status === 404) return res.status(404).json({ message: "Fine not found", code: "FINE_NOT_FOUND" });
+    if (!result.sent && result.status === 400) return res.status(400).json({ message: "Only a linked fine can be announced to its customer", code: "FINE_NOT_LINKED" });
     res.json(result.sent ? { sent: true } : { sent: false, reason: result.reason });
+  });
+
+  /**
+   * Bulk bar of the fines list (Kees, 2026-10-19): tell the customers about, or cancel, several fines at
+   * once. Each fine goes through the same rules as its own button; what could not be done is answered
+   * per fine with the reason, and one fine failing never stops the rest. Audit rows are per fine.
+   */
+  app.post("/api/fines/bulk", canManage, async (req, res) => {
+    const parsed = z.object({ action: z.enum(["notify", "cancel"]), ids: z.array(z.number().int().positive()).min(1).max(200) }).strict().safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ message: "Send { action: 'notify' | 'cancel', ids: number[] (1-200) }", code: "INVALID_BULK_REQUEST" });
+    const { action, ids } = parsed.data;
+    const done: number[] = [];
+    const skipped: Array<{ id: number; reason: string }> = [];
+    for (const id of Array.from(new Set(ids))) {
+      try {
+        if (action === "notify") {
+          const r = await notifyCustomerOfFine(req, id);
+          if (r.sent) done.push(id); else skipped.push({ id, reason: r.reason });
+          continue;
+        }
+        const fine = await finesStorage.getFine(id);
+        if (!fine) { skipped.push({ id, reason: "FINE_NOT_FOUND" }); continue; }
+        if (fine.status === "cancelled") { skipped.push({ id, reason: "ALREADY_CANCELLED" }); continue; }
+        if (!isValidFineTransition(fine.status, "cancelled")) { skipped.push({ id, reason: "CANNOT_CANCEL" }); continue; }
+        await finesStorage.updateFine(id, { status: "cancelled", updatedBy: actor(req) });
+        await AuditLogger.logFromRequest(req, "fine.status", "fine", id, { from: fine.status, to: "cancelled", bulk: true });
+        done.push(id);
+      } catch (e) {
+        console.error(`fine bulk ${action} failed for #${id}:`, e);
+        skipped.push({ id, reason: "FAILED" });
+      }
+    }
+    res.json({ action, done, skipped });
   });
 
   app.post("/api/fines/:id/unlink", canManage, async (req, res) => {

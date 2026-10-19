@@ -1021,7 +1021,46 @@
         "testNeedsHost": "Indique um servidor (host) para testar a ligação ou obter agora."
       },
       "exportCsv": "Exportar (CSV)",
-      "pageTitle": "Multas"
+      "pageTitle": "Multas",
+      "bulk": {
+        "notify": "Informar cliente",
+        "cancel": "Anular",
+        "clear": "Limpar seleção",
+        "selectAll": "Selecionar tudo",
+        "select": "Selecionar {{plate}}",
+        "failed": "A ação em massa falhou.",
+        "confirmCancel": "As coimas escolhidas passam a Anulada. Pode reativar uma coima mais tarde.",
+        "confirmNotify": "Só são enviadas por e-mail as coimas associadas ({{linked}} das escolhidas). O cliente recebe um e-mail e um aviso no portal por coima.",
+        "reasons": {
+          "FINE_NOT_LINKED": "não associada",
+          "FINE_NOT_FOUND": "não encontrada",
+          "ALREADY_CANCELLED": "já anulada",
+          "CANNOT_CANCEL": "não pode ser anulada",
+          "NO_EMAIL": "sem e-mail",
+          "MAIL_FAILED": "falha no e-mail",
+          "FAILED": "erro",
+          "NO_CUSTOMER": "sem cliente",
+          "PORTAL_DISABLED": "e-mail desativado para este cliente"
+        },
+        "selected_one": "{{count}} coima selecionada",
+        "selected_many": "{{count}} de coimas selecionadas",
+        "selected_other": "{{count}} coimas selecionadas",
+        "notifiedTitle_one": "{{count}} cliente informado",
+        "notifiedTitle_many": "{{count}} de clientes informados",
+        "notifiedTitle_other": "{{count}} clientes informados",
+        "cancelledTitle_one": "{{count}} coima anulada",
+        "cancelledTitle_many": "{{count}} de coimas anuladas",
+        "cancelledTitle_other": "{{count}} coimas anuladas",
+        "skipped_one": "{{count}} ignorada",
+        "skipped_many": "{{count}} de ignoradas",
+        "skipped_other": "{{count}} ignoradas",
+        "confirmCancelTitle_one": "Anular {{count}} coima?",
+        "confirmCancelTitle_many": "Anular {{count}} de coimas?",
+        "confirmCancelTitle_other": "Anular {{count}} coimas?",
+        "confirmNotifyTitle_one": "Informar o cliente sobre {{count}} coima?",
+        "confirmNotifyTitle_many": "Informar os clientes sobre {{count}} de coimas?",
+        "confirmNotifyTitle_other": "Informar os clientes sobre {{count}} coimas?"
+      }
     },
     "requests": {
       "title": "Pedidos",

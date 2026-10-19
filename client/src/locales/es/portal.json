@@ -1021,7 +1021,46 @@
         "testNeedsHost": "Indique un servidor (host) para probar la conexión o recoger ahora."
       },
       "exportCsv": "Exportar (CSV)",
-      "pageTitle": "Multas"
+      "pageTitle": "Multas",
+      "bulk": {
+        "notify": "Informar al cliente",
+        "cancel": "Anular",
+        "clear": "Borrar selección",
+        "selectAll": "Seleccionar todo",
+        "select": "Seleccionar {{plate}}",
+        "failed": "La acción en bloque ha fallado.",
+        "confirmCancel": "Las multas elegidas pasan a Anulada. Puede reactivar una multa más tarde.",
+        "confirmNotify": "Solo se envían por correo las multas vinculadas ({{linked}} de las elegidas). El cliente recibe un correo y un aviso en el portal por multa.",
+        "reasons": {
+          "FINE_NOT_LINKED": "no vinculada",
+          "FINE_NOT_FOUND": "no encontrada",
+          "ALREADY_CANCELLED": "ya anulada",
+          "CANNOT_CANCEL": "no se puede anular",
+          "NO_EMAIL": "sin correo electrónico",
+          "MAIL_FAILED": "fallo del correo",
+          "FAILED": "error",
+          "NO_CUSTOMER": "sin cliente",
+          "PORTAL_DISABLED": "correo desactivado para este cliente"
+        },
+        "selected_one": "{{count}} multa seleccionada",
+        "selected_many": "{{count}} de multas seleccionadas",
+        "selected_other": "{{count}} multas seleccionadas",
+        "notifiedTitle_one": "{{count}} cliente informado",
+        "notifiedTitle_many": "{{count}} de clientes informados",
+        "notifiedTitle_other": "{{count}} clientes informados",
+        "cancelledTitle_one": "{{count}} multa anulada",
+        "cancelledTitle_many": "{{count}} de multas anuladas",
+        "cancelledTitle_other": "{{count}} multas anuladas",
+        "skipped_one": "{{count}} omitida",
+        "skipped_many": "{{count}} de omitidas",
+        "skipped_other": "{{count}} omitidas",
+        "confirmCancelTitle_one": "¿Anular {{count}} multa?",
+        "confirmCancelTitle_many": "¿Anular {{count}} de multas?",
+        "confirmCancelTitle_other": "¿Anular {{count}} multas?",
+        "confirmNotifyTitle_one": "¿Informar al cliente de {{count}} multa?",
+        "confirmNotifyTitle_many": "¿Informar a los clientes de {{count}} de multas?",
+        "confirmNotifyTitle_other": "¿Informar a los clientes de {{count}} multas?"
+      }
     },
     "requests": {
       "title": "Solicitudes",

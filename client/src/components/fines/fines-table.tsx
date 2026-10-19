@@ -2,7 +2,10 @@ import { useState } from "react";
 import { formatLicensePlate, formatDateTime, formatCurrency } from "@/lib/format-utils";
 import { type Preview, PreviewFooter, TableSearch, textMatches } from "@/components/portal-admin/preview";
 import { downloadCsv, csvDateTime, csvNumber } from "@/lib/csv";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { apiRequest } from "@/lib/queryClient";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
@@ -49,6 +52,26 @@ export function FinesTable({ customerId, initialPlate, importFileId, preview }: 
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [search, setSearch] = useState("");
+  // Kees, 2026-10-19: tick fines and tell their customers, or cancel them, in one go.
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [confirm, setConfirm] = useState<null | "notify" | "cancel">(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const bulk = useMutation({
+    mutationFn: async (action: "notify" | "cancel") => (await apiRequest("POST", "/api/fines/bulk", { action, ids: Array.from(selected) })).json() as Promise<{ action: string; done: number[]; skipped: Array<{ id: number; reason: string }> }>,
+    onSuccess: (r) => {
+      const reasons = Array.from(new Set(r.skipped.map((s) => s.reason))).map((code) => t(`admin.fines.bulk.reasons.${code}`, { defaultValue: code }));
+      toast({
+        title: t(r.action === "notify" ? "admin.fines.bulk.notifiedTitle" : "admin.fines.bulk.cancelledTitle", { count: r.done.length }),
+        description: r.skipped.length > 0 ? `${t("admin.fines.bulk.skipped", { count: r.skipped.length })}: ${reasons.join(", ")}` : undefined,
+        variant: r.done.length === 0 ? "destructive" : undefined,
+      });
+      setSelected(new Set()); setConfirm(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/fines"] });
+    },
+    onError: () => { toast({ title: t("admin.fines.bulk.failed"), variant: "destructive" }); setConfirm(null); },
+  });
+  const toggle = (id: number) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const filters = { status: status || undefined, customerId, licensePlate: plate.trim() || undefined, from: from || undefined, to: to || undefined, importFileId };
   // B-41 D9: the list answers with an array; the per-status counts of legacy rows travel in a header.
   // They live in the query data, so a list served from the cache keeps them.
@@ -76,6 +99,9 @@ export function FinesTable({ customerId, initialPlate, importFileId, preview }: 
 
   const filtered = data.filter((f) => textMatches(search, f.licensePlate, f.description, f.driverName, f.customerName, f.totalAmount, t(`admin.fines.status.${f.status}`)));
   const rows = preview ? filtered.slice(0, preview.limit) : filtered;
+  const canBulk = canManage && !preview;
+  const allChosen = rows.length > 0 && rows.every((f) => selected.has(f.id));
+  const chosen = data.filter((f) => selected.has(f.id));
   return (
     <div className="space-y-3">
       {!preview && <div className="flex flex-wrap items-center gap-2">
@@ -106,9 +132,29 @@ export function FinesTable({ customerId, initialPlate, importFileId, preview }: 
           </>)}
         </div>
       </div>}
+      {canBulk && selected.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm dark:bg-blue-950/30" data-testid="fines-bulk-bar">
+          <span className="font-medium">{t("admin.fines.bulk.selected", { count: selected.size })}</span>
+          <Button size="sm" onClick={() => setConfirm("notify")} data-testid="button-bulk-notify">{t("admin.fines.bulk.notify")}</Button>
+          <Button size="sm" variant="outline" onClick={() => setConfirm("cancel")} data-testid="button-bulk-cancel">{t("admin.fines.bulk.cancel")}</Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>{t("admin.fines.bulk.clear")}</Button>
+        </div>
+      )}
+      <ConfirmDialog
+        open={confirm !== null}
+        onOpenChange={(o) => { if (!o) setConfirm(null); }}
+        title={confirm === "cancel" ? t("admin.fines.bulk.confirmCancelTitle", { count: selected.size }) : t("admin.fines.bulk.confirmNotifyTitle", { count: selected.size })}
+        description={confirm === "cancel" ? t("admin.fines.bulk.confirmCancel") : t("admin.fines.bulk.confirmNotify", { linked: chosen.filter((f) => f.status === "linked").length })}
+        confirmLabel={confirm === "cancel" ? t("admin.fines.bulk.cancel") : t("admin.fines.bulk.notify")}
+        variant={confirm === "cancel" ? "danger" : "info"}
+        isLoading={bulk.isPending}
+        onConfirm={() => confirm && bulk.mutate(confirm)}
+        confirmTestId="button-bulk-confirm"
+      />
       {rows.length === 0 ? <p className="text-sm text-muted-foreground">{t("admin.fines.empty")}</p> : (
         <Table>
           <TableHeader><TableRow>
+            {canBulk && <TableHead className="w-8"><Checkbox checked={allChosen} onCheckedChange={(v) => setSelected(v ? new Set(rows.map((f) => f.id)) : new Set())} aria-label={t("admin.fines.bulk.selectAll")} data-testid="checkbox-fines-all" /></TableHead>}
             <TableHead>{t("admin.fines.columns.plate")}</TableHead>
             <TableHead>{t("admin.fines.columns.offenceAt")}</TableHead>
             <TableHead>{t("admin.fines.columns.description")}</TableHead>
@@ -120,6 +166,7 @@ export function FinesTable({ customerId, initialPlate, importFileId, preview }: 
           <TableBody>
             {rows.map((f) => (
               <TableRow key={f.id} className="cursor-pointer hover:bg-muted/40" onClick={() => openFineDialog(f.id)} data-testid={`row-fine-${f.id}`}>
+                {canBulk && <TableCell onClick={(e) => e.stopPropagation()}><Checkbox checked={selected.has(f.id)} onCheckedChange={() => toggle(f.id)} aria-label={t("admin.fines.bulk.select", { plate: formatLicensePlate(f.licensePlate) })} data-testid={`checkbox-fine-${f.id}`} /></TableCell>}
                 <TableCell className="font-mono">{formatLicensePlate(f.licensePlate)}</TableCell>
                 <TableCell className="whitespace-nowrap">{formatDateTime(f.offenceAt)}</TableCell>
                 <TableCell>{f.description}</TableCell>
