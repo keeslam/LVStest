@@ -165,6 +165,8 @@ import type { ContractErrorCode } from "../shared/contract-error-codes";
 import { reservationIsOld, verifyAdminPassword, authorizeMileageDecrease } from "./services/authorization";
 import { isLatestReturnForVehicle } from "./services/reservation-mileage-sync";
 import { assignDriverToReservation, listExtraDrivers, getDriverHistoryForStaff } from "./services/driver-assignments";
+import { getReservationListPage, getReservationListRowsByIds } from "./services/reservation-list";
+import { RESERVATION_LIST_VIEWS, RESERVATION_LIST_SORTS, RESERVATION_LIST_MAX_PAGE_SIZE } from "../shared/reservation-list";
 import { getServiceDueVehicles, scanVehiclesForServiceDue } from "./utils/service-due-scanner";
 import { registerUserRoutes } from "./routes/users";
 import { registerAuditEventRoutes } from "./routes/audit-events";
@@ -3318,6 +3320,26 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
+      // BUG-205 (Kees, 2026-10-19): ?view=current|history|completed answers one page
+      // ({ rows, total, page, pageSize, counts }) with slim vehicle and customer; ?ids=1,2 answers those
+      // rows slim. Without either, the old full array, which other screens still read.
+      if (req.query.view !== undefined || req.query.ids !== undefined) {
+        const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+        const parsed = z.object({
+          view: z.enum(RESERVATION_LIST_VIEWS).optional(),
+          ids: z.string().regex(/^\d+(,\d+){0,499}$/).optional(),
+          search: z.string().max(100).optional(),
+          sort: z.enum(RESERVATION_LIST_SORTS).optional(),
+          dir: z.enum(["asc", "desc"]).optional(),
+          page: z.coerce.number().int().min(1).max(100000).default(1),
+          pageSize: z.coerce.number().int().min(1).max(RESERVATION_LIST_MAX_PAGE_SIZE).default(50),
+          startFrom: day.optional(),
+        }).safeParse(req.query);
+        if (!parsed.success) return res.status(400).json({ message: parsed.error.errors[0]?.message ?? "Invalid list request", code: "INVALID_LIST_REQUEST" });
+        const q = parsed.data;
+        if (q.ids) return res.json(await getReservationListRowsByIds(q.ids.split(",").map(Number)));
+        return res.json(await getReservationListPage({ view: q.view!, search: q.search, sort: q.sort, dir: q.dir, page: q.page, pageSize: q.pageSize, startFrom: q.startFrom }));
+      }
       const searchQuery = req.query.search as string | undefined;
       const reservations = await storage.getAllReservations(searchQuery);
       res.json(reservations);

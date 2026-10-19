@@ -6,6 +6,9 @@
  * Now: a page at a time ("Toon meer"), a visible loading state, and the open
  * tab is reported to the caller so the calendar can put it in the URL.
  *
+ * BUG-205 (2026-10-19): the pages come from the server (?view=&search=&pageSize=); the fetch stub
+ * below answers like the server does, so these tests keep saying what the employee sees.
+ *
  * Runs in the jsdom project.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -15,6 +18,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { UserRole } from "@shared/schema";
 import { GlobalDialogProvider } from "@/contexts/GlobalDialogContext";
+import { reservationMatchesSearch } from "@/lib/reservation-search";
 
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: 1, username: "tester", role: UserRole.ADMIN, permissions: [] }, isLoading: false }),
@@ -51,9 +55,13 @@ beforeEach(() => {
   holdOverdue = null;
   vi.stubGlobal("fetch", vi.fn(async (input: any) => {
     const url = typeof input === "string" ? input : input?.url ?? String(input);
-    if (url === "/api/reservations") {
+    if (url.startsWith("/api/reservations?")) {
       if (holdReservations) await holdReservations;
-      return json([...active, ...history]);
+      // What the server answers for ?view=…&search=…&pageSize=… (server/services/reservation-list.ts).
+      const q = new URLSearchParams(url.split("?")[1]);
+      const rows = (q.get("view") === "history" ? history : active).filter((r) => reservationMatchesSearch(r as any, q.get("search") ?? ""));
+      const pageSize = Number(q.get("pageSize") ?? 50);
+      return json({ rows: rows.slice(0, pageSize), total: rows.length, page: 1, pageSize, counts: { current: active.length, history: history.length, completed: history.length } });
     }
     if (url === "/api/reservations/overdue") {
       if (holdOverdue) await holdOverdue;

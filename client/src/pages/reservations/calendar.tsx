@@ -3,7 +3,9 @@ import { withPrintIntent } from "@/lib/audit-events";
 import { useState, useMemo, useEffect } from "react";
 import { bucketByVehicleAndDay, cellKey, type BucketableReservation } from "@/lib/reservation-buckets";
 import { useTranslation } from "react-i18next";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation, keepPreviousData } from "@tanstack/react-query";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import type { ReservationListPage, ReservationListRow } from "@shared/reservation-list";
 import { safeFormatDate } from "@/lib/safe-date";
 import { addDays, subDays, isSameDay, parseISO, startOfMonth, endOfMonth, getDate, getDay, getMonth, getYear, isSameMonth, addMonths, startOfDay, endOfDay, isBefore, isAfter, differenceInDays, startOfWeek, endOfWeek } from "date-fns";
 // BUG-223: Dutch dates on a Dutch screen — formatNl is date-fns' format
@@ -722,29 +724,35 @@ export default function ReservationCalendarPage() {
     );
   }, [allReservations]);
   
-  // Fetch ALL reservations for building lookup maps (includes completed reservations outside calendar range)
-  //
-  // FIX-T (BUG-204): this used to be fetched twice on first paint. A second
-  // useQuery had the key ['/api/reservations', vehicles?.length] — the extra
-  // element is a number, which the query function ignores when it builds the
-  // URL, so it was a second cache entry for the same 8 MB response. Phase 19
-  // measured 19.6 MB on first paint, 16 MB of it this list, downloaded twice;
-  // and every socket reservation event refetched both copies again. One key,
-  // one request; the completed list is derived from it below.
+  // BUG-205 (Kees, 2026-10-19): this page no longer downloads every reservation (7.7 MB) on first
+  // paint. The full list is only fetched while the administration dialog is open (its tabs show
+  // invoicing details of every running and finished rental); the spare lookup asks for the few
+  // reservations it needs by id, and the "afgerond" list is a server page.
   const { data: allReservationsForLookup = [] } = useQuery<Reservation[]>({
     queryKey: ['/api/reservations'],
+    enabled: adminDialogOpen,
   });
-  
+
+  // The reservations a spare on screen stands in for (often outside the visible range).
+  const spareTargetIds = useMemo(() => {
+    const ids = new Set<number>();
+    for (const r of allReservations ?? []) if (r.replacementForReservationId) ids.add(r.replacementForReservationId);
+    if (selectedReservation?.replacementForReservationId) ids.add(selectedReservation.replacementForReservationId);
+    return Array.from(ids).sort((x, y) => x - y).slice(0, 500);
+  }, [allReservations, selectedReservation]);
+  const { data: spareTargets = [] } = useQuery<ReservationListRow[]>({
+    queryKey: ['/api/reservations', { ids: spareTargetIds.join(',') }],
+    enabled: spareTargetIds.length > 0,
+  });
+
   // Build a lookup map: reservationId -> vehicleId (for finding original vehicles of spare assignments)
   const reservationVehicleLookup = useMemo(() => {
     const map = new Map<number, number>();
-    allReservationsForLookup.forEach(r => {
-      if (r.vehicleId) {
-        map.set(r.id, r.vehicleId);
-      }
-    });
+    for (const r of [...(allReservations ?? []), ...spareTargets, ...allReservationsForLookup]) {
+      if (r.vehicleId) map.set(r.id, r.vehicleId);
+    }
     return map;
-  }, [allReservationsForLookup]);
+  }, [allReservations, spareTargets, allReservationsForLookup]);
 
   // A reservation of type 'replacement' is a spare vehicle standing in for the
   // vehicle on the reservation it replaces. Used by the admin invoice-data
@@ -755,24 +763,38 @@ export default function ReservationCalendarPage() {
     if (!originalVehicleId) return undefined;
     return vehicles?.find(v => v.id === originalVehicleId);
   };
-  
-  // The completed/returned list is a projection of the list above — same URL,
-  // same rows, enriched with the vehicle for the mileage column. It used to be
-  // its own useQuery on a second key for the same URL (BUG-204).
-  const completedRentals = useMemo<Reservation[]>(() => {
+
+  // "Afgerond": a server page (newest pickup first), searched and limited to a period there.
+  const [completedRentalsLimit, setCompletedRentalsLimit] = useState(100);
+  const debouncedCompletedSearch = useDebouncedValue(completedRentalsSearch.trim());
+  const completedStartFrom = useMemo(() => {
+    const days = { '7days': 7, '30days': 30, '90days': 90, 'year': 365 }[completedRentalsDateFilter as string];
+    return days ? format(new Date(Date.now() - days * 86_400_000), "yyyy-MM-dd") : undefined;
+  }, [completedRentalsDateFilter]);
+  useEffect(() => { setCompletedRentalsLimit(100); }, [debouncedCompletedSearch, completedStartFrom]);
+  const { data: completedPage } = useQuery<ReservationListPage>({
+    queryKey: ['/api/reservations', { view: 'completed', search: debouncedCompletedSearch || undefined, startFrom: completedStartFrom, sort: 'pickup', dir: 'desc', page: 1, pageSize: completedRentalsLimit }],
+    enabled: completedRentalsDialogOpen,
+    placeholderData: keepPreviousData,
+  });
+  // Only the count, for the button.
+  const { data: completedCountPage } = useQuery<ReservationListPage>({
+    queryKey: ['/api/reservations', { view: 'completed', page: 1, pageSize: 1 }],
+  });
+  const completedRentals = useMemo<Reservation[]>(() => (completedPage?.rows ?? []).map((rental) => ({
+    ...(rental as unknown as Reservation),
+    // Use reservation's returnMileage if available, otherwise fall back to vehicle's returnMileage
+    displayReturnMileage: rental.returnMileage ?? rental.vehicle?.returnMileage ?? null,
+  }) as Reservation), [completedPage]);
+  // The administration dialog's history tab keeps every finished rental, from the full list above.
+  const adminCompletedRentals = useMemo<Reservation[]>(() => {
     if (!vehicles) return [];
-    const completed = allReservationsForLookup.filter(r =>
-      (r.status === 'completed' || r.status === 'returned') &&
-      r.type !== 'maintenance_block'
-    );
-    return completed.map(rental => {
-      const vehicle = vehicles.find(v => v.id === rental.vehicleId);
-      return {
-        ...rental,
-        // Use reservation's returnMileage if available, otherwise fall back to vehicle's returnMileage
-        displayReturnMileage: rental.returnMileage ?? vehicle?.returnMileage ?? null
-      };
-    });
+    return allReservationsForLookup
+      .filter(r => (r.status === 'completed' || r.status === 'returned') && r.type !== 'maintenance_block')
+      .map(rental => {
+        const vehicle = vehicles.find(v => v.id === rental.vehicleId);
+        return { ...rental, displayReturnMileage: rental.returnMileage ?? vehicle?.returnMileage ?? null };
+      });
   }, [allReservationsForLookup, vehicles]);
 
   // Fetch overdue reservations (picked_up but past end date)
@@ -1180,7 +1202,7 @@ export default function ReservationCalendarPage() {
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
               <polyline points="22 4 12 14.01 9 11.01"/>
             </svg>
-            {t('calendarPage.viewCompletedButton', { count: completedRentals.length })}
+            {t('calendarPage.viewCompletedButton', { count: completedCountPage?.total ?? 0 })}
           </Button>
           {overdueReservations.length > 0 && (
             <Button variant="destructive" onClick={() => setOverdueDialogOpen(true)} data-testid="button-view-overdue">
@@ -3292,34 +3314,8 @@ export default function ReservationCalendarPage() {
           
           <ScrollArea className="max-h-[55vh]">
             {(() => {
-              // Apply filters and search
-              const now = new Date();
-              const filtered = completedRentals.filter((rental) => {
-                const vehicle = vehicles?.find(v => v.id === rental.vehicleId);
-                const customerName = rental.customer?.name || '';
-                const vehicleInfo = vehicle ? `${vehicle.brand} ${vehicle.model} ${formatLicensePlate(vehicle.licensePlate)}` : '';
-                
-                // Search filter
-                const searchLower = completedRentalsSearch.toLowerCase();
-                const matchesSearch = !completedRentalsSearch || 
-                  vehicleInfo.toLowerCase().includes(searchLower) || plateMatches(vehicle?.licensePlate, completedRentalsSearch) ||
-                  customerName.toLowerCase().includes(searchLower);
-                
-                // Date filter
-                const rentalDate = new Date(rental.startDate);
-                let matchesDate = true;
-                if (completedRentalsDateFilter === '7days') {
-                  matchesDate = (now.getTime() - rentalDate.getTime()) <= 7 * 24 * 60 * 60 * 1000;
-                } else if (completedRentalsDateFilter === '30days') {
-                  matchesDate = (now.getTime() - rentalDate.getTime()) <= 30 * 24 * 60 * 60 * 1000;
-                } else if (completedRentalsDateFilter === '90days') {
-                  matchesDate = (now.getTime() - rentalDate.getTime()) <= 90 * 24 * 60 * 60 * 1000;
-                } else if (completedRentalsDateFilter === 'year') {
-                  matchesDate = (now.getTime() - rentalDate.getTime()) <= 365 * 24 * 60 * 60 * 1000;
-                }
-                
-                return matchesSearch && matchesDate;
-              });
+              // Searched, limited to the period and sorted by the server (BUG-205).
+              const filtered = completedRentals;
               
               if (filtered.length === 0) {
                 return (
@@ -3335,7 +3331,6 @@ export default function ReservationCalendarPage() {
               return (
                 <div className="space-y-3">
                   {filtered
-                    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
                     .map((rental) => {
                     const vehicle = vehicles?.find(v => v.id === rental.vehicleId);
                     const customerName = rental.customer?.name || t('spareVehicleAssignmentDialog.unknownCustomer');
@@ -3450,6 +3445,17 @@ export default function ReservationCalendarPage() {
               );
             })()}
           </ScrollArea>
+          {/* BUG-205: the list is a server page; the next rows are one click away. */}
+          {(completedPage?.total ?? 0) > 0 && (
+            <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+              <span data-testid="completed-shown">{t('listDialog.shownOfTotal', { shown: completedRentals.length, total: completedPage?.total ?? 0 })}</span>
+              {(completedPage?.total ?? 0) > completedRentals.length && (
+                <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => setCompletedRentalsLimit(completedRentalsLimit + 100)} data-testid="button-completed-more">
+                  {t('listDialog.showMore', { count: Math.min(100, (completedPage?.total ?? 0) - completedRentals.length) })}
+                </Button>
+              )}
+            </div>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setCompletedRentalsDialogOpen(false)}>
               {t('common:actions.close')}
@@ -3803,7 +3809,7 @@ export default function ReservationCalendarPage() {
               {(() => {
                 // Use completedRentals which fetches ALL completed/returned rentals (not date-filtered)
                 // Enrich with vehicle data from vehicles array
-                const historyRentals = completedRentals.map(rental => ({
+                const historyRentals = adminCompletedRentals.map(rental => ({
                   ...rental,
                   vehicle: rental.vehicle || vehicles?.find(v => v.id === rental.vehicleId)
                 }));

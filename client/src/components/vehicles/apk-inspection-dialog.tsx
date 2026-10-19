@@ -74,9 +74,13 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
     },
   });
 
-  // Fetch all maintenance reservations to show on calendar
+  // The maintenance blocks of the weeks on screen (BUG-205, 2026-10-19). This used to fetch every
+  // reservation (7.7 MB), and did so whenever the dialog was mounted, also while it was closed.
+  const gridStart = format(startOfWeek(startOfMonth(calendarMonth), { weekStartsOn: 1 }), "yyyy-MM-dd");
+  const gridEnd = format(endOfWeek(endOfMonth(calendarMonth), { weekStartsOn: 1 }), "yyyy-MM-dd");
   const { data: maintenanceReservations = [] } = useQuery<Reservation[]>({
-    queryKey: ['/api/reservations'],
+    queryKey: ['/api/reservations/range', { startDate: gridStart, endDate: gridEnd }],
+    enabled: open,
     select: (data) => data.filter(r => r.type === 'maintenance_block'),
   });
 

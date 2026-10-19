@@ -2366,13 +2366,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getReservationsInDateRange(startDate: string, endDate: string): Promise<Reservation[]> {
+    // BUG-205 follow-up (2026-10-19): a running rental without an end date that started before the
+    // range belongs in it too; NULL never compares, so it used to fall out. Rentals only: a maintenance
+    // block without an end date is a one-day block. (The calendar draws an open-ended rental on its
+    // start day only, so its grid does not change; lookups on this route now see the rental.)
     const reservationsData = await db
       .select()
       .from(reservations)
       .where(
         sql`((${reservations.startDate} <= ${endDate} AND ${reservations.endDate} >= ${startDate})
             OR (${reservations.startDate} >= ${startDate} AND ${reservations.startDate} <= ${endDate})
-            OR (${reservations.endDate} >= ${startDate} AND ${reservations.endDate} <= ${endDate}))
+            OR (${reservations.endDate} >= ${startDate} AND ${reservations.endDate} <= ${endDate})
+            OR (${reservations.endDate} IS NULL AND ${reservations.startDate} <= ${endDate}
+                AND ${reservations.status} IN ('booked', 'picked_up') AND ${reservations.type} IN ('standard', 'replacement')))
             AND ${reservations.deletedAt} IS NULL`
       );
     

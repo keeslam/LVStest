@@ -1,7 +1,9 @@
 import { describeApiError } from "@/lib/api-error";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, keepPreviousData } from "@tanstack/react-query";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import type { ReservationListPage } from "@shared/reservation-list";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -143,37 +145,31 @@ export function ReservationListDialog({ open, onOpenChange, initialTab, onTabCha
     }
   });
   
-  // Fetch reservations
-  const { data: reservations, isLoading: isLoadingReservations } = useQuery<Reservation[]>({
-    queryKey: ["/api/reservations"],
+  // BUG-205 (Kees, 2026-10-19): the current and history lists come from the server a page at a time,
+  // searched and sorted there, with only the vehicle and customer fields a card shows. "Meer tonen"
+  // asks for a longer first page; a new search or sort starts from the first page again.
+  const debouncedCurrentSearch = useDebouncedValue(currentSearch.trim());
+  const debouncedHistorySearch = useDebouncedValue(historySearch.trim());
+  const { data: currentPage, isLoading: isLoadingCurrent } = useQuery<ReservationListPage>({
+    queryKey: ["/api/reservations", { view: "current", search: debouncedCurrentSearch || undefined, sort: currentSort.column, dir: currentSort.direction, page: 1, pageSize: currentLimit }],
     enabled: open,
+    placeholderData: keepPreviousData,
   });
+  const { data: historyPage, isLoading: isLoadingHistory } = useQuery<ReservationListPage>({
+    queryKey: ["/api/reservations", { view: "history", search: debouncedHistorySearch || undefined, sort: historySort.column, dir: historySort.direction, page: 1, pageSize: historyLimit }],
+    enabled: open,
+    placeholderData: keepPreviousData,
+  });
+  const currentRows = (currentPage?.rows ?? []) as unknown as Reservation[];
+  const historyRows = (historyPage?.rows ?? []) as unknown as Reservation[];
+  const currentTotal = currentPage?.total ?? 0;
+  const historyTotal = historyPage?.total ?? 0;
 
   // Fetch overdue reservations
   const { data: overdueReservations = [], isLoading: isLoadingOverdue } = useQuery<Reservation[]>({
     queryKey: ['/api/reservations/overdue'],
     enabled: open,
   });
-
-  // Split reservations into current and history
-  const { currentReservations, historyReservations } = useMemo(() => {
-    if (!reservations) return { currentReservations: [], historyReservations: [] };
-    
-    const current: Reservation[] = [];
-    const history: Reservation[] = [];
-    
-    reservations.forEach(res => {
-      if (res.type === 'maintenance_block') return;
-      
-      if (res.status === 'booked' || res.status === 'picked_up') {
-        current.push(res);
-      } else if (res.status === 'completed' || res.status === 'returned' || res.status === 'cancelled') {
-        history.push(res);
-      }
-    });
-    
-    return { currentReservations: current, historyReservations: history };
-  }, [reservations]);
 
   // Toggle sort helper
   const toggleCurrentSort = (column: string) => {
@@ -190,52 +186,10 @@ export function ReservationListDialog({ open, onOpenChange, initialTab, onTabCha
     }));
   };
 
-  // Filter and sort current reservations
-  const filteredCurrentReservations = useMemo(() => {
-    let filtered = currentReservations.filter(res => reservationMatchesSearch(res, currentSearch));
-
-    return filtered.sort((a, b) => {
-      const dir = currentSort.direction === 'asc' ? 1 : -1;
-      switch (currentSort.column) {
-        case 'pickup':
-          return dir * (new Date(a.startDate || 0).getTime() - new Date(b.startDate || 0).getTime());
-        case 'return':
-          return dir * (new Date(a.endDate || 0).getTime() - new Date(b.endDate || 0).getTime());
-        case 'customer':
-          return dir * (a.customer?.companyName || a.customer?.name || '').localeCompare(b.customer?.companyName || b.customer?.name || '');
-        case 'plate':
-          return dir * (a.vehicle?.licensePlate || '').localeCompare(b.vehicle?.licensePlate || '');
-        default:
-          return dir * (new Date(a.startDate || 0).getTime() - new Date(b.startDate || 0).getTime());
-      }
-    });
-  }, [currentReservations, currentSearch, currentSort]);
-
   const filteredOverdueReservations = useMemo(() => {
     if (!overdueSearch.trim()) return overdueReservations;
     return overdueReservations.filter((res) => reservationMatchesSearch(res, overdueSearch));
   }, [overdueReservations, overdueSearch]);
-
-  // Filter and sort history reservations
-  const filteredHistoryReservations = useMemo(() => {
-    let filtered = historyReservations.filter(res => reservationMatchesSearch(res, historySearch));
-
-    return filtered.sort((a, b) => {
-      const dir = historySort.direction === 'asc' ? 1 : -1;
-      switch (historySort.column) {
-        case 'pickup':
-          return dir * (new Date(a.startDate || 0).getTime() - new Date(b.startDate || 0).getTime());
-        case 'return':
-          return dir * (new Date(a.endDate || 0).getTime() - new Date(b.endDate || 0).getTime());
-        case 'customer':
-          return dir * (a.customer?.companyName || a.customer?.name || '').localeCompare(b.customer?.companyName || b.customer?.name || '');
-        case 'plate':
-          return dir * (a.vehicle?.licensePlate || '').localeCompare(b.vehicle?.licensePlate || '');
-        default:
-          return dir * (new Date(b.endDate || 0).getTime() - new Date(a.endDate || 0).getTime());
-      }
-    });
-  }, [historyReservations, historySearch, historySort]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -254,12 +208,22 @@ export function ReservationListDialog({ open, onOpenChange, initialTab, onTabCha
     }
   };
 
-  const handleView = (e: React.MouseEvent, reservation: Reservation) => {
+  /** The list rows are slim (BUG-205); a caller that renders the reservation itself gets the full one. */
+  const fullReservation = async (reservation: Reservation): Promise<Reservation> => {
+    try {
+      const res = await apiRequest("GET", `/api/reservations/${reservation.id}`);
+      return (await res.json()) as Reservation;
+    } catch {
+      return reservation;
+    }
+  };
+
+  const handleView = async (e: React.MouseEvent, reservation: Reservation) => {
     e.stopPropagation();
     e.preventDefault();
     
     if (onViewReservation) {
-      onViewReservation(reservation);
+      onViewReservation(await fullReservation(reservation));
     } else {
       // Close parent list, mark that we opened from list, then open child
       openedFromListRef.current = true;
@@ -269,12 +233,12 @@ export function ReservationListDialog({ open, onOpenChange, initialTab, onTabCha
     }
   };
 
-  const handleEdit = (e: React.MouseEvent, reservation: Reservation) => {
+  const handleEdit = async (e: React.MouseEvent, reservation: Reservation) => {
     e.stopPropagation();
     e.preventDefault();
     
     if (onEditReservation) {
-      onEditReservation(reservation);
+      onEditReservation(await fullReservation(reservation));
     } else {
       // Close parent list, mark that we opened from list, then open child
       openedFromListRef.current = true;
@@ -480,7 +444,7 @@ export function ReservationListDialog({ open, onOpenChange, initialTab, onTabCha
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="current" className="flex items-center gap-2">
                 <Car className="h-4 w-4" />
-                {t('listDialog.currentTab', { count: currentReservations.length })}
+                {t('listDialog.currentTab', { count: currentPage?.counts?.current ?? 0 })}
               </TabsTrigger>
               <TabsTrigger value="overdue" className="flex items-center gap-2">
                 <AlertTriangle className={`h-4 w-4 ${overdueReservations.length > 0 ? 'text-red-500' : ''}`} />
@@ -488,7 +452,7 @@ export function ReservationListDialog({ open, onOpenChange, initialTab, onTabCha
               </TabsTrigger>
               <TabsTrigger value="history" className="flex items-center gap-2">
                 <History className="h-4 w-4" />
-                {t('listDialog.historyTab', { count: historyReservations.length })}
+                {t('listDialog.historyTab', { count: historyPage?.counts?.history ?? 0 })}
               </TabsTrigger>
             </TabsList>
 
@@ -515,29 +479,29 @@ export function ReservationListDialog({ open, onOpenChange, initialTab, onTabCha
                     </Button>
                   </div>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {t('listDialog.activeCount', { count: filteredCurrentReservations.length })}
+                    {t('listDialog.activeCount', { count: currentTotal })}
                   </span>
                 </div>
 
                 <div className="border rounded-md overflow-hidden">
                   <ScrollArea className="h-[calc(70vh-180px)]">
                     <div className="divide-y">
-                      {isLoadingReservations ? (
+                      {isLoadingCurrent ? (
                         <div className="flex items-center justify-center gap-2 py-8 text-gray-500" role="status" data-testid="reservation-list-loading">
                           <Loader2 className="h-4 w-4 animate-spin" />
                           {t('listDialog.loading')}
                         </div>
-                      ) : filteredCurrentReservations.length === 0 ? (
+                      ) : currentRows.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">{t('listDialog.noActiveReservations')}</div>
                       ) : (
-                        filteredCurrentReservations.slice(0, currentLimit).map((reservation) => (
+                        currentRows.map((reservation) => (
                           <ReservationCard key={reservation.id} reservation={reservation} />
                         ))
                       )}
                     </div>
                   </ScrollArea>
                 </div>
-                {renderPager("current", filteredCurrentReservations.length, currentLimit, setCurrentLimit)}
+                {renderPager("current", currentTotal, currentLimit, setCurrentLimit)}
               </div>
             </TabsContent>
 
@@ -660,29 +624,29 @@ export function ReservationListDialog({ open, onOpenChange, initialTab, onTabCha
                     </Button>
                   </div>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {t('listDialog.completedCount', { count: filteredHistoryReservations.length })}
+                    {t('listDialog.completedCount', { count: historyTotal })}
                   </span>
                 </div>
 
                 <div className="border rounded-md overflow-hidden">
                   <ScrollArea className="h-[calc(70vh-180px)]">
                     <div className="divide-y">
-                      {isLoadingReservations ? (
+                      {isLoadingHistory ? (
                         <div className="flex items-center justify-center gap-2 py-8 text-gray-500" role="status" data-testid="reservation-list-loading">
                           <Loader2 className="h-4 w-4 animate-spin" />
                           {t('listDialog.loading')}
                         </div>
-                      ) : filteredHistoryReservations.length === 0 ? (
+                      ) : historyRows.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">{t('listDialog.noCompletedReservations')}</div>
                       ) : (
-                        filteredHistoryReservations.slice(0, historyLimit).map((reservation) => (
+                        historyRows.map((reservation) => (
                           <ReservationCard key={reservation.id} reservation={reservation} />
                         ))
                       )}
                     </div>
                   </ScrollArea>
                 </div>
-                {renderPager("history", filteredHistoryReservations.length, historyLimit, setHistoryLimit)}
+                {renderPager("history", historyTotal, historyLimit, setHistoryLimit)}
               </div>
             </TabsContent>
           </Tabs>
