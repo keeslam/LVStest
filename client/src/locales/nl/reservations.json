@@ -1266,5 +1266,16 @@
   "extraDrivers": {
     "label": "Extra bestuurders (via portaal)",
     "hint": "Toegevoegd door de klant. Op het contract staat alleen de hoofdbestuurder."
+  },
+  "driverHistory": {
+    "title_one": "Bestuurdershistorie ({{count}} regel)",
+    "title_other": "Bestuurdershistorie ({{count}} regels)",
+    "main": "hoofdbestuurder",
+    "extra": "extra bestuurder",
+    "byStaff": "ingesteld door {{name}} (kantoor)",
+    "byPortal": "ingesteld door {{name}} (klantenportaal)",
+    "bySystem": "ingesteld door het systeem",
+    "noDriver": "geen bestuurder",
+    "now": "nu"
   }
 }

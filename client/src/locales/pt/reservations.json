@@ -1278,5 +1278,17 @@
   "extraDrivers": {
     "label": "Condutores adicionais (via portal)",
     "hint": "Adicionados pelo cliente. O contrato indica apenas o condutor principal."
+  },
+  "driverHistory": {
+    "title_one": "Histórico de condutores ({{count}} registo)",
+    "title_many": "Histórico de condutores ({{count}} de registos)",
+    "title_other": "Histórico de condutores ({{count}} registos)",
+    "main": "condutor principal",
+    "extra": "condutor adicional",
+    "byStaff": "definido por {{name}} (escritório)",
+    "byPortal": "definido por {{name}} (portal do cliente)",
+    "bySystem": "definido pelo sistema",
+    "noDriver": "sem condutor",
+    "now": "agora"
   }
 }

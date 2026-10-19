@@ -1,5 +1,6 @@
 import { db } from "../db";
-import { reservations, reservationDriverAssignments, drivers, vehicles, type ReservationDriverAssignment } from "../../shared/schema";
+import { reservations, reservationDriverAssignments, drivers, vehicles, users, portalUsers, type ReservationDriverAssignment } from "../../shared/schema";
+import type { DriverHistoryRow } from "../../shared/portal-types";
 import { and, asc, eq, inArray, isNull, ne, or } from "drizzle-orm";
 import { syncUsagePeriodSafely } from "./fiscal/usage-periods";
 
@@ -122,6 +123,28 @@ export async function driverBusyElsewhere(driverId: number, exceptReservationId:
     ))
     .limit(1);
   return row;
+}
+
+/** The whole driver history of a reservation for the office: main and extra drivers, and who set each (Kees, 2026-10-19). */
+export async function getDriverHistoryForStaff(reservationId: number): Promise<DriverHistoryRow[]> {
+  const rows = await db.select({
+    a: reservationDriverAssignments, driverName: drivers.displayName,
+    staffName: users.fullName, staffUsername: users.username, portalName: portalUsers.fullName, portalEmail: portalUsers.email,
+  }).from(reservationDriverAssignments)
+    .leftJoin(drivers, eq(reservationDriverAssignments.driverId, drivers.id))
+    .leftJoin(users, eq(reservationDriverAssignments.assignedByUserId, users.id))
+    .leftJoin(portalUsers, eq(reservationDriverAssignments.assignedByPortalUserId, portalUsers.id))
+    .where(eq(reservationDriverAssignments.reservationId, reservationId))
+    .orderBy(asc(reservationDriverAssignments.assignedFrom), asc(reservationDriverAssignments.id));
+  return rows.map((r) => ({
+    id: r.a.id, driverId: r.a.driverId, driverName: r.driverName ?? null,
+    from: new Date(r.a.assignedFrom).toISOString(), until: r.a.assignedUntil ? new Date(r.a.assignedUntil).toISOString() : null,
+    isExtra: r.a.isExtra,
+    setBy: r.a.assignedByPortalUserId ? { kind: "portal" as const, name: r.portalName ?? r.portalEmail ?? null }
+      : r.a.assignedByUserId ? { kind: "staff" as const, name: r.staffName || r.staffUsername || null }
+      : { kind: "system" as const, name: null },
+    note: r.a.note,
+  }));
 }
 
 export async function getDriverAssignments(reservationId: number): Promise<Array<ReservationDriverAssignment & { driverName: string | null }>> {

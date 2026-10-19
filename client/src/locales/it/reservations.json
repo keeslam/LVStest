@@ -1278,5 +1278,17 @@
   "extraDrivers": {
     "label": "Conducenti aggiuntivi (via portale)",
     "hint": "Aggiunti dal cliente. Il contratto indica solo il conducente principale."
+  },
+  "driverHistory": {
+    "title_one": "Storico conducenti ({{count}} voce)",
+    "title_many": "Storico conducenti ({{count}} di voci)",
+    "title_other": "Storico conducenti ({{count}} voci)",
+    "main": "conducente principale",
+    "extra": "conducente aggiuntivo",
+    "byStaff": "impostato da {{name}} (ufficio)",
+    "byPortal": "impostato da {{name}} (portale clienti)",
+    "bySystem": "impostato dal sistema",
+    "noDriver": "nessun conducente",
+    "now": "ora"
   }
 }

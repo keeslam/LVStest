@@ -1278,5 +1278,17 @@
   "extraDrivers": {
     "label": "Șoferi suplimentari (prin portal)",
     "hint": "Adăugați de client. Contractul îl menționează doar pe șoferul principal."
+  },
+  "driverHistory": {
+    "title_one": "Istoric șoferi ({{count}} înregistrare)",
+    "title_few": "Istoric șoferi ({{count}} înregistrări)",
+    "title_other": "Istoric șoferi ({{count}} de înregistrări)",
+    "main": "șofer principal",
+    "extra": "șofer suplimentar",
+    "byStaff": "setat de {{name}} (birou)",
+    "byPortal": "setat de {{name}} (portalul clienților)",
+    "bySystem": "setat de sistem",
+    "noDriver": "fără șofer",
+    "now": "acum"
   }
 }

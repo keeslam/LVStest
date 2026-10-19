@@ -1266,5 +1266,16 @@
   "extraDrivers": {
     "label": "Extra drivers (via portal)",
     "hint": "Added by the customer. The contract names the main driver only."
+  },
+  "driverHistory": {
+    "title_one": "Driver history ({{count}} entry)",
+    "title_other": "Driver history ({{count}} entries)",
+    "main": "main driver",
+    "extra": "extra driver",
+    "byStaff": "set by {{name}} (office)",
+    "byPortal": "set by {{name}} (customer portal)",
+    "bySystem": "set by the system",
+    "noDriver": "no driver",
+    "now": "now"
   }
 }

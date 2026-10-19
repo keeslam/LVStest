@@ -1290,5 +1290,18 @@
   "extraDrivers": {
     "label": "Dodatkowi kierowcy (przez portal)",
     "hint": "Dodani przez klienta. Umowa wymienia tylko głównego kierowcę."
+  },
+  "driverHistory": {
+    "title_one": "Historia kierowców ({{count}} wpis)",
+    "title_few": "Historia kierowców ({{count}} wpisy)",
+    "title_many": "Historia kierowców ({{count}} wpisów)",
+    "title_other": "Historia kierowców ({{count}} wpisu)",
+    "main": "główny kierowca",
+    "extra": "dodatkowy kierowca",
+    "byStaff": "ustawił(a) {{name}} (biuro)",
+    "byPortal": "ustawił(a) {{name}} (portal klienta)",
+    "bySystem": "ustawione przez system",
+    "noDriver": "brak kierowcy",
+    "now": "teraz"
   }
 }

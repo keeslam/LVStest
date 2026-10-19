@@ -146,6 +146,20 @@ export interface PortalSessionDto {
   lastActiveAt: string;
 }
 
+/** One line of a reservation's driver history as the office sees it (Kees, 2026-10-19). */
+export interface DriverHistoryRow {
+  id: number;
+  driverId: number | null;
+  driverName: string | null;
+  from: string;
+  until: string | null;
+  /** An extra driver next to the main driver. */
+  isExtra: boolean;
+  /** Who set it: an office user, a portal account of the customer, or the system (no one recorded). */
+  setBy: { kind: 'staff' | 'portal' | 'system'; name: string | null };
+  note: string | null;
+}
+
 /** A document a customer uploaded, as the office lists it (Kees, 2026-10-19). */
 export interface CustomerUploadRow {
   id: number;

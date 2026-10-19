@@ -83,7 +83,7 @@ import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { VehicleRemarksWarningDialog } from "@/components/vehicles/vehicle-remarks-warning-dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { officeToday } from "@/lib/office-date";
-import { ExtraDriversNote } from "@/components/reservations/extra-drivers-note";
+import { ExtraDriversNote, DriverHistoryPanel } from "@/components/reservations/extra-drivers-note";
 
 // Extended schema with validation
 const formSchema = insertReservationSchemaBase.extend({
@@ -1910,6 +1910,7 @@ export function ReservationForm({
                         </FormControl>
                         <FormMessage />
                         <ExtraDriversNote reservationId={activeReservationId} />
+                        <DriverHistoryPanel reservationId={activeReservationId} />
                         {selectedDriver && (
                           <div className="mt-2 text-sm bg-muted p-2 rounded-md">
                             <div className="flex items-center justify-between mb-1">

@@ -164,7 +164,7 @@ import { bookingWarningsFor, type BookingWarning } from "../shared/booking-warni
 import type { ContractErrorCode } from "../shared/contract-error-codes";
 import { reservationIsOld, verifyAdminPassword, authorizeMileageDecrease } from "./services/authorization";
 import { isLatestReturnForVehicle } from "./services/reservation-mileage-sync";
-import { assignDriverToReservation, listExtraDrivers } from "./services/driver-assignments";
+import { assignDriverToReservation, listExtraDrivers, getDriverHistoryForStaff } from "./services/driver-assignments";
 import { getServiceDueVehicles, scanVehiclesForServiceDue } from "./utils/service-due-scanner";
 import { registerUserRoutes } from "./routes/users";
 import { registerAuditEventRoutes } from "./routes/audit-events";
@@ -4384,6 +4384,13 @@ export async function registerRoutes(app: Express): Promise<void> {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ message: "Invalid id" });
     res.json((await listExtraDrivers([id])).get(id) ?? []);
+  });
+
+  // Who drove this reservation and when, main and extra drivers, and who set it (Kees, 2026-10-19).
+  app.get("/api/reservations/:id/driver-history", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid id" });
+    res.json(await getDriverHistoryForStaff(id));
   });
 
   app.get("/api/reservations/:id/cancel-impact", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
