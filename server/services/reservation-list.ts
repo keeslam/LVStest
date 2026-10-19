@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, gte, inArray, isNull, ne, sql, type SQL } from "drizzle-orm";
 import { db } from "../db";
 import { customers, reservations, vehicles } from "../../shared/schema";
-import type { ReservationListPage, ReservationListRow, ReservationListSort, ReservationListView } from "../../shared/reservation-list";
+import type { CustomerReservationStats, ReservationListPage, ReservationListRow, ReservationListSort, ReservationListView } from "../../shared/reservation-list";
 
 /**
  * BUG-205 (Kees, 2026-10-19): the reservations list was one 7.7 MB answer, every reservation with its
@@ -91,4 +91,55 @@ export async function getReservationListRowsByIds(ids: number[]): Promise<Reserv
     .leftJoin(customers, eq(reservations.customerId, customers.id))
     .where(and(inArray(reservations.id, ids), isNull(reservations.deletedAt)));
   return (rows as ListSelected[]).map(toRow);
+}
+
+export interface ReservationFilters {
+  type?: string[]; status?: string[]; excludeStatus?: string[];
+  vehicleId?: number; customerId?: number;
+  /** Overlap with [from, to]: starts on or before `to` and ends on or after `from`, or has no end. */
+  from?: string; to?: string;
+  delivery?: boolean;
+  maintenanceStatus?: string[]; excludeMaintenanceStatus?: string[];
+}
+
+/** BUG-205 phase B: the filters a screen sends, as one condition (soft-deleted rows are left out by the caller). */
+export function reservationFilterWhere(f: ReservationFilters): SQL | undefined {
+  return and(
+    f.type?.length ? inArray(reservations.type, f.type) : undefined,
+    f.status?.length ? inArray(reservations.status, f.status) : undefined,
+    f.excludeStatus?.length ? sql`coalesce(${reservations.status}, '') not in (${sql.join(f.excludeStatus.map((s) => sql`${s}`), sql`, `)})` : undefined,
+    f.vehicleId != null ? eq(reservations.vehicleId, f.vehicleId) : undefined,
+    f.customerId != null ? eq(reservations.customerId, f.customerId) : undefined,
+    f.to ? sql`${reservations.startDate} <= ${f.to}` : undefined,
+    f.from ? sql`(${reservations.endDate} is null or ${reservations.endDate} >= ${f.from})` : undefined,
+    f.delivery ? eq(reservations.deliveryRequired, true) : undefined,
+    f.maintenanceStatus?.length ? inArray(reservations.maintenanceStatus, f.maintenanceStatus) : undefined,
+    f.excludeMaintenanceStatus?.length ? sql`coalesce(${reservations.maintenanceStatus}, '') not in (${sql.join(f.excludeMaintenanceStatus.map((s) => sql`${s}`), sql`, `)})` : undefined,
+  );
+}
+
+/** The slim variant of a filtered read: only what a list shows of vehicle and customer. */
+export async function getReservationListRowsWhere(where: SQL | undefined): Promise<ReservationListRow[]> {
+  const rows = await db.select(listSelect).from(reservations)
+    .leftJoin(vehicles, eq(reservations.vehicleId, vehicles.id))
+    .leftJoin(customers, eq(reservations.customerId, customers.id))
+    .where(and(isNull(reservations.deletedAt), where));
+  return (rows as ListSelected[]).map(toRow);
+}
+
+/** Per customer: number of reservations, the latest one created, and whether a car is out now. */
+export async function getCustomerReservationStats(): Promise<CustomerReservationStats[]> {
+  const rows = await db.select({
+    customerId: reservations.customerId,
+    count: sql<number>`count(*)::int`,
+    lastCreatedAt: sql<Date | null>`max(${reservations.createdAt})`,
+    hasActiveRental: sql<boolean>`bool_or(${reservations.status} = 'picked_up')`,
+  }).from(reservations)
+    .where(and(isNull(reservations.deletedAt), sql`${reservations.customerId} is not null`))
+    .groupBy(reservations.customerId);
+  return rows.map((r) => ({
+    customerId: r.customerId!, count: r.count,
+    lastCreatedAt: r.lastCreatedAt ? new Date(r.lastCreatedAt).toISOString() : null,
+    hasActiveRental: Boolean(r.hasActiveRental),
+  }));
 }

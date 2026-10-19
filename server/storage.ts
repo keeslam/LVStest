@@ -149,6 +149,8 @@ export interface IStorage {
   
   // Reservation methods
   getAllReservations(): Promise<Reservation[]>;
+  /** BUG-205 phase B: filtered in the database, same embedded vehicle and customer as getAllReservations. */
+  getReservationsWhere(where: import("drizzle-orm").SQL | undefined): Promise<Reservation[]>;
   getReservation(id: number): Promise<Reservation | undefined>;
   createReservation(reservation: InsertReservation): Promise<Reservation>;
   updateReservation(id: number, reservationData: Partial<InsertReservation>): Promise<Reservation | undefined>;

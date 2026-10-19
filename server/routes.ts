@@ -165,8 +165,8 @@ import type { ContractErrorCode } from "../shared/contract-error-codes";
 import { reservationIsOld, verifyAdminPassword, authorizeMileageDecrease } from "./services/authorization";
 import { isLatestReturnForVehicle } from "./services/reservation-mileage-sync";
 import { assignDriverToReservation, listExtraDrivers, getDriverHistoryForStaff } from "./services/driver-assignments";
-import { getReservationListPage, getReservationListRowsByIds } from "./services/reservation-list";
-import { RESERVATION_LIST_VIEWS, RESERVATION_LIST_SORTS, RESERVATION_LIST_MAX_PAGE_SIZE } from "../shared/reservation-list";
+import { getReservationListPage, getReservationListRowsByIds, reservationFilterWhere, getReservationListRowsWhere, getCustomerReservationStats } from "./services/reservation-list";
+import { RESERVATION_LIST_VIEWS, RESERVATION_LIST_SORTS, RESERVATION_LIST_MAX_PAGE_SIZE, RESERVATION_FILTER_KEYS } from "../shared/reservation-list";
 import { getServiceDueVehicles, scanVehiclesForServiceDue } from "./utils/service-due-scanner";
 import { registerUserRoutes } from "./routes/users";
 import { registerAuditEventRoutes } from "./routes/audit-events";
@@ -3313,6 +3313,12 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  // BUG-205 phase B (2026-10-19): per customer the reservation count, the latest one and whether a car
+  // is out, for the customers page, instead of every reservation.
+  app.get("/api/reservations/customer-stats", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (_req, res) => {
+    res.json(await getCustomerReservationStats());
+  });
+
   // Get all reservations with optional search
   app.get("/api/reservations", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req, res) => {
     try {
@@ -3339,6 +3345,24 @@ export async function registerRoutes(app: Express): Promise<void> {
         const q = parsed.data;
         if (q.ids) return res.json(await getReservationListRowsByIds(q.ids.split(",").map(Number)));
         return res.json(await getReservationListPage({ view: q.view!, search: q.search, sort: q.sort, dir: q.dir, page: q.page, pageSize: q.pageSize, startFrom: q.startFrom }));
+      }
+      // BUG-205 phase B: filters (type, status, vehicle, period, ...) answer the old array, filtered in
+      // the database; slim=1 with only what a list shows of vehicle and customer.
+      if (RESERVATION_FILTER_KEYS.some((k) => req.query[k] !== undefined)) {
+        const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+        const list = z.string().regex(/^[a-z_]+(,[a-z_]+){0,19}$/).transform((v) => v.split(","));
+        const parsed = z.object({
+          type: list.optional(), status: list.optional(), excludeStatus: list.optional(),
+          vehicleId: z.coerce.number().int().positive().optional(), customerId: z.coerce.number().int().positive().optional(),
+          from: day.optional(), to: day.optional(),
+          delivery: z.enum(["true"]).optional(),
+          maintenanceStatus: list.optional(), excludeMaintenanceStatus: list.optional(),
+          slim: z.enum(["1"]).optional(),
+        }).safeParse(req.query);
+        if (!parsed.success) return res.status(400).json({ message: parsed.error.errors[0]?.message ?? "Invalid filter", code: "INVALID_LIST_REQUEST" });
+        const { slim, delivery, ...rest } = parsed.data;
+        const where = reservationFilterWhere({ ...rest, delivery: delivery === "true" });
+        return res.json(slim ? await getReservationListRowsWhere(where) : await storage.getReservationsWhere(where));
       }
       const searchQuery = req.query.search as string | undefined;
       const reservations = await storage.getAllReservations(searchQuery);

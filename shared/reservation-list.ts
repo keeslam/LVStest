@@ -27,3 +27,21 @@ export interface ReservationListPage {
   /** Rows per view without the search, for the tab labels. */
   counts: Record<ReservationListView, number>;
 }
+
+/**
+ * BUG-205 phase B (2026-10-19): `GET /api/reservations` with any of these answers the old array shape,
+ * filtered in the database. `slim=1` answers ReservationListRow (only what a list shows of vehicle
+ * and customer); without it each row carries the full vehicle and customer, as before.
+ */
+export const RESERVATION_FILTER_KEYS = [
+  "type", "status", "excludeStatus", "vehicleId", "customerId", "from", "to", "delivery",
+  "maintenanceStatus", "excludeMaintenanceStatus", "slim",
+] as const;
+
+/** Per customer, for the customers page: how many reservations, the latest one, and whether a car is out now. */
+export interface CustomerReservationStats {
+  customerId: number;
+  count: number;
+  lastCreatedAt: string | null;
+  hasActiveRental: boolean;
+}

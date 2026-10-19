@@ -1827,6 +1827,20 @@ export class DatabaseStorage implements IStorage {
     } else {
       reservationsData = await db.select().from(reservations).where(isNull(reservations.deletedAt));
     }
+
+    return this.withVehicleAndCustomer(reservationsData);
+  }
+
+  /**
+   * BUG-205 phase B (2026-10-19): the rows a screen asks for, filtered in the database, with the same
+   * embedded vehicle and customer as getAllReservations. Soft-deleted rows are never included.
+   */
+  async getReservationsWhere(where: SQL | undefined): Promise<Reservation[]> {
+    const rows = await db.select().from(reservations).where(and(isNull(reservations.deletedAt), where));
+    return this.withVehicleAndCustomer(rows);
+  }
+
+  private async withVehicleAndCustomer(reservationsData: Array<typeof reservations.$inferSelect>): Promise<Reservation[]> {
     
     // Batch-load the related rows. Fetching them per reservation meant two
     // sequential queries per row — ~3k round-trips for 1.5k reservations, which
