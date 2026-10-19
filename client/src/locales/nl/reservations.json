@@ -220,7 +220,12 @@
       "earlyPickupTitle": "De huur start eerder — datum aanpassen?",
       "earlyPickupDescription": "Deze huur staat gepland vanaf {{startDate}}, maar het voertuig gaat vandaag ({{today}}) mee. Zet de startdatum op vandaag, zodat de periode en de prijs kloppen?",
       "earlyPickupConfirm": "Ja, startdatum naar vandaag",
-      "earlyPickupCancel": "Nee, niet ophalen"
+      "earlyPickupCancel": "Nee, niet ophalen",
+      "licenseExpiredWarning": "Let op: het rijbewijs van {{name}} is verlopen op {{date}}.",
+      "licenseCheckedLabel": "Rijbewijs gecontroleerd",
+      "licenseUnknownNote": "Vervaldatum rijbewijs van {{name}} onbekend.",
+      "licenseNotCheckedTitle": "Rijbewijs niet gecontroleerd",
+      "licenseNotCheckedDescription": "Het rijbewijs is verlopen. Vink 'Rijbewijs gecontroleerd' aan om door te gaan."
     },
     "return": {
       "startReturnProcess": "Inleverproces starten",
@@ -510,7 +515,9 @@
     "collectionServiceHint": "Wij halen de auto aan het einde van de huur bij de klant op; de klant brengt hem niet naar de zaak. De klant ziet dit in het klantenportaal.",
     "collectionAddressLabel": "Ophaaladres",
     "collectionSameAsDelivery": "Zelfde als bezorgadres",
-    "pastStartWarning": "Let op: deze startdatum ligt in het verleden."
+    "pastStartWarning": "Let op: deze startdatum ligt in het verleden.",
+    "licenseExpiredWarning": "Let op: het rijbewijs van {{name}} is verlopen op {{date}}, vóór de start van de huur ({{start}}). Opslaan mag.",
+    "licenseUnknownNote": "Vervaldatum rijbewijs van {{name}} onbekend."
   },
   "selector": {
     "defaultPlaceholder": "Selecteer een reservering...",

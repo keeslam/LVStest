@@ -74,7 +74,8 @@ function withProviders(node: React.ReactNode) {
 // alone - none, since no widget's own query accepts VIEW_DASHBOARD (fact
 // sheet, PAGE x PERMISSION TABLE row 1). /api/app-settings/key/calendar_settings
 // and /api/system-settings are requireAuth only and stay unconditional.
-const ALWAYS_ALLOWED = ["/api/app-settings/key/calendar_settings", "/api/system-settings"];
+// dashboard_tiles (Kees 2026-10-19): which tiles show, also requireAuth only.
+const ALWAYS_ALLOWED = ["/api/app-settings/key/calendar_settings", "/api/system-settings", "/api/app-settings/key/dashboard_tiles"];
 
 describe("Dashboard (full page) — a view_dashboard-only user (the reports-only shape) triggers no other family's query", () => {
   it("fires nothing but requireAuth-only settings routes, and every widget shows NoDataAccess where it has a list to show", async () => {

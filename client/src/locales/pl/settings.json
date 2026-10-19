@@ -321,7 +321,9 @@
       "activity": "Aktywność",
       "activityShort": "Dziennik",
       "printers": "Drukarki (ten komputer)",
-      "printersShort": "Drukarki"
+      "printersShort": "Drukarki",
+      "dashboard": "Pulpit",
+      "dashboardShort": "Pulpit"
     },
     "business": {
       "rentalDefaultsTitle": "Wartości domyślne i zasady wynajmu",
@@ -675,6 +677,21 @@
         "action": "Działanie",
         "subject": "Obiekt",
         "changes": "Zmiany"
+      }
+    },
+    "dashboardTiles": {
+      "title": "Kafelki pulpitu",
+      "description": "Wybierz, które kafelki wszyscy widzą na pulpicie i w jakiej kolejności.",
+      "saved": "Kafelki pulpitu zostały zapisane.",
+      "saveFailed": "Zapis nie powiódł się",
+      "moveUp": "W górę",
+      "moveDown": "W dół",
+      "tiles": {
+        "availability": "Dostępne pojazdy",
+        "apk": "Przegląd wygasa",
+        "overdue": "Zaległe wynajmy",
+        "warranty": "Gwarancja wygasa",
+        "licenses": "Prawa jazdy"
       }
     }
   },

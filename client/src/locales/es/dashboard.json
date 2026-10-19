@@ -290,5 +290,14 @@
   "notificationDisplay": {
     "spareAssignmentTitle": "Asignar vehículo de sustitución",
     "spareAssignmentDescription": "Un vehículo de sustitución por determinar necesita una asignación para {{period}}."
+  },
+  "licenseWidget": {
+    "title": "Permisos de conducir",
+    "subtitle": "Caducados o que caducan en 30 días",
+    "none": "Ningún permiso caduca pronto",
+    "loadFailed": "No se pudieron cargar los permisos de conducir",
+    "expiredOn": "Caducó el {{date}}",
+    "expiresOn": "Caduca el {{date}}",
+    "openRental": "Ver alquiler"
   }
 }

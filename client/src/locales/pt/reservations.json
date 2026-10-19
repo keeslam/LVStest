@@ -220,7 +220,12 @@
       "earlyPickupTitle": "O aluguer começa mais cedo — ajustar a data?",
       "earlyPickupDescription": "Este aluguer está agendado a partir de {{startDate}}, mas o veículo sai hoje ({{today}}). Pretende definir a data de início para hoje, para que o período e o preço estejam corretos?",
       "earlyPickupConfirm": "Sim, data de início para hoje",
-      "earlyPickupCancel": "Não, não levantar"
+      "earlyPickupCancel": "Não, não levantar",
+      "licenseExpiredWarning": "Atenção: a carta de condução de {{name}} caducou em {{date}}.",
+      "licenseCheckedLabel": "Carta de condução verificada",
+      "licenseUnknownNote": "Data de validade da carta de condução de {{name}} desconhecida.",
+      "licenseNotCheckedTitle": "Carta de condução não verificada",
+      "licenseNotCheckedDescription": "A carta de condução caducou. Assinale 'Carta de condução verificada' para continuar."
     },
     "return": {
       "startReturnProcess": "Iniciar processo de devolução",
@@ -513,7 +518,9 @@
     "collectionServiceHint": "Recolhemos o automóvel junto do cliente no final do aluguer; o cliente não o leva à empresa. O cliente vê esta informação no portal do cliente.",
     "collectionAddressLabel": "Morada de recolha",
     "collectionSameAsDelivery": "Igual à morada de entrega",
-    "pastStartWarning": "Atenção: esta data de início está no passado."
+    "pastStartWarning": "Atenção: esta data de início está no passado.",
+    "licenseExpiredWarning": "Atenção: a carta de condução de {{name}} caducou em {{date}}, antes do início do aluguer ({{start}}). Pode guardar na mesma.",
+    "licenseUnknownNote": "Data de validade da carta de condução de {{name}} desconhecida."
   },
   "selector": {
     "defaultPlaceholder": "Selecione uma reserva...",

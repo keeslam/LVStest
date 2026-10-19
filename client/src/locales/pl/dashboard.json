@@ -295,5 +295,14 @@
   "notificationDisplay": {
     "spareAssignmentTitle": "Przypisz pojazd zastępczy",
     "spareAssignmentDescription": "Pojazd zastępczy do ustalenia wymaga przypisania na okres {{period}}."
+  },
+  "licenseWidget": {
+    "title": "Prawa jazdy",
+    "subtitle": "Wygasłe lub wygasające w ciągu 30 dni",
+    "none": "Brak praw jazdy wkrótce wygasających",
+    "loadFailed": "Nie udało się wczytać praw jazdy",
+    "expiredOn": "Wygasło {{date}}",
+    "expiresOn": "Wygasa {{date}}",
+    "openRental": "Zobacz wynajem"
   }
 }

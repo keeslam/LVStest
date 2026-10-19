@@ -220,7 +220,12 @@
       "earlyPickupTitle": "El alquiler empieza antes: ¿ajustar la fecha?",
       "earlyPickupDescription": "Este alquiler está programado desde el {{startDate}}, pero el vehículo sale hoy ({{today}}). ¿Poner hoy como fecha de inicio para que el periodo y el precio sean correctos?",
       "earlyPickupConfirm": "Sí, fecha de inicio a hoy",
-      "earlyPickupCancel": "No, no recoger"
+      "earlyPickupCancel": "No, no recoger",
+      "licenseExpiredWarning": "Atención: el permiso de conducir de {{name}} caducó el {{date}}.",
+      "licenseCheckedLabel": "Permiso de conducir comprobado",
+      "licenseUnknownNote": "Fecha de caducidad del permiso de {{name}} desconocida.",
+      "licenseNotCheckedTitle": "Permiso de conducir no comprobado",
+      "licenseNotCheckedDescription": "El permiso de conducir ha caducado. Marque 'Permiso de conducir comprobado' para continuar."
     },
     "return": {
       "startReturnProcess": "Iniciar el proceso de devolución",
@@ -513,7 +518,9 @@
     "collectionServiceHint": "Recogemos el coche en casa del cliente al final del alquiler; el cliente no lo lleva a la empresa. El cliente lo ve en el portal de clientes.",
     "collectionAddressLabel": "Dirección de recogida",
     "collectionSameAsDelivery": "Igual que la dirección de entrega",
-    "pastStartWarning": "Atención: esta fecha de inicio está en el pasado."
+    "pastStartWarning": "Atención: esta fecha de inicio está en el pasado.",
+    "licenseExpiredWarning": "Atención: el permiso de conducir de {{name}} caducó el {{date}}, antes del inicio del alquiler ({{start}}). Puede guardar igualmente.",
+    "licenseUnknownNote": "Fecha de caducidad del permiso de {{name}} desconocida."
   },
   "selector": {
     "defaultPlaceholder": "Seleccione una reserva...",

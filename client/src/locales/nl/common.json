@@ -270,7 +270,8 @@
           "mark-needs-service": "Gemarkeerd als onderhoud nodig",
           "return-from-service": "Terug uit onderhoud",
           "contract-pdf": "Contract-PDF geopend",
-          "damage-check-pdf": "Schadecheck-PDF geopend"
+          "damage-check-pdf": "Schadecheck-PDF geopend",
+          "license-checked": "Rijbewijs gecontroleerd"
         },
         "vehicle": {
           "mileage": "Kilometerstand gewijzigd",

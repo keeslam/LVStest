@@ -20,6 +20,7 @@ import { defaultReturnFuelLevel } from "@/lib/handover-fuel";
 import { officeToday } from "@/lib/office-date";
 import { formatDutchDate, formatMaintenancePeriod } from "@shared/booking-warnings";
 import { needsRemarkConfirmation, hasRemarks } from "@shared/remark-confirmation";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Car, Fuel, Calendar, FileText, ClipboardCheck, ExternalLink, CheckCircle2, Edit, Trash2, Upload, AlertTriangle } from "lucide-react";
 import { MileageOverridePasswordDialog } from "@/components/mileage-override-password-dialog";
 import InteractiveDamageCheck from "@/pages/interactive-damage-check";
@@ -104,6 +105,9 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
   // Vehicle remarks warning state - shown when vehicle has remarks before pickup
   const [remarksWarningOpen, setRemarksWarningOpen] = useState(false);
   const [remarksAcknowledged, setRemarksAcknowledged] = useState(false);
+  // Punt 9 (Kees, 2026-10-19) — "Rijbewijs gecontroleerd" for an expired licence.
+  const [licenseChecked, setLicenseChecked] = useState(false);
+  const [licenseFromRefusal, setLicenseFromRefusal] = useState<{ driverName: string; licenseExpiry: string | null } | null>(null);
   
   // Delete confirmation dialog states
   const [deletePickupDamageCheckDialogOpen, setDeletePickupDamageCheckDialogOpen] = useState(false);
@@ -191,6 +195,12 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
       ? handoverCheck.maintenanceBlocks
       : [];
 
+  // Punt 9 — the main driver's licence on the pickup day (server: handover-check).
+  // A refusal from the pickup itself also shows it, should the check not have loaded.
+  const driverLicense: { driverName: string; licenseExpiry: string | null; state: string } | null =
+    handoverCheck?.driverLicense ?? (licenseFromRefusal ? { ...licenseFromRefusal, state: 'expired' } : null);
+  const licenseExpired = driverLicense?.state === 'expired';
+
   const pickupDamageChecks = damageChecks?.filter((check: any) => check.checkType === 'pickup') || [];
   const pickupPaperDamageChecks = reservationDocuments?.filter((doc: any) => doc.documentType === 'Damage Check (Pickup - Paper)') || [];
   
@@ -214,6 +224,8 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
         
         // Reset remarks acknowledgement - require user to acknowledge again each time
         setRemarksAcknowledged(false);
+        setLicenseChecked(false);
+        setLicenseFromRefusal(null);
         // Explicitly close any existing warning dialog first
         setRemarksWarningOpen(false);
         
@@ -333,6 +345,8 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
       overrideContractNumber?: boolean;
       /** besluiten B-16 — set only after the employee has answered the question. */
       shiftStartDate?: boolean;
+      /** Punt 9 — the employee ticked "Rijbewijs gecontroleerd". */
+      licenseChecked?: boolean;
       /** besluiten B-03 — set only by an administrator, and never without a reason. */
       forceWorkshopOverride?: boolean;
       forceWorkshopReason?: string;
@@ -409,6 +423,17 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
       }
       // besluiten B-16 (BUG-211) — not a failure but a question: "de huur start
       // eerder, datum aanpassen?". Nothing was written; the answer decides.
+      // Punt 9 — an expired licence nobody ticked: nothing was written; show the tick.
+      if (error.code === "DRIVER_LICENSE_EXPIRED") {
+        setLicenseFromRefusal({ driverName: error.driverName ?? "", licenseExpiry: error.licenseExpiry ?? null });
+        setLicenseChecked(false);
+        toast({
+          variant: "destructive",
+          title: t('pickupReturn.pickup.licenseNotCheckedTitle'),
+          description: t('pickupReturn.pickup.licenseNotCheckedDescription'),
+        });
+        return;
+      }
       if (error.code === "PICKUP_BEFORE_START_DATE") {
         setEarlyPickup({ startDate: error.startDate, today: error.today });
         return;
@@ -487,6 +512,16 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
       return;
     }
 
+    // Punt 9 — an expired licence only goes out with the tick.
+    if (licenseExpired && !licenseChecked) {
+      toast({
+        variant: "destructive",
+        title: t('pickupReturn.pickup.licenseNotCheckedTitle'),
+        description: t('pickupReturn.pickup.licenseNotCheckedDescription'),
+      });
+      return;
+    }
+
     // Validate contract number
     if (!contractNumber || contractNumber.trim() === "") {
       toast({
@@ -561,6 +596,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
       pickupDate,
       pickupNotes: pickupNotes || undefined,
       overrideContractNumber: overrideDuplicate,
+      ...(licenseExpired && licenseChecked ? { licenseChecked: true } : {}),
     });
   };
 
@@ -595,6 +631,36 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
                 })}
               </span>
             </div>
+          )}
+          {licenseExpired && driverLicense && (
+            <div
+              className="p-3 bg-amber-50 border border-amber-400 rounded-md text-amber-900 text-sm space-y-2"
+              data-testid="warning-pickup-license-expired"
+              role="status"
+            >
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
+                <span>
+                  {t('pickupReturn.pickup.licenseExpiredWarning', {
+                    name: driverLicense.driverName,
+                    date: formatDutchDate(driverLicense.licenseExpiry),
+                  })}
+                </span>
+              </div>
+              <label className="flex items-center gap-2 font-medium cursor-pointer pl-6">
+                <Checkbox
+                  checked={licenseChecked}
+                  onCheckedChange={(v) => setLicenseChecked(v === true)}
+                  data-testid="checkbox-license-checked"
+                />
+                {t('pickupReturn.pickup.licenseCheckedLabel')}
+              </label>
+            </div>
+          )}
+          {driverLicense?.state === 'unknown' && (
+            <p className="text-sm text-muted-foreground" data-testid="note-pickup-license-unknown">
+              {t('pickupReturn.pickup.licenseUnknownNote', { name: driverLicense.driverName })}
+            </p>
           )}
           {/* TBD Spare Vehicle Selection */}
           {isTBDSpare ? (

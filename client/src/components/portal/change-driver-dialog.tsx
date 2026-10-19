@@ -15,6 +15,26 @@ import { DriverFormDialog } from "./driver-form-dialog";
 import { btnPrimary } from "./ui";
 import { vehicleName } from "@shared/vehicle-name";
 import { busyCar } from "./extra-drivers";
+import { licenseExpiryDay, licenseStateOn } from "@shared/driver-license";
+import { officeToday } from "@/lib/office-date";
+import { formatPortalDate } from "@/lib/portal-format";
+
+/**
+ * Punt 9 (Kees, 2026-10-19) — a warning, never a refusal: the licence on the day the
+ * driver takes the car (the start of a booked rental, today for a running one).
+ */
+function LicenseExpiredNote({ driver, reservation }: { driver: PortalDriverDto | undefined; reservation: Pick<PortalReservationDto, "status" | "startDate"> | undefined }) {
+  const { t } = useTranslation("portal");
+  if (!driver || !reservation) return null;
+  const today = officeToday();
+  const day = reservation.status === "picked_up" || reservation.startDate < today ? today : reservation.startDate;
+  if (licenseStateOn(driver.licenseExpiry, day) !== "expired") return null;
+  return (
+    <p className="rounded-md border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900" role="status" data-testid="portal-license-expired">
+      {t("drivers.licenseExpiredWarning", { name: driver.displayName, date: formatPortalDate(licenseExpiryDay(driver.licenseExpiry)) })}
+    </p>
+  );
+}
 
 /** Active drivers; those already on another booked or running car are listed but cannot be chosen (one car per driver). */
 const driverItems = (drivers: PortalDriverDto[], reservations: PortalReservationDto[], reservationId: number, busyLabel: (plate: string) => string) =>
@@ -62,6 +82,7 @@ export function ChangeDriverDialog({ reservation }: { reservation: PortalReserva
               <SearchListPicker items={driverItems(drivers, reservations, reservation.id, (plate) => t("drivers.busyIn", { plate }))} value={driverId ? Number(driverId) : null} onChange={(did) => setDriverId(did ? String(did) : "")}
                 searchPlaceholder={t("drivers.search")} emptyText={t("drivers.noneFound")} changeLabel={t("actions.change")}
                 hintText={(shown, total) => t("drivers.moreShown", { shown, total })} searchFrom={6} testId="portal-driver-picker" />
+              <LicenseExpiredNote driver={drivers.find((d) => String(d.id) === driverId)} reservation={reservation} />
             </div>
             <div>
               <Label htmlFor="driver-note">{t("fields.note")}</Label>
@@ -105,6 +126,7 @@ export function AssignVehicleDialog({ driver, open, onOpenChange }: { driver: Po
         <div className="space-y-3">
           <SearchListPicker items={cars} value={reservationId} onChange={setReservationId} searchPlaceholder={t("drivers.searchCar")} emptyText={t("drivers.noCarFound")} changeLabel={t("actions.change")}
             hintText={(shown, total) => t("drivers.moreShown", { shown, total })} searchFrom={6} testId="assign-car-picker" />
+          <LicenseExpiredNote driver={driver} reservation={reservations.find((r) => r.id === reservationId)} />
           <div className="grid grid-cols-1 gap-2 sm:flex sm:justify-end">
             <Button variant="outline" onClick={() => onOpenChange(false)}>{t("actions.cancel")}</Button>
             <Button className={btnPrimary} disabled={!reservationId || mutation.isPending} onClick={() => mutation.mutate()}>{t("drivers.assign")}</Button>

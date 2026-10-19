@@ -278,7 +278,8 @@
           "mark-needs-service": "Oznaczono jako wymagający serwisu",
           "return-from-service": "Powrót z serwisu",
           "contract-pdf": "Otwarto PDF umowy",
-          "damage-check-pdf": "Otwarto PDF kontroli uszkodzeń"
+          "damage-check-pdf": "Otwarto PDF kontroli uszkodzeń",
+          "license-checked": "Prawo jazdy sprawdzone"
         },
         "vehicle": {
           "mileage": "Zmieniono przebieg",

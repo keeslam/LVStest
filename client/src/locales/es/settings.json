@@ -319,7 +319,9 @@
       "activity": "Actividad",
       "activityShort": "Registro",
       "printers": "Impresoras (este PC)",
-      "printersShort": "Impresoras"
+      "printersShort": "Impresoras",
+      "dashboard": "Panel",
+      "dashboardShort": "Panel"
     },
     "business": {
       "rentalDefaultsTitle": "Valores predeterminados y políticas de alquiler",
@@ -671,6 +673,21 @@
         "action": "Acción",
         "subject": "Objeto",
         "changes": "Cambios"
+      }
+    },
+    "dashboardTiles": {
+      "title": "Mosaicos del panel",
+      "description": "Elija qué mosaicos ven todos en el panel y en qué orden.",
+      "saved": "Los mosaicos del panel se han guardado.",
+      "saveFailed": "Error al guardar",
+      "moveUp": "Subir",
+      "moveDown": "Bajar",
+      "tiles": {
+        "availability": "Vehículos disponibles",
+        "apk": "ITV caduca",
+        "overdue": "Alquileres atrasados",
+        "warranty": "Garantía caduca",
+        "licenses": "Permisos de conducir"
       }
     }
   },

@@ -13,6 +13,7 @@ import { ActivityLogPanel } from "@/components/settings/activity-log-panel";
 // D17: the RDW vehicle-type check/apply card on the Voertuigen tab.
 import { RdwTypeRemapCard } from "@/components/settings/rdw-type-remap-card";
 import { PrintersPanel } from "@/components/settings/printers-panel";
+import { DashboardTilesCard } from "@/components/settings/dashboard-tiles-card";
 // WAVE 15 item 3 — besluit B-24's office address finally has a field.
 import { OfficeNotificationEmail } from "@/components/settings/office-notification-email";
 import { OfficeTimeZoneCard } from "@/components/settings/office-timezone-card";
@@ -53,6 +54,7 @@ import {
   Globe,
   Car,
   Printer,
+  LayoutDashboard,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { calculateDutchHolidays } from "@shared/holidays";
@@ -819,7 +821,7 @@ export function SettingsPanel() {
       </div>
 
       <Tabs value={activeTab} onValueChange={selectTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-10 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-11 lg:w-auto lg:inline-grid">
           <TabsTrigger value="business" className="gap-2">
             <Building2 className="h-4 w-4" />
             <span className="hidden sm:inline">{t('settingsPage.tabs.business')}</span>
@@ -862,6 +864,11 @@ export function SettingsPanel() {
           <TabsTrigger value="vehicles" className="gap-2" data-testid="tab-vehicles">
             <Car className="h-4 w-4" />
             <span>{t('rdwTypeRemap.tabLabel', { ns: 'vehicles' })}</span>
+          </TabsTrigger>
+          <TabsTrigger value="dashboard" className="gap-2" data-testid="tab-dashboard">
+            <LayoutDashboard className="h-4 w-4" />
+            <span className="hidden sm:inline">{t('settingsPage.tabs.dashboard')}</span>
+            <span className="sm:hidden">{t('settingsPage.tabs.dashboardShort')}</span>
           </TabsTrigger>
           <TabsTrigger value="printers" className="gap-2" data-testid="tab-printers">
             <Printer className="h-4 w-4" />
@@ -2175,6 +2182,10 @@ export function SettingsPanel() {
         </TabsContent>
 
         {/* Printers on this pc (Kees, 2026-10-19): DYMO label makers via DYMO Connect, per pc. */}
+        <TabsContent value="dashboard" {...keepMounted("dashboard")} className="space-y-6 data-[state=inactive]:hidden">
+          <DashboardTilesCard />
+        </TabsContent>
+
         <TabsContent value="printers" {...keepMounted("printers")} className="space-y-6 data-[state=inactive]:hidden">
           {activeTab === "printers" && <PrintersPanel />}
         </TabsContent>

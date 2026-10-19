@@ -220,7 +220,12 @@
       "earlyPickupTitle": "Wynajem zaczyna się wcześniej — zmienić datę?",
       "earlyPickupDescription": "Ten wynajem jest zaplanowany od {{startDate}}, ale pojazd wyjeżdża dzisiaj ({{today}}). Ustawić datę początkową na dzisiaj, aby okres i cena się zgadzały?",
       "earlyPickupConfirm": "Tak, data początkowa na dzisiaj",
-      "earlyPickupCancel": "Nie, nie wydawaj"
+      "earlyPickupCancel": "Nie, nie wydawaj",
+      "licenseExpiredWarning": "Uwaga: prawo jazdy {{name}} wygasło {{date}}.",
+      "licenseCheckedLabel": "Prawo jazdy sprawdzone",
+      "licenseUnknownNote": "Data ważności prawa jazdy {{name}} nieznana.",
+      "licenseNotCheckedTitle": "Prawo jazdy niesprawdzone",
+      "licenseNotCheckedDescription": "Prawo jazdy wygasło. Zaznacz „Prawo jazdy sprawdzone”, aby kontynuować."
     },
     "return": {
       "startReturnProcess": "Rozpocznij proces zwrotu",
@@ -516,7 +521,9 @@
     "collectionServiceHint": "Samochód odbieramy od klienta pod koniec wynajmu; klient nie przywozi go do firmy. Klient widzi to w portalu klienta.",
     "collectionAddressLabel": "Adres odbioru",
     "collectionSameAsDelivery": "Taki sam jak adres dostawy",
-    "pastStartWarning": "Uwaga: ta data rozpoczęcia jest w przeszłości."
+    "pastStartWarning": "Uwaga: ta data rozpoczęcia jest w przeszłości.",
+    "licenseExpiredWarning": "Uwaga: prawo jazdy {{name}} wygasło {{date}}, przed rozpoczęciem wynajmu ({{start}}). Można mimo to zapisać.",
+    "licenseUnknownNote": "Data ważności prawa jazdy {{name}} nieznana."
   },
   "selector": {
     "defaultPlaceholder": "Wybierz rezerwację...",

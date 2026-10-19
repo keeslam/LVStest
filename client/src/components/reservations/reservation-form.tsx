@@ -84,6 +84,7 @@ import { VehicleRemarksWarningDialog } from "@/components/vehicles/vehicle-remar
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { officeToday } from "@/lib/office-date";
 import { ExtraDriversNote, DriverHistoryPanel } from "@/components/reservations/extra-drivers-note";
+import { DriverLicenseNotice } from "@/components/reservations/driver-license-notice";
 
 // Extended schema with validation
 const formSchema = insertReservationSchemaBase.extend({
@@ -1915,6 +1916,7 @@ export function ReservationForm({
                         <FormMessage />
                         <ExtraDriversNote reservationId={activeReservationId} />
                         <DriverHistoryPanel reservationId={activeReservationId} />
+                        <DriverLicenseNotice driver={selectedDriver} startDate={startDateWatch} />
                         {selectedDriver && (
                           <div className="mt-2 text-sm bg-muted p-2 rounded-md">
                             <div className="flex items-center justify-between mb-1">

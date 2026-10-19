@@ -194,7 +194,13 @@
     "pickupTag": "saída",
     "returnTag": "entrada",
     "weekdays": {
-      "mon": "seg", "tue": "ter", "wed": "qua", "thu": "qui", "fri": "sex", "sat": "sáb", "sun": "dom"
+      "mon": "seg",
+      "tue": "ter",
+      "wed": "qua",
+      "thu": "qui",
+      "fri": "sex",
+      "sat": "sáb",
+      "sun": "dom"
     },
     "fullCalendar": "Calendário completo",
     "reservationDetails": "Detalhes da reserva",
@@ -284,5 +290,14 @@
   "notificationDisplay": {
     "spareAssignmentTitle": "Atribuir veículo de substituição",
     "spareAssignmentDescription": "Um veículo de substituição ainda por definir precisa de uma atribuição para {{period}}."
+  },
+  "licenseWidget": {
+    "title": "Cartas de condução",
+    "subtitle": "Caducadas ou a caducar em 30 dias",
+    "none": "Nenhuma carta de condução a caducar em breve",
+    "loadFailed": "Não foi possível carregar as cartas de condução",
+    "expiredOn": "Caducou em {{date}}",
+    "expiresOn": "Caduca em {{date}}",
+    "openRental": "Ver aluguer"
   }
 }

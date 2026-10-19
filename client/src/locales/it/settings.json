@@ -319,7 +319,9 @@
       "activity": "Attività",
       "activityShort": "Log",
       "printers": "Stampanti (questo PC)",
-      "printersShort": "Stampanti"
+      "printersShort": "Stampanti",
+      "dashboard": "Dashboard",
+      "dashboardShort": "Dash"
     },
     "business": {
       "rentalDefaultsTitle": "Valori predefiniti e regole del noleggio",
@@ -671,6 +673,21 @@
         "action": "Azione",
         "subject": "Oggetto",
         "changes": "Modifiche"
+      }
+    },
+    "dashboardTiles": {
+      "title": "Riquadri della dashboard",
+      "description": "Scelga quali riquadri vedono tutti nella dashboard e in quale ordine.",
+      "saved": "I riquadri della dashboard sono stati salvati.",
+      "saveFailed": "Salvataggio non riuscito",
+      "moveUp": "Sposta su",
+      "moveDown": "Sposta giù",
+      "tiles": {
+        "availability": "Veicoli disponibili",
+        "apk": "Revisione in scadenza",
+        "overdue": "Noleggi in ritardo",
+        "warranty": "Garanzia in scadenza",
+        "licenses": "Patenti"
       }
     }
   },

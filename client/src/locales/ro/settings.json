@@ -319,7 +319,9 @@
       "activity": "Activitate",
       "activityShort": "Jurnal",
       "printers": "Imprimante (acest PC)",
-      "printersShort": "Imprimante"
+      "printersShort": "Imprimante",
+      "dashboard": "Panou",
+      "dashboardShort": "Panou"
     },
     "business": {
       "rentalDefaultsTitle": "Valori implicite și politici pentru închirieri",
@@ -671,6 +673,21 @@
         "action": "Acțiune",
         "subject": "Obiect",
         "changes": "Modificări"
+      }
+    },
+    "dashboardTiles": {
+      "title": "Plăcile panoului",
+      "description": "Alegeți ce plăci văd toți pe panou și în ce ordine.",
+      "saved": "Plăcile panoului au fost salvate.",
+      "saveFailed": "Salvarea a eșuat",
+      "moveUp": "Mută în sus",
+      "moveDown": "Mută în jos",
+      "tiles": {
+        "availability": "Vehicule disponibile",
+        "apk": "ITP expiră",
+        "overdue": "Închirieri întârziate",
+        "warranty": "Garanția expiră",
+        "licenses": "Permise de conducere"
       }
     }
   },

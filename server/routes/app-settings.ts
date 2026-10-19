@@ -25,6 +25,7 @@ import { INVALID_OFFICE_TIMEZONE_CODE, OFFICE_TIMEZONE_KEY, isValidTimeZone } fr
 import { loadOfficeTimeZone } from "../services/office-time";
 import { COMPANY_NAME_KEY, INVALID_COMPANY_NAME_CODE, validCompanyName } from "../../shared/company-name";
 import { loadCompanyName } from "../services/company-name";
+import { DASHBOARD_TILES_KEY, INVALID_DASHBOARD_TILES_CODE, isValidDashboardTilesValue } from "../../shared/dashboard-tiles";
 import { migratePortalTemplatesToCompanyName } from "../services/portal-mail";
 
 // Moved verbatim out of server/routes.ts (registerRoutes) - see git history for context.
@@ -92,6 +93,10 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
     // D15: the name goes into mail headers and subjects.
     if (key === COMPANY_NAME_KEY && validCompanyName(value) === null) {
       return { message: "That is not an acceptable company name", code: INVALID_COMPANY_NAME_CODE };
+    }
+    // Kees 2026-10-19: which dashboard tiles show, in what order — known tile ids only.
+    if (key === DASHBOARD_TILES_KEY && !isValidDashboardTilesValue(value)) {
+      return { message: "That is not a list of dashboard tiles", code: INVALID_DASHBOARD_TILES_CODE };
     }
     return null;
   }

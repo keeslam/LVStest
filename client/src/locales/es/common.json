@@ -274,7 +274,8 @@
           "mark-needs-service": "Marcado como pendiente de mantenimiento",
           "return-from-service": "Regreso del mantenimiento",
           "contract-pdf": "PDF del contrato abierto",
-          "damage-check-pdf": "PDF de la inspección de daños abierto"
+          "damage-check-pdf": "PDF de la inspección de daños abierto",
+          "license-checked": "Permiso de conducir comprobado"
         },
         "vehicle": {
           "mileage": "Kilometraje modificado",

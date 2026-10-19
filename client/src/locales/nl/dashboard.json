@@ -190,7 +190,13 @@
     "pickupTag": "uit",
     "returnTag": "in",
     "weekdays": {
-      "mon": "ma", "tue": "di", "wed": "wo", "thu": "do", "fri": "vr", "sat": "za", "sun": "zo"
+      "mon": "ma",
+      "tue": "di",
+      "wed": "wo",
+      "thu": "do",
+      "fri": "vr",
+      "sat": "za",
+      "sun": "zo"
     },
     "fullCalendar": "Volledige kalender",
     "reservationDetails": "Reserveringsdetails",
@@ -279,5 +285,14 @@
   "notificationDisplay": {
     "spareAssignmentTitle": "Vervangend voertuig toewijzen",
     "spareAssignmentDescription": "Een nog te bepalen vervangend voertuig heeft een toewijzing nodig voor {{period}}."
+  },
+  "licenseWidget": {
+    "title": "Rijbewijzen",
+    "subtitle": "Verlopen of verloopt binnen 30 dagen",
+    "none": "Geen rijbewijzen die binnenkort verlopen",
+    "loadFailed": "Rijbewijzen konden niet worden geladen",
+    "expiredOn": "Verlopen op {{date}}",
+    "expiresOn": "Verloopt op {{date}}",
+    "openRental": "Huur bekijken"
   }
 }

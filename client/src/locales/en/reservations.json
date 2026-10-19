@@ -220,7 +220,12 @@
       "earlyPickupTitle": "The rental starts earlier — move the date?",
       "earlyPickupDescription": "This rental is planned from {{startDate}}, but the vehicle leaves today ({{today}}). Move the start date to today so the period and the price are right?",
       "earlyPickupConfirm": "Yes, start today",
-      "earlyPickupCancel": "No, do not pick up"
+      "earlyPickupCancel": "No, do not pick up",
+      "licenseExpiredWarning": "Note: {{name}}'s driving licence expired on {{date}}.",
+      "licenseCheckedLabel": "Driving licence checked",
+      "licenseUnknownNote": "Expiry date of {{name}}'s driving licence unknown.",
+      "licenseNotCheckedTitle": "Driving licence not checked",
+      "licenseNotCheckedDescription": "The driving licence has expired. Tick 'Driving licence checked' to continue."
     },
     "return": {
       "startReturnProcess": "Start Return Process",
@@ -510,7 +515,9 @@
     "collectionServiceHint": "We collect the car from the customer at the end of the rental; the customer does not bring it to the shop. The customer sees this in the customer portal.",
     "collectionAddressLabel": "Collection address",
     "collectionSameAsDelivery": "Same as delivery address",
-    "pastStartWarning": "Note: this start date is in the past."
+    "pastStartWarning": "Note: this start date is in the past.",
+    "licenseExpiredWarning": "Note: {{name}}'s driving licence expired on {{date}}, before the rental starts ({{start}}). You can still save.",
+    "licenseUnknownNote": "Expiry date of {{name}}'s driving licence unknown."
   },
   "selector": {
     "defaultPlaceholder": "Select a reservation...",

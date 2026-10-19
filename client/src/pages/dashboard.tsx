@@ -9,8 +9,25 @@ import { ReservationCalendar } from "@/components/dashboard/reservation-calendar
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { BackupStalenessBanner } from "@/components/backup/backup-staleness-banner";
 import { AccessDeniedBanner } from "@/components/security/access-denied-banner";
+import { DriverLicenseWidget } from "@/components/dashboard/driver-license-widget";
+import { useQuery } from "@tanstack/react-query";
+import { DASHBOARD_TILES_KEY, dashboardTilesFromSetting, type DashboardTileId } from "@shared/dashboard-tiles";
+
+/** Kees 2026-10-19 — the tiles, in the order and selection set in App-instellingen > Dashboard. */
+const TILE_COMPONENTS: Record<DashboardTileId, () => JSX.Element> = {
+  availability: VehicleAvailabilityWidget,
+  apk: ApkExpirationWidget,
+  overdue: OverdueReservationsWidget,
+  warranty: WarrantyExpirationWidget,
+  licenses: DriverLicenseWidget,
+};
 
 export default function Dashboard() {
+  const { data: tileSetting, isLoading: tilesLoading } = useQuery<{ value?: unknown } | null>({
+    queryKey: [`/api/app-settings/key/${DASHBOARD_TILES_KEY}`],
+  });
+  const tiles = dashboardTilesFromSetting(tileSetting?.value).filter((tile) => tile.visible);
+
   return (
     <div className="space-y-6">
       {/* Backup Health */}
@@ -25,12 +42,14 @@ export default function Dashboard() {
       <QuickActions />
       
       {/* Dashboard Widgets */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <VehicleAvailabilityWidget />
-        <ApkExpirationWidget />
-        <OverdueReservationsWidget />
-        <WarrantyExpirationWidget />
-      </div>
+      {!tilesLoading && tiles.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" data-testid="dashboard-tiles">
+          {tiles.map((tile) => {
+            const Tile = TILE_COMPONENTS[tile.id];
+            return <div key={tile.id} data-testid={`dashboard-tile-${tile.id}`}><Tile /></div>;
+          })}
+        </div>
+      )}
       
       {/* Spare Vehicles and Expenses */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

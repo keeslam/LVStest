@@ -274,7 +274,8 @@
           "mark-needs-service": "Marcat ca necesitând mentenanță",
           "return-from-service": "Revenit din mentenanță",
           "contract-pdf": "PDF-ul contractului deschis",
-          "damage-check-pdf": "PDF-ul verificării de daune deschis"
+          "damage-check-pdf": "PDF-ul verificării de daune deschis",
+          "license-checked": "Permis de conducere verificat"
         },
         "vehicle": {
           "mileage": "Kilometraj modificat",

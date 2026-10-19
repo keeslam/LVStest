@@ -29,6 +29,8 @@ type KnownAuditAction =
   | 'reservation.status'
   // Sub-project C: an undone pickup, return or cancellation; details carry the plan.
   | 'reservation.revert'
+  // Punt 9: pickup on an expired licence after the "Rijbewijs gecontroleerd" tick.
+  | 'reservation.license-checked'
   | 'customer.create'
   | 'customer.update'
   | 'customer.delete'

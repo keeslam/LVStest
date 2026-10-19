@@ -266,7 +266,8 @@
       "license": "Rijbewijs"
     },
     "noContact": "Geen e-mail of telefoon",
-    "more": "Meer acties voor {{name}}"
+    "more": "Meer acties voor {{name}}",
+    "licenseExpiredWarning": "Let op: het rijbewijs van {{name}} is verlopen op {{date}}. U kunt deze bestuurder toch kiezen."
   },
   "account": {
     "title": "Mijn account",

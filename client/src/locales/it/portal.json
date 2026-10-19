@@ -272,7 +272,8 @@
       "license": "Patente"
     },
     "noContact": "Nessuna e-mail o telefono",
-    "more": "Altre azioni per {{name}}"
+    "more": "Altre azioni per {{name}}",
+    "licenseExpiredWarning": "Attenzione: la patente di {{name}} è scaduta il {{date}}. Può comunque scegliere questo conducente."
   },
   "account": {
     "title": "Il mio account",

@@ -290,5 +290,14 @@
   "notificationDisplay": {
     "spareAssignmentTitle": "Assegnare un veicolo sostitutivo",
     "spareAssignmentDescription": "Un veicolo sostitutivo ancora da definire richiede un'assegnazione per {{period}}."
+  },
+  "licenseWidget": {
+    "title": "Patenti",
+    "subtitle": "Scadute o in scadenza entro 30 giorni",
+    "none": "Nessuna patente in scadenza a breve",
+    "loadFailed": "Impossibile caricare le patenti",
+    "expiredOn": "Scaduta il {{date}}",
+    "expiresOn": "Scade il {{date}}",
+    "openRental": "Vedi noleggio"
   }
 }

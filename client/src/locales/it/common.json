@@ -274,7 +274,8 @@
           "mark-needs-service": "Contrassegnato come da sottoporre a manutenzione",
           "return-from-service": "Rientrato dalla manutenzione",
           "contract-pdf": "PDF del contratto aperto",
-          "damage-check-pdf": "PDF del controllo danni aperto"
+          "damage-check-pdf": "PDF del controllo danni aperto",
+          "license-checked": "Patente controllata"
         },
         "vehicle": {
           "mileage": "Chilometraggio modificato",

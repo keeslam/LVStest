@@ -28,7 +28,7 @@ const SUB_ACTIONS: Record<string, readonly string[]> = {
   reservation: [
     "pickup", "return", "status", "revert", "contract", "assign-spare", "basic", "usage-period",
     "spare-status", "complete-maintenance", "mark-needs-service", "return-from-service",
-    "contract-pdf", "damage-check-pdf",
+    "contract-pdf", "damage-check-pdf", "license-checked",
   ],
   vehicle: [
     "mileage", "fuel-status", "maintenance-status", "barcode", "toggle-registration", "fiscal-profile", "blacklist",

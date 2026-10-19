@@ -190,7 +190,13 @@
     "pickupTag": "out",
     "returnTag": "in",
     "weekdays": {
-      "mon": "Mon", "tue": "Tue", "wed": "Wed", "thu": "Thu", "fri": "Fri", "sat": "Sat", "sun": "Sun"
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
     },
     "fullCalendar": "Full Calendar",
     "reservationDetails": "Reservation Details",
@@ -279,5 +285,14 @@
   "notificationDisplay": {
     "spareAssignmentTitle": "Assign a spare vehicle",
     "spareAssignmentDescription": "A spare vehicle still to be chosen needs an assignment for {{period}}."
+  },
+  "licenseWidget": {
+    "title": "Driving licences",
+    "subtitle": "Expired or expiring within 30 days",
+    "none": "No driving licences expiring soon",
+    "loadFailed": "Driving licences could not be loaded",
+    "expiredOn": "Expired on {{date}}",
+    "expiresOn": "Expires on {{date}}",
+    "openRental": "View rental"
   }
 }

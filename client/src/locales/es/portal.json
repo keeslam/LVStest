@@ -272,7 +272,8 @@
       "license": "Permiso de conducir"
     },
     "noContact": "Sin correo ni teléfono",
-    "more": "Más acciones para {{name}}"
+    "more": "Más acciones para {{name}}",
+    "licenseExpiredWarning": "Atención: el permiso de conducir de {{name}} caducó el {{date}}. Puede elegir a este conductor igualmente."
   },
   "account": {
     "title": "Mi cuenta",

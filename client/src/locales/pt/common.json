@@ -274,7 +274,8 @@
           "mark-needs-service": "Marcada como a necessitar de manutenção",
           "return-from-service": "Regresso da manutenção",
           "contract-pdf": "PDF do contrato aberto",
-          "damage-check-pdf": "PDF da inspeção de danos aberto"
+          "damage-check-pdf": "PDF da inspeção de danos aberto",
+          "license-checked": "Carta de condução verificada"
         },
         "vehicle": {
           "mileage": "Quilometragem alterada",

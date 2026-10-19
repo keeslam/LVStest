@@ -319,7 +319,9 @@
       "activity": "Atividade",
       "activityShort": "Registo",
       "printers": "Impressoras (este PC)",
-      "printersShort": "Impressoras"
+      "printersShort": "Impressoras",
+      "dashboard": "Painel",
+      "dashboardShort": "Painel"
     },
     "business": {
       "rentalDefaultsTitle": "Valores predefinidos e política de aluguer",
@@ -671,6 +673,21 @@
         "action": "Ação",
         "subject": "Objeto",
         "changes": "Alterações"
+      }
+    },
+    "dashboardTiles": {
+      "title": "Mosaicos do painel",
+      "description": "Escolha que mosaicos todos veem no painel e por que ordem.",
+      "saved": "Os mosaicos do painel foram guardados.",
+      "saveFailed": "Falha ao guardar",
+      "moveUp": "Subir",
+      "moveDown": "Descer",
+      "tiles": {
+        "availability": "Veículos disponíveis",
+        "apk": "Inspeção a caducar",
+        "overdue": "Alugueres em atraso",
+        "warranty": "Garantia a caducar",
+        "licenses": "Cartas de condução"
       }
     }
   },

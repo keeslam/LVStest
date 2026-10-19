@@ -116,6 +116,7 @@ import {
   type HandoverOverride,
 } from "./services/lifecycle";
 import { currentRenterReservation } from "./services/vehicle-notification-recipients";
+import { assertDriverLicenseChecked, driverLicenseInfo, DriverLicenseExpiredError } from "./services/driver-license-check";
 import { abortPlanningRefusal, loadReplacementsHangingOn } from "./services/abort-planning";
 import { recalculateTotalPrice } from "../shared/rental-pricing";
 import { calculateDutchHolidays, mergeHolidaysWithOverrides } from "../shared/holidays";
@@ -3142,6 +3143,18 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Get ALL overdue reservations (picked_up but past end date - customer still has the vehicle)
+  // Punt 9 (Kees, 2026-10-19) — dashboard tile "Rijbewijzen": main drivers of a
+  // booked or running rental whose licence is expired or expires within 30 days.
+  app.get("/api/reservations/driver-licenses-expiring", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (_req, res) => {
+    try {
+      const { licenseTileRows } = await import("./services/driver-license-tile");
+      res.json(await licenseTileRows(isoToday()));
+    } catch (error) {
+      console.error("Error fetching expiring driver licences:", error);
+      res.status(500).json({ message: "Failed to fetch expiring driver licences" });
+    }
+  });
+
   app.get("/api/reservations/overdue", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.setHeader('Pragma', 'no-cache');
@@ -5775,11 +5788,14 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (!reservation) {
         return res.status(404).json({ message: "Reservation not found" });
       }
+      const day = rawDay || isoToday();
+      // Punt 9 — the main driver's licence on the pickup day, so the dialog can ask for the tick up front.
+      const driver = reservation.driverId ? await storage.getDriver(reservation.driverId) : undefined;
+      const driverLicense = driverLicenseInfo(driver, day);
       if (!reservation.vehicleId) {
-        return res.json({ canHandOver: true, refusal: null, warnings: [], maintenanceBlocks: [] });
+        return res.json({ canHandOver: true, refusal: null, warnings: [], maintenanceBlocks: [], driverLicense });
       }
 
-      const day = rawDay || isoToday();
       const [vehicle, vehicleReservations] = await Promise.all([
         storage.getVehicle(reservation.vehicleId),
         storage.getReservationsByVehicle(reservation.vehicleId),
@@ -5792,6 +5808,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         maintenanceBlocks: scheduledMaintenanceOnDay(vehicleReservations, day).map((b) => ({
           id: b.id, startDate: b.startDate, endDate: b.endDate ?? null,
         })),
+        driverLicense,
       });
     } catch (error) {
       console.error("Error running the handover check:", error);
@@ -5890,6 +5907,21 @@ export async function registerRoutes(app: Express): Promise<void> {
         throw error;
       }
 
+      // Punt 9 (Kees, 2026-10-19) — an expired licence of the main driver needs
+      // the "Rijbewijs gecontroleerd" tick; without it nothing is written.
+      const pickupDay = typeof pickupDate === "string" && pickupDate ? pickupDate : isoToday();
+      const pickupDriver = reservation.driverId ? await storage.getDriver(reservation.driverId) : undefined;
+      const pickupLicense = driverLicenseInfo(pickupDriver, pickupDay);
+      let licenseCheckedOnExpired = false;
+      try {
+        licenseCheckedOnExpired = assertDriverLicenseChecked(pickupLicense, req.body?.licenseChecked === true);
+      } catch (error) {
+        if (error instanceof DriverLicenseExpiredError) {
+          return res.status(error.status).json(error.toBody());
+        }
+        throw error;
+      }
+
       let mileageDecreaseAuthorizedBy: string | undefined;
 
       if (reservation.vehicle.currentMileage && mileage < reservation.vehicle.currentMileage) {
@@ -5923,6 +5955,16 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       if (!updatedReservation) {
         return res.status(404).json({ message: "Reservation not found" });
+      }
+
+      // Punt 9 — the tick on an expired licence lands in the reservation's history.
+      if (licenseCheckedOnExpired && pickupLicense) {
+        await AuditLogger.logFromRequest(req, "reservation.license-checked", "reservation", reservationId, {
+          operation: `Rijbewijs gecontroleerd bij ophalen: ${pickupLicense.driverName}, rijbewijs verlopen op ${pickupLicense.licenseExpiry}`,
+          driverId: pickupLicense.driverId,
+          licenseExpiry: pickupLicense.licenseExpiry,
+          pickupDay,
+        }, "success");
       }
 
       // OPT-011 - record which remark text was in force when this vehicle

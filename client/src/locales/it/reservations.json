@@ -220,7 +220,12 @@
       "earlyPickupTitle": "Il noleggio inizia prima — modificare la data?",
       "earlyPickupDescription": "Questo noleggio è pianificato dal {{startDate}}, ma il veicolo parte oggi ({{today}}). Impostare la data di inizio a oggi, in modo che periodo e prezzo siano corretti?",
       "earlyPickupConfirm": "Sì, data di inizio a oggi",
-      "earlyPickupCancel": "No, non ritirare"
+      "earlyPickupCancel": "No, non ritirare",
+      "licenseExpiredWarning": "Attenzione: la patente di {{name}} è scaduta il {{date}}.",
+      "licenseCheckedLabel": "Patente controllata",
+      "licenseUnknownNote": "Data di scadenza della patente di {{name}} sconosciuta.",
+      "licenseNotCheckedTitle": "Patente non controllata",
+      "licenseNotCheckedDescription": "La patente è scaduta. Selezioni 'Patente controllata' per continuare."
     },
     "return": {
       "startReturnProcess": "Avvia procedura di riconsegna",
@@ -513,7 +518,9 @@
     "collectionServiceHint": "Ritiriamo l'auto presso il cliente alla fine del noleggio; il cliente non la porta in sede. Il cliente lo vede nel portale clienti.",
     "collectionAddressLabel": "Indirizzo di ritiro",
     "collectionSameAsDelivery": "Uguale all'indirizzo di consegna",
-    "pastStartWarning": "Attenzione: questa data di inizio è nel passato."
+    "pastStartWarning": "Attenzione: questa data di inizio è nel passato.",
+    "licenseExpiredWarning": "Attenzione: la patente di {{name}} è scaduta il {{date}}, prima dell'inizio del noleggio ({{start}}). Può comunque salvare.",
+    "licenseUnknownNote": "Data di scadenza della patente di {{name}} sconosciuta."
   },
   "selector": {
     "defaultPlaceholder": "Selezioni una prenotazione...",

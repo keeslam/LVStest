@@ -317,7 +317,9 @@
       "activity": "Activity",
       "activityShort": "Log",
       "printers": "Printers (this pc)",
-      "printersShort": "Printers"
+      "printersShort": "Printers",
+      "dashboard": "Dashboard",
+      "dashboardShort": "Dash"
     },
     "business": {
       "rentalDefaultsTitle": "Rental Defaults & Policies",
@@ -667,6 +669,21 @@
         "action": "Action",
         "subject": "Subject",
         "changes": "Changes"
+      }
+    },
+    "dashboardTiles": {
+      "title": "Dashboard tiles",
+      "description": "Choose which tiles everyone sees on the dashboard, and in which order.",
+      "saved": "The dashboard tiles have been saved.",
+      "saveFailed": "Saving failed",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "tiles": {
+        "availability": "Available vehicles",
+        "apk": "MOT expiring",
+        "overdue": "Overdue rentals",
+        "warranty": "Warranty expiring",
+        "licenses": "Driving licences"
       }
     }
   },

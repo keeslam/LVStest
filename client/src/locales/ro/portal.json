@@ -272,7 +272,8 @@
       "license": "Permis"
     },
     "noContact": "Fără e-mail sau telefon",
-    "more": "Mai multe acțiuni pentru {{name}}"
+    "more": "Mai multe acțiuni pentru {{name}}",
+    "licenseExpiredWarning": "Atenție: permisul de conducere al lui {{name}} a expirat la {{date}}. Puteți alege totuși acest șofer."
   },
   "account": {
     "title": "Contul meu",

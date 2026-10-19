@@ -539,6 +539,30 @@ Kees: "de barcodes die gemaakt worden om te printen om aan sleutels te hangen zo
 - **Aanvulling na de eerste proef (Kees: "ik kan hier niet echt aanpassen wat er op het label komt, deze komt niet uit de barcode template editor"):** de sjablooneditor onder Documenten → Barcodelabels kent nu het soort **DYMO-tape (48 x 12 mm)** (nieuwe kolom `barcode_label_templates.tape_print`, standaard onwaar, in schema-columns.json). Een tapesjabloon wordt met zijn eigen velden staand en gedraaid afgedrukt, barcodes zonder code eronder; nieuwe veldbron **Sleutel (Hoofd/Reserve)** leest Hoofd of Reserve uit de code (-S). De schakelaar **DYMO-tape: staand afdrukken, inhoud gedraaid** zet een bestaand sjabloon om. De vaste keuze **DYMO-tape (labelmaker, staand)** blijft bestaan voor wie geen sjabloon wil maken. Handleiding 8.5, 4.11, 18.9, Wat is er nieuw en checklist (regel **Tapesjabloon maken**) bijgewerkt.
 - **Tweede aanvulling (Kees: "waarom komt die nog als prn bestand en niet als .label voor de dymo software?"):** oorzaak gevonden op de balie-pc: de Windows-printer *DYMO LabelManager 420P* heeft als poort `FILE:` (DYMO Connect zet die wachtrij zo neer); het afdrukvenster van de browser kan dus nooit echt op de 420P printen. Op diezelfde pc draait wél de DYMO-webservice van DYMO Connect (https://127.0.0.1:41951), die de 420P als aangesloten tapeprinter met automatisch snijden meldt. Gebouwd: bij een tapelabel de keuze **Uitvoer** met (1) elke gevonden labelmaker, rechtstreeks via de webservice (PrintLabel, één opdracht per label, TapePrintParams AutoCut), (2) **Bestand .label (openen in DYMO Connect)** in het .label-formaat van DYMO Label v8 (ContinuousLabel, PaperName 12mm, vaste lengte in twips, BarcodeObject Code128Auto met exact de VEH-code en TextPosition None, tekstregels uit de sjabloonvelden) en (3) het afdrukvenster. Het XML-formaat is gecontroleerd met RenderLabel van de webservice (levert een correct label op: barcode links, kenteken en Hoofd/Reserve rechts). Voorwaarden: DYMO Connect draait op de pc en de browser vertrouwt het DYMO-certificaat (op de balie-pc is dat zo); de CSP laat alleen https://127.0.0.1:41951 en https://localhost:41951 extra toe. Niet door Claude getest: de fysieke afdruk; Kees doet de checklistregels **Rechtstreeks naar de labelmaker** en **Bestand .label**.
 
+### B-46 — Rijbewijscontrole en instelbare dashboardtegels (19-10-2026)
+
+Kees koos uit de lijst met suggesties punt 9, "rijbewijs verlopen", en keurde de aanpak met klikken goed. Zijn aanvulling bij de dashboardtegel: "dashboard tegel maar dan met de mogelijkheid om aan te vinken welke er zichtbaar zijn ( beschikbaar, apk verloopt, garantie verloopt, achterstallige huren) in app instellingen en dat je dan zelf de volgorde kan bepalen in de app instellingen".
+
+- **Waartegen de app controleert.** Het rijbewijs van de hoofdbestuurder wordt vergeleken met één dag:
+  - bij boeken de startdatum van de huur;
+  - bij ophalen de ophaaldag.
+  - Verloopt het rijbewijs tijdens de huur, dan geeft de app géén melding (Kees: "Nee").
+  - De vervaldag zelf telt nog als geldig.
+- **Boeken en wijzigen.** Bij een verlopen rijbewijs verschijnt een gele melding onder de gekozen bestuurder. Opslaan mag.
+- **Ophalen.** Bij een verlopen rijbewijs ziet de medewerker een gele melding met het vinkje **Rijbewijs gecontroleerd**.
+  - Zonder vinkje gaat het ophalen niet door. De server weigert dan met `DRIVER_LICENSE_EXPIRED` (409) en schrijft niets.
+  - Met vinkje gaat het ophalen door. In de geschiedenis van de reservering komt dan de regel **Rijbewijs gecontroleerd**, met de bestuurder en de vervaldatum.
+- **Geen vervaldatum ingevuld.** De medewerker ziet alleen een grijze regel "Vervaldatum rijbewijs onbekend". Er is geen vinkje nodig.
+- **Portaal.** De klant krijgt een waarschuwing als hij een bestuurder met een verlopen rijbewijs op een auto zet. Het toewijzen blijft mogelijk.
+  - Voor een geboekte huur telt de startdatum, voor een lopende huur vandaag.
+- **Dashboardtegel "Rijbewijzen".** De tegel toont de hoofdbestuurders van geboekte en lopende huren van wie het rijbewijs al verlopen is of binnen 30 dagen verloopt.
+  - Elke bestuurder staat er één keer in, bij zijn eerste huur. Het oog opent die huur.
+  - De tegel is alleen te zien met het recht om reserveringen te bekijken.
+- **Instellingen → Dashboard → Dashboardtegels.** Hier zet je de vijf tegels aan of uit en verschuif je ze met pijltjes. De vijf tegels zijn: beschikbare voertuigen, APK, achterstallige huren, garantie en rijbewijzen.
+  - De keuze geldt voor iedereen. Wie de app-instellingen mag wijzigen, mag ook deze wijzigen.
+  - Het gaat alleen om de tegels, niet om de andere blokken op het dashboard.
+  - Opgeslagen als app-instelling `dashboard_tiles`. Komt er later een nieuwe tegel bij, dan verschijnt die vanzelf achteraan.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).

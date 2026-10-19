@@ -272,7 +272,8 @@
       "license": "Carta de condução"
     },
     "noContact": "Sem e-mail nem telefone",
-    "more": "Mais ações para {{name}}"
+    "more": "Mais ações para {{name}}",
+    "licenseExpiredWarning": "Atenção: a carta de condução de {{name}} caducou em {{date}}. Pode escolher este condutor na mesma."
   },
   "account": {
     "title": "A minha conta",

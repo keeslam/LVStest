@@ -278,7 +278,8 @@
       "license": "Prawo jazdy"
     },
     "noContact": "Brak e-maila i telefonu",
-    "more": "Więcej działań dla {{name}}"
+    "more": "Więcej działań dla {{name}}",
+    "licenseExpiredWarning": "Uwaga: prawo jazdy {{name}} wygasło {{date}}. Można mimo to wybrać tego kierowcę."
   },
   "account": {
     "title": "Moje konto",

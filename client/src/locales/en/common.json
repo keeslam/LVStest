@@ -270,7 +270,8 @@
           "mark-needs-service": "Marked as needing service",
           "return-from-service": "Returned from service",
           "contract-pdf": "Contract PDF opened",
-          "damage-check-pdf": "Damage check PDF opened"
+          "damage-check-pdf": "Damage check PDF opened",
+          "license-checked": "Driving licence checked"
         },
         "vehicle": {
           "mileage": "Mileage changed",

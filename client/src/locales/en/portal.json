@@ -266,7 +266,8 @@
       "license": "Licence"
     },
     "noContact": "No e-mail or phone",
-    "more": "More actions for {{name}}"
+    "more": "More actions for {{name}}",
+    "licenseExpiredWarning": "Note: {{name}}'s driving licence expired on {{date}}. You can still choose this driver."
   },
   "account": {
     "title": "My account",

@@ -290,5 +290,14 @@
   "notificationDisplay": {
     "spareAssignmentTitle": "Atribuiți un vehicul de înlocuire",
     "spareAssignmentDescription": "Un vehicul de înlocuire încă de stabilit necesită o atribuire pentru {{period}}."
+  },
+  "licenseWidget": {
+    "title": "Permise de conducere",
+    "subtitle": "Expirate sau care expiră în 30 de zile",
+    "none": "Niciun permis nu expiră în curând",
+    "loadFailed": "Permisele de conducere nu au putut fi încărcate",
+    "expiredOn": "Expirat la {{date}}",
+    "expiresOn": "Expiră la {{date}}",
+    "openRental": "Vezi închirierea"
   }
 }

@@ -317,7 +317,9 @@
       "activity": "Activiteit",
       "activityShort": "Log",
       "printers": "Printers (deze pc)",
-      "printersShort": "Printers"
+      "printersShort": "Printers",
+      "dashboard": "Dashboard",
+      "dashboardShort": "Dash"
     },
     "business": {
       "rentalDefaultsTitle": "Standaardwaarden & beleid verhuur",
@@ -667,6 +669,21 @@
         "action": "Actie",
         "subject": "Object",
         "changes": "Wijzigingen"
+      }
+    },
+    "dashboardTiles": {
+      "title": "Dashboardtegels",
+      "description": "Kies welke tegels iedereen op het dashboard ziet, en in welke volgorde.",
+      "saved": "De dashboardtegels zijn opgeslagen.",
+      "saveFailed": "Opslaan mislukt",
+      "moveUp": "Omhoog",
+      "moveDown": "Omlaag",
+      "tiles": {
+        "availability": "Beschikbare voertuigen",
+        "apk": "APK verloopt",
+        "overdue": "Achterstallige huren",
+        "warranty": "Garantie verloopt",
+        "licenses": "Rijbewijzen"
       }
     }
   },

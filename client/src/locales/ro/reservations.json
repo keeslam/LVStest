@@ -220,7 +220,12 @@
       "earlyPickupTitle": "Închirierea începe mai devreme — modificați data?",
       "earlyPickupDescription": "Această închiriere este programată de la {{startDate}}, dar vehiculul pleacă astăzi ({{today}}). Setați data de început la astăzi, astfel încât perioada și prețul să fie corecte?",
       "earlyPickupConfirm": "Da, data de început la astăzi",
-      "earlyPickupCancel": "Nu, nu ridicați"
+      "earlyPickupCancel": "Nu, nu ridicați",
+      "licenseExpiredWarning": "Atenție: permisul de conducere al lui {{name}} a expirat la {{date}}.",
+      "licenseCheckedLabel": "Permis de conducere verificat",
+      "licenseUnknownNote": "Data expirării permisului lui {{name}} necunoscută.",
+      "licenseNotCheckedTitle": "Permis de conducere neverificat",
+      "licenseNotCheckedDescription": "Permisul de conducere a expirat. Bifați „Permis de conducere verificat” pentru a continua."
     },
     "return": {
       "startReturnProcess": "Începeți procesul de returnare",
@@ -513,7 +518,9 @@
     "collectionServiceHint": "Noi ridicăm mașina de la client la sfârșitul închirierii; clientul nu o aduce la firmă. Clientul vede acest lucru în portalul pentru clienți.",
     "collectionAddressLabel": "Adresa de ridicare",
     "collectionSameAsDelivery": "La fel ca adresa de livrare",
-    "pastStartWarning": "Atenție: această dată de început este în trecut."
+    "pastStartWarning": "Atenție: această dată de început este în trecut.",
+    "licenseExpiredWarning": "Atenție: permisul de conducere al lui {{name}} a expirat la {{date}}, înainte de începutul închirierii ({{start}}). Puteți salva totuși.",
+    "licenseUnknownNote": "Data expirării permisului lui {{name}} necunoscută."
   },
   "selector": {
     "defaultPlaceholder": "Selectați o rezervare...",
