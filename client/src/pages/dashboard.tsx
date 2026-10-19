@@ -22,6 +22,20 @@ const TILE_COMPONENTS: Record<DashboardTileId, () => JSX.Element> = {
   licenses: DriverLicenseWidget,
 };
 
+/**
+ * The tiles fill the row whatever the number chosen (Kees 2026-10-19: "ook meeschalen
+ * als we er minder dan 4 geselecteerd hebben"). Literal class names, so Tailwind keeps them.
+ */
+export function tileGridClass(count: number): string {
+  switch (count) {
+    case 1: return "grid grid-cols-1 gap-6";
+    case 2: return "grid grid-cols-1 md:grid-cols-2 gap-6";
+    case 3: return "grid grid-cols-1 md:grid-cols-3 gap-6";
+    case 4: return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6";
+    default: return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6";
+  }
+}
+
 export default function Dashboard() {
   const { data: tileSetting, isLoading: tilesLoading } = useQuery<{ value?: unknown } | null>({
     queryKey: [`/api/app-settings/key/${DASHBOARD_TILES_KEY}`],
@@ -43,7 +57,7 @@ export default function Dashboard() {
       
       {/* Dashboard Widgets */}
       {!tilesLoading && tiles.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" data-testid="dashboard-tiles">
+        <div className={tileGridClass(tiles.length)} data-testid="dashboard-tiles">
           {tiles.map((tile) => {
             const Tile = TILE_COMPONENTS[tile.id];
             return <div key={tile.id} data-testid={`dashboard-tile-${tile.id}`}><Tile /></div>;
