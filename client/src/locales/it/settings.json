@@ -317,7 +317,9 @@
       "email": "E-mail e GPS",
       "emailShort": "E-mail",
       "activity": "Attività",
-      "activityShort": "Log"
+      "activityShort": "Log",
+      "printers": "Stampanti (questo PC)",
+      "printersShort": "Stampanti"
     },
     "business": {
       "rentalDefaultsTitle": "Valori predefiniti e regole del noleggio",
@@ -976,5 +978,40 @@
     "resetButton": "Reimpostare",
     "savingButton": "Salvataggio...",
     "saveSettingsButton": "Salvare le impostazioni"
+  },
+  "printers": {
+    "title": "Etichettatrici su questo PC",
+    "description": "Un browser non può vedere da solo le stampanti di un PC. L'app trova le etichettatrici DYMO tramite il programma DYMO Connect su questo PC. Ciò che scegli qui vale solo per questo PC.",
+    "searching": "Ricerca di DYMO Connect su questo PC…",
+    "found_one": "DYMO Connect trovato: {{count}} etichettatrice.",
+    "found_many": "DYMO Connect trovato: {{count}} di etichettatrici.",
+    "found_other": "DYMO Connect trovato: {{count}} etichettatrici.",
+    "notFound": "DYMO Connect non risponde su questo PC.",
+    "searchAgain": "Cerca di nuovo",
+    "helpTitle": "Come risolvere:",
+    "helpInstall": "Installa DYMO Connect for Desktop (da dymo.com), collega l'etichettatrice e avvia DYMO Connect.",
+    "helpCertificate": "DYMO Connect è già installato? Allora di solito il browser blocca il certificato di sicurezza di DYMO. Apri la pagina qui sotto e scegli ‘Avanzate’ e ‘Procedi’.",
+    "allowCertificate": "Consenti il certificato di DYMO",
+    "helpCertificateResult": "Se vedi ‘true’, va bene. Se la pagina non si carica, DYMO Connect non è in esecuzione.",
+    "helpSearchAgain": "Torna a questa schermata e fai clic su ‘Cerca di nuovo’.",
+    "connected": "Collegata",
+    "notConnected": "Non collegata",
+    "inUse": "Usata per le etichette delle chiavi",
+    "testPrint": "Etichetta di prova",
+    "testLabelText": "Etichetta di prova",
+    "testSentTitle": "Etichetta di prova inviata",
+    "testSentDescription": "L'etichetta di prova è stata inviata a {{name}}.",
+    "testFailedTitle": "Etichetta di prova non riuscita",
+    "keyLabelOutput": "Stampa le etichette delle chiavi su questo PC tramite",
+    "keyLabelOutputHint": "La finestra di stampa delle etichette delle chiavi parte con questa scelta su questo PC. Puoi ancora cambiarla a ogni stampa.",
+    "outputBrowser": "Finestra di stampa del browser",
+    "outputPrinter": "{{name}} (direttamente tramite DYMO Connect)",
+    "outputMissing": "{{name}} (non trovata su questo PC)",
+    "outputDownload": "File .label (apri in DYMO Connect)",
+    "savedMissing": "L'etichettatrice scelta {{name}} non è stata trovata su questo PC. Scegline un'altra o risolvi DYMO Connect qui sopra.",
+    "savedTitle": "Salvato per questo PC",
+    "savedDescription": "Le etichette delle chiavi ora partono con questa uscita.",
+    "otherTitle": "Altre stampanti (A4)",
+    "otherDescription": "Contratti, controlli danni e report passano dalla finestra di stampa del browser. Lì scegli la stampante; il browser di solito ricorda l'ultima. Un'app web non può elencare né preselezionare quelle stampanti."
   }
 }

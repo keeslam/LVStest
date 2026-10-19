@@ -315,7 +315,9 @@
       "email": "E-mail & GPS",
       "emailShort": "E-mail",
       "activity": "Activiteit",
-      "activityShort": "Log"
+      "activityShort": "Log",
+      "printers": "Printers (deze pc)",
+      "printersShort": "Printers"
     },
     "business": {
       "rentalDefaultsTitle": "Standaardwaarden & beleid verhuur",
@@ -971,5 +973,39 @@
     "resetButton": "Resetten",
     "savingButton": "Opslaan...",
     "saveSettingsButton": "Instellingen opslaan"
+  },
+  "printers": {
+    "title": "Labelmakers op deze pc",
+    "description": "Een browser kan de printers van een pc niet zelf zien. DYMO-labelmakers vindt de app via het programma DYMO Connect op deze pc. Wat je hier kiest, geldt alleen voor deze pc.",
+    "searching": "DYMO Connect zoeken op deze pc…",
+    "found_one": "DYMO Connect gevonden: {{count}} labelmaker.",
+    "found_other": "DYMO Connect gevonden: {{count}} labelmakers.",
+    "notFound": "DYMO Connect antwoordt niet op deze pc.",
+    "searchAgain": "Opnieuw zoeken",
+    "helpTitle": "Zo los je het op:",
+    "helpInstall": "Installeer DYMO Connect for Desktop (van dymo.com), sluit de labelmaker aan en start DYMO Connect.",
+    "helpCertificate": "Is DYMO Connect al geïnstalleerd? Dan blokkeert de browser meestal het beveiligingscertificaat van DYMO. Open de pagina hieronder en kies daar ‘Geavanceerd’ en ‘Doorgaan’.",
+    "allowCertificate": "Certificaat van DYMO toestaan",
+    "helpCertificateResult": "Zie je daar ‘true’, dan is het goed. Laadt de pagina helemaal niet, dan draait DYMO Connect niet.",
+    "helpSearchAgain": "Kom terug naar dit scherm en klik op ‘Opnieuw zoeken’.",
+    "connected": "Verbonden",
+    "notConnected": "Niet verbonden",
+    "inUse": "Gebruikt voor sleutellabels",
+    "testPrint": "Testlabel",
+    "testLabelText": "Testlabel",
+    "testSentTitle": "Testlabel verstuurd",
+    "testSentDescription": "Het testlabel is naar {{name}} gestuurd.",
+    "testFailedTitle": "Testlabel mislukt",
+    "keyLabelOutput": "Sleutellabels op deze pc afdrukken via",
+    "keyLabelOutputHint": "Het afdrukvenster voor sleutellabels begint op deze pc met deze keuze. Je kunt het per afdruk nog wijzigen.",
+    "outputBrowser": "Afdrukvenster van de browser",
+    "outputPrinter": "{{name}} (rechtstreeks via DYMO Connect)",
+    "outputMissing": "{{name}} (niet gevonden op deze pc)",
+    "outputDownload": "Bestand .label (openen in DYMO Connect)",
+    "savedMissing": "De gekozen labelmaker {{name}} is op deze pc niet gevonden. Kies een andere of los DYMO Connect hierboven op.",
+    "savedTitle": "Opgeslagen voor deze pc",
+    "savedDescription": "Sleutellabels beginnen voortaan met deze uitvoer.",
+    "otherTitle": "Andere printers (A4)",
+    "otherDescription": "Contracten, schadechecks en rapporten gaan via het afdrukvenster van de browser. Daar kies je de printer; de browser onthoudt meestal de laatste keuze. Een webapp kan die printers niet opsommen of vooraf kiezen."
   }
 }

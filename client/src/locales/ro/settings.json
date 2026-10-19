@@ -317,7 +317,9 @@
       "email": "E-mail și GPS",
       "emailShort": "E-mail",
       "activity": "Activitate",
-      "activityShort": "Jurnal"
+      "activityShort": "Jurnal",
+      "printers": "Imprimante (acest PC)",
+      "printersShort": "Imprimante"
     },
     "business": {
       "rentalDefaultsTitle": "Valori implicite și politici pentru închirieri",
@@ -976,5 +978,40 @@
     "resetButton": "Resetează",
     "savingButton": "Se salvează...",
     "saveSettingsButton": "Salvează setările"
+  },
+  "printers": {
+    "title": "Aparate de etichetat pe acest PC",
+    "description": "Un browser nu poate vedea singur imprimantele unui PC. Aplicația găsește aparatele de etichetat DYMO prin programul DYMO Connect de pe acest PC. Ce alegeți aici se aplică doar acestui PC.",
+    "searching": "Se caută DYMO Connect pe acest PC…",
+    "found_one": "DYMO Connect găsit: {{count}} aparat de etichetat.",
+    "found_few": "DYMO Connect găsit: {{count}} aparate de etichetat.",
+    "found_other": "DYMO Connect găsit: {{count}} de aparate de etichetat.",
+    "notFound": "DYMO Connect nu răspunde pe acest PC.",
+    "searchAgain": "Caută din nou",
+    "helpTitle": "Cum rezolvați:",
+    "helpInstall": "Instalați DYMO Connect for Desktop (de pe dymo.com), conectați aparatul de etichetat și porniți DYMO Connect.",
+    "helpCertificate": "DYMO Connect este deja instalat? Atunci browserul blochează de obicei certificatul de securitate DYMO. Deschideți pagina de mai jos și alegeți ‘Avansat’ și ‘Continuați’.",
+    "allowCertificate": "Permiteți certificatul DYMO",
+    "helpCertificateResult": "Dacă vedeți ‘true’, este în regulă. Dacă pagina nu se încarcă deloc, DYMO Connect nu rulează.",
+    "helpSearchAgain": "Reveniți la acest ecran și apăsați ‘Caută din nou’.",
+    "connected": "Conectat",
+    "notConnected": "Neconectat",
+    "inUse": "Folosit pentru etichetele cheilor",
+    "testPrint": "Etichetă de test",
+    "testLabelText": "Etichetă de test",
+    "testSentTitle": "Etichetă de test trimisă",
+    "testSentDescription": "Eticheta de test a fost trimisă la {{name}}.",
+    "testFailedTitle": "Eticheta de test a eșuat",
+    "keyLabelOutput": "Tipăriți etichetele cheilor pe acest PC prin",
+    "keyLabelOutputHint": "Fereastra de tipărire a etichetelor cheilor pornește cu această alegere pe acest PC. O puteți schimba la fiecare tipărire.",
+    "outputBrowser": "Fereastra de tipărire a browserului",
+    "outputPrinter": "{{name}} (direct prin DYMO Connect)",
+    "outputMissing": "{{name}} (negăsit pe acest PC)",
+    "outputDownload": "Fișier .label (deschideți în DYMO Connect)",
+    "savedMissing": "Aparatul de etichetat ales {{name}} nu a fost găsit pe acest PC. Alegeți altul sau rezolvați DYMO Connect mai sus.",
+    "savedTitle": "Salvat pentru acest PC",
+    "savedDescription": "Etichetele cheilor pornesc acum cu această ieșire.",
+    "otherTitle": "Alte imprimante (A4)",
+    "otherDescription": "Contractele, verificările de daune și rapoartele se tipăresc prin fereastra de tipărire a browserului. Acolo alegeți imprimanta; browserul își amintește de obicei ultima alegere. O aplicație web nu poate lista sau preselecta aceste imprimante."
   }
 }

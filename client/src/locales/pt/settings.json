@@ -317,7 +317,9 @@
       "email": "E-mail e GPS",
       "emailShort": "E-mail",
       "activity": "Atividade",
-      "activityShort": "Registo"
+      "activityShort": "Registo",
+      "printers": "Impressoras (este PC)",
+      "printersShort": "Impressoras"
     },
     "business": {
       "rentalDefaultsTitle": "Valores predefinidos e política de aluguer",
@@ -976,5 +978,40 @@
     "resetButton": "Repor",
     "savingButton": "A guardar...",
     "saveSettingsButton": "Guardar definições"
+  },
+  "printers": {
+    "title": "Rotuladoras neste PC",
+    "description": "Um navegador não consegue ver sozinho as impressoras de um PC. A app encontra as rotuladoras DYMO através do programa DYMO Connect neste PC. O que escolher aqui vale só para este PC.",
+    "searching": "A procurar o DYMO Connect neste PC…",
+    "found_one": "DYMO Connect encontrado: {{count}} rotuladora.",
+    "found_many": "DYMO Connect encontrado: {{count}} de rotuladoras.",
+    "found_other": "DYMO Connect encontrado: {{count}} rotuladoras.",
+    "notFound": "O DYMO Connect não responde neste PC.",
+    "searchAgain": "Procurar novamente",
+    "helpTitle": "Como resolver:",
+    "helpInstall": "Instale o DYMO Connect for Desktop (de dymo.com), ligue a rotuladora e inicie o DYMO Connect.",
+    "helpCertificate": "O DYMO Connect já está instalado? Então o navegador costuma bloquear o certificado de segurança da DYMO. Abra a página abaixo e escolha ‘Avançadas’ e ‘Continuar’.",
+    "allowCertificate": "Permitir o certificado da DYMO",
+    "helpCertificateResult": "Se vir ‘true’, está tudo bem. Se a página não carregar, o DYMO Connect não está a funcionar.",
+    "helpSearchAgain": "Volte a este ecrã e clique em ‘Procurar novamente’.",
+    "connected": "Ligada",
+    "notConnected": "Não ligada",
+    "inUse": "Usada para etiquetas de chaves",
+    "testPrint": "Etiqueta de teste",
+    "testLabelText": "Etiqueta de teste",
+    "testSentTitle": "Etiqueta de teste enviada",
+    "testSentDescription": "A etiqueta de teste foi enviada para {{name}}.",
+    "testFailedTitle": "Etiqueta de teste falhou",
+    "keyLabelOutput": "Imprimir etiquetas de chaves neste PC através de",
+    "keyLabelOutputHint": "A janela de impressão de etiquetas de chaves começa com esta escolha neste PC. Ainda pode alterá-la em cada impressão.",
+    "outputBrowser": "Janela de impressão do navegador",
+    "outputPrinter": "{{name}} (diretamente via DYMO Connect)",
+    "outputMissing": "{{name}} (não encontrada neste PC)",
+    "outputDownload": "Ficheiro .label (abrir no DYMO Connect)",
+    "savedMissing": "A rotuladora escolhida {{name}} não foi encontrada neste PC. Escolha outra ou resolva o DYMO Connect acima.",
+    "savedTitle": "Guardado para este PC",
+    "savedDescription": "As etiquetas de chaves começam agora com esta saída.",
+    "otherTitle": "Outras impressoras (A4)",
+    "otherDescription": "Contratos, verificações de danos e relatórios são impressos pela janela de impressão do navegador. Aí escolhe a impressora; o navegador costuma lembrar a última. Uma app web não consegue listar nem pré-selecionar essas impressoras."
   }
 }

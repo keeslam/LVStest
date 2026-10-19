@@ -315,7 +315,9 @@
       "email": "Email & GPS",
       "emailShort": "Email",
       "activity": "Activity",
-      "activityShort": "Log"
+      "activityShort": "Log",
+      "printers": "Printers (this pc)",
+      "printersShort": "Printers"
     },
     "business": {
       "rentalDefaultsTitle": "Rental Defaults & Policies",
@@ -971,5 +973,39 @@
     "resetButton": "Reset",
     "savingButton": "Saving...",
     "saveSettingsButton": "Save Settings"
+  },
+  "printers": {
+    "title": "Label makers on this pc",
+    "description": "A browser cannot see a pc's printers itself. The app finds DYMO label makers through the DYMO Connect program on this pc. What you choose here applies to this pc only.",
+    "searching": "Looking for DYMO Connect on this pc…",
+    "found_one": "DYMO Connect found: {{count}} label maker.",
+    "found_other": "DYMO Connect found: {{count}} label makers.",
+    "notFound": "DYMO Connect does not answer on this pc.",
+    "searchAgain": "Search again",
+    "helpTitle": "How to fix it:",
+    "helpInstall": "Install DYMO Connect for Desktop (from dymo.com), connect the label maker and start DYMO Connect.",
+    "helpCertificate": "Is DYMO Connect already installed? Then the browser usually blocks DYMO's security certificate. Open the page below and choose ‘Advanced’ and ‘Proceed’.",
+    "allowCertificate": "Allow DYMO's certificate",
+    "helpCertificateResult": "If you see ‘true’ there, it is fine. If the page does not load at all, DYMO Connect is not running.",
+    "helpSearchAgain": "Come back to this screen and click ‘Search again’.",
+    "connected": "Connected",
+    "notConnected": "Not connected",
+    "inUse": "Used for key labels",
+    "testPrint": "Test label",
+    "testLabelText": "Test label",
+    "testSentTitle": "Test label sent",
+    "testSentDescription": "The test label was sent to {{name}}.",
+    "testFailedTitle": "Test label failed",
+    "keyLabelOutput": "Print key labels on this pc via",
+    "keyLabelOutputHint": "The key label print dialog starts with this choice on this pc. You can still change it per print.",
+    "outputBrowser": "Browser print dialog",
+    "outputPrinter": "{{name}} (directly via DYMO Connect)",
+    "outputMissing": "{{name}} (not found on this pc)",
+    "outputDownload": ".label file (open in DYMO Connect)",
+    "savedMissing": "The chosen label maker {{name}} was not found on this pc. Choose another or fix DYMO Connect above.",
+    "savedTitle": "Saved for this pc",
+    "savedDescription": "Key labels now start with this output.",
+    "otherTitle": "Other printers (A4)",
+    "otherDescription": "Contracts, damage checks and reports go through the browser's print dialog. You choose the printer there; the browser usually remembers the last choice. A web app cannot list or preselect those printers."
   }
 }

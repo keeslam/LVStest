@@ -319,7 +319,9 @@
       "email": "E-mail i GPS",
       "emailShort": "E-mail",
       "activity": "Aktywność",
-      "activityShort": "Dziennik"
+      "activityShort": "Dziennik",
+      "printers": "Drukarki (ten komputer)",
+      "printersShort": "Drukarki"
     },
     "business": {
       "rentalDefaultsTitle": "Wartości domyślne i zasady wynajmu",
@@ -981,5 +983,41 @@
     "resetButton": "Resetuj",
     "savingButton": "Zapisywanie...",
     "saveSettingsButton": "Zapisz ustawienia"
+  },
+  "printers": {
+    "title": "Drukarki etykiet na tym komputerze",
+    "description": "Przeglądarka nie widzi sama drukarek komputera. Aplikacja znajduje drukarki etykiet DYMO przez program DYMO Connect na tym komputerze. To, co tu wybierzesz, dotyczy tylko tego komputera.",
+    "searching": "Szukanie DYMO Connect na tym komputerze…",
+    "found_one": "Znaleziono DYMO Connect: {{count}} drukarka etykiet.",
+    "found_few": "Znaleziono DYMO Connect: {{count}} drukarki etykiet.",
+    "found_many": "Znaleziono DYMO Connect: {{count}} drukarek etykiet.",
+    "found_other": "Znaleziono DYMO Connect: {{count}} drukarki etykiet.",
+    "notFound": "DYMO Connect nie odpowiada na tym komputerze.",
+    "searchAgain": "Szukaj ponownie",
+    "helpTitle": "Jak to naprawić:",
+    "helpInstall": "Zainstaluj DYMO Connect for Desktop (z dymo.com), podłącz drukarkę etykiet i uruchom DYMO Connect.",
+    "helpCertificate": "DYMO Connect jest już zainstalowany? Wtedy przeglądarka zwykle blokuje certyfikat bezpieczeństwa DYMO. Otwórz stronę poniżej i wybierz ‘Zaawansowane’ i ‘Kontynuuj’.",
+    "allowCertificate": "Zezwól na certyfikat DYMO",
+    "helpCertificateResult": "Jeśli widzisz ‘true’, wszystko jest w porządku. Jeśli strona w ogóle się nie ładuje, DYMO Connect nie działa.",
+    "helpSearchAgain": "Wróć do tego ekranu i kliknij ‘Szukaj ponownie’.",
+    "connected": "Podłączona",
+    "notConnected": "Niepodłączona",
+    "inUse": "Używana do etykiet kluczy",
+    "testPrint": "Etykieta testowa",
+    "testLabelText": "Etykieta testowa",
+    "testSentTitle": "Wysłano etykietę testową",
+    "testSentDescription": "Etykieta testowa została wysłana do {{name}}.",
+    "testFailedTitle": "Etykieta testowa nie powiodła się",
+    "keyLabelOutput": "Drukuj etykiety kluczy na tym komputerze przez",
+    "keyLabelOutputHint": "Okno drukowania etykiet kluczy zaczyna na tym komputerze od tego wyboru. Nadal możesz go zmienić przy każdym wydruku.",
+    "outputBrowser": "Okno drukowania przeglądarki",
+    "outputPrinter": "{{name}} (bezpośrednio przez DYMO Connect)",
+    "outputMissing": "{{name}} (nie znaleziono na tym komputerze)",
+    "outputDownload": "Plik .label (otwórz w DYMO Connect)",
+    "savedMissing": "Wybrana drukarka etykiet {{name}} nie została znaleziona na tym komputerze. Wybierz inną lub napraw DYMO Connect powyżej.",
+    "savedTitle": "Zapisano dla tego komputera",
+    "savedDescription": "Etykiety kluczy zaczynają teraz od tego wyjścia.",
+    "otherTitle": "Inne drukarki (A4)",
+    "otherDescription": "Umowy, kontrole szkód i raporty drukuje się przez okno drukowania przeglądarki. Tam wybierasz drukarkę; przeglądarka zwykle pamięta ostatni wybór. Aplikacja internetowa nie może wyświetlić ani wstępnie wybrać tych drukarek."
   }
 }

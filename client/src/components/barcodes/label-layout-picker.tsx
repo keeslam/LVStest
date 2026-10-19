@@ -23,7 +23,7 @@ const STORAGE_KEY = "lvs.key-label.tape";
 
 export const OUTPUT_BROWSER = "browser";
 export const OUTPUT_DOWNLOAD = "download";
-const OUTPUT_PRINTER_PREFIX = "printer:";
+export const OUTPUT_PRINTER_PREFIX = "printer:";
 
 interface StoredTape extends TapeLayout {
   preferred: boolean;
@@ -64,6 +64,19 @@ function saveStored(value: StoredTape): void {
   } catch {
     // Nothing to do: the choice then only lasts for this page.
   }
+}
+
+/**
+ * Settings > Printers (deze pc), Kees 2026-10-19: read and set which output this pc's key-label print
+ * starts on ("browser", "download" or "printer:<name>"), in the same per-pc storage the print dialog
+ * itself remembers its choice in. Also the tape width, for a test label of the right size.
+ */
+export function readKeyLabelOutput(): { output: string; tapeWidthMm: number } {
+  const stored = loadStored();
+  return { output: stored.output, tapeWidthMm: stored.tapeWidthMm };
+}
+export function saveKeyLabelOutput(output: string): void {
+  saveStored({ ...loadStored(), output });
 }
 
 export type DymoStatus = "idle" | "searching" | "found" | "none";
