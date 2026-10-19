@@ -506,6 +506,8 @@ Per besluit wat er is gebouwd:
 
 **Nieuw open punt D21:** mag een medewerker met het vinkje "Gebruikers beheren" die zelf geen beheerder is, een beheerder verwijderen of degraderen? De server staat het toe (er is bewust geen guard gewijzigd); het venster Gebruikersbeheer is alleen voor de rol Beheerder bereikbaar, dus via de app kan het niet, via de API wel. Advies: dat ook via de server alleen aan een beheerder laten (een nieuw besluit; er is niets aan gebouwd).
 
+**D21 beslist (19-10-2026, Kees):** "Nee, alleen beheerder." Alleen een beheerder mag een beheerder degraderen, uitschakelen of verwijderen. Dat stond al op de server sinds de beveiligingsronde van 18-10 (commit `c932276e`, server/routes/users.ts: PATCH en DELETE geven 403 als een niet-beheerder een beheerder raakt; test `server/__tests__/security-review-2026-10-18.test.ts` "leaves an administrator's account alone").
+
 **Na de deploy controleren:**
 
 - Het containerlog bij de eerste start: "User foreign keys set to ON DELETE SET NULL: 20 key(s) changed" (marker `migration:d19_user_fk_set_null`). Staat er een waarschuwing "D19: …", dan is een koppeling overgeslagen en volgt een nieuwe poging bij de volgende start.
@@ -540,7 +542,7 @@ Kees: "de barcodes die gemaakt worden om te printen om aan sleutels te hangen zo
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).
-- **D21** (nieuw, zie B-43): mag een medewerker met "Gebruikers beheren" die geen beheerder is een beheerder verwijderen of degraderen?
+- (beslist 19-10-2026) **D21**: alleen een beheerder mag een beheerder verwijderen of degraderen; afgedwongen sinds `c932276e`.
 - De omzetting van de database naar tijdzone-bewuste kolommen (B-22) is nog niet uitgevoerd; de kolommenlijst staat klaar.
 
 - (beslist, zie B-17) OPT-001 — wat telt als "openstaand punt" op het werkdagscherm.
