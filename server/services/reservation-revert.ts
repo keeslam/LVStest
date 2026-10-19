@@ -63,7 +63,7 @@ const PICKUP_COLUMNS = [
 
 /** Columns that hold the return (and the reading from before it). */
 const RETURN_COLUMNS = [
-  "actualReturnDate", "returnMileage", "fuelLevelReturn", "fuelCost", "fuelCardNumber", "fuelNotes",
+  "actualReturnDate", "returnMileage", "fuelLevelReturn", "fuelCost", "fuelCardNumber", "fuelNotes", "extraKm", "extraKmCost",
   "completionDate", "vehicleMileageBeforeReturn", "vehicleFuelBeforeReturn",
 ] as const;
 

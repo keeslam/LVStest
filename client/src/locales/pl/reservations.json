@@ -253,7 +253,18 @@
       "returnCompletedDescription": "Pojazd został zwrócony. Kontrola uszkodzeń została wygenerowana.",
       "returnFailedTitle": "Zwrot nie powiódł się",
       "processReturnFailedFallback": "Nie udało się przetworzyć zwrotu. Spróbuj ponownie.",
-      "returnMileageLessThanPickup": "Przebieg przy zwrocie nie może być niższy niż przy odbiorze ({{km}} km)."
+      "returnMileageLessThanPickup": "Przebieg przy zwrocie nie może być niższy niż przy odbiorze ({{km}} km).",
+      "extraCosts": {
+        "title": "Dodatkowe koszty",
+        "kmLabel": "Dodatkowe kilometry (€)",
+        "kmExplanation": "{{driven}} km przejechane w {{days}} dni; {{free}} km darmowych; {{extra}} dodatkowych km × € {{price}}. Kwotę można zmienić.",
+        "kmNoRate": "Brak opłaty za kilometry: dla tego pojazdu lub typu nie ustawiono darmowych kilometrów.",
+        "fuelLabel": "Tankowanie (€)",
+        "fuelLevels": "Bak przy odbiorze: {{pickup}} · przy zwrocie: {{return}}. Puste = bez opłaty.",
+        "invalidTitle": "Nieprawidłowa kwota",
+        "invalidDescription": "Wpisz kwotę równą 0 lub większą w dodatkowych kosztach albo zostaw pole puste.",
+        "kmNoReading": "Brak propozycji: brakuje stanu licznika lub daty odbioru. Możesz sam wpisać kwotę."
+      }
     },
     "workshopBlocked": {
       "title": "Wydanie zablokowane",
@@ -869,6 +880,13 @@
     "toasts": {
       "reservationDeletedTitle": "Rezerwacja usunięta",
       "reservationDeletedDescription": "Rezerwacja została usunięta"
+    },
+    "extraCosts": {
+      "title": "Dodatkowe koszty",
+      "fuel": "Tankowanie",
+      "km": "Dodatkowe kilometry",
+      "kmWithCount": "Dodatkowe kilometry ({{km}} km)",
+      "total": "Razem dodatkowe koszty"
     }
   },
   "listDialog": {

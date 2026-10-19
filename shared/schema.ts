@@ -252,6 +252,9 @@ export const vehicles = pgTable("vehicles", {
   gpsActivated: boolean("gps_activated"), // GPS activation status
   monthlyPrice: numeric("monthly_price"),
   dailyPrice: numeric("daily_price"),
+  // Punt 1 (Kees, 2026-10-19): own free km per day and price per extra km; null = the vehicle type default.
+  freeKmPerDay: integer("free_km_per_day"),
+  extraKmPrice: numeric("extra_km_price"),
   dateIn: text("date_in"),
   dateOut: text("date_out"),
   contractNumber: text("contract_number"),
@@ -1027,6 +1030,9 @@ export const reservations = pgTable("reservations", {
   fuelCost: numeric("fuel_cost"), // Calculated fuel cost
   fuelCardNumber: text("fuel_card_number"), // Associated fuel card
   fuelNotes: text("fuel_notes"), // Additional fuel-related notes
+  // Punt 1 (Kees, 2026-10-19): extra costs settled at return, apart from totalPrice.
+  extraKm: integer("extra_km"), // km driven above the free km
+  extraKmCost: numeric("extra_km_cost"),
 
   // The vehicle's own readings as they stood just BEFORE the pickup / the return
   // overwrote them (sub-project C, besluiten B-30). Without these a reversal

@@ -3271,6 +3271,8 @@ export class DatabaseStorage implements IStorage {
       fuelLevelReturn: string;
       returnDate?: string;
       returnNotes?: string;
+      /** Punt 1 (Kees, 2026-10-19): extra costs settled at return; null = none. Left alone when absent. */
+      extraCosts?: { fuelCost: number | null; extraKm: number | null; extraKmCost: number | null };
     }
   ): Promise<Reservation | undefined> {
     const reservation = await this.getReservation(reservationId);
@@ -3299,6 +3301,11 @@ export class DatabaseStorage implements IStorage {
         .set({
           returnMileage: returnData.returnMileage,
           fuelLevelReturn: returnData.fuelLevelReturn,
+          ...(returnData.extraCosts ? {
+            fuelCost: returnData.extraCosts.fuelCost != null ? String(returnData.extraCosts.fuelCost) : null,
+            extraKm: returnData.extraCosts.extraKm,
+            extraKmCost: returnData.extraCosts.extraKmCost != null ? String(returnData.extraCosts.extraKmCost) : null,
+          } : {}),
           actualReturnDate: returnDate,
           // besluiten B-02 - the return closes the rental.
           status: 'completed',

@@ -253,7 +253,18 @@
       "returnCompletedDescription": "Veículo devolvido com sucesso. A verificação de danos foi gerada.",
       "returnFailedTitle": "Falha na devolução",
       "processReturnFailedFallback": "Não foi possível processar a devolução. Tente novamente.",
-      "returnMileageLessThanPickup": "A quilometragem na devolução não pode ser inferior à do levantamento ({{km}} km)."
+      "returnMileageLessThanPickup": "A quilometragem na devolução não pode ser inferior à do levantamento ({{km}} km).",
+      "extraCosts": {
+        "title": "Custos extra",
+        "kmLabel": "Quilómetros extra (€)",
+        "kmExplanation": "{{driven}} km percorridos em {{days}} dias; {{free}} km livres; {{extra}} km extra × € {{price}}. Pode alterar o valor.",
+        "kmNoRate": "Sem cobrança de quilómetros: não há quilómetros livres definidos para este veículo ou tipo.",
+        "fuelLabel": "Abastecimento (€)",
+        "fuelLevels": "Depósito no levantamento: {{pickup}} · na devolução: {{return}}. Vazio = sem cobrança.",
+        "invalidTitle": "Valor inválido",
+        "invalidDescription": "Introduza um valor igual ou superior a 0 nos custos extra, ou deixe o campo vazio.",
+        "kmNoReading": "Sem proposta: falta a quilometragem ou a data de levantamento. Pode introduzir um valor."
+      }
     },
     "workshopBlocked": {
       "title": "Entrega bloqueada",
@@ -863,6 +874,13 @@
     "toasts": {
       "reservationDeletedTitle": "Reserva eliminada",
       "reservationDeletedDescription": "A reserva foi eliminada com sucesso"
+    },
+    "extraCosts": {
+      "title": "Custos extra",
+      "fuel": "Abastecimento",
+      "km": "Quilómetros extra",
+      "kmWithCount": "Quilómetros extra ({{km}} km)",
+      "total": "Total de custos extra"
     }
   },
   "listDialog": {

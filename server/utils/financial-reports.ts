@@ -44,6 +44,8 @@ export interface VehicleFinancialRow {
   rentals: number;
   rentalDays: number;
   revenue: number;
+  /** Punt 1: the part of revenue that is extra costs settled at return (fuel, extra km). */
+  extraCosts: number;
   expenses: number;
   expensesByCategory: Record<string, number>;
   margin: number;
@@ -52,12 +54,14 @@ export interface VehicleFinancialRow {
 export interface VehicleFinancialsReport {
   range: DateRangeYmd;
   rows: VehicleFinancialRow[];
-  totals: { rentals: number; rentalDays: number; revenue: number; expenses: number; margin: number };
+  totals: { rentals: number; rentalDays: number; revenue: number; extraCosts: number; expenses: number; margin: number };
 }
 
 /**
  * Revenue = totalPrice of standard, non-cancelled reservations whose start
- * date falls in the range. Expenses = expense rows dated in the range.
+ * date falls in the range, plus the extra costs settled at their return
+ * (fuelCost, extraKmCost; punt 1, also reported apart as extraCosts).
+ * Expenses = expense rows dated in the range.
  */
 export function buildVehicleFinancials(
   vehicles: Vehicle[],
@@ -77,6 +81,7 @@ export function buildVehicleFinancials(
       rentals: 0,
       rentalDays: 0,
       revenue: 0,
+      extraCosts: 0,
       expenses: 0,
       expensesByCategory: {},
       margin: 0,
@@ -91,7 +96,9 @@ export function buildVehicleFinancials(
     const row = rowsById.get(r.vehicleId);
     if (!row) continue;
     row.rentals++;
-    row.revenue += money(r.totalPrice);
+    const extra = money((r as any).fuelCost) + money((r as any).extraKmCost);
+    row.revenue += money(r.totalPrice) + extra;
+    row.extraCosts += extra;
     const end = ymd(r.actualReturnDate) || ymd(r.endDate) || (today > start! ? today : start!);
     row.rentalDays += Math.max(1, daysBetweenYmd(start!, end) + 1);
   }
@@ -110,6 +117,7 @@ export function buildVehicleFinancials(
   const rows = [...rowsById.values()].map((row) => ({
     ...row,
     revenue: Math.round(row.revenue * 100) / 100,
+    extraCosts: Math.round(row.extraCosts * 100) / 100,
     expenses: Math.round(row.expenses * 100) / 100,
     margin: Math.round((row.revenue - row.expenses) * 100) / 100,
   }));
@@ -120,12 +128,14 @@ export function buildVehicleFinancials(
       rentals: acc.rentals + r.rentals,
       rentalDays: acc.rentalDays + r.rentalDays,
       revenue: acc.revenue + r.revenue,
+      extraCosts: acc.extraCosts + r.extraCosts,
       expenses: acc.expenses + r.expenses,
       margin: acc.margin + r.margin,
     }),
-    { rentals: 0, rentalDays: 0, revenue: 0, expenses: 0, margin: 0 },
+    { rentals: 0, rentalDays: 0, revenue: 0, extraCosts: 0, expenses: 0, margin: 0 },
   );
   totals.revenue = Math.round(totals.revenue * 100) / 100;
+  totals.extraCosts = Math.round(totals.extraCosts * 100) / 100;
   totals.expenses = Math.round(totals.expenses * 100) / 100;
   totals.margin = Math.round(totals.margin * 100) / 100;
 

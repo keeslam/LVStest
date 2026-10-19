@@ -253,7 +253,18 @@
       "returnCompletedDescription": "Vehicul returnat cu succes. Verificarea daunelor a fost generată.",
       "returnFailedTitle": "Returnare eșuată",
       "processReturnFailedFallback": "Procesarea returnării a eșuat. Încercați din nou.",
-      "returnMileageLessThanPickup": "Kilometrajul la returnare nu poate fi mai mic decât cel de la ridicare ({{km}} km)."
+      "returnMileageLessThanPickup": "Kilometrajul la returnare nu poate fi mai mic decât cel de la ridicare ({{km}} km).",
+      "extraCosts": {
+        "title": "Costuri suplimentare",
+        "kmLabel": "Kilometri suplimentari (€)",
+        "kmExplanation": "{{driven}} km parcurși în {{days}} zile; {{free}} km gratuiți; {{extra}} km suplimentari × € {{price}}. Puteți modifica suma.",
+        "kmNoRate": "Fără taxare pe kilometri: nu sunt setați kilometri gratuiți pentru acest vehicul sau tip.",
+        "fuelLabel": "Alimentare (€)",
+        "fuelLevels": "Rezervor la ridicare: {{pickup}} · la returnare: {{return}}. Gol = fără taxă.",
+        "invalidTitle": "Sumă invalidă",
+        "invalidDescription": "Introduceți o sumă de 0 sau mai mare la costurile suplimentare sau lăsați câmpul gol.",
+        "kmNoReading": "Fără propunere: lipsește kilometrajul sau data ridicării. Puteți introduce singur o sumă."
+      }
     },
     "workshopBlocked": {
       "title": "Predare blocată",
@@ -863,6 +874,13 @@
     "toasts": {
       "reservationDeletedTitle": "Rezervare ștearsă",
       "reservationDeletedDescription": "Rezervarea a fost ștearsă cu succes"
+    },
+    "extraCosts": {
+      "title": "Costuri suplimentare",
+      "fuel": "Alimentare",
+      "km": "Kilometri suplimentari",
+      "kmWithCount": "Kilometri suplimentari ({{km}} km)",
+      "total": "Total costuri suplimentare"
     }
   },
   "listDialog": {

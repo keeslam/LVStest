@@ -685,6 +685,18 @@
         "warranty": "Warranty expiring",
         "licenses": "Driving licences"
       }
+    },
+    "kmAllowance": {
+      "title": "Kilometres per vehicle type",
+      "description": "Free kilometres per day and the price per extra kilometre, per vehicle type. Both can be changed on a vehicle.",
+      "otherRow": "Other / no type",
+      "typeColumn": "Vehicle type",
+      "freeKmColumn": "Free km per day",
+      "priceColumn": "Price per extra km (€)",
+      "hint": "Empty = no kilometre charge for that type. At return the app proposes the amount; the employee can change it.",
+      "invalid": "Only enter numbers of 0 or more.",
+      "saved": "The kilometre rates have been saved.",
+      "saveFailed": "Saving failed"
     }
   },
   "damageCheckFieldsPage": {

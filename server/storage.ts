@@ -179,6 +179,7 @@ export interface IStorage {
     fuelLevelReturn: string;
     returnDate?: string;
     returnNotes?: string;
+    extraCosts?: { fuelCost: number | null; extraKm: number | null; extraKmCost: number | null };
   }): Promise<Reservation | undefined>;
   
   // Spare vehicle management methods

@@ -929,7 +929,12 @@
       "genericCreateFailed": "Creazione del veicolo non riuscita",
       "unknownError": "Errore sconosciuto",
       "lookupFailedFallback": "Ricerca del veicolo non riuscita"
-    }
+    },
+    "freeKmPerDayLabel": "Km gratuiti al giorno",
+    "extraKmPriceLabel": "Prezzo per km in più (€)",
+    "kmTypeDefault": "Vuoto = valore del tipo di veicolo: {{km}} km al giorno, € {{price}} per km in più.",
+    "kmTypeDefaultNone": "Vuoto = valore del tipo di veicolo (non ancora impostato).",
+    "kmOverrideHint": "Compili solo se questo veicolo è diverso dal suo tipo."
   },
   "remarksWarningDialog": {
     "titlePickup": "Osservazioni sul veicolo - Avviso di ritiro",

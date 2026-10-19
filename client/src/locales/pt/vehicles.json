@@ -929,7 +929,12 @@
       "genericCreateFailed": "Não foi possível criar o veículo",
       "unknownError": "Erro desconhecido",
       "lookupFailedFallback": "Não foi possível consultar o veículo"
-    }
+    },
+    "freeKmPerDayLabel": "Km livres por dia",
+    "extraKmPriceLabel": "Preço por km extra (€)",
+    "kmTypeDefault": "Vazio = valor do tipo de veículo: {{km}} km por dia, € {{price}} por km extra.",
+    "kmTypeDefaultNone": "Vazio = valor do tipo de veículo (ainda não definido).",
+    "kmOverrideHint": "Preencha apenas se este veículo for diferente do seu tipo."
   },
   "remarksWarningDialog": {
     "titlePickup": "Observações do veículo - Aviso de levantamento",

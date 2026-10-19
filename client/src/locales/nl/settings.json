@@ -685,6 +685,18 @@
         "warranty": "Garantie verloopt",
         "licenses": "Rijbewijzen"
       }
+    },
+    "kmAllowance": {
+      "title": "Kilometers per voertuigsoort",
+      "description": "Vrije kilometers per dag en de prijs per extra kilometer, per voertuigsoort. Bij een voertuig kunt u beide aanpassen.",
+      "otherRow": "Overige / geen soort",
+      "typeColumn": "Voertuigsoort",
+      "freeKmColumn": "Vrije km per dag",
+      "priceColumn": "Prijs per extra km (€)",
+      "hint": "Leeg = geen kilometerafrekening voor die soort. Bij inleveren stelt de app het bedrag voor; de medewerker kan het aanpassen.",
+      "invalid": "Vul alleen getallen van 0 of hoger in.",
+      "saved": "De kilometertarieven zijn opgeslagen.",
+      "saveFailed": "Opslaan mislukt"
     }
   },
   "damageCheckFieldsPage": {

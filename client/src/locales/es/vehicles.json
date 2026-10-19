@@ -929,7 +929,12 @@
       "genericCreateFailed": "No se ha podido crear el vehículo",
       "unknownError": "Error desconocido",
       "lookupFailedFallback": "No se ha podido buscar el vehículo"
-    }
+    },
+    "freeKmPerDayLabel": "Km libres por día",
+    "extraKmPriceLabel": "Precio por km adicional (€)",
+    "kmTypeDefault": "Vacío = valor del tipo de vehículo: {{km}} km por día, € {{price}} por km adicional.",
+    "kmTypeDefaultNone": "Vacío = valor del tipo de vehículo (aún no configurado).",
+    "kmOverrideHint": "Rellénelo solo si este vehículo difiere de su tipo."
   },
   "remarksWarningDialog": {
     "titlePickup": "Observaciones del vehículo - Aviso de recogida",

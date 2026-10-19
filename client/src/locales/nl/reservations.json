@@ -253,7 +253,18 @@
       "returnCompletedDescription": "Voertuig succesvol ingeleverd. Schadecheck is gegenereerd.",
       "returnFailedTitle": "Inleveren mislukt",
       "processReturnFailedFallback": "Inleveren verwerken mislukt. Probeer het opnieuw.",
-      "returnMileageLessThanPickup": "Kilometerstand bij inleveren kan niet lager zijn dan bij ophalen ({{km}} km)."
+      "returnMileageLessThanPickup": "Kilometerstand bij inleveren kan niet lager zijn dan bij ophalen ({{km}} km).",
+      "extraCosts": {
+        "title": "Extra kosten",
+        "kmLabel": "Extra kilometers (€)",
+        "kmExplanation": "{{driven}} km gereden in {{days}} dagen; {{free}} km vrij; {{extra}} extra km × € {{price}}. Het bedrag mag u aanpassen.",
+        "kmNoRate": "Geen kilometerafrekening: voor deze auto of voertuigsoort zijn geen vrije kilometers ingesteld.",
+        "fuelLabel": "Bijtanken (€)",
+        "fuelLevels": "Tank bij ophalen: {{pickup}} · bij inleveren: {{return}}. Leeg = niets in rekening.",
+        "invalidTitle": "Ongeldig bedrag",
+        "invalidDescription": "Vul bij de extra kosten een bedrag van 0 of hoger in, of laat het veld leeg.",
+        "kmNoReading": "Geen voorstel: de km-stand bij ophalen of de ophaaldatum ontbreekt. U kunt zelf een bedrag invullen."
+      }
     },
     "workshopBlocked": {
       "title": "Uitgifte geblokkeerd",
@@ -857,6 +868,13 @@
     "toasts": {
       "reservationDeletedTitle": "Reservering verwijderd",
       "reservationDeletedDescription": "De reservering is succesvol verwijderd"
+    },
+    "extraCosts": {
+      "title": "Extra kosten",
+      "fuel": "Bijtanken",
+      "km": "Extra kilometers",
+      "kmWithCount": "Extra kilometers ({{km}} km)",
+      "total": "Totaal extra kosten"
     }
   },
   "listDialog": {

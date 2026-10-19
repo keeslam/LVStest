@@ -268,7 +268,8 @@
       "dailyPrice": "Cena dzienna",
       "expenses": "Koszty",
       "margin": "Marża",
-      "total": "Razem"
+      "total": "Razem",
+      "ofWhichExtra": "w tym dodatkowe koszty {{amount}}"
     },
     "mileage": {
       "title": "Kilometry miesięcznie",

@@ -693,6 +693,18 @@
         "warranty": "Gwarancja wygasa",
         "licenses": "Prawa jazdy"
       }
+    },
+    "kmAllowance": {
+      "title": "Kilometry według typu pojazdu",
+      "description": "Darmowe kilometry na dzień i cena za dodatkowy kilometr, według typu pojazdu. Obie wartości można zmienić przy pojeździe.",
+      "otherRow": "Inne / bez typu",
+      "typeColumn": "Typ pojazdu",
+      "freeKmColumn": "Darmowe km na dzień",
+      "priceColumn": "Cena za dodatkowy km (€)",
+      "hint": "Puste = brak opłaty za kilometry dla tego typu. Przy zwrocie aplikacja proponuje kwotę; pracownik może ją zmienić.",
+      "invalid": "Wpisz tylko liczby równe 0 lub większe.",
+      "saved": "Stawki za kilometry zostały zapisane.",
+      "saveFailed": "Zapis nie powiódł się"
     }
   },
   "damageCheckFieldsPage": {

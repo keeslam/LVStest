@@ -253,7 +253,18 @@
       "returnCompletedDescription": "Veicolo riconsegnato correttamente. Il controllo danni è stato generato.",
       "returnFailedTitle": "Riconsegna non riuscita",
       "processReturnFailedFallback": "Elaborazione della riconsegna non riuscita. Riprovi.",
-      "returnMileageLessThanPickup": "Il chilometraggio alla riconsegna non può essere inferiore a quello al ritiro ({{km}} km)."
+      "returnMileageLessThanPickup": "Il chilometraggio alla riconsegna non può essere inferiore a quello al ritiro ({{km}} km).",
+      "extraCosts": {
+        "title": "Costi aggiuntivi",
+        "kmLabel": "Chilometri in più (€)",
+        "kmExplanation": "{{driven}} km percorsi in {{days}} giorni; {{free}} km gratuiti; {{extra}} km in più × € {{price}}. Può modificare l'importo.",
+        "kmNoRate": "Nessun addebito chilometrico: non sono impostati chilometri gratuiti per questo veicolo o tipo.",
+        "fuelLabel": "Rifornimento (€)",
+        "fuelLevels": "Serbatoio al ritiro: {{pickup}} · alla riconsegna: {{return}}. Vuoto = nessun addebito.",
+        "invalidTitle": "Importo non valido",
+        "invalidDescription": "Inserisca un importo uguale o superiore a 0 nei costi aggiuntivi, oppure lasci il campo vuoto.",
+        "kmNoReading": "Nessuna proposta: mancano il chilometraggio o la data di ritiro. Può inserire un importo."
+      }
     },
     "workshopBlocked": {
       "title": "Consegna bloccata",
@@ -863,6 +874,13 @@
     "toasts": {
       "reservationDeletedTitle": "Prenotazione eliminata",
       "reservationDeletedDescription": "La prenotazione è stata eliminata correttamente"
+    },
+    "extraCosts": {
+      "title": "Costi aggiuntivi",
+      "fuel": "Rifornimento",
+      "km": "Chilometri in più",
+      "kmWithCount": "Chilometri in più ({{km}} km)",
+      "total": "Totale costi aggiuntivi"
     }
   },
   "listDialog": {

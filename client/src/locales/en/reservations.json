@@ -253,7 +253,18 @@
       "returnCompletedDescription": "Vehicle returned successfully. Damage check has been generated.",
       "returnFailedTitle": "Return Failed",
       "processReturnFailedFallback": "Failed to process return. Please try again.",
-      "returnMileageLessThanPickup": "Return mileage cannot be less than pickup mileage ({{km}} km)."
+      "returnMileageLessThanPickup": "Return mileage cannot be less than pickup mileage ({{km}} km).",
+      "extraCosts": {
+        "title": "Extra costs",
+        "kmLabel": "Extra kilometres (€)",
+        "kmExplanation": "{{driven}} km driven in {{days}} days; {{free}} km free; {{extra}} extra km × € {{price}}. You may change the amount.",
+        "kmNoRate": "No kilometre charge: no free kilometres are set for this vehicle or vehicle type.",
+        "fuelLabel": "Refuelling (€)",
+        "fuelLevels": "Tank at pickup: {{pickup}} · at return: {{return}}. Empty = no charge.",
+        "invalidTitle": "Invalid amount",
+        "invalidDescription": "Enter an amount of 0 or more for the extra costs, or leave the field empty.",
+        "kmNoReading": "No proposal: the pickup mileage or pickup date is missing. You can enter an amount yourself."
+      }
     },
     "workshopBlocked": {
       "title": "Handover blocked",
@@ -857,6 +868,13 @@
     "toasts": {
       "reservationDeletedTitle": "Reservation deleted",
       "reservationDeletedDescription": "The reservation has been successfully deleted"
+    },
+    "extraCosts": {
+      "title": "Extra costs",
+      "fuel": "Refuelling",
+      "km": "Extra kilometres",
+      "kmWithCount": "Extra kilometres ({{km}} km)",
+      "total": "Total extra costs"
     }
   },
   "listDialog": {

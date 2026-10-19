@@ -929,7 +929,12 @@
       "genericCreateFailed": "Crearea vehiculului a eșuat",
       "unknownError": "Eroare necunoscută",
       "lookupFailedFallback": "Căutarea vehiculului a eșuat"
-    }
+    },
+    "freeKmPerDayLabel": "Km gratuiți pe zi",
+    "extraKmPriceLabel": "Preț pe km suplimentar (€)",
+    "kmTypeDefault": "Gol = valoarea tipului de vehicul: {{km}} km pe zi, € {{price}} pe km suplimentar.",
+    "kmTypeDefaultNone": "Gol = valoarea tipului de vehicul (încă nesetată).",
+    "kmOverrideHint": "Completați doar dacă acest vehicul diferă de tipul său."
   },
   "remarksWarningDialog": {
     "titlePickup": "Observații despre vehicul - Avertisment la ridicare",

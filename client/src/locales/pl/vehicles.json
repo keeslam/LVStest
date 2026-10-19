@@ -934,7 +934,12 @@
       "genericCreateFailed": "Nie udało się utworzyć pojazdu",
       "unknownError": "Nieznany błąd",
       "lookupFailedFallback": "Nie udało się wyszukać pojazdu"
-    }
+    },
+    "freeKmPerDayLabel": "Darmowe km na dzień",
+    "extraKmPriceLabel": "Cena za dodatkowy km (€)",
+    "kmTypeDefault": "Puste = wartość typu pojazdu: {{km}} km na dzień, € {{price}} za dodatkowy km.",
+    "kmTypeDefaultNone": "Puste = wartość typu pojazdu (jeszcze nieustawiona).",
+    "kmOverrideHint": "Wypełnij tylko, jeśli ten pojazd różni się od swojego typu."
   },
   "remarksWarningDialog": {
     "titlePickup": "Uwagi o pojeździe - ostrzeżenie przy odbiorze",

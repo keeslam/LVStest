@@ -261,7 +261,8 @@
       "dailyPrice": "Precio diario",
       "expenses": "Gastos",
       "margin": "Margen",
-      "total": "Total"
+      "total": "Total",
+      "ofWhichExtra": "de los cuales costes adicionales {{amount}}"
     },
     "mileage": {
       "title": "Kilómetros por mes",

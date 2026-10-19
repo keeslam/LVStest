@@ -689,6 +689,18 @@
         "warranty": "Garanția expiră",
         "licenses": "Permise de conducere"
       }
+    },
+    "kmAllowance": {
+      "title": "Kilometri pe tip de vehicul",
+      "description": "Kilometri gratuiți pe zi și prețul pe kilometru suplimentar, pe tip de vehicul. Ambele pot fi modificate la un vehicul.",
+      "otherRow": "Altele / fără tip",
+      "typeColumn": "Tip de vehicul",
+      "freeKmColumn": "Km gratuiți pe zi",
+      "priceColumn": "Preț pe km suplimentar (€)",
+      "hint": "Gol = fără taxare pe kilometri pentru acel tip. La returnare aplicația propune suma; angajatul o poate modifica.",
+      "invalid": "Introduceți doar numere de 0 sau mai mari.",
+      "saved": "Tarifele pe kilometru au fost salvate.",
+      "saveFailed": "Salvarea a eșuat"
     }
   },
   "damageCheckFieldsPage": {

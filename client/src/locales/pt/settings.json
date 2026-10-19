@@ -689,6 +689,18 @@
         "warranty": "Garantia a caducar",
         "licenses": "Cartas de condução"
       }
+    },
+    "kmAllowance": {
+      "title": "Quilómetros por tipo de veículo",
+      "description": "Quilómetros livres por dia e preço por quilómetro extra, por tipo de veículo. Ambos podem ser alterados num veículo.",
+      "otherRow": "Outros / sem tipo",
+      "typeColumn": "Tipo de veículo",
+      "freeKmColumn": "Km livres por dia",
+      "priceColumn": "Preço por km extra (€)",
+      "hint": "Vazio = sem cobrança de quilómetros para esse tipo. Na devolução a aplicação propõe o valor; o funcionário pode alterá-lo.",
+      "invalid": "Introduza apenas números iguais ou superiores a 0.",
+      "saved": "As tarifas por quilómetro foram guardadas.",
+      "saveFailed": "Falha ao guardar"
     }
   },
   "damageCheckFieldsPage": {

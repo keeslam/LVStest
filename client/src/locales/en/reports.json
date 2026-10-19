@@ -254,7 +254,8 @@
       "dailyPrice": "Daily price",
       "expenses": "Expenses",
       "margin": "Margin",
-      "total": "Total"
+      "total": "Total",
+      "ofWhichExtra": "of which extra costs {{amount}}"
     },
     "mileage": {
       "title": "Kilometres per month",

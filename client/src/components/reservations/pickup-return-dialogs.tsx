@@ -21,6 +21,7 @@ import { officeToday } from "@/lib/office-date";
 import { formatDutchDate, formatMaintenancePeriod } from "@shared/booking-warnings";
 import { needsRemarkConfirmation, hasRemarks } from "@shared/remark-confirmation";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ReturnExtraCosts, EMPTY_RETURN_EXTRA_COSTS, type ReturnExtraCostsValue } from "@/components/reservations/return-extra-costs";
 import { Car, Fuel, Calendar, FileText, ClipboardCheck, ExternalLink, CheckCircle2, Edit, Trash2, Upload, AlertTriangle } from "lucide-react";
 import { MileageOverridePasswordDialog } from "@/components/mileage-override-password-dialog";
 import InteractiveDamageCheck from "@/pages/interactive-damage-check";
@@ -1503,6 +1504,8 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess, onRes
     officeToday()
   );
   const [returnNotes, setReturnNotes] = useState("");
+  // Punt 1 (Kees, 2026-10-19): extra km and fuel, settled at return.
+  const [extraCosts, setExtraCosts] = useState<ReturnExtraCostsValue>(EMPTY_RETURN_EXTRA_COSTS);
   // OPT-005: what the return produced, shown after the dialog closes.
   const [handoverResult, setHandoverResult] = useState<{
     document: StoredDocument | null;
@@ -1592,6 +1595,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess, onRes
       setFuelLevelReturn(defaultReturnFuelLevel(reservation.fuelLevelPickup));
       setReturnDate(officeToday());
       setReturnNotes("");
+      setExtraCosts(EMPTY_RETURN_EXTRA_COSTS);
     }
   }, [open, reservation]);
 
@@ -1601,6 +1605,9 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess, onRes
       fuelLevelReturn: string;
       returnDate: string;
       returnNotes?: string;
+      fuelCost?: string | null;
+      extraKm?: number | null;
+      extraKmCost?: string | null;
     }) => {
       return await apiRequest("POST", `/api/reservations/${reservation.id}/return`, data);
     },
@@ -1666,11 +1673,27 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess, onRes
       return;
     }
 
+    // Punt 1: amounts as typed (comma or point); the server checks them.
+    const fuelCost = extraCosts.fuelCost.trim();
+    const extraKmCost = extraCosts.extraKmCost.trim();
+    const amountProblem = [fuelCost, extraKmCost].some((a) => a !== "" && !(Number(a.replace(",", ".")) >= 0));
+    if (amountProblem) {
+      toast({
+        variant: "destructive",
+        title: t('pickupReturn.return.extraCosts.invalidTitle'),
+        description: t('pickupReturn.return.extraCosts.invalidDescription'),
+      });
+      return;
+    }
+
     returnMutation.mutate({
       returnMileage: mileage,
       fuelLevelReturn,
       returnDate,
       returnNotes: returnNotes || undefined,
+      fuelCost: fuelCost || null,
+      extraKm: extraKmCost && extraCosts.settlement ? extraCosts.settlement.extraKm : null,
+      extraKmCost: extraKmCost || null,
     });
   };
 
@@ -1795,6 +1818,16 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess, onRes
                 </div>
               </div>
             </div>
+
+            {/* Punt 1: extra km and fuel */}
+            <ReturnExtraCosts
+              reservation={reservation}
+              returnMileage={returnMileage}
+              returnDate={returnDate}
+              fuelLevelReturn={fuelLevelReturn}
+              value={extraCosts}
+              onChange={setExtraCosts}
+            />
 
             {/* Damage Check Section */}
             <div className="border rounded-lg p-4 bg-green-50 space-y-3">

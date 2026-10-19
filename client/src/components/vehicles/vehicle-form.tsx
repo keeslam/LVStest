@@ -45,6 +45,7 @@ import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { formatLicensePlate, capitalizeWords } from "@/lib/format-utils";
 import { OIL_GRADES } from "@/constants/oil-grades";
 import { officeToday } from "@/lib/office-date";
+import { KM_ALLOWANCE_KEY, kmAllowanceFromSetting, kmRateForVehicle } from "@shared/km-allowance";
 
 // Utility function to handle null values for form inputs
 const handleFieldValue = (value: any): string => {
@@ -90,6 +91,13 @@ export const formSchema = insertVehicleSchema.extend({
   serviceIntervalMonths: z.union([z.string(), z.number(), z.null()]).optional()
     .transform(val => val === '' || val === undefined || val === null ? null : Number(val))
     .refine(val => val === null || (Number.isInteger(val) && val > 0), { message: v("intervalPositiveInteger") }),
+  // Punt 1: blank = the vehicle type default from Instellingen > Bedrijf
+  freeKmPerDay: z.union([z.string(), z.number(), z.null()]).optional()
+    .transform(val => val === '' || val === undefined || val === null ? null : Number(String(val).replace(',', '.')))
+    .refine(val => val === null || (Number.isInteger(val) && val >= 0), { message: v("mileageNegative") }),
+  extraKmPrice: z.union([z.string(), z.number(), z.null()]).optional()
+    .transform(val => val === '' || val === undefined || val === null ? null : String(val).replace(',', '.'))
+    .refine(val => val === null || (Number.isFinite(Number(val)) && Number(val) >= 0), { message: v("mileageNegative") }),
 });
 
 // Vehicle types
@@ -257,6 +265,8 @@ export function VehicleForm({
   const [invalidFields, setInvalidFields] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  // Punt 1: the vehicle type default shown next to the km fields.
+  const { data: kmSetting } = useQuery<{ value?: unknown } | null>({ queryKey: [`/api/app-settings/key/${KM_ALLOWANCE_KEY}`] });
   const [_, navigate] = useLocation();
   const { openVehicleDialog } = useGlobalDialog();
   
@@ -309,6 +319,8 @@ export function VehicleForm({
       gps: false,
       monthlyPrice: "",
       dailyPrice: "",
+      freeKmPerDay: "",
+      extraKmPrice: "",
       dateIn: "",
       dateOut: "",
       contractNumber: "",
@@ -1983,6 +1995,48 @@ export function VehicleForm({
                       </FormItem>
                     )}
                   />
+
+                  {(() => {
+                    const typeRate = kmRateForVehicle({ vehicleType: form.watch("vehicleType") }, kmAllowanceFromSetting(kmSetting?.value));
+                    const typeDefault = typeRate.freeKmPerDay == null && typeRate.pricePerKm == null
+                      ? t('vehicleForm.kmTypeDefaultNone')
+                      : t('vehicleForm.kmTypeDefault', {
+                          km: typeRate.freeKmPerDay ?? "—",
+                          price: typeRate.pricePerKm == null ? "—" : typeRate.pricePerKm.toFixed(2).replace(".", ","),
+                        });
+                    return (
+                      <>
+                        <FormField
+                          control={form.control}
+                          name="freeKmPerDay"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t('vehicleForm.freeKmPerDayLabel')}</FormLabel>
+                              <FormControl>
+                                <Input type="number" min="0" step="1" placeholder={typeRate.freeKmPerDay != null ? String(typeRate.freeKmPerDay) : ""} {...field} value={field.value ?? ""} data-testid="input-vehicle-free-km" />
+                              </FormControl>
+                              <FormDescription>{typeDefault}</FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="extraKmPrice"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t('vehicleForm.extraKmPriceLabel')}</FormLabel>
+                              <FormControl>
+                                <Input type="number" min="0" step="0.01" placeholder={typeRate.pricePerKm != null ? String(typeRate.pricePerKm) : ""} {...field} value={field.value ?? ""} data-testid="input-vehicle-km-price" />
+                              </FormControl>
+                              <FormDescription>{t('vehicleForm.kmOverrideHint')}</FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    );
+                  })()}
 
                   <FormField
                     control={form.control}

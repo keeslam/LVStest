@@ -254,7 +254,8 @@
       "dailyPrice": "Dagprijs",
       "expenses": "Kosten",
       "margin": "Marge",
-      "total": "Totaal"
+      "total": "Totaal",
+      "ofWhichExtra": "waarvan extra kosten {{amount}}"
     },
     "mileage": {
       "title": "Kilometers per maand",

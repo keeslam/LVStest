@@ -5129,6 +5129,20 @@
         "default": null
       },
       {
+        "name": "extra_km",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "extra_km_cost",
+        "type": "numeric",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
         "name": "vehicle_mileage_before_pickup",
         "type": "integer",
         "notNull": false,
@@ -7235,6 +7249,20 @@
       },
       {
         "name": "daily_price",
+        "type": "numeric",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "free_km_per_day",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "extra_km_price",
         "type": "numeric",
         "notNull": false,
         "primary": false,

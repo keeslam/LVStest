@@ -924,7 +924,12 @@
       "lookupFailedFallback": "Failed to lookup vehicle",
       "saveFailedDescriptionUpdate": "Updating the vehicle failed: {{message}}",
       "saveFailedDescriptionCreate": "Creating the vehicle failed: {{message}}"
-    }
+    },
+    "freeKmPerDayLabel": "Free km per day",
+    "extraKmPriceLabel": "Price per extra km (€)",
+    "kmTypeDefault": "Empty = vehicle type default: {{km}} km per day, € {{price}} per extra km.",
+    "kmTypeDefaultNone": "Empty = vehicle type default (not set yet).",
+    "kmOverrideHint": "Only fill in when this vehicle differs from its type."
   },
   "remarksWarningDialog": {
     "titlePickup": "Vehicle Remarks - Pickup Warning",
@@ -1003,8 +1008,7 @@
     "daysOverdue_other": "{{count}} days overdue",
     "daysRemaining_one": "{{count}} day",
     "daysRemaining_other": "{{count}} days",
-    "toasts": {
-    },
+    "toasts": {},
     "pageTitle": "Vehicle Management",
     "fleetCardTitle": "Vehicle Fleet",
     "fleetCardDescription": "Manage your vehicle fleet, view details, and create reservations.",

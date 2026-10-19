@@ -871,6 +871,31 @@ export function ReservationViewDialog({
                 </div>
               )}
 
+              {/* Punt 1 (Kees, 2026-10-19): extra costs settled at return, apart from the rental price. */}
+              {(reservation.fuelCost || reservation.extraKmCost) && (
+                <div data-testid="section-extra-costs">
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">{t('viewDialog.extraCosts.title')}</h3>
+                  <div className="bg-amber-50 border border-amber-200 rounded-md p-4 space-y-1 text-sm">
+                    {reservation.fuelCost && (
+                      <div className="flex justify-between gap-4">
+                        <span>{t('viewDialog.extraCosts.fuel')}</span>
+                        <span className="font-semibold"><Price value={Number(reservation.fuelCost)} /></span>
+                      </div>
+                    )}
+                    {reservation.extraKmCost && (
+                      <div className="flex justify-between gap-4">
+                        <span>{reservation.extraKm != null ? t('viewDialog.extraCosts.kmWithCount', { km: reservation.extraKm }) : t('viewDialog.extraCosts.km')}</span>
+                        <span className="font-semibold"><Price value={Number(reservation.extraKmCost)} /></span>
+                      </div>
+                    )}
+                    <div className="flex justify-between gap-4 border-t border-amber-200 pt-1 mt-1">
+                      <span className="font-medium">{t('viewDialog.extraCosts.total')}</span>
+                      <span className="font-semibold" data-testid="text-extra-costs-total"><Price value={Number(reservation.fuelCost ?? 0) + Number(reservation.extraKmCost ?? 0)} /></span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Spare Vehicle Management */}
               {reservation.type === 'standard' && (
                 <div>

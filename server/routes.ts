@@ -117,6 +117,8 @@ import {
 } from "./services/lifecycle";
 import { currentRenterReservation } from "./services/vehicle-notification-recipients";
 import { assertDriverLicenseChecked, driverLicenseInfo, DriverLicenseExpiredError } from "./services/driver-license-check";
+import { parseReturnExtraCosts } from "../shared/km-allowance";
+import { normalizeKmOverrides } from "./services/km-overrides";
 import { abortPlanningRefusal, loadReplacementsHangingOn } from "./services/abort-planning";
 import { recalculateTotalPrice } from "../shared/rental-pricing";
 import { calculateDutchHolidays, mergeHolidaysWithOverrides } from "../shared/holidays";
@@ -610,6 +612,17 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Get vehicles with warranty expiring soon
+  // Punt 1 (Kees, 2026-10-19): the vehicle types in the fleet, for the km-per-type settings.
+  app.get("/api/vehicles/types", hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_SETTINGS), async (_req, res) => {
+    try {
+      const rows = await db.execute(sql`SELECT DISTINCT vehicle_type FROM vehicles WHERE vehicle_type IS NOT NULL AND btrim(vehicle_type) <> '' ORDER BY 1`);
+      res.json((rows.rows as Array<{ vehicle_type: string }>).map((r) => r.vehicle_type.trim()));
+    } catch (error) {
+      console.error("Error fetching vehicle types:", error);
+      res.status(500).json({ message: "Failed to fetch vehicle types" });
+    }
+  });
+
   app.get("/api/vehicles/warranty-expiring", hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), async (req, res) => {
     try {
       // Get maintenance calendar settings
@@ -1072,6 +1085,8 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (sanitizedData.returnMileage === '') sanitizedData.returnMileage = null;
       if (sanitizedData.monthlyPrice === '') sanitizedData.monthlyPrice = null;
       if (sanitizedData.dailyPrice === '') sanitizedData.dailyPrice = null;
+      // Punt 1 (Kees, 2026-10-19): own free km / price per extra km; empty = the vehicle type default.
+      normalizeKmOverrides(sanitizedData);
       
       // Convert values for boolean fields
       const booleanFields = [
@@ -1560,6 +1575,8 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (sanitizedData.returnMileage === '') sanitizedData.returnMileage = null;
       if (sanitizedData.monthlyPrice === '') sanitizedData.monthlyPrice = null;
       if (sanitizedData.dailyPrice === '') sanitizedData.dailyPrice = null;
+      // Punt 1 (Kees, 2026-10-19): own free km / price per extra km; empty = the vehicle type default.
+      normalizeKmOverrides(sanitizedData);
       
       // Convert values for boolean fields
       const booleanFields = [
@@ -6112,6 +6129,15 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       const { returnMileage, fuelLevelReturn, returnDate, returnNotes } = req.body;
 
+      // Punt 1 (Kees, 2026-10-19): fuel and extra km as amounts, checked before anything is written.
+      const extraCosts = parseReturnExtraCosts(req.body);
+      if (!extraCosts.ok) {
+        return res.status(400).json({
+          message: "Invalid extra cost",
+          errors: [{ field: extraCosts.field, message: "Use a number of 0 or more" }],
+        });
+      }
+
       // BUG-131: same as pickupDate - unvalidated text went into the row and
       // into a filename, and a return before the pickup was accepted.
       if (returnDate != null && returnDate !== '' && (typeof returnDate !== 'string' || !isCalendarDate(returnDate))) {
@@ -6147,7 +6173,8 @@ export async function registerRoutes(app: Express): Promise<void> {
         returnMileage: mileage,
         fuelLevelReturn,
         returnDate,
-        returnNotes
+        returnNotes,
+        extraCosts: extraCosts.value,
       });
 
       if (!updatedReservation) {

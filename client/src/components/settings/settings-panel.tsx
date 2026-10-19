@@ -18,6 +18,7 @@ import { DashboardTilesCard } from "@/components/settings/dashboard-tiles-card";
 import { OfficeNotificationEmail } from "@/components/settings/office-notification-email";
 import { OfficeTimeZoneCard } from "@/components/settings/office-timezone-card";
 import { CompanyNameCard } from "@/components/settings/company-name-card";
+import { KmAllowanceCard } from "@/components/settings/km-allowance-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -1037,6 +1038,9 @@ export function SettingsPanel() {
 
           {/* D15: the company name for every mail (app setting company_name) */}
           <CompanyNameCard />
+
+          {/* Punt 1: free km per day and price per extra km, per vehicle type (app setting km_allowance) */}
+          <KmAllowanceCard />
         </TabsContent>
 
         {/* Notifications Tab */}

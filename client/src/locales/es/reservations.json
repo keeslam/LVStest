@@ -253,7 +253,18 @@
       "returnCompletedDescription": "Vehículo devuelto correctamente. Se ha generado la inspección de daños.",
       "returnFailedTitle": "Error en la devolución",
       "processReturnFailedFallback": "No se ha podido procesar la devolución. Inténtelo de nuevo.",
-      "returnMileageLessThanPickup": "El kilometraje en la devolución no puede ser inferior al de la recogida ({{km}} km)."
+      "returnMileageLessThanPickup": "El kilometraje en la devolución no puede ser inferior al de la recogida ({{km}} km).",
+      "extraCosts": {
+        "title": "Costes adicionales",
+        "kmLabel": "Kilómetros adicionales (€)",
+        "kmExplanation": "{{driven}} km recorridos en {{days}} días; {{free}} km libres; {{extra}} km adicionales × € {{price}}. Puede cambiar el importe.",
+        "kmNoRate": "Sin cargo por kilómetros: no hay kilómetros libres configurados para este vehículo o tipo.",
+        "fuelLabel": "Repostaje (€)",
+        "fuelLevels": "Depósito en la recogida: {{pickup}} · en la devolución: {{return}}. Vacío = sin cargo.",
+        "invalidTitle": "Importe no válido",
+        "invalidDescription": "Introduzca un importe de 0 o más en los costes adicionales, o deje el campo vacío.",
+        "kmNoReading": "Sin propuesta: falta el kilometraje o la fecha de recogida. Puede introducir un importe usted mismo."
+      }
     },
     "workshopBlocked": {
       "title": "Entrega bloqueada",
@@ -863,6 +874,13 @@
     "toasts": {
       "reservationDeletedTitle": "Reserva eliminada",
       "reservationDeletedDescription": "La reserva se ha eliminado correctamente"
+    },
+    "extraCosts": {
+      "title": "Costes adicionales",
+      "fuel": "Repostaje",
+      "km": "Kilómetros adicionales",
+      "kmWithCount": "Kilómetros adicionales ({{km}} km)",
+      "total": "Total costes adicionales"
     }
   },
   "listDialog": {

@@ -924,7 +924,12 @@
       "genericCreateFailed": "Aanmaken van voertuig mislukt",
       "unknownError": "Onbekende fout",
       "lookupFailedFallback": "Voertuig opzoeken mislukt"
-    }
+    },
+    "freeKmPerDayLabel": "Vrije km per dag",
+    "extraKmPriceLabel": "Prijs per extra km (€)",
+    "kmTypeDefault": "Leeg = standaard van de voertuigsoort: {{km}} km per dag, € {{price}} per extra km.",
+    "kmTypeDefaultNone": "Leeg = standaard van de voertuigsoort (nog niet ingesteld).",
+    "kmOverrideHint": "Alleen invullen als deze auto afwijkt van zijn voertuigsoort."
   },
   "remarksWarningDialog": {
     "titlePickup": "Voertuigopmerkingen - Ophaalwaarschuwing",
@@ -1003,8 +1008,7 @@
     "daysOverdue_other": "{{count}} dagen te laat",
     "daysRemaining_one": "{{count}} dag",
     "daysRemaining_other": "{{count}} dagen",
-    "toasts": {
-    },
+    "toasts": {},
     "pageTitle": "Voertuigbeheer",
     "fleetCardTitle": "Voertuigenpark",
     "fleetCardDescription": "Beheer je voertuigenpark, bekijk details en maak reserveringen aan.",

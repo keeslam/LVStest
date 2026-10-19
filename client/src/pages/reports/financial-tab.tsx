@@ -19,13 +19,15 @@ interface VehicleFinancialRow {
   rentals: number;
   rentalDays: number;
   revenue: number;
+  /** Punt 1: part of revenue that is extra costs settled at return. */
+  extraCosts?: number;
   expenses: number;
   expensesByCategory: Record<string, number>;
   margin: number;
 }
 interface VehicleFinancialsReport {
   rows: VehicleFinancialRow[];
-  totals: { rentals: number; rentalDays: number; revenue: number; expenses: number; margin: number };
+  totals: { rentals: number; rentalDays: number; revenue: number; extraCosts?: number; expenses: number; margin: number };
 }
 interface MileagePerMonthReport {
   months: { month: string; km: number; vehicles: number }[];
@@ -153,7 +155,12 @@ export function FinancialTab({ dateRange, selectedVehicle }: FinancialTabProps) 
                     </TableCell>
                     <TableCell className="text-right">{row.rentals}</TableCell>
                     <TableCell className="text-right">{row.rentalDays}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(row.revenue)}</TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(row.revenue)}
+                      {(row.extraCosts ?? 0) > 0 && (
+                        <div className="text-xs text-gray-500" data-testid={`text-extra-costs-${row.vehicleId}`}>{t('financialTab.table.ofWhichExtra', { amount: formatCurrency(row.extraCosts ?? 0) })}</div>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">{row.rentalDays > 0 ? formatCurrency(row.revenue / row.rentalDays) : "–"}</TableCell>
                     <TableCell className="text-right text-gray-500">{row.dailyPrice != null ? formatCurrency(row.dailyPrice) : "–"}</TableCell>
                     <TableCell className="text-right text-red-600" title={Object.entries(row.expensesByCategory).map(([c, a]) => `${formatExpenseCategory(c)}: ${formatCurrency(a)}`).join("\n")}>{formatCurrency(row.expenses)}</TableCell>
@@ -168,7 +175,12 @@ export function FinancialTab({ dateRange, selectedVehicle }: FinancialTabProps) 
                     <TableCell>{t('financialTab.table.total')}</TableCell>
                     <TableCell className="text-right">{financials.totals.rentals}</TableCell>
                     <TableCell className="text-right">{financials.totals.rentalDays}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(financials.totals.revenue)}</TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(financials.totals.revenue)}
+                      {(financials.totals.extraCosts ?? 0) > 0 && (
+                        <div className="text-xs text-gray-500 font-normal">{t('financialTab.table.ofWhichExtra', { amount: formatCurrency(financials.totals.extraCosts ?? 0) })}</div>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">{financials.totals.rentalDays > 0 ? formatCurrency(financials.totals.revenue / financials.totals.rentalDays) : "–"}</TableCell>
                     <TableCell />
                     <TableCell className="text-right text-red-600">{formatCurrency(financials.totals.expenses)}</TableCell>

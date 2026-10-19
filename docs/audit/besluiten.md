@@ -563,6 +563,30 @@ Kees koos uit de lijst met suggesties punt 9, "rijbewijs verlopen", en keurde de
   - Het gaat alleen om de tegels, niet om de andere blokken op het dashboard.
   - Opgeslagen als app-instelling `dashboard_tiles`. Komt er later een nieuwe tegel bij, dan verschijnt die vanzelf achteraan.
 
+### B-47 — Extra kosten bij inleveren (19-10-2026)
+
+Kees koos uit de lijst met suggesties punt 1, "afrekening bij inleveren", en gaf zijn keuzes met klikken. Over de kilometers zei hij: "Standaard + per auto maar dan is de standaard per voertuig categorie in te stellen."
+
+- **Kilometers.**
+  - Per voertuigsoort stel je in hoeveel kilometer per dag vrij is en wat een extra kilometer kost. Dat staat onder Instellingen → Bedrijf → **Kilometers per voertuigsoort** (app-instelling `km_allowance`).
+  - Er is ook een regel **Overige / geen soort**, voor auto's zonder soort of met een soort zonder eigen regel.
+  - Bij een auto kun je beide waarden apart aanpassen (`vehicles.free_km_per_day`, `vehicles.extra_km_price`). Leeg betekent: de standaard van de soort.
+  - Is voor een soort niets ingevuld, dan wordt er geen kilometerafrekening gemaakt.
+- **Berekening bij inleveren.**
+  - Gereden km = km-stand bij inleveren min km-stand bij ophalen.
+  - Vrije km = aantal huurdagen × vrije km per dag. De huurdagen tellen van de ophaaldag tot en met de inleverdag, net als de huurprijs.
+  - De extra km boven de vrije km × de prijs per km wordt een voorgesteld bedrag.
+  - De medewerker kan het bedrag aanpassen. Een aangepast bedrag volgt de km-stand daarna niet meer.
+- **Bijtanken.** Geen berekening: de medewerker vult het bedrag zelf in. De tankniveaus bij ophalen en bij inleveren staan ernaast.
+- **Te laat terug.** Wordt niet afgerekend.
+- **Opslaan.**
+  - De bedragen komen als extra kosten bij de reservering: bijtanken in `fuel_cost`, en de extra km met het aantal in `extra_km_cost` en `extra_km`.
+  - De huurprijs (`total_price`) blijft ongewijzigd.
+  - Het reserveringsoverzicht toont een blok **Extra kosten** met een totaal.
+  - Het financiële rapport telt de bedragen bij de omzet van de auto en noemt ze apart: "waarvan extra kosten".
+  - Wordt het inleveren teruggedraaid (B-30), dan worden de extra kosten ook gewist.
+  - Factureren blijft in de boekhouding (D9).
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).

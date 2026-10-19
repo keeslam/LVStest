@@ -261,7 +261,8 @@
       "dailyPrice": "Preț zilnic",
       "expenses": "Cheltuieli",
       "margin": "Marjă",
-      "total": "Total"
+      "total": "Total",
+      "ofWhichExtra": "din care costuri suplimentare {{amount}}"
     },
     "mileage": {
       "title": "Kilometri pe lună",

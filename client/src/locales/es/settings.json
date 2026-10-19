@@ -689,6 +689,18 @@
         "warranty": "Garantía caduca",
         "licenses": "Permisos de conducir"
       }
+    },
+    "kmAllowance": {
+      "title": "Kilómetros por tipo de vehículo",
+      "description": "Kilómetros libres por día y precio por kilómetro adicional, por tipo de vehículo. Ambos se pueden cambiar en un vehículo.",
+      "otherRow": "Otros / sin tipo",
+      "typeColumn": "Tipo de vehículo",
+      "freeKmColumn": "Km libres por día",
+      "priceColumn": "Precio por km adicional (€)",
+      "hint": "Vacío = sin cargo por kilómetros para ese tipo. En la devolución la aplicación propone el importe; el empleado puede cambiarlo.",
+      "invalid": "Introduzca solo números de 0 o más.",
+      "saved": "Las tarifas por kilómetro se han guardado.",
+      "saveFailed": "Error al guardar"
     }
   },
   "damageCheckFieldsPage": {
