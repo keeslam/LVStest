@@ -14,11 +14,12 @@ import { formatLicensePlate } from "@/lib/format-utils";
 import { DriverFormDialog } from "./driver-form-dialog";
 import { btnPrimary } from "./ui";
 import { vehicleName } from "@shared/vehicle-name";
+import { busyCar } from "./extra-drivers";
 
 /** Active drivers; those already on another booked or running car are listed but cannot be chosen (one car per driver). */
 const driverItems = (drivers: PortalDriverDto[], reservations: PortalReservationDto[], reservationId: number, busyLabel: (plate: string) => string) =>
   drivers.filter((d) => d.status === "active").map((d) => {
-    const busy = reservations.find((r) => r.id !== reservationId && r.driver?.id === d.id && (r.status === "booked" || r.status === "picked_up"));
+    const busy = busyCar(reservations, d.id, reservationId);
     return { id: d.id, label: d.displayName, disabled: Boolean(busy), sub: busy ? busyLabel(busy.vehicle?.licensePlate ? formatLicensePlate(busy.vehicle.licensePlate) : `#${busy.id}`) : d.email ?? d.phone ?? null, search: `${d.firstName ?? ""} ${d.lastName ?? ""} ${d.phone ?? ""} ${d.email ?? ""}` };
   });
 

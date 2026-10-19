@@ -33,6 +33,7 @@ export function FineRow({ fine: f }: { fine: PortalFineDto }) {
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#64748b] sm:text-sm">
           <span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{formatPortalDateTimeMedium(f.offenceAt)}</span>
           {f.driver && <DriverChip name={f.driver.displayName} />}
+          {!f.driver && (f.driverOptions?.length ?? 0) > 0 && <span className="rounded-full bg-[#faeeda] px-2 py-0.5 text-xs font-medium text-[#633806]" data-testid={`fine-needs-driver-${f.id}`}>{t("fines.whoDrove.badge")}</span>}
         </div>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3">

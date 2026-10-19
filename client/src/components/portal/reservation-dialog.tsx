@@ -18,6 +18,7 @@ import { Plate, StatusBadge } from "./ui";
 import { vehicleName } from "@shared/vehicle-name";
 import { HandoverBlock } from "./handover-block";
 import { ReservationUploads } from "./reservation-uploads";
+import { ExtraDrivers } from "./extra-drivers";
 
 type Detail = PortalReservationDto & {
   driverHistory: Array<{ id: number; driverId: number | null; driverName: string | null; assignedFrom: string; assignedUntil: string | null; note: string | null }>;
@@ -104,6 +105,8 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
                 <div className="space-y-2" data-testid="reservation-fines">{linkedFines.map((f) => <FineRow key={f.id} fine={f} />)}</div>
               </div>
             )}
+            {/* Kees, 2026-10-18: a car shared by several drivers. */}
+            {(r.status === "booked" || r.status === "picked_up") && <ExtraDrivers reservation={r} canEdit={canChangeDriver} />}
             {/* Kees, 2026-10-18: the customer adds a PDF or photo to the reservation themself. */}
             <ReservationUploads reservationId={r.id} canUpload={r.status !== "cancelled"} />
             {r.driverHistory.length > 0 && <div>

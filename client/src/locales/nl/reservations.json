@@ -1262,5 +1262,9 @@
       "failedTitle": "Voertuig wijzigen mislukt"
     }
   },
-  "customerUpload": "Upload klant"
+  "customerUpload": "Upload klant",
+  "extraDrivers": {
+    "label": "Extra bestuurders (via portaal)",
+    "hint": "Toegevoegd door de klant. Op het contract staat alleen de hoofdbestuurder."
+  }
 }

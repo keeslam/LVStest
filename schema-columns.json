@@ -4851,6 +4851,13 @@
         "default": null
       },
       {
+        "name": "is_extra",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "false"
+      },
+      {
         "name": "created_at",
         "type": "timestamp with time zone",
         "notNull": true,

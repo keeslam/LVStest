@@ -6,7 +6,7 @@ import { UserPermission } from "../../shared/schema";
 import { isValidRequestTransition, REQUEST_TRANSITIONS, hhmm, type PortalRequestStatusValue } from "../../shared/portal-requests";
 import type { PortalBookingAlternativeDto } from "../../shared/portal-types";
 import { NOT_RENTABLE } from "../services/portal-storage";
-import { assignDriverToReservation } from "../services/driver-assignments";
+import { assignDriverToReservation, driverBusyElsewhere } from "../services/driver-assignments";
 import { realtimeEvents } from "../realtime-events";
 import { customerNotifications } from "../services/portal-customer-notifications";
 import { requestsStorage, toRequestDto } from "../services/portal-requests-storage";
@@ -298,8 +298,9 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     if (driverId) {
       const driver = await portalStorage.getDriverForCustomer(driverId, row.customerId);
       if (!driver || driver.status !== "active") return res.status(400).json({ message: "Driver not found for this customer", field: "driverId" });
-      const busy = (await portalStorage.listReservationsForCustomer(row.customerId, {})).find((r) => r.driverId === driverId && (r.status === "booked" || r.status === "picked_up"));
-      if (busy) return res.status(409).json({ message: `${driver.displayName} rijdt al in ${busy.vehicle?.licensePlate ?? `#${busy.id}`}`, field: "driverId" });
+      // One car per driver, as main or as extra driver (Kees, 2026-10-18).
+      const busy = await driverBusyElsewhere(driverId, 0);
+      if (busy) return res.status(409).json({ message: `${driver.displayName} rijdt al in ${busy.licensePlate ?? `#${busy.id}`}`, field: "driverId" });
     }
 
     // FIX-F — the approval is a booking like any other: the predicate runs

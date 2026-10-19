@@ -25,7 +25,8 @@ import { getServiceDueVehicles } from "../utils/service-due-scanner";
 import { setSafeFileHeaders } from "../utils/portal-files";
 import { handoverOf } from "../../shared/portal-handover";
 import { settingsFlags, requireFeature, requirePortalRole, portalError, logPortalActivity, type PortalRequestContext } from "../portal-auth";
-import { assignDriverToReservation, getDriverAssignments } from "../services/driver-assignments";
+import { assignDriverToReservation, getDriverAssignments, addExtraDriver, removeExtraDriver, listExtraDrivers, driverBusyElsewhere } from "../services/driver-assignments";
+import { driversAt } from "../services/fine-attribution";
 import { notifyStaffOfPortalEvent } from "../services/portal-notifications";
 import { resolveDocumentFilePath, getRelativePath } from "../services/document-paths";
 import { createSecureMulterFilter, sanitizeFilename, validateAfterUpload } from "../utils/security/fileUploadSecurity";
@@ -64,7 +65,7 @@ export interface PortalRouteDeps {
 
 const ACTIVE_STATUSES = ["booked", "picked_up"];
 
-export function toReservationDto(r: PortalReservation, showPrices: boolean): PortalReservationDto {
+export function toReservationDto(r: PortalReservation, showPrices: boolean, extraDrivers: Array<{ id: number; displayName: string }> = []): PortalReservationDto {
   const dto: PortalReservationDto = {
     id: r.id, status: r.status, type: r.type,
     startDate: r.startDate, endDate: r.endDate, startTime: r.startTime, endTime: r.endTime,
@@ -73,6 +74,7 @@ export function toReservationDto(r: PortalReservation, showPrices: boolean): Por
     contractNumber: r.contractNumber,
     vehicle: r.vehicle ? { id: r.vehicle.id, licensePlate: r.vehicle.licensePlate, brand: r.vehicle.brand, model: r.vehicle.model, apkDate: r.vehicle.apkDate ?? null, ...(showPrices ? { dailyPrice: r.vehicle.dailyPrice ?? null } : {}) } : null,
     driver: r.driver ? { id: r.driver.id, displayName: r.driver.displayName } : null,
+    extraDrivers,
     replacementForReservationId: r.replacementForReservationId,
     handover: handoverOf(r),
   };
@@ -128,9 +130,9 @@ const driverInputSchema = z.object({
   status: z.enum(["active", "inactive"]).optional(),
 });
 
-function idParam(req: Request, res: Response): number | null {
-  const id = parseInt(req.params.id, 10);
-  if (Number.isNaN(id)) { portalError(res, 400, PORTAL_ERROR.VALIDATION, "Invalid id"); return null; }
+function idParam(req: Request, res: Response, name = "id"): number | null {
+  const id = parseInt(req.params[name], 10);
+  if (Number.isNaN(id)) { portalError(res, 400, PORTAL_ERROR.VALIDATION, `Invalid ${name}`); return null; }
   return id;
 }
 
@@ -150,7 +152,8 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
   app.get("/api/portal/reservations", requirePortalUser, async (req, res) => {
     const ctx = ctxOf(req);
     const rows = await portalStorage.listReservationsForCustomer(ctx.customerId, ctx.scope);
-    res.json(rows.map((r) => toReservationDto(r, settingsFlags(ctx.settings, ctx.user).showPrices)));
+    const extras = await listExtraDrivers(rows.filter((r) => ACTIVE_STATUSES.includes(r.status)).map((r) => r.id));
+    res.json(rows.map((r) => toReservationDto(r, settingsFlags(ctx.settings, ctx.user).showPrices, extras.get(r.id) ?? [])));
   });
 
   app.get("/api/portal/reservations/:id", requirePortalUser, async (req, res) => {
@@ -168,7 +171,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
       ? (await requestsStorage.listRequestsForCustomer(ctx.customerId, {})).find((q) => q.type === "cancellation" && q.reservationId === r.id && (q.status === "new" || q.status === "in_progress"))
       : undefined;
     res.json({
-      ...toReservationDto(r, settingsFlags(ctx.settings, ctx.user).showPrices), driverHistory: toDriverHistoryDto(history), serviceDue,
+      ...toReservationDto(r, settingsFlags(ctx.settings, ctx.user).showPrices, (await listExtraDrivers([r.id])).get(r.id) ?? []), driverHistory: toDriverHistoryDto(history), serviceDue,
       cancellation: cancellationState(r, openCancel?.id ?? null),
     });
   });
@@ -183,10 +186,9 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     if (!ACTIVE_STATUSES.includes(r.status)) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Only booked or running rentals can change driver");
     const driver = await portalStorage.getDriverForCustomer(parsed.data.driverId, ctx.customerId);
     if (!driver || driver.status !== "active") return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Driver not found");
-    // One car per driver: a driver who is already on another booked or running car cannot be put on this one.
-    const busy = (await portalStorage.listReservationsForCustomer(ctx.customerId, ctx.scope))
-      .find((other) => other.id !== id && other.driverId === driver.id && ACTIVE_STATUSES.includes(other.status));
-    if (busy) return portalError(res, 400, PORTAL_ERROR.DRIVER_BUSY, `${driver.displayName} rijdt al in ${busy.vehicle?.licensePlate ?? `#${busy.id}`}`);
+    // One car per driver: a driver who is already on another booked or running car (as main or extra driver) cannot be put on this one.
+    const busy = await driverBusyElsewhere(driver.id, id);
+    if (busy) return portalError(res, 400, PORTAL_ERROR.DRIVER_BUSY, `${driver.displayName} rijdt al in ${busy.licensePlate ?? `#${busy.id}`}`);
 
     await assignDriverToReservation({ reservationId: id, driverId: driver.id, byPortalUserId: ctx.user.id, note: parsed.data.note });
     await logPortalActivity(req, "driver_assigned", { entity: "reservation", entityId: id, details: { driverId: driver.id, previousDriverId: r.driverId } });
@@ -198,7 +200,77 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
       customerId: ctx.customerId,
     });
     const updated = await portalStorage.getReservationForCustomer(id, ctx.customerId, ctx.scope);
-    res.json({ ...toReservationDto(updated!, settingsFlags(ctx.settings, ctx.user).showPrices), driverHistory: toDriverHistoryDto(await getDriverAssignments(id)) });
+    res.json({ ...toReservationDto(updated!, settingsFlags(ctx.settings, ctx.user).showPrices, (await listExtraDrivers([id])).get(id) ?? []), driverHistory: toDriverHistoryDto(await getDriverAssignments(id)) });
+  });
+
+  /** The drivers on the fine's car at the offence moment, when there were several (no driver could be named). */
+  async function driverOptionsFor(fine: FineListRow): Promise<Array<{ id: number; displayName: string }>> {
+    if (fine.driverId || !fine.reservationId || !fine.customerId) return [];
+    const ids = await driversAt(fine.reservationId, fine.offenceAt);
+    if (ids.length < 2) return [];
+    const all = await portalStorage.listDriversForCustomer(fine.customerId);
+    return all.filter((d) => ids.includes(d.id)).map((d) => ({ id: d.id, displayName: d.displayName }));
+  }
+  async function withDriverOptions(req: Request, rows: FineListRow[]): Promise<PortalFineDto[]> {
+    const admin = ctxOf(req).user.role === "admin";
+    return Promise.all(rows.map(async (f) => {
+      const dto = toFineDto(f);
+      if (admin && !f.driverId) { const options = await driverOptionsFor(f); if (options.length > 0) dto.driverOptions = options; }
+      return dto;
+    }));
+  }
+
+  // ---- extra drivers on one car (Kees, 2026-10-18) ---------------------------------------------------
+  // An admin shares a car between drivers. The main driver and the contract stay; one car per driver
+  // still holds (an extra driver cannot be on another booked or running car). The office is told.
+  const extraDriverGuard = [requirePortalUser, requireFeature("canManageDrivers"), requirePortalRole("admin")];
+  async function sharedCar(req: Request, res: Response) {
+    const id = idParam(req, res); if (id === null) return null;
+    const ctx = ctxOf(req);
+    const r = await portalStorage.getReservationForCustomer(id, ctx.customerId, ctx.scope);
+    if (!r) { portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Reservation not found"); return null; }
+    if (!ACTIVE_STATUSES.includes(r.status)) { portalError(res, 400, PORTAL_ERROR.VALIDATION, "Only booked or running rentals can change drivers"); return null; }
+    return r;
+  }
+  async function sharedCarResponse(req: Request, id: number) {
+    const ctx = ctxOf(req);
+    const r = await portalStorage.getReservationForCustomer(id, ctx.customerId, ctx.scope);
+    return { ...toReservationDto(r!, settingsFlags(ctx.settings, ctx.user).showPrices, (await listExtraDrivers([id])).get(id) ?? []), driverHistory: toDriverHistoryDto(await getDriverAssignments(id)) };
+  }
+
+  app.post("/api/portal/reservations/:id/drivers", ...extraDriverGuard, async (req, res) => {
+    const r = await sharedCar(req, res); if (!r) return;
+    const ctx = ctxOf(req);
+    const parsed = z.object({ driverId: z.number().int().positive() }).safeParse(req.body);
+    if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "driverId is required");
+    const driver = await portalStorage.getDriverForCustomer(parsed.data.driverId, ctx.customerId);
+    if (!driver || driver.status !== "active") return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Driver not found");
+    const busy = await driverBusyElsewhere(driver.id, r.id);
+    if (busy) return portalError(res, 400, PORTAL_ERROR.DRIVER_BUSY, `${driver.displayName} rijdt al in ${busy.licensePlate ?? `#${busy.id}`}`);
+    const added = await addExtraDriver({ reservationId: r.id, driverId: driver.id, byPortalUserId: ctx.user.id });
+    if (!added) return portalError(res, 409, PORTAL_ERROR.DUPLICATE_REQUEST, `${driver.displayName} rijdt al in deze auto`);
+    await logPortalActivity(req, "extra_driver_added", { entity: "reservation", entityId: r.id, details: { driverId: driver.id } });
+    await notifyStaffOfPortalEvent({
+      kind: "portal_driver_change", title: `Extra bestuurder: ${r.vehicle?.licensePlate ?? `#${r.id}`}`,
+      description: `${ctx.user.fullName} heeft ${driver.displayName} toegevoegd als extra bestuurder${r.driver ? ` (hoofdbestuurder blijft ${r.driver.displayName})` : ""}.`,
+      link: `/reservations/edit/${r.id}`, customerId: ctx.customerId,
+    });
+    res.status(201).json(await sharedCarResponse(req, r.id));
+  });
+
+  app.delete("/api/portal/reservations/:id/drivers/:driverId", ...extraDriverGuard, async (req, res) => {
+    const r = await sharedCar(req, res); if (!r) return;
+    const ctx = ctxOf(req);
+    const driverId = idParam(req, res, "driverId"); if (driverId === null) return;
+    if (!(await removeExtraDriver(r.id, driverId))) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Not an extra driver on this car");
+    const driver = await portalStorage.getDriverForCustomer(driverId, ctx.customerId);
+    await logPortalActivity(req, "extra_driver_removed", { entity: "reservation", entityId: r.id, details: { driverId } });
+    await notifyStaffOfPortalEvent({
+      kind: "portal_driver_change", title: `Extra bestuurder eraf: ${r.vehicle?.licensePlate ?? `#${r.id}`}`,
+      description: `${ctx.user.fullName} heeft ${driver?.displayName ?? `bestuurder #${driverId}`} als extra bestuurder verwijderd.`,
+      link: `/reservations/edit/${r.id}`, customerId: ctx.customerId,
+    });
+    res.json(await sharedCarResponse(req, r.id));
   });
 
   // ---- documents ------------------------------------------------------------
@@ -469,7 +541,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
   // ---- fines ------------------------------------------------------------------
   app.get("/api/portal/fines", requirePortalUser, requireFeature("canViewFines"), async (req, res) => {
     const ctx = ctxOf(req);
-    res.json((await finesStorage.listFinesForCustomer(ctx.customerId, ctx.scope)).map(toFineDto));
+    res.json(await withDriverOptions(req, await finesStorage.listFinesForCustomer(ctx.customerId, ctx.scope)));
   });
 
   app.get("/api/portal/fines/:id", requirePortalUser, requireFeature("canViewFines"), async (req, res) => {
@@ -477,7 +549,38 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     const ctx = ctxOf(req);
     const fine = await finesStorage.getFineForCustomer(id, ctx.customerId, ctx.scope);
     if (!fine) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Fine not found");
-    res.json(toFineDto(fine));
+    res.json((await withDriverOptions(req, [fine]))[0]);
+  });
+
+  /**
+   * Who drove (Kees, 2026-10-18): a fine on a car several drivers shared has no driver. An admin
+   * chooses one of the drivers who were on the car at that moment; it is on the fine at once and the
+   * office is told (and can still change it). Once a fine has a driver, only the office changes it.
+   */
+  app.post("/api/portal/fines/:id/driver", requirePortalUser, requireFeature("canViewFines"), requirePortalRole("admin"), async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const ctx = ctxOf(req);
+    const parsed = z.object({ driverId: z.number().int().positive() }).safeParse(req.body);
+    if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "driverId is required");
+    const fine = await finesStorage.getFineForCustomer(id, ctx.customerId, ctx.scope);
+    if (!fine) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Fine not found");
+    if (fine.driverId) return portalError(res, 409, PORTAL_ERROR.VALIDATION, "This fine already has a driver; please contact us to change it");
+    const options = await driverOptionsFor(fine);
+    const chosen = options.find((d) => d.id === parsed.data.driverId);
+    if (!chosen) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "This driver was not on the car at that moment");
+    await finesStorage.updateFine(id, { driverId: chosen.id, updatedBy: `portaal:${ctx.user.email}` });
+    await logPortalActivity(req, "fine_driver_set", { entity: "fine", entityId: id, details: { driverId: chosen.id } });
+    await AuditLogger.log({
+      username: `portaal:${ctx.user.email}`, action: "portal.fine_driver_set", resourceType: "fine", resourceId: String(id),
+      details: { customerId: ctx.customerId, reservationId: fine.reservationId, driverId: chosen.id, driverName: chosen.displayName }, ipAddress: req.ip, userAgent: req.get("user-agent") ?? undefined,
+    }).catch((e: Error) => console.error("portal fine driver audit failed:", e.message));
+    await notifyStaffOfPortalEvent({
+      kind: "portal_fine_driver", title: `Bestuurder bij bekeuring ${fine.licensePlate}: ${chosen.displayName}`,
+      description: `${ctx.user.fullName} geeft aan dat ${chosen.displayName} reed (${fine.description}). De auto had meerdere bestuurders.`.slice(0, 200),
+      link: "/fines", customerId: ctx.customerId,
+    });
+    const updated = await finesStorage.getFineForCustomer(id, ctx.customerId, ctx.scope);
+    res.json((await withDriverOptions(req, [updated!]))[0]);
   });
 
   app.get("/api/portal/fines/:id/letter", requirePortalUser, requireFeature("canViewFines"), async (req, res) => {

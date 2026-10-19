@@ -1833,6 +1833,8 @@ async function runMigrations() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS rda_reservation_from_idx ON reservation_driver_assignments (reservation_id, assigned_from)`);
+    // Extra drivers on one car (Kees, 2026-10-18).
+    await addColumnIfNotExists('reservation_driver_assignments', 'is_extra', 'BOOLEAN NOT NULL DEFAULT false');
 
     await createTableIfNotExists('portal_activity_log', `
       CREATE TABLE portal_activity_log (

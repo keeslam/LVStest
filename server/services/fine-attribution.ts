@@ -55,20 +55,35 @@ export async function findCandidates(licensePlate: string, offenceAt: Date): Pro
   return { covering, near };
 }
 
-/** Driver of a reservation at a moment, from the assignment history (fallback: reservations.driver_id). */
-export async function driverAt(reservationId: number, at: Date): Promise<number | null> {
-  const [row] = await db.select({ driverId: reservationDriverAssignments.driverId })
+/**
+ * Everyone assigned to the reservation at that moment, main and extra drivers. A reservation from
+ * before the history was kept has no main row; its reservations.driver_id stands in for the main driver.
+ */
+export async function driversAt(reservationId: number, at: Date): Promise<number[]> {
+  const rows = await db.select({ driverId: reservationDriverAssignments.driverId, isExtra: reservationDriverAssignments.isExtra })
     .from(reservationDriverAssignments)
     .where(and(
       eq(reservationDriverAssignments.reservationId, reservationId),
       lte(reservationDriverAssignments.assignedFrom, at),
       or(isNull(reservationDriverAssignments.assignedUntil), sql`${reservationDriverAssignments.assignedUntil} > ${at}`),
     ))
-    .orderBy(asc(reservationDriverAssignments.assignedFrom))
-    .limit(1);
-  if (row) return row.driverId;
-  const [res] = await db.select({ driverId: reservations.driverId }).from(reservations).where(eq(reservations.id, reservationId));
-  return res?.driverId ?? null;
+    .orderBy(asc(reservationDriverAssignments.assignedFrom));
+  const ids = rows.map((r) => r.driverId);
+  if (!rows.some((r) => !r.isExtra)) {
+    const [res] = await db.select({ driverId: reservations.driverId }).from(reservations).where(eq(reservations.id, reservationId));
+    ids.unshift(res?.driverId ?? null);
+  }
+  return Array.from(new Set(ids.filter((id): id is number => id != null)));
+}
+
+/**
+ * Driver of a reservation at a moment, from the assignment history (fallback: reservations.driver_id).
+ * Kees, 2026-10-18: when several drivers shared the car at that moment there is no one to name, so
+ * the fine stays without a driver and the customer says who drove.
+ */
+export async function driverAt(reservationId: number, at: Date): Promise<number | null> {
+  const ids = await driversAt(reservationId, at);
+  return ids.length === 1 ? ids[0] : null;
 }
 
 /** Links automatically when exactly one reservation covers the moment; otherwise leaves the fine `new`. */

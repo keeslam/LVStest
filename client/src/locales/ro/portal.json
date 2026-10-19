@@ -691,7 +691,10 @@
         "colleague_blocked": "Coleg blocat",
         "colleague_unblocked": "Coleg permis din nou",
         "colleague_invite_resent": "Invitație coleg retrimisă",
-        "sessions_signed_out": "Alte dispozitive deconectate"
+        "sessions_signed_out": "Alte dispozitive deconectate",
+        "extra_driver_added": "Șofer suplimentar adăugat",
+        "extra_driver_removed": "Șofer suplimentar eliminat",
+        "fine_driver_set": "Șoferul unei amenzi indicat"
       },
       "detailKeys": {
         "by": "de către",
@@ -1274,7 +1277,14 @@
     "openSummary_few": "{{count}} amenzi, în total {{amount}}. Refacturarea către șoferul dumneavoastră rămâne în sarcina dumneavoastră.",
     "openSummary_other": "{{count}} de amenzi, în total {{amount}}. Refacturarea către șoferul dumneavoastră rămâne în sarcina dumneavoastră.",
     "noneOpen": "Nu există amenzi.",
-    "subtitle": "Amenzi procesate pe numele firmei dumneavoastră. Refacturarea către șoferul dumneavoastră rămâne în sarcina dumneavoastră."
+    "subtitle": "Amenzi procesate pe numele firmei dumneavoastră. Refacturarea către șoferul dumneavoastră rămâne în sarcina dumneavoastră.",
+    "whoDrove": {
+      "badge": "Cine conducea?",
+      "explain": "În acel moment mai mulți șoferi foloseau acest vehicul. Indicați cine conducea; Lam Groep primește o notificare.",
+      "label": "Alegeți șoferul",
+      "save": "Salvați",
+      "saved": "Șofer salvat"
+    }
   },
   "requests": {
     "title": "Solicitări",
@@ -1736,5 +1746,14 @@
     "cancel": "Renunță",
     "sent": "Document trimis către Lam Groep",
     "wrongType": "Doar PDF, JPG sau PNG."
+  },
+  "extraDrivers": {
+    "title": "Șoferi suplimentari",
+    "addButton": "Adaugă șofer suplimentar",
+    "add": "Adaugă",
+    "remove": "Elimină {{name}} ca șofer suplimentar",
+    "added": "Șofer suplimentar adăugat",
+    "removed": "Șofer suplimentar eliminat",
+    "hint": "Mai multe persoane conduc acest vehicul. Contractul îl menționează doar pe șoferul principal. O amendă rămâne fără șofer; indicați dumneavoastră cine conducea."
   }
 }

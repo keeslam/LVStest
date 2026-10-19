@@ -1262,5 +1262,9 @@
       "failedTitle": "Could not change the vehicle"
     }
   },
-  "customerUpload": "Customer upload"
+  "customerUpload": "Customer upload",
+  "extraDrivers": {
+    "label": "Extra drivers (via portal)",
+    "hint": "Added by the customer. The contract names the main driver only."
+  }
 }

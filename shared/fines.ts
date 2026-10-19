@@ -61,6 +61,11 @@ export interface PortalFineDto {
   status: FineStatusValue;
   customerNote: string | null;
   driver: { id: number; displayName: string } | null;
+  /**
+   * Admin accounts only, when the fine has no driver because several drivers shared the car at that
+   * moment: who the customer can choose from (Kees, 2026-10-18).
+   */
+  driverOptions?: Array<{ id: number; displayName: string }>;
   reservationId: number | null;
   hasLetter: boolean;
   createdAt: string;

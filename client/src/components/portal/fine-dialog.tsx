@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { formatLicensePlate } from "@/lib/format-utils";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useFilePreview } from "@/components/documents/use-file-preview";
 import type { PortalFineDto } from "@shared/fines";
-import { portalQueryFn } from "@/lib/portal-api";
+import { PortalApiError, portalFetch, portalQueryFn } from "@/lib/portal-api";
+import { useToast } from "@/hooks/use-toast";
 import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -20,6 +22,15 @@ export function FineDialog({ id, onClose }: { id: number | null; onClose: () => 
   const { me } = usePortalAuth();
   const { openNewRequest } = usePortalDialogs();
   const { data: f, isLoading, isError } = useQuery<PortalFineDto>({ queryKey: ["portal", `/api/portal/fines/${id}`], queryFn: portalQueryFn, enabled: id !== null });
+  // Kees, 2026-10-18: several drivers shared the car, so the admin says who drove.
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [who, setWho] = useState("");
+  const setDriver = useMutation({
+    mutationFn: () => portalFetch<PortalFineDto>("POST", `/api/portal/fines/${id}/driver`, { driverId: Number(who) }),
+    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ["portal"] }); toast({ title: t("fines.whoDrove.saved") }); setWho(""); },
+    onError: (e) => toast({ title: t(`errors.${e instanceof PortalApiError ? e.code : "PORTAL_SERVER_ERROR"}`, { defaultValue: (e as Error).message }), variant: "destructive" }),
+  });
 
   return (<>
     <Dialog open={id !== null} onOpenChange={(o) => !o && onClose()}>
@@ -41,6 +52,18 @@ export function FineDialog({ id, onClose }: { id: number | null; onClose: () => 
               <DetailRow label={t("fines.fields.amount")} value={formatPortalCurrency(f.amount)} />
               <DetailRow label={t("fines.fields.note")} value={f.customerNote} />
             </dl>
+            {!f.driver && (f.driverOptions?.length ?? 0) > 0 && (
+              <div className="space-y-2 rounded-md border border-[#f4d7a8] bg-[#faeeda] p-3 text-sm text-[#633806]" data-testid="fine-who-drove">
+                <p>{t("fines.whoDrove.explain")}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <select className="min-w-[12rem] rounded-md border bg-white px-2 py-1.5 text-sm text-[#0f172a]" value={who} onChange={(e) => setWho(e.target.value)} aria-label={t("fines.whoDrove.label")} data-testid="select-fine-driver">
+                    <option value="">{t("fines.whoDrove.label")}</option>
+                    {f.driverOptions!.map((d) => <option key={d.id} value={d.id}>{d.displayName}</option>)}
+                  </select>
+                  <Button size="sm" className={btnPrimary} onClick={() => setDriver.mutate()} disabled={!who || setDriver.isPending} data-testid="button-save-fine-driver">{t("fines.whoDrove.save")}</Button>
+                </div>
+              </div>
+            )}
             <div className="flex flex-wrap gap-2">
               {f.hasLetter && <Button size="sm" variant="outline" onClick={() => preview.open(`/api/portal/fines/${f.id}/letter`, t("fines.letter"))} data-testid="button-fine-letter">{t("fines.letter")}</Button>}
               {me?.settings.canSubmitRequests && <Button size="sm" className={btnPrimary} onClick={() => openNewRequest({ type: "fine_question", fineId: f.id })} data-testid="button-fine-ask">{t("fines.ask")}</Button>}

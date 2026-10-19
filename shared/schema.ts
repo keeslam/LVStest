@@ -728,9 +728,13 @@ export const updatePortalCustomerSettingsSchema = insertPortalCustomerSettingsSc
 export type PortalCustomerSettings = typeof portalCustomerSettings.$inferSelect;
 export type InsertPortalCustomerSettings = z.infer<typeof insertPortalCustomerSettingsSchema>;
 
-// Who was the driver of a reservation, and when. Exactly one open row
-// (assigned_until IS NULL) per reservation. Part 3 (fines) answers
-// "who drove plate X at time T" from this table.
+// Who was the driver of a reservation, and when. Exactly one open main row
+// (assigned_until IS NULL, is_extra false) per reservation: the driver that
+// reservations.driver_id mirrors. Since 2026-10-18 (Kees) a car can also have
+// extra drivers at the same time, each an open row with is_extra true; the
+// contract keeps naming the main driver only. Part 3 (fines) answers "who drove
+// plate X at time T" from this table: one driver at that moment, or nobody when
+// several shared the car (the customer then says who drove).
 export const reservationDriverAssignments = pgTable("reservation_driver_assignments", {
   id: serial("id").primaryKey(),
   reservationId: integer("reservation_id").notNull().references(() => reservations.id, { onDelete: "cascade" }),
@@ -740,6 +744,7 @@ export const reservationDriverAssignments = pgTable("reservation_driver_assignme
   assignedByPortalUserId: integer("assigned_by_portal_user_id").references(() => portalUsers.id, { onDelete: "set null" }),
   assignedByUserId: integer("assigned_by_user_id").references(() => users.id, { onDelete: "set null" }),
   note: text("note"),
+  isExtra: boolean("is_extra").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
   reservationFromIdx: index("rda_reservation_from_idx").on(table.reservationId, table.assignedFrom),

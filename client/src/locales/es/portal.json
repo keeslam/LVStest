@@ -691,7 +691,10 @@
         "colleague_blocked": "Compañero bloqueado",
         "colleague_unblocked": "Compañero permitido de nuevo",
         "colleague_invite_resent": "Invitación de compañero reenviada",
-        "sessions_signed_out": "Sesión cerrada en otros dispositivos"
+        "sessions_signed_out": "Sesión cerrada en otros dispositivos",
+        "extra_driver_added": "Conductor adicional añadido",
+        "extra_driver_removed": "Conductor adicional quitado",
+        "fine_driver_set": "Conductor de una multa indicado"
       },
       "detailKeys": {
         "by": "por",
@@ -1274,7 +1277,14 @@
     "openSummary_many": "{{count}} de multas, {{amount}} en total. Usted se encarga de repercutirlas a su conductor.",
     "openSummary_other": "{{count}} multas, {{amount}} en total. Usted se encarga de repercutirlas a su conductor.",
     "noneOpen": "No hay multas.",
-    "subtitle": "Multas tramitadas a nombre de su empresa. Usted se encarga de repercutirlas a su conductor."
+    "subtitle": "Multas tramitadas a nombre de su empresa. Usted se encarga de repercutirlas a su conductor.",
+    "whoDrove": {
+      "badge": "¿Quién conducía?",
+      "explain": "En ese momento varios conductores usaban este vehículo. Indique quién conducía; Lam Groep recibe un aviso.",
+      "label": "Elija el conductor",
+      "save": "Guardar",
+      "saved": "Conductor guardado"
+    }
   },
   "requests": {
     "title": "Solicitudes",
@@ -1736,5 +1746,14 @@
     "cancel": "Cancelar",
     "sent": "Documento enviado a Lam Groep",
     "wrongType": "Solo PDF, JPG o PNG."
+  },
+  "extraDrivers": {
+    "title": "Conductores adicionales",
+    "addButton": "Añadir conductor adicional",
+    "add": "Añadir",
+    "remove": "Quitar a {{name}} como conductor adicional",
+    "added": "Conductor adicional añadido",
+    "removed": "Conductor adicional quitado",
+    "hint": "Varias personas conducen este vehículo. El contrato solo nombra al conductor principal. Una multa no tendrá conductor; usted indica quién conducía."
   }
 }

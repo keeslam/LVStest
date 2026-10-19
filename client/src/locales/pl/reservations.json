@@ -1286,5 +1286,9 @@
       "failedTitle": "Nie udało się zmienić pojazdu"
     }
   },
-  "customerUpload": "Plik klienta"
+  "customerUpload": "Plik klienta",
+  "extraDrivers": {
+    "label": "Dodatkowi kierowcy (przez portal)",
+    "hint": "Dodani przez klienta. Umowa wymienia tylko głównego kierowcę."
+  }
 }

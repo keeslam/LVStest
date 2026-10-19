@@ -691,7 +691,10 @@
         "colleague_blocked": "Colega bloqueado",
         "colleague_unblocked": "Colega permitido novamente",
         "colleague_invite_resent": "Convite de colega reenviado",
-        "sessions_signed_out": "Sessão terminada noutros dispositivos"
+        "sessions_signed_out": "Sessão terminada noutros dispositivos",
+        "extra_driver_added": "Condutor adicional adicionado",
+        "extra_driver_removed": "Condutor adicional removido",
+        "fine_driver_set": "Condutor de uma coima indicado"
       },
       "detailKeys": {
         "by": "por",
@@ -1274,7 +1277,14 @@
     "openSummary_many": "{{count}} multas, no total {{amount}}. A cobrança ao seu condutor fica ao seu cuidado.",
     "openSummary_other": "{{count}} multas, no total {{amount}}. A cobrança ao seu condutor fica ao seu cuidado.",
     "noneOpen": "Sem multas.",
-    "subtitle": "Multas processadas em nome da sua empresa. A cobrança ao seu condutor fica ao seu cuidado."
+    "subtitle": "Multas processadas em nome da sua empresa. A cobrança ao seu condutor fica ao seu cuidado.",
+    "whoDrove": {
+      "badge": "Quem conduzia?",
+      "explain": "Nesse momento vários condutores usavam este veículo. Indique quem conduzia; a Lam Groep é notificada.",
+      "label": "Escolha o condutor",
+      "save": "Guardar",
+      "saved": "Condutor guardado"
+    }
   },
   "requests": {
     "title": "Pedidos",
@@ -1736,5 +1746,14 @@
     "cancel": "Cancelar",
     "sent": "Documento enviado para a Lam Groep",
     "wrongType": "Apenas PDF, JPG ou PNG."
+  },
+  "extraDrivers": {
+    "title": "Condutores adicionais",
+    "addButton": "Adicionar condutor adicional",
+    "add": "Adicionar",
+    "remove": "Remover {{name}} como condutor adicional",
+    "added": "Condutor adicional adicionado",
+    "removed": "Condutor adicional removido",
+    "hint": "Várias pessoas conduzem este veículo. O contrato indica apenas o condutor principal. Uma coima fica sem condutor; indica quem conduzia."
   }
 }

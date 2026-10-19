@@ -1274,5 +1274,9 @@
       "failedTitle": "Schimbarea vehiculului a eșuat"
     }
   },
-  "customerUpload": "Încărcare client"
+  "customerUpload": "Încărcare client",
+  "extraDrivers": {
+    "label": "Șoferi suplimentari (prin portal)",
+    "hint": "Adăugați de client. Contractul îl menționează doar pe șoferul principal."
+  }
 }

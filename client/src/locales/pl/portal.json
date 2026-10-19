@@ -698,7 +698,10 @@
         "colleague_blocked": "Zablokowano współpracownika",
         "colleague_unblocked": "Odblokowano współpracownika",
         "colleague_invite_resent": "Ponownie wysłano zaproszenie współpracownika",
-        "sessions_signed_out": "Wylogowano inne urządzenia"
+        "sessions_signed_out": "Wylogowano inne urządzenia",
+        "extra_driver_added": "Dodano dodatkowego kierowcę",
+        "extra_driver_removed": "Usunięto dodatkowego kierowcę",
+        "fine_driver_set": "Wskazano kierowcę mandatu"
       },
       "detailKeys": {
         "by": "przez",
@@ -1284,7 +1287,14 @@
     "openSummary_many": "{{count}} mandatów, łącznie {{amount}}. Przeniesieniem kosztów na kierowcę zajmują się Państwo samodzielnie.",
     "openSummary_other": "{{count}} mandatu, łącznie {{amount}}. Przeniesieniem kosztów na kierowcę zajmują się Państwo samodzielnie.",
     "noneOpen": "Brak mandatów.",
-    "subtitle": "Mandaty przetworzone na nazwę Państwa firmy. Przeniesieniem kosztów na kierowcę zajmują się Państwo samodzielnie."
+    "subtitle": "Mandaty przetworzone na nazwę Państwa firmy. Przeniesieniem kosztów na kierowcę zajmują się Państwo samodzielnie.",
+    "whoDrove": {
+      "badge": "Kto prowadził?",
+      "explain": "W tym momencie z pojazdu korzystało kilku kierowców. Wskaż, kto prowadził; Lam Groep otrzyma powiadomienie.",
+      "label": "Wybierz kierowcę",
+      "save": "Zapisz",
+      "saved": "Zapisano kierowcę"
+    }
   },
   "requests": {
     "title": "Wnioski",
@@ -1749,5 +1759,14 @@
     "cancel": "Anuluj",
     "sent": "Dokument wysłany do Lam Groep",
     "wrongType": "Tylko PDF, JPG lub PNG."
+  },
+  "extraDrivers": {
+    "title": "Dodatkowi kierowcy",
+    "addButton": "Dodaj kierowcę",
+    "add": "Dodaj",
+    "remove": "Usuń {{name}} jako dodatkowego kierowcę",
+    "added": "Dodano kierowcę",
+    "removed": "Usunięto kierowcę",
+    "hint": "Tym pojazdem jeździ kilka osób. Umowa wymienia tylko głównego kierowcę. Mandat nie ma wtedy kierowcy; to Ty wskazujesz, kto prowadził."
   }
 }

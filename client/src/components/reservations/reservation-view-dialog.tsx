@@ -48,6 +48,7 @@ import { ReservationDocumentsDialog } from "@/components/reservations/reservatio
 import { StaleDocumentBadge } from "@/components/documents/stale-document";
 import { ContractSignatureBadge, ContractSignaturesPanel, useReservationSignatures } from "@/components/documents/contract-signatures";
 import { PickupDialog, ReturnDialog } from "@/components/reservations/pickup-return-dialogs";
+import { ExtraDriversNote } from "@/components/reservations/extra-drivers-note";
 
 const DOCUMENT_QUICK_TYPE_KEYS: Record<string, string> = {
   "Contract (Signed)": "contractSigned",
@@ -554,6 +555,8 @@ export function ReservationViewDialog({
                   </div>
                 </div>
               )}
+              {/* Kees, 2026-10-18: drivers the customer added in the portal next to the main driver. */}
+              {reservation.type !== 'maintenance_block' && <ExtraDriversNote reservationId={reservationId} />}
 
               {/* Fiscal mobility check (docs/fiscaal): derived facts, confirmation, latest assessment.
                   A maintenance block is never a rental: it has no usage period, and asking for one

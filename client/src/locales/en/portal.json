@@ -684,7 +684,10 @@
         "colleague_blocked": "Colleague blocked",
         "colleague_unblocked": "Colleague allowed again",
         "colleague_invite_resent": "Colleague invitation sent again",
-        "sessions_signed_out": "Other devices signed out"
+        "sessions_signed_out": "Other devices signed out",
+        "extra_driver_added": "Extra driver added",
+        "extra_driver_removed": "Extra driver removed",
+        "fine_driver_set": "Driver of a fine given"
       },
       "detailKeys": {
         "by": "by",
@@ -1264,7 +1267,14 @@
     "openSummary_one": "{{count}} fine, {{amount}}. Passing it on to the driver is up to you.",
     "openSummary_other": "{{count}} fines, {{amount}} in total. Passing them on to the driver is up to you.",
     "noneOpen": "No fines.",
-    "subtitle": "Fines processed in your company's name. Passing them on to the driver is up to you."
+    "subtitle": "Fines processed in your company's name. Passing them on to the driver is up to you.",
+    "whoDrove": {
+      "badge": "Who drove?",
+      "explain": "Several drivers were on this car at that moment. Please say who drove; Lam Groep is notified.",
+      "label": "Choose the driver",
+      "save": "Save",
+      "saved": "Driver saved"
+    }
   },
   "requests": {
     "title": "Requests",
@@ -1723,5 +1733,14 @@
     "cancel": "Cancel",
     "sent": "Document sent to Lam Groep",
     "wrongType": "Only PDF, JPG or PNG."
+  },
+  "extraDrivers": {
+    "title": "Extra drivers",
+    "addButton": "Add extra driver",
+    "add": "Add",
+    "remove": "Remove {{name}} as extra driver",
+    "added": "Extra driver added",
+    "removed": "Extra driver removed",
+    "hint": "Several people drive this car. The contract names the main driver only. A fine then gets no driver; you say who drove."
   }
 }

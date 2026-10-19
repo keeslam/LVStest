@@ -684,7 +684,10 @@
         "colleague_blocked": "Collega geblokkeerd",
         "colleague_unblocked": "Collega weer toegelaten",
         "colleague_invite_resent": "Uitnodiging collega opnieuw verstuurd",
-        "sessions_signed_out": "Andere apparaten uitgelogd"
+        "sessions_signed_out": "Andere apparaten uitgelogd",
+        "extra_driver_added": "Extra bestuurder toegevoegd",
+        "extra_driver_removed": "Extra bestuurder verwijderd",
+        "fine_driver_set": "Bestuurder bij bekeuring opgegeven"
       },
       "detailKeys": {
         "by": "door",
@@ -1264,7 +1267,14 @@
     "openSummary_one": "{{count}} bekeuring, {{amount}}. Het doorbelasten aan uw bestuurder regelt u zelf.",
     "openSummary_other": "{{count}} bekeuringen, samen {{amount}}. Het doorbelasten aan uw bestuurder regelt u zelf.",
     "noneOpen": "Geen bekeuringen.",
-    "subtitle": "Bekeuringen die op naam van uw bedrijf zijn verwerkt. Het doorbelasten aan uw bestuurder regelt u zelf."
+    "subtitle": "Bekeuringen die op naam van uw bedrijf zijn verwerkt. Het doorbelasten aan uw bestuurder regelt u zelf.",
+    "whoDrove": {
+      "badge": "Wie reed?",
+      "explain": "In deze auto reden op dat moment meerdere bestuurders. Geef aan wie er reed; Lam Groep krijgt een melding.",
+      "label": "Kies de bestuurder",
+      "save": "Opslaan",
+      "saved": "Bestuurder opgeslagen"
+    }
   },
   "requests": {
     "title": "Aanvragen",
@@ -1723,5 +1733,14 @@
     "cancel": "Annuleren",
     "sent": "Document verstuurd naar Lam Groep",
     "wrongType": "Alleen PDF, JPG of PNG."
+  },
+  "extraDrivers": {
+    "title": "Extra bestuurders",
+    "addButton": "Extra bestuurder toevoegen",
+    "add": "Toevoegen",
+    "remove": "{{name}} verwijderen als extra bestuurder",
+    "added": "Extra bestuurder toegevoegd",
+    "removed": "Extra bestuurder verwijderd",
+    "hint": "Meerdere mensen rijden in deze auto. Op het contract staat alleen de hoofdbestuurder. Een bekeuring krijgt dan geen bestuurder; u geeft zelf aan wie reed."
   }
 }

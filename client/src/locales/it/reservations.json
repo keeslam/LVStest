@@ -1274,5 +1274,9 @@
       "failedTitle": "Modifica del veicolo non riuscita"
     }
   },
-  "customerUpload": "Caricamento cliente"
+  "customerUpload": "Caricamento cliente",
+  "extraDrivers": {
+    "label": "Conducenti aggiuntivi (via portale)",
+    "hint": "Aggiunti dal cliente. Il contratto indica solo il conducente principale."
+  }
 }

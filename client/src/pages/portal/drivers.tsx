@@ -24,7 +24,7 @@ const maskLicence = (n: string) => (n.length <= 4 ? n : `•••• ${n.slice(
 
 /** Cars a driver is on right now (booked or running). */
 const carsOf = (reservations: PortalReservationDto[], driverId: number) =>
-  reservations.filter((r) => r.driver?.id === driverId && (r.status === "booked" || r.status === "picked_up"));
+  reservations.filter((r) => (r.driver?.id === driverId || (r.extraDrivers ?? []).some((d) => d.id === driverId)) && (r.status === "booked" || r.status === "picked_up"));
 
 /** The quick filters above the list. */
 type DriverFilter = "active" | "driving" | "noCar" | "inactive";

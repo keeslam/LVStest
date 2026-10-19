@@ -691,7 +691,10 @@
         "colleague_blocked": "Collega bloccato",
         "colleague_unblocked": "Collega riammesso",
         "colleague_invite_resent": "Invito al collega inviato di nuovo",
-        "sessions_signed_out": "Altri dispositivi disconnessi"
+        "sessions_signed_out": "Altri dispositivi disconnessi",
+        "extra_driver_added": "Conducente aggiuntivo aggiunto",
+        "extra_driver_removed": "Conducente aggiuntivo rimosso",
+        "fine_driver_set": "Conducente di una multa indicato"
       },
       "detailKeys": {
         "by": "da",
@@ -1274,7 +1277,14 @@
     "openSummary_many": "{{count}} multe, in totale {{amount}}. L’addebito al Suo conducente è a Suo carico.",
     "openSummary_other": "{{count}} multe, in totale {{amount}}. L’addebito al Suo conducente è a Suo carico.",
     "noneOpen": "Nessuna multa.",
-    "subtitle": "Multe elaborate a nome della Sua azienda. L’addebito al Suo conducente è a Suo carico."
+    "subtitle": "Multe elaborate a nome della Sua azienda. L’addebito al Suo conducente è a Suo carico.",
+    "whoDrove": {
+      "badge": "Chi guidava?",
+      "explain": "In quel momento più conducenti usavano questo veicolo. Indica chi guidava; Lam Groep riceve un avviso.",
+      "label": "Scegli il conducente",
+      "save": "Salva",
+      "saved": "Conducente salvato"
+    }
   },
   "requests": {
     "title": "Richieste",
@@ -1736,5 +1746,14 @@
     "cancel": "Annulla",
     "sent": "Documento inviato a Lam Groep",
     "wrongType": "Solo PDF, JPG o PNG."
+  },
+  "extraDrivers": {
+    "title": "Conducenti aggiuntivi",
+    "addButton": "Aggiungi conducente",
+    "add": "Aggiungi",
+    "remove": "Rimuovi {{name}} come conducente aggiuntivo",
+    "added": "Conducente aggiunto",
+    "removed": "Conducente rimosso",
+    "hint": "Più persone guidano questo veicolo. Il contratto indica solo il conducente principale. Una multa resta senza conducente; indichi tu chi guidava."
   }
 }

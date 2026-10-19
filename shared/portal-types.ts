@@ -124,6 +124,8 @@ export interface PortalReservationDto {
   handover: PortalHandover;
   vehicle: { id: number; licensePlate: string; brand: string; model: string; apkDate: string | null; dailyPrice?: string | null } | null;
   driver: { id: number; displayName: string } | null;
+  /** Other drivers sharing this car right now (Kees, 2026-10-18); the contract names `driver` only. */
+  extraDrivers: Array<{ id: number; displayName: string }>;
   replacementForReservationId: number | null;
   /** Detail view only: service is due (or due soon) on this vehicle. */
   serviceDue?: 'due' | 'soon' | null;

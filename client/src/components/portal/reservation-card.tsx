@@ -45,6 +45,7 @@ export function ReservationCard({ reservation, showPrice }: { reservation: Porta
           <div className="mt-1 flex h-6 items-center gap-x-3 overflow-hidden whitespace-nowrap text-xs text-[#64748b] sm:text-sm">
             <span className="inline-flex shrink-0 items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{formatPortalDate(r.startDate)} – {r.endDate ? formatPortalDate(r.endDate) : t("overview.openEnded")}</span>
             {r.driver && <DriverChip name={r.driver.displayName} className="max-w-[14rem]" />}
+            {(r.extraDrivers?.length ?? 0) > 0 && <span className="shrink-0 rounded-full bg-[#eef0fb] px-1.5 text-[11px] font-medium text-[#1a1d62]" title={r.extraDrivers!.map((d) => d.displayName).join(", ")} data-testid={`extra-drivers-count-${r.id}`}>+{r.extraDrivers!.length}</span>}
             {showPrice && r.totalPrice && <span className="shrink-0">€ {r.totalPrice}</span>}
           </div>
           <div className={`mt-1 flex h-4 items-center gap-3 text-xs font-medium ${overdue ? "text-[#a32d2d]" : "text-[#185fa5]"}`}>

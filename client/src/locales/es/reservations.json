@@ -1274,5 +1274,9 @@
       "failedTitle": "No se ha podido cambiar el vehículo"
     }
   },
-  "customerUpload": "Archivo del cliente"
+  "customerUpload": "Archivo del cliente",
+  "extraDrivers": {
+    "label": "Conductores adicionales (vía portal)",
+    "hint": "Añadidos por el cliente. El contrato solo nombra al conductor principal."
+  }
 }

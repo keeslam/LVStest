@@ -164,7 +164,7 @@ import { bookingWarningsFor, type BookingWarning } from "../shared/booking-warni
 import type { ContractErrorCode } from "../shared/contract-error-codes";
 import { reservationIsOld, verifyAdminPassword, authorizeMileageDecrease } from "./services/authorization";
 import { isLatestReturnForVehicle } from "./services/reservation-mileage-sync";
-import { assignDriverToReservation } from "./services/driver-assignments";
+import { assignDriverToReservation, listExtraDrivers } from "./services/driver-assignments";
 import { getServiceDueVehicles, scanVehiclesForServiceDue } from "./utils/service-due-scanner";
 import { registerUserRoutes } from "./routes/users";
 import { registerAuditEventRoutes } from "./routes/audit-events";
@@ -4379,6 +4379,13 @@ export async function registerRoutes(app: Express): Promise<void> {
    * can ask per item whether it goes too (the dialog itself is OPT-028,
    * phase 34). Cancelling used to touch none of it (BUG-112).
    */
+  // Extra drivers the customer put on this car in the portal (Kees, 2026-10-18); the main driver stays reservations.driver_id.
+  app.get("/api/reservations/:id/extra-drivers", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid id" });
+    res.json((await listExtraDrivers([id])).get(id) ?? []);
+  });
+
   app.get("/api/reservations/:id/cancel-impact", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ message: "Invalid id" });
