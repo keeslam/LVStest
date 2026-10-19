@@ -980,7 +980,7 @@ async function convertTimestampsToTimestamptz(manifest) {
     return;
   }
 
-  console.log(`B-22: converting ${pending.length} column(s) to timestamptz, reading existing values as ${ASSUMED_TIMESTAMP_ZONE}...`);
+  console.log(`B-22: converting ${pending.length} column(s) to timestamptz, reading existing values as ${ASSUMED_TIMESTAMP_ZONE} (values with whole milliseconds, written by the app, as UTC)...`);
   let converted = 0;
   for (const column of pending) {
     await db.execute(sql.raw(

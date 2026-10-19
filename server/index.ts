@@ -18,6 +18,7 @@ import { backfillUsagePeriods, reconcileUsagePeriods } from "./services/fiscal/u
 import { startCjibScheduler } from "./services/cjib/poller";
 import { loadOfficeTimeZone } from "./services/office-time";
 import { loadCompanyName } from "./services/company-name";
+import { runOneOffCleanups } from "./services/one-off-cleanups";
 import { startInvoiceInboxScheduler, stopInvoiceInboxScheduler } from "./services/invoice-inbox/poller";
 import { registerPortalRoutes } from "./routes/portal";
 import { getUploadsDir as getPortalUploadsDir } from "../shared/paths";
@@ -504,6 +505,9 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 await loadOfficeTimeZone();
 // D15: and the company name that every mail carries.
 await loadCompanyName();
+// Kees, 2026-10-19: one-off data cleanups, only when their CLEANUP_* flag says apply; before any
+// scheduler starts, so nothing else writes these rows meanwhile. See server/services/one-off-cleanups.ts.
+await runOneOffCleanups().catch((e) => console.error("one-off cleanups:", e));
 
 // Initialize backup scheduler
 backupScheduler = new BackupScheduler();
