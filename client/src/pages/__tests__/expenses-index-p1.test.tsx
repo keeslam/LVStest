@@ -6,6 +6,11 @@
  *
  * The fetch mock answers GET /api/expenses the way the server does: it applies
  * vehicleId, from, to and category from the query string.
+ *
+ * 2026-10-19: since the rebuild of 74f066eb the page asks /api/expenses/facets
+ * (picker choices), /api/expenses/summary (count, sum and the categories) and
+ * pages /api/expenses; the stub answers all three like the server
+ * (shared/expense-list.ts), and the rows are read from the table view.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, within, waitFor } from "@testing-library/react";
@@ -46,7 +51,31 @@ function serverAnswer(url: string) {
     (!params.get("vehicleId") || e.vehicleId === Number(params.get("vehicleId")))
     && (!params.get("category") || e.category === params.get("category"))
     && (!params.get("from") || e.date >= params.get("from")!)
-    && (!params.get("to") || e.date <= params.get("to")!));
+    && (!params.get("to") || e.date <= params.get("to")!))
+    // The server answers newest first by default (sort=date, dir=desc).
+    .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+}
+const cents = (rows: typeof EXPENSES) => rows.reduce((sum, e) => sum + Math.round(Number(e.amount) * 100), 0);
+
+/** GET /api/expenses/summary: the selection's count and sum, and per category its count, sum and newest rows. */
+function summaryAnswer(url: string) {
+  const rows = serverAnswer(url);
+  const groups = new Map<string, typeof EXPENSES>();
+  for (const e of rows) groups.set(e.category, [...(groups.get(e.category) ?? []), e]);
+  const byCategory = Array.from(groups.entries())
+    .map(([category, items]) => ({ category, count: items.length, amount: cents(items) / 100, recent: items.slice(0, 5) }))
+    .sort((a, b) => b.amount - a.amount);
+  return { total: rows.length, totalAmount: cents(rows) / 100, byCategory };
+}
+
+/** GET /api/expenses: a page with page/pageSize, the whole selection without (as the CSV export asks). */
+function listAnswer(url: string) {
+  const params = new URL(url, "http://localhost").searchParams;
+  const rows = serverAnswer(url);
+  if (!params.has("page") && !params.has("pageSize")) return rows;
+  const page = Number(params.get("page") ?? "1");
+  const pageSize = Number(params.get("pageSize") ?? "50");
+  return { rows: rows.slice((page - 1) * pageSize, page * pageSize), total: rows.length, totalAmount: cents(rows) / 100, page, pageSize };
 }
 
 beforeEach(() => {
@@ -57,11 +86,20 @@ beforeEach(() => {
     const url = typeof input === "string" ? input : (input as Request).url;
     calls.push(url);
     if (url.includes("/api/expenses/inbox/status")) return json({ enabled: false, running: false, lastRun: null, scheduledMinutes: null, reviewCount: 0, geminiConfigured: false });
-    if (/\/api\/expenses(\?|$)/.test(url)) return json(serverAnswer(url));
+    if (url.includes("/api/expenses/facets")) return json({ vehicles: [VAN, CAR], categories: ["fuel", "parking", "toll"] });
+    if (url.includes("/api/expenses/summary")) return json(summaryAnswer(url));
+    if (/\/api\/expenses(\?|$)/.test(url)) return json(listAnswer(url));
     return json([]);
   }));
 });
 afterEach(() => vi.unstubAllGlobals());
+
+/** Mounts the page and switches to the table view, where every row of the selection is listed. */
+async function mountTable() {
+  const view = mount();
+  await userEvent.click(await screen.findByTestId("button-view-table"));
+  return view;
+}
 
 function mount() {
   const client = new QueryClient({
@@ -84,13 +122,14 @@ const total = () => screen.getByTestId("expense-total").textContent;
 
 describe("Kosten page (A-9-8)", () => {
   it("lists every expense, newest first, with Dutch category labels and one total", async () => {
-    mount();
+    await mountTable();
     await waitFor(() => expect(rowIds()).toHaveLength(4));
     expect(rowIds()).toEqual(["row-expense-13", "row-expense-12", "row-expense-11", "row-expense-10"]);
     const first = screen.getByTestId("row-expense-13");
     expect(first).toHaveTextContent("Parkeren");
     expect(first).toHaveTextContent("XY-99-ZZ");
-    expect(first).toHaveTextContent("8 okt. 2026");
+    // The table (rebuilt 2026-10-16) writes the short date on one line.
+    expect(first).toHaveTextContent("08-10-2026");
     expect(first).toHaveTextContent("€ 7,25");
     expect(total()).toMatch(/109,75/);
     // One summary row per category key: fuel is one row, not two.
@@ -101,7 +140,7 @@ describe("Kosten page (A-9-8)", () => {
 
   it("narrows the rows and the total by category", async () => {
     const user = userEvent.setup();
-    mount();
+    await mountTable();
     await waitFor(() => expect(rowIds()).toHaveLength(4));
 
     await user.click(screen.getByRole("combobox", { name: "Categorie" }));
@@ -114,7 +153,7 @@ describe("Kosten page (A-9-8)", () => {
 
   it("narrows by period (from and to, inclusive)", async () => {
     const user = userEvent.setup();
-    mount();
+    await mountTable();
     await waitFor(() => expect(rowIds()).toHaveLength(4));
 
     await user.type(screen.getByLabelText("Van"), "2026-09-20");
@@ -126,7 +165,7 @@ describe("Kosten page (A-9-8)", () => {
 
   it("narrows by vehicle, found by its plate with or without dashes", async () => {
     const user = userEvent.setup();
-    mount();
+    await mountTable();
     await waitFor(() => expect(rowIds()).toHaveLength(4));
 
     await user.click(screen.getByRole("button", { name: "Alle voertuigen" }));
@@ -142,7 +181,7 @@ describe("Kosten page (A-9-8)", () => {
 
   it("clears every filter again", async () => {
     const user = userEvent.setup();
-    mount();
+    await mountTable();
     await waitFor(() => expect(rowIds()).toHaveLength(4));
     await user.type(screen.getByLabelText("Van"), "2026-10-01");
     await waitFor(() => expect(rowIds()).toHaveLength(2));
@@ -153,7 +192,7 @@ describe("Kosten page (A-9-8)", () => {
 
   it("exports exactly the shown selection with the shared CSV writer, in Dutch formats", async () => {
     const user = userEvent.setup();
-    mount();
+    await mountTable();
     await waitFor(() => expect(rowIds()).toHaveLength(4));
     await user.type(screen.getByLabelText("Van"), "2026-10-01");
     await waitFor(() => expect(rowIds()).toHaveLength(2));
@@ -170,14 +209,14 @@ describe("Kosten page (A-9-8)", () => {
   });
 
   it("asks for no vehicle list: a profile with manage_expenses only gets no request it would be refused", async () => {
-    mount();
+    await mountTable();
     await waitFor(() => expect(rowIds()).toHaveLength(4));
     expect(calls.some((u) => u.includes("/api/vehicles"))).toBe(false);
   });
 
   it("hides the CSV export for a profile that may not see prices", async () => {
     authUser.current = { ...authUser.current, hidePrices: true };
-    mount();
+    await mountTable();
     await waitFor(() => expect(rowIds()).toHaveLength(4));
     expect(screen.queryByTestId("button-export-expenses")).not.toBeInTheDocument();
   });
