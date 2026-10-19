@@ -109,7 +109,7 @@ describe("several drivers on one car", () => {
     expect(ok.status).toBe(200);
     expect(ok.body.driver).toMatchObject({ id: piet });
     expect((await finesStorage.getFine(fine.id))?.driverId).toBe(piet);
-    expect(notifyStaffOfPortalEvent).toHaveBeenCalledWith(expect.objectContaining({ kind: "portal_fine_driver" }));
+    expect(notifyStaffOfPortalEvent).toHaveBeenCalledWith(expect.objectContaining({ kind: "portal_fine_driver", link: `/fines?bekeuring=${fine.id}` }));
     // Once named, only the office changes it.
     expect((await set(jan)).status).toBe(409);
     // Now Piet's own account sees the fine.

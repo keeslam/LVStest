@@ -577,7 +577,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     await notifyStaffOfPortalEvent({
       kind: "portal_fine_driver", title: `Bestuurder bij bekeuring ${fine.licensePlate}: ${chosen.displayName}`,
       description: `${ctx.user.fullName} geeft aan dat ${chosen.displayName} reed (${fine.description}). De auto had meerdere bestuurders.`.slice(0, 200),
-      link: "/fines", customerId: ctx.customerId,
+      link: `/fines?bekeuring=${id}`, customerId: ctx.customerId,
     });
     const updated = await finesStorage.getFineForCustomer(id, ctx.customerId, ctx.scope);
     res.json((await withDriverOptions(req, [updated!]))[0]);
