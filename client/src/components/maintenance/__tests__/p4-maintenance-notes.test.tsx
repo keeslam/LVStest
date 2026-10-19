@@ -92,7 +92,8 @@ describe("the maintenance overview shows the type translated", () => {
     });
     client.setQueryData(["/api/vehicles/apk-expiring"], []);
     client.setQueryData(["/api/vehicles/warranty-expiring"], []);
-    client.setQueryData(["/api/reservations"], BLOCKS);
+    // BUG-205 phase B: the list asks for the maintenance blocks only.
+    client.setQueryData(["/api/reservations", { type: "maintenance_block" }], BLOCKS);
     client.setQueryData(["/api/placeholder-reservations/needing-assignment"], []);
     const user = userEvent.setup();
     render(

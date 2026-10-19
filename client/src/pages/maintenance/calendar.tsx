@@ -353,8 +353,9 @@ export default function MaintenanceCalendar() {
   });
 
   // Fetch scheduled maintenance blocks (reservations with type maintenance_block)
+  // BUG-205 phase B (2026-10-19): only the rows this screen needs, filtered by the server.
   const { data: maintenanceBlocks = [] } = useQuery<Reservation[]>({
-    queryKey: ['/api/reservations'],
+    queryKey: ['/api/reservations', { type: 'maintenance_block', excludeMaintenanceStatus: 'out' }],
     enabled: canViewReservations,
     select: (reservations: Reservation[]) =>
       reservations.filter(r => r.type === 'maintenance_block' && r.maintenanceStatus !== 'out') // Exclude completed maintenance
@@ -388,7 +389,7 @@ export default function MaintenanceCalendar() {
 
   // Fetch completed maintenance blocks separately
   const { data: completedMaintenanceBlocks = [] } = useQuery<Reservation[]>({
-    queryKey: ['/api/reservations'],
+    queryKey: ['/api/reservations', { type: 'maintenance_block', maintenanceStatus: 'out' }],
     enabled: canViewReservations,
     select: (reservations: Reservation[]) =>
       reservations.filter(r => r.type === 'maintenance_block' && r.maintenanceStatus === 'out') // Only completed maintenance
@@ -1301,7 +1302,7 @@ export default function MaintenanceCalendar() {
                                               onClick={async (e) => {
                                                 e.stopPropagation();
                                                 try {
-                                                  const response = await fetch('/api/reservations');
+                                                  const response = await fetch(`/api/reservations?type=maintenance_block&vehicleId=${event.vehicleId}&from=${event.date}&to=${event.date}`);
                                                   const allReservations = await response.json();
                                                   const actualReservation = allReservations.find((r: any) =>
                                                     r.vehicleId === event.vehicleId &&
@@ -1374,7 +1375,7 @@ export default function MaintenanceCalendar() {
                                               variant="outline"
                                               onClick={async () => {
                                                 try {
-                                                  const response = await fetch('/api/reservations');
+                                                  const response = await fetch(`/api/reservations?type=maintenance_block&vehicleId=${event.vehicleId}&from=${event.date}&to=${event.date}`);
                                                   const allReservations = await response.json();
                                                   const actualReservation = allReservations.find((r: any) =>
                                                     r.vehicleId === event.vehicleId &&
@@ -1534,7 +1535,7 @@ export default function MaintenanceCalendar() {
                                   className="bg-green-600 hover:bg-green-700"
                                   onClick={async () => {
                                     try {
-                                      const response = await fetch('/api/reservations');
+                                      const response = await fetch(`/api/reservations?type=maintenance_block&vehicleId=${event.vehicleId}&from=${event.date}&to=${event.date}`);
                                       const allReservations = await response.json();
                                       const actualReservation = allReservations.find((r: any) =>
                                         r.vehicleId === event.vehicleId &&
@@ -1592,7 +1593,7 @@ export default function MaintenanceCalendar() {
                                   variant="outline"
                                   onClick={async () => {
                                     try {
-                                      const response = await fetch('/api/reservations');
+                                      const response = await fetch(`/api/reservations?type=maintenance_block&vehicleId=${event.vehicleId}&from=${event.date}&to=${event.date}`);
                                       const allReservations = await response.json();
                                       const actualReservation = allReservations.find((r: any) =>
                                         r.vehicleId === event.vehicleId &&

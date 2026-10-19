@@ -44,7 +44,8 @@ beforeEach(() => {
   fetchMock = vi.fn(async (input: unknown, init?: RequestInit) => {
     const path = pathOf(input);
     if (init?.method === "PATCH") return json({ ...FINISHED_BLOCK, status: "picked_up", maintenanceStatus: "in" });
-    if (path === "/api/reservations") return json([FINISHED_BLOCK]);
+    // BUG-205 phase B: the finished blocks come from /api/reservations?type=maintenance_block&maintenanceStatus=out.
+    if (path.split("?")[0] === "/api/reservations") return json([FINISHED_BLOCK]);
     return json([]);
   });
   vi.stubGlobal("fetch", fetchMock);

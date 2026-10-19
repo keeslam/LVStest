@@ -150,7 +150,8 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
       customer?: { id: number; name: string; firstName?: string; lastName?: string };
     })[]
   >({
-    queryKey: ["/api/reservations"],
+    // BUG-205 phase B (2026-10-19): only the rows this screen needs, filtered by the server.
+    queryKey: ["/api/reservations", { type: "maintenance_block" }],
     enabled: open,
   });
 

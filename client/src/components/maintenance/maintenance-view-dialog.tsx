@@ -104,10 +104,10 @@ export function MaintenanceViewDialog({
     enabled: !!reservationId && open,
   });
 
-  // Fetch all reservations to find overlapping rentals
+  // Rentals of this vehicle that could overlap the maintenance (BUG-205 phase B: filtered by the server).
   const { data: allReservations = [] } = useQuery<Reservation[]>({
-    queryKey: ['/api/reservations'],
-    enabled: !!reservation && open,
+    queryKey: ['/api/reservations', { type: 'standard', status: 'booked,picked_up', vehicleId: reservation?.vehicleId ?? undefined }],
+    enabled: !!reservation?.vehicleId && open,
   });
 
   // Fetch available vehicles for spare assignment

@@ -251,16 +251,18 @@ export function ScheduleMaintenanceDialog({
     }),
   ];
 
-  // Fetch all reservations to filter out vehicles with maintenance (if filter is enabled)
+  // Maintenance blocks on the chosen day, to leave out vehicles that already have one (BUG-205 phase B:
+  // filtered by the server instead of every reservation).
   const { data: allReservations = [] } = useQuery<any[]>({
-    queryKey: ['/api/reservations'],
-    enabled: open && excludeMaintenanceVehicles, // Only fetch when needed
+    queryKey: ['/api/reservations', { type: 'maintenance_block', from: scheduledDate || undefined, to: scheduledDate || undefined }],
+    enabled: open && excludeMaintenanceVehicles && !!scheduledDate, // Only fetch when needed
   });
 
-  // Fetch all reservations to check for active rentals (for auto-filling customer)
+  // Booked or running rentals of the chosen vehicle on the chosen day (for auto-filling the customer).
+  const chosenVehicleId = Number(form.watch('vehicleId')) || undefined;
   const { data: activeReservations = [] } = useQuery<any[]>({
-    queryKey: ['/api/reservations'],
-    enabled: open, // Also when editing: blocks saved without a customer get the renting customer filled in
+    queryKey: ['/api/reservations', { type: 'standard', status: 'booked,picked_up', vehicleId: chosenVehicleId, from: scheduledDate || undefined, to: scheduledDate || undefined }],
+    enabled: open && !!chosenVehicleId && !!scheduledDate, // Also when editing: blocks saved without a customer get the renting customer filled in
   });
 
   // Watch vehicle and date for auto-filling customer

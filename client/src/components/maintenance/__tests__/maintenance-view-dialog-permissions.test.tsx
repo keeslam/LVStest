@@ -180,7 +180,8 @@ describe("MaintenanceViewDialog - removing a spare that has been picked up", () 
           return deleteResponse;
         }
         if (url.endsWith(`/api/reservations/${reservation.id}`)) return json(reservation);
-        if (url.endsWith("/api/reservations")) return json([reservation, rental, spare]);
+        // BUG-205 phase B: the dialog asks for this vehicle's rentals with filters (?type=...&vehicleId=...).
+        if (url.endsWith("/api/reservations") || url.includes("/api/reservations?")) return json([reservation, rental, spare]);
         if (url.endsWith("/api/vehicles")) return json([vehicle, { id: 2, brand: "Opel", model: "Corsa", licensePlate: "ZZ-999-Z" }]);
         if (url.includes(`/api/vehicles/${vehicle.id}`)) return json(vehicle);
         return json([]);
