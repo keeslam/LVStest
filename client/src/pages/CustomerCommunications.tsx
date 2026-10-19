@@ -219,7 +219,8 @@ export default function CustomerCommunications() {
         const allCustomers = await customersResponse.json();
 
         // Get reservations to determine which customers have active reservations
-        const reservationsResponse = await fetch('/api/reservations');
+        // BUG-205 phase B: only booked and running reservations, slim.
+        const reservationsResponse = await fetch('/api/reservations?status=booked,picked_up&slim=1');
         const reservations = reservationsResponse.ok ? await reservationsResponse.json() : [];
 
         return allCustomers.map((customer: any) => ({

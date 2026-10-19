@@ -188,9 +188,12 @@ function FullReportsPage() {
   });
 
   // Fetch reservations with date filtering
+  // BUG-205 phase B (2026-10-19): only the reservations that touch the chosen period, from the server.
+  const reportFrom = dateRange.from ? format(dateRange.from, "yyyy-MM-dd") : undefined;
+  const reportTo = dateRange.to ? format(dateRange.to, "yyyy-MM-dd") : undefined;
   const { data: reservations = [], isFetching: reservationsFetching } = useQuery<Reservation[]>({
-    queryKey: ["/api/reservations"],
-    enabled: canViewReservations,
+    queryKey: ["/api/reservations", { from: reportFrom, to: reportTo }],
+    enabled: canViewReservations && !!reportFrom && !!reportTo,
   });
 
   // Fetch customers

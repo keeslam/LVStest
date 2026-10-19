@@ -82,8 +82,10 @@ export function SpareVehicleAssignmentDialog({
     .map((p: Reservation) => p.replacementForReservationId)
     .filter(Boolean);
   
+  // BUG-205 phase B (2026-10-19): only the rows this screen needs, filtered by the server.
+  const originalIdsParam = Array.from(new Set(originalReservationIds as number[])).sort((a, b) => a - b).slice(0, 500).join(',');
   const { data: originalReservations = [] } = useQuery<Reservation[]>({
-    queryKey: ['/api/reservations'],
+    queryKey: ['/api/reservations', { ids: originalIdsParam }],
     enabled: open && originalReservationIds.length > 0,
   });
 

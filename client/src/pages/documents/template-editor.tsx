@@ -172,8 +172,9 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
     enabled: canManageTemplates,
   });
 
-  const { data: reservationsData, isLoading: isReservationsLoading } = useQuery({
-    queryKey: ['/api/reservations'],
+  // BUG-205 phase B (2026-10-19): the preview needs one reservation, not every one.
+  const { data: reservationsData, isLoading: isReservationsLoading } = useQuery<{ rows?: unknown[] }>({
+    queryKey: ['/api/reservations', { view: 'current', page: 1, pageSize: 1 }],
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
@@ -522,7 +523,7 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
 
   useEffect(() => {
     if (reservationsData) {
-      const reservationsArray = Array.isArray(reservationsData) ? reservationsData : [];
+      const reservationsArray: any[] = Array.isArray(reservationsData?.rows) ? reservationsData.rows : [];
       setReservations(reservationsArray);
       if (reservationsArray.length > 0 && !previewReservationId) {
         setPreviewReservationId(reservationsArray[0].id.toString());

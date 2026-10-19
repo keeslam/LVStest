@@ -379,8 +379,10 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
   });
 
   // Fetch reservations
+  // BUG-205 phase B (2026-10-19): the chosen vehicle's reservations, or (no vehicle yet) the booked and
+  // running ones; slim, as the picker only shows plate and customer.
   const { data: reservations = [] } = useQuery<Reservation[]>({
-    queryKey: ['/api/reservations'],
+    queryKey: ['/api/reservations', selectedVehicleId ? { vehicleId: selectedVehicleId, slim: '1' } : { status: 'booked,picked_up', slim: '1' }],
   });
 
   // Fetch existing damage checks for selected vehicle/reservation

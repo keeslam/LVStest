@@ -81,8 +81,9 @@ export default function DeliveryDashboard() {
   };
 
   // Fetch reservations with delivery service
+  // BUG-205 phase B (2026-10-19): only the rows this screen needs, filtered by the server.
   const { data: reservations = [], isLoading: reservationsLoading } = useQuery<Reservation[]>({
-    queryKey: ["/api/reservations"],
+    queryKey: ["/api/reservations", { delivery: "true" }],
     enabled: canViewReservations,
   });
 
