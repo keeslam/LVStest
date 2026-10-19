@@ -298,6 +298,7 @@
     "loadFailed": "Não foi possível carregar as cartas de condução",
     "expiredOn": "Caducou em {{date}}",
     "expiresOn": "Caduca em {{date}}",
-    "openRental": "Ver aluguer"
+    "openRental": "Ver aluguer",
+    "openCustomer": "Ver os condutores do cliente"
   }
 }

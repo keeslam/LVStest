@@ -3143,9 +3143,9 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Get ALL overdue reservations (picked_up but past end date - customer still has the vehicle)
-  // Punt 9 (Kees, 2026-10-19) — dashboard tile "Rijbewijzen": main drivers of a
-  // booked or running rental whose licence is expired or expires within 30 days.
-  app.get("/api/reservations/driver-licenses-expiring", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (_req, res) => {
+  // Punt 9 (Kees, 2026-10-19) — dashboard tile "Rijbewijzen": every active driver
+  // whose licence is expired or expires within 30 days, with or without a rental.
+  app.get("/api/reservations/driver-licenses-expiring", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS, UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS), async (_req, res) => {
     try {
       const { licenseTileRows } = await import("./services/driver-license-tile");
       res.json(await licenseTileRows(isoToday()));

@@ -298,6 +298,7 @@
     "loadFailed": "Impossibile caricare le patenti",
     "expiredOn": "Scaduta il {{date}}",
     "expiresOn": "Scade il {{date}}",
-    "openRental": "Vedi noleggio"
+    "openRental": "Vedi noleggio",
+    "openCustomer": "Vedi i conducenti del cliente"
   }
 }

@@ -303,6 +303,7 @@
     "loadFailed": "Nie udało się wczytać praw jazdy",
     "expiredOn": "Wygasło {{date}}",
     "expiresOn": "Wygasa {{date}}",
-    "openRental": "Zobacz wynajem"
+    "openRental": "Zobacz wynajem",
+    "openCustomer": "Zobacz kierowców klienta"
   }
 }

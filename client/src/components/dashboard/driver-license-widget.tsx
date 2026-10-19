@@ -1,7 +1,8 @@
 /**
- * Punt 9 (Kees, 2026-10-19) — tile "Rijbewijzen": main drivers of a booked or
- * running rental whose licence is expired or expires within 30 days
- * (GET /api/reservations/driver-licenses-expiring). The eye opens the rental.
+ * Punt 9 (Kees, 2026-10-19) — tile "Rijbewijzen": every active driver whose
+ * licence is expired or expires within 30 days, with or without a rental
+ * (GET /api/reservations/driver-licenses-expiring). The eye opens the driver's
+ * earliest booked or running rental, or the customer's drivers when there is none.
  */
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -16,23 +17,27 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { NoDataAccess } from "@/components/ui/no-data-access";
 import { officeToday } from "@/lib/office-date";
 import { formatDutchDate } from "@shared/booking-warnings";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 
 interface LicenseTileRow {
   driverId: number;
   driverName: string;
+  customerId: number;
   customerName: string | null;
   licenseExpiry: string | null;
   expiryDay: string;
-  reservationId: number;
+  reservationId: number | null;
   licensePlate: string | null;
-  startDate: string;
-  status: string;
+  startDate: string | null;
 }
 
 export function DriverLicenseWidget() {
   const { t } = useTranslation("dashboard");
   const [selectedReservationId, setSelectedReservationId] = useState<number | null>(null);
-  const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
+  const { openCustomerDialog } = useGlobalDialog();
+  const canViewReservations = useHasPermission(
+    UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS, UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS,
+  );
   const { data: rows = [], isLoading, error } = useQuery<LicenseTileRow[]>({
     queryKey: ["/api/reservations/driver-licenses-expiring"],
     enabled: canViewReservations,
@@ -77,9 +82,9 @@ export function DriverLicenseWidget() {
                         variant="ghost"
                         size="sm"
                         className="flex-shrink-0 ml-2 h-8 w-8 p-0"
-                        onClick={() => setSelectedReservationId(row.reservationId)}
-                        aria-label={t("licenseWidget.openRental")}
-                        data-testid={`button-license-reservation-${row.reservationId}`}
+                        onClick={() => row.reservationId ? setSelectedReservationId(row.reservationId) : openCustomerDialog(row.customerId, "drivers")}
+                        aria-label={t(row.reservationId ? "licenseWidget.openRental" : "licenseWidget.openCustomer")}
+                        data-testid={`button-license-open-${row.driverId}`}
                       >
                         <Eye className="h-4 w-4 text-gray-500 hover:text-gray-700" />
                       </Button>

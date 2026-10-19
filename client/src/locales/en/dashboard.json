@@ -293,6 +293,7 @@
     "loadFailed": "Driving licences could not be loaded",
     "expiredOn": "Expired on {{date}}",
     "expiresOn": "Expires on {{date}}",
-    "openRental": "View rental"
+    "openRental": "View rental",
+    "openCustomer": "View the customer's drivers"
   }
 }

@@ -298,6 +298,7 @@
     "loadFailed": "No se pudieron cargar los permisos de conducir",
     "expiredOn": "Caducó el {{date}}",
     "expiresOn": "Caduca el {{date}}",
-    "openRental": "Ver alquiler"
+    "openRental": "Ver alquiler",
+    "openCustomer": "Ver los conductores del cliente"
   }
 }

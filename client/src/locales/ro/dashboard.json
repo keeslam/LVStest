@@ -298,6 +298,7 @@
     "loadFailed": "Permisele de conducere nu au putut fi încărcate",
     "expiredOn": "Expirat la {{date}}",
     "expiresOn": "Expiră la {{date}}",
-    "openRental": "Vezi închirierea"
+    "openRental": "Vezi închirierea",
+    "openCustomer": "Vezi șoferii clientului"
   }
 }

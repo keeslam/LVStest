@@ -293,6 +293,7 @@
     "loadFailed": "Rijbewijzen konden niet worden geladen",
     "expiredOn": "Verlopen op {{date}}",
     "expiresOn": "Verloopt op {{date}}",
-    "openRental": "Huur bekijken"
+    "openRental": "Huur bekijken",
+    "openCustomer": "Chauffeurs van de klant bekijken"
   }
 }

@@ -555,9 +555,9 @@ Kees koos uit de lijst met suggesties punt 9, "rijbewijs verlopen", en keurde de
 - **Geen vervaldatum ingevuld.** De medewerker ziet alleen een grijze regel "Vervaldatum rijbewijs onbekend". Er is geen vinkje nodig.
 - **Portaal.** De klant krijgt een waarschuwing als hij een bestuurder met een verlopen rijbewijs op een auto zet. Het toewijzen blijft mogelijk.
   - Voor een geboekte huur telt de startdatum, voor een lopende huur vandaag.
-- **Dashboardtegel "Rijbewijzen".** De tegel toont de hoofdbestuurders van geboekte en lopende huren van wie het rijbewijs al verlopen is of binnen 30 dagen verloopt.
-  - Elke bestuurder staat er één keer in, bij zijn eerste huur. Het oog opent die huur.
-  - De tegel is alleen te zien met het recht om reserveringen te bekijken.
+- **Dashboardtegel "Rijbewijzen".** De tegel toont elke actieve chauffeur van wie het rijbewijs al verlopen is of binnen 30 dagen verloopt, met of zonder huur. Eerst gold dit alleen voor hoofdbestuurders van geboekte en lopende huren; Kees wilde het later op 19-10 "met en zonder reservering".
+  - Elke chauffeur staat er één keer in. Staat hij op een geboekte of lopende huur, dan opent het oog de eerste daarvan; anders opent het oog de chauffeurs van de klant.
+  - De tegel is te zien met het recht om reserveringen of klanten te bekijken.
 - **Instellingen → Dashboard → Dashboardtegels.** Hier zet je de vijf tegels aan of uit en verschuif je ze met pijltjes. De vijf tegels zijn: beschikbare voertuigen, APK, achterstallige huren, garantie en rijbewijzen.
   - De keuze geldt voor iedereen. Wie de app-instellingen mag wijzigen, mag ook deze wijzigen.
   - Het gaat alleen om de tegels, niet om de andere blokken op het dashboard.
