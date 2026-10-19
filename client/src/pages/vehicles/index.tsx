@@ -106,8 +106,10 @@ export default function VehiclesIndex() {
   // badge, left out silently, no NoDataAccess.
   const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
   // Fetch reservations to check for spare vehicle assignments
+  // BUG-205 phase B (2026-10-19): only the rows this screen needs, filtered by the server. The badges only look at
+  // reservations still in play, and only at their own columns.
   const { data: reservations } = useQuery<Reservation[]>({
-    queryKey: ["/api/reservations"],
+    queryKey: ["/api/reservations", { excludeStatus: "cancelled,completed", slim: "1" }],
     enabled: canViewReservations,
   });
   

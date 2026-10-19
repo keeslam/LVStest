@@ -7,6 +7,9 @@
  * customer list itself comes from `/api/customers`, unaffected - so denied
  * is silent, no NoDataAccess.
  *
+ * BUG-205 phase B (2026-10-19): the stats now come from /api/reservations/customer-stats (one row per
+ * customer instead of every reservation), under the same reservation permission.
+ *
  * Runs in the jsdom project (plan §8.8).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -69,7 +72,7 @@ describe("/customers — /api/reservations follows view_reservations/manage_rese
     await waitFor(() => expect(calledWith("/api/customers")).toBe(true));
     await waitFor(() => expect(calledWith("/api/drivers")).toBe(true));
     await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(calledWith("/api/reservations")).toBe(false);
+    expect(calledWith("/api/reservations/customer-stats")).toBe(false);
   });
 
   it("fires /api/reservations with view_reservations", async () => {
@@ -77,7 +80,7 @@ describe("/customers — /api/reservations follows view_reservations/manage_rese
     permissions = [UserPermission.VIEW_CUSTOMERS, UserPermission.VIEW_RESERVATIONS];
     withProviders(<CustomersIndex />);
 
-    await waitFor(() => expect(calledWith("/api/reservations")).toBe(true));
+    await waitFor(() => expect(calledWith("/api/reservations/customer-stats")).toBe(true));
   });
 
   it("admin gets every query regardless of the permissions array", async () => {
@@ -86,6 +89,6 @@ describe("/customers — /api/reservations follows view_reservations/manage_rese
     withProviders(<CustomersIndex />);
 
     await waitFor(() => expect(calledWith("/api/customers")).toBe(true));
-    await waitFor(() => expect(calledWith("/api/reservations")).toBe(true));
+    await waitFor(() => expect(calledWith("/api/reservations/customer-stats")).toBe(true));
   });
 });

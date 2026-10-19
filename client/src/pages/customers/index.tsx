@@ -13,7 +13,8 @@ import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/ui/data-table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ColumnDef } from "@tanstack/react-table";
-import { Customer, Reservation, Driver, UserPermission } from "@shared/schema";
+import { Customer, Driver, UserPermission } from "@shared/schema";
+import type { CustomerReservationStats } from "@shared/reservation-list";
 import { RequiresPermission } from "@/components/ui/requires-permission";
 import { formatPhoneNumber } from "@/lib/format-utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -59,10 +60,13 @@ export default function CustomersIndex() {
   // /api/customers above and stays intact - so a denied user just sees rows
   // without those stats, left out silently, no NoDataAccess.
   const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
-  const { data: reservations } = useQuery<Reservation[]>({
-    queryKey: ["/api/reservations"],
+  // BUG-205 phase B (2026-10-19): per customer the count, the latest reservation and whether a car is
+  // out, worked out by the server instead of downloading every reservation.
+  const { data: reservationStats } = useQuery<CustomerReservationStats[]>({
+    queryKey: ["/api/reservations/customer-stats"],
     enabled: canViewReservations,
   });
+  const statsByCustomer = useMemo(() => new Map((reservationStats ?? []).map((s) => [s.customerId, s])), [reservationStats]);
 
   const { data: drivers } = useQuery<Driver[]>({
     queryKey: ["/api/drivers"],
@@ -80,19 +84,13 @@ export default function CustomersIndex() {
     const thirtyDaysAgo = subDays(new Date(), 30);
 
     return customers.map(customer => {
-      // Get reservations for this customer
-      const customerReservations = reservations?.filter(r => r.customerId === customer.id) || [];
-      
+      const stats = statsByCustomer.get(customer.id);
       // Count reservations
-      const reservationCount = customerReservations.length;
-      
-      // Find most recent reservation date
-      const lastReservationDate = customerReservations.length > 0
-        ? new Date(Math.max(...customerReservations.map(r => new Date(r.createdAt).getTime())))
-        : null;
-      
-      // Check if has active rentals (status 'picked_up')
-      const hasActiveRentals = customerReservations.some(r => r.status === 'picked_up');
+      const reservationCount = stats?.count ?? 0;
+      // Most recent reservation (by when it was made)
+      const lastReservationDate = stats?.lastCreatedAt ? new Date(stats.lastCreatedAt) : null;
+      // Has an active rental (status 'picked_up')
+      const hasActiveRentals = stats?.hasActiveRental ?? false;
       
       // Count drivers for this customer
       const driverCount = drivers?.filter(d => d.customerId === customer.id).length || 0;
@@ -113,7 +111,7 @@ export default function CustomersIndex() {
         isComplete,
       };
     });
-  }, [customers, reservations, drivers]);
+  }, [customers, statsByCustomer, drivers]);
 
   // Apply sorting
   const sortedCustomers = useMemo(() => {
