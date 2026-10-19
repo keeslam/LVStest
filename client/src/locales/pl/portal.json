@@ -430,7 +430,10 @@
       "requests": "Wnioski",
       "blacklist": "Czarna lista",
       "maintenance": "Serwis",
-      "signatures": "Podpisane"
+      "signatures": "Podpisane",
+      "uploads": "Pliki klienta",
+      "cancellations": "Anulowania",
+      "whoDrove": "Kto prowadził?"
     },
     "dashboard": {
       "inviteAccount": "Zaproś do konta",
@@ -455,7 +458,10 @@
         "activitySub": "Ostatnie działania w portalu",
         "maintenanceSub": "zgłoszenia i rezerwacje zastępcze",
         "signedNew": "nowo podpisane",
-        "signedPlusAwaiting": "nowe · {{n}} czeka na podpis"
+        "signedPlusAwaiting": "nowe · {{n}} czeka na podpis",
+        "uploadsSub": "nowe",
+        "cancellationsSub": "otwarte prośby",
+        "whoDroveSub": "czeka na klienta"
       },
       "attention": {
         "title": "Wymaga uwagi",
@@ -1256,6 +1262,29 @@
         "signer": "Podpisał(a)",
         "status": "Status",
         "since": "Gotowe od"
+      }
+    },
+    "uploads": {
+      "empty": "Brak dokumentów od klientów.",
+      "view": "Pokaż",
+      "col": {
+        "uploadedAt": "Przesłano",
+        "customer": "Klient",
+        "plate": "Numer rej.",
+        "description": "Opis",
+        "by": "Przez",
+        "status": "Status"
+      }
+    },
+    "whoDrove": {
+      "help": "Mandaty na pojazd z kilkoma kierowcami: klient musi jeszcze wskazać, kto prowadził. Otwórz mandat, aby uzupełnić samodzielnie.",
+      "empty": "Brak mandatów czekających na klienta.",
+      "col": {
+        "offenceAt": "Wykroczenie",
+        "customer": "Klient",
+        "plate": "Numer rej.",
+        "description": "Opis",
+        "drivers": "Kierowcy w tym momencie"
       }
     }
   },

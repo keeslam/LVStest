@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useMemo, ReactNode } fr
 import type { HandoverKind } from '@/lib/handover-choice';
 
 /** Which portal-admin list opens in the shared list dialog (see portal-list-dialog.tsx). */
-export type PortalListKind = 'customers' | 'accounts' | 'requests' | 'fines' | 'vehicles' | 'activity' | 'blacklist' | 'signatures';
+export type PortalListKind = 'customers' | 'accounts' | 'requests' | 'fines' | 'vehicles' | 'activity' | 'blacklist' | 'signatures' | 'uploads' | 'whoDrove';
 
 interface DialogState {
   reservation: { open: boolean; id: number | null };

@@ -416,7 +416,10 @@
       "requests": "Aanvragen",
       "blacklist": "Blacklist",
       "maintenance": "Onderhoud",
-      "signatures": "Getekend"
+      "signatures": "Getekend",
+      "uploads": "Uploads klant",
+      "cancellations": "Annuleringen",
+      "whoDrove": "Wie reed?"
     },
     "dashboard": {
       "inviteAccount": "Account uitnodigen",
@@ -441,7 +444,10 @@
         "activitySub": "Laatste acties in het portaal",
         "maintenanceSub": "meldingen en placeholders",
         "signedNew": "nieuw getekend",
-        "signedPlusAwaiting": "nieuw · {{n}} wachten op handtekening"
+        "signedPlusAwaiting": "nieuw · {{n}} wachten op handtekening",
+        "uploadsSub": "nieuw geüpload",
+        "cancellationsSub": "open verzoeken",
+        "whoDroveSub": "wacht op klant"
       },
       "attention": {
         "title": "Aandacht nodig",
@@ -1238,6 +1244,29 @@
         "signer": "Getekend door",
         "status": "Status",
         "since": "Klaar sinds"
+      }
+    },
+    "uploads": {
+      "empty": "Nog geen documenten van klanten.",
+      "view": "Bekijken",
+      "col": {
+        "uploadedAt": "Geüpload",
+        "customer": "Klant",
+        "plate": "Kenteken",
+        "description": "Omschrijving",
+        "by": "Door",
+        "status": "Status"
+      }
+    },
+    "whoDrove": {
+      "help": "Bekeuringen op een auto met meerdere bestuurders: de klant moet nog aangeven wie reed. Open een bekeuring om het zelf in te vullen.",
+      "empty": "Geen bekeuringen die op de klant wachten.",
+      "col": {
+        "offenceAt": "Overtreding",
+        "customer": "Klant",
+        "plate": "Kenteken",
+        "description": "Omschrijving",
+        "drivers": "Bestuurders op dat moment"
       }
     }
   },

@@ -423,7 +423,10 @@
       "requests": "Solicitudes",
       "blacklist": "Lista negra",
       "maintenance": "Mantenimiento",
-      "signatures": "Firmados"
+      "signatures": "Firmados",
+      "uploads": "Archivos del cliente",
+      "cancellations": "Cancelaciones",
+      "whoDrove": "¿Quién conducía?"
     },
     "dashboard": {
       "inviteAccount": "Invitar a una cuenta",
@@ -448,7 +451,10 @@
         "activitySub": "Últimas acciones en el portal",
         "maintenanceSub": "avisos y reservas provisionales",
         "signedNew": "firmados nuevos",
-        "signedPlusAwaiting": "nuevos · {{n}} pendientes de firma"
+        "signedPlusAwaiting": "nuevos · {{n}} pendientes de firma",
+        "uploadsSub": "nuevos",
+        "cancellationsSub": "solicitudes abiertas",
+        "whoDroveSub": "esperando al cliente"
       },
       "attention": {
         "title": "Requiere atención",
@@ -1247,6 +1253,29 @@
         "signer": "Firmado por",
         "status": "Estado",
         "since": "Listo desde"
+      }
+    },
+    "uploads": {
+      "empty": "Aún no hay documentos de clientes.",
+      "view": "Ver",
+      "col": {
+        "uploadedAt": "Subido",
+        "customer": "Cliente",
+        "plate": "Matrícula",
+        "description": "Descripción",
+        "by": "Por",
+        "status": "Estado"
+      }
+    },
+    "whoDrove": {
+      "help": "Multas en un vehículo con varios conductores: el cliente aún debe indicar quién conducía. Abra una multa para indicarlo usted.",
+      "empty": "No hay multas esperando al cliente.",
+      "col": {
+        "offenceAt": "Infracción",
+        "customer": "Cliente",
+        "plate": "Matrícula",
+        "description": "Descripción",
+        "drivers": "Conductores en ese momento"
       }
     }
   },

@@ -423,7 +423,10 @@
       "requests": "Solicitări",
       "blacklist": "Listă neagră",
       "maintenance": "Mentenanță",
-      "signatures": "Semnate"
+      "signatures": "Semnate",
+      "uploads": "Încărcări client",
+      "cancellations": "Anulări",
+      "whoDrove": "Cine conducea?"
     },
     "dashboard": {
       "inviteAccount": "Invită un cont",
@@ -448,7 +451,10 @@
         "activitySub": "Ultimele acțiuni din portal",
         "maintenanceSub": "notificări și substituenți",
         "signedNew": "semnate noi",
-        "signedPlusAwaiting": "noi · {{n}} așteaptă semnătura"
+        "signedPlusAwaiting": "noi · {{n}} așteaptă semnătura",
+        "uploadsSub": "încărcate nou",
+        "cancellationsSub": "cereri deschise",
+        "whoDroveSub": "așteaptă clientul"
       },
       "attention": {
         "title": "Necesită atenție",
@@ -1247,6 +1253,29 @@
         "signer": "Semnat de",
         "status": "Stare",
         "since": "Gata din"
+      }
+    },
+    "uploads": {
+      "empty": "Încă nu există documente de la clienți.",
+      "view": "Vezi",
+      "col": {
+        "uploadedAt": "Încărcat",
+        "customer": "Client",
+        "plate": "Număr",
+        "description": "Descriere",
+        "by": "De",
+        "status": "Stare"
+      }
+    },
+    "whoDrove": {
+      "help": "Amenzi pe un vehicul cu mai mulți șoferi: clientul trebuie încă să indice cine conducea. Deschideți o amendă pentru a completa dumneavoastră.",
+      "empty": "Nicio amendă nu așteaptă clientul.",
+      "col": {
+        "offenceAt": "Contravenție",
+        "customer": "Client",
+        "plate": "Număr",
+        "description": "Descriere",
+        "drivers": "Șoferi în acel moment"
       }
     }
   },

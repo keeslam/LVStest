@@ -146,6 +146,37 @@ export interface PortalSessionDto {
   lastActiveAt: string;
 }
 
+/** A document a customer uploaded, as the office lists it (Kees, 2026-10-19). */
+export interface CustomerUploadRow {
+  id: number;
+  reservationId: number;
+  customerId: number | null;
+  customerName: string;
+  licensePlate: string | null;
+  description: string;
+  fileName: string;
+  contentType: string;
+  uploadedAt: string;
+  /** The portal account's e-mail address. */
+  uploadedBy: string;
+  seenAt: string | null;
+  seenBy: string | null;
+}
+
+/** A fine on a shared car that waits for the customer to say who drove (Kees, 2026-10-19). */
+export interface FineAwaitingDriverRow {
+  id: number;
+  reservationId: number;
+  customerId: number;
+  customerName: string;
+  licensePlate: string;
+  description: string;
+  offenceAt: string;
+  totalAmount: string;
+  /** Who was on the car at that moment. */
+  drivers: string[];
+}
+
 /** A colleague's portal account as an admin of the same company sees it (Kees, 2026-10-18). */
 export interface PortalColleagueDto {
   id: number;
@@ -384,6 +415,12 @@ export interface PortalDashboard {
     signedNew: number;
     /** Current unsigned contracts and damage forms of portal customers that nobody signed yet. */
     awaitingSignature: number;
+    /** Documents customers uploaded that the office has not marked as seen (Kees, 2026-10-19). */
+    uploadsNew: number;
+    /** Open requests to cancel a reservation. */
+    cancellations: number;
+    /** Fines on a shared car still waiting for the customer to say who drove. */
+    finesAwaitingDriver: number;
   };
   attention: {
     requests: Array<{

@@ -10,6 +10,7 @@ import { sendPortalInvite } from "../services/portal-mail";
 import { getPortalConfig, savePortalConfig } from "../services/portal-config";
 import { getPortalDashboard } from "../services/portal-dashboard";
 import { listAwaitingSignature, listSignedDocuments, markSignatureSeen } from "../services/contract-signing";
+import { listCustomerUploads, listFinesAwaitingDriver, markUploadSeen } from "../services/portal-office-lists";
 import { AuditLogger } from "../utils/security/auditLogger";
 import type { RouteDeps } from "./deps";
 
@@ -159,6 +160,21 @@ export function registerPortalAdminRoutes(app: Express, _deps: RouteDeps): void 
     const ok = await markSignatureSeen(id, req.user?.username ?? "staff");
     if (!ok) return res.status(404).json({ message: "Signature not found" });
     res.json({ ok: true });
+  });
+
+  // ---- customer uploads and fines waiting for "who drove" (Kees, 2026-10-19) -----------------------
+  app.get("/api/portal-admin/uploads", canView, async (_req, res) => {
+    res.json(await listCustomerUploads({ limit: 300 }));
+  });
+  /** "Gezien": the upload leaves the tile's count. */
+  app.post("/api/portal-admin/uploads/:id/seen", canView, async (req, res) => {
+    const id = intParam(req, res, "id"); if (id === null) return;
+    if (!(await markUploadSeen(id, req.user?.username ?? "staff"))) return res.status(404).json({ message: "Upload not found" });
+    res.json({ ok: true });
+  });
+  // Fines: the portal right and a fines right, like the fines tile.
+  app.get("/api/portal-admin/fines-awaiting-driver", canView, hasPermission(UserPermission.VIEW_FINES, UserPermission.MANAGE_FINES), async (_req, res) => {
+    res.json(await listFinesAwaitingDriver(300));
   });
 
   app.post("/api/portal-admin/notifications/:id/read", canView, async (req, res) => {

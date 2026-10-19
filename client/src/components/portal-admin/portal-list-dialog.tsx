@@ -9,6 +9,7 @@ import { RequestsTable } from "./requests-table";
 import { BlacklistTable } from "./blacklist-table";
 import { FinesTable } from "@/components/fines/fines-table";
 import { SignaturesTable } from "./signatures-table";
+import { UploadsTable, FinesAwaitingDriverTable } from "./uploads-table";
 
 /**
  * One wide dialog for every portal-admin list (customers, accounts, requests,
@@ -24,7 +25,7 @@ export function PortalListDialog() {
   return (
     <Dialog open={open} onOpenChange={(o) => !o && closePortalListDialog()}>
       <DialogContent className="max-w-[95vw] max-h-[90vh] flex flex-col" data-testid={`dialog-portal-list-${kind}`}>
-        <DialogHeader><DialogTitle>{t(`admin.tabs.${kind}`)}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{kind === "requests" && types?.length === 1 && types[0] === "cancellation" ? t("admin.tabs.cancellations") : t(`admin.tabs.${kind}`)}</DialogTitle></DialogHeader>
         <div className="flex-1 overflow-auto">
           {kind === "customers" && <CustomersOverviewTable />}
           {kind === "accounts" && <AccountsTable />}
@@ -34,6 +35,8 @@ export function PortalListDialog() {
           {kind === "activity" && <ActivityTable limit={200} />}
           {kind === "blacklist" && <BlacklistTable key={plate ?? ""} initialPlate={plate} />}
           {kind === "signatures" && <SignaturesTable />}
+          {kind === "uploads" && <UploadsTable />}
+          {kind === "whoDrove" && <FinesAwaitingDriverTable />}
         </div>
       </DialogContent>
     </Dialog>

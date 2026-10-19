@@ -416,7 +416,10 @@
       "requests": "Requests",
       "blacklist": "Blacklist",
       "maintenance": "Maintenance",
-      "signatures": "Signed"
+      "signatures": "Signed",
+      "uploads": "Customer uploads",
+      "cancellations": "Cancellations",
+      "whoDrove": "Who drove?"
     },
     "dashboard": {
       "inviteAccount": "Invite account",
@@ -441,7 +444,10 @@
         "activitySub": "Latest actions in the portal",
         "maintenanceSub": "reports and placeholders",
         "signedNew": "newly signed",
-        "signedPlusAwaiting": "new · {{n}} awaiting signature"
+        "signedPlusAwaiting": "new · {{n}} awaiting signature",
+        "uploadsSub": "newly uploaded",
+        "cancellationsSub": "open requests",
+        "whoDroveSub": "waiting for customer"
       },
       "attention": {
         "title": "Needs attention",
@@ -1238,6 +1244,29 @@
         "signer": "Signed by",
         "status": "Status",
         "since": "Ready since"
+      }
+    },
+    "uploads": {
+      "empty": "No documents from customers yet.",
+      "view": "View",
+      "col": {
+        "uploadedAt": "Uploaded",
+        "customer": "Customer",
+        "plate": "Plate",
+        "description": "Description",
+        "by": "By",
+        "status": "Status"
+      }
+    },
+    "whoDrove": {
+      "help": "Fines on a car with several drivers: the customer still has to say who drove. Open a fine to fill it in yourself.",
+      "empty": "No fines waiting for the customer.",
+      "col": {
+        "offenceAt": "Offence",
+        "customer": "Customer",
+        "plate": "Plate",
+        "description": "Description",
+        "drivers": "Drivers at that moment"
       }
     }
   },

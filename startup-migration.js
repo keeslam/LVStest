@@ -1629,6 +1629,10 @@ async function runMigrations() {
       console.log(`✅ Backfilled ${deliveryTransportBackfillResult.rowCount} delivery reservation(s) to a linked transport`);
     }
 
+    // Customer uploads the office marked as seen (Kees, 2026-10-19).
+    await addColumnIfNotExists('documents', 'portal_seen_at', 'TIMESTAMPTZ');
+    await addColumnIfNotExists('documents', 'portal_seen_by', 'TEXT');
+
     // Documents can now be "general reports" that aren't tied to one vehicle
     // (e.g. a multi-vehicle transport summary), so vehicle_id must be nullable.
     const documentsVehicleIdInfo = await db.execute(sql`

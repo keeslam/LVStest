@@ -423,7 +423,10 @@
       "requests": "Richieste",
       "blacklist": "Lista nera",
       "maintenance": "Manutenzione",
-      "signatures": "Firmati"
+      "signatures": "Firmati",
+      "uploads": "Caricamenti cliente",
+      "cancellations": "Annullamenti",
+      "whoDrove": "Chi guidava?"
     },
     "dashboard": {
       "inviteAccount": "Invitare un account",
@@ -448,7 +451,10 @@
         "activitySub": "Ultime azioni nel portale",
         "maintenanceSub": "segnalazioni e segnaposto",
         "signedNew": "nuovi firmati",
-        "signedPlusAwaiting": "nuovi · {{n}} in attesa di firma"
+        "signedPlusAwaiting": "nuovi · {{n}} in attesa di firma",
+        "uploadsSub": "nuovi",
+        "cancellationsSub": "richieste aperte",
+        "whoDroveSub": "in attesa del cliente"
       },
       "attention": {
         "title": "Richiede attenzione",
@@ -1247,6 +1253,29 @@
         "signer": "Firmato da",
         "status": "Stato",
         "since": "Pronto dal"
+      }
+    },
+    "uploads": {
+      "empty": "Ancora nessun documento dai clienti.",
+      "view": "Visualizza",
+      "col": {
+        "uploadedAt": "Caricato",
+        "customer": "Cliente",
+        "plate": "Targa",
+        "description": "Descrizione",
+        "by": "Da",
+        "status": "Stato"
+      }
+    },
+    "whoDrove": {
+      "help": "Multe su un veicolo con più conducenti: il cliente deve ancora indicare chi guidava. Apri una multa per indicarlo tu.",
+      "empty": "Nessuna multa in attesa del cliente.",
+      "col": {
+        "offenceAt": "Infrazione",
+        "customer": "Cliente",
+        "plate": "Targa",
+        "description": "Descrizione",
+        "drivers": "Conducenti in quel momento"
       }
     }
   },

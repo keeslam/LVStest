@@ -20,6 +20,7 @@ import type { SignedDocumentRow } from "@shared/contract-signing";
 const counts: PortalDashboard["counts"] = {
   newRequests: 0, inProgressRequests: 0, unlinkedFines: 0, onlineNow: 0, pendingInvites: 0, expiredInvites: 0,
   vehiclesOnline: 0, blacklistEntries: 0, unreadNotifications: 0, maintenance: 0, signedNew: 2, awaitingSignature: 3,
+  uploadsNew: 0, cancellations: 0, finesAwaitingDriver: 0,
 };
 const signedRow = (over: Partial<SignedDocumentRow> = {}): SignedDocumentRow => ({
   id: 11, documentKind: "damage_check", reservationId: 2049, customerId: 179, customerName: "Klant 179 B.V.", licensePlate: "11ZSZ3",

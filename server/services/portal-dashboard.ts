@@ -6,6 +6,7 @@ import { requestsStorage } from "./portal-requests-storage";
 import type { PortalDashboard } from "../../shared/portal-types";
 import { customerDisplayName } from "./customer-display-name";
 import { listAwaitingSignature, listSignedDocuments } from "./contract-signing";
+import { listCustomerUploads, listFinesAwaitingDriver } from "./portal-office-lists";
 
 /** Days ahead the "upcoming pickups/returns" panel looks. */
 export const DASHBOARD_WINDOW_DAYS = 14;
@@ -34,7 +35,7 @@ export async function getPortalDashboard(): Promise<PortalDashboard> {
   const today = isoDay(0);
   const horizon = isoDay(DASHBOARD_WINDOW_DAYS);
 
-  const [overview, requests, unlinked, notes, upcomingRows, [vehiclesOnline], [inProgress], [blacklistEntries], [placeholdersFromPortal], unseenSigned, awaitingSignature] = await Promise.all([
+  const [overview, requests, unlinked, notes, upcomingRows, [vehiclesOnline], [inProgress], [blacklistEntries], [placeholdersFromPortal], unseenSigned, awaitingSignature, unseenUploads, finesAwaitingDriver] = await Promise.all([
     portalStorage.listCustomersOverview(),
     requestsStorage.listRequests({}),
     db.select().from(fines).where(eq(fines.status, "new")).orderBy(desc(fines.offenceAt)).limit(ATTENTION_LIMIT),
@@ -65,6 +66,9 @@ export async function getPortalDashboard(): Promise<PortalDashboard> {
     // Kees, 2026-10-18: what came back signed and has not been looked at, and what still waits for a signature.
     listSignedDocuments({ onlyUnseen: true, limit: ATTENTION_LIMIT }),
     listAwaitingSignature(500),
+    // Kees, 2026-10-19: uploads not yet seen, and fines on a shared car waiting for "who drove".
+    listCustomerUploads({ onlyUnseen: true, limit: 500 }),
+    listFinesAwaitingDriver(500),
   ]);
 
   const staleBefore = new Date(Date.now() - STALE_REQUEST_DAYS * 86_400_000);
@@ -104,6 +108,9 @@ export async function getPortalDashboard(): Promise<PortalDashboard> {
       maintenance: openRequests.filter((r) => r.type === "maintenance" || r.type === "maintenance_change").length + (placeholdersFromPortal?.n ?? 0),
       signedNew: unseenSigned.length,
       awaitingSignature: awaitingSignature.length,
+      uploadsNew: unseenUploads.length,
+      cancellations: openRequests.filter((r) => r.type === "cancellation").length,
+      finesAwaitingDriver: finesAwaitingDriver.length,
     },
     attention: {
       requests: openRequests.slice(0, ATTENTION_LIMIT).map((r) => ({

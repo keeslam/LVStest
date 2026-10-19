@@ -423,7 +423,10 @@
       "requests": "Pedidos",
       "blacklist": "Lista negra",
       "maintenance": "Manutenção",
-      "signatures": "Assinados"
+      "signatures": "Assinados",
+      "uploads": "Envios do cliente",
+      "cancellations": "Cancelamentos",
+      "whoDrove": "Quem conduzia?"
     },
     "dashboard": {
       "inviteAccount": "Convidar conta",
@@ -448,7 +451,10 @@
         "activitySub": "Últimas ações no portal",
         "maintenanceSub": "notificações e marcadores de posição",
         "signedNew": "novos assinados",
-        "signedPlusAwaiting": "novos · {{n}} a aguardar assinatura"
+        "signedPlusAwaiting": "novos · {{n}} a aguardar assinatura",
+        "uploadsSub": "novos",
+        "cancellationsSub": "pedidos abertos",
+        "whoDroveSub": "à espera do cliente"
       },
       "attention": {
         "title": "Requer atenção",
@@ -1247,6 +1253,29 @@
         "signer": "Assinado por",
         "status": "Estado",
         "since": "Pronto desde"
+      }
+    },
+    "uploads": {
+      "empty": "Ainda não há documentos de clientes.",
+      "view": "Ver",
+      "col": {
+        "uploadedAt": "Enviado",
+        "customer": "Cliente",
+        "plate": "Matrícula",
+        "description": "Descrição",
+        "by": "Por",
+        "status": "Estado"
+      }
+    },
+    "whoDrove": {
+      "help": "Coimas num veículo com vários condutores: o cliente ainda tem de indicar quem conduzia. Abra uma coima para o indicar.",
+      "empty": "Nenhuma coima à espera do cliente.",
+      "col": {
+        "offenceAt": "Infração",
+        "customer": "Cliente",
+        "plate": "Matrícula",
+        "description": "Descrição",
+        "drivers": "Condutores nesse momento"
       }
     }
   },

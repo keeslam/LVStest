@@ -1655,6 +1655,20 @@
         "notNull": false,
         "primary": false,
         "default": null
+      },
+      {
+        "name": "portal_seen_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "portal_seen_by",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
       }
     ]
   },

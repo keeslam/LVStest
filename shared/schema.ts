@@ -1496,6 +1496,9 @@ export const documents = pgTable("documents", {
   updatedBy: text("updated_by"),
   createdByUser: integer("created_by_user_id").references(() => users.id),
   updatedByUser: integer("updated_by_user_id").references(() => users.id),
+  // A customer upload (document_type "Customer Upload") the office has looked at (Kees, 2026-10-19).
+  portalSeenAt: timestamp("portal_seen_at", { withTimezone: true }),
+  portalSeenBy: text("portal_seen_by"),
 }, (table) => ({
   vehicleIdIdx: index("documents_vehicle_id_idx").on(table.vehicleId),
   reservationIdIdx: index("documents_reservation_id_idx").on(table.reservationId),
