@@ -509,7 +509,8 @@
     "collectionServiceLabel": "Collection service at return",
     "collectionServiceHint": "We collect the car from the customer at the end of the rental; the customer does not bring it to the shop. The customer sees this in the customer portal.",
     "collectionAddressLabel": "Collection address",
-    "collectionSameAsDelivery": "Same as delivery address"
+    "collectionSameAsDelivery": "Same as delivery address",
+    "pastStartWarning": "Note: this start date is in the past."
   },
   "selector": {
     "defaultPlaceholder": "Select a reservation...",

@@ -509,7 +509,8 @@
     "collectionServiceLabel": "Ophaalservice bij inleveren",
     "collectionServiceHint": "Wij halen de auto aan het einde van de huur bij de klant op; de klant brengt hem niet naar de zaak. De klant ziet dit in het klantenportaal.",
     "collectionAddressLabel": "Ophaaladres",
-    "collectionSameAsDelivery": "Zelfde als bezorgadres"
+    "collectionSameAsDelivery": "Zelfde als bezorgadres",
+    "pastStartWarning": "Let op: deze startdatum ligt in het verleden."
   },
   "selector": {
     "defaultPlaceholder": "Selecteer een reservering...",

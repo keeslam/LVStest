@@ -512,7 +512,8 @@
     "collectionServiceLabel": "Serviciu de ridicare la returnare",
     "collectionServiceHint": "Noi ridicăm mașina de la client la sfârșitul închirierii; clientul nu o aduce la firmă. Clientul vede acest lucru în portalul pentru clienți.",
     "collectionAddressLabel": "Adresa de ridicare",
-    "collectionSameAsDelivery": "La fel ca adresa de livrare"
+    "collectionSameAsDelivery": "La fel ca adresa de livrare",
+    "pastStartWarning": "Atenție: această dată de început este în trecut."
   },
   "selector": {
     "defaultPlaceholder": "Selectați o rezervare...",

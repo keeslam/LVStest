@@ -515,7 +515,8 @@
     "collectionServiceLabel": "Usługa odbioru przy zwrocie",
     "collectionServiceHint": "Samochód odbieramy od klienta pod koniec wynajmu; klient nie przywozi go do firmy. Klient widzi to w portalu klienta.",
     "collectionAddressLabel": "Adres odbioru",
-    "collectionSameAsDelivery": "Taki sam jak adres dostawy"
+    "collectionSameAsDelivery": "Taki sam jak adres dostawy",
+    "pastStartWarning": "Uwaga: ta data rozpoczęcia jest w przeszłości."
   },
   "selector": {
     "defaultPlaceholder": "Wybierz rezerwację...",

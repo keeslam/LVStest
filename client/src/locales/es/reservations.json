@@ -512,7 +512,8 @@
     "collectionServiceLabel": "Servicio de recogida en la devolución",
     "collectionServiceHint": "Recogemos el coche en casa del cliente al final del alquiler; el cliente no lo lleva a la empresa. El cliente lo ve en el portal de clientes.",
     "collectionAddressLabel": "Dirección de recogida",
-    "collectionSameAsDelivery": "Igual que la dirección de entrega"
+    "collectionSameAsDelivery": "Igual que la dirección de entrega",
+    "pastStartWarning": "Atención: esta fecha de inicio está en el pasado."
   },
   "selector": {
     "defaultPlaceholder": "Seleccione una reserva...",

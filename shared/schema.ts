@@ -1126,6 +1126,14 @@ export const insertReservationSchemaBase = createInsertSchema(reservations).omit
   vehicleFuelBeforePickup: true,
   vehicleMileageBeforeReturn: true,
   vehicleFuelBeforeReturn: true,
+  // BUG-056 (Kees, 2026-10-19): recurring reservations never created anything; the option is removed.
+  // The columns stay (no data is dropped), but no request can set them any more.
+  isRecurring: true,
+  recurringParentId: true,
+  recurringFrequency: true,
+  recurringEndDate: true,
+  recurringDayOfWeek: true,
+  recurringDayOfMonth: true,
 })
 .extend({
   // BUG-054 — this had no bounds at all, and non-numeric input silently became

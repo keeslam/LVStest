@@ -1374,6 +1374,10 @@ export function ReservationForm({
                         />
                       </FormControl>
                       <FormMessage />
+                      {/* BUG-040 (Kees, 2026-10-19): allowed, but said out loud. */}
+                      {!editMode && typeof field.value === "string" && field.value !== "" && field.value < officeToday() && (
+                        <p className="text-xs font-medium text-amber-700" data-testid="warning-start-in-past">{t('form.pastStartWarning')}</p>
+                      )}
                     </FormItem>
                   )}
                 />
@@ -1991,6 +1995,10 @@ export function ReservationForm({
                         />
                       </FormControl>
                       <FormMessage />
+                      {/* BUG-040 (Kees, 2026-10-19): allowed, but said out loud. */}
+                      {!editMode && typeof field.value === "string" && field.value !== "" && field.value < officeToday() && (
+                        <p className="text-xs font-medium text-amber-700" data-testid="warning-start-in-past">{t('form.pastStartWarning')}</p>
+                      )}
                     </FormItem>
                   )}
                 />

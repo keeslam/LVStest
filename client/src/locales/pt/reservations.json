@@ -512,7 +512,8 @@
     "collectionServiceLabel": "Serviço de recolha na devolução",
     "collectionServiceHint": "Recolhemos o automóvel junto do cliente no final do aluguer; o cliente não o leva à empresa. O cliente vê esta informação no portal do cliente.",
     "collectionAddressLabel": "Morada de recolha",
-    "collectionSameAsDelivery": "Igual à morada de entrega"
+    "collectionSameAsDelivery": "Igual à morada de entrega",
+    "pastStartWarning": "Atenção: esta data de início está no passado."
   },
   "selector": {
     "defaultPlaceholder": "Selecione uma reserva...",

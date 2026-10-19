@@ -512,7 +512,8 @@
     "collectionServiceLabel": "Servizio di ritiro alla riconsegna",
     "collectionServiceHint": "Ritiriamo l'auto presso il cliente alla fine del noleggio; il cliente non la porta in sede. Il cliente lo vede nel portale clienti.",
     "collectionAddressLabel": "Indirizzo di ritiro",
-    "collectionSameAsDelivery": "Uguale all'indirizzo di consegna"
+    "collectionSameAsDelivery": "Uguale all'indirizzo di consegna",
+    "pastStartWarning": "Attenzione: questa data di inizio è nel passato."
   },
   "selector": {
     "defaultPlaceholder": "Selezioni una prenotazione...",
