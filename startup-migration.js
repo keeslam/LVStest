@@ -933,6 +933,15 @@ async function setUserForeignKeysToSetNull() {
 // Every ALTER below takes an ACCESS EXCLUSIVE lock and rewrites the table, so
 // it belongs in a maintenance window.
 const ASSUMED_TIMESTAMP_ZONE = 'Europe/Amsterdam';
+// Kees, 2026-10-19: whole milliseconds = written by the application through a JavaScript Date (UTC);
+// anything else = the column default now() (Amsterdam). Same rule as timestamptzUsing() in
+// scripts/migrate-timestamps-to-timestamptz.ts.
+function timestamptzUsing(column) {
+  const c = `"${column}"`;
+  return `CASE WHEN ${c} IS NULL THEN NULL ` +
+    `WHEN (extract(microseconds from ${c})::bigint % 1000) = 0 THEN ${c} AT TIME ZONE 'UTC' ` +
+    `ELSE ${c} AT TIME ZONE '${ASSUMED_TIMESTAMP_ZONE}' END`;
+}
 
 async function convertTimestampsToTimestamptz(manifest) {
   const wanted = [];
@@ -976,7 +985,7 @@ async function convertTimestampsToTimestamptz(manifest) {
   for (const column of pending) {
     await db.execute(sql.raw(
       `ALTER TABLE "${column.table}" ALTER COLUMN "${column.column}" ` +
-      `TYPE timestamptz USING "${column.column}" AT TIME ZONE '${ASSUMED_TIMESTAMP_ZONE}'`
+      `TYPE timestamptz USING ${timestamptzUsing(column.column)}`
     ));
     converted += 1;
   }

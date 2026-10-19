@@ -91,3 +91,34 @@ Per script een besluit voor productie. Van tevoren altijd eerst een back-up.
 
 De wegwerpkopie `lvs_prodtest_proef` staat nog op de lokale Postgres. Weggooien kan zodra Kees het
 niet meer nodig heeft.
+
+## Besluiten van Kees (19-10-2026) en tweede proefdraai
+
+Kees koos:
+
+- **Tijdzone-migratie:** mét de verbetering per waarde.
+- **Reserveringen afsluiten:** ja, na een back-up.
+- **Kentekens gelijktrekken:** ja, na een back-up.
+- **Weesrijen:** naar de prullenbak.
+
+**Tweede proefdraai, op een verse wegwerpkopie `lvs_prodtest_proef`.** Eerst draaide de
+opstart-migratie (`startup-migration.js`), net zoals productie bij het opstarten doet. Daarna
+draaiden alle scripts écht.
+
+| Stap | Resultaat | Duur |
+|---|---|---|
+| Tijdzone-migratie, verbeterd (`timestamptzUsing`) | 99 van 99 kolommen omgezet. De steekproef van reserveringen, auditregels en kosten verliest de twee uur. Voertuig #495 blijft 21:42 en de bekeuringen blijven zoals ze nu op het scherm staan (bijv. 01-10 10:00). | 4 s |
+| Weesrijen naar prullenbak (`scripts/orphan-blocks-to-bin.ts`, nieuw) | 258 van 258 in de prullenbak van Onderhoud. Ze zijn terug te zetten. | 3 s |
+| Reserveringen afsluiten | 161 geannuleerd, 2 afgerond. 155 blijven op "Nog buiten". | 2 s |
+| Kentekens gelijktrekken | 95 gelijkgetrokken, unieke index staat. | 3 s |
+| Datahygiëne daarna | 0 weesrijen, 0 verouderde statussen, 155 op "Nog buiten". | |
+
+**Volgorde telt.** 107 van de 109 rijen met een verouderde status wáren weesrijen. Gaan de weesrijen
+eerst naar de prullenbak, dan rondt het afsluitscript er nog maar 2 af.
+
+**Voor productie:**
+
+- De scripts zitten niet in het productie-image. De Dockerfile kopieert alleen `dist`, `shared` en
+  `startup-migration.js`.
+- Alleen de tijdzone-migratie heeft al een opstartvlag: `TIMESTAMPTZ_MIGRATION=apply`.
+- Voor de andere drie scripts moet nog worden gekozen hoe ze in productie draaien.

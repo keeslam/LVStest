@@ -64,6 +64,22 @@ import { db } from "../server/db";
 /** The assumption B-22 records, in one place. */
 export const ASSUMED_ZONE = "Europe/Amsterdam";
 
+/**
+ * How one value is read (Kees, 2026-10-19, after the clone run on lvs_prodtest). A value the database
+ * wrote through the column default `now()` carries microseconds and is Amsterdam wall clock. A value
+ * the application wrote itself went through a JavaScript `Date`, so it has whole milliseconds and is
+ * UTC wall clock (caveat 1 below). Reading each as what it is keeps both correct; on the clone that
+ * was every vehicle "updated at" and every fine's offence time. The only miss is a database value
+ * that happens to end on whole milliseconds, about 1 in 1000, which then moves by the offset.
+ * Kept in step with startup-migration.js.
+ */
+export function timestamptzUsing(column: string): string {
+  const c = `"${column}"`;
+  return `CASE WHEN ${c} IS NULL THEN NULL ` +
+    `WHEN (extract(microseconds from ${c})::bigint % 1000) = 0 THEN ${c} AT TIME ZONE 'UTC' ` +
+    `ELSE ${c} AT TIME ZONE '${ASSUMED_ZONE}' END`;
+}
+
 const here = path.dirname(fileURLToPath(import.meta.url));
 const MANIFEST = path.resolve(here, "..", "schema-columns.json");
 
@@ -153,7 +169,7 @@ export async function migrateTimestampsToTimestamptz(
       await db.execute(
         sql.raw(
           `ALTER TABLE "${col.table}" ALTER COLUMN "${col.column}" ` +
-          `TYPE timestamptz USING "${col.column}" AT TIME ZONE '${ASSUMED_ZONE}'`,
+          `TYPE timestamptz USING ${timestamptzUsing(col.column)}`,
         ),
       );
       converted += 1;
