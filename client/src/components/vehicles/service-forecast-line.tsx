@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { TrendingUp } from "lucide-react";
 import type { ServiceForecast } from "@shared/service-forecast";
 import { formatDutchDate } from "@shared/booking-warnings";
+import { officeToday } from "@/lib/office-date";
 
 export function ServiceForecastLine({ vehicleId }: { vehicleId: number }) {
   const { t } = useTranslation("vehicles");
@@ -29,7 +30,11 @@ export function ServiceForecastLine({ vehicleId }: { vehicleId: number }) {
     <div className="mt-3 flex items-start gap-2 rounded-md bg-white/70 p-2 text-sm" data-testid="text-service-forecast">
       <TrendingUp className="h-4 w-4 mt-0.5 shrink-0 text-gray-500" aria-hidden="true" />
       <div>
-        <p className="font-medium">{t("details.maintenance.forecastExpected", { date: formatDutchDate(forecast.expectedDate) })}</p>
+        <p className="font-medium">
+          {forecast.expectedDate < officeToday()
+            ? t("details.maintenance.forecastOverdue", { date: formatDutchDate(forecast.expectedDate) })
+            : t("details.maintenance.forecastExpected", { date: formatDutchDate(forecast.expectedDate) })}
+        </p>
         <p className="text-gray-600">
           {t("details.maintenance.forecastPace", { km: (forecast.kmPerDay ?? 0).toLocaleString("nl-NL") })}
           {" · "}

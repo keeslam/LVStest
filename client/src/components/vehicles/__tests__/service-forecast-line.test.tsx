@@ -25,6 +25,13 @@ describe("ServiceForecastLine", () => {
     expect(line.textContent).toContain("km-grens");
   });
 
+  it("says the service is overdue when the expected date has passed", async () => {
+    renderWith({ forecast: { expectedDate: "2020-08-02", basis: "months", kmDate: "2027-01-05", kmPerDay: 71.8, tooFewReadings: false } });
+    const line = await screen.findByTestId("text-service-forecast");
+    expect(line.textContent).toContain("al te laat (sinds 02-08-2020)");
+    expect(line.textContent).not.toContain("Verwachte beurt rond");
+  });
+
   it("says when there are too few readings", async () => {
     renderWith({ forecast: { expectedDate: "2027-01-01", basis: "months", kmDate: null, kmPerDay: null, tooFewReadings: true } });
     expect((await screen.findByTestId("text-service-forecast")).textContent).toMatch(/te weinig km-standen/);

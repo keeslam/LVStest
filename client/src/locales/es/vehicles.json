@@ -542,7 +542,8 @@
       "forecastExpected": "Revisión prevista hacia el {{date}}",
       "forecastPace": "De media {{km}} km al día",
       "forecastBasisKm": "se alcanza primero: el límite de km",
-      "forecastBasisMonths": "se alcanza primero: la fecha"
+      "forecastBasisMonths": "se alcanza primero: la fecha",
+      "forecastOverdue": "La revisión está atrasada (desde el {{date}})"
     },
     "history": {
       "activityTitle": "Historial de actividad",

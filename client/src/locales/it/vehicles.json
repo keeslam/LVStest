@@ -542,7 +542,8 @@
       "forecastExpected": "Tagliando previsto intorno al {{date}}",
       "forecastPace": "In media {{km}} km al giorno",
       "forecastBasisKm": "raggiunto prima: il limite di km",
-      "forecastBasisMonths": "raggiunto prima: la data"
+      "forecastBasisMonths": "raggiunto prima: la data",
+      "forecastOverdue": "Il tagliando è in ritardo (dal {{date}})"
     },
     "history": {
       "activityTitle": "Cronologia delle attività",

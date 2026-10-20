@@ -542,7 +542,8 @@
       "forecastExpected": "Revizie estimată în jurul datei de {{date}}",
       "forecastPace": "În medie {{km}} km pe zi",
       "forecastBasisKm": "atinsă prima: limita de km",
-      "forecastBasisMonths": "atinsă prima: data"
+      "forecastBasisMonths": "atinsă prima: data",
+      "forecastOverdue": "Revizia este întârziată (din {{date}})"
     },
     "history": {
       "activityTitle": "Istoricul activităților",

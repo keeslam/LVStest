@@ -537,7 +537,8 @@
       "forecastExpected": "Verwachte beurt rond {{date}}",
       "forecastPace": "Gemiddeld {{km}} km per dag",
       "forecastBasisKm": "eerst bereikt: de km-grens",
-      "forecastBasisMonths": "eerst bereikt: de datum"
+      "forecastBasisMonths": "eerst bereikt: de datum",
+      "forecastOverdue": "Beurt is al te laat (sinds {{date}})"
     },
     "history": {
       "activityTitle": "Activiteitengeschiedenis",

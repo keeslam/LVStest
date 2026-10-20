@@ -537,7 +537,8 @@
       "forecastExpected": "Service expected around {{date}}",
       "forecastPace": "On average {{km}} km per day",
       "forecastBasisKm": "reached first: the km limit",
-      "forecastBasisMonths": "reached first: the date"
+      "forecastBasisMonths": "reached first: the date",
+      "forecastOverdue": "Service is overdue (since {{date}})"
     },
     "history": {
       "activityTitle": "Activity History",

@@ -547,7 +547,8 @@
       "forecastExpected": "Przegląd przewidywany około {{date}}",
       "forecastPace": "Średnio {{km}} km dziennie",
       "forecastBasisKm": "najpierw osiągnięty: limit km",
-      "forecastBasisMonths": "najpierw osiągnięta: data"
+      "forecastBasisMonths": "najpierw osiągnięta: data",
+      "forecastOverdue": "Przegląd jest spóźniony (od {{date}})"
     },
     "history": {
       "activityTitle": "Historia aktywności",
