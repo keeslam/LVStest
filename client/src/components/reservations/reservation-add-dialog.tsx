@@ -19,6 +19,8 @@ interface ReservationAddDialogProps {
   initialVehicleId?: string;
   initialCustomerId?: string;
   initialStartDate?: string;
+  /** Punt 14: the availability window hands over its period. */
+  initialEndDate?: string;
   children?: React.ReactNode;
   onSuccess?: (reservation: any) => void;
   // Optional controlled-mode props. When provided, the dialog open state is owned by
@@ -32,6 +34,7 @@ export function ReservationAddDialog({
   initialVehicleId, 
   initialCustomerId, 
   initialStartDate,
+  initialEndDate,
   children,
   onSuccess,
   open: controlledOpen,
@@ -141,6 +144,7 @@ export function ReservationAddDialog({
             initialVehicleId={initialVehicleId}
             initialCustomerId={initialCustomerId}
             initialStartDate={initialStartDate}
+            initialEndDate={initialEndDate}
             onPreviewModeChange={setIsInPreviewMode}
             onSuccess={(reservation) => {
               setIsInPreviewMode(false);

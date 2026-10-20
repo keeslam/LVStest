@@ -218,6 +218,8 @@ interface ReservationFormProps {
   initialVehicleId?: string;
   initialCustomerId?: string;
   initialStartDate?: string;
+  /** Punt 14: an end date handed over by the availability window. */
+  initialEndDate?: string;
   onSuccess?: (reservation: Reservation) => void;
   onCancel?: () => void;
   onPreviewModeChange?: (isPreviewMode: boolean) => void;
@@ -235,6 +237,7 @@ export function ReservationForm({
   initialVehicleId,
   initialCustomerId,
   initialStartDate,
+  initialEndDate,
   onSuccess,
   onCancel,
   onPreviewModeChange,
@@ -422,7 +425,7 @@ export function ReservationForm({
   // This runs on every render, and `selectedStartDate` is "" the moment someone
   // empties the date field — `suggestEndDate` answers "" for that instead of
   // throwing "Invalid time value" and taking the reservations page down.
-  const defaultEndDate = !isOpenEnded ? suggestEndDate(selectedStartDate) : "";
+  const defaultEndDate = !isOpenEnded ? (initialEndDate && initialEndDate >= selectedStartDate ? initialEndDate : suggestEndDate(selectedStartDate)) : "";
   
   // Setup form with react-hook-form and zod validation
   // When editing (initialData exists), compute isOpenEnded from endDate since API doesn't return it

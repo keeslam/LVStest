@@ -67,7 +67,8 @@
       "rdw-apk-scan": "Skanuj daty APK w RDW",
       "start-pickup": "Rozpocznij odbiór",
       "start-return": "Rozpocznij przyjęcie zwrotu",
-      "scan": "Skanuj"
+      "scan": "Skanuj",
+      "availability": "Dostępność"
     },
     "rdwScanConfirmTitle": "Skanować daty APK w RDW?",
     "rdwScanConfirmDescription": "Spowoduje to pobranie z RDW daty APK dla całej floty i może potrwać kilka minut. Nic nie zostanie zmienione: różnice trafią jako propozycje na listę, którą następnie się ocenia.",
@@ -75,7 +76,8 @@
     "hints": {
       "start-pickup": "Wydanie samochodu klientowi",
       "start-return": "Przyjęcie samochodu od klienta",
-      "scan": "Tylko wyszukiwanie, nic nie jest rozpoczynane"
+      "scan": "Tylko wyszukiwanie, nic nie jest rozpoczynane",
+      "availability": "Który samochód jest wolny?"
     },
     "rdwScanInProgress": "Skanowanie...",
     "rdwScanStartedDescription": "Skanowanie zostało rozpoczęte i działa w tle. Można normalnie pracować dalej - po zakończeniu pojawi się powiadomienie.",
@@ -305,5 +307,29 @@
     "expiresOn": "Wygasa {{date}}",
     "openRental": "Zobacz wynajem",
     "openCustomer": "Zobacz kierowców klienta"
+  },
+  "availabilityDialog": {
+    "title": "Dostępność",
+    "description": "Które samochody są wolne w tym okresie? Nic nie zostanie utworzone, dopóki nie klikniesz Zarezerwuj.",
+    "from": "Od",
+    "until": "Do (włącznie)",
+    "type": "Typ pojazdu",
+    "allTypes": "Wszystkie typy",
+    "noType": "Bez typu",
+    "invalidPeriod": "Wybierz prawidłowy okres: data końcowa nie może być wcześniejsza niż początkowa.",
+    "loading": "Wczytywanie...",
+    "loadFailed": "Nie udało się wczytać dostępności.",
+    "freeTitle": "Wolne od {{from}} do {{until}}: {{count}}",
+    "noneFree": "Brak wolnych samochodów w tym okresie.",
+    "busyTitle": "Teraz zajęte ({{count}})",
+    "reserve": "Zarezerwuj",
+    "fuel": "Bak {{level}}",
+    "freeKm": "{{km}} km/dzień wolne",
+    "apkBadge": "Przegląd wygasa {{date}}",
+    "maintenanceBadge": "Zaplanowany serwis",
+    "freeUntil": "wolny do {{date}}",
+    "freeFrom": "wolny od {{date}}",
+    "freeFromUnknown": "powrót nieznany",
+    "apkExpiredBadge": "Przegląd wygasł {{date}}"
   }
 }

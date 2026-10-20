@@ -630,6 +630,28 @@ Hij voegde toe: "de bestanden en contraten die ooit zijn aangemaakt voor dat voe
 - **Terug in de vloot.** Na een bevestiging wist deze knop de gegevens van het uit de vloot halen. De status volgt daarna weer uit de reserveringen.
 - **Vastlegging.** Beide stappen komen in de geschiedenis van het voertuig. De gegevens staan in de nieuwe kolommen `out_of_fleet_date`, `_reason`, `_sale_price`, `_buyer` en `_note`. Het oude veld `date_out` wordt bewust niet gebruikt, omdat bestaande data daarin onbekend is.
 
+### B-50 — Beschikbaarheidsvenster (20-10-2026)
+
+Kees koos uit de lijst met suggesties punt 14 (OPT-004) en gaf zijn keuzes met klikken:
+- het venster opent als Snelle actie op het dashboard;
+- ook auto's die bijna vrij zijn, met de datum waarop ze vrij komen;
+- per auto: vrije km, APK-waarschuwing, tankniveau en km-stand;
+- de dashboardtegel gebruikt dezelfde berekening.
+
+- **Tegel "Beschikbaarheid" bij Snelle acties.** Hij opent een venster om alleen te kijken.
+  - Je kiest van en tot en met (standaard vandaag plus 3 dagen) en eventueel een voertuigsoort.
+  - Er wordt niets aangemaakt tot je op **Reserveren** klikt. Die knop opent het reserveringsformulier met de auto en beide datums al ingevuld.
+- **Vrij.**
+  - Vrij betekent precies wat het boeken gebruikt (`getAvailableVehiclesInRange`): geen lopende huur in de periode, beide grenzen tellen mee.
+  - Ook niet in de werkplaats, niet "niet voor verhuur" en niet uit de vloot.
+  - De auto's staan per soort, met het aantal.
+  - Een gepland onderhoudsblok maakt een auto niet bezet (B-09), maar krijgt een geel label.
+  - Een APK die in de periode verloopt of al verlopen is, krijgt een rood label.
+- **Nu bezet.** De overige verhuurbare auto's staan in deze lijst.
+  - Is de auto vrij aan het begin en later in de periode verhuurd, dan staat er "vrij t/m (dag voor die huur)".
+  - Is hij aan het begin verhuurd, dan staat er "vrij vanaf (eerste vrije dag)", of "terugkomst onbekend" bij een huur zonder einddatum.
+- **Dashboardtegel "Beschikbare voertuigen".** Telt voortaan de auto's die vandaag te boeken zijn, met dezelfde regel. Eerst keek hij naar de status "beschikbaar", en dan telt een auto met een boeking binnen 30 dagen niet mee. In de testdata ging het van 12 naar 86 auto's.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).

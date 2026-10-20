@@ -42,7 +42,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import React, { useEffect, useState } from "react";
 import { Reservation, UserPermission, Vehicle } from "@shared/schema";
-import { Check, RotateCw, Search, CalendarClock, LogIn, LogOut, ScanLine } from "lucide-react";
+import { Check, RotateCw, Search, CalendarClock, CalendarSearch, LogIn, LogOut, ScanLine } from "lucide-react";
+import { AvailabilityDialog } from "@/components/dashboard/availability-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { isTrueValue } from "@/lib/utils";
 import { formatLicensePlate, plateMatches } from "@/lib/format-utils";
@@ -74,6 +75,8 @@ function ActionIcon({ name, className = "" }: ActionIconProps) {
       return <LogIn className={className} />;
     case "scan-line":
       return <ScanLine className={className} />;
+    case "calendar-search":
+      return <CalendarSearch className={className} />;
     case "calendar-clock":
       return (
         <svg
@@ -315,6 +318,13 @@ const quickActions: QuickAction[] = [
     icon: "scan-line",
     primary: true,
   },
+  // Punt 14 (Kees, 2026-10-20): "is er een auto vrij?" without a booking form.
+  {
+    label: "Availability",
+    dialog: "availability",
+    icon: "calendar-search",
+    primary: true,
+  },
   {
     label: "New Reservation",
     dialog: "new-reservation",
@@ -408,6 +418,8 @@ export function QuickActions() {
   
   // State for the vehicle reservation dialog
   const [vehicleReservationDialogOpen, setVehicleReservationDialogOpen] = useState(false);
+  // Punt 14: the availability window
+  const [availabilityOpen, setAvailabilityOpen] = useState(false);
   
   // State for the document upload dialog
   const [selectedUploadVehicle, setSelectedUploadVehicle] = useState<Vehicle | null>(null);
@@ -1004,6 +1016,28 @@ export function QuickActions() {
                     <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
                     {t(`quickActions.buttons.${action.dialog}`)}
                     <span className="text-xs font-normal opacity-80" data-testid={`hint-quick-${action.dialog}`}>{t(`quickActions.hints.${action.dialog}`)}</span>
+                  </Button>
+                </RequiresPermission>
+              );
+            }
+
+            // Punt 14: the read-only availability window.
+            if (action.dialog === "availability") {
+              return (
+                <RequiresPermission
+                  key={action.label}
+                  anyOf={[UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES, UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS]}
+                >
+                  <Button
+                    variant="outline"
+                    className={actionStyle(action).className}
+                    size={actionStyle(action).size}
+                    onClick={() => setAvailabilityOpen(true)}
+                    data-testid="button-quick-availability"
+                  >
+                    <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
+                    {t(`quickActions.buttons.${action.dialog}`)}
+                    <span className="text-xs font-normal opacity-80" data-testid="hint-quick-availability">{t(`quickActions.hints.${action.dialog}`)}</span>
                   </Button>
                 </RequiresPermission>
               );
@@ -2156,12 +2190,13 @@ export function QuickActions() {
 
           return (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4" data-testid="quick-actions-primary">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4" data-testid="quick-actions-primary">
                 {quickActions.filter(a => a.primary).map(renderAction)}
               </div>
               <div className="flex flex-wrap gap-2" data-testid="quick-actions-secondary">
                 {quickActions.filter(a => !a.primary).map(renderAction)}
               </div>
+              <AvailabilityDialog open={availabilityOpen} onOpenChange={setAvailabilityOpen} />
             </>
           );
           })()}

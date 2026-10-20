@@ -624,6 +624,24 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  // Punt 14 (Kees, 2026-10-20): the availability window — free cars for a
+  // period (the booking rule itself) and busy cars with their first free day.
+  app.get("/api/vehicles/availability-board", hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES, UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req, res) => {
+    const startDate = typeof req.query.startDate === "string" ? req.query.startDate : "";
+    const endDate = typeof req.query.endDate === "string" ? req.query.endDate : "";
+    if (!isCalendarDate(startDate) || !isCalendarDate(endDate) || endDate < startDate) {
+      return res.status(400).json({ message: "Use a real period: startDate and endDate as yyyy-MM-dd, end not before start" });
+    }
+    const type = typeof req.query.type === "string" && req.query.type.trim() && req.query.type !== "all" ? req.query.type.trim().slice(0, 50) : null;
+    try {
+      const { availabilityBoard } = await import("./services/availability-board");
+      res.json(await availabilityBoard(startDate, endDate, type));
+    } catch (error) {
+      console.error("Error building the availability board:", error);
+      res.status(500).json({ message: "Failed to build the availability overview" });
+    }
+  });
+
   app.get("/api/vehicles/warranty-expiring", hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), async (req, res) => {
     try {
       // Get maintenance calendar settings

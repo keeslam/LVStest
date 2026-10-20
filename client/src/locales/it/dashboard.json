@@ -64,7 +64,8 @@
       "rdw-apk-scan": "Scansiona date APK RDW",
       "start-pickup": "Avvia ritiro",
       "start-return": "Avvia presa in consegna",
-      "scan": "Scansione"
+      "scan": "Scansione",
+      "availability": "Disponibilità"
     },
     "rdwScanConfirmTitle": "Scansionare le date APK RDW?",
     "rdwScanConfirmDescription": "Questa operazione richiede all'RDW la data APK dell'intera flotta e può durare alcuni minuti. Non viene modificato nulla: le differenze finiscono come proposte in un elenco, che Lei valuterà.",
@@ -72,7 +73,8 @@
     "hints": {
       "start-pickup": "Consegnare l'auto al cliente",
       "start-return": "Riprendere l'auto dal cliente",
-      "scan": "Solo ricerca, non avvia nulla"
+      "scan": "Solo ricerca, non avvia nulla",
+      "availability": "Quale auto è libera?"
     },
     "rdwScanInProgress": "Scansione in corso...",
     "rdwScanStartedDescription": "La scansione è stata avviata e prosegue in background. Può continuare a lavorare: riceverà una notifica non appena sarà terminata.",
@@ -300,5 +302,29 @@
     "expiresOn": "Scade il {{date}}",
     "openRental": "Vedi noleggio",
     "openCustomer": "Vedi i conducenti del cliente"
+  },
+  "availabilityDialog": {
+    "title": "Disponibilità",
+    "description": "Quali auto sono libere in questo periodo? Non viene creato nulla finché non clicca su Prenota.",
+    "from": "Dal",
+    "until": "Fino al (incluso)",
+    "type": "Tipo di veicolo",
+    "allTypes": "Tutti i tipi",
+    "noType": "Senza tipo",
+    "invalidPeriod": "Scelga un periodo valido: la data di fine non può precedere quella di inizio.",
+    "loading": "Caricamento...",
+    "loadFailed": "Impossibile caricare la disponibilità.",
+    "freeTitle": "Libere dal {{from}} al {{until}}: {{count}}",
+    "noneFree": "Nessuna auto libera in questo periodo.",
+    "busyTitle": "Occupate ora ({{count}})",
+    "reserve": "Prenota",
+    "fuel": "Serbatoio {{level}}",
+    "freeKm": "{{km}} km/giorno gratuiti",
+    "apkBadge": "Revisione scade il {{date}}",
+    "maintenanceBadge": "Manutenzione prevista",
+    "freeUntil": "libera fino al {{date}}",
+    "freeFrom": "libera dal {{date}}",
+    "freeFromUnknown": "rientro sconosciuto",
+    "apkExpiredBadge": "Revisione scaduta {{date}}"
   }
 }

@@ -64,7 +64,8 @@
       "rdw-apk-scan": "Scanați datele APK de la RDW",
       "start-pickup": "Începeți ridicarea",
       "start-return": "Începeți preluarea",
-      "scan": "Scanare"
+      "scan": "Scanare",
+      "availability": "Disponibilitate"
     },
     "rdwScanConfirmTitle": "Scanați datele APK de la RDW?",
     "rdwScanConfirmDescription": "Se solicită de la RDW data APK pentru întreaga flotă, ceea ce poate dura câteva minute. Nu se modifică nimic: diferențele apar ca propunere într-o listă, pe care o evaluați dumneavoastră.",
@@ -72,7 +73,8 @@
     "hints": {
       "start-pickup": "Predați mașina clientului",
       "start-return": "Preluați mașina de la client",
-      "scan": "Doar căutare, nu pornește nimic"
+      "scan": "Doar căutare, nu pornește nimic",
+      "availability": "Ce mașină este liberă?"
     },
     "rdwScanInProgress": "Se scanează...",
     "rdwScanStartedDescription": "Scanarea a pornit și rulează în fundal. Puteți continua să lucrați - veți primi o notificare când este gata.",
@@ -300,5 +302,29 @@
     "expiresOn": "Expiră la {{date}}",
     "openRental": "Vezi închirierea",
     "openCustomer": "Vezi șoferii clientului"
+  },
+  "availabilityDialog": {
+    "title": "Disponibilitate",
+    "description": "Ce mașini sunt libere în această perioadă? Nu se creează nimic până nu apăsați Rezervă.",
+    "from": "De la",
+    "until": "Până la (inclusiv)",
+    "type": "Tip de vehicul",
+    "allTypes": "Toate tipurile",
+    "noType": "Fără tip",
+    "invalidPeriod": "Alegeți o perioadă validă: data de sfârșit nu poate fi înaintea celei de început.",
+    "loading": "Se încarcă...",
+    "loadFailed": "Disponibilitatea nu a putut fi încărcată.",
+    "freeTitle": "Libere între {{from}} și {{until}}: {{count}}",
+    "noneFree": "Nicio mașină liberă în această perioadă.",
+    "busyTitle": "Ocupate acum ({{count}})",
+    "reserve": "Rezervă",
+    "fuel": "Rezervor {{level}}",
+    "freeKm": "{{km}} km/zi gratuiți",
+    "apkBadge": "ITP expiră la {{date}}",
+    "maintenanceBadge": "Întreținere planificată",
+    "freeUntil": "liberă până la {{date}}",
+    "freeFrom": "liberă din {{date}}",
+    "freeFromUnknown": "returnare necunoscută",
+    "apkExpiredBadge": "ITP expirat {{date}}"
   }
 }

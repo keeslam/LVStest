@@ -61,7 +61,8 @@
       "rdw-apk-scan": "Scan RDW APK Dates",
       "start-pickup": "Start pickup",
       "start-return": "Start return",
-      "scan": "Scan"
+      "scan": "Scan",
+      "availability": "Availability"
     },
     "rdwScanConfirmTitle": "Scan RDW APK dates?",
     "rdwScanConfirmDescription": "This asks the RDW for the APK date of the whole fleet and can take a few minutes. Nothing is changed: differences are put in a list as proposals, which you review.",
@@ -69,7 +70,8 @@
     "hints": {
       "start-pickup": "Hand a car to the customer",
       "start-return": "Take a car back from the customer",
-      "scan": "Look up only, start nothing"
+      "scan": "Look up only, start nothing",
+      "availability": "Which car is free?"
     },
     "rdwScanInProgress": "Scanning...",
     "rdwScanStartedDescription": "The scan has started and is running in the background. Feel free to keep working - you'll get a notification once it's done.",
@@ -295,5 +297,29 @@
     "expiresOn": "Expires on {{date}}",
     "openRental": "View rental",
     "openCustomer": "View the customer's drivers"
+  },
+  "availabilityDialog": {
+    "title": "Availability",
+    "description": "Which cars are free in this period? Nothing is created until you click Reserve.",
+    "from": "From",
+    "until": "Up to and including",
+    "type": "Vehicle type",
+    "allTypes": "All types",
+    "noType": "No type",
+    "invalidPeriod": "Choose a valid period: the end date cannot be before the start date.",
+    "loading": "Loading...",
+    "loadFailed": "The availability could not be loaded.",
+    "freeTitle": "Free from {{from}} to {{until}}: {{count}}",
+    "noneFree": "No car is free in this period.",
+    "busyTitle": "Busy now ({{count}})",
+    "reserve": "Reserve",
+    "fuel": "Tank {{level}}",
+    "freeKm": "{{km}} km/day free",
+    "apkBadge": "MOT expires {{date}}",
+    "maintenanceBadge": "Maintenance planned",
+    "freeUntil": "free until {{date}}",
+    "freeFrom": "free from {{date}}",
+    "freeFromUnknown": "return unknown",
+    "apkExpiredBadge": "MOT expired {{date}}"
   }
 }

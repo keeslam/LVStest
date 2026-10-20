@@ -61,7 +61,8 @@
       "rdw-apk-scan": "RDW APK-datums scannen",
       "start-pickup": "Ophalen starten",
       "start-return": "Innemen starten",
-      "scan": "Scannen"
+      "scan": "Scannen",
+      "availability": "Beschikbaarheid"
     },
     "rdwScanConfirmTitle": "RDW APK-datums scannen?",
     "rdwScanConfirmDescription": "Dit vraagt de APK-datum van het hele wagenpark op bij de RDW en kan enkele minuten duren. Er wordt niets aangepast: verschillen komen als voorstel in een lijst te staan, die jij beoordeelt.",
@@ -69,7 +70,8 @@
     "hints": {
       "start-pickup": "Auto meegeven aan de klant",
       "start-return": "Auto terugnemen van de klant",
-      "scan": "Alleen opzoeken, niets starten"
+      "scan": "Alleen opzoeken, niets starten",
+      "availability": "Welke auto is vrij?"
     },
     "rdwScanInProgress": "Scannen...",
     "rdwScanStartedDescription": "De scan is gestart en loopt op de achtergrond. Je kunt gewoon doorwerken - je krijgt een melding zodra deze klaar is.",
@@ -295,5 +297,29 @@
     "expiresOn": "Verloopt op {{date}}",
     "openRental": "Huur bekijken",
     "openCustomer": "Chauffeurs van de klant bekijken"
+  },
+  "availabilityDialog": {
+    "title": "Beschikbaarheid",
+    "description": "Welke auto's zijn vrij in deze periode? Er wordt niets aangemaakt tot u op Reserveren klikt.",
+    "from": "Van",
+    "until": "Tot en met",
+    "type": "Voertuigsoort",
+    "allTypes": "Alle soorten",
+    "noType": "Zonder soort",
+    "invalidPeriod": "Kies een geldige periode: de einddatum mag niet voor de begindatum liggen.",
+    "loading": "Bezig met laden...",
+    "loadFailed": "De beschikbaarheid kon niet worden geladen.",
+    "freeTitle": "Vrij van {{from}} t/m {{until}}: {{count}}",
+    "noneFree": "Geen auto vrij in deze periode.",
+    "busyTitle": "Nu bezet ({{count}})",
+    "reserve": "Reserveren",
+    "fuel": "Tank {{level}}",
+    "freeKm": "{{km}} km/dag vrij",
+    "apkBadge": "APK verloopt {{date}}",
+    "maintenanceBadge": "Onderhoud gepland",
+    "freeUntil": "vrij t/m {{date}}",
+    "freeFrom": "vrij vanaf {{date}}",
+    "freeFromUnknown": "terugkomst onbekend",
+    "apkExpiredBadge": "APK verlopen {{date}}"
   }
 }

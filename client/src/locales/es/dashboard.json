@@ -64,7 +64,8 @@
       "rdw-apk-scan": "Escanear fechas de APK en el RDW",
       "start-pickup": "Iniciar recogida",
       "start-return": "Iniciar recepción",
-      "scan": "Escanear"
+      "scan": "Escanear",
+      "availability": "Disponibilidad"
     },
     "rdwScanConfirmTitle": "¿Escanear las fechas de APK en el RDW?",
     "rdwScanConfirmDescription": "Se consultará al RDW la fecha de la APK de toda la flota, lo que puede tardar unos minutos. No se modifica nada: las diferencias aparecen como propuesta en una lista que usted revisa.",
@@ -72,7 +73,8 @@
     "hints": {
       "start-pickup": "Entregar el coche al cliente",
       "start-return": "Recoger el coche del cliente",
-      "scan": "Solo consultar, no se inicia nada"
+      "scan": "Solo consultar, no se inicia nada",
+      "availability": "¿Qué coche está libre?"
     },
     "rdwScanInProgress": "Escaneando...",
     "rdwScanStartedDescription": "El escaneo se ha iniciado y se ejecuta en segundo plano. Puede seguir trabajando con normalidad: recibirá un aviso cuando termine.",
@@ -300,5 +302,29 @@
     "expiresOn": "Caduca el {{date}}",
     "openRental": "Ver alquiler",
     "openCustomer": "Ver los conductores del cliente"
+  },
+  "availabilityDialog": {
+    "title": "Disponibilidad",
+    "description": "¿Qué coches están libres en este periodo? No se crea nada hasta que pulse Reservar.",
+    "from": "Desde",
+    "until": "Hasta (incluido)",
+    "type": "Tipo de vehículo",
+    "allTypes": "Todos los tipos",
+    "noType": "Sin tipo",
+    "invalidPeriod": "Elija un periodo válido: la fecha de fin no puede ser anterior a la de inicio.",
+    "loading": "Cargando...",
+    "loadFailed": "No se pudo cargar la disponibilidad.",
+    "freeTitle": "Libres del {{from}} al {{until}}: {{count}}",
+    "noneFree": "Ningún coche libre en este periodo.",
+    "busyTitle": "Ocupados ahora ({{count}})",
+    "reserve": "Reservar",
+    "fuel": "Depósito {{level}}",
+    "freeKm": "{{km}} km/día libres",
+    "apkBadge": "ITV caduca el {{date}}",
+    "maintenanceBadge": "Mantenimiento previsto",
+    "freeUntil": "libre hasta el {{date}}",
+    "freeFrom": "libre desde el {{date}}",
+    "freeFromUnknown": "regreso desconocido",
+    "apkExpiredBadge": "ITV caducada {{date}}"
   }
 }

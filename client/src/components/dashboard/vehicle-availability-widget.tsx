@@ -9,14 +9,18 @@ import { ReservationAddDialog } from "@/components/reservations/reservation-add-
 import { Vehicle, UserPermission } from "@shared/schema";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { NoDataAccess } from "@/components/ui/no-data-access";
+import { officeToday } from "@/lib/office-date";
 
 export function VehicleAvailabilityWidget() {
   const { t } = useTranslation("dashboard");
   // The dashboard's own permission is VIEW_DASHBOARD; this card's data needs
   // the vehicle family instead (GET /api/vehicles/available, routes.ts:463).
   const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
+  // Punt 14 (Kees, 2026-10-20): "free today" by the booking rule itself (the same
+  // answer as the availability window and the booking form), not by the status field.
+  const today = officeToday();
   const { data: vehicles, isLoading } = useQuery<Vehicle[]>({
-    queryKey: ["/api/vehicles/available"],
+    queryKey: [`/api/vehicles/available?startDate=${today}&endDate=${today}`],
     enabled: canViewVehicles,
   });
 
