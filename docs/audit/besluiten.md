@@ -650,6 +650,10 @@ Kees koos uit de lijst met suggesties punt 14 (OPT-004) en gaf zijn keuzes met k
 - **Nu bezet.** De overige verhuurbare auto's staan in deze lijst.
   - Is de auto vrij aan het begin en later in de periode verhuurd, dan staat er "vrij t/m (dag voor die huur)".
   - Is hij aan het begin verhuurd, dan staat er "vrij vanaf (eerste vrije dag)", of "terugkomst onbekend" bij een huur zonder einddatum.
+- **Opzet na Kees' proef ("super onoverzichtelijk met zo veel voertuigen erin", "de tabel is niet breed genoeg").**
+  - Tabbladen Vrij en Bezet met een zoekveld (kenteken, merk of model) en een compacte tabel: één regel per auto, 15 per pagina.
+  - Het venster is op desktop bijna schermbreed.
+  - Een APK die al verlopen is, krijgt het label "APK verlopen"; de datum staat in de tooltip.
 - **Dashboardtegel "Beschikbare voertuigen".** Telt voortaan de auto's die vandaag te boeken zijn, met dezelfde regel. Eerst keek hij naar de status "beschikbaar", en dan telt een auto met een boeking binnen 30 dagen niet mee. In de testdata ging het van 12 naar 86 auto's.
 
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)

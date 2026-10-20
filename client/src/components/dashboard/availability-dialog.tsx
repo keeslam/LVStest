@@ -1,20 +1,25 @@
 /**
  * Punt 14 (Kees, 2026-10-20) — "Beschikbaarheid" from the dashboard's quick
- * actions: which cars are free for a period, grouped by type, and when the
- * busy ones are free again. Read-only; "Reserveren" opens the booking form
- * with the car and the period filled in. Free means exactly what booking uses
+ * actions: which cars are free for a period, and when the busy ones are free
+ * again. Read-only; "Reserveren" opens the booking form with the car and the
+ * period filled in. Free means exactly what booking uses
  * (GET /api/vehicles/availability-board).
+ *
+ * Kees found the first version (every car as a card, grouped per type)
+ * "super onoverzichtelijk"; he chose a compact table: tabs Vrij / Bezet, a
+ * search on plate, brand or model, one line per car and 15 per page.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { Wrench } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, Wrench } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ReservationAddDialog } from "@/components/reservations/reservation-add-dialog";
 import { RequiresPermission } from "@/components/ui/requires-permission";
 import { formatFuelLevel, formatLicensePlate, formatVehicleType } from "@/lib/format-utils";
@@ -40,10 +45,17 @@ interface AvailabilityRow {
 
 interface AvailabilityBoard { startDate: string; endDate: string; free: AvailabilityRow[]; busy: AvailabilityRow[] }
 
+const PAGE_SIZE = 15;
+
 function plusDays(day: string, days: number): string {
   const d = new Date(`${day}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
+}
+
+/** Plate without dashes, brand and model, lower case: what the search box looks in. */
+function haystack(r: AvailabilityRow): string {
+  return `${r.licensePlate.replace(/-/g, "")} ${r.brand} ${r.model}`.toLowerCase();
 }
 
 export function AvailabilityDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
@@ -52,57 +64,74 @@ export function AvailabilityDialog({ open, onOpenChange }: { open: boolean; onOp
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(plusDays(today, 3));
   const [type, setType] = useState("all");
+  const [tab, setTab] = useState<"free" | "busy">("free");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [reserve, setReserve] = useState<AvailabilityRow | null>(null);
 
   const validPeriod = /^\d{4}-\d{2}-\d{2}$/.test(startDate) && /^\d{4}-\d{2}-\d{2}$/.test(endDate) && endDate >= startDate;
   const url = `/api/vehicles/availability-board?startDate=${startDate}&endDate=${endDate}`;
   const { data, isLoading, isError } = useQuery<AvailabilityBoard>({ queryKey: [url], enabled: open && validPeriod });
-  // The type is filtered here, on the full answer, so choosing a type never empties the list of types.
+
+  // The type list comes from the full answer, so choosing a type never empties it.
   const types = useMemo(() => {
     const set = new Set<string>();
     for (const r of [...(data?.free ?? []), ...(data?.busy ?? [])]) if (r.vehicleType) set.add(r.vehicleType);
     return Array.from(set).sort((a, b) => formatVehicleType(a).localeCompare(formatVehicleType(b)));
   }, [data]);
 
-  const ofType = (r: AvailabilityRow) => type === "all" || (r.vehicleType ?? "").toLowerCase() === type.toLowerCase();
-  const free = (data?.free ?? []).filter(ofType);
-  const busy = (data?.busy ?? []).filter(ofType);
-  const groups = useMemo(() => {
-    const map = new Map<string, AvailabilityRow[]>();
-    for (const r of free) {
-      const key = r.vehicleType || t("availabilityDialog.noType");
-      map.set(key, [...(map.get(key) ?? []), r]);
-    }
-    return Array.from(map.entries()).sort((a, b) => formatVehicleType(a[0]).localeCompare(formatVehicleType(b[0])));
-  }, [free, t]);
+  const matches = useMemo(() => {
+    const needle = search.trim().toLowerCase().replace(/-/g, "");
+    return (r: AvailabilityRow) =>
+      (type === "all" || (r.vehicleType ?? "").toLowerCase() === type.toLowerCase())
+      && (!needle || haystack(r).includes(needle));
+  }, [type, search]);
+  const free = useMemo(() => (data?.free ?? []).filter(matches), [data, matches]);
+  const busy = useMemo(() => (data?.busy ?? []).filter(matches), [data, matches]);
+  const rows = tab === "free" ? free : busy;
+  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+  const shown = rows.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  useEffect(() => { setPage(1); }, [tab, type, search, startDate, endDate]);
 
-  const details = (r: AvailabilityRow) => (
-    <div className="text-xs text-gray-500 flex flex-wrap gap-x-3 gap-y-1">
-      {r.currentMileage != null && <span>{r.currentMileage.toLocaleString("nl-NL")} km</span>}
-      {r.currentFuelLevel && <span>{t("availabilityDialog.fuel", { level: formatFuelLevel(r.currentFuelLevel) })}</span>}
-      {r.freeKmPerDay != null && <span>{t("availabilityDialog.freeKm", { km: r.freeKmPerDay })}</span>}
-    </div>
-  );
-  const badges = (r: AvailabilityRow) => (
-    <>
+  const labels = (r: AvailabilityRow) => (
+    <div className="flex flex-wrap gap-1">
       {r.apkExpiresInPeriod && (
-        <Badge className="bg-red-100 text-red-700 hover:bg-red-100" data-testid={`badge-apk-${r.id}`}>
-          {t(r.apkDate && r.apkDate.slice(0, 10) < today ? "availabilityDialog.apkExpiredBadge" : "availabilityDialog.apkBadge", { date: formatDutchDate(r.apkDate?.slice(0, 10)) })}
+        <Badge
+          className="bg-red-100 text-red-700 hover:bg-red-100 px-1.5 py-0 text-[11px] font-medium whitespace-nowrap"
+          title={formatDutchDate(r.apkDate?.slice(0, 10))}
+          data-testid={`badge-apk-${r.id}`}
+        >
+          {r.apkDate && r.apkDate.slice(0, 10) < today
+            ? t("availabilityDialog.apkExpiredShort")
+            : t("availabilityDialog.apkBadge", { date: formatDutchDate(r.apkDate?.slice(0, 10)) })}
         </Badge>
       )}
       {r.maintenancePlanned && (
-        <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 gap-1" data-testid={`badge-maintenance-${r.id}`}>
+        <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 gap-1 px-1.5 py-0 text-[11px] font-medium whitespace-nowrap" data-testid={`badge-maintenance-${r.id}`}>
           <Wrench className="h-3 w-3" />
           {t("availabilityDialog.maintenanceBadge")}
         </Badge>
       )}
-    </>
+    </div>
+  );
+
+  const tabButton = (value: "free" | "busy", count: number) => (
+    <button
+      type="button"
+      onClick={() => setTab(value)}
+      className={`rounded-md px-3 py-1.5 text-sm font-medium ${tab === value ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+      aria-pressed={tab === value}
+      data-testid={`tab-availability-${value}`}
+    >
+      {t(value === "free" ? "availabilityDialog.tabFree" : "availabilityDialog.tabBusy", { count })}
+    </button>
   );
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" data-testid="dialog-availability">
+        <DialogContent className="max-w-[min(95vw,90rem)] max-h-[90vh] overflow-y-auto" data-testid="dialog-availability">
           <DialogHeader>
             <DialogTitle>{t("availabilityDialog.title")}</DialogTitle>
             <DialogDescription>{t("availabilityDialog.description")}</DialogDescription>
@@ -136,65 +165,86 @@ export function AvailabilityDialog({ open, onOpenChange }: { open: boolean; onOp
           ) : isError ? (
             <p className="text-sm text-red-600">{t("availabilityDialog.loadFailed")}</p>
           ) : (
-            <div className="space-y-5">
-              <section data-testid="availability-free">
-                <h3 className="font-semibold text-green-700">
-                  {t("availabilityDialog.freeTitle", { count: free.length, from: formatDutchDate(startDate), until: formatDutchDate(endDate) })}
-                </h3>
-                {free.length === 0 ? (
-                  <p className="text-sm text-gray-500 mt-1">{t("availabilityDialog.noneFree")}</p>
-                ) : groups.map(([groupType, rows]) => (
-                  <div key={groupType} className="mt-3">
-                    <p className="text-sm font-medium text-gray-700">{formatVehicleType(groupType)} <span className="text-gray-400">({rows.length})</span></p>
-                    <ul className="mt-1 divide-y rounded-md border">
-                      {rows.map((r) => (
-                        <li key={r.id} className="flex items-center gap-3 p-2" data-testid={`availability-free-${r.id}`}>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-medium">{formatLicensePlate(r.licensePlate)}</span>
-                              <span className="text-sm text-gray-600 truncate">{r.brand} {r.model}</span>
-                              {badges(r)}
-                            </div>
-                            {details(r)}
-                          </div>
-                          <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
-                            <Button size="sm" variant="outline" onClick={() => setReserve(r)} data-testid={`button-availability-reserve-${r.id}`}>
-                              {t("availabilityDialog.reserve")}
-                            </Button>
-                          </RequiresPermission>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </section>
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                {tabButton("free", free.length)}
+                {tabButton("busy", busy.length)}
+                <div className="relative ml-auto w-full sm:w-64">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" aria-hidden="true" />
+                  <Input
+                    className="pl-8 h-9"
+                    placeholder={t("availabilityDialog.searchPlaceholder")}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    aria-label={t("availabilityDialog.searchPlaceholder")}
+                    data-testid="input-availability-search"
+                  />
+                </div>
+              </div>
 
-              {busy.length > 0 && (
-                <section data-testid="availability-busy">
-                  <h3 className="font-semibold text-gray-700">{t("availabilityDialog.busyTitle", { count: busy.length })}</h3>
-                  <ul className="mt-2 divide-y rounded-md border">
-                    {busy.map((r) => (
-                      <li key={r.id} className="flex items-center gap-3 p-2" data-testid={`availability-busy-${r.id}`}>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-medium">{formatLicensePlate(r.licensePlate)}</span>
-                            <span className="text-sm text-gray-600 truncate">{r.brand} {r.model}</span>
-                            {r.vehicleType && <span className="text-xs text-gray-400">{formatVehicleType(r.vehicleType)}</span>}
-                            {badges(r)}
-                          </div>
-                          {details(r)}
-                        </div>
-                        <span className="text-sm whitespace-nowrap text-gray-700" data-testid={`availability-busy-when-${r.id}`}>
-                          {r.freeUntil
-                            ? t("availabilityDialog.freeUntil", { date: formatDutchDate(r.freeUntil) })
-                            : r.freeFrom
-                              ? t("availabilityDialog.freeFrom", { date: formatDutchDate(r.freeFrom) })
-                              : t("availabilityDialog.freeFromUnknown")}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
+              {rows.length === 0 ? (
+                <p className="text-sm text-gray-500 py-4 text-center">
+                  {t(tab === "free" ? "availabilityDialog.noneFree" : "availabilityDialog.noneBusy")}
+                </p>
+              ) : (
+                <div className="rounded-md border overflow-x-auto">
+                  <Table data-testid={`table-availability-${tab}`}>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t("availabilityDialog.colPlate")}</TableHead>
+                        <TableHead>{t("availabilityDialog.colModel")}</TableHead>
+                        <TableHead>{t("availabilityDialog.colType")}</TableHead>
+                        <TableHead className="text-right">{t("availabilityDialog.colKm")}</TableHead>
+                        <TableHead>{t("availabilityDialog.colFuel")}</TableHead>
+                        <TableHead className="text-right">{t("availabilityDialog.colFreeKm")}</TableHead>
+                        <TableHead>{t("availabilityDialog.colNotes")}</TableHead>
+                        <TableHead className="text-right">{tab === "busy" ? t("availabilityDialog.colWhen") : ""}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {shown.map((r) => (
+                        <TableRow key={r.id} className="text-sm" data-testid={`availability-${tab}-${r.id}`}>
+                          <TableCell className="py-1.5 font-medium whitespace-nowrap">{formatLicensePlate(r.licensePlate)}</TableCell>
+                          <TableCell className="py-1.5 max-w-[12rem] lg:max-w-[22rem] truncate" title={`${r.brand} ${r.model}`}>{r.brand} {r.model}</TableCell>
+                          <TableCell className="py-1.5 whitespace-nowrap text-gray-600">{r.vehicleType ? formatVehicleType(r.vehicleType) : "—"}</TableCell>
+                          <TableCell className="py-1.5 text-right whitespace-nowrap">{r.currentMileage != null ? r.currentMileage.toLocaleString("nl-NL") : "—"}</TableCell>
+                          <TableCell className="py-1.5 whitespace-nowrap">{r.currentFuelLevel ? formatFuelLevel(r.currentFuelLevel) : "—"}</TableCell>
+                          <TableCell className="py-1.5 text-right whitespace-nowrap">{r.freeKmPerDay != null ? r.freeKmPerDay : "—"}</TableCell>
+                          <TableCell className="py-1.5">{labels(r)}</TableCell>
+                          <TableCell className="py-1.5 text-right whitespace-nowrap">
+                            {tab === "free" ? (
+                              <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                                <Button size="sm" variant="outline" className="h-7" onClick={() => setReserve(r)} data-testid={`button-availability-reserve-${r.id}`}>
+                                  {t("availabilityDialog.reserve")}
+                                </Button>
+                              </RequiresPermission>
+                            ) : (
+                              <span data-testid={`availability-busy-when-${r.id}`}>
+                                {r.freeUntil
+                                  ? t("availabilityDialog.freeUntil", { date: formatDutchDate(r.freeUntil) })
+                                  : r.freeFrom
+                                    ? t("availabilityDialog.freeFrom", { date: formatDutchDate(r.freeFrom) })
+                                    : t("availabilityDialog.freeFromUnknown")}
+                              </span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+
+              {pageCount > 1 && (
+                <div className="flex items-center justify-end gap-2 text-sm" data-testid="availability-pager">
+                  <span className="text-gray-500">{t("availabilityDialog.pageOf", { page: safePage, pages: pageCount })}</span>
+                  <Button variant="outline" size="sm" className="h-8 w-8 p-0" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)} aria-label={t("availabilityDialog.prevPage")} data-testid="availability-prev-page">
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" className="h-8 w-8 p-0" disabled={safePage >= pageCount} onClick={() => setPage(safePage + 1)} aria-label={t("availabilityDialog.nextPage")} data-testid="availability-next-page">
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               )}
             </div>
           )}
