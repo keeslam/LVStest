@@ -542,7 +542,12 @@
       "repairHistoryTitle": "Historia napraw",
       "repairFallback": "Naprawa",
       "noRepairHistory": "Brak jeszcze historii napraw",
-      "noRepairHistoryHint": "Awarie, wymiany opon i naprawy pojawią się tutaj"
+      "noRepairHistoryHint": "Awarie, wymiany opon i naprawy pojawią się tutaj",
+      "forecastTooFew": "Przewidywana data: za mało odczytów licznika, aby przewidzieć.",
+      "forecastExpected": "Przegląd przewidywany około {{date}}",
+      "forecastPace": "Średnio {{km}} km dziennie",
+      "forecastBasisKm": "najpierw osiągnięty: limit km",
+      "forecastBasisMonths": "najpierw osiągnięta: data"
     },
     "history": {
       "activityTitle": "Historia aktywności",

@@ -532,7 +532,12 @@
       "repairHistoryTitle": "Reparatiegeschiedenis",
       "repairFallback": "Reparatie",
       "noRepairHistory": "Nog geen reparatiegeschiedenis",
-      "noRepairHistoryHint": "Pech, bandenwissels en reparaties verschijnen hier"
+      "noRepairHistoryHint": "Pech, bandenwissels en reparaties verschijnen hier",
+      "forecastTooFew": "Verwachte datum: te weinig km-standen om te voorspellen.",
+      "forecastExpected": "Verwachte beurt rond {{date}}",
+      "forecastPace": "Gemiddeld {{km}} km per dag",
+      "forecastBasisKm": "eerst bereikt: de km-grens",
+      "forecastBasisMonths": "eerst bereikt: de datum"
     },
     "history": {
       "activityTitle": "Activiteitengeschiedenis",

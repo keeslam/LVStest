@@ -537,7 +537,12 @@
       "repairHistoryTitle": "Istoricul reparațiilor",
       "repairFallback": "Reparație",
       "noRepairHistory": "Încă niciun istoric de reparații",
-      "noRepairHistoryHint": "Defecțiunile, schimburile de anvelope și reparațiile apar aici"
+      "noRepairHistoryHint": "Defecțiunile, schimburile de anvelope și reparațiile apar aici",
+      "forecastTooFew": "Data estimată: prea puține citiri ale kilometrajului pentru o estimare.",
+      "forecastExpected": "Revizie estimată în jurul datei de {{date}}",
+      "forecastPace": "În medie {{km}} km pe zi",
+      "forecastBasisKm": "atinsă prima: limita de km",
+      "forecastBasisMonths": "atinsă prima: data"
     },
     "history": {
       "activityTitle": "Istoricul activităților",

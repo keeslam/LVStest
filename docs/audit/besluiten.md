@@ -587,6 +587,24 @@ Kees koos uit de lijst met suggesties punt 1, "afrekening bij inleveren", en gaf
   - Wordt het inleveren teruggedraaid (B-30), dan worden de extra kosten ook gewist.
   - Factureren blijft in de boekhouding (D9).
 
+### B-48 — Verwachte onderhoudsdatum (20-10-2026)
+
+Kees koos uit de lijst met suggesties punt 6. Zijn keuzes, met klikken: het gemiddelde over **alle gegevens**; **niets voorspellen** als er te weinig km-standen zijn; tonen op de **voertuigkaart** en in de **onderhoudskalender**; niet eerder waarschuwen. Over de kalender zei hij: "alle autos maar dan met de optie om ook alleen binnenkort weer te geven of niks weer te geven".
+
+- **Km per dag.**
+  - De app gebruikt alle km-standen met een datum: ophalen, inleveren, schadechecks, de laatste beurt en de huidige stand (op de dag dat het voertuig het laatst is gewijzigd).
+  - Het gemiddelde loopt van de eerste tot de laatste stand. Een stand die lager is dan een eerdere stand telt niet mee.
+  - Bij minder dan 2 standen, of minder dan 14 dagen ertussen, voorspelt de app niets. De voertuigkaart zegt dat dan.
+- **Verwachte beurt.** De vroegste van twee datums:
+  - vandaag + resterende km ÷ km per dag;
+  - de bestaande datum op maanden.
+- **Voertuigkaart.** Bij Volgende beurt staat bijvoorbeeld: "Verwachte beurt rond 12-12-2026 · gemiddeld 85 km per dag · eerst bereikt: de km-grens".
+- **Onderhoudskalender.**
+  - Elke auto met een verwachte datum staat op die dag in de kalender, met de titel "Verwachte onderhoudsbeurt". Een auto die al te laat is, blijft op vandaag staan.
+  - Er is een keuze **Onderhoud: alle verwachte / alleen binnenkort / niet tonen**, die per browser wordt onthouden.
+  - De schakelaar onder de instellingen blijft werken.
+- **Nachtelijke melding.** Ongewijzigd.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).

@@ -450,7 +450,9 @@
       "reminderOriginallyWeekend": " (El recordatorio estaba planificado originalmente para el fin de semana)",
       "reminderMovedToMonday": " (El recordatorio se ha trasladado del fin de semana al lunes)",
       "movedToMonday": " (Trasladado del fin de semana al lunes)",
-      "scheduledMaintenanceForVehicle": "{{title}} para {{vehicle}}"
+      "scheduledMaintenanceForVehicle": "{{title}} para {{vehicle}}",
+      "serviceExpectedTitle": "Revisión prevista",
+      "serviceExpectedPace": "de media {{km}} km al día"
     },
     "dayDialog": {
       "title": "Eventos de mantenimiento - {{date}}",
@@ -512,6 +514,12 @@
       "maintenanceRecordDeletedDescription": "El registro de mantenimiento se ha movido a la papelera",
       "deleteMaintenanceFailedDescription": "Error al eliminar el mantenimiento",
       "cannotFindReservationDescription": "No se encuentran los datos de la reserva de mantenimiento"
+    },
+    "serviceMode": {
+      "label": "Recordatorios de revisión",
+      "all": "Revisión: todas las previstas",
+      "soon": "Revisión: solo próximas",
+      "off": "Revisión: no mostrar"
     }
   }
 }

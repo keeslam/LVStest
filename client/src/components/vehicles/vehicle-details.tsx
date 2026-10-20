@@ -24,6 +24,7 @@ import { Price } from "@/components/ui/price";
 import { isTrueValue } from "@/lib/utils";
 import { getDaysUntil, getUrgencyColorClass } from "@/lib/date-utils";
 import { computeServiceDue, serviceDueDefaultsFromSettings, type ServiceDueSettingsFields } from "@shared/service-due";
+import { ServiceForecastLine } from "@/components/vehicles/service-forecast-line";
 import { Vehicle, Expense, Document, Reservation, UserRole, UserPermission, Customer } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { InlineDocumentUpload } from "@/components/documents/inline-document-upload";
@@ -3108,6 +3109,8 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                         </div>
                       )}
                     </div>
+                    {/* Punt 6: the expected date from the average km per day */}
+                    <ServiceForecastLine vehicleId={vehicle.id} />
                     <div className="mt-3 text-sm text-gray-600">
                       <p>{t('details.maintenance.serviceIntervalLabel', { km: serviceDueInfo.intervalKm.toLocaleString(), months: serviceDueInfo.intervalMonths })}</p>
                       <p>{t('details.maintenance.lastServiceLabel', { date: vehicle.lastServiceDate ? formatDate(vehicle.lastServiceDate) : t('details.maintenance.notRecorded') })}</p>

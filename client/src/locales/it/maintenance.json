@@ -261,20 +261,62 @@
     "whoIsBringingVehicle": "Chi porta il veicolo in manutenzione?",
     "maintenanceType": "Tipo di manutenzione",
     "typesFull": {
-      "breakdown": { "label": "Guasto del veicolo", "description": "L'auto non si avvia, problemi al motore" },
-      "tire_replacement": { "label": "Cambio pneumatici", "description": "Pneumatici usurati, foratura" },
-      "brake_service": { "label": "Manutenzione dei freni", "description": "Pastiglie usurate, liquido dei freni" },
-      "engine_repair": { "label": "Riparazione del motore", "description": "Problemi al motore, surriscaldamento" },
-      "transmission_repair": { "label": "Riparazione della trasmissione", "description": "Problemi con il cambio marcia" },
-      "electrical_issue": { "label": "Problema elettrico", "description": "Illuminazione, sensori, elettronica" },
-      "air_conditioning": { "label": "Aria condizionata", "description": "Riparazione del climatizzatore, ricarica del gas" },
-      "battery_replacement": { "label": "Sostituzione della batteria", "description": "Batteria scarica, problemi di ricarica" },
-      "oil_change": { "label": "Cambio dell'olio", "description": "Cambio olio periodico" },
-      "regular_maintenance": { "label": "Manutenzione ordinaria", "description": "Tagliando programmato" },
-      "apk_inspection": { "label": "Revisione APK", "description": "Revisione annuale del veicolo" },
-      "warranty_service": { "label": "Intervento in garanzia", "description": "Riparazioni coperte" },
-      "accident_damage": { "label": "Danni da incidente", "description": "Riparazioni dopo una collisione" },
-      "other": { "label": "Altro", "description": "Manutenzione personalizzata" }
+      "breakdown": {
+        "label": "Guasto del veicolo",
+        "description": "L'auto non si avvia, problemi al motore"
+      },
+      "tire_replacement": {
+        "label": "Cambio pneumatici",
+        "description": "Pneumatici usurati, foratura"
+      },
+      "brake_service": {
+        "label": "Manutenzione dei freni",
+        "description": "Pastiglie usurate, liquido dei freni"
+      },
+      "engine_repair": {
+        "label": "Riparazione del motore",
+        "description": "Problemi al motore, surriscaldamento"
+      },
+      "transmission_repair": {
+        "label": "Riparazione della trasmissione",
+        "description": "Problemi con il cambio marcia"
+      },
+      "electrical_issue": {
+        "label": "Problema elettrico",
+        "description": "Illuminazione, sensori, elettronica"
+      },
+      "air_conditioning": {
+        "label": "Aria condizionata",
+        "description": "Riparazione del climatizzatore, ricarica del gas"
+      },
+      "battery_replacement": {
+        "label": "Sostituzione della batteria",
+        "description": "Batteria scarica, problemi di ricarica"
+      },
+      "oil_change": {
+        "label": "Cambio dell'olio",
+        "description": "Cambio olio periodico"
+      },
+      "regular_maintenance": {
+        "label": "Manutenzione ordinaria",
+        "description": "Tagliando programmato"
+      },
+      "apk_inspection": {
+        "label": "Revisione APK",
+        "description": "Revisione annuale del veicolo"
+      },
+      "warranty_service": {
+        "label": "Intervento in garanzia",
+        "description": "Riparazioni coperte"
+      },
+      "accident_damage": {
+        "label": "Danni da incidente",
+        "description": "Riparazioni dopo una collisione"
+      },
+      "other": {
+        "label": "Altro",
+        "description": "Manutenzione personalizzata"
+      }
     },
     "scheduledDate": "Data prevista",
     "whenPerformedHint": "Quando deve essere eseguita questa manutenzione?",
@@ -408,7 +450,9 @@
       "reminderOriginallyWeekend": " (Il promemoria era originariamente previsto nel fine settimana)",
       "reminderMovedToMonday": " (Il promemoria è stato spostato dal fine settimana a lunedì)",
       "movedToMonday": " (Spostato dal fine settimana a lunedì)",
-      "scheduledMaintenanceForVehicle": "{{title}} per {{vehicle}}"
+      "scheduledMaintenanceForVehicle": "{{title}} per {{vehicle}}",
+      "serviceExpectedTitle": "Tagliando previsto",
+      "serviceExpectedPace": "in media {{km}} km al giorno"
     },
     "dayDialog": {
       "title": "Eventi di manutenzione - {{date}}",
@@ -470,6 +514,12 @@
       "maintenanceRecordDeletedDescription": "Il record di manutenzione è stato spostato nel cestino",
       "deleteMaintenanceFailedDescription": "Eliminazione della manutenzione non riuscita",
       "cannotFindReservationDescription": "Impossibile trovare i dati della prenotazione di manutenzione"
+    },
+    "serviceMode": {
+      "label": "Promemoria tagliando",
+      "all": "Tagliando: tutti i previsti",
+      "soon": "Tagliando: solo imminenti",
+      "off": "Tagliando: non mostrare"
     }
   }
 }

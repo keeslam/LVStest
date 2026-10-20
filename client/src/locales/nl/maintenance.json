@@ -256,20 +256,62 @@
     "whoIsBringingVehicle": "Wie brengt het voertuig voor onderhoud?",
     "maintenanceType": "Onderhoudstype",
     "typesFull": {
-      "breakdown": { "label": "Voertuigpech", "description": "Auto start niet, motorproblemen" },
-      "tire_replacement": { "label": "Bandenwissel", "description": "Versleten banden, lekke band" },
-      "brake_service": { "label": "Remmenonderhoud", "description": "Versleten remblokken, remvloeistof" },
-      "engine_repair": { "label": "Motorreparatie", "description": "Motorproblemen, oververhitting" },
-      "transmission_repair": { "label": "Transmissiereparatie", "description": "Problemen met schakelen" },
-      "electrical_issue": { "label": "Elektrisch probleem", "description": "Verlichting, sensoren, elektronica" },
-      "air_conditioning": { "label": "Airconditioning", "description": "Airco-reparatie, gas bijvullen" },
-      "battery_replacement": { "label": "Accuwissel", "description": "Lege accu, laadproblemen" },
-      "oil_change": { "label": "Olieverversing", "description": "Reguliere oliebeurt" },
-      "regular_maintenance": { "label": "Regulier onderhoud", "description": "Geplande servicebeurt" },
-      "apk_inspection": { "label": "APK-keuring", "description": "Jaarlijkse voertuigkeuring" },
-      "warranty_service": { "label": "Garantieservice", "description": "Gedekte reparaties" },
-      "accident_damage": { "label": "Ongevalschade", "description": "Reparaties na aanrijding" },
-      "other": { "label": "Overig", "description": "Aangepast onderhoud" }
+      "breakdown": {
+        "label": "Voertuigpech",
+        "description": "Auto start niet, motorproblemen"
+      },
+      "tire_replacement": {
+        "label": "Bandenwissel",
+        "description": "Versleten banden, lekke band"
+      },
+      "brake_service": {
+        "label": "Remmenonderhoud",
+        "description": "Versleten remblokken, remvloeistof"
+      },
+      "engine_repair": {
+        "label": "Motorreparatie",
+        "description": "Motorproblemen, oververhitting"
+      },
+      "transmission_repair": {
+        "label": "Transmissiereparatie",
+        "description": "Problemen met schakelen"
+      },
+      "electrical_issue": {
+        "label": "Elektrisch probleem",
+        "description": "Verlichting, sensoren, elektronica"
+      },
+      "air_conditioning": {
+        "label": "Airconditioning",
+        "description": "Airco-reparatie, gas bijvullen"
+      },
+      "battery_replacement": {
+        "label": "Accuwissel",
+        "description": "Lege accu, laadproblemen"
+      },
+      "oil_change": {
+        "label": "Olieverversing",
+        "description": "Reguliere oliebeurt"
+      },
+      "regular_maintenance": {
+        "label": "Regulier onderhoud",
+        "description": "Geplande servicebeurt"
+      },
+      "apk_inspection": {
+        "label": "APK-keuring",
+        "description": "Jaarlijkse voertuigkeuring"
+      },
+      "warranty_service": {
+        "label": "Garantieservice",
+        "description": "Gedekte reparaties"
+      },
+      "accident_damage": {
+        "label": "Ongevalschade",
+        "description": "Reparaties na aanrijding"
+      },
+      "other": {
+        "label": "Overig",
+        "description": "Aangepast onderhoud"
+      }
     },
     "scheduledDate": "Geplande datum",
     "whenPerformedHint": "Wanneer moet dit onderhoud worden uitgevoerd?",
@@ -403,7 +445,9 @@
       "reminderOriginallyWeekend": " (Herinnering was oorspronkelijk gepland in het weekend)",
       "reminderMovedToMonday": " (Herinnering is verplaatst van het weekend naar maandag)",
       "movedToMonday": " (Verplaatst van het weekend naar maandag)",
-      "scheduledMaintenanceForVehicle": "{{title}} voor {{vehicle}}"
+      "scheduledMaintenanceForVehicle": "{{title}} voor {{vehicle}}",
+      "serviceExpectedTitle": "Verwachte onderhoudsbeurt",
+      "serviceExpectedPace": "gemiddeld {{km}} km per dag"
     },
     "dayDialog": {
       "title": "Onderhoudsevenementen - {{date}}",
@@ -465,6 +509,12 @@
       "maintenanceRecordDeletedDescription": "Het onderhoudsrecord is naar de prullenbak verplaatst",
       "deleteMaintenanceFailedDescription": "Onderhoud verwijderen mislukt",
       "cannotFindReservationDescription": "Kan onderhoudsreserveringsgegevens niet vinden"
+    },
+    "serviceMode": {
+      "label": "Onderhoudsherinneringen",
+      "all": "Onderhoud: alle verwachte",
+      "soon": "Onderhoud: alleen binnenkort",
+      "off": "Onderhoud: niet tonen"
     }
   }
 }

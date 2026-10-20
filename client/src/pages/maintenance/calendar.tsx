@@ -14,6 +14,7 @@ import { Link } from "wouter";
 import { Vehicle, Reservation, UserPermission } from "@shared/schema";
 import { RequiresPermission } from "@/components/ui/requires-permission";
 import type { ServiceDueInfo } from "@shared/service-due";
+import type { ServiceForecast } from "@shared/service-forecast";
 import { displayLicensePlate } from "@/lib/utils";
 import { isWeekendIso } from "@/lib/format-utils";
 import { 
@@ -96,7 +97,23 @@ type MaintenanceFilters = {
   eventType: string;
 };
 
-type ServiceDueVehicle = Vehicle & { serviceDue: ServiceDueInfo };
+type ServiceDueVehicle = Vehicle & { serviceDue: ServiceDueInfo; forecast?: ServiceForecast };
+
+/**
+ * Punt 6 (Kees, 2026-10-20): which service reminders the calendar shows —
+ * every vehicle on its expected date, only the ones due (soon), or none.
+ * Remembered per browser.
+ */
+type ServiceReminderMode = "all" | "soon" | "off";
+const SERVICE_MODE_KEY = "maintenance-calendar-service-mode";
+function readServiceMode(): ServiceReminderMode {
+  try {
+    const stored = localStorage.getItem(SERVICE_MODE_KEY);
+    return stored === "soon" || stored === "off" ? stored : "all";
+  } catch {
+    return "all";
+  }
+}
 
 interface MaintenanceEvent {
   id: string | number;
@@ -332,11 +349,23 @@ export default function MaintenanceCalendar() {
     enabled: canViewVehicles,
   });
 
-  // Regular service due / due soon (server applies interval + settings defaults)
-  const { data: serviceDueVehicles = [] } = useQuery<ServiceDueVehicle[]>({
-    queryKey: ['/api/vehicles/service-due'],
+  // Regular service (server applies interval + settings defaults). Punt 6: every
+  // vehicle with its expected date; the mode decides which ones are shown.
+  const [serviceMode, setServiceMode] = useState<ServiceReminderMode>(readServiceMode);
+  const changeServiceMode = (mode: string) => {
+    const next = (mode === "soon" || mode === "off" ? mode : "all") as ServiceReminderMode;
+    setServiceMode(next);
+    try { localStorage.setItem(SERVICE_MODE_KEY, next); } catch { /* the choice just is not remembered */ }
+  };
+  const { data: serviceForecastVehicles = [] } = useQuery<ServiceDueVehicle[]>({
+    queryKey: ['/api/vehicles/service-forecast'],
     enabled: canViewVehicles,
   });
+  const serviceDueVehicles = useMemo(() => {
+    if (serviceMode === "off") return [];
+    return serviceForecastVehicles.filter((v) =>
+      v.serviceDue.isServiceDue || v.serviceDue.isServiceDueSoon || (serviceMode === "all" && !!v.forecast?.expectedDate));
+  }, [serviceForecastVehicles, serviceMode]);
 
   // Fetch reservations for the full calendar view (including adjacent month dates).
   // Uses the full Monday-Sunday grid, not just the weekday cells we may end up
@@ -759,8 +788,10 @@ export default function MaintenanceCalendar() {
         if (isMaintenanceScheduled(vehicle.id, 'regular_maintenance')) return;
         const { serviceDue } = vehicle;
         // An overdue service stays visible on today's date (a past due date would
-        // hide it in an earlier month); an upcoming one sits on its due date.
-        const dueDate = serviceDue.nextServiceDate ? parseISO(serviceDue.nextServiceDate) : today;
+        // hide it in an earlier month); an upcoming one sits on its expected date
+        // (punt 6: the earlier of the km limit at the average pace and the months).
+        const expected = vehicle.forecast?.expectedDate ?? serviceDue.nextServiceDate;
+        const dueDate = expected ? parseISO(expected) : today;
         const eventDate = serviceDue.isServiceDue && isBefore(dueDate, today) ? today : dueDate;
         const { shiftedDate, wasShifted } = shiftWeekendToMonday(eventDate);
         const details: string[] = [];
@@ -774,16 +805,20 @@ export default function MaintenanceCalendar() {
             ? t('calendarPage.events.serviceDueKmOver', { km: Math.abs(serviceDue.kmUntilService).toLocaleString() })
             : t('calendarPage.events.serviceDueKmLeft', { km: serviceDue.kmUntilService.toLocaleString() }));
         }
+        if (vehicle.forecast?.kmPerDay != null && vehicle.forecast.basis === 'km') {
+          details.push(t('calendarPage.events.serviceExpectedPace', { km: vehicle.forecast.kmPerDay.toLocaleString() }));
+        }
+        const isDueOrSoon = serviceDue.isServiceDue || serviceDue.isServiceDueSoon;
         events.push({
           id: `service_due_${vehicle.id}`,
           vehicleId: vehicle.id,
           vehicle,
           type: 'service_due' as const,
           date: format(shiftedDate, 'yyyy-MM-dd'),
-          title: (serviceDue.isServiceDue ? t('calendarPage.events.serviceDueTitle') : t('calendarPage.events.serviceDueSoonTitle')) + (wasShifted ? t('calendarPage.events.movedFromWeekend') : ''),
+          title: (serviceDue.isServiceDue ? t('calendarPage.events.serviceDueTitle') : isDueOrSoon ? t('calendarPage.events.serviceDueSoonTitle') : t('calendarPage.events.serviceExpectedTitle')) + (wasShifted ? t('calendarPage.events.movedFromWeekend') : ''),
           description: t('calendarPage.events.serviceDueDescription', { vehicle: `${vehicle.brand} ${vehicle.model}`, details: details.join(', ') }),
           needsSpareVehicle: false,
-          priority: serviceDue.isServiceDue ? 'urgent' : 'medium',
+          priority: serviceDue.isServiceDue ? 'urgent' : isDueOrSoon ? 'medium' : 'low',
           currentReservations: reservations?.filter((r: Reservation) => r.vehicleId === vehicle.id) || []
         });
       });
@@ -1169,6 +1204,19 @@ export default function MaintenanceCalendar() {
                   <SelectItem value="scheduled_maintenance">{t('calendarPage.eventTypeLabels.scheduled_maintenance')}</SelectItem>
                 </SelectContent>
               </Select>
+
+              {showServiceReminders && (
+                <Select value={serviceMode} onValueChange={changeServiceMode}>
+                  <SelectTrigger className="w-56 h-9" data-testid="select-service-reminder-mode" aria-label={t('calendarPage.serviceMode.label')}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('calendarPage.serviceMode.all')}</SelectItem>
+                    <SelectItem value="soon">{t('calendarPage.serviceMode.soon')}</SelectItem>
+                    <SelectItem value="off">{t('calendarPage.serviceMode.off')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
           

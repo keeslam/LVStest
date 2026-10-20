@@ -256,20 +256,62 @@
     "whoIsBringingVehicle": "Who is bringing the vehicle in for maintenance?",
     "maintenanceType": "Maintenance Type",
     "typesFull": {
-      "breakdown": { "label": "Vehicle Breakdown", "description": "Car won't start, engine issues" },
-      "tire_replacement": { "label": "Tire Replacement", "description": "Worn tires, punctures" },
-      "brake_service": { "label": "Brake Service", "description": "Worn brake pads, brake fluid" },
-      "engine_repair": { "label": "Engine Repair", "description": "Engine problems, overheating" },
-      "transmission_repair": { "label": "Transmission Repair", "description": "Gear shifting issues" },
-      "electrical_issue": { "label": "Electrical Issue", "description": "Lights, sensors, electronics" },
-      "air_conditioning": { "label": "Air Conditioning", "description": "A/C repair, gas refill" },
-      "battery_replacement": { "label": "Battery Replacement", "description": "Dead battery, charging issues" },
-      "oil_change": { "label": "Oil Change", "description": "Regular oil service" },
-      "regular_maintenance": { "label": "Regular Maintenance", "description": "Scheduled service" },
-      "apk_inspection": { "label": "APK Inspection", "description": "Annual vehicle inspection" },
-      "warranty_service": { "label": "Warranty Service", "description": "Covered repairs" },
-      "accident_damage": { "label": "Accident Damage", "description": "Collision repairs" },
-      "other": { "label": "Other", "description": "Custom maintenance" }
+      "breakdown": {
+        "label": "Vehicle Breakdown",
+        "description": "Car won't start, engine issues"
+      },
+      "tire_replacement": {
+        "label": "Tire Replacement",
+        "description": "Worn tires, punctures"
+      },
+      "brake_service": {
+        "label": "Brake Service",
+        "description": "Worn brake pads, brake fluid"
+      },
+      "engine_repair": {
+        "label": "Engine Repair",
+        "description": "Engine problems, overheating"
+      },
+      "transmission_repair": {
+        "label": "Transmission Repair",
+        "description": "Gear shifting issues"
+      },
+      "electrical_issue": {
+        "label": "Electrical Issue",
+        "description": "Lights, sensors, electronics"
+      },
+      "air_conditioning": {
+        "label": "Air Conditioning",
+        "description": "A/C repair, gas refill"
+      },
+      "battery_replacement": {
+        "label": "Battery Replacement",
+        "description": "Dead battery, charging issues"
+      },
+      "oil_change": {
+        "label": "Oil Change",
+        "description": "Regular oil service"
+      },
+      "regular_maintenance": {
+        "label": "Regular Maintenance",
+        "description": "Scheduled service"
+      },
+      "apk_inspection": {
+        "label": "APK Inspection",
+        "description": "Annual vehicle inspection"
+      },
+      "warranty_service": {
+        "label": "Warranty Service",
+        "description": "Covered repairs"
+      },
+      "accident_damage": {
+        "label": "Accident Damage",
+        "description": "Collision repairs"
+      },
+      "other": {
+        "label": "Other",
+        "description": "Custom maintenance"
+      }
     },
     "scheduledDate": "Scheduled Date",
     "whenPerformedHint": "When should this maintenance be performed?",
@@ -403,7 +445,9 @@
       "reminderOriginallyWeekend": " (Reminder originally scheduled for weekend)",
       "reminderMovedToMonday": " (Reminder was moved from weekend to Monday)",
       "movedToMonday": " (Moved from weekend to Monday)",
-      "scheduledMaintenanceForVehicle": "{{title}} for {{vehicle}}"
+      "scheduledMaintenanceForVehicle": "{{title}} for {{vehicle}}",
+      "serviceExpectedTitle": "Expected service",
+      "serviceExpectedPace": "on average {{km}} km per day"
     },
     "dayDialog": {
       "title": "Maintenance Events - {{date}}",
@@ -465,6 +509,12 @@
       "maintenanceRecordDeletedDescription": "The maintenance record has been moved to the recycle bin",
       "deleteMaintenanceFailedDescription": "Failed to delete maintenance",
       "cannotFindReservationDescription": "Cannot find maintenance reservation details"
+    },
+    "serviceMode": {
+      "label": "Service reminders",
+      "all": "Service: all expected",
+      "soon": "Service: due soon only",
+      "off": "Service: hide"
     }
   }
 }

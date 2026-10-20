@@ -532,7 +532,12 @@
       "repairHistoryTitle": "Repair History",
       "repairFallback": "Repair",
       "noRepairHistory": "No repair history yet",
-      "noRepairHistoryHint": "Breakdowns, tire replacements, and repairs will appear here"
+      "noRepairHistoryHint": "Breakdowns, tire replacements, and repairs will appear here",
+      "forecastTooFew": "Expected date: too few odometer readings to predict.",
+      "forecastExpected": "Service expected around {{date}}",
+      "forecastPace": "On average {{km}} km per day",
+      "forecastBasisKm": "reached first: the km limit",
+      "forecastBasisMonths": "reached first: the date"
     },
     "history": {
       "activityTitle": "Activity History",

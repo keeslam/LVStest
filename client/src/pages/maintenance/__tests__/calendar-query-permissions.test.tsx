@@ -3,7 +3,7 @@
  * sheet, PAGE x PERMISSION TABLE row 7) — the page's own permission is
  * MANAGE_MAINTENANCE, but NONE of its GETs accept it: four need
  * VIEW_VEHICLES/MANAGE_VEHICLES (/api/vehicles, /api/vehicles/apk-expiring,
- * /api/vehicles/warranty-expiring, /api/vehicles/service-due), three need
+ * /api/vehicles/warranty-expiring, /api/vehicles/service-forecast), three need
  * VIEW_RESERVATIONS/MANAGE_RESERVATIONS (/api/reservations/range twice via
  * select, /api/reservations for completed blocks). Per the task brief, a
  * manage_maintenance-only account (no vehicle/reservation view rights) is
@@ -67,7 +67,7 @@ function withProviders(node: React.ReactNode) {
   );
 }
 
-const VEHICLE_URLS = ["/api/vehicles", "/api/vehicles/apk-expiring", "/api/vehicles/warranty-expiring", "/api/vehicles/service-due"];
+const VEHICLE_URLS = ["/api/vehicles", "/api/vehicles/apk-expiring", "/api/vehicles/warranty-expiring", "/api/vehicles/service-forecast"];
 
 describe("/maintenance — a manage_maintenance-only account sees NoDataAccess (honest outcome, spec §3)", () => {
   it("fires neither vehicle nor reservation queries, and shows two NoDataAccess lines, with manage_maintenance alone", async () => {

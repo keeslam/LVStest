@@ -455,7 +455,9 @@
       "reminderOriginallyWeekend": " (Przypomnienie pierwotnie zaplanowano na weekend)",
       "reminderMovedToMonday": " (Przypomnienie zostało przeniesione z weekendu na poniedziałek)",
       "movedToMonday": " (Przeniesiono z weekendu na poniedziałek)",
-      "scheduledMaintenanceForVehicle": "{{title}} dla pojazdu {{vehicle}}"
+      "scheduledMaintenanceForVehicle": "{{title}} dla pojazdu {{vehicle}}",
+      "serviceExpectedTitle": "Przewidywany przegląd",
+      "serviceExpectedPace": "średnio {{km}} km dziennie"
     },
     "dayDialog": {
       "title": "Wydarzenia konserwacji - {{date}}",
@@ -517,6 +519,12 @@
       "maintenanceRecordDeletedDescription": "Wpis konserwacji został przeniesiony do kosza",
       "deleteMaintenanceFailedDescription": "Nie udało się usunąć konserwacji",
       "cannotFindReservationDescription": "Nie można znaleźć danych rezerwacji konserwacji"
+    },
+    "serviceMode": {
+      "label": "Przypomnienia o przeglądzie",
+      "all": "Przegląd: wszystkie przewidywane",
+      "soon": "Przegląd: tylko wkrótce",
+      "off": "Przegląd: nie pokazuj"
     }
   }
 }

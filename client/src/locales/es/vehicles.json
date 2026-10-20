@@ -537,7 +537,12 @@
       "repairHistoryTitle": "Historial de reparaciones",
       "repairFallback": "Reparación",
       "noRepairHistory": "Aún no hay historial de reparaciones",
-      "noRepairHistoryHint": "Las averías, los cambios de neumáticos y las reparaciones aparecerán aquí"
+      "noRepairHistoryHint": "Las averías, los cambios de neumáticos y las reparaciones aparecerán aquí",
+      "forecastTooFew": "Fecha prevista: muy pocas lecturas del cuentakilómetros para predecir.",
+      "forecastExpected": "Revisión prevista hacia el {{date}}",
+      "forecastPace": "De media {{km}} km al día",
+      "forecastBasisKm": "se alcanza primero: el límite de km",
+      "forecastBasisMonths": "se alcanza primero: la fecha"
     },
     "history": {
       "activityTitle": "Historial de actividad",

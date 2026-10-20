@@ -643,6 +643,32 @@ export async function registerRoutes(app: Express): Promise<void> {
 
   // Vehicles whose regular service is due or due soon (per-vehicle interval,
   // defaults from system settings). Feeds the maintenance calendar.
+  // Punt 6 (Kees, 2026-10-20): the expected date of the next service, for the
+  // maintenance calendar (all vehicles) and the vehicle card (one).
+  app.get("/api/vehicles/service-forecast", hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), async (_req, res) => {
+    try {
+      const { serviceForecasts } = await import("./services/service-forecast");
+      res.json(await serviceForecasts());
+    } catch (error) {
+      console.error("Error building service forecasts:", error);
+      res.status(500).json({ message: "Failed to build service forecasts" });
+    }
+  });
+
+  app.get("/api/vehicles/:id/service-forecast", hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ message: "Invalid vehicle ID" });
+    try {
+      const { serviceForecastFor } = await import("./services/service-forecast");
+      const result = await serviceForecastFor(id);
+      if (!result) return res.status(404).json({ message: "Vehicle not found" });
+      res.json(result);
+    } catch (error) {
+      console.error("Error building the service forecast:", error);
+      res.status(500).json({ message: "Failed to build the service forecast" });
+    }
+  });
+
   app.get("/api/vehicles/service-due", hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), async (_req, res) => {
     try {
       res.json(await getServiceDueVehicles());

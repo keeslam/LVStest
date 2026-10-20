@@ -537,7 +537,12 @@
       "repairHistoryTitle": "Cronologia delle riparazioni",
       "repairFallback": "Riparazione",
       "noRepairHistory": "Nessuna cronologia delle riparazioni",
-      "noRepairHistoryHint": "Guasti, cambi di pneumatici e riparazioni appariranno qui"
+      "noRepairHistoryHint": "Guasti, cambi di pneumatici e riparazioni appariranno qui",
+      "forecastTooFew": "Data prevista: troppo poche letture del contachilometri per prevedere.",
+      "forecastExpected": "Tagliando previsto intorno al {{date}}",
+      "forecastPace": "In media {{km}} km al giorno",
+      "forecastBasisKm": "raggiunto prima: il limite di km",
+      "forecastBasisMonths": "raggiunto prima: la data"
     },
     "history": {
       "activityTitle": "Cronologia delle attività",

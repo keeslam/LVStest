@@ -450,7 +450,9 @@
       "reminderOriginallyWeekend": " (Memento-ul era planificat inițial în weekend)",
       "reminderMovedToMonday": " (Memento-ul a fost mutat din weekend în ziua de luni)",
       "movedToMonday": " (Mutat din weekend în ziua de luni)",
-      "scheduledMaintenanceForVehicle": "{{title}} pentru {{vehicle}}"
+      "scheduledMaintenanceForVehicle": "{{title}} pentru {{vehicle}}",
+      "serviceExpectedTitle": "Revizie estimată",
+      "serviceExpectedPace": "în medie {{km}} km pe zi"
     },
     "dayDialog": {
       "title": "Evenimente de întreținere - {{date}}",
@@ -512,6 +514,12 @@
       "maintenanceRecordDeletedDescription": "Înregistrarea de întreținere a fost mutată în coșul de reciclare",
       "deleteMaintenanceFailedDescription": "Ștergerea întreținerii a eșuat",
       "cannotFindReservationDescription": "Nu se pot găsi datele rezervării de întreținere"
+    },
+    "serviceMode": {
+      "label": "Mementouri revizie",
+      "all": "Revizie: toate cele estimate",
+      "soon": "Revizie: doar în curând",
+      "off": "Revizie: nu afișa"
     }
   }
 }

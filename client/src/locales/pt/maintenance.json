@@ -450,7 +450,9 @@
       "reminderOriginallyWeekend": " (O lembrete estava originalmente agendado para o fim de semana)",
       "reminderMovedToMonday": " (O lembrete foi movido do fim de semana para segunda-feira)",
       "movedToMonday": " (Movido do fim de semana para segunda-feira)",
-      "scheduledMaintenanceForVehicle": "{{title}} para {{vehicle}}"
+      "scheduledMaintenanceForVehicle": "{{title}} para {{vehicle}}",
+      "serviceExpectedTitle": "Revisão prevista",
+      "serviceExpectedPace": "em média {{km}} km por dia"
     },
     "dayDialog": {
       "title": "Eventos de manutenção - {{date}}",
@@ -512,6 +514,12 @@
       "maintenanceRecordDeletedDescription": "O registo de manutenção foi movido para a reciclagem",
       "deleteMaintenanceFailedDescription": "Não foi possível eliminar a manutenção",
       "cannotFindReservationDescription": "Não foi possível encontrar os dados da reserva de manutenção"
+    },
+    "serviceMode": {
+      "label": "Lembretes de revisão",
+      "all": "Revisão: todas as previstas",
+      "soon": "Revisão: só em breve",
+      "off": "Revisão: não mostrar"
     }
   }
 }
