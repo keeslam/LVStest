@@ -515,7 +515,9 @@
       "defaultServiceIntervalMonthsLabel": "Interval implicit (luni)",
       "serviceReminderKmLabel": "Memento începând de la (km înainte)",
       "serviceReminderDaysLabel": "Memento începând de la (zile înainte)",
-      "saveMaintenanceSettingsButton": "Salvează setările de mentenanță"
+      "saveMaintenanceSettingsButton": "Salvează setările de mentenanță",
+      "zoneRemindersLabel": "Memento zonă de emisii și Move IZI",
+      "zoneRemindersHint": "Cu atâtea zile înainte de data de final mașina apare pe placă și în notificări"
     },
     "email": {
       "configurationTitle": "Configurarea e-mailului",
@@ -687,7 +689,8 @@
         "apk": "ITP expiră",
         "overdue": "Închirieri întârziate",
         "warranty": "Garanția expiră",
-        "licenses": "Permise de conducere"
+        "licenses": "Permise de conducere",
+        "zones": "Zonă de emisii / Move IZI"
       }
     },
     "quickActions": {

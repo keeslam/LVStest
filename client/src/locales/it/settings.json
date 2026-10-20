@@ -515,7 +515,9 @@
       "defaultServiceIntervalMonthsLabel": "Intervallo predefinito (mesi)",
       "serviceReminderKmLabel": "Promemoria a partire da (km prima)",
       "serviceReminderDaysLabel": "Promemoria a partire da (giorni prima)",
-      "saveMaintenanceSettingsButton": "Salvare le impostazioni di manutenzione"
+      "saveMaintenanceSettingsButton": "Salvare le impostazioni di manutenzione",
+      "zoneRemindersLabel": "Promemoria zona ambientale e Move IZI",
+      "zoneRemindersHint": "Tanti giorni prima della data di fine l'auto compare nel riquadro e nelle notifiche"
     },
     "email": {
       "configurationTitle": "Configurazione e-mail",
@@ -687,7 +689,8 @@
         "apk": "Revisione in scadenza",
         "overdue": "Noleggi in ritardo",
         "warranty": "Garanzia in scadenza",
-        "licenses": "Patenti"
+        "licenses": "Patenti",
+        "zones": "Zona ambientale / Move IZI"
       }
     },
     "quickActions": {

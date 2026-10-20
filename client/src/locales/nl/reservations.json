@@ -528,7 +528,13 @@
     "collectionSameAsDelivery": "Zelfde als bezorgadres",
     "pastStartWarning": "Let op: deze startdatum ligt in het verleden.",
     "licenseExpiredWarning": "Let op: het rijbewijs van {{name}} is verlopen op {{date}}, vóór de start van de huur ({{start}}). Opslaan mag.",
-    "licenseUnknownNote": "Vervaldatum rijbewijs van {{name}} onbekend."
+    "licenseUnknownNote": "Vervaldatum rijbewijs van {{name}} onbekend.",
+    "zoneWarning": {
+      "expired": "Let op: {{what}} van deze auto is verlopen op {{date}}, vóór het begin van de huur. Opslaan mag.",
+      "during": "Let op: {{what}} van deze auto verloopt op {{date}}, tijdens de huur. Opslaan mag.",
+      "euroZone": "de milieuzone",
+      "moveIzi": "Move IZI"
+    }
   },
   "selector": {
     "defaultPlaceholder": "Selecteer een reservering...",

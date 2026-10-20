@@ -336,5 +336,12 @@
     "prevPage": "Página anterior",
     "nextPage": "Página siguiente",
     "apkExpiredShort": "ITV caducada"
+  },
+  "zoneWidget": {
+    "title": "Zona ambiental / Move IZI",
+    "subtitle": "Caducado o caduca pronto",
+    "none": "No hay fechas de zona ambiental ni Move IZI que caduquen pronto",
+    "euroZone": "zona ambiental",
+    "moveIzi": "Move IZI"
   }
 }

@@ -78,7 +78,12 @@
     "deleteConfirm": "¿Está seguro de que desea eliminar \"{{title}}\"? Esta acción no se puede deshacer.",
     "dismissNotificationTitle": "Descartar notificación",
     "dismissConfirm": "¿Descartar la notificación de {{label}} durante 7 días? Volverá a aparecer después si la inspección sigue caducada.",
-    "dismissButton": "Descartar"
+    "dismissButton": "Descartar",
+    "zoneExpiring": "Zona ambiental y Move IZI",
+    "zoneExpiringTitle": {
+      "euroZone": "Caduca la zona ambiental - {{plate}}",
+      "moveIzi": "Caduca Move IZI - {{plate}}"
+    }
   },
   "customerCommunications": {
     "pageTitle": "Comunicación con clientes",

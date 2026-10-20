@@ -210,7 +210,8 @@ import { isDeliberateStorageRefusal } from "./utils/storage-refusals";
 import { UploadRejectedError } from "./utils/security/fileUploadSecurity";
 import { db } from "./db";
 import { FUEL_REFILL_SOURCE, parseFuelCost, fuelSourceRef, fuelExpenseDescription, findRecentFuelExpense } from "./services/expenses/fuel-refill";
-import { sql, eq, desc } from "drizzle-orm";
+import { sql, eq, desc, and, or, isNull, isNotNull } from "drizzle-orm";
+import { vehicles as vehiclesTable } from "../shared/schema";
 
 /**
  * The fields that move a booking in time or onto another vehicle. A PATCH that
@@ -657,6 +658,33 @@ export async function registerRoutes(app: Express): Promise<void> {
     } catch (error) {
       console.error("Error fetching warranty expiring vehicles:", error);
       res.status(500).json({ message: "Failed to fetch warranty expiring vehicles" });
+    }
+  });
+
+  // Round 2 punt 9 (Kees, 2026-10-20): low-emission-zone and Move IZI end dates within
+  // settings.zoneReminderDays (up to two months overdue), same vehicles as the warranty list.
+  app.get("/api/vehicles/zone-expiring", hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), async (_req, res) => {
+    try {
+      const appSettings = await storage.getSettings();
+      const excludedStatuses: string[] = appSettings?.maintenanceExcludedStatuses || ["not_for_rental"];
+      const daysAhead = appSettings?.zoneReminderDays || 30;
+      const { officeDate } = await import("./services/lifecycle");
+      const { zoneExpiringRows } = await import("../shared/zone-expiry");
+      const today = officeDate(new Date());
+      const shift = (days: number) => {
+        const d = new Date(`${today}T12:00:00Z`);
+        d.setUTCDate(d.getUTCDate() + days);
+        return d.toISOString().slice(0, 10);
+      };
+      const candidates = await db.select().from(vehiclesTable).where(and(
+        isNull(vehiclesTable.outOfFleetDate),
+        or(isNotNull(vehiclesTable.euroZoneEndDate), isNotNull(vehiclesTable.moveIziExpirationDate)),
+      ));
+      const inService = candidates.filter((v) => !excludedStatuses.includes(v.availabilityStatus ?? ""));
+      res.json(zoneExpiringRows(inService, shift(-60), shift(daysAhead)));
+    } catch (error) {
+      console.error("Error fetching zone expiring vehicles:", error);
+      res.status(500).json({ message: "Failed to fetch low-emission-zone and Move IZI end dates" });
     }
   });
 

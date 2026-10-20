@@ -18,6 +18,7 @@ import type { Reservation, Vehicle } from "@shared/schema";
 import { formatReservationStatus, formatDate } from "@/lib/format-utils";
 import { defaultReturnFuelLevel } from "@/lib/handover-fuel";
 import { officeToday } from "@/lib/office-date";
+import { ZoneExpiryNotice } from "@/components/reservations/zone-expiry-notice";
 import { formatDutchDate, formatMaintenancePeriod } from "@shared/booking-warnings";
 import { needsRemarkConfirmation, hasRemarks } from "@shared/remark-confirmation";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -658,6 +659,13 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
               </label>
             </div>
           )}
+          {/* Round 2 punt 9: low-emission-zone / Move IZI end date before or during the rental. */}
+          <ZoneExpiryNotice
+            vehicle={selectedVehicle ?? vehicles?.find((v: any) => v.id === reservation.vehicleId)}
+            startDate={pickupDate}
+            endDate={reservation.endDate}
+            testId="warning-pickup-zone-expiry"
+          />
           {driverLicense?.state === 'unknown' && (
             <p className="text-sm text-muted-foreground" data-testid="note-pickup-license-unknown">
               {t('pickupReturn.pickup.licenseUnknownNote', { name: driverLicense.driverName })}

@@ -12,21 +12,21 @@ describe("dashboardTilesFromSetting", () => {
   });
 
   it("follows the stored order and hides what is hidden", () => {
-    const tiles = dashboardTilesFromSetting({ order: ["licenses", "apk", "availability", "overdue", "warranty"], hidden: ["warranty"] });
-    expect(tiles.map((t) => t.id)).toEqual(["licenses", "apk", "availability", "overdue", "warranty"]);
+    const tiles = dashboardTilesFromSetting({ order: ["licenses", "apk", "availability", "overdue", "warranty", "zones"], hidden: ["warranty"] });
+    expect(tiles.map((t) => t.id)).toEqual(["licenses", "apk", "availability", "overdue", "warranty", "zones"]);
     expect(tiles.find((t) => t.id === "warranty")?.visible).toBe(false);
   });
 
   it("drops unknown ids and appends tiles the stored order does not know yet", () => {
     const tiles = dashboardTilesFromSetting({ order: ["overdue", "bogus", "apk"], hidden: ["bogus"] });
-    expect(tiles.map((t) => t.id)).toEqual(["overdue", "apk", "availability", "warranty", "licenses"]);
+    expect(tiles.map((t) => t.id)).toEqual(["overdue", "apk", "availability", "warranty", "licenses", "zones"]);
     expect(tiles.every((t) => t.visible)).toBe(true);
   });
 });
 
 describe("round trip and validation", () => {
   it("stores what it reads", () => {
-    const value = { order: ["warranty", "availability", "apk", "overdue", "licenses"], hidden: ["apk"] };
+    const value = { order: ["warranty", "availability", "apk", "overdue", "licenses", "zones"], hidden: ["apk"] };
     expect(dashboardTilesToSetting(dashboardTilesFromSetting(value))).toEqual(value);
   });
 

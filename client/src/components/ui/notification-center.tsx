@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Bell } from "lucide-react";
 import { Vehicle, Reservation, CustomNotification } from "@shared/schema";
+import type { ZoneExpiringRow } from "@shared/zone-expiry";
 import { NotificationCenterDialog } from "@/components/notifications/notification-center-dialog";
 import { useNotificationDataPermissions } from "@/hooks/use-has-permission";
 
@@ -31,6 +32,12 @@ export function NotificationCenter() {
 
   const { data: warrantyExpiringVehicles = [] } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles/warranty-expiring"],
+    enabled: canViewVehicles,
+  });
+
+  // Round 2 punt 9: low-emission-zone and Move IZI end dates.
+  const { data: zoneExpiringRows = [] } = useQuery<ZoneExpiringRow[]>({
+    queryKey: ["/api/vehicles/zone-expiring"],
     enabled: canViewVehicles,
   });
 
@@ -74,6 +81,10 @@ export function NotificationCenter() {
     (vehicle) => !isDismissed(`dismissed_warranty_${vehicle.id}`)
   );
 
+  const zoneExpiringItems = zoneExpiringRows.filter(
+    (z) => !isDismissed(`dismissed_zone_${z.kind}_${z.id}`)
+  );
+
   const upcomingReservationItems = upcomingReservations.filter((reservation) => {
     const daysUntil = differenceInDays(new Date(reservation.startDate), today);
     return daysUntil >= 0 && daysUntil <= 2;
@@ -91,6 +102,7 @@ export function NotificationCenter() {
   const totalNotifications =
     apkExpiringItems.length +
     warrantyExpiringItems.length +
+    zoneExpiringItems.length +
     upcomingReservationItems.length +
     upcomingMaintenanceItems.length +
     placeholderReservations.length +

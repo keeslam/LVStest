@@ -336,5 +336,12 @@
     "prevPage": "Pagina precedente",
     "nextPage": "Pagina successiva",
     "apkExpiredShort": "Revisione scaduta"
+  },
+  "zoneWidget": {
+    "title": "Zona ambientale / Move IZI",
+    "subtitle": "Scaduto o in scadenza",
+    "none": "Nessuna data di zona ambientale o Move IZI in scadenza",
+    "euroZone": "zona ambientale",
+    "moveIzi": "Move IZI"
   }
 }

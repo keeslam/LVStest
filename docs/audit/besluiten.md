@@ -737,6 +737,16 @@ Kees koos uit de tweede lijst met suggesties punt 5. Met klikken koos hij dit: d
   - Niet bij bewerken, niet bij inleveren en niet als je zelf al iets hebt getekend.
   - Kies je een andere auto of een inlevercheck, dan verdwijnt wat is overgenomen.
 
+### B-56 — Herinnering milieuzone en Move IZI (20-10-2026)
+
+Kees koos uit de tweede lijst met suggesties punt 9. De einddatum van de milieuzone (`euroZoneEndDate`) en van Move IZI (`moveIziExpirationDate`) werden tot nu toe alleen ingevuld en getoond. Kees koos met klikken op alle drie de plekken een herinnering; de termijn is instelbaar, en het telt voor dezelfde auto's als bij APK en garantie.
+
+- **Dashboardtegel** "Milieuzone / Move IZI". Op de tegel staat per auto en per soort de einddatum en het aantal dagen. Bij de dashboardtegels zet je hem aan of uit en verander je de volgorde.
+- **Meldingencentrum.** Bij het belletje, net als APK en garantie. De melding is weg te klikken.
+- **Boeken en ophalen.** Een gele waarschuwing als de datum vóór de huur ligt (verlopen) of in de huurperiode valt (verloopt tijdens de huur). Opslaan en meegeven mag wel.
+- **Termijn.** In **Instellingen > Kalender** staat "Herinnering milieuzone en Move IZI", standaard 30 dagen. Auto's waarvan de datum tot twee maanden verlopen is, blijven op de lijst staan.
+- **Welke auto's.** Dezelfde als bij APK en garantie: niet de uitgesloten statussen uit de onderhoudsinstellingen, en niet de auto's die uit de vloot zijn.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).

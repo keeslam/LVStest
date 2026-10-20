@@ -518,7 +518,9 @@
       "defaultServiceIntervalMonthsLabel": "Domyślny odstęp (miesiące)",
       "serviceReminderKmLabel": "Przypomnienie od (km wcześniej)",
       "serviceReminderDaysLabel": "Przypomnienie od (dni wcześniej)",
-      "saveMaintenanceSettingsButton": "Zapisz ustawienia serwisu"
+      "saveMaintenanceSettingsButton": "Zapisz ustawienia serwisu",
+      "zoneRemindersLabel": "Przypomnienie o strefie ekologicznej i Move IZI",
+      "zoneRemindersHint": "Tyle dni przed datą końcową auto pojawia się na kafelku i w powiadomieniach"
     },
     "email": {
       "configurationTitle": "Konfiguracja e-mail",
@@ -691,7 +693,8 @@
         "apk": "Przegląd wygasa",
         "overdue": "Zaległe wynajmy",
         "warranty": "Gwarancja wygasa",
-        "licenses": "Prawa jazdy"
+        "licenses": "Prawa jazdy",
+        "zones": "Strefa ekologiczna / Move IZI"
       }
     },
     "quickActions": {

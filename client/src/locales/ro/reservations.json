@@ -531,7 +531,13 @@
     "collectionSameAsDelivery": "La fel ca adresa de livrare",
     "pastStartWarning": "Atenție: această dată de început este în trecut.",
     "licenseExpiredWarning": "Atenție: permisul de conducere al lui {{name}} a expirat la {{date}}, înainte de începutul închirierii ({{start}}). Puteți salva totuși.",
-    "licenseUnknownNote": "Data expirării permisului lui {{name}} necunoscută."
+    "licenseUnknownNote": "Data expirării permisului lui {{name}} necunoscută.",
+    "zoneWarning": {
+      "expired": "Atenție: {{what}} acestei mașini a expirat la {{date}}, înainte de începutul închirierii. Salvarea este permisă.",
+      "during": "Atenție: {{what}} acestei mașini expiră la {{date}}, în timpul închirierii. Salvarea este permisă.",
+      "euroZone": "zona de emisii",
+      "moveIzi": "Move IZI"
+    }
   },
   "selector": {
     "defaultPlaceholder": "Selectați o rezervare...",

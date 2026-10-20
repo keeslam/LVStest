@@ -534,7 +534,13 @@
     "collectionSameAsDelivery": "Taki sam jak adres dostawy",
     "pastStartWarning": "Uwaga: ta data rozpoczęcia jest w przeszłości.",
     "licenseExpiredWarning": "Uwaga: prawo jazdy {{name}} wygasło {{date}}, przed rozpoczęciem wynajmu ({{start}}). Można mimo to zapisać.",
-    "licenseUnknownNote": "Data ważności prawa jazdy {{name}} nieznana."
+    "licenseUnknownNote": "Data ważności prawa jazdy {{name}} nieznana.",
+    "zoneWarning": {
+      "expired": "Uwaga: {{what}} tego auta wygasła {{date}}, przed początkiem wynajmu. Zapis jest dozwolony.",
+      "during": "Uwaga: {{what}} tego auta wygasa {{date}}, w trakcie wynajmu. Zapis jest dozwolony.",
+      "euroZone": "strefa ekologiczna",
+      "moveIzi": "Move IZI"
+    }
   },
   "selector": {
     "defaultPlaceholder": "Wybierz rezerwację...",

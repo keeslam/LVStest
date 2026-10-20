@@ -331,5 +331,12 @@
     "prevPage": "Vorige pagina",
     "nextPage": "Volgende pagina",
     "apkExpiredShort": "APK verlopen"
+  },
+  "zoneWidget": {
+    "title": "Milieuzone / Move IZI",
+    "subtitle": "Verlopen of verloopt binnenkort",
+    "none": "Geen milieuzone- of Move IZI-datums die binnenkort verlopen",
+    "euroZone": "milieuzone",
+    "moveIzi": "Move IZI"
   }
 }

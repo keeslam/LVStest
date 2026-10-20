@@ -531,7 +531,13 @@
     "collectionSameAsDelivery": "Uguale all'indirizzo di consegna",
     "pastStartWarning": "Attenzione: questa data di inizio è nel passato.",
     "licenseExpiredWarning": "Attenzione: la patente di {{name}} è scaduta il {{date}}, prima dell'inizio del noleggio ({{start}}). Può comunque salvare.",
-    "licenseUnknownNote": "Data di scadenza della patente di {{name}} sconosciuta."
+    "licenseUnknownNote": "Data di scadenza della patente di {{name}} sconosciuta.",
+    "zoneWarning": {
+      "expired": "Attenzione: {{what}} di quest'auto è scaduta il {{date}}, prima dell'inizio del noleggio. Si può salvare.",
+      "during": "Attenzione: {{what}} di quest'auto scade il {{date}}, durante il noleggio. Si può salvare.",
+      "euroZone": "la zona ambientale",
+      "moveIzi": "Move IZI"
+    }
   },
   "selector": {
     "defaultPlaceholder": "Selezioni una prenotazione...",

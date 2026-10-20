@@ -224,6 +224,8 @@ export function SettingsPanel() {
   const [showMaintenanceBlocks, setShowMaintenanceBlocks] = useState(true);
   const [apkReminderThresholdDays, setApkReminderThresholdDays] = useState("30");
   const [warrantyReminderThresholdDays, setWarrantyReminderThresholdDays] = useState("30");
+  // Round 2 punt 9: days ahead for the low-emission-zone and Move IZI end dates.
+  const [zoneReminderDays, setZoneReminderDays] = useState("30");
   // Regular-service reminders (interval defaults + reminder window)
   const [showServiceReminders, setShowServiceReminders] = useState(true);
   const [defaultServiceIntervalKm, setDefaultServiceIntervalKm] = useState("30000");
@@ -308,6 +310,7 @@ export function SettingsPanel() {
     showMaintenanceBlocks?: boolean;
     apkReminderDays?: number;
     warrantyReminderDays?: number;
+    zoneReminderDays?: number;
     showServiceReminders?: boolean;
     defaultServiceIntervalKm?: number;
     defaultServiceIntervalMonths?: number;
@@ -363,6 +366,9 @@ export function SettingsPanel() {
     }
     if (systemSettings.warrantyReminderDays) {
       setWarrantyReminderThresholdDays(String(systemSettings.warrantyReminderDays));
+    }
+    if (systemSettings.zoneReminderDays) {
+      setZoneReminderDays(String(systemSettings.zoneReminderDays));
     }
     if (systemSettings.tollRatePerKm) {
       setTollRatePerKm(String(systemSettings.tollRatePerKm));
@@ -562,6 +568,7 @@ export function SettingsPanel() {
         showMaintenanceBlocks,
         apkReminderDays: parseInt(apkReminderThresholdDays) || 30,
         warrantyReminderDays: parseInt(warrantyReminderThresholdDays) || 30,
+        zoneReminderDays: parseInt(zoneReminderDays) || 30,
         showServiceReminders,
         defaultServiceIntervalKm: parseInt(defaultServiceIntervalKm) || 30000,
         defaultServiceIntervalMonths: parseInt(defaultServiceIntervalMonths) || 12,
@@ -1709,6 +1716,25 @@ export function SettingsPanel() {
                         onCheckedChange={setShowWarrantyReminders}
                         data-testid="switch-show-warranty-reminders"
                       />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>{t('settingsPage.calendar.zoneRemindersLabel')}</Label>
+                      <p className="text-sm text-gray-500">{t('settingsPage.calendar.zoneRemindersHint')}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="1"
+                        max="365"
+                        value={zoneReminderDays}
+                        onChange={(e) => setZoneReminderDays(e.target.value)}
+                        className="w-20"
+                        data-testid="input-zone-reminder-days"
+                      />
+                      <span className="text-sm text-gray-500">{t('common:units.days')}</span>
                     </div>
                   </div>
 

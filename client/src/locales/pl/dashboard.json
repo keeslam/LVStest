@@ -341,5 +341,12 @@
     "prevPage": "Poprzednia strona",
     "nextPage": "Następna strona",
     "apkExpiredShort": "Przegląd wygasł"
+  },
+  "zoneWidget": {
+    "title": "Strefa ekologiczna / Move IZI",
+    "subtitle": "Wygasło lub wkrótce wygaśnie",
+    "none": "Brak dat strefy ekologicznej lub Move IZI, które wkrótce wygasają",
+    "euroZone": "strefa ekologiczna",
+    "moveIzi": "Move IZI"
   }
 }

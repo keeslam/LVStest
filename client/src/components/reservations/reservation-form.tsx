@@ -85,6 +85,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { officeToday } from "@/lib/office-date";
 import { ExtraDriversNote, DriverHistoryPanel } from "@/components/reservations/extra-drivers-note";
 import { DriverLicenseNotice } from "@/components/reservations/driver-license-notice";
+import { ZoneExpiryNotice } from "@/components/reservations/zone-expiry-notice";
 
 // Extended schema with validation
 const formSchema = insertReservationSchemaBase.extend({
@@ -1708,6 +1709,8 @@ export function ReservationForm({
                           </span>
                         </div>
                       )}
+                      {/* Round 2 punt 9: low-emission-zone / Move IZI end date before or during the rental. */}
+                      <ZoneExpiryNotice vehicle={selectedVehicle} startDate={startDateWatch} endDate={endDateWatch} />
                       
                       <FormMessage />
                     </FormItem>

@@ -79,7 +79,12 @@
     "deleteConfirm": "Czy na pewno usunąć „{{title}}”? Tej operacji nie można cofnąć.",
     "dismissNotificationTitle": "Ukryj powiadomienie",
     "dismissConfirm": "Ukryć powiadomienie dla {{label}} na 7 dni? Pojawi się ponownie, jeśli przegląd nadal będzie przeterminowany.",
-    "dismissButton": "Ukryj"
+    "dismissButton": "Ukryj",
+    "zoneExpiring": "Strefa ekologiczna i Move IZI",
+    "zoneExpiringTitle": {
+      "euroZone": "Strefa ekologiczna wygasa - {{plate}}",
+      "moveIzi": "Move IZI wygasa - {{plate}}"
+    }
   },
   "customerCommunications": {
     "pageTitle": "Komunikacja z klientami",

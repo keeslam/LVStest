@@ -10,6 +10,7 @@ import { QuickActions } from "@/components/dashboard/quick-actions";
 import { BackupStalenessBanner } from "@/components/backup/backup-staleness-banner";
 import { AccessDeniedBanner } from "@/components/security/access-denied-banner";
 import { DriverLicenseWidget } from "@/components/dashboard/driver-license-widget";
+import { ZoneExpirationWidget } from "@/components/dashboard/zone-expiration-widget";
 import { useQuery } from "@tanstack/react-query";
 import { DASHBOARD_TILES_KEY, dashboardTilesFromSetting, type DashboardTileId } from "@shared/dashboard-tiles";
 
@@ -20,6 +21,7 @@ const TILE_COMPONENTS: Record<DashboardTileId, () => JSX.Element> = {
   overdue: OverdueReservationsWidget,
   warranty: WarrantyExpirationWidget,
   licenses: DriverLicenseWidget,
+  zones: ZoneExpirationWidget,
 };
 
 /**
@@ -32,7 +34,9 @@ export function tileGridClass(count: number): string {
     case 2: return "grid grid-cols-1 md:grid-cols-2 gap-6";
     case 3: return "grid grid-cols-1 md:grid-cols-3 gap-6";
     case 4: return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6";
-    default: return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6";
+    case 5: return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6";
+    // Six (round 2 punt 9 added the zone tile): two even rows of three.
+    default: return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
   }
 }
 

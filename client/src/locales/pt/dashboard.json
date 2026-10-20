@@ -336,5 +336,12 @@
     "prevPage": "Página anterior",
     "nextPage": "Página seguinte",
     "apkExpiredShort": "Inspeção caducada"
+  },
+  "zoneWidget": {
+    "title": "Zona ambiental / Move IZI",
+    "subtitle": "Expirado ou a expirar em breve",
+    "none": "Sem datas de zona ambiental ou Move IZI a expirar em breve",
+    "euroZone": "zona ambiental",
+    "moveIzi": "Move IZI"
   }
 }

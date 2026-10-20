@@ -528,7 +528,13 @@
     "collectionSameAsDelivery": "Same as delivery address",
     "pastStartWarning": "Note: this start date is in the past.",
     "licenseExpiredWarning": "Note: {{name}}'s driving licence expired on {{date}}, before the rental starts ({{start}}). You can still save.",
-    "licenseUnknownNote": "Expiry date of {{name}}'s driving licence unknown."
+    "licenseUnknownNote": "Expiry date of {{name}}'s driving licence unknown.",
+    "zoneWarning": {
+      "expired": "Note: {{what}} of this car expired on {{date}}, before the rental starts. Saving is allowed.",
+      "during": "Note: {{what}} of this car expires on {{date}}, during the rental. Saving is allowed.",
+      "euroZone": "the emission zone",
+      "moveIzi": "Move IZI"
+    }
   },
   "selector": {
     "defaultPlaceholder": "Select a reservation...",

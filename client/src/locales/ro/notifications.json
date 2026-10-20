@@ -78,7 +78,12 @@
     "deleteConfirm": "Sunteți sigur că doriți să ștergeți „{{title}}”? Această acțiune nu poate fi anulată.",
     "dismissNotificationTitle": "Ignorați notificarea",
     "dismissConfirm": "Ignorați notificarea pentru {{label}} timp de 7 zile? Aceasta va reapărea ulterior dacă inspecția este în continuare expirată.",
-    "dismissButton": "Ignorați"
+    "dismissButton": "Ignorați",
+    "zoneExpiring": "Zonă de emisii și Move IZI",
+    "zoneExpiringTitle": {
+      "euroZone": "Zona de emisii expiră - {{plate}}",
+      "moveIzi": "Move IZI expiră - {{plate}}"
+    }
   },
   "customerCommunications": {
     "pageTitle": "Comunicarea cu clienții",

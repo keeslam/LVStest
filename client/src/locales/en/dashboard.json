@@ -331,5 +331,12 @@
     "prevPage": "Previous page",
     "nextPage": "Next page",
     "apkExpiredShort": "MOT expired"
+  },
+  "zoneWidget": {
+    "title": "Emission zone / Move IZI",
+    "subtitle": "Expired or expiring soon",
+    "none": "No emission zone or Move IZI dates expiring soon",
+    "euroZone": "emission zone",
+    "moveIzi": "Move IZI"
   }
 }

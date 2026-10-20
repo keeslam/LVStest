@@ -77,7 +77,12 @@
     "deleteConfirm": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone.",
     "dismissNotificationTitle": "Dismiss Notification",
     "dismissConfirm": "Dismiss the notification for {{label}} for 7 days? It will reappear after that if it's still overdue.",
-    "dismissButton": "Dismiss"
+    "dismissButton": "Dismiss",
+    "zoneExpiring": "Emission zone and Move IZI",
+    "zoneExpiringTitle": {
+      "euroZone": "Emission zone expires - {{plate}}",
+      "moveIzi": "Move IZI expires - {{plate}}"
+    }
   },
   "customerCommunications": {
     "pageTitle": "Customer Communications",

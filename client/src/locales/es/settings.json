@@ -515,7 +515,9 @@
       "defaultServiceIntervalMonthsLabel": "Intervalo predeterminado (meses)",
       "serviceReminderKmLabel": "Recordatorio a partir de (km de antelación)",
       "serviceReminderDaysLabel": "Recordatorio a partir de (días de antelación)",
-      "saveMaintenanceSettingsButton": "Guardar ajustes de mantenimiento"
+      "saveMaintenanceSettingsButton": "Guardar ajustes de mantenimiento",
+      "zoneRemindersLabel": "Aviso de zona ambiental y Move IZI",
+      "zoneRemindersHint": "Tantos días antes de la fecha final el coche aparece en el mosaico y en las notificaciones"
     },
     "email": {
       "configurationTitle": "Configuración de correo electrónico",
@@ -687,7 +689,8 @@
         "apk": "ITV caduca",
         "overdue": "Alquileres atrasados",
         "warranty": "Garantía caduca",
-        "licenses": "Permisos de conducir"
+        "licenses": "Permisos de conducir",
+        "zones": "Zona ambiental / Move IZI"
       }
     },
     "quickActions": {

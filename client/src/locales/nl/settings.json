@@ -512,7 +512,9 @@
       "defaultServiceIntervalMonthsLabel": "Standaardinterval (maanden)",
       "serviceReminderKmLabel": "Herinnering vanaf (km vooraf)",
       "serviceReminderDaysLabel": "Herinnering vanaf (dagen vooraf)",
-      "saveMaintenanceSettingsButton": "Onderhoudsinstellingen opslaan"
+      "saveMaintenanceSettingsButton": "Onderhoudsinstellingen opslaan",
+      "zoneRemindersLabel": "Herinnering milieuzone en Move IZI",
+      "zoneRemindersHint": "Zoveel dagen voor de einddatum komt een auto op de tegel en bij de meldingen"
     },
     "email": {
       "configurationTitle": "E-mailconfiguratie",
@@ -683,7 +685,8 @@
         "apk": "APK verloopt",
         "overdue": "Achterstallige huren",
         "warranty": "Garantie verloopt",
-        "licenses": "Rijbewijzen"
+        "licenses": "Rijbewijzen",
+        "zones": "Milieuzone / Move IZI"
       }
     },
     "quickActions": {

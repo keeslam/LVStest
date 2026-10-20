@@ -78,7 +78,12 @@
     "deleteConfirm": "Eliminare \"{{title}}\"? Questa azione non può essere annullata.",
     "dismissNotificationTitle": "Ignorare la notifica",
     "dismissConfirm": "Ignorare la notifica per {{label}} per 7 giorni? Riapparirà dopo questo periodo se la revisione risulterà ancora scaduta.",
-    "dismissButton": "Ignorare"
+    "dismissButton": "Ignorare",
+    "zoneExpiring": "Zona ambientale e Move IZI",
+    "zoneExpiringTitle": {
+      "euroZone": "Zona ambientale in scadenza - {{plate}}",
+      "moveIzi": "Move IZI in scadenza - {{plate}}"
+    }
   },
   "customerCommunications": {
     "pageTitle": "Comunicazioni con i clienti",

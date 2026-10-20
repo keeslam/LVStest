@@ -531,7 +531,13 @@
     "collectionSameAsDelivery": "Igual à morada de entrega",
     "pastStartWarning": "Atenção: esta data de início está no passado.",
     "licenseExpiredWarning": "Atenção: a carta de condução de {{name}} caducou em {{date}}, antes do início do aluguer ({{start}}). Pode guardar na mesma.",
-    "licenseUnknownNote": "Data de validade da carta de condução de {{name}} desconhecida."
+    "licenseUnknownNote": "Data de validade da carta de condução de {{name}} desconhecida.",
+    "zoneWarning": {
+      "expired": "Atenção: {{what}} deste carro expirou a {{date}}, antes do início do aluguer. Pode guardar.",
+      "during": "Atenção: {{what}} deste carro expira a {{date}}, durante o aluguer. Pode guardar.",
+      "euroZone": "a zona ambiental",
+      "moveIzi": "Move IZI"
+    }
   },
   "selector": {
     "defaultPlaceholder": "Selecione uma reserva...",

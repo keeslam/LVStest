@@ -512,7 +512,9 @@
       "defaultServiceIntervalMonthsLabel": "Default interval (months)",
       "serviceReminderKmLabel": "Remind from (km ahead)",
       "serviceReminderDaysLabel": "Remind from (days ahead)",
-      "saveMaintenanceSettingsButton": "Save Maintenance Settings"
+      "saveMaintenanceSettingsButton": "Save Maintenance Settings",
+      "zoneRemindersLabel": "Emission zone and Move IZI reminder",
+      "zoneRemindersHint": "This many days before the end date a car appears on the tile and in the notifications"
     },
     "email": {
       "configurationTitle": "Email Configuration",
@@ -683,7 +685,8 @@
         "apk": "MOT expiring",
         "overdue": "Overdue rentals",
         "warranty": "Warranty expiring",
-        "licenses": "Driving licences"
+        "licenses": "Driving licences",
+        "zones": "Emission zone / Move IZI"
       }
     },
     "quickActions": {

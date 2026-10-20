@@ -336,5 +336,12 @@
     "prevPage": "Pagina anterioară",
     "nextPage": "Pagina următoare",
     "apkExpiredShort": "ITP expirat"
+  },
+  "zoneWidget": {
+    "title": "Zonă de emisii / Move IZI",
+    "subtitle": "Expirat sau expiră curând",
+    "none": "Nicio dată de zonă de emisii sau Move IZI care expiră curând",
+    "euroZone": "zonă de emisii",
+    "moveIzi": "Move IZI"
   }
 }

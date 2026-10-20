@@ -2567,6 +2567,8 @@ export const settings = pgTable("settings", {
   apkReminderDays: integer("apk_reminder_days").notNull().default(30),
   showWarrantyReminders: boolean("show_warranty_reminders").notNull().default(true),
   warrantyReminderDays: integer("warranty_reminder_days").notNull().default(30),
+  // Round 2 punt 9 (Kees, 2026-10-20): days ahead for the low-emission-zone and Move IZI end dates.
+  zoneReminderDays: integer("zone_reminder_days").notNull().default(30),
   showMaintenanceBlocks: boolean("show_maintenance_blocks").notNull().default(true),
   // Regular-service reminders: default interval (per vehicle overridable) and the
   // window before the due point in which "due soon" reminders start.
@@ -2602,6 +2604,7 @@ export const updateSettingsSchema = createInsertSchema(settings).pick({
   apkReminderDays: true,
   showWarrantyReminders: true,
   warrantyReminderDays: true,
+  zoneReminderDays: true,
   showMaintenanceBlocks: true,
   showServiceReminders: true,
   defaultServiceIntervalKm: true,

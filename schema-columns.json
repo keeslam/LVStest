@@ -5791,6 +5791,13 @@
         "default": "30"
       },
       {
+        "name": "zone_reminder_days",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": "30"
+      },
+      {
         "name": "show_maintenance_blocks",
         "type": "boolean",
         "notNull": true,

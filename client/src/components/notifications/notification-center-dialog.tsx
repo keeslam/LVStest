@@ -50,6 +50,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Vehicle, Reservation, Customer, CustomNotification, UserPermission } from "@shared/schema";
+import type { ZoneExpiringRow } from "@shared/zone-expiry";
 import { formatDate, formatLicensePlate, formatMaintenanceCategory } from "@/lib/format-utils";
 import { displayNotification } from "@/lib/notification-display";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
@@ -71,6 +72,7 @@ import {
   Settings,
   ExternalLink,
   Search,
+  Leaf,
 } from "lucide-react";
 import { officeToday } from "@/lib/office-date";
 
@@ -151,6 +153,12 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
 
   const { data: warrantyExpiringVehicles = [] } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles/warranty-expiring"],
+    enabled: canViewVehicles,
+  });
+
+  // Round 2 punt 9: low-emission-zone and Move IZI end dates.
+  const { data: zoneExpiringRows = [] } = useQuery<ZoneExpiringRow[]>({
+    queryKey: ["/api/vehicles/zone-expiring"],
     enabled: canViewVehicles,
   });
 
@@ -278,6 +286,10 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
     .filter((v) => matchesSearch(`${v.brand} ${v.model} ${v.licensePlate}`))
     .sort((a, b) => new Date(a.warrantyEndDate || "").getTime() - new Date(b.warrantyEndDate || "").getTime());
 
+  const zoneExpiringItems = zoneExpiringRows
+    .filter((z) => !isDismissed(`dismissed_zone_${z.kind}_${z.id}`))
+    .filter((z) => matchesSearch(`${z.brand ?? ""} ${z.model ?? ""} ${z.licensePlate}`));
+
   const upcomingReservationItems = upcomingReservations
     .filter((r) => {
       const daysUntil = differenceInDays(new Date(r.startDate), today);
@@ -301,6 +313,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
   const totalNotifications =
     apkExpiringItems.length +
     warrantyExpiringItems.length +
+    zoneExpiringItems.length +
     upcomingReservationItems.length +
     upcomingMaintenanceItems.length +
     placeholderReservations.length +
@@ -743,6 +756,22 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                             date={v.warrantyEndDate || ""}
                             onView={() => openVehicleDialog(v.id)}
                             onDismiss={() => setPendingDismiss({ key: `dismissed_warranty_${v.id}`, label: formatLicensePlate(v.licensePlate) })}
+                          />
+                        ))}
+                      </>
+                    )}
+                    {zoneExpiringItems.length > 0 && (
+                      <>
+                        <div className="px-4 py-2 bg-muted/50 text-xs font-medium">{t('centerDialog.zoneExpiring')}</div>
+                        {zoneExpiringItems.map((z) => (
+                          <NotificationCard
+                            key={`zone-${z.kind}-${z.id}`}
+                            icon={<Leaf className="h-5 w-5 text-green-600" />}
+                            title={t(`centerDialog.zoneExpiringTitle.${z.kind}`, { plate: formatLicensePlate(z.licensePlate) })}
+                            description={`${z.brand ?? ""} ${z.model ?? ""}`.trim()}
+                            date={z.date}
+                            onView={() => openVehicleDialog(z.id)}
+                            onDismiss={() => setPendingDismiss({ key: `dismissed_zone_${z.kind}_${z.id}`, label: formatLicensePlate(z.licensePlate) })}
                           />
                         ))}
                       </>
