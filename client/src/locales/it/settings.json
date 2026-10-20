@@ -692,9 +692,14 @@
     },
     "quickActions": {
       "title": "Azioni rapide",
-      "description": "Scegli quali azioni rapide tutti vedono nella dashboard e in quale ordine. Le prime {{count}} selezionate diventano riquadri grandi, le altre pulsanti sotto.",
+      "description": "Scegli per ogni azione se tutti la vedono nella dashboard come riquadro grande (al massimo {{max}}, anche meno) o come pulsante sotto. Non selezionata: non mostrata.",
       "saved": "Le azioni rapide sono state salvate.",
-      "buttonsBelow": "Sotto: pulsanti sotto i riquadri"
+      "tilesColumn": "Riquadri ({{count}}/{{max}})",
+      "buttonsColumn": "Pulsanti sotto",
+      "toButtons": "Ai pulsanti",
+      "toTiles": "Ai riquadri",
+      "tilesFull": "Ci sono già {{max}} riquadri",
+      "empty": "Ancora niente qui"
     },
     "kmAllowance": {
       "title": "Chilometri per tipo di veicolo",

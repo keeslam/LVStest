@@ -688,9 +688,14 @@
     },
     "quickActions": {
       "title": "Quick actions",
-      "description": "Choose which quick actions everyone sees on the dashboard, and in what order. The first {{count}} ticked ones become large tiles, the rest buttons below them.",
+      "description": "Choose per action whether everyone sees it on the dashboard as a large tile (at most {{max}}, fewer is fine) or as a button below. Unticked: not shown.",
       "saved": "The quick actions have been saved.",
-      "buttonsBelow": "Below: buttons under the tiles"
+      "tilesColumn": "Tiles ({{count}}/{{max}})",
+      "buttonsColumn": "Buttons below",
+      "toButtons": "To buttons",
+      "toTiles": "To tiles",
+      "tilesFull": "There are already {{max}} tiles",
+      "empty": "Nothing here yet"
     },
     "kmAllowance": {
       "title": "Kilometres per vehicle type",

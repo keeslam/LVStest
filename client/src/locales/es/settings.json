@@ -692,9 +692,14 @@
     },
     "quickActions": {
       "title": "Acciones rápidas",
-      "description": "Elija qué acciones rápidas ve todo el mundo en el panel y en qué orden. Las primeras {{count}} marcadas son mosaicos grandes; el resto, botones debajo.",
+      "description": "Elija para cada acción si todos la ven en el panel como mosaico grande (como máximo {{max}}, menos también vale) o como botón debajo. Sin marcar: no se muestra.",
       "saved": "Las acciones rápidas se han guardado.",
-      "buttonsBelow": "Abajo: botones bajo los mosaicos"
+      "tilesColumn": "Mosaicos ({{count}}/{{max}})",
+      "buttonsColumn": "Botones debajo",
+      "toButtons": "A botones",
+      "toTiles": "A mosaicos",
+      "tilesFull": "Ya hay {{max}} mosaicos",
+      "empty": "Aún no hay nada"
     },
     "kmAllowance": {
       "title": "Kilómetros por tipo de vehículo",

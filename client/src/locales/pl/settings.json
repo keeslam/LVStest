@@ -696,9 +696,14 @@
     },
     "quickActions": {
       "title": "Szybkie akcje",
-      "description": "Wybierz, które szybkie akcje wszyscy widzą na pulpicie i w jakiej kolejności. Pierwsze {{count}} zaznaczone to duże kafelki, reszta to przyciski pod nimi.",
+      "description": "Wybierz dla każdej akcji, czy wszyscy widzą ją na pulpicie jako duży kafelek (najwyżej {{max}}, mniej też może być) czy jako przycisk pod spodem. Odznaczona: nie jest pokazywana.",
       "saved": "Szybkie akcje zostały zapisane.",
-      "buttonsBelow": "Poniżej: przyciski pod kafelkami"
+      "tilesColumn": "Kafelki ({{count}}/{{max}})",
+      "buttonsColumn": "Przyciski pod spodem",
+      "toButtons": "Do przycisków",
+      "toTiles": "Do kafelków",
+      "tilesFull": "Jest już {{max}} kafelków",
+      "empty": "Na razie nic tu nie ma"
     },
     "kmAllowance": {
       "title": "Kilometry według typu pojazdu",

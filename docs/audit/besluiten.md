@@ -703,12 +703,12 @@ Kees koos uit de lijst met suggesties punt 16 en gaf de criteria met klikken: ee
 
 Kees wilde de snelle acties net zo instellen als de dashboardtegels: aan- en uitzetten en de volgorde kiezen, met altijd hoogstens 6 grote tegels en de rest als knoppen eronder. Hij koos met klikken:
 
-- **Waar.** In **Instellingen > Dashboard** staat onder de dashboardtegels een tweede lijst, **Snelle acties**, met vinkjes, pijltjes en een eigen knop Opslaan. Het is één instelling voor iedereen.
-- **Tegels en knoppen.** De eerste 6 aangevinkte acties zijn grote tegels. De andere aangevinkte acties zijn knoppen onder de tegels. Een streep in de lijst laat zien waar de knoppen beginnen.
+- **Waar.** In **Instellingen > Dashboard** staat onder de dashboardtegels een kaart **Snelle acties**, met vinkjes, pijltjes en een eigen knop Opslaan. Het is één instelling voor iedereen.
+- **Tegels en knoppen.** De lijst heeft twee kolommen naast elkaar: **Tegels** en **Knoppen eronder**. Met een pijltje opzij zet je een actie in de andere kolom. Er mogen hoogstens 6 tegels zijn, minder mag ook (Kees: "het hoeven er niet altijd 6 te zijn").
 - **Uitvinken.** Een uitgevinkte actie staat niet op het dashboard.
 - **Geen recht.** Een tegel waar iemand geen recht op heeft, valt bij die persoon weg. Er schuift geen knop op, dus die persoon ziet dan minder tegels.
 - **Breedte.** Minder dan 6 tegels vullen samen de hele rij.
-- **Zonder instelling.** Het dashboard blijft zoals het was: de bekende 6 tegels, en de rest als knoppen. Een actie die later wordt toegevoegd, komt aangevinkt achteraan.
+- **Zonder instelling.** Het dashboard blijft zoals het was: de bekende 6 tegels, en de rest als knoppen. Een actie die later wordt toegevoegd, komt aangevinkt onderaan bij de knoppen.
 
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 

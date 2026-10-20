@@ -692,9 +692,14 @@
     },
     "quickActions": {
       "title": "Acțiuni rapide",
-      "description": "Alegeți ce acțiuni rapide vede toată lumea pe tabloul de bord și în ce ordine. Primele {{count}} bifate devin plăci mari, restul butoane dedesubt.",
+      "description": "Alegeți pentru fiecare acțiune dacă toată lumea o vede pe tabloul de bord ca placă mare (cel mult {{max}}, mai puține e în regulă) sau ca buton dedesubt. Nebifată: nu se afișează.",
       "saved": "Acțiunile rapide au fost salvate.",
-      "buttonsBelow": "Mai jos: butoane sub plăci"
+      "tilesColumn": "Plăci ({{count}}/{{max}})",
+      "buttonsColumn": "Butoane dedesubt",
+      "toButtons": "La butoane",
+      "toTiles": "La plăci",
+      "tilesFull": "Există deja {{max}} plăci",
+      "empty": "Încă nimic aici"
     },
     "kmAllowance": {
       "title": "Kilometri pe tip de vehicul",
