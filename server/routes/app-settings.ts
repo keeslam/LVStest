@@ -26,6 +26,7 @@ import { loadOfficeTimeZone } from "../services/office-time";
 import { COMPANY_NAME_KEY, INVALID_COMPANY_NAME_CODE, validCompanyName } from "../../shared/company-name";
 import { loadCompanyName } from "../services/company-name";
 import { DASHBOARD_TILES_KEY, INVALID_DASHBOARD_TILES_CODE, isValidDashboardTilesValue } from "../../shared/dashboard-tiles";
+import { QUICK_ACTIONS_KEY, INVALID_QUICK_ACTIONS_CODE, isValidQuickActionsValue } from "../../shared/quick-actions-layout";
 import { INVALID_KM_ALLOWANCE_CODE, KM_ALLOWANCE_KEY, isValidKmAllowance } from "../../shared/km-allowance";
 import { migratePortalTemplatesToCompanyName } from "../services/portal-mail";
 
@@ -98,6 +99,10 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
     // Kees 2026-10-19: which dashboard tiles show, in what order — known tile ids only.
     if (key === DASHBOARD_TILES_KEY && !isValidDashboardTilesValue(value)) {
       return { message: "That is not a list of dashboard tiles", code: INVALID_DASHBOARD_TILES_CODE };
+    }
+    // Kees 2026-10-20: which quick actions show, in what order — known action ids only.
+    if (key === QUICK_ACTIONS_KEY && !isValidQuickActionsValue(value)) {
+      return { message: "That is not a list of quick actions", code: INVALID_QUICK_ACTIONS_CODE };
     }
     // Punt 1 (Kees 2026-10-19): free km per day and price per extra km per vehicle type.
     if (key === KM_ALLOWANCE_KEY && !isValidKmAllowance(value)) {

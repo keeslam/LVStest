@@ -690,6 +690,12 @@
         "licenses": "Cartas de condução"
       }
     },
+    "quickActions": {
+      "title": "Ações rápidas",
+      "description": "Escolha que ações rápidas todos veem no painel e em que ordem. As primeiras {{count}} marcadas tornam-se blocos grandes; as restantes, botões por baixo.",
+      "saved": "As ações rápidas foram guardadas.",
+      "buttonsBelow": "Abaixo: botões sob os blocos"
+    },
     "kmAllowance": {
       "title": "Quilómetros por tipo de veículo",
       "description": "Quilómetros livres por dia e preço por quilómetro extra, por tipo de veículo. Ambos podem ser alterados num veículo.",

@@ -42,6 +42,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import React, { useEffect, useState } from "react";
 import { Reservation, UserPermission, Vehicle } from "@shared/schema";
+import { QUICK_ACTIONS_KEY, quickActionsLayout } from "@shared/quick-actions-layout";
 import { Check, RotateCw, Search, CalendarClock, CalendarSearch, LogIn, LogOut, ScanLine } from "lucide-react";
 import { AvailabilityDialog } from "@/components/dashboard/availability-dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -290,8 +291,9 @@ interface QuickAction {
   primary?: boolean;
 }
 
-// The five most-used actions render as large tiles in the top row, in this
-// exact order; everything else lands in the compact second row.
+// The default order. Kees, 2026-10-20: Instellingen > Dashboard decides which
+// actions show and in what order (shared/quick-actions-layout.ts); the first six
+// shown are the large tiles, the rest the compact buttons below.
 //
 // OPT-002 - the two most frequent actions at the counter, handing a car over
 // and taking it back (50x/day between them, per the workflow report), had no
@@ -304,98 +306,84 @@ const quickActions: QuickAction[] = [
     label: "Start Pickup",
     dialog: "start-pickup",
     icon: "log-out",
-    primary: true,
   },
   {
     label: "Start Return",
     dialog: "start-return",
     icon: "log-in",
-    primary: true,
   },
   {
     label: "Scan",
     dialog: "scan",
     icon: "scan-line",
-    primary: true,
   },
   // Punt 14 (Kees, 2026-10-20): "is er een auto vrij?" without a booking form.
   {
     label: "Availability",
     dialog: "availability",
     icon: "calendar-search",
-    primary: true,
   },
   {
     label: "New Reservation",
     dialog: "new-reservation",
     icon: "calendar-plus",
-    primary: true,
   },
   {
     label: "Start Damage Check",
     dialog: "interactive-damage-check",
     icon: "hammer",
-    primary: true,
   },
   {
     label: "Add Vehicle",
     dialog: "add-vehicle",
     icon: "car",
-    primary: false,
   },
   {
     label: "Add Customer",
     dialog: "add-customer",
     icon: "user-plus",
-    primary: false,
   },
   {
     label: "Scan RDW APK Dates",
     icon: "refresh-cw",
     dialog: "rdw-apk-scan",
-    primary: false,
   },
   {
     label: "Upload Document",
     icon: "upload",
     dialog: "document-upload",
-    primary: false,
   },
   {
     label: "Log Expense",
     dialog: "log-expense",
     icon: "receipt",
-    primary: false,
   },
   {
     label: "Update Fuel Status",
     dialog: "fuel-status",
     icon: "fuel",
-    primary: false,
   },
   {
     label: "Change Registration",
     icon: "refresh-cw",
     dialog: "registration",
-    primary: false,
   },
   {
     label: "Upload APK Report",
     icon: "upload",
     dialog: "apk-report",
-    primary: false,
   },
   {
     label: "Send APK Notifications",
     icon: "shield-alert",
     dialog: "apk-notifications",
-    primary: false,
   },
 ];
 
-// Shared styling for the top-row tiles so the five primary branches stay in sync.
+// Shared styling for the top-row tiles. They share the row (flex-1), so fewer than
+// six still fill the full width.
 const PRIMARY_TILE_CLASS =
-  "h-auto w-full flex-col gap-2 py-4 px-2 text-sm font-semibold whitespace-normal text-center bg-primary-50 text-primary-600 hover:bg-primary-100 border-primary-100 [&_svg]:size-8";
+  "h-auto min-w-0 flex-1 basis-[calc(50%_-_0.375rem)] sm:basis-[calc(33.333%_-_0.5rem)] lg:basis-0 flex-col gap-2 py-4 px-2 text-sm font-semibold whitespace-normal text-center bg-primary-50 text-primary-600 hover:bg-primary-100 border-primary-100 [&_svg]:size-8";
 const PRIMARY_TILE_ICON_CLASS = "h-8 w-8";
 const SECONDARY_BUTTON_CLASS = "bg-primary-50 text-primary-600 hover:bg-primary-100";
 const SECONDARY_ICON_CLASS = "mr-1 h-4 w-4";
@@ -473,6 +461,12 @@ export function QuickActions() {
   const [isRdwScanRunning, setIsRdwScanRunning] = useState(false);
   // A-2-2: the scan covers the whole fleet, so the button asks first.
   const [rdwScanConfirmOpen, setRdwScanConfirmOpen] = useState(false);
+
+  // Kees, 2026-10-20: which actions show, in what order (Instellingen > Dashboard).
+  const { data: quickActionSetting, isSuccess: quickActionSettingLoaded } = useQuery<{ value?: unknown } | null>({
+    queryKey: [`/api/app-settings/key/${QUICK_ACTIONS_KEY}`],
+  });
+  const quickActionLayout = quickActionsLayout(quickActionSettingLoaded ? quickActionSetting?.value : null);
 
   const { data: rdwScanStatus } = useQuery<{
     running: boolean;
@@ -1000,7 +994,7 @@ export function QuickActions() {
                   >
                     <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
                     {t(`quickActions.buttons.${action.dialog}`)}
-                    <span className="text-xs font-normal opacity-80" data-testid={`hint-quick-${action.dialog}`}>{t(`quickActions.hints.${action.dialog}`)}</span>
+                    {action.primary && <span className="text-xs font-normal opacity-80" data-testid={`hint-quick-${action.dialog}`}>{t(`quickActions.hints.${action.dialog}`)}</span>}
                   </Button>
                 );
               }
@@ -1015,7 +1009,7 @@ export function QuickActions() {
                   >
                     <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
                     {t(`quickActions.buttons.${action.dialog}`)}
-                    <span className="text-xs font-normal opacity-80" data-testid={`hint-quick-${action.dialog}`}>{t(`quickActions.hints.${action.dialog}`)}</span>
+                    {action.primary && <span className="text-xs font-normal opacity-80" data-testid={`hint-quick-${action.dialog}`}>{t(`quickActions.hints.${action.dialog}`)}</span>}
                   </Button>
                 </RequiresPermission>
               );
@@ -1037,7 +1031,7 @@ export function QuickActions() {
                   >
                     <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
                     {t(`quickActions.buttons.${action.dialog}`)}
-                    <span className="text-xs font-normal opacity-80" data-testid="hint-quick-availability">{t(`quickActions.hints.${action.dialog}`)}</span>
+                    {action.primary && <span className="text-xs font-normal opacity-80" data-testid="hint-quick-availability">{t(`quickActions.hints.${action.dialog}`)}</span>}
                   </Button>
                 </RequiresPermission>
               );
@@ -1182,11 +1176,11 @@ export function QuickActions() {
                   <RequiresPermission anyOf={[UserPermission.MANAGE_EXPENSES]}>
                     <Button
                       variant="outline"
-                      className="bg-primary-50 text-primary-600 hover:bg-primary-100"
-                      size="sm"
+                      className={actionStyle(action).className}
+                      size={actionStyle(action).size}
                       data-testid="button-quick-log-expense"
                     >
-                      <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
+                      <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
                       {t(`quickActions.buttons.${action.dialog}`)}
                     </Button>
                   </RequiresPermission>
@@ -1204,11 +1198,11 @@ export function QuickActions() {
                     <RequiresPermission anyOf={[UserPermission.MANAGE_DOCUMENTS]}>
                       <Button
                         variant="outline"
-                        className="bg-primary-50 text-primary-600 hover:bg-primary-100"
-                        size="sm"
+                        className={actionStyle(action).className}
+                        size={actionStyle(action).size}
                         data-testid="button-quick-document-upload"
                       >
-                        <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
+                        <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
                         {t(`quickActions.buttons.${action.dialog}`)}
                       </Button>
                     </RequiresPermission>
@@ -1380,11 +1374,11 @@ export function QuickActions() {
                     <RequiresPermission anyOf={[UserPermission.MANAGE_NOTIFICATIONS]}>
                       <Button
                         variant="outline"
-                        className="bg-primary-50 text-primary-600 hover:bg-primary-100"
-                        size="sm"
+                        className={actionStyle(action).className}
+                        size={actionStyle(action).size}
                         data-testid="button-quick-apk-notifications"
                       >
-                        <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
+                        <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
                         {t(`quickActions.buttons.${action.dialog}`)}
                       </Button>
                     </RequiresPermission>
@@ -1611,11 +1605,11 @@ export function QuickActions() {
                     <RequiresPermission allOf={[UserPermission.MANAGE_DOCUMENTS, UserPermission.MANAGE_VEHICLES]}>
                       <Button
                         variant="outline"
-                        className="bg-primary-50 text-primary-600 hover:bg-primary-100"
-                        size="sm"
+                        className={actionStyle(action).className}
+                        size={actionStyle(action).size}
                         data-testid="button-quick-apk-report"
                       >
-                        <ActionIcon name={action.icon || "upload"} className="mr-1 h-4 w-4" />
+                        <ActionIcon name={action.icon || "upload"} className={actionStyle(action).iconClassName} />
                         {t(`quickActions.buttons.${action.dialog}`)}
                       </Button>
                     </RequiresPermission>
@@ -1792,11 +1786,11 @@ export function QuickActions() {
                     <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
                       <Button
                         variant="outline"
-                        className="bg-primary-50 text-primary-600 hover:bg-primary-100"
-                        size="sm"
+                        className={actionStyle(action).className}
+                        size={actionStyle(action).size}
                         data-testid="button-quick-registration"
                       >
-                        <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
+                        <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
                         {t(`quickActions.buttons.${action.dialog}`)}
                       </Button>
                     </RequiresPermission>
@@ -1996,11 +1990,11 @@ export function QuickActions() {
                       <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
                         <Button
                           variant="outline"
-                          className="bg-primary-50 text-primary-600 hover:bg-primary-100"
-                          size="sm"
+                          className={actionStyle(action).className}
+                          size={actionStyle(action).size}
                           data-testid="button-quick-fuel-status"
                         >
-                          <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
+                          <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
                           {t(`quickActions.buttons.${action.dialog}`)}
                         </Button>
                       </RequiresPermission>
@@ -2188,13 +2182,18 @@ export function QuickActions() {
             );
           };
 
+          // A tile someone has no right to is left out for that person (Kees: no shifting up).
+          const actionsFor = (ids: string[], primary: boolean) =>
+            ids.flatMap((id) => quickActions.filter((a) => a.dialog === id).map((a) => ({ ...a, primary })));
           return (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4" data-testid="quick-actions-primary">
-                {quickActions.filter(a => a.primary).map(renderAction)}
-              </div>
+              {quickActionLayout.tiles.length > 0 && (
+                <div className="flex flex-wrap gap-3 mb-4" data-testid="quick-actions-primary">
+                  {actionsFor(quickActionLayout.tiles, true).map(renderAction)}
+                </div>
+              )}
               <div className="flex flex-wrap gap-2" data-testid="quick-actions-secondary">
-                {quickActions.filter(a => !a.primary).map(renderAction)}
+                {actionsFor(quickActionLayout.buttons, false).map(renderAction)}
               </div>
               <AvailabilityDialog open={availabilityOpen} onOpenChange={setAvailabilityOpen} />
             </>

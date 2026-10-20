@@ -13,7 +13,7 @@ import { ActivityLogPanel } from "@/components/settings/activity-log-panel";
 // D17: the RDW vehicle-type check/apply card on the Voertuigen tab.
 import { RdwTypeRemapCard } from "@/components/settings/rdw-type-remap-card";
 import { PrintersPanel } from "@/components/settings/printers-panel";
-import { DashboardTilesCard } from "@/components/settings/dashboard-tiles-card";
+import { DashboardTilesCard, QuickActionsSettingsCard } from "@/components/settings/dashboard-tiles-card";
 // WAVE 15 item 3 — besluit B-24's office address finally has a field.
 import { OfficeNotificationEmail } from "@/components/settings/office-notification-email";
 import { OfficeTimeZoneCard } from "@/components/settings/office-timezone-card";
@@ -2188,6 +2188,7 @@ export function SettingsPanel() {
         {/* Printers on this pc (Kees, 2026-10-19): DYMO label makers via DYMO Connect, per pc. */}
         <TabsContent value="dashboard" {...keepMounted("dashboard")} className="space-y-6 data-[state=inactive]:hidden">
           <DashboardTilesCard />
+          <QuickActionsSettingsCard />
         </TabsContent>
 
         <TabsContent value="printers" {...keepMounted("printers")} className="space-y-6 data-[state=inactive]:hidden">

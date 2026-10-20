@@ -699,6 +699,17 @@ Kees koos uit de lijst met suggesties punt 16 en gaf de criteria met klikken: ee
   - Opslaan gebeurt pas met Toewijzen.
 - **Wat vrij is.** Dat bepalen de bestaande beschikbaarheidszoekers van beide vensters. Het voorstel kiest alleen uit die auto's.
 
+### B-53 — Snelle acties instelbaar (20-10-2026)
+
+Kees wilde de snelle acties net zo instellen als de dashboardtegels: aan- en uitzetten en de volgorde kiezen, met altijd hoogstens 6 grote tegels en de rest als knoppen eronder. Hij koos met klikken:
+
+- **Waar.** In **Instellingen > Dashboard** staat onder de dashboardtegels een tweede lijst, **Snelle acties**, met vinkjes, pijltjes en een eigen knop Opslaan. Het is één instelling voor iedereen.
+- **Tegels en knoppen.** De eerste 6 aangevinkte acties zijn grote tegels. De andere aangevinkte acties zijn knoppen onder de tegels. Een streep in de lijst laat zien waar de knoppen beginnen.
+- **Uitvinken.** Een uitgevinkte actie staat niet op het dashboard.
+- **Geen recht.** Een tegel waar iemand geen recht op heeft, valt bij die persoon weg. Er schuift geen knop op, dus die persoon ziet dan minder tegels.
+- **Breedte.** Minder dan 6 tegels vullen samen de hele rij.
+- **Zonder instelling.** Het dashboard blijft zoals het was: de bekende 6 tegels, en de rest als knoppen. Een actie die later wordt toegevoegd, komt aangevinkt achteraan.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).

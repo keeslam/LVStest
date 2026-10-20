@@ -694,6 +694,12 @@
         "licenses": "Prawa jazdy"
       }
     },
+    "quickActions": {
+      "title": "Szybkie akcje",
+      "description": "Wybierz, które szybkie akcje wszyscy widzą na pulpicie i w jakiej kolejności. Pierwsze {{count}} zaznaczone to duże kafelki, reszta to przyciski pod nimi.",
+      "saved": "Szybkie akcje zostały zapisane.",
+      "buttonsBelow": "Poniżej: przyciski pod kafelkami"
+    },
     "kmAllowance": {
       "title": "Kilometry według typu pojazdu",
       "description": "Darmowe kilometry na dzień i cena za dodatkowy kilometr, według typu pojazdu. Obie wartości można zmienić przy pojeździe.",

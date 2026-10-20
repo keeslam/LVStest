@@ -686,6 +686,12 @@
         "licenses": "Driving licences"
       }
     },
+    "quickActions": {
+      "title": "Quick actions",
+      "description": "Choose which quick actions everyone sees on the dashboard, and in what order. The first {{count}} ticked ones become large tiles, the rest buttons below them.",
+      "saved": "The quick actions have been saved.",
+      "buttonsBelow": "Below: buttons under the tiles"
+    },
     "kmAllowance": {
       "title": "Kilometres per vehicle type",
       "description": "Free kilometres per day and the price per extra kilometre, per vehicle type. Both can be changed on a vehicle.",

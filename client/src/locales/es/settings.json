@@ -690,6 +690,12 @@
         "licenses": "Permisos de conducir"
       }
     },
+    "quickActions": {
+      "title": "Acciones rápidas",
+      "description": "Elija qué acciones rápidas ve todo el mundo en el panel y en qué orden. Las primeras {{count}} marcadas son mosaicos grandes; el resto, botones debajo.",
+      "saved": "Las acciones rápidas se han guardado.",
+      "buttonsBelow": "Abajo: botones bajo los mosaicos"
+    },
     "kmAllowance": {
       "title": "Kilómetros por tipo de vehículo",
       "description": "Kilómetros libres por día y precio por kilómetro adicional, por tipo de vehículo. Ambos se pueden cambiar en un vehículo.",

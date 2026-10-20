@@ -686,6 +686,12 @@
         "licenses": "Rijbewijzen"
       }
     },
+    "quickActions": {
+      "title": "Snelle acties",
+      "description": "Kies welke snelle acties iedereen op het dashboard ziet, en in welke volgorde. De eerste {{count}} aangevinkte worden grote tegels, de rest knoppen eronder.",
+      "saved": "De snelle acties zijn opgeslagen.",
+      "buttonsBelow": "Hieronder: knoppen onder de tegels"
+    },
     "kmAllowance": {
       "title": "Kilometers per voertuigsoort",
       "description": "Vrije kilometers per dag en de prijs per extra kilometer, per voertuigsoort. Bij een voertuig kunt u beide aanpassen.",

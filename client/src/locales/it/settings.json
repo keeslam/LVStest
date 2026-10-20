@@ -690,6 +690,12 @@
         "licenses": "Patenti"
       }
     },
+    "quickActions": {
+      "title": "Azioni rapide",
+      "description": "Scegli quali azioni rapide tutti vedono nella dashboard e in quale ordine. Le prime {{count}} selezionate diventano riquadri grandi, le altre pulsanti sotto.",
+      "saved": "Le azioni rapide sono state salvate.",
+      "buttonsBelow": "Sotto: pulsanti sotto i riquadri"
+    },
     "kmAllowance": {
       "title": "Chilometri per tipo di veicolo",
       "description": "Chilometri gratuiti al giorno e prezzo per chilometro in più, per tipo di veicolo. Entrambi si possono modificare su un veicolo.",

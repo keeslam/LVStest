@@ -690,6 +690,12 @@
         "licenses": "Permise de conducere"
       }
     },
+    "quickActions": {
+      "title": "Acțiuni rapide",
+      "description": "Alegeți ce acțiuni rapide vede toată lumea pe tabloul de bord și în ce ordine. Primele {{count}} bifate devin plăci mari, restul butoane dedesubt.",
+      "saved": "Acțiunile rapide au fost salvate.",
+      "buttonsBelow": "Mai jos: butoane sub plăci"
+    },
     "kmAllowance": {
       "title": "Kilometri pe tip de vehicul",
       "description": "Kilometri gratuiți pe zi și prețul pe kilometru suplimentar, pe tip de vehicul. Ambele pot fi modificate la un vehicul.",
