@@ -1316,5 +1316,16 @@
     "bySystem": "asignado por el sistema",
     "noDriver": "sin conductor",
     "now": "ahora"
+  },
+  "spareSuggestions": {
+    "title": "Propuesta",
+    "sameModel": "mismo tipo y modelo",
+    "sameBrand": "mismo tipo y marca",
+    "sameType": "mismo tipo",
+    "otherType": "otro tipo",
+    "apkWarning": "ITV caduca el {{date}}",
+    "pick": "Elegir",
+    "chosen": "Elegido",
+    "fillAll": "Rellenar todo con la propuesta"
   }
 }

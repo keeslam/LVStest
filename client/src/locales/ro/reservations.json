@@ -1316,5 +1316,16 @@
     "bySystem": "setat de sistem",
     "noDriver": "fără șofer",
     "now": "acum"
+  },
+  "spareSuggestions": {
+    "title": "Propunere",
+    "sameModel": "același tip și model",
+    "sameBrand": "același tip și marcă",
+    "sameType": "același tip",
+    "otherType": "alt tip",
+    "apkWarning": "ITP expiră la {{date}}",
+    "pick": "Alege",
+    "chosen": "Ales",
+    "fillAll": "Completează tot cu propunerea"
   }
 }

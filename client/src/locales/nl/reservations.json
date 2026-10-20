@@ -1303,5 +1303,16 @@
     "bySystem": "ingesteld door het systeem",
     "noDriver": "geen bestuurder",
     "now": "nu"
+  },
+  "spareSuggestions": {
+    "title": "Voorstel",
+    "sameModel": "zelfde soort en model",
+    "sameBrand": "zelfde soort en merk",
+    "sameType": "zelfde soort",
+    "otherType": "andere soort",
+    "apkWarning": "APK verloopt {{date}}",
+    "pick": "Kiezen",
+    "chosen": "Gekozen",
+    "fillAll": "Alles invullen met voorstel"
   }
 }

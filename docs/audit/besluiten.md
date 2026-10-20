@@ -682,6 +682,23 @@ Kees koos uit de lijst met suggesties punt 15 en gaf zijn keuzes met klikken:
   - Je kunt elke controle openen en opnieuw afdrukken.
   - Controles worden altijd bewaard. Lezen mag iedereen met het recht om voertuigen te bekijken of te beheren.
 
+### B-52 — Vervangende auto voorstellen (20-10-2026, beantwoordt OPT-009)
+
+Kees koos uit de lijst met suggesties punt 16 en gaf de criteria met klikken: eerst **dezelfde voertuigsoort**, dan **hetzelfde merk en model**. Is er geen auto van dezelfde soort vrij, dan komen andere soorten in het voorstel. Over een auto met een APK die in de periode verloopt zei hij: "toch ja met waarschuwing voor de apk!"
+
+- **Voorstel.** In **Vervangend voertuig** en in **Voertuig toewijzen** staat bovenaan een blok "Voorstel" met de 3 best passende vrije auto's.
+  - Bij elke auto staat de reden (zelfde soort en model, zelfde soort en merk, zelfde soort of andere soort) en een knop **Kiezen**.
+  - Is de originele auto onbekend, dan staat er geen reden bij.
+- **Volgorde.** Eerst dezelfde soort. Daarbinnen eerst hetzelfde merk en model, dan hetzelfde merk, dan de rest.
+  - Een auto met een APK die in de periode verloopt, staat in het voorstel met een rood label, net achter een verder gelijke auto zonder dat probleem.
+  - Bij een gelijke stand beslist het kenteken.
+  - Niet gekozen als criterium: hoe lang de auto daarna vrij is, en de km-stand.
+- **Alles invullen.** In het toewijsvenster vult deze knop bij elke open vervanger het eerste voorstel in.
+  - Een auto wordt nooit twee keer gebruikt.
+  - Rijen die al een keuze hebben, blijven zoals ze zijn.
+  - Opslaan gebeurt pas met Toewijzen.
+- **Wat vrij is.** Dat bepalen de bestaande beschikbaarheidszoekers van beide vensters. Het voorstel kiest alleen uit die auto's.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).
@@ -689,7 +706,7 @@ Kees koos uit de lijst met suggesties punt 15 en gaf zijn keuzes met klikken:
 - De omzetting van de database naar tijdzone-bewuste kolommen (B-22) is nog niet uitgevoerd; de kolommenlijst staat klaar.
 
 - (beslist, zie B-17) OPT-001 — wat telt als "openstaand punt" op het werkdagscherm.
-- OPT-009 — mag de app zelf een vervanger voorstellen/toewijzen, en op welke criteria.
+- (beslist, zie B-52) OPT-009 — mag de app zelf een vervanger voorstellen/toewijzen, en op welke criteria.
 - (beslist, zie B-30) OPT-017 — welke statusomkeringen mogen, en door wie.
 - (geparkeerd, zie hieronder) OPT-025 — welke velden verplicht zijn voordat een voertuig
   verhuurd mag worden.

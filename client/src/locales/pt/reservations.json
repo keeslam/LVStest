@@ -1316,5 +1316,16 @@
     "bySystem": "definido pelo sistema",
     "noDriver": "sem condutor",
     "now": "agora"
+  },
+  "spareSuggestions": {
+    "title": "Sugestão",
+    "sameModel": "mesmo tipo e modelo",
+    "sameBrand": "mesmo tipo e marca",
+    "sameType": "mesmo tipo",
+    "otherType": "outro tipo",
+    "apkWarning": "Inspeção caduca a {{date}}",
+    "pick": "Escolher",
+    "chosen": "Escolhido",
+    "fillAll": "Preencher tudo com a sugestão"
   }
 }

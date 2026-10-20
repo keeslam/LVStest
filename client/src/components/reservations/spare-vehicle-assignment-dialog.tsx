@@ -30,6 +30,9 @@ import { Loader2, Car, Calendar, User, Wrench } from "lucide-react";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { Reservation, Vehicle } from "@shared/schema";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
+import { SpareSuggestions } from "@/components/reservations/spare-suggestions";
+import { suggestForAll } from "@shared/spare-suggestion";
+import { Wand2 } from "lucide-react";
 
 // Form schema for vehicle assignments. Built with the translator so the
 // field message follows the language (it used to be a hard-coded English text).
@@ -237,6 +240,40 @@ export function SpareVehicleAssignmentDialog({
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {/* Punt 16 / OPT-009: the first suggestion in every open row, never the same car twice. */}
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={assignVehiclesMutation.isPending || !availableVehicles || availableVehicles.length === 0}
+                  onClick={() => {
+                    const current = form.getValues("assignments");
+                    const taken = current.map((a) => a.vehicleId).filter((id) => id > 0);
+                    const rows = filteredPlaceholders
+                      .map((p: Reservation, i: number) => ({ p, i }))
+                      .filter(({ i }: { i: number }) => !(current[i]?.vehicleId > 0))
+                      .map(({ p, i }: { p: Reservation; i: number }) => ({
+                        key: i,
+                        // The list embeds a slim vehicle; the suggestion block fetched the full one (with its type).
+                        original: (() => {
+                          const slim = p.replacementForReservationId ? (originalReservationsMap.get(p.replacementForReservationId) as any)?.vehicle : null;
+                          const full = slim?.id ? queryClient.getQueryData<any>([`/api/vehicles/${slim.id}`]) : null;
+                          return full ? { ...slim, ...full } : slim;
+                        })(),
+                        endDate: p.endDate || p.startDate,
+                        candidates: (availableVehicles || []) as any[],
+                      }));
+                    for (const [i, vehicleId] of Array.from(suggestForAll(rows, taken).entries())) {
+                      form.setValue(`assignments.${i}.vehicleId` as const, vehicleId, { shouldDirty: true, shouldValidate: true });
+                    }
+                  }}
+                  data-testid="button-spare-fill-all"
+                >
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  {t('spareSuggestions.fillAll')}
+                </Button>
+              </div>
               <div className="space-y-4">
                 {filteredPlaceholders.map((placeholder: Reservation, index: number) => {
                   const originalReservation = placeholder.replacementForReservationId 
@@ -310,6 +347,16 @@ export function SpareVehicleAssignmentDialog({
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel>{t('spareVehicleAssignmentDialog.selectVehicleLabel')}</FormLabel>
+                                <SpareSuggestions
+                                  original={(originalReservation as any)?.vehicle}
+                                  candidates={availableVehicles || []}
+                                  endDate={placeholder.endDate || placeholder.startDate}
+                                  selectedId={field.value > 0 ? field.value : null}
+                                  takenIds={form.watch("assignments").map((a) => a.vehicleId).filter((id) => id > 0)}
+                                  onPick={(id) => field.onChange(id)}
+                                  disabled={assignVehiclesMutation.isPending}
+                                  testId={`spare-suggestions-${placeholder.id}`}
+                                />
                                 <FormControl>
                                   <VehicleSelector
                                     vehicles={availableVehicles || []}

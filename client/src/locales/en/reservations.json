@@ -1303,5 +1303,16 @@
     "bySystem": "set by the system",
     "noDriver": "no driver",
     "now": "now"
+  },
+  "spareSuggestions": {
+    "title": "Suggestion",
+    "sameModel": "same type and model",
+    "sameBrand": "same type and make",
+    "sameType": "same type",
+    "otherType": "other type",
+    "apkWarning": "MOT expires {{date}}",
+    "pick": "Choose",
+    "chosen": "Chosen",
+    "fillAll": "Fill in all with suggestion"
   }
 }

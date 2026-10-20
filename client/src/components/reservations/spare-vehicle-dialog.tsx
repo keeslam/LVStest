@@ -29,6 +29,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
+import { SpareSuggestions } from "@/components/reservations/spare-suggestions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -226,6 +227,15 @@ export function SpareVehicleDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('spareVehicleDialog.availableSpareVehiclesLabel')}</FormLabel>
+                  {/* Punt 16 / OPT-009: the best fitting free cars, one click to choose. */}
+                  <SpareSuggestions
+                    original={(originalReservation as any)?.vehicle}
+                    candidates={availableVehicles || []}
+                    endDate={form.watch("endDate") || form.watch("startDate")}
+                    selectedId={field.value ? Number(field.value) : null}
+                    onPick={(id) => field.onChange(String(id))}
+                    disabled={isLoadingVehicles}
+                  />
                   <FormControl>
                     <VehicleSelector
                       vehicles={availableVehicles || []}
