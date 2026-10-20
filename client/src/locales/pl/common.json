@@ -249,7 +249,8 @@
         "access": "Dostęp",
         "user": "Użytkownik",
         "session": "Sesja",
-        "password": "Hasło"
+        "password": "Hasło",
+        "key-audit": "Kontrola szafki na klucze"
       },
       "verbs": {
         "create": "utworzono",

@@ -3752,6 +3752,88 @@
     ]
   },
   {
+    "name": "key_audits",
+    "columns": [
+      {
+        "name": "id",
+        "type": "serial",
+        "notNull": true,
+        "primary": true,
+        "default": null
+      },
+      {
+        "name": "mode",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "finished_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": "now()"
+      },
+      {
+        "name": "performed_by",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "performed_by_name",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "expected_count",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "scanned_count",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "missing",
+        "type": "jsonb",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "unexpected",
+        "type": "jsonb",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "scanned",
+        "type": "jsonb",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "note",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      }
+    ]
+  },
+  {
     "name": "login_attempts",
     "columns": [
       {

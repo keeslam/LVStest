@@ -241,7 +241,8 @@
         "access": "Toegang",
         "user": "Gebruiker",
         "session": "Sessie",
-        "password": "Wachtwoord"
+        "password": "Wachtwoord",
+        "key-audit": "Sleutelkastcontrole"
       },
       "verbs": {
         "create": "aangemaakt",

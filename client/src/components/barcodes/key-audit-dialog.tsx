@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,15 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Camera, KeyRound, RotateCcw } from "lucide-react";
+import { Camera, KeyRound, Printer, RotateCcw } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
+import { describeApiError } from "@/lib/api-error";
+import { useToast } from "@/hooks/use-toast";
+import { printKeyAudit } from "./key-audit-print";
+import type { KeyAudit } from "@shared/schema";
+import { KEY_AUDIT_NOTE_MAX } from "@shared/key-audit";
 import { CameraScannerDialog } from "./camera-scanner-dialog";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { Vehicle } from "@shared/schema";
@@ -45,6 +53,10 @@ export function KeyAuditDialog({ open, onOpenChange, mode = "main" }: KeyAuditDi
   const [view, setView] = useState<ViewState>("scanning");
   // A-3-12: the plate of the key that was scanned last, shown in green until the next scan.
   const [lastScanned, setLastScanned] = useState<string | null>(null);
+  // Punt 15 / OPT-032: the note goes on the saved audit and its print; the saved audit is printed.
+  const [note, setNote] = useState("");
+  const [savedAudit, setSavedAudit] = useState<KeyAudit | null>(null);
+  const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   // Synchronous mirror of `scanned` so the scan handler can check membership
   // and commit updates outside of a setState updater — React Strict Mode
@@ -73,6 +85,8 @@ export function KeyAuditDialog({ open, onOpenChange, mode = "main" }: KeyAuditDi
       setScanned(new Map());
       setLastScanned(null);
       setView("scanning");
+      setNote("");
+      setSavedAudit(null);
       requestAnimationFrame(() => inputRef.current?.focus());
     }
   }, [open]);
@@ -153,7 +167,34 @@ export function KeyAuditDialog({ open, onOpenChange, mode = "main" }: KeyAuditDi
         : v.availabilityStatus === "rented"
     ));
 
+  // Punt 15 / OPT-032: "Afronden" saves the audit for good; the result shows whether that worked.
+  const save = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/key-audits", {
+        mode,
+        expectedCount: expected.length,
+        missingIds: missing.map((v) => v.id),
+        unexpectedIds: unexpected.map((v) => v.id),
+        scannedIds: Array.from(scanned.keys()),
+        note: note.trim() || null,
+      });
+      return (await res.json()) as KeyAudit;
+    },
+    onSuccess: (audit) => {
+      setSavedAudit(audit);
+      invalidateByPrefix("/api/key-audits");
+    },
+    onError: (err) => toast({ variant: "destructive", title: t("keyAudit.saveFailedTitle"), description: describeApiError(err) }),
+  });
+
+  const finish = () => {
+    setView("result");
+    save.mutate();
+  };
+
   const handleReset = () => {
+    setNote("");
+    setSavedAudit(null);
     scannedRef.current = new Map();
     setScanned(new Map());
     setLastScanned(null);
@@ -261,9 +302,22 @@ export function KeyAuditDialog({ open, onOpenChange, mode = "main" }: KeyAuditDi
               </div>
             </div>
 
+            <div className="space-y-1">
+              <Label htmlFor="key-audit-note">{t("keyAudit.noteLabel")}</Label>
+              <Textarea
+                id="key-audit-note"
+                rows={2}
+                maxLength={KEY_AUDIT_NOTE_MAX}
+                placeholder={t("keyAudit.notePlaceholder")}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                data-testid="input-key-audit-note"
+              />
+            </div>
+
             <Button
               className="justify-center"
-              onClick={() => setView("result")}
+              onClick={finish}
               data-testid="button-key-audit-finish"
             >
               {t("keyAudit.finishButton")}
@@ -308,6 +362,25 @@ export function KeyAuditDialog({ open, onOpenChange, mode = "main" }: KeyAuditDi
                 </ul>
               </div>
             )}
+
+            <p className="text-sm text-muted-foreground" data-testid="text-key-audit-saved">
+              {save.isPending ? t("keyAudit.saving") : savedAudit ? t("keyAudit.saved") : save.isError ? t("keyAudit.notSaved") : ""}
+            </p>
+            {save.isError && (
+              <Button variant="outline" className="justify-center" onClick={() => save.mutate()} data-testid="button-key-audit-retry-save">
+                {t("keyAudit.retrySave")}
+              </Button>
+            )}
+
+            <Button
+              className="justify-center"
+              disabled={!savedAudit}
+              onClick={() => savedAudit && printKeyAudit(savedAudit)}
+              data-testid="button-key-audit-print"
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              {t("keyAudit.printButton")}
+            </Button>
 
             <Button
               variant="outline"

@@ -1695,6 +1695,25 @@ export const insertScanEventSchema = createInsertSchema(scanEvents)
 export type ScanEvent = typeof scanEvents.$inferSelect;
 export type InsertScanEvent = z.infer<typeof insertScanEventSchema>;
 
+// Punt 15 / OPT-032 (Kees, 2026-10-20): a finished key-cabinet audit, kept for good.
+// The lists are snapshots ({vehicleId, licensePlate, brand, model}) so a later change
+// to a vehicle never rewrites what was found that day.
+export interface KeyAuditVehicle { vehicleId: number; licensePlate: string; brand: string | null; model: string | null }
+export const keyAudits = pgTable("key_audits", {
+  id: serial("id").primaryKey(),
+  mode: text("mode").notNull(), // main | spare
+  finishedAt: timestamp("finished_at", { withTimezone: true }).defaultNow().notNull(),
+  performedBy: integer("performed_by").references(() => users.id, { onDelete: "set null" }),
+  performedByName: text("performed_by_name"),
+  expectedCount: integer("expected_count").notNull(),
+  scannedCount: integer("scanned_count").notNull(),
+  missing: jsonb("missing").$type<KeyAuditVehicle[]>().notNull(),
+  unexpected: jsonb("unexpected").$type<KeyAuditVehicle[]>().notNull(),
+  scanned: jsonb("scanned").$type<KeyAuditVehicle[]>().notNull(),
+  note: text("note"),
+});
+export type KeyAudit = typeof keyAudits.$inferSelect;
+
 // Custom Notifications table
 export const customNotifications = pgTable("custom_notifications", {
   id: serial("id").primaryKey(),

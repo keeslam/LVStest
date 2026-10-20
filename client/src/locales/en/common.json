@@ -241,7 +241,8 @@
         "access": "Access",
         "user": "User",
         "session": "Session",
-        "password": "Password"
+        "password": "Password",
+        "key-audit": "Key-cabinet audit"
       },
       "verbs": {
         "create": "created",

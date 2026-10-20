@@ -245,7 +245,8 @@
         "access": "Acceso",
         "user": "Usuario",
         "session": "Sesión",
-        "password": "Contraseña"
+        "password": "Contraseña",
+        "key-audit": "Control del armario de llaves"
       },
       "verbs": {
         "create": "creado",

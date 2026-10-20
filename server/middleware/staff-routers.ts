@@ -9,6 +9,7 @@ import emailTemplatesRoutes from '../routes/email-templates';
 import emailLogsRoutes from '../routes/email-logs';
 import apkDateChangesRoutes from '../routes/apk-date-changes';
 import contractSignaturesRoutes from '../routes/contract-signatures';
+import keyAuditsRoutes from '../routes/key-audits';
 
 /**
  * The staff routers that are `Router` objects rather than `register*()`
@@ -36,4 +37,6 @@ export function mountStaffRouters(app: Express, requireAuth: RequestHandler): vo
   app.use('/api/email-logs', requireAuth, hasPermission(UserPermission.MANAGE_EMAIL_TEMPLATES), emailLogsRoutes);
   app.use('/api/apk-date-changes', requireAuth, hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), apkDateChangesRoutes);
   app.use('/api/contract-signatures', requireAuth, hasPermission(UserPermission.VIEW_DOCUMENTS, UserPermission.MANAGE_DOCUMENTS), contractSignaturesRoutes);
+  // Punt 15 / OPT-032: finished key-cabinet audits, for anyone who may view vehicles.
+  app.use('/api/key-audits', requireAuth, hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), keyAuditsRoutes);
 }

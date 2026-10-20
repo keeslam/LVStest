@@ -656,6 +656,28 @@ Kees koos uit de lijst met suggesties punt 14 (OPT-004) en gaf zijn keuzes met k
   - Een APK die al verlopen is, krijgt het label "APK verlopen"; de datum staat in de tooltip.
 - **Dashboardtegel "Beschikbare voertuigen".** Telt voortaan de auto's die vandaag te boeken zijn, met dezelfde regel. Eerst keek hij naar de status "beschikbaar", en dan telt een auto met een boeking binnen 30 dagen niet mee. In de testdata ging het van 12 naar 86 auto's.
 
+### B-51 — Sleutelkastcontrole bewaren en afdrukken (20-10-2026, beantwoordt OPT-032)
+
+Kees koos uit de lijst met suggesties punt 15 en gaf zijn keuzes met klikken:
+- automatisch bewaren bij Afronden;
+- altijd bewaren;
+- leesbaar voor wie voertuigen mag zien;
+- op de afdruk een handtekeningregel, een notitie en alle gescande sleutels.
+
+- **Afronden.** Boven de knop Afronden staat een notitieveld (maximaal 2000 tekens).
+  - Afronden bewaart de controle meteen in de nieuwe tabel `key_audits`: kast (hoofd of reserve), datum en tijd, medewerker, verwacht aantal, gescand aantal, de lijsten "ontbreekt", "hoort er niet" en "gescand", en de notitie.
+  - De lijsten zijn momentopnamen (kenteken, merk, model). Een latere wijziging aan een voertuig verandert dus nooit wat er die dag is vastgesteld.
+  - Mislukt het opslaan, dan zegt het venster dat en kun je het opnieuw proberen.
+- **Afdrukken (A4).** De afdruk bevat:
+  - kast, datum en tijd, medewerker en de aantallen;
+  - de ontbrekende sleutels, de sleutels die er niet horen en alle gescande sleutels;
+  - de notitie, en onderaan Gecontroleerd door, Handtekening en Datum.
+  - De afdruk is altijd in het Nederlands (B-18).
+- **Eerdere controles.** De knop staat naast Sleutelkast-audit op de voertuigenpagina.
+  - Een tabel toont datum, kast, door wie, gescand/verwacht, het aantal ontbrekende, het aantal dat er niet hoort, en de notitie.
+  - Je kunt elke controle openen en opnieuw afdrukken.
+  - Controles worden altijd bewaard. Lezen mag iedereen met het recht om voertuigen te bekijken of te beheren.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).
@@ -669,7 +691,7 @@ Kees koos uit de lijst met suggesties punt 14 (OPT-004) en gaf zijn keuzes met k
   verhuurd mag worden.
 - (geparkeerd, zie hieronder) OPT-026 — BV → Opnaam: vooraf vragen of achteraf melden.
 - (beslist, zie B-31) OPT-029 — pechomruil: wat gebeurt er met de oorspronkelijke huur.
-- OPT-032 — wat de sleutelkastaudit moet vastleggen en afdrukken.
+- (beslist, zie B-51) OPT-032 — wat de sleutelkastaudit moet vastleggen en afdrukken.
 
 **Geparkeerd op verzoek van Kees (21-09-2026, letterlijk: "moeten genegeerd worden voor
 nu").** Hier niet opnieuw naar vragen totdat hij er zelf over begint of het werk erom

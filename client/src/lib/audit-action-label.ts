@@ -58,7 +58,7 @@ const RESOURCES = [
   "system",
   // Reads of files (TRACKED_READS in server/middleware/audit.ts) and what the client prints or exports itself.
   "backup", "interactive-damage-check", "damage-check-template", "fine-import", "fiscal-assessment", "fiscal-report",
-  "invoice-inbox-item", "portal-request", "label", "barcode-book", "report",
+  "invoice-inbox-item", "portal-request", "label", "barcode-book", "report", "key-audit",
   "screen", "dialog", "access", "user", "session", "password", "ui",
 ] as const;
 

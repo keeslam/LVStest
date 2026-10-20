@@ -14,6 +14,7 @@ import { VehicleBulkImportDialog } from "@/components/vehicles/vehicle-bulk-impo
 import { VehicleRemarksWarningDialog } from "@/components/vehicles/vehicle-remarks-warning-dialog";
 import { BarcodeBookDialog } from "@/components/barcodes/barcode-book-dialog";
 import { KeyAuditDialog } from "@/components/barcodes/key-audit-dialog";
+import { KeyAuditHistoryDialog } from "@/components/barcodes/key-audit-history-dialog";
 import { Button } from "@/components/ui/button";
 import { RequiresPermission } from "@/components/ui/requires-permission";
 import { Input } from "@/components/ui/input";
@@ -32,7 +33,7 @@ import { formatDate, formatLicensePlate, formatVehicleType } from "@/lib/format-
 import { displayLicensePlate } from "@/lib/utils";
 import { isTrueValue } from "@/lib/utils";
 import { getDaysUntil } from "@/lib/date-utils";
-import { Search, SlidersHorizontal, Edit, Trash2, Archive, BookOpen, KeyRound } from "lucide-react";
+import { Search, SlidersHorizontal, Edit, Trash2, Archive, BookOpen, KeyRound, History } from "lucide-react";
 import { UserPermission } from "@shared/schema";
 import { useHasPermission } from "@/hooks/use-has-permission";
 
@@ -79,6 +80,8 @@ export default function VehiclesIndex() {
   const [barcodeBookOpen, setBarcodeBookOpen] = useState(false);
   const [keyAuditOpen, setKeyAuditOpen] = useState(false);
   const [spareKeyAuditOpen, setSpareKeyAuditOpen] = useState(false);
+  // Punt 15 / OPT-032: saved key-cabinet audits
+  const [keyAuditHistoryOpen, setKeyAuditHistoryOpen] = useState(false);
   
   // Vehicle remarks warning dialog state
   const [remarksWarningOpen, setRemarksWarningOpen] = useState(false);
@@ -640,6 +643,8 @@ export default function VehiclesIndex() {
         mode="spare"
       />
 
+      <KeyAuditHistoryDialog open={keyAuditHistoryOpen} onOpenChange={setKeyAuditHistoryOpen} />
+
       <div className="flex flex-wrap justify-between items-center gap-2">
         <h1 className="text-2xl font-bold">{t('indexPage.pageTitle')}</h1>
         <div className="flex flex-wrap gap-2">
@@ -667,6 +672,10 @@ export default function VehiclesIndex() {
           <Button variant="outline" onClick={() => setSpareKeyAuditOpen(true)} data-testid="button-spare-key-audit">
             <KeyRound className="h-4 w-4 mr-2" />
             {t("barcodes:keyAudit.spareTitle")}
+          </Button>
+          <Button variant="outline" onClick={() => setKeyAuditHistoryOpen(true)} data-testid="button-key-audit-history">
+            <History className="h-4 w-4 mr-2" />
+            {t("barcodes:keyAuditHistory.button")}
           </Button>
           <VehicleBulkImportDialog onSuccess={handleDialogSuccess} />
           <VehicleAddDialog onSuccess={handleDialogSuccess} />
