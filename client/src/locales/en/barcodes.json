@@ -210,7 +210,9 @@
     "saved": "Audit saved. You can find it under Previous audits.",
     "notSaved": "The audit has not been saved.",
     "retrySave": "Save again",
-    "printButton": "Print"
+    "printButton": "Print",
+    "withCustomerHeading": "Spare key with customer ({{count}})",
+    "unknownCustomer": "customer unknown"
   },
   "templatePicker": {
     "label": "Label template",
@@ -251,7 +253,10 @@
     "plate": "Plate",
     "vehicle": "Vehicle",
     "toastTitle": "Print window opened",
-    "toastDescription": "Choose the printer in the browser's print window."
+    "toastDescription": "Choose the printer in the browser's print window.",
+    "withCustomer": "Spare keys with a customer",
+    "noneWithCustomer": "No spare keys with a customer.",
+    "customer": "Customer"
   },
   "keyAuditHistory": {
     "button": "Previous audits",
@@ -274,6 +279,8 @@
     "colMissing": "Missing",
     "colUnexpected": "Should not be there",
     "colNote": "Note",
-    "open": "Open"
+    "open": "Open",
+    "withCustomer": "With customer",
+    "colWithCustomer": "With customer"
   }
 }

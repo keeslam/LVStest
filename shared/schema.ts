@@ -1698,7 +1698,7 @@ export type InsertScanEvent = z.infer<typeof insertScanEventSchema>;
 // Punt 15 / OPT-032 (Kees, 2026-10-20): a finished key-cabinet audit, kept for good.
 // The lists are snapshots ({vehicleId, licensePlate, brand, model}) so a later change
 // to a vehicle never rewrites what was found that day.
-export interface KeyAuditVehicle { vehicleId: number; licensePlate: string; brand: string | null; model: string | null }
+export interface KeyAuditVehicle { vehicleId: number; licensePlate: string; brand: string | null; model: string | null; customerName?: string | null }
 export const keyAudits = pgTable("key_audits", {
   id: serial("id").primaryKey(),
   mode: text("mode").notNull(), // main | spare
@@ -1710,6 +1710,9 @@ export const keyAudits = pgTable("key_audits", {
   missing: jsonb("missing").$type<KeyAuditVehicle[]>().notNull(),
   unexpected: jsonb("unexpected").$type<KeyAuditVehicle[]>().notNull(),
   scanned: jsonb("scanned").$type<KeyAuditVehicle[]>().notNull(),
+  // Kees, 2026-10-20: "soms heeft de klant ook de reserve sleutel, dit moet ook gedocumenteerd worden"
+  // — spare keys recorded as with a customer at the time of the audit (with the name).
+  withCustomer: jsonb("with_customer").$type<KeyAuditVehicle[]>().notNull().default([]),
   note: text("note"),
 });
 export type KeyAudit = typeof keyAudits.$inferSelect;

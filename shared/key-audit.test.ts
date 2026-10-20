@@ -7,13 +7,18 @@ describe("parseKeyAuditInput", () => {
   it("accepts a finished audit, drops duplicate ids and trims the note", () => {
     expect(parseKeyAuditInput(ok)).toEqual({
       ok: true,
-      value: { mode: "main", expectedCount: 3, missingIds: [1], unexpectedIds: [], scannedIds: [2, 3], note: "sleutel 1 bij garage" },
+      value: { mode: "main", expectedCount: 3, missingIds: [1], unexpectedIds: [], scannedIds: [2, 3], withCustomerIds: [], note: "sleutel 1 bij garage" },
     });
   });
 
   it("stores an empty note as nothing", () => {
     expect(parseKeyAuditInput({ ...ok, note: "   " })).toMatchObject({ ok: true, value: { note: null } });
     expect(parseKeyAuditInput({ ...ok, note: undefined })).toMatchObject({ ok: true, value: { note: null } });
+  });
+
+  it("takes the spare keys that are with a customer", () => {
+    expect(parseKeyAuditInput({ ...ok, mode: "spare", withCustomerIds: [7, 7, 8] })).toMatchObject({ ok: true, value: { withCustomerIds: [7, 8] } });
+    expect(parseKeyAuditInput({ ...ok, withCustomerIds: ["7"] })).toEqual({ ok: false, field: "withCustomerIds" });
   });
 
   it("names the wrong field", () => {

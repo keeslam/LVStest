@@ -23,10 +23,10 @@ router.post("/", async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Invalid key-cabinet audit", errors: [{ field: input.field, message: "Check this field" }] });
   }
   try {
-    const { mode, expectedCount, missingIds, unexpectedIds, scannedIds, note } = input.value;
-    const allIds = Array.from(new Set([...missingIds, ...unexpectedIds, ...scannedIds]));
+    const { mode, expectedCount, missingIds, unexpectedIds, scannedIds, withCustomerIds, note } = input.value;
+    const allIds = Array.from(new Set([...missingIds, ...unexpectedIds, ...scannedIds, ...withCustomerIds]));
     const rows = allIds.length === 0 ? [] : await db
-      .select({ id: vehicles.id, licensePlate: vehicles.licensePlate, brand: vehicles.brand, model: vehicles.model })
+      .select({ id: vehicles.id, licensePlate: vehicles.licensePlate, brand: vehicles.brand, model: vehicles.model, spareKeyCustomerName: vehicles.spareKeyCustomerName })
       .from(vehicles)
       .where(inArray(vehicles.id, allIds));
     const byId = new Map(rows.map((v) => [v.id, v]));
@@ -45,6 +45,8 @@ router.post("/", async (req: Request, res: Response) => {
       missing: snapshot(missingIds),
       unexpected: snapshot(unexpectedIds),
       scanned: snapshot(scannedIds),
+      // With the customer's name as the vehicle card has it at this moment.
+      withCustomer: snapshot(withCustomerIds).map((v) => ({ ...v, customerName: byId.get(v.vehicleId)?.spareKeyCustomerName ?? null })),
       note,
     }).returning();
     res.status(201).json(saved);
@@ -66,15 +68,17 @@ router.get("/", async (_req: Request, res: Response) => {
         scannedCount: keyAudits.scannedCount,
         missing: keyAudits.missing,
         unexpected: keyAudits.unexpected,
+        withCustomer: keyAudits.withCustomer,
         note: keyAudits.note,
       })
       .from(keyAudits)
       .orderBy(desc(keyAudits.finishedAt))
       .limit(500);
-    res.json(rows.map(({ missing, unexpected, ...r }) => ({
+    res.json(rows.map(({ missing, unexpected, withCustomer, ...r }) => ({
       ...r,
       missingCount: Array.isArray(missing) ? missing.length : 0,
       unexpectedCount: Array.isArray(unexpected) ? unexpected.length : 0,
+      withCustomerCount: Array.isArray(withCustomer) ? withCustomer.length : 0,
     })));
   } catch (error) {
     console.error("Error listing key-cabinet audits:", error);

@@ -214,7 +214,9 @@
     "saved": "Controlo guardado. Encontra-o em Controlos anteriores.",
     "notSaved": "O controlo não foi guardado.",
     "retrySave": "Guardar novamente",
-    "printButton": "Imprimir"
+    "printButton": "Imprimir",
+    "withCustomerHeading": "Chave suplente com o cliente ({{count}})",
+    "unknownCustomer": "cliente desconhecido"
   },
   "templatePicker": {
     "label": "Modelo de etiqueta",
@@ -256,7 +258,10 @@
     "plate": "Matrícula",
     "vehicle": "Veículo",
     "toastTitle": "Janela de impressão aberta",
-    "toastDescription": "Escolha a impressora na janela de impressão do navegador."
+    "toastDescription": "Escolha a impressora na janela de impressão do navegador.",
+    "withCustomer": "Chaves suplentes com um cliente",
+    "noneWithCustomer": "Nenhuma chave suplente com um cliente.",
+    "customer": "Cliente"
   },
   "keyAuditHistory": {
     "button": "Controlos anteriores",
@@ -279,6 +284,8 @@
     "colMissing": "Em falta",
     "colUnexpected": "Não deviam estar",
     "colNote": "Nota",
-    "open": "Abrir"
+    "open": "Abrir",
+    "withCustomer": "Com o cliente",
+    "colWithCustomer": "Com cliente"
   }
 }

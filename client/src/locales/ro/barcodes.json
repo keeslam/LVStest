@@ -214,7 +214,9 @@
     "saved": "Verificare salvată. O găsiți la Verificări anterioare.",
     "notSaved": "Verificarea nu a fost salvată.",
     "retrySave": "Salvează din nou",
-    "printButton": "Tipărește"
+    "printButton": "Tipărește",
+    "withCustomerHeading": "Cheie de rezervă la client ({{count}})",
+    "unknownCustomer": "client necunoscut"
   },
   "templatePicker": {
     "label": "Șablon de etichetă",
@@ -256,7 +258,10 @@
     "plate": "Număr",
     "vehicle": "Vehicul",
     "toastTitle": "Fereastra de tipărire s-a deschis",
-    "toastDescription": "Alegeți imprimanta în fereastra de tipărire a browserului."
+    "toastDescription": "Alegeți imprimanta în fereastra de tipărire a browserului.",
+    "withCustomer": "Chei de rezervă la un client",
+    "noneWithCustomer": "Nicio cheie de rezervă la un client.",
+    "customer": "Client"
   },
   "keyAuditHistory": {
     "button": "Verificări anterioare",
@@ -279,6 +284,8 @@
     "colMissing": "Lipsesc",
     "colUnexpected": "Nu ar trebui",
     "colNote": "Notă",
-    "open": "Deschide"
+    "open": "Deschide",
+    "withCustomer": "La client",
+    "colWithCustomer": "La client"
   }
 }

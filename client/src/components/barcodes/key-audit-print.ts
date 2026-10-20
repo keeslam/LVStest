@@ -9,7 +9,8 @@ import { toast } from "@/hooks/use-toast";
 import { formatLicensePlate } from "@/lib/format-utils";
 import type { KeyAudit, KeyAuditVehicle } from "@shared/schema";
 
-type PrintableAudit = Pick<KeyAudit, "mode" | "finishedAt" | "performedByName" | "expectedCount" | "scannedCount" | "missing" | "unexpected" | "scanned" | "note">;
+type PrintableAudit = Pick<KeyAudit, "mode" | "finishedAt" | "performedByName" | "expectedCount" | "scannedCount" | "missing" | "unexpected" | "scanned" | "note">
+  & { withCustomer?: KeyAudit["withCustomer"] | null };
 
 function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
@@ -30,6 +31,15 @@ export function buildKeyAuditPrintHtml(audit: PrintableAudit): string {
       : `<table><thead><tr><th>${escapeHtml(t("keyAuditPrint.plate"))}</th><th>${escapeHtml(t("keyAuditPrint.vehicle"))}</th></tr></thead><tbody>${
         list.map((v) => `<tr><td>${escapeHtml(formatLicensePlate(v.licensePlate))}</td><td>${escapeHtml([v.brand, v.model].filter(Boolean).join(" "))}</td></tr>`).join("")
       }</tbody></table>`}`;
+  // Kees, 2026-10-20: spare keys that are with a customer are written down, with the name.
+  const withCustomerSection = (list: KeyAuditVehicle[]) => `
+    <h2>${escapeHtml(t("keyAuditPrint.withCustomer"))} (${list.length})</h2>
+    ${list.length === 0
+      ? `<p class="empty">${escapeHtml(t("keyAuditPrint.noneWithCustomer"))}</p>`
+      : `<table><thead><tr><th>${escapeHtml(t("keyAuditPrint.plate"))}</th><th>${escapeHtml(t("keyAuditPrint.vehicle"))}</th><th>${escapeHtml(t("keyAuditPrint.customer"))}</th></tr></thead><tbody>${
+        list.map((v) => `<tr><td>${escapeHtml(formatLicensePlate(v.licensePlate))}</td><td>${escapeHtml([v.brand, v.model].filter(Boolean).join(" "))}</td><td>${escapeHtml(v.customerName || "—")}</td></tr>`).join("")
+      }</tbody></table>`}`;
+  const withCustomer = audit.withCustomer ?? [];
   const title = t(audit.mode === "spare" ? "keyAuditPrint.titleSpare" : "keyAuditPrint.titleMain");
   return `<!doctype html><html lang="nl"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
 <style>
@@ -55,6 +65,7 @@ export function buildKeyAuditPrintHtml(audit: PrintableAudit): string {
   </tbody></table>
   ${section(t("keyAuditPrint.missing"), audit.missing, t("keyAuditPrint.noneMissing"))}
   ${section(t("keyAuditPrint.unexpected"), audit.unexpected, t("keyAuditPrint.noneUnexpected"))}
+  ${audit.mode === "spare" || withCustomer.length > 0 ? withCustomerSection(withCustomer) : ""}
   ${section(t("keyAuditPrint.scanned"), audit.scanned, t("keyAuditPrint.noneScanned"))}
   <h2>${escapeHtml(t("keyAuditPrint.note"))}</h2>
   <div class="note">${audit.note ? escapeHtml(audit.note) : "&nbsp;"}</div>

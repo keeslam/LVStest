@@ -47,4 +47,18 @@ describe("buildKeyAuditPrintHtml", () => {
   it("says spare keys for the spare cabinet", () => {
     expect(buildKeyAuditPrintHtml({ ...audit, mode: "spare" })).toContain("reservesleutels");
   });
+
+  it("writes down spare keys that are with a customer, with the name", () => {
+    const html = buildKeyAuditPrintHtml({
+      ...audit,
+      mode: "spare",
+      withCustomer: [{ vehicleId: 9, licensePlate: "GH789J", brand: "Opel", model: "Vivaro", customerName: "Klant BV" }],
+    });
+    expect(html).toContain("Reservesleutels bij klant (1)");
+    expect(html).toContain("GH-789-J");
+    expect(html).toContain("Klant BV");
+    // A spare audit always shows the section, also when empty; the main cabinet does not.
+    expect(buildKeyAuditPrintHtml({ ...audit, mode: "spare", withCustomer: [] })).toContain("Geen reservesleutels bij een klant.");
+    expect(buildKeyAuditPrintHtml(audit)).not.toContain("Reservesleutels bij klant");
+  });
 });

@@ -20,6 +20,8 @@ export interface KeyAuditInput {
   missingIds: number[];
   unexpectedIds: number[];
   scannedIds: number[];
+  /** Spare keys that are with a customer (vehicles.spare_key_with_customer); empty for the main cabinet. */
+  withCustomerIds: number[];
   note: string | null;
 }
 
@@ -42,12 +44,14 @@ export function parseKeyAuditInput(body: Record<string, unknown> | null | undefi
   if (!unexpectedIds) return { ok: false, field: "unexpectedIds" };
   const scannedIds = ids(body?.scannedIds);
   if (!scannedIds) return { ok: false, field: "scannedIds" };
+  const withCustomerIds = body?.withCustomerIds === undefined ? [] : ids(body?.withCustomerIds);
+  if (!withCustomerIds) return { ok: false, field: "withCustomerIds" };
   const rawNote = body?.note;
   if (rawNote !== undefined && rawNote !== null && typeof rawNote !== "string") return { ok: false, field: "note" };
   const note = typeof rawNote === "string" ? rawNote.trim() : "";
   if (note.length > KEY_AUDIT_NOTE_MAX) return { ok: false, field: "note" };
   return {
     ok: true,
-    value: { mode: mode as KeyAuditModeValue, expectedCount: expectedCount as number, missingIds, unexpectedIds, scannedIds, note: note || null },
+    value: { mode: mode as KeyAuditModeValue, expectedCount: expectedCount as number, missingIds, unexpectedIds, scannedIds, withCustomerIds, note: note || null },
   };
 }

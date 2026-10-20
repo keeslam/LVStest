@@ -23,6 +23,7 @@ interface KeyAuditSummary {
   scannedCount: number;
   missingCount: number;
   unexpectedCount: number;
+  withCustomerCount?: number;
   note: string | null;
 }
 
@@ -46,6 +47,7 @@ export function KeyAuditHistoryDialog({ open, onOpenChange }: { open: boolean; o
             <li key={v.vehicleId} className="break-inside-avoid py-0.5">
               <span className="font-medium">{formatLicensePlate(v.licensePlate)}</span>
               <span className="text-gray-500"> {[v.brand, v.model].filter(Boolean).join(" ")}</span>
+              {v.customerName !== undefined && <span className="text-blue-700"> · {v.customerName || "—"}</span>}
             </li>
           ))}
         </ul>
@@ -84,6 +86,8 @@ export function KeyAuditHistoryDialog({ open, onOpenChange }: { open: boolean; o
               </p>
               {list(t("keyAuditHistory.missing"), selected.missing, "text-red-700")}
               {list(t("keyAuditHistory.unexpected"), selected.unexpected, "text-amber-700")}
+              {(selected.mode === "spare" || (selected.withCustomer ?? []).length > 0) &&
+                list(t("keyAuditHistory.withCustomer"), selected.withCustomer ?? [], "text-blue-700")}
               {list(t("keyAuditHistory.scanned"), selected.scanned, "text-gray-700")}
               {selected.note && (
                 <div>
@@ -108,6 +112,7 @@ export function KeyAuditHistoryDialog({ open, onOpenChange }: { open: boolean; o
                   <TableHead className="text-right">{t("keyAuditHistory.colScanned")}</TableHead>
                   <TableHead className="text-right">{t("keyAuditHistory.colMissing")}</TableHead>
                   <TableHead className="text-right">{t("keyAuditHistory.colUnexpected")}</TableHead>
+                  <TableHead className="text-right">{t("keyAuditHistory.colWithCustomer")}</TableHead>
                   <TableHead>{t("keyAuditHistory.colNote")}</TableHead>
                   <TableHead />
                 </TableRow>
@@ -121,6 +126,7 @@ export function KeyAuditHistoryDialog({ open, onOpenChange }: { open: boolean; o
                     <TableCell className="py-1.5 text-right whitespace-nowrap">{a.scannedCount} / {a.expectedCount}</TableCell>
                     <TableCell className={`py-1.5 text-right ${a.missingCount > 0 ? "text-red-700 font-medium" : ""}`}>{a.missingCount}</TableCell>
                     <TableCell className={`py-1.5 text-right ${a.unexpectedCount > 0 ? "text-amber-700 font-medium" : ""}`}>{a.unexpectedCount}</TableCell>
+                    <TableCell className="py-1.5 text-right">{a.mode === "spare" ? (a.withCustomerCount ?? 0) : "—"}</TableCell>
                     <TableCell className="py-1.5 max-w-[16rem] truncate" title={a.note ?? undefined}>{a.note ?? ""}</TableCell>
                     <TableCell className="py-1.5 text-right">
                       <Button size="sm" variant="outline" className="h-7" onClick={() => setSelectedId(a.id)} data-testid={`button-key-audit-open-${a.id}`}>

@@ -156,6 +156,23 @@ export function KeyAuditDialog({ open, onOpenChange, mode = "main" }: KeyAuditDi
   };
 
   const missing = expected.filter(v => !scanned.has(v.id));
+  // Kees, 2026-10-20: a spare key that is with a customer is not expected in the cabinet,
+  // but it is written down — with the customer's name from the vehicle card.
+  const withCustomer = isSpare
+    ? vehicles.filter(v => !v.outOfFleetDate && !!v.spareKey && !!v.spareKeyWithCustomer && !scanned.has(v.id))
+    : [];
+  const withCustomerList = withCustomer.length > 0 && (
+    <div>
+      <h3 className="text-sm font-semibold text-blue-700 mb-1">{t("keyAudit.withCustomerHeading", { count: withCustomer.length })}</h3>
+      <ul className="space-y-1 max-h-48 overflow-y-auto" data-testid="list-key-audit-with-customer">
+        {withCustomer.map((v) => (
+          <li key={v.id} className="border border-blue-200 bg-blue-50 text-blue-800 rounded-md px-3 py-1 text-sm">
+            {formatLicensePlate(v.licensePlate)} — {v.brand} {v.model} · {v.spareKeyCustomerName || t("keyAudit.unknownCustomer")}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
   // Newest first, so the key that was just scanned is at the top of the list.
   const scannedList = Array.from(scanned.values()).reverse();
   const unexpected = Array.from(scanned.keys())
@@ -176,6 +193,7 @@ export function KeyAuditDialog({ open, onOpenChange, mode = "main" }: KeyAuditDi
         missingIds: missing.map((v) => v.id),
         unexpectedIds: unexpected.map((v) => v.id),
         scannedIds: Array.from(scanned.keys()),
+        withCustomerIds: withCustomer.map((v) => v.id),
         note: note.trim() || null,
       });
       return (await res.json()) as KeyAudit;
@@ -301,6 +319,7 @@ export function KeyAuditDialog({ open, onOpenChange, mode = "main" }: KeyAuditDi
                 )}
               </div>
             </div>
+            {withCustomerList}
 
             <div className="space-y-1">
               <Label htmlFor="key-audit-note">{t("keyAudit.noteLabel")}</Label>
@@ -346,6 +365,8 @@ export function KeyAuditDialog({ open, onOpenChange, mode = "main" }: KeyAuditDi
                 </ul>
               )}
             </div>
+
+            {withCustomerList}
 
             {unexpected.length > 0 && (
               <div>

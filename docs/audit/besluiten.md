@@ -668,6 +668,10 @@ Kees koos uit de lijst met suggesties punt 15 en gaf zijn keuzes met klikken:
   - Afronden bewaart de controle meteen in de nieuwe tabel `key_audits`: kast (hoofd of reserve), datum en tijd, medewerker, verwacht aantal, gescand aantal, de lijsten "ontbreekt", "hoort er niet" en "gescand", en de notitie.
   - De lijsten zijn momentopnamen (kenteken, merk, model). Een latere wijziging aan een voertuig verandert dus nooit wat er die dag is vastgesteld.
   - Mislukt het opslaan, dan zegt het venster dat en kun je het opnieuw proberen.
+- **Reservesleutels bij klant.** Kees: "soms heeft de klant ook de reserve sleutel, dit moet ook gedocumenteerd worden".
+  - Bij een reservesleutelcontrole staan de auto's waarvan op de voertuigkaart "reservesleutel bij klant" is aangevinkt in een eigen lijst, met de klantnaam van de kaart.
+  - Die lijst wordt bewaard (kolom `with_customer`), staat op de afdruk en bij Eerdere controles (kolom Bij klant).
+  - Deze sleutels tellen niet als ontbrekend.
 - **Afdrukken (A4).** De afdruk bevat:
   - kast, datum en tijd, medewerker en de aantallen;
   - de ontbrekende sleutels, de sleutels die er niet horen en alle gescande sleutels;

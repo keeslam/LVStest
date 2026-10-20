@@ -218,7 +218,9 @@
     "saved": "Kontrola zapisana. Znajdziesz ją w Poprzednich kontrolach.",
     "notSaved": "Kontrola nie została zapisana.",
     "retrySave": "Zapisz ponownie",
-    "printButton": "Drukuj"
+    "printButton": "Drukuj",
+    "withCustomerHeading": "Klucz zapasowy u klienta ({{count}})",
+    "unknownCustomer": "klient nieznany"
   },
   "templatePicker": {
     "label": "Szablon etykiety",
@@ -261,7 +263,10 @@
     "plate": "Rejestracja",
     "vehicle": "Pojazd",
     "toastTitle": "Otwarto okno drukowania",
-    "toastDescription": "Wybierz drukarkę w oknie drukowania przeglądarki."
+    "toastDescription": "Wybierz drukarkę w oknie drukowania przeglądarki.",
+    "withCustomer": "Klucze zapasowe u klienta",
+    "noneWithCustomer": "Brak kluczy zapasowych u klienta.",
+    "customer": "Klient"
   },
   "keyAuditHistory": {
     "button": "Poprzednie kontrole",
@@ -284,6 +289,8 @@
     "colMissing": "Brakuje",
     "colUnexpected": "Nie powinno być",
     "colNote": "Notatka",
-    "open": "Otwórz"
+    "open": "Otwórz",
+    "withCustomer": "U klienta",
+    "colWithCustomer": "U klienta"
   }
 }

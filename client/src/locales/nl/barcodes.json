@@ -210,7 +210,9 @@
     "saved": "Controle opgeslagen. U vindt hem terug onder Eerdere controles.",
     "notSaved": "De controle is niet opgeslagen.",
     "retrySave": "Opnieuw opslaan",
-    "printButton": "Afdrukken"
+    "printButton": "Afdrukken",
+    "withCustomerHeading": "Reservesleutel bij klant ({{count}})",
+    "unknownCustomer": "klant onbekend"
   },
   "templatePicker": {
     "label": "Labelsjabloon",
@@ -251,7 +253,10 @@
     "plate": "Kenteken",
     "vehicle": "Voertuig",
     "toastTitle": "Afdrukvenster geopend",
-    "toastDescription": "Kies de printer in het afdrukvenster van de browser."
+    "toastDescription": "Kies de printer in het afdrukvenster van de browser.",
+    "withCustomer": "Reservesleutels bij klant",
+    "noneWithCustomer": "Geen reservesleutels bij een klant.",
+    "customer": "Klant"
   },
   "keyAuditHistory": {
     "button": "Eerdere controles",
@@ -274,6 +279,8 @@
     "colMissing": "Ontbreekt",
     "colUnexpected": "Hoort er niet",
     "colNote": "Notitie",
-    "open": "Openen"
+    "open": "Openen",
+    "withCustomer": "Bij klant",
+    "colWithCustomer": "Bij klant"
   }
 }

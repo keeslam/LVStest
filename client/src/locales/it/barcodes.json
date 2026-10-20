@@ -214,7 +214,9 @@
     "saved": "Controllo salvato. Lo trova in Controlli precedenti.",
     "notSaved": "Il controllo non è stato salvato.",
     "retrySave": "Salva di nuovo",
-    "printButton": "Stampa"
+    "printButton": "Stampa",
+    "withCustomerHeading": "Chiave di riserva al cliente ({{count}})",
+    "unknownCustomer": "cliente sconosciuto"
   },
   "templatePicker": {
     "label": "Modello di etichetta",
@@ -256,7 +258,10 @@
     "plate": "Targa",
     "vehicle": "Veicolo",
     "toastTitle": "Finestra di stampa aperta",
-    "toastDescription": "Scelga la stampante nella finestra di stampa del browser."
+    "toastDescription": "Scelga la stampante nella finestra di stampa del browser.",
+    "withCustomer": "Chiavi di riserva presso un cliente",
+    "noneWithCustomer": "Nessuna chiave di riserva presso un cliente.",
+    "customer": "Cliente"
   },
   "keyAuditHistory": {
     "button": "Controlli precedenti",
@@ -279,6 +284,8 @@
     "colMissing": "Mancanti",
     "colUnexpected": "Non dovrebbero esserci",
     "colNote": "Nota",
-    "open": "Apri"
+    "open": "Apri",
+    "withCustomer": "Presso il cliente",
+    "colWithCustomer": "Al cliente"
   }
 }

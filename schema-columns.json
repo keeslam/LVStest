@@ -3825,6 +3825,13 @@
         "default": null
       },
       {
+        "name": "with_customer",
+        "type": "jsonb",
+        "notNull": true,
+        "primary": false,
+        "default": "'[]'::jsonb"
+      },
+      {
         "name": "note",
         "type": "text",
         "notNull": false,
