@@ -690,7 +690,16 @@
     "checklistProgress": "{{filled}} din {{total}} completate",
     "allGoodButton": "Totul în regulă",
     "allGoodHint": "Completează doar câmpurile încă goale din acest bloc cu valoarea normală (de exemplu curat, bun, da). Ce ați completat deja rămâne neschimbat.",
-    "notAnswered": "necompletat"
+    "notAnswered": "necompletat",
+    "undoDrawingButton": "Șterge ultima linie",
+    "carryOver": {
+      "title": "Daune cunoscute preluate din {{check}} din {{date}}. Puncte de daună: {{count}}",
+      "hint": "Ceva reparat? Faceți clic pe punctul de daună și alegeți Ștergere, sau eliminați linii cu Șterge ultima linie.",
+      "startEmpty": "Începe gol",
+      "tag": "preluat",
+      "pickup": "verificarea la preluare",
+      "return": "verificarea la returnare"
+    }
   },
   "barcodeLabelEditor": {
     "defaultSpareSuffix": " (Cheie de rezervă implicită)",

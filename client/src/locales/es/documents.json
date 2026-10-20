@@ -690,7 +690,16 @@
     "checklistProgress": "{{filled}} de {{total}} rellenados",
     "allGoodButton": "Todo correcto",
     "allGoodHint": "Rellena solo los campos aún vacíos de este bloque con el valor normal (por ejemplo limpio, bien, sí). Lo que ya haya rellenado se conserva.",
-    "notAnswered": "sin rellenar"
+    "notAnswered": "sin rellenar",
+    "undoDrawingButton": "Quitar última línea",
+    "carryOver": {
+      "title": "Daños conocidos copiados de la {{check}} del {{date}}. Puntos de daño: {{count}}",
+      "hint": "¿Algo reparado? Haga clic en el punto de daño y elija Eliminar, o quite líneas con Quitar última línea.",
+      "startEmpty": "Empezar vacío",
+      "tag": "copiado",
+      "pickup": "revisión de recogida",
+      "return": "revisión de devolución"
+    }
   },
   "barcodeLabelEditor": {
     "defaultSpareSuffix": " (Llave de repuesto predeterminada)",

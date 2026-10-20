@@ -17,6 +17,7 @@ import { apiRequest, queryClient, invalidateRelatedQueries, invalidateByPrefix }
 import { X, Save, Trash2, Plus, Pencil, Eraser, Download, ClipboardCheck, Printer, Loader2, Check, CheckCheck } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { diagramImageProblem } from "@shared/diagram-image";
+import { carriedDamage, carryOverSource } from "@shared/damage-carry-over";
 import { applyAllGood, countFilled } from "@/lib/damage-check-all-good";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { ReservationSelector } from "@/components/ui/reservation-selector";
@@ -29,6 +30,8 @@ interface DamageMarker {
   type: 'scratch' | 'dent' | 'crack' | 'missing' | 'other';
   severity: 'minor' | 'moderate' | 'severe';
   notes: string;
+  /** Round 2 punt 5: the earlier check this known damage was carried over from. */
+  carriedFrom?: number;
 }
 
 interface DiagramTemplate {
@@ -411,6 +414,51 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
       setShowComparison(false);
     }
   }, [checkType, selectedReservationId, existingChecks, editingCheckId, compareWithCheckId]);
+
+  // Round 2 punt 5 (Kees, 2026-10-20): a new pickup check starts with the damage of the
+  // vehicle's newest check (shared/damage-carry-over.ts); repaired damage is removed by hand.
+  const carryOverWanted = checkType === 'pickup' && !editingCheckId && !compareWithCheckId && !!selectedVehicleId;
+  const { data: vehicleChecks } = useQuery<any[]>({
+    queryKey: [`/api/interactive-damage-checks/vehicle/${selectedVehicleId}`],
+    enabled: carryOverWanted,
+  });
+  const [carriedFrom, setCarriedFrom] = useState<{ vehicleId: number; checkType: string; date: string | null; paths: string[] } | null>(null);
+  // The vehicle already offered its damage; emptying the check by hand does not bring it back.
+  const carriedForVehicleRef = useRef<number | null>(null);
+  const removeCarried = () => {
+    const carriedPaths = carriedFrom?.paths ?? [];
+    setMarkers((prev) => prev.filter((m) => !m.carriedFrom));
+    setDrawingPaths((prev) => prev.filter((p) => !carriedPaths.includes(p)));
+    setSelectedMarker((prev) => (prev?.carriedFrom ? null : prev));
+    setCarriedFrom(null);
+  };
+  useEffect(() => {
+    if (carriedFrom && (checkType !== 'pickup' || carriedFrom.vehicleId !== selectedVehicleId)) {
+      // Another vehicle or a return check: the carried damage does not belong there.
+      removeCarried();
+      return;
+    }
+    if (carriedFrom && (editingCheckId || compareWithCheckId)) {
+      // Saved (or another check loaded): the markers are the check's own now; only the banner goes.
+      setCarriedFrom(null);
+      return;
+    }
+    if (!carryOverWanted || !vehicleChecks || carriedForVehicleRef.current === selectedVehicleId) return;
+    carriedForVehicleRef.current = selectedVehicleId;
+    if (markers.length > 0 || drawingPaths.length > 0) return;
+    const source = carryOverSource(vehicleChecks);
+    if (!source) return;
+    const carried = carriedDamage(source);
+    setMarkers(carried.markers as unknown as DamageMarker[]);
+    setDrawingPaths(carried.paths);
+    setCarriedFrom({
+      vehicleId: selectedVehicleId!,
+      checkType: source.checkType === 'return' ? 'return' : 'pickup',
+      date: source.checkDate ?? source.createdAt ?? null,
+      paths: carried.paths,
+    });
+  }, [carryOverWanted, checkType, editingCheckId, compareWithCheckId, selectedVehicleId, vehicleChecks, carriedFrom]);
+  const carriedMarkerCount = markers.filter((m) => m.carriedFrom).length;
 
   // Fetch matching diagram when vehicle is selected
   useEffect(() => {
@@ -1154,6 +1202,28 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
           </Button>
         </div>
 
+        {/* Round 2 punt 5: where the known damage came from, and how to start empty instead. */}
+        {carriedFrom && (carriedMarkerCount > 0 || drawingPaths.some((p) => carriedFrom.paths.includes(p))) && (
+          <Card className="p-4 mb-6 bg-amber-50 border-amber-300" data-testid="carry-over-banner">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-sm text-amber-900">
+                <p className="font-semibold">
+                  {t('interactiveDamageCheck.carryOver.title', {
+                    check: t(`interactiveDamageCheck.carryOver.${carriedFrom.checkType}`),
+                    date: carriedFrom.date ? formatDate(carriedFrom.date) : '',
+                    count: carriedMarkerCount,
+                  })}
+                </p>
+                <p>{t('interactiveDamageCheck.carryOver.hint')}</p>
+              </div>
+              <Button variant="outline" size="sm" className="shrink-0" onClick={removeCarried} data-testid="button-carry-over-clear">
+                <Eraser className="h-4 w-4 mr-2" />
+                {t('interactiveDamageCheck.carryOver.startEmpty')}
+              </Button>
+            </div>
+          </Card>
+        )}
+
         {/* Pickup Check Comparison Panel */}
         {showComparison && pickupCheckData && (
           <Card className="p-4 mb-6 bg-blue-50 border-blue-300">
@@ -1364,6 +1434,16 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => setDrawingPaths((prev) => prev.slice(0, -1))}
+                disabled={drawingPaths.length === 0}
+                data-testid="button-undo-drawing"
+              >
+                <Eraser className="h-4 w-4 mr-2" />
+                {t('interactiveDamageCheck.undoDrawingButton')}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={clearDrawings}
                 disabled={drawingPaths.length === 0}
                 data-testid="button-clear-drawings"
@@ -1542,6 +1622,9 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                     data-testid={`marker-summary-${index}`}
                   >
                     <span className="font-medium">#{index + 1}</span> - {marker.type}
+                    {marker.carriedFrom && (
+                      <span className="block text-xs text-amber-700" data-testid={`marker-carried-${index}`}>{t('interactiveDamageCheck.carryOver.tag')}</span>
+                    )}
                   </div>
                 ))}
               </div>

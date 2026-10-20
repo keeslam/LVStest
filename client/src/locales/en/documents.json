@@ -678,7 +678,16 @@
     "checklistProgress": "{{filled}} of {{total}} filled in",
     "allGoodButton": "All good",
     "allGoodHint": "Fills only the still-empty fields of this block with the normal value (for example clean, good, yes). What you already filled in stays.",
-    "notAnswered": "not filled in"
+    "notAnswered": "not filled in",
+    "undoDrawingButton": "Remove last line",
+    "carryOver": {
+      "title": "Known damage carried over from the {{check}} of {{date}}. Damage points: {{count}}",
+      "hint": "Something repaired? Click the damage point and choose Delete, or remove lines with Remove last line.",
+      "startEmpty": "Start empty",
+      "tag": "carried over",
+      "pickup": "pickup check",
+      "return": "return check"
+    }
   },
   "barcodeLabelEditor": {
     "defaultSpareSuffix": " (Default spare key)",

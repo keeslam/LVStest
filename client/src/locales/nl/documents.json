@@ -678,7 +678,16 @@
     "checklistProgress": "{{filled}} van {{total}} ingevuld",
     "allGoodButton": "Alles goed",
     "allGoodHint": "Vult alleen de nog lege velden in dit blok met de normale waarde (bijvoorbeeld schoon, goed, ja). Wat je al hebt ingevuld blijft staan.",
-    "notAnswered": "niet ingevuld"
+    "notAnswered": "niet ingevuld",
+    "undoDrawingButton": "Laatste lijn weghalen",
+    "carryOver": {
+      "title": "Bekende schade overgenomen van de {{check}} van {{date}}. Schadepunten: {{count}}",
+      "hint": "Is iets gerepareerd? Klik op het schadepunt en kies Verwijderen, of haal lijnen weg met Laatste lijn weghalen.",
+      "startEmpty": "Leeg beginnen",
+      "tag": "overgenomen",
+      "pickup": "ophaalcheck",
+      "return": "inlevercheck"
+    }
   },
   "barcodeLabelEditor": {
     "defaultSpareSuffix": " (Standaard reservesleutel)",

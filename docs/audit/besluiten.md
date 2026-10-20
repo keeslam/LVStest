@@ -724,6 +724,19 @@ Kees koos uit de tweede lijst met suggesties punt 2. Met klikken koos hij deze v
   - voertuigtype, brandstoftype, huidige km-stand en brandstofniveau, APK-datum;
   - e-mail en bedrijfsnaam van de klant.
 
+### B-55 — Ophaal-schadecheck begint met de bekende schade (20-10-2026)
+
+Kees koos uit de tweede lijst met suggesties punt 5. Met klikken koos hij dit: de bekende schade wordt overgenomen als markeringen, en het moet kunnen dat je schade verwijdert ("want soms wordt het gemaakt").
+
+- **Bron.** Een nieuwe ophaal-schadecheck neemt de schade over van de nieuwste check van de auto. Dat kan een ophaal- of inlevercheck zijn, van welke huur ook.
+  - Hij neemt zowel de markeringen (met soort, ernst en notitie) als de getekende lijnen over.
+  - Zo staat alle schade op de check die de klant tekent. Bij inleveren valt alleen nieuwe schade op.
+- **Melding.** Bovenaan staat van welke check de schade komt, met datum en aantal. Overgenomen punten hebben het label "overgenomen".
+- **Weghalen.** Gerepareerde schade verwijder je per schadepunt. Lijnen haal je weg met **Laatste lijn weghalen**. **Leeg beginnen** haalt alles weg wat is overgenomen.
+- **Grenzen.** Er wordt alleen iets overgenomen in een nieuwe, nog lege ophaalcheck.
+  - Niet bij bewerken, niet bij inleveren en niet als je zelf al iets hebt getekend.
+  - Kies je een andere auto of een inlevercheck, dan verdwijnt wat is overgenomen.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).

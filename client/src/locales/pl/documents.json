@@ -702,7 +702,16 @@
     "checklistProgress": "Wypełniono {{filled}} z {{total}}",
     "allGoodButton": "Wszystko w porządku",
     "allGoodHint": "Wypełnia tylko puste jeszcze pola w tym bloku wartością standardową (np. czysto, dobrze, tak). To, co zostało już wypełnione, pozostaje bez zmian.",
-    "notAnswered": "nie wypełniono"
+    "notAnswered": "nie wypełniono",
+    "undoDrawingButton": "Usuń ostatnią linię",
+    "carryOver": {
+      "title": "Znane szkody przeniesione z {{check}} z {{date}}. Punkty szkody: {{count}}",
+      "hint": "Coś naprawiono? Kliknij punkt szkody i wybierz Usuń albo usuń linie przyciskiem Usuń ostatnią linię.",
+      "startEmpty": "Zacznij od zera",
+      "tag": "przeniesione",
+      "pickup": "kontroli przy odbiorze",
+      "return": "kontroli przy zwrocie"
+    }
   },
   "barcodeLabelEditor": {
     "defaultSpareSuffix": " (domyślna etykieta kluczyka zapasowego)",

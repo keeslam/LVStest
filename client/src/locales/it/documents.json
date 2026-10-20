@@ -690,7 +690,16 @@
     "checklistProgress": "{{filled}} di {{total}} compilati",
     "allGoodButton": "Tutto a posto",
     "allGoodHint": "Compila solo i campi ancora vuoti di questo blocco con il valore normale (ad esempio pulito, buono, sì). Ciò che ha già compilato rimane invariato.",
-    "notAnswered": "non compilato"
+    "notAnswered": "non compilato",
+    "undoDrawingButton": "Rimuovi ultima linea",
+    "carryOver": {
+      "title": "Danni noti ripresi dal {{check}} del {{date}}. Punti di danno: {{count}}",
+      "hint": "Qualcosa riparato? Clicca sul punto di danno e scegli Elimina, oppure togli le linee con Rimuovi ultima linea.",
+      "startEmpty": "Inizia vuoto",
+      "tag": "ripreso",
+      "pickup": "controllo al ritiro",
+      "return": "controllo alla riconsegna"
+    }
   },
   "barcodeLabelEditor": {
     "defaultSpareSuffix": " (Chiave di riserva predefinita)",
