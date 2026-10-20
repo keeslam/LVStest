@@ -285,7 +285,9 @@
           "toggle-registration": "Registo em nome alterado",
           "fiscal-profile": "Perfil fiscal alterado",
           "blacklist": "Colocado na lista negra",
-          "damage-check-pdf": "PDF da inspeção de danos aberto"
+          "damage-check-pdf": "PDF da inspeção de danos aberto",
+          "out-of-fleet": "Retirado da frota",
+          "back-in-fleet": "Devolvido à frota"
         },
         "document": {
           "email": "Documento enviado por e-mail",

@@ -281,7 +281,9 @@
           "toggle-registration": "Registration changed",
           "fiscal-profile": "Fiscal profile changed",
           "blacklist": "Added to the blacklist",
-          "damage-check-pdf": "Damage check PDF opened"
+          "damage-check-pdf": "Damage check PDF opened",
+          "out-of-fleet": "Taken out of the fleet",
+          "back-in-fleet": "Put back in the fleet"
         },
         "document": {
           "email": "Document emailed",

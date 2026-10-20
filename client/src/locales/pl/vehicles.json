@@ -1053,7 +1053,8 @@
     "sortNeedsFixingOption": "Wymaga naprawy",
     "sortOpnaamOption": "Opnaam",
     "sortBvOption": "BV",
-    "sortUnspecifiedOption": "Nie podano"
+    "sortUnspecifiedOption": "Nie podano",
+    "filterOutOfFleetOption": "Poza flotą"
   },
   "rdwTypeRemap": {
     "tabLabel": "Pojazdy",
@@ -1094,5 +1095,35 @@
       "REMAP_PLAN_MISSING": "Nie ma już wyniku sprawdzenia do zastosowania. Najpierw uruchom Sprawdź.",
       "REMAP_CHECK_FAILED": "Sprawdzanie nie powiodło się. Spróbuj ponownie później."
     }
+  },
+  "outOfFleet": {
+    "button": "Wycofaj z floty",
+    "title": "Wycofaj {{plate}} z floty",
+    "description": "Pojazd znika z listy pojazdów i list wyboru i nie można go już rezerwować. Nic nie jest usuwane.",
+    "dateLabel": "Data",
+    "reasonLabel": "Powód",
+    "reasons": {
+      "sold": "Sprzedany",
+      "lease_returned": "Zwrócony do leasingodawcy",
+      "scrapped": "Zezłomowany",
+      "other": "Inny"
+    },
+    "salePriceLabel": "Cena sprzedaży (€)",
+    "buyerLabel": "Kupujący",
+    "noteLabel": "Notatka",
+    "keepsHistory": "Rezerwacje, koszty, dokumenty, umowy i mandaty zostają zachowane i widoczne.",
+    "confirm": "Wycofaj z floty",
+    "doneTitle": "Wycofano z floty",
+    "doneDescription": "Historia i wszystkie dokumenty zostają zachowane.",
+    "failedTitle": "Nie udało się",
+    "blocked": "Jeszcze niemożliwe: ten pojazd ma trwające lub zaplanowane rezerwacje. Najpierw je zamknij lub przenieś.",
+    "blockingRental": "Wynajem #{{id}}: {{start}} – {{end}}",
+    "blockingMaintenance": "Serwis #{{id}}: {{start}} – {{end}}",
+    "backButton": "Przywróć do floty",
+    "backConfirmTitle": "Przywrócić {{plate}} do floty?",
+    "backConfirmDescription": "Pojazd wraca na listę pojazdów i można go znów rezerwować. Dane wycofania zostaną wyczyszczone.",
+    "backTitle": "Przywrócono do floty",
+    "bannerTitle": "Poza flotą od {{date}}",
+    "bannerHint": "Nie można już rezerwować. Rezerwacje, koszty, dokumenty i umowy są nadal dostępne poniżej."
   }
 }

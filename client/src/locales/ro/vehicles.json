@@ -1046,7 +1046,8 @@
     "sortNeedsFixingOption": "Necesită reparație",
     "sortOpnaamOption": "Opnaam",
     "sortBvOption": "BV",
-    "sortUnspecifiedOption": "Nespecificat"
+    "sortUnspecifiedOption": "Nespecificat",
+    "filterOutOfFleetOption": "Scoase din flotă"
   },
   "rdwTypeRemap": {
     "tabLabel": "Vehicule",
@@ -1084,5 +1085,35 @@
       "REMAP_PLAN_MISSING": "Nu mai există niciun rezultat al verificării de aplicat. Rulați mai întâi Verificare.",
       "REMAP_CHECK_FAILED": "Verificarea a eșuat. Încercați din nou mai târziu."
     }
+  },
+  "outOfFleet": {
+    "button": "Scoate din flotă",
+    "title": "Scoate {{plate}} din flotă",
+    "description": "Vehiculul dispare din lista de vehicule și din selectoare și nu mai poate fi rezervat. Nu se șterge nimic.",
+    "dateLabel": "Data",
+    "reasonLabel": "Motiv",
+    "reasons": {
+      "sold": "Vândut",
+      "lease_returned": "Returnat la firma de leasing",
+      "scrapped": "Casat",
+      "other": "Altul"
+    },
+    "salePriceLabel": "Preț de vânzare (€)",
+    "buyerLabel": "Cumpărător",
+    "noteLabel": "Notă",
+    "keepsHistory": "Rezervările, costurile, documentele, contractele și amenzile se păstrează și rămân vizibile.",
+    "confirm": "Scoate din flotă",
+    "doneTitle": "Scos din flotă",
+    "doneDescription": "Istoricul și toate documentele se păstrează.",
+    "failedTitle": "Nu a reușit",
+    "blocked": "Încă nu este posibil: acest vehicul are rezervări în curs sau planificate. Închideți-le sau mutați-le mai întâi.",
+    "blockingRental": "Închiriere #{{id}}: {{start}} – {{end}}",
+    "blockingMaintenance": "Întreținere #{{id}}: {{start}} – {{end}}",
+    "backButton": "Înapoi în flotă",
+    "backConfirmTitle": "Readuceți {{plate}} în flotă?",
+    "backConfirmDescription": "Vehiculul revine în lista de vehicule și poate fi rezervat din nou. Datele scoaterii din flotă se șterg.",
+    "backTitle": "Înapoi în flotă",
+    "bannerTitle": "Scos din flotă din {{date}}",
+    "bannerHint": "Nu mai poate fi rezervat. Rezervările, costurile, documentele și contractele rămân disponibile mai jos."
   }
 }

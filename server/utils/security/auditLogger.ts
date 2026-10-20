@@ -22,6 +22,9 @@ type KnownAuditAction =
   // BUG-147: a restore was recorded as `vehicle.update` purely because this
   // union had no word for it, so it could not be searched or reported on.
   | 'vehicle.restore'
+  // Punt 7: out of the fleet instead of deleted, and back.
+  | 'vehicle.out-of-fleet'
+  | 'vehicle.back-in-fleet'
   | 'customer.restore'
   // BUG-152: the reservation sub-actions the middleware now emits.
   | 'reservation.pickup'

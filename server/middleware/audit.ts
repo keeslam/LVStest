@@ -194,6 +194,8 @@ const SELF_LOGGED: Array<{ method: string; pattern: RegExp }> = [
   { method: 'POST', pattern: /^\/api\/vehicles\/rdw-type-remap\/(check|apply)$/ },
   // The fines bulk bar writes one row per fine itself (fine.notify-customer / fine.status).
   { method: 'POST', pattern: /^\/api\/fines\/bulk$/ },
+  // Punt 7: out of the fleet / back in the fleet write their own row, with date, reason and price.
+  { method: 'POST', pattern: /^\/api\/vehicles\/\d+\/(out-of-fleet|back-in-fleet)$/ },
   // The client's own print/export reports: the route writes the row it describes.
   { method: 'POST', pattern: /^\/api\/audit-events$/ },
 ];

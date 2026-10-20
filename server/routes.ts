@@ -116,6 +116,7 @@ import {
   type HandoverOverride,
 } from "./services/lifecycle";
 import { currentRenterReservation } from "./services/vehicle-notification-recipients";
+import { ALREADY_OUT_OF_FLEET_CODE, NOT_OUT_OF_FLEET_CODE, OUT_OF_FLEET_BLOCKED_CODE, isOutOfFleet, parseOutOfFleetInput } from "../shared/out-of-fleet";
 import { assertDriverLicenseChecked, driverLicenseInfo, DriverLicenseExpiredError } from "./services/driver-license-check";
 import { parseReturnExtraCosts } from "../shared/km-allowance";
 import { normalizeKmOverrides } from "./services/km-overrides";
@@ -1679,6 +1680,16 @@ export async function registerRoutes(app: Express): Promise<void> {
       // five-value enum instead of falling through to `{allowed:true}` — this
       // is where "banana_not_real" used to get in.
       let statusWarning: string | undefined;
+      // Punt 7: a vehicle out of the fleet stays "not for rental" until it is
+      // brought back with "Terug in de vloot" (POST /api/vehicles/:id/back-in-fleet).
+      if (isOutOfFleet(existingVehicle) && sanitizedData.availabilityStatus !== undefined &&
+          sanitizedData.availabilityStatus !== "not_for_rental") {
+        return res.status(409).json({
+          message: "This vehicle is out of the fleet; bring it back first",
+          code: ALREADY_OUT_OF_FLEET_CODE,
+          field: "availabilityStatus",
+        });
+      }
       if (sanitizedData.availabilityStatus !== undefined &&
           sanitizedData.availabilityStatus !== existingVehicle.availabilityStatus) {
         const currentStatus = (existingVehicle.availabilityStatus || 'available') as VehicleAvailabilityStatus;
@@ -2282,6 +2293,83 @@ export async function registerRoutes(app: Express): Promise<void> {
 
   // What a vehicle delete would take with it. Shown in the confirmation dialog
   // so nobody removes a car without seeing the rentals attached to it.
+  // Punt 7 (Kees, 2026-10-20) — out of the fleet instead of deleted. Nothing is
+  // removed: reservations, costs, documents and contracts stay with the vehicle.
+  // Refused, like a delete, while a rental or block is running or planned.
+  app.post("/api/vehicles/:id/out-of-fleet", hasPermission(UserPermission.MANAGE_VEHICLES), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid vehicle ID" });
+      const input = parseOutOfFleetInput(req.body);
+      if (!input.ok) {
+        return res.status(400).json({ message: "Invalid out-of-fleet details", errors: [{ field: input.field, message: "Check this field" }] });
+      }
+      const impact = await storage.getVehicleDeleteImpact?.(id);
+      if (!impact) return res.status(404).json({ message: "Vehicle not found" });
+      if (isOutOfFleet(impact.vehicle)) {
+        return res.status(409).json({ message: "This vehicle is already out of the fleet", code: ALREADY_OUT_OF_FLEET_CODE });
+      }
+      if (impact.blockingReservations.length > 0) {
+        return res.status(409).json({
+          message: "This vehicle still has running or planned reservations",
+          code: OUT_OF_FLEET_BLOCKED_CODE,
+          blockingReservations: impact.blockingReservations.map((r) => ({
+            id: r.id, customerId: r.customerId, startDate: r.startDate, endDate: r.endDate, status: r.status, type: r.type,
+          })),
+        });
+      }
+      const { date, reason, salePrice, buyer, note } = input.value;
+      const updated = await storage.updateVehicle(id, {
+        outOfFleetDate: date,
+        outOfFleetReason: reason,
+        outOfFleetSalePrice: salePrice != null ? String(salePrice) : null,
+        outOfFleetBuyer: buyer,
+        outOfFleetNote: note,
+        availabilityStatus: "not_for_rental",
+        updatedBy: req.user?.username ?? null,
+      } as any);
+      await AuditLogger.logFromRequest(req, "vehicle.out-of-fleet", "vehicle", id, {
+        operation: `Uit de vloot per ${date} (${reason})`,
+        date, reason, salePrice, buyer,
+      }, "success");
+      res.json(updated);
+    } catch (error) {
+      console.error("Error taking the vehicle out of the fleet:", error);
+      res.status(500).json({ message: "Error taking the vehicle out of the fleet" });
+    }
+  });
+
+  app.post("/api/vehicles/:id/back-in-fleet", hasPermission(UserPermission.MANAGE_VEHICLES), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid vehicle ID" });
+      const vehicle = await storage.getVehicle(id);
+      if (!vehicle) return res.status(404).json({ message: "Vehicle not found" });
+      if (!isOutOfFleet(vehicle)) {
+        return res.status(409).json({ message: "This vehicle is in the fleet", code: NOT_OUT_OF_FLEET_CODE });
+      }
+      await storage.updateVehicle(id, {
+        outOfFleetDate: null,
+        outOfFleetReason: null,
+        outOfFleetSalePrice: null,
+        outOfFleetBuyer: null,
+        outOfFleetNote: null,
+        availabilityStatus: "available",
+        updatedBy: req.user?.username ?? null,
+      } as any);
+      // The status follows from its reservations again (lifecycle.ts deriveVehicleAvailability).
+      await (storage as any).recomputeVehicleAvailability?.(id);
+      await AuditLogger.logFromRequest(req, "vehicle.back-in-fleet", "vehicle", id, {
+        operation: "Terug in de vloot",
+        previous: { date: vehicle.outOfFleetDate, reason: vehicle.outOfFleetReason },
+      }, "success");
+      res.json(await storage.getVehicle(id));
+    } catch (error) {
+      console.error("Error bringing the vehicle back into the fleet:", error);
+      res.status(500).json({ message: "Error bringing the vehicle back into the fleet" });
+    }
+  });
+
   app.get("/api/vehicles/:id/delete-impact", hasPermission(UserPermission.MANAGE_VEHICLES), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);

@@ -1039,7 +1039,8 @@
     "sortNeedsFixingOption": "Needs Fixing",
     "sortOpnaamOption": "Opnaam",
     "sortBvOption": "BV",
-    "sortUnspecifiedOption": "Not specified"
+    "sortUnspecifiedOption": "Not specified",
+    "filterOutOfFleetOption": "Out of fleet"
   },
   "rdwTypeRemap": {
     "tabLabel": "Vehicles",
@@ -1074,5 +1075,35 @@
       "REMAP_PLAN_MISSING": "There is no check result left to apply. Run Check first.",
       "REMAP_CHECK_FAILED": "The check failed. Please try again later."
     }
+  },
+  "outOfFleet": {
+    "button": "Take out of fleet",
+    "title": "Take {{plate}} out of the fleet",
+    "description": "The vehicle disappears from the vehicle list and the pickers and can no longer be booked. Nothing is deleted.",
+    "dateLabel": "Date",
+    "reasonLabel": "Reason",
+    "reasons": {
+      "sold": "Sold",
+      "lease_returned": "Returned to lessor",
+      "scrapped": "Scrapped",
+      "other": "Other"
+    },
+    "salePriceLabel": "Sale price (€)",
+    "buyerLabel": "Buyer",
+    "noteLabel": "Note",
+    "keepsHistory": "Reservations, costs, documents, contracts and fines are kept and stay visible.",
+    "confirm": "Take out of fleet",
+    "doneTitle": "Taken out of the fleet",
+    "doneDescription": "The history and all documents are kept.",
+    "failedTitle": "That did not work",
+    "blocked": "Not yet possible: this vehicle still has running or planned reservations. Close or move them first.",
+    "blockingRental": "Rental #{{id}}: {{start}} to {{end}}",
+    "blockingMaintenance": "Maintenance #{{id}}: {{start}} to {{end}}",
+    "backButton": "Back in fleet",
+    "backConfirmTitle": "Put {{plate}} back in the fleet?",
+    "backConfirmDescription": "The vehicle returns to the vehicle list and can be booked again. The out-of-fleet details are cleared.",
+    "backTitle": "Back in the fleet",
+    "bannerTitle": "Out of the fleet since {{date}}",
+    "bannerHint": "Can no longer be booked. Reservations, costs, documents and contracts stay available below."
   }
 }

@@ -1039,7 +1039,8 @@
     "sortNeedsFixingOption": "Reparatie nodig",
     "sortOpnaamOption": "Opnaam",
     "sortBvOption": "BV",
-    "sortUnspecifiedOption": "Niet opgegeven"
+    "sortUnspecifiedOption": "Niet opgegeven",
+    "filterOutOfFleetOption": "Uit de vloot"
   },
   "rdwTypeRemap": {
     "tabLabel": "Voertuigen",
@@ -1074,5 +1075,35 @@
       "REMAP_PLAN_MISSING": "Er is geen controle-uitkomst meer om toe te passen. Draai eerst Controleren.",
       "REMAP_CHECK_FAILED": "De controle is mislukt. Probeer het later opnieuw."
     }
+  },
+  "outOfFleet": {
+    "button": "Uit de vloot halen",
+    "title": "{{plate}} uit de vloot halen",
+    "description": "De auto verdwijnt uit de voertuigenlijst en de keuzelijsten en kan niet meer geboekt worden. Er wordt niets verwijderd.",
+    "dateLabel": "Datum",
+    "reasonLabel": "Reden",
+    "reasons": {
+      "sold": "Verkocht",
+      "lease_returned": "Terug naar leasemaatschappij",
+      "scrapped": "Gesloopt",
+      "other": "Anders"
+    },
+    "salePriceLabel": "Verkoopprijs (€)",
+    "buyerLabel": "Koper",
+    "noteLabel": "Notitie",
+    "keepsHistory": "Reserveringen, kosten, documenten, contracten en boetes blijven bewaard en zichtbaar.",
+    "confirm": "Uit de vloot halen",
+    "doneTitle": "Uit de vloot gehaald",
+    "doneDescription": "De geschiedenis en alle documenten blijven bewaard.",
+    "failedTitle": "Dat lukte niet",
+    "blocked": "Dit kan nog niet: deze auto heeft nog lopende of geplande reserveringen. Sluit ze eerst af of boek ze om.",
+    "blockingRental": "Huur #{{id}}: {{start}} t/m {{end}}",
+    "blockingMaintenance": "Onderhoud #{{id}}: {{start}} t/m {{end}}",
+    "backButton": "Terug in de vloot",
+    "backConfirmTitle": "{{plate}} terug in de vloot zetten?",
+    "backConfirmDescription": "De auto komt terug in de voertuigenlijst en kan weer geboekt worden. De gegevens van het uit de vloot halen worden gewist.",
+    "backTitle": "Terug in de vloot",
+    "bannerTitle": "Uit de vloot sinds {{date}}",
+    "bannerHint": "Niet meer te boeken. Reserveringen, kosten, documenten en contracten blijven hieronder beschikbaar."
   }
 }

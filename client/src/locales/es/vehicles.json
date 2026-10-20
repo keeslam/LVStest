@@ -1046,7 +1046,8 @@
     "sortNeedsFixingOption": "Necesita reparación",
     "sortOpnaamOption": "Opnaam",
     "sortBvOption": "BV",
-    "sortUnspecifiedOption": "No especificado"
+    "sortUnspecifiedOption": "No especificado",
+    "filterOutOfFleetOption": "Fuera de la flota"
   },
   "rdwTypeRemap": {
     "tabLabel": "Vehículos",
@@ -1084,5 +1085,35 @@
       "REMAP_PLAN_MISSING": "Ya no hay un resultado de comprobación que aplicar. Ejecute primero Comprobar.",
       "REMAP_CHECK_FAILED": "La comprobación ha fallado. Inténtelo de nuevo más tarde."
     }
+  },
+  "outOfFleet": {
+    "button": "Retirar de la flota",
+    "title": "Retirar {{plate}} de la flota",
+    "description": "El vehículo desaparece de la lista de vehículos y de los selectores y ya no se puede reservar. No se elimina nada.",
+    "dateLabel": "Fecha",
+    "reasonLabel": "Motivo",
+    "reasons": {
+      "sold": "Vendido",
+      "lease_returned": "Devuelto a la empresa de leasing",
+      "scrapped": "Desguazado",
+      "other": "Otro"
+    },
+    "salePriceLabel": "Precio de venta (€)",
+    "buyerLabel": "Comprador",
+    "noteLabel": "Nota",
+    "keepsHistory": "Las reservas, costes, documentos, contratos y multas se conservan y siguen visibles.",
+    "confirm": "Retirar de la flota",
+    "doneTitle": "Retirado de la flota",
+    "doneDescription": "El historial y todos los documentos se conservan.",
+    "failedTitle": "No ha funcionado",
+    "blocked": "Aún no es posible: este vehículo tiene reservas en curso o previstas. Ciérrelas o cámbielas primero.",
+    "blockingRental": "Alquiler #{{id}}: {{start}} a {{end}}",
+    "blockingMaintenance": "Mantenimiento #{{id}}: {{start}} a {{end}}",
+    "backButton": "Volver a la flota",
+    "backConfirmTitle": "¿Volver a poner {{plate}} en la flota?",
+    "backConfirmDescription": "El vehículo vuelve a la lista de vehículos y se puede reservar de nuevo. Se borran los datos de la retirada.",
+    "backTitle": "De vuelta en la flota",
+    "bannerTitle": "Fuera de la flota desde {{date}}",
+    "bannerHint": "Ya no se puede reservar. Las reservas, costes, documentos y contratos siguen disponibles abajo."
   }
 }

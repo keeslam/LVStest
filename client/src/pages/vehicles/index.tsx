@@ -1,3 +1,4 @@
+import { isOutOfFleet } from "@shared/out-of-fleet";
 import { invalidateByPrefix } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect, useCallback, useMemo } from "react";
@@ -54,7 +55,7 @@ export default function VehiclesIndex() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<string>("default");
   // A-3-8: what to show is its own choice now, next to (not inside) the sort order.
-  const [statusFilter, setStatusFilter] = useState<"all" | "needs-fixing" | "opnaam" | "bv" | "unspecified">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "needs-fixing" | "opnaam" | "bv" | "unspecified" | "out-of-fleet">("all");
   // Feature filters: list of selected vehicle boolean columns to require, plus
   // the match mode (strict = vehicle must have ALL selected; broad = ANY).
   const [featureFilters, setFeatureFilters] = useState<(keyof Vehicle)[]>([]);
@@ -167,6 +168,10 @@ export default function VehiclesIndex() {
       if (!matchesSearch) return false;
     }
     
+    // Punt 7: a vehicle out of the fleet only shows under "Uit de vloot".
+    if (statusFilter === "out-of-fleet") return isOutOfFleet(vehicle);
+    if (isOutOfFleet(vehicle)) return false;
+
     // Apply registration filter
     if (statusFilter === "opnaam" || statusFilter === "bv" || statusFilter === "unspecified") {
       const isRegisteredToPerson = isTrueValue(vehicle.registeredTo);
@@ -303,6 +308,9 @@ export default function VehiclesIndex() {
                 }
               }
               
+              // Punt 7: a vehicle out of the fleet cannot be booked any more.
+              if (isOutOfFleet(vehicle)) return null;
+
               // For not-for-rental vehicles, show disabled button with tooltip
               if (isNotForRental) {
                 return (
@@ -799,6 +807,7 @@ export default function VehiclesIndex() {
                   <SelectItem value="opnaam">{t('indexPage.sortOpnaamOption')}</SelectItem>
                   <SelectItem value="bv">{t('indexPage.sortBvOption')}</SelectItem>
                   <SelectItem value="unspecified">{t('indexPage.sortUnspecifiedOption')}</SelectItem>
+                  <SelectItem value="out-of-fleet">{t('indexPage.filterOutOfFleetOption')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

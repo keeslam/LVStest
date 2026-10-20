@@ -54,7 +54,7 @@ export function KeyAuditDialog({ open, onOpenChange, mode = "main" }: KeyAuditDi
   const { data: vehicles = [] } = useQuery<Vehicle[]>({ queryKey: ["/api/vehicles"] });
 
   const expected = useMemo(
-    () => vehicles.filter(v => (
+    () => vehicles.filter(v => !v.outOfFleetDate && (
       isSpare
         // A spare key stays in the cabinet while the car is out - unless it was
         // handed to the customer, or the vehicle has no spare key at all.

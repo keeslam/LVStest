@@ -26,7 +26,8 @@ function delay(ms: number): Promise<void> {
  * confirmed/dismissed) never produces duplicates.
  */
 export async function scanVehiclesForApkChanges(): Promise<ApkScanResult> {
-  const vehicles = await storage.getAllVehicles();
+  // Punt 7: a vehicle out of the fleet (sold, scrapped) is no longer checked at the RDW.
+  const vehicles = (await storage.getAllVehicles()).filter((v) => !v.outOfFleetDate);
   // BUG-230: this ran one `getPendingApkDateChangeForVehicle` SELECT per
   // vehicle — 665 statements a night on top of 665 external calls. The pending
   // rows are a short list; read them once.

@@ -1046,7 +1046,8 @@
     "sortNeedsFixingOption": "Necessita de reparação",
     "sortOpnaamOption": "Opnaam",
     "sortBvOption": "BV",
-    "sortUnspecifiedOption": "Não indicado"
+    "sortUnspecifiedOption": "Não indicado",
+    "filterOutOfFleetOption": "Fora da frota"
   },
   "rdwTypeRemap": {
     "tabLabel": "Veículos",
@@ -1084,5 +1085,35 @@
       "REMAP_PLAN_MISSING": "Já não existe um resultado de verificação para aplicar. Execute primeiro a Verificação.",
       "REMAP_CHECK_FAILED": "A verificação falhou. Tente novamente mais tarde."
     }
+  },
+  "outOfFleet": {
+    "button": "Retirar da frota",
+    "title": "Retirar {{plate}} da frota",
+    "description": "O veículo desaparece da lista de veículos e dos seletores e deixa de poder ser reservado. Nada é eliminado.",
+    "dateLabel": "Data",
+    "reasonLabel": "Motivo",
+    "reasons": {
+      "sold": "Vendido",
+      "lease_returned": "Devolvido à empresa de leasing",
+      "scrapped": "Abatido",
+      "other": "Outro"
+    },
+    "salePriceLabel": "Preço de venda (€)",
+    "buyerLabel": "Comprador",
+    "noteLabel": "Nota",
+    "keepsHistory": "Reservas, custos, documentos, contratos e multas são guardados e continuam visíveis.",
+    "confirm": "Retirar da frota",
+    "doneTitle": "Retirado da frota",
+    "doneDescription": "O histórico e todos os documentos são guardados.",
+    "failedTitle": "Não foi possível",
+    "blocked": "Ainda não é possível: este veículo tem reservas em curso ou previstas. Feche-as ou mude-as primeiro.",
+    "blockingRental": "Aluguer #{{id}}: {{start}} a {{end}}",
+    "blockingMaintenance": "Manutenção #{{id}}: {{start}} a {{end}}",
+    "backButton": "Voltar à frota",
+    "backConfirmTitle": "Voltar a colocar {{plate}} na frota?",
+    "backConfirmDescription": "O veículo volta à lista de veículos e pode ser reservado de novo. Os dados da retirada são apagados.",
+    "backTitle": "De volta à frota",
+    "bannerTitle": "Fora da frota desde {{date}}",
+    "bannerHint": "Já não pode ser reservado. Reservas, custos, documentos e contratos continuam disponíveis abaixo."
   }
 }

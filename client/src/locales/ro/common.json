@@ -285,7 +285,9 @@
           "toggle-registration": "Înmatricularea pe nume modificată",
           "fiscal-profile": "Profil fiscal modificat",
           "blacklist": "Adăugat pe lista neagră",
-          "damage-check-pdf": "PDF-ul verificării de daune deschis"
+          "damage-check-pdf": "PDF-ul verificării de daune deschis",
+          "out-of-fleet": "Scos din flotă",
+          "back-in-fleet": "Readus în flotă"
         },
         "document": {
           "email": "Document trimis prin e-mail",

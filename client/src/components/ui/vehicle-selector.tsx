@@ -1,3 +1,4 @@
+import { inFleetOrSelected } from "@shared/out-of-fleet";
 import * as React from "react";
 import { useState, useMemo, useRef, useEffect, useId } from "react";
 import { useTranslation } from "react-i18next";
@@ -48,11 +49,17 @@ interface VehicleSelectorProps {
    * click both closes the list and acts (A-7-8).
    */
   modal?: boolean;
+  /**
+   * Punt 7: vehicles out of the fleet are left out of the list (the one already
+   * chosen stays). The document upload passes true: a sale contract belongs to
+   * a sold car.
+   */
+  includeOutOfFleet?: boolean;
   "data-testid"?: string;
 }
 
 export function VehicleSelector({
-  vehicles,
+  vehicles: allVehicles,
   value,
   onChange,
   placeholder,
@@ -62,8 +69,13 @@ export function VehicleSelector({
   warnExpiredApk = false,
   ariaLabelledBy,
   modal = true,
+  includeOutOfFleet = false,
   "data-testid": dataTestId,
 }: VehicleSelectorProps) {
+  const vehicles = useMemo(
+    () => (includeOutOfFleet || !allVehicles ? allVehicles : inFleetOrSelected(allVehicles, value ? Number(value) : null)),
+    [allVehicles, includeOutOfFleet, value],
+  );
   const { t } = useTranslation("vehicles");
   const triggerId = useId();
   const finalPlaceholder = placeholder ?? t('vehicleSelector.defaultPlaceholder');

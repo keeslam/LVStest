@@ -31,6 +31,8 @@ import { InlineDocumentUpload } from "@/components/documents/inline-document-upl
 import { RequiresPermission } from "@/components/ui/requires-permission";
 import { QuickStatusChangeButton } from "@/components/vehicles/quick-status-change-button";
 import { VehicleDeleteDialog } from "@/components/vehicles/vehicle-delete-dialog";
+import { OutOfFleetBanner, OutOfFleetControl } from "@/components/vehicles/out-of-fleet";
+import { isOutOfFleet } from "@shared/out-of-fleet";
 import { VehicleBarcodeDialog } from "@/components/barcodes/vehicle-barcode-dialog";
 import { PdfPreviewDialog } from "@/components/documents/pdf-preview-dialog";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
@@ -1111,6 +1113,9 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
             }}
           />
 
+          {/* Punt 7: out of the fleet instead of deleted; history and documents stay. */}
+          <OutOfFleetControl vehicle={vehicle} />
+
           {/* Same guarded dialog as the vehicles list: shows what cascades and
               requires the license plate to be typed. The old inline confirm
               could delete a vehicle plus its rentals on two quick clicks. */}
@@ -1140,18 +1145,22 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
             </Button>
           </VehicleDeleteDialog>
 
-          <ReservationAddDialog initialVehicleId={vehicleId.toString()}>
-            <Button data-testid="button-new-reservation">
-              <Calendar className="h-4 w-4 mr-2" />
-              {t('details.header.newReservationButton')}
-            </Button>
-          </ReservationAddDialog>
+          {!isOutOfFleet(vehicle) && (
+            <ReservationAddDialog initialVehicleId={vehicleId.toString()}>
+              <Button data-testid="button-new-reservation">
+                <Calendar className="h-4 w-4 mr-2" />
+                {t('details.header.newReservationButton')}
+              </Button>
+            </ReservationAddDialog>
+          )}
           
           {/* Quick Status Change Button for Active Reservation */}
           <QuickStatusChangeButton vehicleId={vehicleId} />
         </div>
       </div>
       
+      <OutOfFleetBanner vehicle={vehicle} />
+
       {/* Vehicle Info Cards */}
       <div className={`grid grid-cols-1 gap-4 ${displayReservation ? 'md:grid-cols-7' : 'md:grid-cols-5'}`}>
         <Card className={displayReservation ? 'md:col-span-1' : ''}>
@@ -2427,7 +2436,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                   <CardTitle>{t('details.reservations.historyTitle')}</CardTitle>
                   <CardDescription>{t('details.reservations.historyDescription')}</CardDescription>
                 </div>
-                <ReservationAddDialog initialVehicleId={String(vehicleId)}>
+                {!isOutOfFleet(vehicle) && <ReservationAddDialog initialVehicleId={String(vehicleId)}>
                   <Button size="sm">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-calendar-plus mr-2">
                       <path d="M21 13V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8" />
@@ -2439,7 +2448,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                     </svg>
                     {t('details.reservations.newReservationButton')}
                   </Button>
-                </ReservationAddDialog>
+                </ReservationAddDialog>}
               </div>
             </CardHeader>
             <CardContent>

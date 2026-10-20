@@ -7283,6 +7283,41 @@
         "default": null
       },
       {
+        "name": "out_of_fleet_date",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "out_of_fleet_reason",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "out_of_fleet_sale_price",
+        "type": "numeric",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "out_of_fleet_buyer",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "out_of_fleet_note",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
         "name": "contract_number",
         "type": "text",
         "notNull": false,

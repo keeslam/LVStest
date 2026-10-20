@@ -575,6 +575,7 @@ export default function DocumentsIndex() {
                 vehicles={vehicles || []}
                 value={uploadVehicleId}
                 onChange={setUploadVehicleId}
+                includeOutOfFleet
                 data-testid="select-upload-vehicle"
               />
             </div>

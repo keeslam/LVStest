@@ -605,6 +605,31 @@ Kees koos uit de lijst met suggesties punt 6. Zijn keuzes, met klikken: het gemi
   - De schakelaar onder de instellingen blijft werken.
 - **Nachtelijke melding.** Ongewijzigd.
 
+### B-49 — Auto uit de vloot halen (20-10-2026)
+
+Kees koos uit de lijst met suggesties punt 7 en gaf zijn keuzes met klikken:
+- vaste redenen (Verkocht, Terug naar leasemaatschappij, Gesloopt, Anders);
+- de auto verborgen houden, met een filter;
+- de verkoopprijs niet in het rapport;
+- niet toegestaan zolang er nog een lopende of geplande huur is.
+
+Hij voegde toe: "de bestanden en contraten die ooit zijn aangemaakt voor dat voertuig moeten ook bewaard blijven!"
+
+- **Knop "Uit de vloot halen" op de voertuigkaart.**
+  - Je vult in: datum, reden en een notitie. Bij Verkocht ook de verkoopprijs en de koper.
+  - Het gaat niet zolang er een lopende of geplande huur of een onderhoudsblok is. Dat is dezelfde regel als bij verwijderen (B-14). Het venster toont welke huren of blokken het tegenhouden.
+- **Er wordt niets verwijderd.** Reserveringen, kosten, documenten, contracten, schadechecks, boetes en de geschiedenis blijven bij de auto en blijven te openen op de voertuigkaart.
+  - Onder Documenten kun je nog steeds een bestand uploaden bij een auto die uit de vloot is, bijvoorbeeld het verkoopcontract.
+  - Rapporten tonen de auto zoals voorheen. De verkoopprijs staat alleen op de voertuigkaart.
+- **Gevolgen voor de auto.**
+  - Hij krijgt de status Niet voor verhuur. Boeken, het portaal, de beschikbaarheid en de onderhoudskalender slaan hem daardoor al over.
+  - De nachtelijke APK-scan bij de RDW slaat hem ook over.
+  - De sleutelkastcontrole verwacht zijn sleutel niet meer.
+  - Hij staat niet meer in de voertuigenlijst en niet in de keuzelijsten. In de voertuigenlijst zie je hem met **Tonen: Uit de vloot**.
+  - De status is niet met Bewerken terug te zetten.
+- **Terug in de vloot.** Na een bevestiging wist deze knop de gegevens van het uit de vloot halen. De status volgt daarna weer uit de reserveringen.
+- **Vastlegging.** Beide stappen komen in de geschiedenis van het voertuig. De gegevens staan in de nieuwe kolommen `out_of_fleet_date`, `_reason`, `_sale_price`, `_buyer` en `_note`. Het oude veld `date_out` wordt bewust niet gebruikt, omdat bestaande data daarin onbekend is.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).

@@ -257,6 +257,12 @@ export const vehicles = pgTable("vehicles", {
   extraKmPrice: numeric("extra_km_price"),
   dateIn: text("date_in"),
   dateOut: text("date_out"),
+  // Punt 7 (Kees, 2026-10-20): out of the fleet instead of deleted; history and documents stay.
+  outOfFleetDate: text("out_of_fleet_date"), // yyyy-MM-dd; null = in the fleet
+  outOfFleetReason: text("out_of_fleet_reason"), // sold | lease_returned | scrapped | other
+  outOfFleetSalePrice: numeric("out_of_fleet_sale_price"),
+  outOfFleetBuyer: text("out_of_fleet_buyer"),
+  outOfFleetNote: text("out_of_fleet_note"),
   contractNumber: text("contract_number"),
   damageCheck: boolean("damage_check"),
   damageCheckDate: text("damage_check_date"),

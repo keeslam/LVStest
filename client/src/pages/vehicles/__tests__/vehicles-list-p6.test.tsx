@@ -50,7 +50,8 @@ const fleet = Array.from({ length: 25 }, (_, i) => {
   if (id === 3) return vehicle(id, { availabilityStatus: "needs_fixing", company: "true" });
   if (id === 5) return vehicle(id, { availabilityStatus: "needs_fixing" });
   return vehicle(id);
-});
+  // Punt 7: id 26 (AA-074-B) is out of the fleet and only shows under "Uit de vloot".
+}).concat([vehicle(26, { availabilityStatus: "not_for_rental", outOfFleetDate: "2026-10-01", outOfFleetReason: "sold" })]);
 
 beforeEach(() => {
   vi.stubGlobal(
@@ -115,7 +116,7 @@ describe("A-3-8 — sorting and filtering are separate controls", () => {
 
     await user.click(screen.getByTestId("select-vehicle-filter"));
     const filterOptions = (await screen.findAllByRole("option")).map((o) => o.textContent);
-    expect(filterOptions).toEqual(["Alle voertuigen", "Reparatie nodig", "Opnaam", "BV", "Niet opgegeven"]);
+    expect(filterOptions).toEqual(["Alle voertuigen", "Reparatie nodig", "Opnaam", "BV", "Niet opgegeven", "Uit de vloot"]);
   });
 
   it("a filter and a sort key work together: the repair-needed vehicles, ordered by plate", async () => {
@@ -129,6 +130,22 @@ describe("A-3-8 — sorting and filtering are separate controls", () => {
 
     await choose(user, "select-vehicle-sort", "Kenteken");
     await waitFor(() => expect(tablePlates()).toEqual(["AA-095-B", "AA-097-B"]));
+  });
+});
+
+describe("punt 7 — uit de vloot", () => {
+  it("hides a vehicle out of the fleet, and shows only those under Uit de vloot", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByTestId("select-vehicle-sort");
+    expect(await screen.findByText(/Pagina 1 van 3/)).toBeInTheDocument(); // 25 in the fleet, not 26
+    const goTo = screen.getByTestId("input-go-to-page");
+    await user.clear(goTo);
+    await user.type(goTo, "3{Enter}");
+    await waitFor(() => expect(tablePlates()).toHaveLength(5)); // 26 would make it 6
+    expect(tablePlates()).not.toContain("AA-074-B");
+    await choose(user, "select-vehicle-filter", "Uit de vloot");
+    await waitFor(() => expect(tablePlates()).toEqual(["AA-074-B"]));
   });
 });
 

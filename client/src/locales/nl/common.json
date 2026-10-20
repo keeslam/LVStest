@@ -281,7 +281,9 @@
           "toggle-registration": "Tenaamstelling gewijzigd",
           "fiscal-profile": "Fiscaal profiel gewijzigd",
           "blacklist": "Op de zwarte lijst gezet",
-          "damage-check-pdf": "Schadecheck-PDF geopend"
+          "damage-check-pdf": "Schadecheck-PDF geopend",
+          "out-of-fleet": "Uit de vloot gehaald",
+          "back-in-fleet": "Terug in de vloot gezet"
         },
         "document": {
           "email": "Document gemaild",

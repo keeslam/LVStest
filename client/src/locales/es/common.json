@@ -285,7 +285,9 @@
           "toggle-registration": "Titularidad modificada",
           "fiscal-profile": "Perfil fiscal modificado",
           "blacklist": "Añadido a la lista negra",
-          "damage-check-pdf": "PDF de la inspección de daños abierto"
+          "damage-check-pdf": "PDF de la inspección de daños abierto",
+          "out-of-fleet": "Retirado de la flota",
+          "back-in-fleet": "Devuelto a la flota"
         },
         "document": {
           "email": "Documento enviado por correo",

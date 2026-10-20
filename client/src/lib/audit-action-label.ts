@@ -32,7 +32,7 @@ const SUB_ACTIONS: Record<string, readonly string[]> = {
   ],
   vehicle: [
     "mileage", "fuel-status", "maintenance-status", "barcode", "toggle-registration", "fiscal-profile", "blacklist",
-    "damage-check-pdf",
+    "damage-check-pdf", "out-of-fleet", "back-in-fleet",
   ],
   document: ["email", "regenerate"],
   fine: ["letter", "link", "unlink", "reactivate", "status", "letter-view"],

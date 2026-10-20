@@ -1046,7 +1046,8 @@
     "sortNeedsFixingOption": "Riparazione necessaria",
     "sortOpnaamOption": "Opnaam",
     "sortBvOption": "BV",
-    "sortUnspecifiedOption": "Non indicato"
+    "sortUnspecifiedOption": "Non indicato",
+    "filterOutOfFleetOption": "Fuori flotta"
   },
   "rdwTypeRemap": {
     "tabLabel": "Veicoli",
@@ -1084,5 +1085,35 @@
       "REMAP_PLAN_MISSING": "Non c'è più alcun risultato di verifica da applicare. Esegua prima Verifica.",
       "REMAP_CHECK_FAILED": "La verifica non è riuscita. Riprovi più tardi."
     }
+  },
+  "outOfFleet": {
+    "button": "Togli dalla flotta",
+    "title": "Togliere {{plate}} dalla flotta",
+    "description": "Il veicolo scompare dall'elenco veicoli e dai selettori e non può più essere prenotato. Non viene eliminato nulla.",
+    "dateLabel": "Data",
+    "reasonLabel": "Motivo",
+    "reasons": {
+      "sold": "Venduto",
+      "lease_returned": "Restituito alla società di leasing",
+      "scrapped": "Rottamato",
+      "other": "Altro"
+    },
+    "salePriceLabel": "Prezzo di vendita (€)",
+    "buyerLabel": "Acquirente",
+    "noteLabel": "Nota",
+    "keepsHistory": "Prenotazioni, costi, documenti, contratti e multe restano conservati e visibili.",
+    "confirm": "Togli dalla flotta",
+    "doneTitle": "Tolto dalla flotta",
+    "doneDescription": "Lo storico e tutti i documenti restano conservati.",
+    "failedTitle": "Non è riuscito",
+    "blocked": "Non ancora possibile: questo veicolo ha prenotazioni in corso o previste. Le chiuda o le sposti prima.",
+    "blockingRental": "Noleggio #{{id}}: dal {{start}} al {{end}}",
+    "blockingMaintenance": "Manutenzione #{{id}}: dal {{start}} al {{end}}",
+    "backButton": "Rimetti nella flotta",
+    "backConfirmTitle": "Rimettere {{plate}} nella flotta?",
+    "backConfirmDescription": "Il veicolo torna nell'elenco veicoli e può essere prenotato di nuovo. I dati della rimozione vengono cancellati.",
+    "backTitle": "Di nuovo nella flotta",
+    "bannerTitle": "Fuori flotta dal {{date}}",
+    "bannerHint": "Non più prenotabile. Prenotazioni, costi, documenti e contratti restano disponibili qui sotto."
   }
 }

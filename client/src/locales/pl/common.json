@@ -289,7 +289,9 @@
           "toggle-registration": "Zmieniono rejestrację na firmę",
           "fiscal-profile": "Zmieniono profil podatkowy",
           "blacklist": "Dodano do czarnej listy",
-          "damage-check-pdf": "Otwarto PDF kontroli uszkodzeń"
+          "damage-check-pdf": "Otwarto PDF kontroli uszkodzeń",
+          "out-of-fleet": "Wycofano z floty",
+          "back-in-fleet": "Przywrócono do floty"
         },
         "document": {
           "email": "Dokument wysłano e-mailem",
