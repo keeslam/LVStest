@@ -384,7 +384,9 @@
       "pickupMileage": "Quilometragem no levantamento",
       "returnMileage": "Quilometragem na devolução",
       "fuelLevelPickup": "Nível de combustível no levantamento",
-      "fuelLevelReturn": "Nível de combustível na devolução"
+      "fuelLevelReturn": "Nível de combustível na devolução",
+      "deductibleDomestic": "Franquia (nacional)",
+      "deductibleAbroad": "Franquia (estrangeiro)"
     },
     "backToDocuments": "Voltar aos documentos",
     "createFirstTemplateTitle": "Crie o seu primeiro modelo",

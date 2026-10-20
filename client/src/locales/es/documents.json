@@ -384,7 +384,9 @@
       "pickupMileage": "Kilometraje en la recogida",
       "returnMileage": "Kilometraje en la devolución",
       "fuelLevelPickup": "Nivel de combustible en la recogida",
-      "fuelLevelReturn": "Nivel de combustible en la devolución"
+      "fuelLevelReturn": "Nivel de combustible en la devolución",
+      "deductibleDomestic": "Franquicia (nacional)",
+      "deductibleAbroad": "Franquicia (extranjero)"
     },
     "backToDocuments": "Volver a documentos",
     "createFirstTemplateTitle": "Cree su primera plantilla",

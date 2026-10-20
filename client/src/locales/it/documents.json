@@ -384,7 +384,9 @@
       "pickupMileage": "Chilometraggio al ritiro",
       "returnMileage": "Chilometraggio alla restituzione",
       "fuelLevelPickup": "Livello del carburante al ritiro",
-      "fuelLevelReturn": "Livello del carburante alla restituzione"
+      "fuelLevelReturn": "Livello del carburante alla restituzione",
+      "deductibleDomestic": "Franchigia (nazionale)",
+      "deductibleAbroad": "Franchigia (estero)"
     },
     "backToDocuments": "Torna ai documenti",
     "createFirstTemplateTitle": "Crei il Suo primo modello",

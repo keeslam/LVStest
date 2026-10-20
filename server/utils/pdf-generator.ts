@@ -124,6 +124,22 @@ const CONTRACT_FIELD_SOURCES: Record<string, keyof ContractData> = {
   endDate: "endDate",
   duration: "duration",
   totalPrice: "totalPrice",
+  // Kees, 2026-10-20 (round 2, punt 2): the deductible, and the readings at pickup.
+  deductibleDomestic: "deductibleDomestic",
+  deductibleAbroad: "deductibleAbroad",
+  // The template editor has offered these since long before the renderer knew
+  // them, so a placed field printed nothing; each now has a value.
+  pickupMileage: "pickupMileage",
+  fuelLevelPickup: "fuelLevelPickup",
+  returnMileage: "returnMileage",
+  fuelLevelReturn: "fuelLevelReturn",
+  vehicleType: "vehicleType",
+  fuelType: "fuelType",
+  currentMileage: "currentMileage",
+  currentFuelLevel: "currentFuelLevel",
+  apkDate: "apkDate",
+  customerEmail: "customerEmail",
+  companyName: "companyName",
   // The dotted spellings the template editor writes.
   "customer.name": "customerName",
   "customer.address": "customerAddress",
@@ -142,6 +158,10 @@ const CONTRACT_FIELD_SOURCES: Record<string, keyof ContractData> = {
   "reservation.endDate": "endDate",
   "reservation.duration": "duration",
   "reservation.totalPrice": "totalPrice",
+  "reservation.pickupMileage": "pickupMileage",
+  "reservation.fuelLevelPickup": "fuelLevelPickup",
+  "settings.deductibleDomestic": "deductibleDomestic",
+  "settings.deductibleAbroad": "deductibleAbroad",
   "driver.name": "driverName",
   "driver.firstName": "driverFirstName",
   "driver.lastName": "driverLastName",
@@ -328,8 +348,9 @@ async function createContractPage(
 export async function generateRentalContractFromTemplate(
   reservation: Reservation,
   template?: PdfTemplate,
+  businessRules?: unknown,
 ): Promise<Buffer> {
-  const contractData = prepareContractData(reservation);
+  const contractData = prepareContractData(reservation, businessRules === undefined ? await loadBusinessRules() : businessRules);
   const pdfDoc = await PDFDocument.create();
   const page = await createContractPage(pdfDoc, template);
 
@@ -405,10 +426,43 @@ export async function generateRentalContractFromTemplate(
   return Buffer.from(pdfBytes);
 }
 
+/** The `business_rules` app setting (the deductible lives there); null when it cannot be read. */
+export async function loadBusinessRules(): Promise<unknown> {
+  try {
+    const { storage } = await import("../storage");
+    return (await storage.getAppSettingByKey("business_rules"))?.value ?? null;
+  } catch (error) {
+    console.warn("[contract] business_rules could not be read; the deductible uses the defaults.", error);
+    return null;
+  }
+}
+
+/**
+ * The deductible as Instellingen > Bedrijfsregels shows it: the stored amount, or the
+ * form's own default (500 / 1000) when the rules were never saved.
+ */
+export function contractDeductibles(businessRules: unknown): { domestic: string; abroad: string } {
+  const rules = businessRules && typeof businessRules === "object" ? (businessRules as Record<string, unknown>) : {};
+  const amount = (value: unknown, fallback: string) => {
+    const text = value === null || value === undefined || String(value).trim() === "" ? fallback : String(value).trim();
+    return formatCurrencyNL(text.replace(",", "."));
+  };
+  return { domestic: amount(rules.eigenrisicoBinnenland, "500"), abroad: amount(rules.eigenrisicoBuitenland, "1000") };
+}
+
+/** The fuel level written down at pickup, in Dutch ("vol", "3/4", "leeg"). */
+export function contractFuelLevel(level: string | null | undefined): string {
+  const text = (level ?? "").trim();
+  const lower = text.toLowerCase();
+  if (lower === "full") return "vol";
+  if (lower === "empty") return "leeg";
+  return text;
+}
+
 /**
  * Prepare contract data from reservation
  */
-export function prepareContractData(reservation: Reservation) {
+export function prepareContractData(reservation: Reservation, businessRules: unknown = null) {
   const vehicle = reservation.vehicle || {
     licensePlate: "",
     brand: "",
@@ -448,6 +502,8 @@ export function prepareContractData(reservation: Reservation) {
     diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
   
+  const deductibles = contractDeductibles(businessRules);
+
   // Parse totalPrice as a number if it's a string
   const totalPrice = typeof reservation.totalPrice === 'string' 
     ? parseFloat(reservation.totalPrice) 
@@ -482,6 +538,20 @@ export function prepareContractData(reservation: Reservation) {
     endDate: endDate ? formatDateNL(endDate) : 'nader te bepalen',
     duration: formatDaysNL(diffDays),
     totalPrice: formatCurrency(totalPrice),
+    // Empty until the pickup is recorded, so a contract made earlier leaves room to write them in.
+    pickupMileage: reservation.pickupMileage === null || reservation.pickupMileage === undefined ? "" : formatKilometresNL(reservation.pickupMileage),
+    fuelLevelPickup: contractFuelLevel(reservation.fuelLevelPickup),
+    returnMileage: reservation.returnMileage === null || reservation.returnMileage === undefined ? "" : formatKilometresNL(reservation.returnMileage),
+    fuelLevelReturn: contractFuelLevel(reservation.fuelLevelReturn),
+    vehicleType: (vehicle as any).vehicleType || "",
+    fuelType: (vehicle as any).fuel || (vehicle as any).fuelType || "",
+    currentMileage: (vehicle as any).currentMileage === null || (vehicle as any).currentMileage === undefined ? "" : formatKilometresNL((vehicle as any).currentMileage),
+    currentFuelLevel: contractFuelLevel((vehicle as any).currentFuelLevel),
+    apkDate: (vehicle as any).apkDate ? formatDateNL(new Date((vehicle as any).apkDate)) : "",
+    customerEmail: (customer as any).email || "",
+    companyName: (customer as any).companyName || "",
+    deductibleDomestic: deductibles.domestic,
+    deductibleAbroad: deductibles.abroad,
     vehicleId: reservation.vehicleId || 0,  // Add vehicleId for document cache invalidation
   };
 }

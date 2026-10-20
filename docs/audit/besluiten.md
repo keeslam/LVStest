@@ -710,6 +710,20 @@ Kees wilde de snelle acties net zo instellen als de dashboardtegels: aan- en uit
 - **Breedte.** Minder dan 6 tegels vullen samen de hele rij.
 - **Zonder instelling.** Het dashboard blijft zoals het was: de bekende 6 tegels, en de rest als knoppen. Een actie die later wordt toegevoegd, komt aangevinkt onderaan bij de knoppen.
 
+### B-54 — Contract: km-stand, brandstof en eigen risico (20-10-2026)
+
+Kees koos uit de tweede lijst met suggesties punt 2. Met klikken koos hij deze velden: km-stand en brandstof bij ophalen, en het eigen risico. Vrije km en ophaaltijden koos hij niet.
+
+- **Nieuwe velden in de sjablooneditor:** Eigen risico binnenland en Eigen risico buitenland, als twee aparte velden. Kees zet ze zelf op zijn sjabloon.
+  - Het bedrag komt uit **Instellingen > Bedrijfsregels**.
+  - Zijn die regels nooit opgeslagen, dan gelden dezelfde standaardbedragen als het formulier toont: € 500 en € 1.000.
+- **Km-stand en brandstof bij ophalen** voorbeelden: "12.345 km", "vol", "3/4", "leeg".
+  - Is de auto nog niet opgehaald, dan blijven deze velden leeg, zodat ze met de hand ingevuld kunnen worden.
+- **Meegenomen:** de sjablooneditor bood al velden aan die op het contract niets printten. Die vullen nu wel:
+  - km-stand en brandstof bij ophalen en terugbrengen;
+  - voertuigtype, brandstoftype, huidige km-stand en brandstofniveau, APK-datum;
+  - e-mail en bedrijfsnaam van de klant.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).

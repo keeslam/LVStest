@@ -384,7 +384,9 @@
       "pickupMileage": "Kilometraj la preluare",
       "returnMileage": "Kilometraj la returnare",
       "fuelLevelPickup": "Nivelul de combustibil la preluare",
-      "fuelLevelReturn": "Nivelul de combustibil la returnare"
+      "fuelLevelReturn": "Nivelul de combustibil la returnare",
+      "deductibleDomestic": "Franșiză (în țară)",
+      "deductibleAbroad": "Franșiză (în străinătate)"
     },
     "backToDocuments": "Înapoi la documente",
     "createFirstTemplateTitle": "Creați primul șablon",

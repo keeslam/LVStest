@@ -377,7 +377,9 @@
       "pickupMileage": "Pickup Mileage",
       "returnMileage": "Return Mileage",
       "fuelLevelPickup": "Fuel Level at Pickup",
-      "fuelLevelReturn": "Fuel Level at Return"
+      "fuelLevelReturn": "Fuel Level at Return",
+      "deductibleDomestic": "Deductible (domestic)",
+      "deductibleAbroad": "Deductible (abroad)"
     },
     "backToDocuments": "Back to Documents",
     "createFirstTemplateTitle": "Create Your First Template",

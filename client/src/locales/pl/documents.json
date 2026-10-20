@@ -391,7 +391,9 @@
       "pickupMileage": "Przebieg przy odbiorze",
       "returnMileage": "Przebieg przy zwrocie",
       "fuelLevelPickup": "Poziom paliwa przy odbiorze",
-      "fuelLevelReturn": "Poziom paliwa przy zwrocie"
+      "fuelLevelReturn": "Poziom paliwa przy zwrocie",
+      "deductibleDomestic": "Udział własny (kraj)",
+      "deductibleAbroad": "Udział własny (zagranica)"
     },
     "backToDocuments": "Powrót do dokumentów",
     "createFirstTemplateTitle": "Utwórz pierwszy szablon",

@@ -377,7 +377,9 @@
       "pickupMileage": "Kilometerstand ophalen",
       "returnMileage": "Kilometerstand terugbrengen",
       "fuelLevelPickup": "Brandstofniveau bij ophalen",
-      "fuelLevelReturn": "Brandstofniveau bij terugbrengen"
+      "fuelLevelReturn": "Brandstofniveau bij terugbrengen",
+      "deductibleDomestic": "Eigen risico binnenland",
+      "deductibleAbroad": "Eigen risico buitenland"
     },
     "backToDocuments": "Terug naar documenten",
     "createFirstTemplateTitle": "Maak je eerste sjabloon",

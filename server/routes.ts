@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import { storage } from "./storage";
 import { ReportValidationError } from "./database-storage";
 import { fetchVehicleInfoByLicensePlate, RDWNotFoundError, RDWTimeoutError, RDWUpstreamError } from "./utils/rdw-api";
-import { generateRentalContractFromTemplate, prepareContractData, contractErrorCodeForRenderError } from "./utils/pdf-generator";
+import { generateRentalContractFromTemplate, prepareContractData, contractErrorCodeForRenderError, loadBusinessRules } from "./utils/pdf-generator";
 import { processInvoiceWithAI, generateInvoiceHash, validateParsedInvoice, type ParsedInvoice } from "./utils/invoice-scanner";
 import path from "path";
 import fs from "fs";
@@ -8066,7 +8066,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       // Use the same data preparation as the PDF generator
-      const contractData = prepareContractData(reservation);
+      const contractData = prepareContractData(reservation, await loadBusinessRules());
       
       // Return the contract data as JSON
       res.json(contractData);
