@@ -21,7 +21,7 @@ import { db } from "../db";
 import { damageCheckTemplates, pdfTemplates, documents } from "../../shared/schema";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureCustomer, createFixtureVehicle, createFixtureReservation, cleanupFixtures } from "./helpers/fixtures";
-import { generateRentalContractFromTemplate, pdfCarriesActiveContent, detectActivePdfContent } from "../utils/pdf-generator";
+import { generateRentalContractFromTemplate, pdfCarriesActiveContent, detectActivePdfContent, structuralActivePdfContent } from "../utils/pdf-generator";
 import { canvasFieldsSchema, templateFieldsSchema, MAX_TEMPLATE_PAGES } from "../../shared/template-fields";
 import { selectContractTemplate } from "../services/pdf-template-selection";
 
@@ -203,7 +203,9 @@ describe("FIX-P — a background may not smuggle code into every contract", () =
     expect(await detectActivePdfContent(await activeContentBackground())).toBeTruthy();
   });
 
-  it("BUG-180: uploading such a background is refused", async () => {
+  // Kees 2026-10-21: such a background is cleaned on upload instead of refused (a Word
+  // "open at full page" is an /OpenAction too); the stored file carries no active content.
+  it("BUG-180: uploading such a background stores a cleaned copy", async () => {
     const [template] = await db
       .insert(pdfTemplates)
       .values({ name: `${FIXTURE_PREFIX}active-content`, fields: [] as any })
@@ -212,8 +214,11 @@ describe("FIX-P — a background may not smuggle code into every contract", () =
     const res = await admin
       .post(`/api/pdf-templates/${template.id}/background`)
       .attach("background", await activeContentBackground(), "evil.pdf");
-    expect(res.status).toBe(400);
-    expect(res.body.message).toMatch(/JavaScript|automatic action/i);
+    expect(res.status).toBe(200);
+    const [after] = await db.select().from(pdfTemplates).where(eq(pdfTemplates.id, template.id));
+    expect(after.backgroundPath).toBeTruthy();
+    const stored = await fs.promises.readFile(path.join(uploadsDir, "templates", path.basename(after.backgroundPath!)));
+    expect(await structuralActivePdfContent(stored)).toBeNull();
   });
 
   it("BUG-193: a PNG renamed to .pdf is refused by content sniffing", async () => {

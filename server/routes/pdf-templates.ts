@@ -16,7 +16,7 @@ import fs from "fs";
 import { z } from "zod";
 import { insertPdfTemplateSchema, Reservation, UserPermission } from "../../shared/schema";
 import { templateFieldsSchema, coerceFieldArray } from "../../shared/template-fields";
-import { detectActivePdfContent } from "../utils/pdf-generator";
+import { detectActivePdfContent, stripActivePdfContent, structuralActivePdfContent } from "../utils/pdf-generator";
 import multer from "multer";
 import { hasPermission } from "../middleware/permissions.js";
 import { createSecureMulterFilter, validateFileBuffer } from "../utils/security/fileUploadSecurity";
@@ -424,7 +424,8 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
    * copied into every contract the template produced. The bytes decide what
    * the file is, and an active-content PDF is refused at the door.
    */
-  const rejectUnsafeBackground = async (bytes: Buffer, originalName: string): Promise<string | null> => {
+  // Kees 2026-10-21: returns the bytes to store (a PDF cleaned of active content) or a refusal.
+  const rejectUnsafeBackground = async (bytes: Buffer, originalName: string): Promise<string | { cleaned: Buffer }> => {
     const declared = path.extname(originalName).toLowerCase();
     const isPdf = bytes.length > 5 && bytes.slice(0, 5).toString('latin1') === '%PDF-';
     const isPng = bytes.length > 4 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
@@ -438,9 +439,16 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       return `This file is a ${actual.slice(1).toUpperCase()} but is named "${originalName}". Upload it with the right extension.`;
     }
     if (isPdf && (await detectActivePdfContent(bytes))) {
-      return 'This PDF contains document-level JavaScript or an automatic action. Export it without active content and upload it again.';
+      // Cleaned instead of refused; refused only when the cleaning did not take.
+      try {
+        const cleaned = await stripActivePdfContent(bytes);
+        if (!(await structuralActivePdfContent(cleaned))) return { cleaned };
+      } catch (error) {
+        console.warn('Background PDF could not be cleaned:', error);
+      }
+      return 'This PDF contains document-level JavaScript or an automatic action that could not be removed. Export it without active content and upload it again.';
     }
-    return null;
+    return { cleaned: bytes };
   };
 
   // Configure multer for template background uploads (memory storage) with enhanced security
@@ -481,10 +489,11 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
         return res.status(400).json({ message: bufferValidation.error });
       }
 
-      const backgroundRejection = await rejectUnsafeBackground(req.file.buffer, req.file.originalname);
-      if (backgroundRejection) {
-        return res.status(400).json({ message: backgroundRejection });
+      const backgroundCheck = await rejectUnsafeBackground(req.file.buffer, req.file.originalname);
+      if (typeof backgroundCheck === 'string') {
+        return res.status(400).json({ message: backgroundCheck });
       }
+      req.file.buffer = backgroundCheck.cleaned;
 
       // ALWAYS use filesystem storage (same as contract PDFs)
       // Works reliably on both Replit and Coolify/Docker
@@ -670,10 +679,11 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
         return res.status(400).json({ message: bufferValidation.error });
       }
 
-      const libraryRejection = await rejectUnsafeBackground(req.file.buffer, req.file.originalname);
-      if (libraryRejection) {
-        return res.status(400).json({ message: libraryRejection });
+      const libraryCheck = await rejectUnsafeBackground(req.file.buffer, req.file.originalname);
+      if (typeof libraryCheck === 'string') {
+        return res.status(400).json({ message: libraryCheck });
       }
+      req.file.buffer = libraryCheck.cleaned;
 
       // Save file to filesystem (same pattern as regular background upload)
       console.log('💾 Saving background to library filesystem');

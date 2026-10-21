@@ -1,4 +1,5 @@
 import { describeApiError } from "@/lib/api-error";
+import { uploadUrl } from "@/lib/upload-url";
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, Link } from 'wouter';
@@ -721,7 +722,7 @@ export default function DamageCheckTemplateCanvasEditor({
                       {currentTemplate?.backgroundPath ? (
                         <div className="flex items-center gap-2">
                           <img
-                            src={`/${currentTemplate.backgroundPreviewPath ?? currentTemplate.backgroundPath}`}
+                            src={`${uploadUrl((currentTemplate.backgroundPreviewPath ?? currentTemplate.backgroundPath)!)}`}
                             alt={t('templateEditorPage.currentBackgroundAlt')}
                             className="h-16 w-auto border rounded"
                           />
@@ -776,7 +777,7 @@ export default function DamageCheckTemplateCanvasEditor({
                       {backgroundLibrary.map(bg => (
                         <div key={bg.id} className="flex items-center justify-between gap-2 border rounded p-2">
                           <div className="flex items-center gap-2">
-                            <img src={`/${bg.previewPath}`} alt={bg.name} className="h-10 w-auto border rounded" />
+                            <img src={`${uploadUrl(bg.previewPath)}`} alt={bg.name} className="h-10 w-auto border rounded" />
                             <span className="text-xs">{bg.name}</span>
                           </div>
                           <div className="flex gap-1">
@@ -989,7 +990,7 @@ export default function DamageCheckTemplateCanvasEditor({
                   >
                     {currentTemplate?.backgroundPath && (
                       <img
-                        src={`/${currentTemplate.backgroundPreviewPath ?? currentTemplate.backgroundPath}`}
+                        src={`${uploadUrl((currentTemplate.backgroundPreviewPath ?? currentTemplate.backgroundPath)!)}`}
                         alt={t('templateEditorPage.backgroundAlt')}
                         style={{
                           position: 'absolute',

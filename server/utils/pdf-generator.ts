@@ -13,7 +13,7 @@ import { Reservation, PdfTemplate, VehicleTransport, TransportReportTemplate } f
 import { format } from "date-fns";
 import * as fs from 'fs';
 import * as path from 'path';
-import { PDFDocument, PDFName, rgb, StandardFonts, TextAlignment } from 'pdf-lib';
+import { PDFDict, PDFDocument, PDFName, rgb, StandardFonts, TextAlignment } from 'pdf-lib';
 import { formatReservationBarcode } from '../../shared/barcode';
 import { renderBarcodePng } from './barcode-png';
 import { resolveUploadsPath } from '../../shared/paths';
@@ -222,6 +222,43 @@ export function pdfCarriesActiveContent(bytes: Buffer): boolean {
  * write. Parsing the document and looking at the catalog catches those too.
  * Returns the offending key, or null when the file is clean.
  */
+/**
+ * Kees 2026-10-21: a background with an auto-action (Word's "open at full page", an
+ * /OpenAction) or document JavaScript was refused, and the raw byte scan above also hits
+ * /AA or /JS by chance inside compressed streams. Uploads are now cleaned instead: the
+ * catalog's /OpenAction and /AA, the JavaScript and EmbeddedFiles name trees and every
+ * page's /AA are removed and the PDF is saved again. Contracts embed the background's
+ * pages into a fresh document anyway (BUG-180), so nothing of this reached them; the
+ * cleaning keeps the stored file clean too.
+ */
+export async function stripActivePdfContent(bytes: Buffer): Promise<Buffer> {
+  const doc = await PDFDocument.load(bytes, { throwOnInvalidObject: false });
+  doc.catalog.delete(PDFName.of("OpenAction"));
+  doc.catalog.delete(PDFName.of("AA"));
+  const names = doc.catalog.lookupMaybe(PDFName.of("Names"), PDFDict);
+  if (names) {
+    names.delete(PDFName.of("JavaScript"));
+    names.delete(PDFName.of("EmbeddedFiles"));
+  }
+  for (const page of doc.getPages()) page.node.delete(PDFName.of("AA"));
+  return Buffer.from(await doc.save());
+}
+
+/** The parsed check only (no raw byte scan): what is really in the catalog. */
+export async function structuralActivePdfContent(bytes: Buffer): Promise<string | null> {
+  try {
+    const doc = await PDFDocument.load(bytes, { throwOnInvalidObject: false });
+    if (doc.catalog.get(PDFName.of("OpenAction"))) return "/OpenAction";
+    if (doc.catalog.get(PDFName.of("AA"))) return "/AA";
+    const names = doc.catalog.lookupMaybe(PDFName.of("Names"), PDFDict);
+    if (names && (names.get(PDFName.of("JavaScript")) || names.get(PDFName.of("EmbeddedFiles")))) return "/JavaScript";
+    if (doc.getPages().some((page) => page.node.get(PDFName.of("AA")))) return "/AA";
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function detectActivePdfContent(bytes: Buffer): Promise<string | null> {
   for (const key of ACTIVE_PDF_KEYS) {
     if (bytes.toString("latin1").includes(key)) return key;

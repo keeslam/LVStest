@@ -1,4 +1,5 @@
 import { notifyFileReady } from "@/lib/file-ready";
+import { uploadUrl } from "@/lib/upload-url";
 import { describeApiError } from "@/lib/api-error";
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from "react-i18next";
@@ -1686,7 +1687,7 @@ const TransportReportTemplateEditor = ({ onClose, onDirtyChange }: TransportRepo
                               // Preview path is a PNG image that can be displayed in CSS
                               // Add cache-busting parameter to force browser to reload when background changes
                               const timestamp = currentTemplate.updatedAt ? new Date(currentTemplate.updatedAt).getTime() : Date.now();
-                              const bgUrl = `/${currentTemplate.backgroundPreviewPath}?v=${timestamp}`;
+                              const bgUrl = `${uploadUrl(currentTemplate.backgroundPreviewPath)}?v=${timestamp}`;
                               console.log('🖼️ Loading preview image from:', bgUrl);
                               return showGrid ? 
                                 `repeating-linear-gradient(0deg, transparent, transparent ${gridSize * zoomLevel - 1}px, #e5e7eb ${gridSize * zoomLevel - 1}px, #e5e7eb ${gridSize * zoomLevel}px),
@@ -1697,7 +1698,7 @@ const TransportReportTemplateEditor = ({ onClose, onDirtyChange }: TransportRepo
                               // Fallback to backgroundPath for backwards compatibility (images only)
                               // Add cache-busting parameter to force browser to reload when background changes
                               const timestamp = currentTemplate.updatedAt ? new Date(currentTemplate.updatedAt).getTime() : Date.now();
-                              const bgUrl = `/${currentTemplate.backgroundPath}?v=${timestamp}`;
+                              const bgUrl = `${uploadUrl(currentTemplate.backgroundPath)}?v=${timestamp}`;
                               console.log('🖼️ Loading background (legacy) from:', bgUrl);
                               return showGrid ? 
                                 `repeating-linear-gradient(0deg, transparent, transparent ${gridSize * zoomLevel - 1}px, #e5e7eb ${gridSize * zoomLevel - 1}px, #e5e7eb ${gridSize * zoomLevel}px),
@@ -2184,7 +2185,7 @@ const TransportReportTemplateEditor = ({ onClose, onDirtyChange }: TransportRepo
                       {/* Thumbnail */}
                       <div className="aspect-[1/1.414] bg-gray-100 relative overflow-hidden">
                         <img 
-                          src={`/${bg.previewPath}?_cb=${Date.now()}`} 
+                          src={`${uploadUrl(bg.previewPath)}?_cb=${Date.now()}`} 
                           alt={bg.name}
                           className="w-full h-full object-contain"
                         />
