@@ -368,7 +368,11 @@
       "companyNameSaved": "O nome da empresa foi guardado.",
       "companyNameInvalid": "Introduza um nome com no máximo 100 caracteres, sem quebras de linha.",
       "companyNameSaveFailed": "Não foi possível guardar o nome da empresa.",
-      "timeZoneInvalid": "Este não é um fuso horário que a aplicação conheça."
+      "timeZoneInvalid": "Este não é um fuso horário que a aplicação conheça.",
+      "signingPlaceLabel": "Local de assinatura",
+      "signingPlaceHint": "Aparece no contrato em \"Assinado em\"",
+      "damageNoteLabel": "Texto para danos no veículo",
+      "damageNoteHint": "Aparece no contrato em \"Danos no veículo\", p. ex. \"Ver verificação de danos\""
     },
     "notifications": {
       "reminderTimingTitle": "Momento dos lembretes",

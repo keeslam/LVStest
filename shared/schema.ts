@@ -528,6 +528,9 @@ export const customers = pgTable("customers", {
   corporateDiscount: numeric("corporate_discount"), // Discount percentage for corporate clients
   paymentTermDays: integer("payment_term_days").default(30), // Payment terms in days
   creditLimit: numeric("credit_limit"), // Credit limit for corporate accounts
+  // Kees 2026-10-21: eigen risico per vehicle type, domestic and abroad (shared/customer-deductibles.ts).
+  // Written only through PUT /api/customers/:id/deductibles (omitted from the insert schema below).
+  deductibles: jsonb("deductibles"),
   
   // Multiple contacts for businesses
   primaryContactName: text("primary_contact_name"),
@@ -562,6 +565,7 @@ const optionalEmail = z.string().email("Invalid email address").nullable().optio
 
 export const insertCustomerSchema = createInsertSchema(customers).omit({
   id: true,
+  deductibles: true,
   createdAt: true,
   updatedAt: true,
   createdByUser: true,

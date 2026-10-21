@@ -355,5 +355,17 @@
     },
     "open": "Otwórz",
     "hint": "Można po prostu kontynuować; to ostrzeżenie, a nie blokada."
+  },
+  "deductibles": {
+    "title": "Udział własny",
+    "description": "Według rodzaju pojazdu, kraj i zagranica. Puste = kwota ogólna z ustawień. Umowa pokazuje kwotę dla rodzaju wynajętego auta.",
+    "type": "Rodzaj pojazdu",
+    "domestic": "Kraj (€)",
+    "abroad": "Zagranica (€)",
+    "general": "ogólna",
+    "otherRow": "Inne / bez rodzaju",
+    "saved": "Udział własny zapisany",
+    "saveFailed": "Zapis nie powiódł się",
+    "invalidAmount": "Podaj poprawną kwotę (lub zostaw puste)"
   }
 }

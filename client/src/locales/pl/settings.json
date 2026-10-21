@@ -370,7 +370,11 @@
       "companyNameSaved": "Nazwa firmy została zapisana.",
       "companyNameInvalid": "Wpisz nazwę o długości do 100 znaków, bez znaków końca wiersza.",
       "companyNameSaveFailed": "Nie udało się zapisać nazwy firmy.",
-      "timeZoneInvalid": "Aplikacja nie zna takiej strefy czasowej."
+      "timeZoneInvalid": "Aplikacja nie zna takiej strefy czasowej.",
+      "signingPlaceLabel": "Miejsce podpisania",
+      "signingPlaceHint": "Pojawia się w umowie przy \"Podpisano w\"",
+      "damageNoteLabel": "Tekst przy szkodach pojazdu",
+      "damageNoteHint": "Pojawia się w umowie przy \"Szkody pojazdu\", np. \"Zobacz kontrolę szkód\""
     },
     "notifications": {
       "reminderTimingTitle": "Czas wysyłania przypomnień",

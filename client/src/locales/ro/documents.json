@@ -386,7 +386,11 @@
       "fuelLevelPickup": "Nivelul de combustibil la preluare",
       "fuelLevelReturn": "Nivelul de combustibil la returnare",
       "deductibleDomestic": "Franșiză (în țară)",
-      "deductibleAbroad": "Franșiză (în străinătate)"
+      "deductibleAbroad": "Franșiză (în străinătate)",
+      "signatureLandlord": "Semnătura locatorului",
+      "signatureTenant": "Semnătura locatarului",
+      "signingPlace": "Semnat la",
+      "damageNote": "Daune la vehicul"
     },
     "backToDocuments": "Înapoi la documente",
     "createFirstTemplateTitle": "Creați primul șablon",

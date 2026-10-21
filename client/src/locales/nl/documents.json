@@ -379,7 +379,11 @@
       "fuelLevelPickup": "Brandstofniveau bij ophalen",
       "fuelLevelReturn": "Brandstofniveau bij terugbrengen",
       "deductibleDomestic": "Eigen risico binnenland",
-      "deductibleAbroad": "Eigen risico buitenland"
+      "deductibleAbroad": "Eigen risico buitenland",
+      "signatureLandlord": "Handtekening verhuurder",
+      "signatureTenant": "Handtekening huurder",
+      "signingPlace": "Getekend te",
+      "damageNote": "Schade aan voertuig"
     },
     "backToDocuments": "Terug naar documenten",
     "createFirstTemplateTitle": "Maak je eerste sjabloon",

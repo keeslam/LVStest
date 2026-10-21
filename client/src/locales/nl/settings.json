@@ -366,7 +366,11 @@
       "companyNameSaved": "De bedrijfsnaam is opgeslagen.",
       "companyNameInvalid": "Vul een naam in van maximaal 100 tekens, zonder regeleinden.",
       "companyNameSaveFailed": "De bedrijfsnaam kon niet worden opgeslagen.",
-      "timeZoneInvalid": "Dit is geen tijdzone die de app kent."
+      "timeZoneInvalid": "Dit is geen tijdzone die de app kent.",
+      "signingPlaceLabel": "Plaats van ondertekening",
+      "signingPlaceHint": "Komt op het contract bij \"Getekend te\"",
+      "damageNoteLabel": "Tekst bij schade aan voertuig",
+      "damageNoteHint": "Komt op het contract bij \"Schade aan voertuig\", bijvoorbeeld \"Zie schadecheck\""
     },
     "notifications": {
       "reminderTimingTitle": "Timing van herinneringen",

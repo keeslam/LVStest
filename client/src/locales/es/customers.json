@@ -347,5 +347,17 @@
     },
     "open": "Abrir",
     "hint": "Puede continuar sin problema; es una advertencia, no un bloqueo."
+  },
+  "deductibles": {
+    "title": "Franquicia",
+    "description": "Por tipo de vehículo, nacional y extranjero. Vacío = el importe general de los ajustes. El contrato muestra el importe para el tipo del coche alquilado.",
+    "type": "Tipo de vehículo",
+    "domestic": "Nacional (€)",
+    "abroad": "Extranjero (€)",
+    "general": "general",
+    "otherRow": "Otro / sin tipo",
+    "saved": "Franquicia guardada",
+    "saveFailed": "No se pudo guardar",
+    "invalidAmount": "Indique un importe válido (o déjelo vacío)"
   }
 }

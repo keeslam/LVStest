@@ -347,5 +347,17 @@
     },
     "open": "Deschideți",
     "hint": "Puteți continua; acesta este un avertisment, nu o blocare."
+  },
+  "deductibles": {
+    "title": "Franșiză",
+    "description": "Pe tip de vehicul, în țară și în străinătate. Gol = suma generală din setări. Contractul arată suma pentru tipul mașinii închiriate.",
+    "type": "Tip vehicul",
+    "domestic": "În țară (€)",
+    "abroad": "În străinătate (€)",
+    "general": "general",
+    "otherRow": "Altele / fără tip",
+    "saved": "Franșiza a fost salvată",
+    "saveFailed": "Salvarea a eșuat",
+    "invalidAmount": "Introduceți o sumă validă (sau lăsați gol)"
   }
 }

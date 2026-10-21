@@ -1,4 +1,6 @@
 import { formatDate } from "@/lib/format-utils";
+import { StaffSignatureCard } from "@/components/dialogs/staff-signature-card";
+import { PenLine } from "lucide-react";
 import { v } from "@/lib/zod-i18n";
 import { describeApiError } from "@/lib/api-error";
 import { useState, useEffect } from "react";
@@ -161,7 +163,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
         </DialogHeader>
 
         {user && (<Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile" data-testid="tab-profile">
               <UserIcon className="h-4 w-4 mr-1" />
               {t('profileDialog.tabs.profile')}
@@ -173,6 +175,11 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
             <TabsTrigger value="password" data-testid="tab-change-password">
               <KeyRound className="h-4 w-4 mr-1" />
               {t('profileDialog.tabs.password')}
+            </TabsTrigger>
+            {/* Kees 2026-10-21: your signature for the contracts you make. */}
+            <TabsTrigger value="signature" data-testid="tab-signature">
+              <PenLine className="h-4 w-4 mr-1" />
+              {t('profileDialog.tabs.signature')}
             </TabsTrigger>
           </TabsList>
 
@@ -400,6 +407,9 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
             </Form>
           </TabsContent>
 
+          <TabsContent value="signature" className="mt-4">
+            <StaffSignatureCard />
+          </TabsContent>
         </Tabs>)}
       </DialogContent>
     </Dialog>

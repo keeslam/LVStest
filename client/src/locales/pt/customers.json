@@ -347,5 +347,17 @@
     },
     "open": "Abrir",
     "hint": "Pode continuar normalmente; isto é um aviso, não um bloqueio."
+  },
+  "deductibles": {
+    "title": "Franquia",
+    "description": "Por tipo de veículo, nacional e estrangeiro. Vazio = o valor geral das definições. O contrato mostra o valor para o tipo do carro alugado.",
+    "type": "Tipo de veículo",
+    "domestic": "Nacional (€)",
+    "abroad": "Estrangeiro (€)",
+    "general": "geral",
+    "otherRow": "Outro / sem tipo",
+    "saved": "Franquia guardada",
+    "saveFailed": "Falha ao guardar",
+    "invalidAmount": "Indique um valor válido (ou deixe vazio)"
   }
 }

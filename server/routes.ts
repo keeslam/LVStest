@@ -3096,6 +3096,25 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Update customer
+  // Kees 2026-10-21: eigen risico per vehicle type for this customer (null clears it).
+  app.put("/api/customers/:id/deductibles", hasPermission(UserPermission.MANAGE_CUSTOMERS), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ message: "Invalid customer ID" });
+      const { isValidCustomerDeductibles } = await import("../shared/customer-deductibles");
+      const value = req.body?.deductibles ?? null;
+      if (!isValidCustomerDeductibles(value)) return res.status(400).json({ message: "Invalid deductibles", code: "INVALID_DEDUCTIBLES" });
+      const { customers } = await import("../shared/schema");
+      const [updated] = await db.update(customers).set({ deductibles: value, updatedAt: new Date(), updatedBy: req.user?.username ?? null })
+        .where(eq(customers.id, id)).returning();
+      if (!updated) return res.status(404).json({ message: "Customer not found" });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error saving customer deductibles:", error);
+      res.status(500).json({ message: "Error saving the deductible" });
+    }
+  });
+
   app.patch("/api/customers/:id", hasPermission(UserPermission.MANAGE_CUSTOMERS), async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {

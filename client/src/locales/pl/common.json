@@ -574,5 +574,19 @@
     "houseNumber": "Numer domu",
     "addition": "Dodatek",
     "street": "Ulica"
+  },
+  "signature": {
+    "description": "Ten podpis pojawia się na umowach, które tworzysz, w polu \"Podpis wynajmującego\" szablonu.",
+    "current": "Obecny podpis",
+    "none": "Nie ustawiono jeszcze podpisu.",
+    "remove": "Usuń",
+    "draw": "Narysuj swój podpis",
+    "clear": "Wyczyść",
+    "saveDrawn": "Zapisz narysowany podpis",
+    "upload": "Prześlij obraz",
+    "saved": "Podpis zapisany",
+    "saveFailed": "Zapis nie powiódł się",
+    "removed": "Podpis usunięty",
+    "notImage": "Ten plik nie jest obrazem"
   }
 }

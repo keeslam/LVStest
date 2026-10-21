@@ -386,7 +386,11 @@
       "fuelLevelPickup": "Nível de combustível no levantamento",
       "fuelLevelReturn": "Nível de combustível na devolução",
       "deductibleDomestic": "Franquia (nacional)",
-      "deductibleAbroad": "Franquia (estrangeiro)"
+      "deductibleAbroad": "Franquia (estrangeiro)",
+      "signatureLandlord": "Assinatura do locador",
+      "signatureTenant": "Assinatura do locatário",
+      "signingPlace": "Assinado em",
+      "damageNote": "Danos no veículo"
     },
     "backToDocuments": "Voltar aos documentos",
     "createFirstTemplateTitle": "Crie o seu primeiro modelo",

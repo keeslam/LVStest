@@ -566,5 +566,19 @@
     "houseNumber": "House number",
     "addition": "Addition",
     "street": "Street"
+  },
+  "signature": {
+    "description": "This signature goes on the contracts you make, in the template's \"Landlord signature\" box.",
+    "current": "Current signature",
+    "none": "No signature set yet.",
+    "remove": "Remove",
+    "draw": "Draw your signature",
+    "clear": "Clear",
+    "saveDrawn": "Save drawn signature",
+    "upload": "Upload picture",
+    "saved": "Signature saved",
+    "saveFailed": "Saving failed",
+    "removed": "Signature removed",
+    "notImage": "That file is not a picture"
   }
 }

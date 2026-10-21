@@ -570,5 +570,19 @@
     "houseNumber": "Número",
     "addition": "Complemento",
     "street": "Calle"
+  },
+  "signature": {
+    "description": "Esta firma aparece en los contratos que usted crea, en el recuadro \"Firma del arrendador\" de la plantilla.",
+    "current": "Firma actual",
+    "none": "Aún no hay firma.",
+    "remove": "Eliminar",
+    "draw": "Dibuje su firma",
+    "clear": "Borrar",
+    "saveDrawn": "Guardar firma dibujada",
+    "upload": "Subir imagen",
+    "saved": "Firma guardada",
+    "saveFailed": "No se pudo guardar",
+    "removed": "Firma eliminada",
+    "notImage": "Ese archivo no es una imagen"
   }
 }

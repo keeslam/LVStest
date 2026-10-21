@@ -347,5 +347,17 @@
     },
     "open": "Aprire",
     "hint": "Può procedere comunque; questo è un avviso, non un blocco."
+  },
+  "deductibles": {
+    "title": "Franchigia",
+    "description": "Per tipo di veicolo, nazionale ed estero. Vuoto = l'importo generale delle impostazioni. Il contratto mostra l'importo per il tipo dell'auto noleggiata.",
+    "type": "Tipo di veicolo",
+    "domestic": "Nazionale (€)",
+    "abroad": "Estero (€)",
+    "general": "generale",
+    "otherRow": "Altro / nessun tipo",
+    "saved": "Franchigia salvata",
+    "saveFailed": "Salvataggio non riuscito",
+    "invalidAmount": "Inserisci un importo valido (o lascia vuoto)"
   }
 }

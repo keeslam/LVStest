@@ -1,4 +1,5 @@
 import { describeApiError } from "@/lib/api-error";
+import { CustomerDeductiblesCard } from "@/components/customers/customer-deductibles-card";
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -1102,6 +1103,13 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
               />
             </CardContent>
           </Card>
+
+          {/* Kees 2026-10-21: eigen risico per vehicle type for this customer. */}
+          {customer && (
+            <div className="mt-6">
+              <CustomerDeductiblesCard customer={customer} />
+            </div>
+          )}
         </TabsContent>
         
         {/* Drivers Tab */}

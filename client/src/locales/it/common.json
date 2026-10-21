@@ -570,5 +570,19 @@
     "houseNumber": "Numero civico",
     "addition": "Aggiunta",
     "street": "Via"
+  },
+  "signature": {
+    "description": "Questa firma compare sui contratti che crei, nel riquadro \"Firma del locatore\" del modello.",
+    "current": "Firma attuale",
+    "none": "Nessuna firma impostata.",
+    "remove": "Rimuovi",
+    "draw": "Disegna la tua firma",
+    "clear": "Cancella",
+    "saveDrawn": "Salva firma disegnata",
+    "upload": "Carica immagine",
+    "saved": "Firma salvata",
+    "saveFailed": "Salvataggio non riuscito",
+    "removed": "Firma rimossa",
+    "notImage": "Quel file non è un'immagine"
   }
 }

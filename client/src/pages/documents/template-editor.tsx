@@ -117,7 +117,7 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
     'customerEmail', 'companyName', 'driverLicense', 'driverName', 'driverFirstName',
     'driverLastName', 'driverEmail', 'driverPhone', 'driverLicenseNumber', 'driverLicenseExpiry',
     'startDate', 'endDate', 'duration', 'totalPrice', 'pickupMileage', 'returnMileage',
-    'fuelLevelPickup', 'fuelLevelReturn', 'deductibleDomestic', 'deductibleAbroad',
+    'fuelLevelPickup', 'fuelLevelReturn', 'deductibleDomestic', 'deductibleAbroad', 'signingPlace', 'damageNote', 'signatureLandlord', 'signatureTenant',
   ];
   const [templates, setTemplates] = useState<Template[]>([]);
   const [currentTemplate, setCurrentTemplate] = useState<Template | null>(null);

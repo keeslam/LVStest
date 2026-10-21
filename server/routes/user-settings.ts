@@ -11,12 +11,15 @@ import { storage } from "../storage";
 import { userSettings } from "../../shared/schema";
 import { DASHBOARD_TILES_KEY, isValidDashboardTilesValue } from "../../shared/dashboard-tiles";
 import { QUICK_ACTIONS_KEY, isValidQuickActionsValue } from "../../shared/quick-actions-layout";
+import { STAFF_SIGNATURE_KEY, isValidStaffSignature } from "../../shared/staff-signature";
 import type { RouteDeps } from "./deps";
 
 /** The keys a user may keep for themselves, each with its own check. */
 const USER_SETTING_RULES: Record<string, (value: unknown) => boolean> = {
   [DASHBOARD_TILES_KEY]: isValidDashboardTilesValue,
   [QUICK_ACTIONS_KEY]: isValidQuickActionsValue,
+  // Kees 2026-10-21: your own signature for the contracts you make (no standard).
+  [STAFF_SIGNATURE_KEY]: isValidStaffSignature,
 };
 
 export function registerUserSettingRoutes(app: Express, deps: RouteDeps): void {
@@ -34,7 +37,7 @@ export function registerUserSettingRoutes(app: Express, deps: RouteDeps): void {
       const userId = req.user!.id;
       const [own] = await db.select().from(userSettings).where(and(eq(userSettings.userId, userId), eq(userSettings.key, req.params.key)));
       if (own) return res.json({ value: own.value, source: "user" });
-      const standard = await storage.getAppSettingByKey(req.params.key);
+      const standard = req.params.key === STAFF_SIGNATURE_KEY ? null : await storage.getAppSettingByKey(req.params.key);
       res.json({ value: standard?.value ?? null, source: "standard" });
     } catch (error) {
       console.error("Error reading user setting:", error);

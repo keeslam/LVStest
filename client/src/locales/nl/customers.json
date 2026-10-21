@@ -339,5 +339,17 @@
     },
     "open": "Openen",
     "hint": "Je kunt gewoon doorgaan; dit is een waarschuwing, geen blokkade."
+  },
+  "deductibles": {
+    "title": "Eigen risico",
+    "description": "Per voertuigsoort, binnenland en buitenland. Leeg = het algemene bedrag uit de instellingen. Het contract toont het bedrag voor de soort van de gehuurde auto.",
+    "type": "Voertuigsoort",
+    "domestic": "Binnenland (€)",
+    "abroad": "Buitenland (€)",
+    "general": "algemeen",
+    "otherRow": "Overige / geen soort",
+    "saved": "Eigen risico opgeslagen",
+    "saveFailed": "Opslaan mislukt",
+    "invalidAmount": "Vul een geldig bedrag in (of laat leeg)"
   }
 }

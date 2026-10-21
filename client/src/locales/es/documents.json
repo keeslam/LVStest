@@ -386,7 +386,11 @@
       "fuelLevelPickup": "Nivel de combustible en la recogida",
       "fuelLevelReturn": "Nivel de combustible en la devolución",
       "deductibleDomestic": "Franquicia (nacional)",
-      "deductibleAbroad": "Franquicia (extranjero)"
+      "deductibleAbroad": "Franquicia (extranjero)",
+      "signatureLandlord": "Firma del arrendador",
+      "signatureTenant": "Firma del arrendatario",
+      "signingPlace": "Firmado en",
+      "damageNote": "Daños del vehículo"
     },
     "backToDocuments": "Volver a documentos",
     "createFirstTemplateTitle": "Cree su primera plantilla",

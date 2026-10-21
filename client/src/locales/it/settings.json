@@ -368,7 +368,11 @@
       "companyNameSaved": "Il nome dell’azienda è stato salvato.",
       "companyNameInvalid": "Inserisca un nome di al massimo 100 caratteri, senza ritorni a capo.",
       "companyNameSaveFailed": "Non è stato possibile salvare il nome dell’azienda.",
-      "timeZoneInvalid": "Questo non è un fuso orario noto all’app."
+      "timeZoneInvalid": "Questo non è un fuso orario noto all’app.",
+      "signingPlaceLabel": "Luogo di firma",
+      "signingPlaceHint": "Compare nel contratto in \"Firmato a\"",
+      "damageNoteLabel": "Testo per danni al veicolo",
+      "damageNoteHint": "Compare nel contratto in \"Danni al veicolo\", es. \"Vedi controllo danni\""
     },
     "notifications": {
       "reminderTimingTitle": "Tempistica dei promemoria",

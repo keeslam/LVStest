@@ -339,5 +339,17 @@
     },
     "open": "Open",
     "hint": "You can continue; this is a warning, not a block."
+  },
+  "deductibles": {
+    "title": "Deductible",
+    "description": "Per vehicle type, domestic and abroad. Empty = the general amount from the settings. The contract shows the amount for the rented car's type.",
+    "type": "Vehicle type",
+    "domestic": "Domestic (€)",
+    "abroad": "Abroad (€)",
+    "general": "general",
+    "otherRow": "Other / no type",
+    "saved": "Deductible saved",
+    "saveFailed": "Saving failed",
+    "invalidAmount": "Enter a valid amount (or leave empty)"
   }
 }

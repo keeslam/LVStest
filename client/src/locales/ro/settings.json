@@ -368,7 +368,11 @@
       "companyNameSaved": "Numele firmei a fost salvat.",
       "companyNameInvalid": "Introduceți un nume de maximum 100 de caractere, fără întreruperi de rând.",
       "companyNameSaveFailed": "Numele firmei nu a putut fi salvat.",
-      "timeZoneInvalid": "Acesta nu este un fus orar cunoscut de aplicație."
+      "timeZoneInvalid": "Acesta nu este un fus orar cunoscut de aplicație.",
+      "signingPlaceLabel": "Locul semnării",
+      "signingPlaceHint": "Apare pe contract la \"Semnat la\"",
+      "damageNoteLabel": "Text pentru daune la vehicul",
+      "damageNoteHint": "Apare pe contract la \"Daune la vehicul\", de ex. \"Vezi verificarea daunelor\""
     },
     "notifications": {
       "reminderTimingTitle": "Momentul mementourilor",

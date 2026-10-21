@@ -1,4 +1,5 @@
 import type { Express, RequestHandler } from 'express';
+import { requestUserContext } from "../services/request-user";
 import { auditMutations } from './audit';
 import { hasPermission } from './permissions';
 import { UserPermission } from '../../shared/schema';
@@ -28,6 +29,8 @@ import keyAuditsRoutes from '../routes/key-audits';
  * portal routes (the portal keeps its own activity log).
  */
 export function mountStaffRouters(app: Express, requireAuth: RequestHandler): void {
+  // Kees 2026-10-21: who makes the request, for the landlord signature on a contract.
+  app.use(requestUserContext);
   app.use(auditMutations);
 
   app.use('/api/notifications', requireAuth, hasPermission(UserPermission.MANAGE_NOTIFICATIONS), notificationRoutes);

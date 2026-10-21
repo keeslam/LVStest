@@ -3,6 +3,10 @@
  * Using the ELENA AVL ALL contract template or custom templates
  */
 
+import { DEFAULT_SIGNATURE_BOX, SIGNATURE_LANDLORD_SOURCE, SIGNATURE_SOURCES, SIGNATURE_TENANT_SOURCE, fitInBox, tenantSignatureKeyword, type SignatureBox } from "../../shared/contract-signature-box";
+import { STAFF_SIGNATURE_KEY, isValidStaffSignature } from "../../shared/staff-signature";
+import { currentRequestUserId } from "../services/request-user";
+import { customerDeductibleFor } from "../../shared/customer-deductibles";
 import { Reservation, PdfTemplate, VehicleTransport, TransportReportTemplate } from "../../shared/schema";
 // Only the contract *number* still uses date-fns (a yyyyMMdd stamp); every
 // human-readable date goes through ./dutch-format below (besluiten B-18).
@@ -127,6 +131,8 @@ const CONTRACT_FIELD_SOURCES: Record<string, keyof ContractData> = {
   // Kees, 2026-10-20 (round 2, punt 2): the deductible, and the readings at pickup.
   deductibleDomestic: "deductibleDomestic",
   deductibleAbroad: "deductibleAbroad",
+  signingPlace: "signingPlace",
+  damageNote: "damageNote",
   // The template editor has offered these since long before the renderer knew
   // them, so a placed field printed nothing; each now has a value.
   pickupMileage: "pickupMileage",
@@ -370,7 +376,24 @@ export async function generateRentalContractFromTemplate(
   const PADDING_X = 6;
   const PADDING_Y = 1;
 
+  // Kees 2026-10-21: signature boxes. The landlord's is the signature of whoever generates
+  // the contract; the tenant's box is only recorded, for the portal signing (contract-signature-box.ts).
+  const landlordPng = fields.some((f) => f.source === SIGNATURE_LANDLORD_SOURCE) ? await loadStaffSignaturePng(currentRequestUserId()) : null;
+  const landlordImage = landlordPng ? await pdfDoc.embedPng(landlordPng).catch(() => null) : null;
+  let tenantBox: SignatureBox | null = null;
+
   for (const field of fields) {
+    if (field.source && SIGNATURE_SOURCES.has(field.source)) {
+      const box: SignatureBox = {
+        x: field.x,
+        y: PAGE_HEIGHT - field.y - (field.height || DEFAULT_SIGNATURE_BOX.height),
+        width: field.width || DEFAULT_SIGNATURE_BOX.width,
+        height: field.height || DEFAULT_SIGNATURE_BOX.height,
+      };
+      if (field.source === SIGNATURE_TENANT_SOURCE) tenantBox = box;
+      else if (landlordImage) page.drawImage(landlordImage, fitInBox(landlordImage.width, landlordImage.height, box));
+      continue;
+    }
     const raw = resolveContractFieldValue(field.source, contractData);
     if (raw === "") continue;
     const value = sanitizeForWinAnsi(raw, `contract field "${field.source}"`);
@@ -422,8 +445,26 @@ export async function generateRentalContractFromTemplate(
     console.warn('Contract barcode skipped:', e);
   }
 
+  if (tenantBox) pdfDoc.setKeywords([tenantSignatureKeyword(tenantBox)]);
+
   const pdfBytes = await pdfDoc.save();
   return Buffer.from(pdfBytes);
+}
+
+/** Kees 2026-10-21: the PNG a staff member set in Profiel > Handtekening, or null. */
+async function loadStaffSignaturePng(userId: number | null): Promise<Buffer | null> {
+  if (!userId) return null;
+  try {
+    const { db } = await import("../db");
+    const { userSettings } = await import("../../shared/schema");
+    const { and, eq } = await import("drizzle-orm");
+    const [row] = await db.select().from(userSettings).where(and(eq(userSettings.userId, userId), eq(userSettings.key, STAFF_SIGNATURE_KEY)));
+    if (!row || !isValidStaffSignature(row.value)) return null;
+    return Buffer.from(row.value.png.split(",")[1], "base64");
+  } catch (error) {
+    console.warn("[contract] the staff signature could not be read; the box stays empty.", error);
+    return null;
+  }
 }
 
 /** The `business_rules` app setting (the deductible lives there); null when it cannot be read. */
@@ -441,13 +482,29 @@ export async function loadBusinessRules(): Promise<unknown> {
  * The deductible as Instellingen > Bedrijfsregels shows it: the stored amount, or the
  * form's own default (500 / 1000) when the rules were never saved.
  */
-export function contractDeductibles(businessRules: unknown): { domestic: string; abroad: string } {
+export function contractDeductibles(
+  businessRules: unknown,
+  customerDeductibles?: unknown,
+  vehicleType?: string | null,
+): { domestic: string; abroad: string } {
   const rules = businessRules && typeof businessRules === "object" ? (businessRules as Record<string, unknown>) : {};
   const amount = (value: unknown, fallback: string) => {
     const text = value === null || value === undefined || String(value).trim() === "" ? fallback : String(value).trim();
     return formatCurrencyNL(text.replace(",", "."));
   };
-  return { domestic: amount(rules.eigenrisicoBinnenland, "500"), abroad: amount(rules.eigenrisicoBuitenland, "1000") };
+  // Kees 2026-10-21: the customer's own amount for this vehicle type wins; empty falls back.
+  const own = customerDeductibleFor(customerDeductibles, vehicleType);
+  return {
+    domestic: own.domestic !== null ? formatCurrencyNL(own.domestic) : amount(rules.eigenrisicoBinnenland, "500"),
+    abroad: own.abroad !== null ? formatCurrencyNL(own.abroad) : amount(rules.eigenrisicoBuitenland, "1000"),
+  };
+}
+
+/** Kees 2026-10-21: "Getekend te" (default Zuidland) and the fixed damage line ("Zie schadecheck"). */
+export function contractBusinessTexts(businessRules: unknown): { signingPlace: string; damageNote: string } {
+  const rules = businessRules && typeof businessRules === "object" ? (businessRules as Record<string, unknown>) : {};
+  const text = (value: unknown, fallback: string) => (typeof value === "string" && value.trim() ? value.trim() : fallback);
+  return { signingPlace: text(rules.signingPlace, "Zuidland"), damageNote: text(rules.damageNoteText, "Zie schadecheck") };
 }
 
 /** The fuel level written down at pickup, in Dutch ("vol", "3/4", "leeg"). */
@@ -502,7 +559,8 @@ export function prepareContractData(reservation: Reservation, businessRules: unk
     diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
   
-  const deductibles = contractDeductibles(businessRules);
+  const deductibles = contractDeductibles(businessRules, (customer as any).deductibles, (vehicle as any).vehicleType);
+  const businessTexts = contractBusinessTexts(businessRules);
 
   // Parse totalPrice as a number if it's a string
   const totalPrice = typeof reservation.totalPrice === 'string' 
@@ -552,6 +610,8 @@ export function prepareContractData(reservation: Reservation, businessRules: unk
     companyName: (customer as any).companyName || "",
     deductibleDomestic: deductibles.domestic,
     deductibleAbroad: deductibles.abroad,
+    signingPlace: businessTexts.signingPlace,
+    damageNote: businessTexts.damageNote,
     vehicleId: reservation.vehicleId || 0,  // Add vehicleId for document cache invalidation
   };
 }

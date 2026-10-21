@@ -814,6 +814,23 @@ Kees wilde dat ieder zijn eigen dashboard kan indelen: welke tegels en snelle ac
   - Die standaard is niet meer te wijzigen.
 - **Terug naar standaard.** Deze knop staat alleen in App-instellingen > Dashboard, niet onder het tandwieltje (Kees). De eigen indeling verdwijnt en de standaard geldt weer.
 
+### B-61 — Contract: getekend te, schade, handtekeningen en eigen risico per klant (21-10-2026)
+
+Kees koos met klikken:
+
+- **Getekend te.** Nieuw veld in de sjablooneditor. De plaats komt uit **Bedrijfsregels > Plaats van ondertekening** (standaard Zuidland).
+- **Schade aan voertuig.** Nieuw veld met een vaste tekst uit Bedrijfsregels, standaard "Zie schadecheck". Kees koos "altijd zie schadecheck".
+- **Handtekening verhuurder.** Iedere medewerker zet zijn eigen handtekening bij **Profiel > Handtekening**, getekend of als geüploade afbeelding.
+  - Het veld "Handtekening verhuurder" toont die van de medewerker die het contract maakt.
+  - Heeft die nog geen handtekening, dan blijft het vak leeg.
+- **Handtekening huurder.** Het veld "Handtekening huurder" blijft bij het maken leeg; de plek wordt in het PDF bewaard.
+  - Tekent de klant in het portaal, dan komt zijn handtekening in dat vak. De bewijspagina blijft.
+  - Bij contracten van vóór deze wijziging staat de handtekening alleen op de bewijspagina.
+- **Grootte van de vakken.** Een handtekeningvak is 170 x 55 pt, gerekend vanaf de linkerbovenhoek van het veld.
+- **Eigen risico per klant.** Bij de klant per voertuigsoort een bedrag binnenland en buitenland.
+  - Het contract toont het bedrag voor de soort van de gehuurde auto.
+  - Leeg betekent het algemene bedrag uit Bedrijfsregels.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).

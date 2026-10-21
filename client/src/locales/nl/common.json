@@ -566,5 +566,19 @@
     "houseNumber": "Huisnummer",
     "addition": "Toevoeging",
     "street": "Straat"
+  },
+  "signature": {
+    "description": "Deze handtekening komt op de contracten die jij maakt, in het vak \"Handtekening verhuurder\" van het contractsjabloon.",
+    "current": "Huidige handtekening",
+    "none": "Nog geen handtekening ingesteld.",
+    "remove": "Verwijderen",
+    "draw": "Teken je handtekening",
+    "clear": "Wissen",
+    "saveDrawn": "Getekende handtekening opslaan",
+    "upload": "Afbeelding uploaden",
+    "saved": "Handtekening opgeslagen",
+    "saveFailed": "Opslaan mislukt",
+    "removed": "Handtekening verwijderd",
+    "notImage": "Dat bestand is geen afbeelding"
   }
 }

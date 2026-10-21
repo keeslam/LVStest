@@ -570,5 +570,19 @@
     "houseNumber": "Número da porta",
     "addition": "Complemento",
     "street": "Rua"
+  },
+  "signature": {
+    "description": "Esta assinatura aparece nos contratos que cria, no campo \"Assinatura do locador\" do modelo.",
+    "current": "Assinatura atual",
+    "none": "Ainda sem assinatura.",
+    "remove": "Remover",
+    "draw": "Desenhe a sua assinatura",
+    "clear": "Limpar",
+    "saveDrawn": "Guardar assinatura desenhada",
+    "upload": "Carregar imagem",
+    "saved": "Assinatura guardada",
+    "saveFailed": "Falha ao guardar",
+    "removed": "Assinatura removida",
+    "notImage": "Esse ficheiro não é uma imagem"
   }
 }

@@ -379,7 +379,11 @@
       "fuelLevelPickup": "Fuel Level at Pickup",
       "fuelLevelReturn": "Fuel Level at Return",
       "deductibleDomestic": "Deductible (domestic)",
-      "deductibleAbroad": "Deductible (abroad)"
+      "deductibleAbroad": "Deductible (abroad)",
+      "signatureLandlord": "Landlord signature",
+      "signatureTenant": "Tenant signature",
+      "signingPlace": "Signed at",
+      "damageNote": "Damage to vehicle"
     },
     "backToDocuments": "Back to Documents",
     "createFirstTemplateTitle": "Create Your First Template",

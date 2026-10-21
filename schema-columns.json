@@ -876,6 +876,13 @@
         "default": null
       },
       {
+        "name": "deductibles",
+        "type": "jsonb",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
         "name": "primary_contact_name",
         "type": "text",
         "notNull": false,

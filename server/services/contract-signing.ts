@@ -14,6 +14,7 @@
  *  - one signature per document, enforced by a unique index before any file is written;
  *  - the audit row keeps both hashes, so staff and portal can show that the files did not change.
  */
+import { fitInBox, tenantSignatureBoxFrom } from "../../shared/contract-signature-box";
 import crypto from "crypto";
 import fs from "fs";
 import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
@@ -143,6 +144,12 @@ export async function buildSignedPdf(original: Buffer, signaturePng: Buffer, inf
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const image = await pdf.embedPng(signaturePng);
+  // Kees 2026-10-21: the customer's signature also goes into the template's "Handtekening
+  // huurder" box, recorded in the contract's keywords when it was made (older contracts have none).
+  const tenantBox = info.kind === "contract" ? tenantSignatureBoxFrom(pdf.getKeywords()) : null;
+  if (tenantBox && pdf.getPageCount() > 0) {
+    pdf.getPage(0).drawImage(image, fitInBox(image.width, image.height, tenantBox));
+  }
   const page = pdf.addPage([595.28, 841.89]);
   const left = 56;
   const width = 595.28 - left * 2;

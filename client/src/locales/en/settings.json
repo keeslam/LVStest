@@ -366,7 +366,11 @@
       "companyNameSaved": "The company name has been saved.",
       "companyNameInvalid": "Enter a name of at most 100 characters, without line breaks.",
       "companyNameSaveFailed": "The company name could not be saved.",
-      "timeZoneInvalid": "That is not a time zone the app knows."
+      "timeZoneInvalid": "That is not a time zone the app knows.",
+      "signingPlaceLabel": "Place of signing",
+      "signingPlaceHint": "Printed on the contract at \"Signed at\"",
+      "damageNoteLabel": "Text for damage to vehicle",
+      "damageNoteHint": "Printed on the contract at \"Damage to vehicle\", e.g. \"See damage check\""
     },
     "notifications": {
       "reminderTimingTitle": "Reminder Timing",

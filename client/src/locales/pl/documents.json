@@ -393,7 +393,11 @@
       "fuelLevelPickup": "Poziom paliwa przy odbiorze",
       "fuelLevelReturn": "Poziom paliwa przy zwrocie",
       "deductibleDomestic": "Udział własny (kraj)",
-      "deductibleAbroad": "Udział własny (zagranica)"
+      "deductibleAbroad": "Udział własny (zagranica)",
+      "signatureLandlord": "Podpis wynajmującego",
+      "signatureTenant": "Podpis najemcy",
+      "signingPlace": "Podpisano w",
+      "damageNote": "Szkody pojazdu"
     },
     "backToDocuments": "Powrót do dokumentów",
     "createFirstTemplateTitle": "Utwórz pierwszy szablon",

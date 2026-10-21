@@ -386,7 +386,11 @@
       "fuelLevelPickup": "Livello del carburante al ritiro",
       "fuelLevelReturn": "Livello del carburante alla restituzione",
       "deductibleDomestic": "Franchigia (nazionale)",
-      "deductibleAbroad": "Franchigia (estero)"
+      "deductibleAbroad": "Franchigia (estero)",
+      "signatureLandlord": "Firma del locatore",
+      "signatureTenant": "Firma del conduttore",
+      "signingPlace": "Firmato a",
+      "damageNote": "Danni al veicolo"
     },
     "backToDocuments": "Torna ai documenti",
     "createFirstTemplateTitle": "Crei il Suo primo modello",

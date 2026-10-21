@@ -570,5 +570,19 @@
     "houseNumber": "Număr",
     "addition": "Supliment",
     "street": "Stradă"
+  },
+  "signature": {
+    "description": "Această semnătură apare pe contractele pe care le creați, în caseta \"Semnătura locatorului\" din șablon.",
+    "current": "Semnătura actuală",
+    "none": "Nicio semnătură setată încă.",
+    "remove": "Șterge",
+    "draw": "Desenați semnătura",
+    "clear": "Golește",
+    "saveDrawn": "Salvează semnătura desenată",
+    "upload": "Încarcă imagine",
+    "saved": "Semnătura a fost salvată",
+    "saveFailed": "Salvarea a eșuat",
+    "removed": "Semnătura a fost ștearsă",
+    "notImage": "Fișierul nu este o imagine"
   }
 }

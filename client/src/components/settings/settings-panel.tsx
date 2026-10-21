@@ -149,6 +149,9 @@ export function SettingsPanel() {
   const [defaultFuelPolicy, setDefaultFuelPolicy] = useState("full-to-full");
   const [eigenrisicoBinnenland, setEigenrisicoBinnenland] = useState("500");
   const [eigenrisicoBuitenland, setEigenrisicoBuitenland] = useState("1000");
+  // Kees 2026-10-21: "Getekend te" and the contract's fixed damage line.
+  const [signingPlace, setSigningPlace] = useState("Zuidland");
+  const [damageNoteText, setDamageNoteText] = useState("Zie schadecheck");
   const [tollRatePerKm, setTollRatePerKm] = useState("0.15");
   const [depotAddress, setDepotAddress] = useState("");
   const [depotCity, setDepotCity] = useState("");
@@ -392,6 +395,8 @@ export function SettingsPanel() {
       setDefaultFuelPolicy(businessRules.value.defaultFuelPolicy || "full-to-full");
       setEigenrisicoBinnenland(businessRules.value.eigenrisicoBinnenland || "500");
       setEigenrisicoBuitenland(businessRules.value.eigenrisicoBuitenland || "1000");
+      setSigningPlace(businessRules.value.signingPlace || "Zuidland");
+      setDamageNoteText(businessRules.value.damageNoteText || "Zie schadecheck");
     }
     
     // Notification Preferences
@@ -475,6 +480,8 @@ export function SettingsPanel() {
           defaultFuelPolicy,
           eigenrisicoBinnenland,
           eigenrisicoBuitenland,
+          signingPlace,
+          damageNoteText,
         }
       };
       await apiRequest('POST', '/api/app-settings', data);
@@ -965,6 +972,16 @@ export function SettingsPanel() {
                     data-testid="input-eigenrisico-buitenland"
                   />
                   <p className="text-xs text-gray-500 mt-1">{t('settingsPage.business.eigenrisicoBuitenlandHint')}</p>
+                </div>
+                <div>
+                  <Label htmlFor="signingPlace">{t('settingsPage.business.signingPlaceLabel')}</Label>
+                  <Input id="signingPlace" value={signingPlace} maxLength={100} onChange={(e) => setSigningPlace(e.target.value)} data-testid="input-signing-place" />
+                  <p className="text-xs text-gray-500 mt-1">{t('settingsPage.business.signingPlaceHint')}</p>
+                </div>
+                <div>
+                  <Label htmlFor="damageNoteText">{t('settingsPage.business.damageNoteLabel')}</Label>
+                  <Input id="damageNoteText" value={damageNoteText} maxLength={200} onChange={(e) => setDamageNoteText(e.target.value)} data-testid="input-damage-note" />
+                  <p className="text-xs text-gray-500 mt-1">{t('settingsPage.business.damageNoteHint')}</p>
                 </div>
               </div>
 
