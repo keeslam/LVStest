@@ -54,9 +54,13 @@ export async function convertPdfToPng(
     
     console.log(`📐 Viewport: ${viewport.width}x${viewport.height}`);
     
-    // Create canvas
-    const canvas = createCanvas(viewport.width, viewport.height);
-    const context = canvas.getContext('2d');
+    // Kees 2026-10-21: a PDF with pictures failed with "Image or Canvas expected": pdfjs 5 makes its
+    // own helper canvases with @napi-rs/canvas, which a node-canvas context cannot draw. The page is
+    // now drawn on a canvas from pdfjs's own factory; node-canvas stays the fallback.
+    const factory = (pdfDocument as any).canvasFactory;
+    const made = factory?.create ? factory.create(Math.ceil(viewport.width), Math.ceil(viewport.height)) : null;
+    const canvas: any = made?.canvas ?? createCanvas(viewport.width, viewport.height);
+    const context: any = made?.context ?? canvas.getContext('2d');
     
     // Fill canvas with white background to ensure visibility
     context.fillStyle = '#ffffff';

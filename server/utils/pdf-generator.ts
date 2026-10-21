@@ -228,7 +228,7 @@ export function pdfCarriesActiveContent(bytes: Buffer): boolean {
  * raw byte scan also hits /AA or /JS by chance inside compressed streams. Re-saving the PDF
  * to strip things broke real PDFs (no preview could be made), so the original is kept and
  * only real active content is refused: an OpenAction that is an action other than GoTo,
- * document or page /AA, document JavaScript or embedded files. Contracts embed the
+ * document or page /AA, or document JavaScript (embedded files are fine). Contracts embed the
  * background's pages into a fresh document anyway (BUG-180).
  */
 export async function dangerousPdfContent(bytes: Buffer): Promise<string | null> {
@@ -241,7 +241,9 @@ export async function dangerousPdfContent(bytes: Buffer): Promise<string | null>
     }
     if (doc.catalog.get(PDFName.of("AA"))) return "/AA";
     const names = doc.catalog.lookupMaybe(PDFName.of("Names"), PDFDict);
-    if (names && (names.get(PDFName.of("JavaScript")) || names.get(PDFName.of("EmbeddedFiles")))) return "/JavaScript";
+    // Embedded files are allowed: "Content Credentials" (C2PA provenance from Adobe or AI tools)
+    // travel that way, and a contract only takes the background's pages, never its attachments.
+    if (names && names.get(PDFName.of("JavaScript"))) return "/JavaScript";
     if (doc.getPages().some((page) => page.node.get(PDFName.of("AA")))) return "/AA";
     return null;
   } catch {

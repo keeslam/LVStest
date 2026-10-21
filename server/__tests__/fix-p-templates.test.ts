@@ -21,7 +21,7 @@ import { db } from "../db";
 import { damageCheckTemplates, pdfTemplates, documents } from "../../shared/schema";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureCustomer, createFixtureVehicle, createFixtureReservation, cleanupFixtures } from "./helpers/fixtures";
-import { generateRentalContractFromTemplate, pdfCarriesActiveContent, detectActivePdfContent } from "../utils/pdf-generator";
+import { generateRentalContractFromTemplate, pdfCarriesActiveContent, detectActivePdfContent, dangerousPdfContent } from "../utils/pdf-generator";
 import { canvasFieldsSchema, templateFieldsSchema, MAX_TEMPLATE_PAGES } from "../../shared/template-fields";
 import { selectContractTemplate } from "../services/pdf-template-selection";
 
@@ -214,6 +214,17 @@ describe("FIX-P — a background may not smuggle code into every contract", () =
       .attach("background", await activeContentBackground(), "evil.pdf");
     expect(res.status).toBe(400);
     expect(res.body.message).toMatch(/JavaScript|automatic action/i);
+  });
+
+  // Kees 2026-10-21: his background carried "Content Credentials" as an embedded file (C2PA);
+  // that is allowed, JavaScript is not.
+  it("allows embedded files but not document JavaScript", async () => {
+    const { PDFDocument } = await import("pdf-lib");
+    const withAttachment = await PDFDocument.create();
+    withAttachment.addPage([595, 842]);
+    await withAttachment.attach(Buffer.from("{}"), "Content Credentials", { mimeType: "application/c2pa" });
+    expect(await dangerousPdfContent(Buffer.from(await withAttachment.save()))).toBeNull();
+    expect(await dangerousPdfContent(await activeContentBackground())).toBe("/JavaScript");
   });
 
   // Kees 2026-10-21: Word's "open at full page" (an /OpenAction destination) is harmless;
