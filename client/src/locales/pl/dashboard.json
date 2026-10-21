@@ -348,5 +348,12 @@
     "none": "Brak dat strefy ekologicznej lub Move IZI, które wkrótce wygasają",
     "euroZone": "strefa ekologiczna",
     "moveIzi": "Move IZI"
+  },
+  "missingInvoiceWidget": {
+    "title": "Brak faktury",
+    "subtitle": "Wizyty w warsztacie wciąż bez faktury {{days}} dni po zakończeniu",
+    "none": "Wszystkie faktury dotarły",
+    "print": "Drukuj listę",
+    "daysAgo": "{{count}} dni"
   }
 }

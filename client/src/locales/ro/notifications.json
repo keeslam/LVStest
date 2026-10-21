@@ -83,7 +83,9 @@
     "zoneExpiringTitle": {
       "euroZone": "Zona de emisii expiră - {{plate}}",
       "moveIzi": "Move IZI expiră - {{plate}}"
-    }
+    },
+    "missingInvoice": "Factură lipsă",
+    "missingInvoiceTitle": "Factură lipsă - {{plate}} ({{days}} zile după sfârșit)"
   },
   "customerCommunications": {
     "pageTitle": "Comunicarea cu clienții",
@@ -706,5 +708,54 @@
     "noWarrantyExpirationsDescription": "Nu există vehicule cu garanții care expiră în curând.",
     "noCustomNotificationsTitle": "Nicio notificare personalizată",
     "noCustomNotificationsDescription": "Încă nu ați creat notificări personalizate."
+  },
+  "settingsCard": {
+    "description": "Aceleași setări ca în Setări aplicație > Calendar; se aplică tuturor.",
+    "readOnly": "Doar cine poate gestiona setările poate modifica aceste valori.",
+    "saved": "Setările notificărilor au fost salvate",
+    "saveFailed": "Salvarea a eșuat",
+    "daysUnit": "zile",
+    "save": "Salvează",
+    "sendNow": "Trimite acum",
+    "sendNowSent": "E-mail trimis cu {{count}} vizită/vizite",
+    "sendNowNot": {
+      "empty": "Nimic trimis: nu lipsesc facturi",
+      "no-recipients": "Nimic trimis: completați destinatarii și salvați mai întâi",
+      "send-failed": "Trimiterea a eșuat, verificați setările de e-mail"
+    },
+    "days": {
+      "apkReminderDays": "ITP expiră în",
+      "warrantyReminderDays": "Garanția expiră în",
+      "zoneReminderDays": "Zona de emisii / Move IZI expiră în",
+      "upcomingReservationDays": "Rezervări viitoare în",
+      "missingInvoiceDays": "Factură lipsă după"
+    },
+    "mail": {
+      "title": "E-mail săptămânal: factură lipsă",
+      "recipients": "Destinatari (virgulă între adrese)",
+      "weekday": "Zi",
+      "time": "Oră",
+      "subject": "Subiect",
+      "intro": "Text deasupra listei",
+      "columns": "Coloane în listă",
+      "hint": "Lista este în e-mail și atașată ca PDF. Dacă lista este goală, nu se trimite e-mail."
+    },
+    "columns": {
+      "licensePlate": "Număr",
+      "vehicle": "Marcă și model",
+      "type": "Tip",
+      "period": "Perioadă",
+      "description": "Descriere",
+      "daysSinceEnd": "Zile de la sfârșit"
+    },
+    "weekdays": {
+      "1": "luni",
+      "2": "marți",
+      "3": "miercuri",
+      "4": "joi",
+      "5": "vineri",
+      "6": "sâmbătă",
+      "7": "duminică"
+    }
   }
 }

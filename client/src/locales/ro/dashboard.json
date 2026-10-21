@@ -343,5 +343,12 @@
     "none": "Nicio dată de zonă de emisii sau Move IZI care expiră curând",
     "euroZone": "zonă de emisii",
     "moveIzi": "Move IZI"
+  },
+  "missingInvoiceWidget": {
+    "title": "Factură lipsă",
+    "subtitle": "Vizite la service încă fără factură la {{days}} zile după sfârșit",
+    "none": "Toate facturile au sosit",
+    "print": "Tipărește lista",
+    "daysAgo": "{{count}} zile"
   }
 }

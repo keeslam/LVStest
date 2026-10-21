@@ -83,7 +83,9 @@
     "zoneExpiringTitle": {
       "euroZone": "Caduca la zona ambiental - {{plate}}",
       "moveIzi": "Caduca Move IZI - {{plate}}"
-    }
+    },
+    "missingInvoice": "Falta la factura",
+    "missingInvoiceTitle": "Falta la factura - {{plate}} ({{days}} días tras el fin)"
   },
   "customerCommunications": {
     "pageTitle": "Comunicación con clientes",
@@ -706,5 +708,54 @@
     "noWarrantyExpirationsDescription": "No hay vehículos con garantías próximas a caducar.",
     "noCustomNotificationsTitle": "No hay notificaciones personalizadas",
     "noCustomNotificationsDescription": "Aún no ha creado ninguna notificación personalizada."
+  },
+  "settingsCard": {
+    "description": "Los mismos ajustes que en Ajustes de la app > Calendario; valen para todos.",
+    "readOnly": "Solo quien puede gestionar ajustes puede cambiar estos valores.",
+    "saved": "Ajustes de notificaciones guardados",
+    "saveFailed": "No se pudo guardar",
+    "daysUnit": "días",
+    "save": "Guardar",
+    "sendNow": "Enviar ahora",
+    "sendNowSent": "Correo enviado con {{count}} visita(s)",
+    "sendNowNot": {
+      "empty": "No se envió nada: no falta ninguna factura",
+      "no-recipients": "No se envió nada: indique destinatarios y guarde primero",
+      "send-failed": "Error al enviar, revise los ajustes de correo"
+    },
+    "days": {
+      "apkReminderDays": "ITV caduca en",
+      "warrantyReminderDays": "Garantía caduca en",
+      "zoneReminderDays": "Zona ambiental / Move IZI caduca en",
+      "upcomingReservationDays": "Próximas reservas en",
+      "missingInvoiceDays": "Factura pendiente tras"
+    },
+    "mail": {
+      "title": "Correo semanal: falta la factura",
+      "recipients": "Destinatarios (coma entre direcciones)",
+      "weekday": "Día",
+      "time": "Hora",
+      "subject": "Asunto",
+      "intro": "Texto sobre la lista",
+      "columns": "Columnas de la lista",
+      "hint": "La lista va en el correo y como PDF adjunto. Si está vacía, no se envía correo."
+    },
+    "columns": {
+      "licensePlate": "Matrícula",
+      "vehicle": "Marca y modelo",
+      "type": "Tipo",
+      "period": "Periodo",
+      "description": "Descripción",
+      "daysSinceEnd": "Días desde el fin"
+    },
+    "weekdays": {
+      "1": "lunes",
+      "2": "martes",
+      "3": "miércoles",
+      "4": "jueves",
+      "5": "viernes",
+      "6": "sábado",
+      "7": "domingo"
+    }
   }
 }

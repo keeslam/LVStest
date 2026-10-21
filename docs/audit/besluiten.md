@@ -766,6 +766,30 @@ Kees koos uit de tweede lijst met suggesties punt 11. Hij koos met klikken alle 
   - Per auto: het aantal bezoeken, de dagen in de werkplaats (alleen binnen de periode), hoe vaak het pech was en de gekoppelde kosten.
   - Daaronder dezelfde cijfers per merk en model.
 
+### B-58 — Factuur ontbreekt en werkende meldingsinstellingen (21-10-2026, punt 11 deel B)
+
+Kees koos met klikken: het aantal dagen voor "factuur ontbreekt" is instelbaar, de melding komt op drie plekken, en er gaat een wekelijkse mail uit waarvan hij ontvangers, dag en tijd, onderwerp en tekst en de kolommen zelf instelt. Daarnaast moesten de meldingen in het meldingencentrum aan te passen zijn, net als de andere meldingen.
+
+- **Factuur ontbreekt.** Een werkplaatsbezoek staat op de lijst als het X dagen na het einde nog geen gekoppelde kosten heeft. X is standaard 14.
+  - Alleen bezoeken die op of na 1 oktober 2026 eindigden tellen mee. Oudere bezoeken konden nog niet gekoppeld worden.
+  - Met **Geen factuur nodig** op het bezoek (bijvoorbeeld bij gratis garantie) gaat het bezoek van de lijst.
+- **Waar je het ziet.**
+  - Bij het belletje, weg te klikken net als de andere meldingen.
+  - Op een nieuwe dashboardtegel **Factuur ontbreekt** met de knop **Lijst afdrukken** (PDF). De tegel staat bij de dashboardtegels aan of uit.
+  - Als markering op het bezoek in de onderhoudskalender en als rood label in het bezoekvenster.
+- **Wekelijkse mail.** Je stelt in: ontvangers, dag en tijd, onderwerp, tekst boven de lijst en kolommen.
+  - Mogelijke kolommen: kenteken, merk en model, soort, periode, omschrijving en dagen sinds einde.
+  - De lijst staat in de mail en gaat ook mee als PDF.
+  - Is de lijst leeg, dan gaat er geen mail.
+  - Met **Nu versturen** stuur je de mail meteen.
+  - De mail gaat één keer op de gekozen dag, vanaf de gekozen tijd. De server kijkt elk kwartier.
+- **Meldingsinstellingen.** Het scherm Instellingen in het meldingencentrum sloeg niets op; in de code stond letterlijk "in a real application, save these settings". Nu bewaart het echt:
+  - de dagen voor APK, garantie, milieuzone/Move IZI, aankomende reserveringen en factuur ontbreekt;
+  - de mailinstellingen.
+  - Het zijn dezelfde waarden als in **App-instellingen > Kalender**. Aankomende reserveringen stond vast op 2 dagen en is nu een instelling.
+  - De nepschakelaars "App-meldingen" en "E-mailmeldingen" zijn weg.
+  - Opslaan mag alleen wie instellingen mag beheren.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).

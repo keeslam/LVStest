@@ -226,6 +226,9 @@ export function SettingsPanel() {
   const [warrantyReminderThresholdDays, setWarrantyReminderThresholdDays] = useState("30");
   // Round 2 punt 9: days ahead for the low-emission-zone and Move IZI end dates.
   const [zoneReminderDays, setZoneReminderDays] = useState("30");
+  // Round 2 punt 11 part B: "factuur ontbreekt" after N days, and upcoming rentals in the notification centre.
+  const [missingInvoiceDays, setMissingInvoiceDays] = useState("14");
+  const [upcomingReservationDays, setUpcomingReservationDays] = useState("2");
   // Regular-service reminders (interval defaults + reminder window)
   const [showServiceReminders, setShowServiceReminders] = useState(true);
   const [defaultServiceIntervalKm, setDefaultServiceIntervalKm] = useState("30000");
@@ -311,6 +314,8 @@ export function SettingsPanel() {
     apkReminderDays?: number;
     warrantyReminderDays?: number;
     zoneReminderDays?: number;
+    missingInvoiceDays?: number;
+    upcomingReservationDays?: number;
     showServiceReminders?: boolean;
     defaultServiceIntervalKm?: number;
     defaultServiceIntervalMonths?: number;
@@ -369,6 +374,12 @@ export function SettingsPanel() {
     }
     if (systemSettings.zoneReminderDays) {
       setZoneReminderDays(String(systemSettings.zoneReminderDays));
+    }
+    if (systemSettings.missingInvoiceDays) {
+      setMissingInvoiceDays(String(systemSettings.missingInvoiceDays));
+    }
+    if (systemSettings.upcomingReservationDays) {
+      setUpcomingReservationDays(String(systemSettings.upcomingReservationDays));
     }
     if (systemSettings.tollRatePerKm) {
       setTollRatePerKm(String(systemSettings.tollRatePerKm));
@@ -569,6 +580,8 @@ export function SettingsPanel() {
         apkReminderDays: parseInt(apkReminderThresholdDays) || 30,
         warrantyReminderDays: parseInt(warrantyReminderThresholdDays) || 30,
         zoneReminderDays: parseInt(zoneReminderDays) || 30,
+        missingInvoiceDays: parseInt(missingInvoiceDays) || 14,
+        upcomingReservationDays: parseInt(upcomingReservationDays) || 2,
         showServiceReminders,
         defaultServiceIntervalKm: parseInt(defaultServiceIntervalKm) || 30000,
         defaultServiceIntervalMonths: parseInt(defaultServiceIntervalMonths) || 12,
@@ -1733,6 +1746,44 @@ export function SettingsPanel() {
                         onChange={(e) => setZoneReminderDays(e.target.value)}
                         className="w-20"
                         data-testid="input-zone-reminder-days"
+                      />
+                      <span className="text-sm text-gray-500">{t('common:units.days')}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>{t('settingsPage.calendar.missingInvoiceLabel')}</Label>
+                      <p className="text-sm text-gray-500">{t('settingsPage.calendar.missingInvoiceHint')}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="1"
+                        max="365"
+                        value={missingInvoiceDays}
+                        onChange={(e) => setMissingInvoiceDays(e.target.value)}
+                        className="w-20"
+                        data-testid="input-missing-invoice-days"
+                      />
+                      <span className="text-sm text-gray-500">{t('common:units.days')}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>{t('settingsPage.calendar.upcomingReservationsLabel')}</Label>
+                      <p className="text-sm text-gray-500">{t('settingsPage.calendar.upcomingReservationsHint')}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="1"
+                        max="365"
+                        value={upcomingReservationDays}
+                        onChange={(e) => setUpcomingReservationDays(e.target.value)}
+                        className="w-20"
+                        data-testid="input-upcoming-reservation-days"
                       />
                       <span className="text-sm text-gray-500">{t('common:units.days')}</span>
                     </div>

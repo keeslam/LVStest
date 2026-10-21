@@ -338,5 +338,12 @@
     "none": "Geen milieuzone- of Move IZI-datums die binnenkort verlopen",
     "euroZone": "milieuzone",
     "moveIzi": "Move IZI"
+  },
+  "missingInvoiceWidget": {
+    "title": "Factuur ontbreekt",
+    "subtitle": "Werkplaatsbezoeken {{days}} dagen na het einde nog zonder factuur",
+    "none": "Alle facturen zijn binnen",
+    "print": "Lijst afdrukken",
+    "daysAgo": "{{count}} dagen"
   }
 }

@@ -51,20 +51,10 @@ import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { CustomNotificationsDialog } from "@/components/notifications/custom-notifications-dialog";
+import { NotificationSettingsCard } from "@/components/notifications/notification-settings-card";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-
-// Define notification settings schema
-const notificationSettingsSchema = z.object({
-  apkExpiryDays: z.string(),
-  warrantyExpiryDays: z.string(),
-  upcomingReservationDays: z.string(),
-  emailNotifications: z.boolean(),
-  appNotifications: z.boolean(),
-});
-
-type NotificationSettings = z.infer<typeof notificationSettingsSchema>;
 
 // Shared content for the notification center - used by NotificationsDialog,
 // so there is one implementation instead of copies drifting apart.
@@ -75,21 +65,6 @@ export function NotificationsPanel() {
   const [activeTab, setActiveTab] = useState<string>("all");
   const [customDialogOpen, setCustomDialogOpen] = useState(false);
   const today = new Date();
-
-  // Default notification settings (we would normally load these from user preferences)
-  const defaultSettings: NotificationSettings = {
-    apkExpiryDays: "60",
-    warrantyExpiryDays: "60",
-    upcomingReservationDays: "2",
-    emailNotifications: false,
-    appNotifications: true,
-  };
-
-  // Setup form
-  const form = useForm<NotificationSettings>({
-    resolver: zodResolver(notificationSettingsSchema),
-    defaultValues: defaultSettings,
-  });
 
   // QueryClient for mutations
   const queryClient = useQueryClient();
@@ -146,10 +121,11 @@ export function NotificationsPanel() {
     queryKey: ["/api/custom-notifications"],
   });
 
-  // Calculate notifications based on form values
-  const daysForApk = Number(form.watch("apkExpiryDays"));
-  const daysForWarranty = Number(form.watch("warrantyExpiryDays"));
-  const daysForReservations = Number(form.watch("upcomingReservationDays"));
+  // The lists follow the saved notification settings (round 2 punt 11 part B).
+  const { data: systemSettings } = useQuery<{ apkReminderDays?: number; warrantyReminderDays?: number; upcomingReservationDays?: number }>({ queryKey: ["/api/system-settings"] });
+  const daysForApk = systemSettings?.apkReminderDays ?? 30;
+  const daysForWarranty = systemSettings?.warrantyReminderDays ?? 30;
+  const daysForReservations = systemSettings?.upcomingReservationDays ?? 2;
 
   // Generate notification lists
   const apkExpiringItems = vehicles
@@ -192,23 +168,6 @@ export function NotificationsPanel() {
     upcomingReservationItems.length +
     customNotifications.length;
 
-  // Handle form submission
-  const onSubmit: SubmitHandler<NotificationSettings> = (data) => {
-    // In a real application, save these settings to the user's preferences
-    console.log("Notification settings updated:", data);
-
-    toast({
-      title: t('notificationsPage.toasts.settingsUpdatedTitle'),
-      description: t('notificationsPage.toasts.settingsUpdatedDescription'),
-      variant: "default",
-    });
-  };
-
-  // React to settings changes
-  const handleApplySettings = () => {
-    form.handleSubmit(onSubmit)();
-  };
-
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
@@ -225,159 +184,8 @@ export function NotificationsPanel() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Notification Settings */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>{t('notificationsPage.settingsCardTitle')}</CardTitle>
-            <CardDescription>
-              {t('notificationsPage.settingsCardDescription')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="apkExpiryDays"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('notificationsPage.apkExpiryWarningsLabel')}</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={t('notificationsPage.selectDaysPlaceholder')} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="30">{t('notificationsPage.daysBefore', { count: 30 })}</SelectItem>
-                          <SelectItem value="60">{t('notificationsPage.daysBefore', { count: 60 })}</SelectItem>
-                          <SelectItem value="90">{t('notificationsPage.daysBefore', { count: 90 })}</SelectItem>
-                          <SelectItem value="120">{t('notificationsPage.daysBefore', { count: 120 })}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        {t('notificationsPage.apkExpiryWarningsDescription')}
-                      </FormDescription>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="warrantyExpiryDays"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('notificationsPage.warrantyExpiryWarningsLabel')}</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={t('notificationsPage.selectDaysPlaceholder')} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="30">{t('notificationsPage.daysBefore', { count: 30 })}</SelectItem>
-                          <SelectItem value="60">{t('notificationsPage.daysBefore', { count: 60 })}</SelectItem>
-                          <SelectItem value="90">{t('notificationsPage.daysBefore', { count: 90 })}</SelectItem>
-                          <SelectItem value="120">{t('notificationsPage.daysBefore', { count: 120 })}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        {t('notificationsPage.warrantyExpiryWarningsDescription')}
-                      </FormDescription>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="upcomingReservationDays"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('notificationsPage.upcomingReservationAlertsLabel')}</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={t('notificationsPage.selectDaysPlaceholder')} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="1">{t('notificationsPage.daysBefore', { count: 1 })}</SelectItem>
-                          <SelectItem value="2">{t('notificationsPage.daysBefore', { count: 2 })}</SelectItem>
-                          <SelectItem value="3">{t('notificationsPage.daysBefore', { count: 3 })}</SelectItem>
-                          <SelectItem value="7">{t('notificationsPage.daysBefore', { count: 7 })}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        {t('notificationsPage.upcomingReservationAlertsDescription')}
-                      </FormDescription>
-                    </FormItem>
-                  )}
-                />
-
-                <div className="space-y-4 pt-2">
-                  <FormField
-                    control={form.control}
-                    name="appNotifications"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between">
-                        <div className="space-y-0.5">
-                          <FormLabel>{t('notificationsPage.appNotificationsLabel')}</FormLabel>
-                          <FormDescription>
-                            {t('notificationsPage.appNotificationsDescription')}
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="emailNotifications"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between">
-                        <div className="space-y-0.5">
-                          <FormLabel>{t('notificationsPage.emailNotificationsLabel')}</FormLabel>
-                          <FormDescription>
-                            {t('notificationsPage.emailNotificationsDescription')}
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <Button
-                  type="button"
-                  onClick={handleApplySettings}
-                  className="w-full"
-                >
-                  {t('notificationsPage.applySettingsButton')}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+        {/* Notification Settings - round 2 punt 11 part B: real now (notification-settings-card.tsx). */}
+        <NotificationSettingsCard className="lg:col-span-1" />
 
         {/* Notifications Display */}
         <Card className="lg:col-span-2">

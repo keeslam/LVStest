@@ -83,7 +83,9 @@
     "zoneExpiringTitle": {
       "euroZone": "Zona ambiental expira - {{plate}}",
       "moveIzi": "Move IZI expira - {{plate}}"
-    }
+    },
+    "missingInvoice": "Fatura em falta",
+    "missingInvoiceTitle": "Fatura em falta - {{plate}} ({{days}} dias após o fim)"
   },
   "customerCommunications": {
     "pageTitle": "Comunicação com clientes",
@@ -706,5 +708,54 @@
     "noWarrantyExpirationsDescription": "Não há veículos com garantias a expirar em breve.",
     "noCustomNotificationsTitle": "Sem notificações personalizadas",
     "noCustomNotificationsDescription": "Ainda não criou notificações personalizadas."
+  },
+  "settingsCard": {
+    "description": "As mesmas definições que em Definições da app > Calendário; valem para todos.",
+    "readOnly": "Só quem pode gerir definições pode alterar estes valores.",
+    "saved": "Definições de notificações guardadas",
+    "saveFailed": "Falha ao guardar",
+    "daysUnit": "dias",
+    "save": "Guardar",
+    "sendNow": "Enviar agora",
+    "sendNowSent": "E-mail enviado com {{count}} visita(s)",
+    "sendNowNot": {
+      "empty": "Nada enviado: não faltam faturas",
+      "no-recipients": "Nada enviado: indique destinatários e guarde primeiro",
+      "send-failed": "Falha no envio, verifique as definições de e-mail"
+    },
+    "days": {
+      "apkReminderDays": "Inspeção expira em",
+      "warrantyReminderDays": "Garantia expira em",
+      "zoneReminderDays": "Zona ambiental / Move IZI expira em",
+      "upcomingReservationDays": "Próximas reservas em",
+      "missingInvoiceDays": "Fatura em falta após"
+    },
+    "mail": {
+      "title": "E-mail semanal: fatura em falta",
+      "recipients": "Destinatários (vírgula entre endereços)",
+      "weekday": "Dia",
+      "time": "Hora",
+      "subject": "Assunto",
+      "intro": "Texto acima da lista",
+      "columns": "Colunas da lista",
+      "hint": "A lista vai no e-mail e em anexo como PDF. Se estiver vazia, não é enviado e-mail."
+    },
+    "columns": {
+      "licensePlate": "Matrícula",
+      "vehicle": "Marca e modelo",
+      "type": "Tipo",
+      "period": "Período",
+      "description": "Descrição",
+      "daysSinceEnd": "Dias desde o fim"
+    },
+    "weekdays": {
+      "1": "segunda-feira",
+      "2": "terça-feira",
+      "3": "quarta-feira",
+      "4": "quinta-feira",
+      "5": "sexta-feira",
+      "6": "sábado",
+      "7": "domingo"
+    }
   }
 }

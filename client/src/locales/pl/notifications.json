@@ -84,7 +84,9 @@
     "zoneExpiringTitle": {
       "euroZone": "Strefa ekologiczna wygasa - {{plate}}",
       "moveIzi": "Move IZI wygasa - {{plate}}"
-    }
+    },
+    "missingInvoice": "Brak faktury",
+    "missingInvoiceTitle": "Brak faktury - {{plate}} ({{days}} dni po zakończeniu)"
   },
   "customerCommunications": {
     "pageTitle": "Komunikacja z klientami",
@@ -731,5 +733,54 @@
     "noWarrantyExpirationsDescription": "Brak pojazdów z wkrótce wygasającymi gwarancjami.",
     "noCustomNotificationsTitle": "Brak powiadomień niestandardowych",
     "noCustomNotificationsDescription": "Nie utworzono jeszcze żadnych powiadomień niestandardowych."
+  },
+  "settingsCard": {
+    "description": "Te same ustawienia co w Ustawienia aplikacji > Kalendarz; obowiązują wszystkich.",
+    "readOnly": "Tylko osoby zarządzające ustawieniami mogą zmieniać te wartości.",
+    "saved": "Ustawienia powiadomień zapisane",
+    "saveFailed": "Zapis nie powiódł się",
+    "daysUnit": "dni",
+    "save": "Zapisz",
+    "sendNow": "Wyślij teraz",
+    "sendNowSent": "Wysłano e-mail z {{count}} wizytą/wizytami",
+    "sendNowNot": {
+      "empty": "Nic nie wysłano: nie brakuje faktur",
+      "no-recipients": "Nic nie wysłano: najpierw podaj odbiorców i zapisz",
+      "send-failed": "Wysyłka nie powiodła się, sprawdź ustawienia e-mail"
+    },
+    "days": {
+      "apkReminderDays": "Przegląd wygasa w ciągu",
+      "warrantyReminderDays": "Gwarancja wygasa w ciągu",
+      "zoneReminderDays": "Strefa ekologiczna / Move IZI wygasa w ciągu",
+      "upcomingReservationDays": "Nadchodzące rezerwacje w ciągu",
+      "missingInvoiceDays": "Brak faktury po"
+    },
+    "mail": {
+      "title": "Cotygodniowy e-mail: brak faktury",
+      "recipients": "Odbiorcy (przecinek między adresami)",
+      "weekday": "Dzień",
+      "time": "Godzina",
+      "subject": "Temat",
+      "intro": "Tekst nad listą",
+      "columns": "Kolumny na liście",
+      "hint": "Lista jest w e-mailu i w załączniku PDF. Gdy lista jest pusta, e-mail nie jest wysyłany."
+    },
+    "columns": {
+      "licensePlate": "Numer rejestracyjny",
+      "vehicle": "Marka i model",
+      "type": "Rodzaj",
+      "period": "Okres",
+      "description": "Opis",
+      "daysSinceEnd": "Dni od zakończenia"
+    },
+    "weekdays": {
+      "1": "poniedziałek",
+      "2": "wtorek",
+      "3": "środa",
+      "4": "czwartek",
+      "5": "piątek",
+      "6": "sobota",
+      "7": "niedziela"
+    }
   }
 }

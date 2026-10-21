@@ -338,5 +338,12 @@
     "none": "No emission zone or Move IZI dates expiring soon",
     "euroZone": "emission zone",
     "moveIzi": "Move IZI"
+  },
+  "missingInvoiceWidget": {
+    "title": "Invoice missing",
+    "subtitle": "Workshop visits still without an invoice {{days}} days after the end",
+    "none": "All invoices are in",
+    "print": "Print list",
+    "daysAgo": "{{count}} days"
   }
 }

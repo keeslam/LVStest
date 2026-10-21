@@ -12,7 +12,7 @@ export const DASHBOARD_TILES_KEY = "dashboard_tiles";
 export const INVALID_DASHBOARD_TILES_CODE = "INVALID_DASHBOARD_TILES";
 
 /** Today's order on the dashboard, plus the new licence tile at the end. */
-export const DASHBOARD_TILE_IDS = ["availability", "apk", "overdue", "warranty", "licenses", "zones"] as const;
+export const DASHBOARD_TILE_IDS = ["availability", "apk", "overdue", "warranty", "licenses", "zones", "missingInvoices"] as const;
 export type DashboardTileId = (typeof DASHBOARD_TILE_IDS)[number];
 
 export interface DashboardTile {

@@ -535,6 +535,8 @@
     "linkFailed": "Falha ao associar",
     "confirmTitle": "Que fatura pertence a esta visita?",
     "confirmDescription": "A mais recente já está selecionada. Verifique valor, data e descrição: por vezes chega outra fatura entretanto.",
-    "confirmLink": "Associar"
+    "confirmLink": "Associar",
+    "missingInvoice": "Fatura em falta",
+    "noInvoiceExpected": "Sem fatura necessária (ex.: garantia gratuita)"
   }
 }

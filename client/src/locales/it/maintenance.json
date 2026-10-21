@@ -535,6 +535,8 @@
     "linkFailed": "Collegamento non riuscito",
     "confirmTitle": "Quale fattura appartiene a questa visita?",
     "confirmDescription": "La più recente è già selezionata. Controlla importo, data e descrizione: a volte arriva un'altra fattura nel frattempo.",
-    "confirmLink": "Collega"
+    "confirmLink": "Collega",
+    "missingInvoice": "Fattura mancante",
+    "noInvoiceExpected": "Nessuna fattura necessaria (es. garanzia gratuita)"
   }
 }

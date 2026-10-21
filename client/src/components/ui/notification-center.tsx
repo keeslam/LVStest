@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Bell } from "lucide-react";
 import { Vehicle, Reservation, CustomNotification } from "@shared/schema";
 import type { ZoneExpiringRow } from "@shared/zone-expiry";
+import type { MissingInvoiceRow } from "@shared/missing-invoice";
 import { NotificationCenterDialog } from "@/components/notifications/notification-center-dialog";
 import { useNotificationDataPermissions } from "@/hooks/use-has-permission";
 
@@ -40,6 +41,15 @@ export function NotificationCenter() {
     queryKey: ["/api/vehicles/zone-expiring"],
     enabled: canViewVehicles,
   });
+
+  // Round 2 punt 11 part B: workshop visits whose invoice is missing, and the
+  // number of days ahead for upcoming rentals (notification settings, default 2).
+  const { data: missingInvoiceData } = useQuery<{ rows: MissingInvoiceRow[] }>({
+    queryKey: ["/api/maintenance-blocks/missing-invoices"],
+    enabled: canViewVehicles,
+  });
+  const { data: notificationSystemSettings } = useQuery<{ upcomingReservationDays?: number }>({ queryKey: ["/api/system-settings"] });
+  const upcomingDays = notificationSystemSettings?.upcomingReservationDays ?? 2;
 
   const { data: upcomingReservations = [] } = useQuery<Reservation[]>({
     queryKey: ["/api/reservations/upcoming"],
@@ -85,9 +95,13 @@ export function NotificationCenter() {
     (z) => !isDismissed(`dismissed_zone_${z.kind}_${z.id}`)
   );
 
+  const missingInvoiceItems = (missingInvoiceData?.rows ?? []).filter(
+    (m) => !isDismissed(`dismissed_missing_invoice_${m.visitId}`)
+  );
+
   const upcomingReservationItems = upcomingReservations.filter((reservation) => {
     const daysUntil = differenceInDays(new Date(reservation.startDate), today);
-    return daysUntil >= 0 && daysUntil <= 2;
+    return daysUntil >= 0 && daysUntil <= upcomingDays;
   });
 
   const upcomingMaintenanceItems = upcomingMaintenanceReservations.filter((reservation) => {
@@ -103,6 +117,7 @@ export function NotificationCenter() {
     apkExpiringItems.length +
     warrantyExpiringItems.length +
     zoneExpiringItems.length +
+    missingInvoiceItems.length +
     upcomingReservationItems.length +
     upcomingMaintenanceItems.length +
     placeholderReservations.length +

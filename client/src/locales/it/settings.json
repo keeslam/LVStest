@@ -517,7 +517,11 @@
       "serviceReminderDaysLabel": "Promemoria a partire da (giorni prima)",
       "saveMaintenanceSettingsButton": "Salvare le impostazioni di manutenzione",
       "zoneRemindersLabel": "Promemoria zona ambientale e Move IZI",
-      "zoneRemindersHint": "Tanti giorni prima della data di fine l'auto compare nel riquadro e nelle notifiche"
+      "zoneRemindersHint": "Tanti giorni prima della data di fine l'auto compare nel riquadro e nelle notifiche",
+      "missingInvoiceLabel": "Promemoria fattura mancante",
+      "missingInvoiceHint": "Tanti giorni dopo la fine di una visita in officina senza fattura collegata",
+      "upcomingReservationsLabel": "Prenotazioni in arrivo",
+      "upcomingReservationsHint": "Con tanti giorni di anticipo il centro notifiche mostra i nuovi noleggi"
     },
     "email": {
       "configurationTitle": "Configurazione e-mail",
@@ -690,7 +694,8 @@
         "overdue": "Noleggi in ritardo",
         "warranty": "Garanzia in scadenza",
         "licenses": "Patenti",
-        "zones": "Zona ambientale / Move IZI"
+        "zones": "Zona ambientale / Move IZI",
+        "missingInvoices": "Fattura mancante"
       }
     },
     "quickActions": {

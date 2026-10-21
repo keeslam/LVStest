@@ -530,6 +530,8 @@
     "linkFailed": "Linking failed",
     "confirmTitle": "Which invoice belongs to this visit?",
     "confirmDescription": "The newest is already selected. Check amount, date and description: another invoice sometimes comes in between.",
-    "confirmLink": "Link"
+    "confirmLink": "Link",
+    "missingInvoice": "Invoice missing",
+    "noInvoiceExpected": "No invoice needed (e.g. free warranty)"
   }
 }

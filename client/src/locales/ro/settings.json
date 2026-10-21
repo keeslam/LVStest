@@ -517,7 +517,11 @@
       "serviceReminderDaysLabel": "Memento începând de la (zile înainte)",
       "saveMaintenanceSettingsButton": "Salvează setările de mentenanță",
       "zoneRemindersLabel": "Memento zonă de emisii și Move IZI",
-      "zoneRemindersHint": "Cu atâtea zile înainte de data de final mașina apare pe placă și în notificări"
+      "zoneRemindersHint": "Cu atâtea zile înainte de data de final mașina apare pe placă și în notificări",
+      "missingInvoiceLabel": "Memento factură lipsă",
+      "missingInvoiceHint": "Atâtea zile după sfârșitul unei vizite la service fără factură legată",
+      "upcomingReservationsLabel": "Rezervări viitoare",
+      "upcomingReservationsHint": "Cu atâtea zile înainte centrul de notificări arată închirierile noi"
     },
     "email": {
       "configurationTitle": "Configurarea e-mailului",
@@ -690,7 +694,8 @@
         "overdue": "Închirieri întârziate",
         "warranty": "Garanția expiră",
         "licenses": "Permise de conducere",
-        "zones": "Zonă de emisii / Move IZI"
+        "zones": "Zonă de emisii / Move IZI",
+        "missingInvoices": "Factură lipsă"
       }
     },
     "quickActions": {

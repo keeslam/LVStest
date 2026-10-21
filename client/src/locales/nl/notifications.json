@@ -82,7 +82,9 @@
     "zoneExpiringTitle": {
       "euroZone": "Milieuzone verloopt - {{plate}}",
       "moveIzi": "Move IZI verloopt - {{plate}}"
-    }
+    },
+    "missingInvoice": "Factuur ontbreekt",
+    "missingInvoiceTitle": "Factuur ontbreekt - {{plate}} ({{days}} dagen na einde)"
   },
   "customerCommunications": {
     "pageTitle": "Klantcommunicatie",
@@ -681,5 +683,54 @@
     "noWarrantyExpirationsDescription": "Er zijn geen voertuigen met binnenkort verlopende garanties.",
     "noCustomNotificationsTitle": "Geen aangepaste meldingen",
     "noCustomNotificationsDescription": "Je hebt nog geen aangepaste meldingen aangemaakt."
+  },
+  "settingsCard": {
+    "description": "Dezelfde instellingen als in App-instellingen > Kalender; ze gelden voor iedereen.",
+    "readOnly": "Alleen wie instellingen mag beheren kan deze waarden aanpassen.",
+    "saved": "Meldingsinstellingen opgeslagen",
+    "saveFailed": "Opslaan mislukt",
+    "daysUnit": "dagen",
+    "save": "Opslaan",
+    "sendNow": "Nu versturen",
+    "sendNowSent": "Mail verstuurd met {{count}} bezoek(en)",
+    "sendNowNot": {
+      "empty": "Niets verstuurd: er ontbreken geen facturen",
+      "no-recipients": "Niets verstuurd: vul eerst ontvangers in en sla op",
+      "send-failed": "Versturen mislukt, kijk bij de e-mailinstellingen"
+    },
+    "days": {
+      "apkReminderDays": "APK verloopt binnen",
+      "warrantyReminderDays": "Garantie verloopt binnen",
+      "zoneReminderDays": "Milieuzone / Move IZI verloopt binnen",
+      "upcomingReservationDays": "Aankomende reserveringen binnen",
+      "missingInvoiceDays": "Factuur ontbreekt na"
+    },
+    "mail": {
+      "title": "Wekelijkse mail: factuur ontbreekt",
+      "recipients": "Ontvangers (komma tussen adressen)",
+      "weekday": "Dag",
+      "time": "Tijd",
+      "subject": "Onderwerp",
+      "intro": "Tekst boven de lijst",
+      "columns": "Kolommen in de lijst",
+      "hint": "De lijst staat in de mail en gaat mee als PDF. Is de lijst leeg, dan gaat er geen mail."
+    },
+    "columns": {
+      "licensePlate": "Kenteken",
+      "vehicle": "Merk en model",
+      "type": "Soort",
+      "period": "Periode",
+      "description": "Omschrijving",
+      "daysSinceEnd": "Dagen sinds einde"
+    },
+    "weekdays": {
+      "1": "maandag",
+      "2": "dinsdag",
+      "3": "woensdag",
+      "4": "donderdag",
+      "5": "vrijdag",
+      "6": "zaterdag",
+      "7": "zondag"
+    }
   }
 }

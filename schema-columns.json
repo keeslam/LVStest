@@ -5162,6 +5162,13 @@
         "default": null
       },
       {
+        "name": "no_invoice_expected",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "false"
+      },
+      {
         "name": "spare_assignment_decision",
         "type": "text",
         "notNull": false,
@@ -5810,6 +5817,20 @@
         "notNull": true,
         "primary": false,
         "default": "30"
+      },
+      {
+        "name": "missing_invoice_days",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": "14"
+      },
+      {
+        "name": "upcoming_reservation_days",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": "2"
       },
       {
         "name": "show_maintenance_blocks",

@@ -535,6 +535,8 @@
     "linkFailed": "No se pudo vincular",
     "confirmTitle": "¿Qué factura pertenece a esta visita?",
     "confirmDescription": "La más reciente ya está marcada. Compruebe importe, fecha y descripción: a veces llega otra factura entre medias.",
-    "confirmLink": "Vincular"
+    "confirmLink": "Vincular",
+    "missingInvoice": "Falta la factura",
+    "noInvoiceExpected": "No hace falta factura (p. ej. garantía gratuita)"
   }
 }

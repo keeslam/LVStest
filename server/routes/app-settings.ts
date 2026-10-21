@@ -27,6 +27,7 @@ import { COMPANY_NAME_KEY, INVALID_COMPANY_NAME_CODE, validCompanyName } from ".
 import { loadCompanyName } from "../services/company-name";
 import { DASHBOARD_TILES_KEY, INVALID_DASHBOARD_TILES_CODE, isValidDashboardTilesValue } from "../../shared/dashboard-tiles";
 import { QUICK_ACTIONS_KEY, INVALID_QUICK_ACTIONS_CODE, isValidQuickActionsValue } from "../../shared/quick-actions-layout";
+import { MISSING_INVOICE_MAIL_KEY, MISSING_INVOICE_MAIL_STATE_KEY, INVALID_MISSING_INVOICE_MAIL_CODE, isValidMissingInvoiceMail } from "../../shared/missing-invoice";
 import { INVALID_KM_ALLOWANCE_CODE, KM_ALLOWANCE_KEY, isValidKmAllowance } from "../../shared/km-allowance";
 import { migratePortalTemplatesToCompanyName } from "../services/portal-mail";
 
@@ -99,6 +100,13 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
     // Kees 2026-10-19: which dashboard tiles show, in what order — known tile ids only.
     if (key === DASHBOARD_TILES_KEY && !isValidDashboardTilesValue(value)) {
       return { message: "That is not a list of dashboard tiles", code: INVALID_DASHBOARD_TILES_CODE };
+    }
+    // Round 2 punt 11 part B: the weekly "factuur ontbreekt" mail; the send state is the server's own.
+    if (key === MISSING_INVOICE_MAIL_KEY && !isValidMissingInvoiceMail(value)) {
+      return { message: "That is not a valid weekly mail setting", code: INVALID_MISSING_INVOICE_MAIL_CODE };
+    }
+    if (key === MISSING_INVOICE_MAIL_STATE_KEY) {
+      return { message: "This setting is kept by the server", code: INVALID_MISSING_INVOICE_MAIL_CODE };
     }
     // Kees 2026-10-20: which quick actions show, in what order — known action ids only.
     if (key === QUICK_ACTIONS_KEY && !isValidQuickActionsValue(value)) {

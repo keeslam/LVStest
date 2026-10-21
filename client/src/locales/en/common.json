@@ -345,7 +345,8 @@
           "fiscal-nightly": "Nightly fiscal assessment ran",
           "cjib-import": "CJIB fines imported",
           "invoice-inbox-import": "Invoices imported from the mailbox",
-          "backup": "Backup made"
+          "backup": "Backup made",
+          "missing-invoice-mail": "Weekly missing-invoice mail"
         }
       }
     }

@@ -349,7 +349,8 @@
           "fiscal-nightly": "Valutazione fiscale notturna eseguita",
           "cjib-import": "Multe del CJIB importate",
           "invoice-inbox-import": "Fatture dalla casella di posta importate",
-          "backup": "Backup creato"
+          "backup": "Backup creato",
+          "missing-invoice-mail": "E-mail settimanale fatture mancanti"
         }
       }
     }

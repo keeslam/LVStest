@@ -82,7 +82,9 @@
     "zoneExpiringTitle": {
       "euroZone": "Emission zone expires - {{plate}}",
       "moveIzi": "Move IZI expires - {{plate}}"
-    }
+    },
+    "missingInvoice": "Invoice missing",
+    "missingInvoiceTitle": "Invoice missing - {{plate}} ({{days}} days after end)"
   },
   "customerCommunications": {
     "pageTitle": "Customer Communications",
@@ -681,5 +683,54 @@
     "noWarrantyExpirationsDescription": "No vehicles have warranties expiring soon.",
     "noCustomNotificationsTitle": "No custom notifications",
     "noCustomNotificationsDescription": "You haven't created any custom notifications yet."
+  },
+  "settingsCard": {
+    "description": "The same settings as App settings > Calendar; they apply to everyone.",
+    "readOnly": "Only people who may manage settings can change these values.",
+    "saved": "Notification settings saved",
+    "saveFailed": "Saving failed",
+    "daysUnit": "days",
+    "save": "Save",
+    "sendNow": "Send now",
+    "sendNowSent": "Mail sent with {{count}} visit(s)",
+    "sendNowNot": {
+      "empty": "Nothing sent: no invoices are missing",
+      "no-recipients": "Nothing sent: fill in recipients and save first",
+      "send-failed": "Sending failed, check the e-mail settings"
+    },
+    "days": {
+      "apkReminderDays": "MOT expires within",
+      "warrantyReminderDays": "Warranty expires within",
+      "zoneReminderDays": "Emission zone / Move IZI expires within",
+      "upcomingReservationDays": "Upcoming reservations within",
+      "missingInvoiceDays": "Invoice missing after"
+    },
+    "mail": {
+      "title": "Weekly mail: invoice missing",
+      "recipients": "Recipients (comma between addresses)",
+      "weekday": "Day",
+      "time": "Time",
+      "subject": "Subject",
+      "intro": "Text above the list",
+      "columns": "Columns in the list",
+      "hint": "The list is in the mail and attached as a PDF. When the list is empty, no mail is sent."
+    },
+    "columns": {
+      "licensePlate": "Licence plate",
+      "vehicle": "Make and model",
+      "type": "Type",
+      "period": "Period",
+      "description": "Description",
+      "daysSinceEnd": "Days since end"
+    },
+    "weekdays": {
+      "1": "Monday",
+      "2": "Tuesday",
+      "3": "Wednesday",
+      "4": "Thursday",
+      "5": "Friday",
+      "6": "Saturday",
+      "7": "Sunday"
+    }
   }
 }

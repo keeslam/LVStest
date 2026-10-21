@@ -27,6 +27,7 @@ import { BackupScheduler } from "./backupScheduler";
 import { mountBodyParsers } from "./middleware/body-limits";
 import { ApkScanScheduler } from "./apkScanScheduler";
 import { ServiceDueScheduler } from "./serviceDueScheduler";
+import { MissingInvoiceScheduler } from "./services/missing-invoices";
 import { PortalAlertScheduler } from "./portalAlertScheduler";
 import { FiscalScheduler } from "./fiscalScheduler";
 import { initializeDefaultAdmin, displayDeploymentInfo } from "./initAdmin";
@@ -47,6 +48,7 @@ let io: SocketIOServer | null = null;
 let backupScheduler: any = null;
 let apkScanScheduler: any = null;
 let serviceDueScheduler: any = null;
+let missingInvoiceScheduler: MissingInvoiceScheduler | null = null;
 let portalAlertScheduler: any = null;
 let fiscalScheduler: any = null;
 let isShuttingDown = false;
@@ -106,6 +108,7 @@ async function gracefulShutdown(signal: string) {
     if (portalAlertScheduler) portalAlertScheduler.stop();
     if (fiscalScheduler) fiscalScheduler.stop();
     stopInvoiceInboxScheduler();
+    missingInvoiceScheduler?.stop();
     if (serviceDueScheduler) {
       serviceDueScheduler.stop();
       console.log('✅ Service-due scheduler stopped');
@@ -523,6 +526,9 @@ apkScanScheduler.start();
 // Initialize regular-service due scan scheduler (notifications)
 serviceDueScheduler = new ServiceDueScheduler();
 serviceDueScheduler.start();
+// Round 2 punt 11 part B: the weekly "factuur ontbreekt" mail.
+missingInvoiceScheduler = new MissingInvoiceScheduler();
+missingInvoiceScheduler.start();
 portalAlertScheduler = new PortalAlertScheduler();
 portalAlertScheduler.start();
 

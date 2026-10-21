@@ -1,4 +1,6 @@
 import { describeApiError } from "@/lib/api-error";
+import { FileWarning } from "lucide-react";
+import type { MissingInvoiceRow } from "@shared/missing-invoice";
 import { maintenanceTypeKey, maintenanceTypeOf } from "@shared/maintenance-type";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -334,6 +336,10 @@ export default function MaintenanceCalendar() {
   const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
 
   // Fetch vehicles
+  // Round 2 punt 11 part B: visits whose invoice is missing get a mark on the calendar.
+  const { data: missingInvoices } = useQuery<{ rows: MissingInvoiceRow[] }>({ queryKey: ["/api/maintenance-blocks/missing-invoices"] });
+  const missingInvoiceVisitIds = new Set((missingInvoices?.rows ?? []).map((r) => `scheduled_maintenance_${r.visitId}`));
+
   const { data: vehicles, isLoading: isLoadingVehicles } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],
     enabled: canViewVehicles,
@@ -1338,6 +1344,15 @@ export default function MaintenanceCalendar() {
                                       <div className="flex items-center gap-1 min-w-0">
                                         {getEventIcon(event.type)}
                                         <span className="truncate">{displayLicensePlate(event.vehicle.licensePlate)}</span>
+                                        {missingInvoiceVisitIds.has(String(event.id)) && (
+                                          <FileWarning
+                                            className="h-3 w-3 shrink-0 text-red-600"
+                                            aria-label={t('visitCosts.missingInvoice')}
+                                            data-testid={`missing-invoice-mark-${event.id}`}
+                                          >
+                                            <title>{t('visitCosts.missingInvoice')}</title>
+                                          </FileWarning>
+                                        )}
                                       </div>
                                       
                                       {/* Action buttons - only show on hover */}

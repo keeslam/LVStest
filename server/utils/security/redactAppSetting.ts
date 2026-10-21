@@ -50,6 +50,9 @@ export function isManagedSettingKey(key: unknown): boolean {
  */
 const READ_RIGHT_BY_KEY: Record<string, string> = {
   [RDW_TYPE_REMAP_PLAN_KEY]: UserPermission.MANAGE_VEHICLES,
+  // Round 2 punt 11: the weekly "factuur ontbreekt" mail names e-mail addresses.
+  missing_invoice_mail: UserPermission.MANAGE_SETTINGS,
+  missing_invoice_mail_state: UserPermission.MANAGE_SETTINGS,
 };
 
 type ReadingUser = { role?: string; permissions?: string[] } | null | undefined;

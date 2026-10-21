@@ -83,7 +83,9 @@
     "zoneExpiringTitle": {
       "euroZone": "Zona ambientale in scadenza - {{plate}}",
       "moveIzi": "Move IZI in scadenza - {{plate}}"
-    }
+    },
+    "missingInvoice": "Fattura mancante",
+    "missingInvoiceTitle": "Fattura mancante - {{plate}} ({{days}} giorni dopo la fine)"
   },
   "customerCommunications": {
     "pageTitle": "Comunicazioni con i clienti",
@@ -706,5 +708,54 @@
     "noWarrantyExpirationsDescription": "Non ci sono veicoli con garanzia in scadenza a breve.",
     "noCustomNotificationsTitle": "Nessuna notifica personalizzata",
     "noCustomNotificationsDescription": "Non ha ancora creato notifiche personalizzate."
+  },
+  "settingsCard": {
+    "description": "Le stesse impostazioni di Impostazioni app > Calendario; valgono per tutti.",
+    "readOnly": "Solo chi può gestire le impostazioni può modificare questi valori.",
+    "saved": "Impostazioni notifiche salvate",
+    "saveFailed": "Salvataggio non riuscito",
+    "daysUnit": "giorni",
+    "save": "Salva",
+    "sendNow": "Invia ora",
+    "sendNowSent": "E-mail inviata con {{count}} visita/e",
+    "sendNowNot": {
+      "empty": "Nulla inviato: non mancano fatture",
+      "no-recipients": "Nulla inviato: inserisci i destinatari e salva prima",
+      "send-failed": "Invio non riuscito, controlla le impostazioni e-mail"
+    },
+    "days": {
+      "apkReminderDays": "Revisione scade entro",
+      "warrantyReminderDays": "Garanzia scade entro",
+      "zoneReminderDays": "Zona ambientale / Move IZI scade entro",
+      "upcomingReservationDays": "Prenotazioni in arrivo entro",
+      "missingInvoiceDays": "Fattura mancante dopo"
+    },
+    "mail": {
+      "title": "E-mail settimanale: fattura mancante",
+      "recipients": "Destinatari (virgola tra gli indirizzi)",
+      "weekday": "Giorno",
+      "time": "Ora",
+      "subject": "Oggetto",
+      "intro": "Testo sopra l'elenco",
+      "columns": "Colonne dell'elenco",
+      "hint": "L'elenco è nella mail e in allegato come PDF. Se è vuoto, non viene inviata alcuna mail."
+    },
+    "columns": {
+      "licensePlate": "Targa",
+      "vehicle": "Marca e modello",
+      "type": "Tipo",
+      "period": "Periodo",
+      "description": "Descrizione",
+      "daysSinceEnd": "Giorni dalla fine"
+    },
+    "weekdays": {
+      "1": "lunedì",
+      "2": "martedì",
+      "3": "mercoledì",
+      "4": "giovedì",
+      "5": "venerdì",
+      "6": "sabato",
+      "7": "domenica"
+    }
   }
 }

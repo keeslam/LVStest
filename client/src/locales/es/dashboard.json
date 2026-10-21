@@ -343,5 +343,12 @@
     "none": "No hay fechas de zona ambiental ni Move IZI que caduquen pronto",
     "euroZone": "zona ambiental",
     "moveIzi": "Move IZI"
+  },
+  "missingInvoiceWidget": {
+    "title": "Falta la factura",
+    "subtitle": "Visitas al taller aún sin factura {{days}} días después del fin",
+    "none": "Todas las facturas han llegado",
+    "print": "Imprimir lista",
+    "daysAgo": "{{count}} días"
   }
 }

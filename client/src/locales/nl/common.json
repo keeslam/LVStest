@@ -345,7 +345,8 @@
           "fiscal-nightly": "Nachtelijke fiscale beoordeling uitgevoerd",
           "cjib-import": "CJIB-boetes geïmporteerd",
           "invoice-inbox-import": "Facturen uit het postvak geïmporteerd",
-          "backup": "Back-up gemaakt"
+          "backup": "Back-up gemaakt",
+          "missing-invoice-mail": "Wekelijkse mail facturen ontbreken"
         }
       }
     }

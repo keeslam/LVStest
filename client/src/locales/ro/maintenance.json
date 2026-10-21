@@ -535,6 +535,8 @@
     "linkFailed": "Legarea a eșuat",
     "confirmTitle": "Ce factură aparține acestei vizite?",
     "confirmDescription": "Cea mai nouă este deja selectată. Verificați suma, data și descrierea: uneori între timp sosește altă factură.",
-    "confirmLink": "Leagă"
+    "confirmLink": "Leagă",
+    "missingInvoice": "Factură lipsă",
+    "noInvoiceExpected": "Nu e nevoie de factură (ex. garanție gratuită)"
   }
 }

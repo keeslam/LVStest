@@ -514,7 +514,11 @@
       "serviceReminderDaysLabel": "Remind from (days ahead)",
       "saveMaintenanceSettingsButton": "Save Maintenance Settings",
       "zoneRemindersLabel": "Emission zone and Move IZI reminder",
-      "zoneRemindersHint": "This many days before the end date a car appears on the tile and in the notifications"
+      "zoneRemindersHint": "This many days before the end date a car appears on the tile and in the notifications",
+      "missingInvoiceLabel": "Missing invoice reminder",
+      "missingInvoiceHint": "This many days after a workshop visit ends without a linked invoice",
+      "upcomingReservationsLabel": "Upcoming reservations",
+      "upcomingReservationsHint": "This many days ahead the notification centre shows new rentals"
     },
     "email": {
       "configurationTitle": "Email Configuration",
@@ -686,7 +690,8 @@
         "overdue": "Overdue rentals",
         "warranty": "Warranty expiring",
         "licenses": "Driving licences",
-        "zones": "Emission zone / Move IZI"
+        "zones": "Emission zone / Move IZI",
+        "missingInvoices": "Invoice missing"
       }
     },
     "quickActions": {

@@ -503,7 +503,14 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
           )).orderBy(desc(expenses.date), desc(expenses.id))
         : [];
       const total = linked.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-      res.json({ linked, candidates, total, window });
+      // Part B: is this visit on the "factuur ontbreekt" list, and was it marked "Geen factuur nodig"?
+      const { missingInvoiceRows } = await import("../../shared/missing-invoice");
+      const settings = await storage.getSettings();
+      const vehicle = await storage.getVehicle(visit.vehicleId);
+      const missing = vehicle
+        ? missingInvoiceRows([visit], [vehicle], new Set(linked.length > 0 ? [visit.id] : []), officeDate(new Date()), settings?.missingInvoiceDays ?? 14).length > 0
+        : false;
+      res.json({ linked, candidates, total, window, missing, noInvoiceExpected: visit.noInvoiceExpected });
     } catch (error) {
       console.error("Error fetching workshop visit costs:", error);
       res.status(500).json({ message: "Error fetching workshop visit costs" });

@@ -11,6 +11,7 @@ import { BackupStalenessBanner } from "@/components/backup/backup-staleness-bann
 import { AccessDeniedBanner } from "@/components/security/access-denied-banner";
 import { DriverLicenseWidget } from "@/components/dashboard/driver-license-widget";
 import { ZoneExpirationWidget } from "@/components/dashboard/zone-expiration-widget";
+import { MissingInvoiceWidget } from "@/components/dashboard/missing-invoice-widget";
 import { useQuery } from "@tanstack/react-query";
 import { DASHBOARD_TILES_KEY, dashboardTilesFromSetting, type DashboardTileId } from "@shared/dashboard-tiles";
 
@@ -22,6 +23,7 @@ const TILE_COMPONENTS: Record<DashboardTileId, () => JSX.Element> = {
   warranty: WarrantyExpirationWidget,
   licenses: DriverLicenseWidget,
   zones: ZoneExpirationWidget,
+  missingInvoices: MissingInvoiceWidget,
 };
 
 /**

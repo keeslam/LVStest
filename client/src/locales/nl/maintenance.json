@@ -530,6 +530,8 @@
     "linkFailed": "Koppelen mislukt",
     "confirmTitle": "Welke factuur hoort bij dit bezoek?",
     "confirmDescription": "De nieuwste staat al aangevinkt. Controleer bedrag, datum en omschrijving: soms komt er tussendoor een andere factuur binnen.",
-    "confirmLink": "Koppelen"
+    "confirmLink": "Koppelen",
+    "missingInvoice": "Factuur ontbreekt",
+    "noInvoiceExpected": "Geen factuur nodig (bijvoorbeeld gratis garantie)"
   }
 }

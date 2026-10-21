@@ -349,7 +349,8 @@
           "fiscal-nightly": "Evaluarea fiscală nocturnă efectuată",
           "cjib-import": "Amenzi CJIB importate",
           "invoice-inbox-import": "Facturi din căsuța poștală importate",
-          "backup": "Copie de rezervă creată"
+          "backup": "Copie de rezervă creată",
+          "missing-invoice-mail": "E-mail săptămânal facturi lipsă"
         }
       }
     }

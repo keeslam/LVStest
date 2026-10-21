@@ -10,7 +10,8 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Link2, Plus, Receipt, Unlink } from "lucide-react";
+import { FileWarning, Link2, Plus, Receipt, Unlink } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -33,6 +34,9 @@ interface VisitCostsResponse {
   linked: VisitExpense[];
   candidates: VisitExpense[];
   total: number;
+  /** Part B: on the "factuur ontbreekt" list. */
+  missing?: boolean;
+  noInvoiceExpected?: boolean;
 }
 
 function ExpenseLine({ e }: { e: VisitExpense }) {
@@ -66,6 +70,17 @@ export function VisitCosts({ visitId, vehicleId }: { visitId: number; vehicleId:
     onError: (error) => toast({ variant: "destructive", title: t("visitCosts.linkFailed"), description: describeApiError(error) }),
   });
 
+  const noInvoice = useMutation({
+    mutationFn: async (noInvoiceExpected: boolean) => {
+      await apiRequest("PUT", `/api/maintenance-blocks/${visitId}/no-invoice`, { noInvoiceExpected });
+    },
+    onSuccess: () => {
+      invalidateByPrefix(key);
+      invalidateByPrefix("/api/maintenance-blocks/missing-invoices");
+    },
+    onError: (error) => toast({ variant: "destructive", title: t("visitCosts.linkFailed"), description: describeApiError(error) }),
+  });
+
   const linked = data?.linked ?? [];
   const candidates = data?.candidates ?? [];
   const openPicker = () => {
@@ -91,6 +106,13 @@ export function VisitCosts({ visitId, vehicleId }: { visitId: number; vehicleId:
           </Button>
         </ExpenseAddDialog>
       </div>
+
+      {data?.missing && (
+        <div className="flex items-center gap-2 rounded-md border border-red-300 bg-red-50 p-2 text-sm text-red-800" data-testid="visit-missing-invoice">
+          <FileWarning className="h-4 w-4 shrink-0" aria-hidden="true" />
+          {t("visitCosts.missingInvoice")}
+        </div>
+      )}
 
       {candidates.length > 0 && (
         <div className="flex flex-col gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between" data-testid="visit-invoice-found">
@@ -127,6 +149,18 @@ export function VisitCosts({ visitId, vehicleId }: { visitId: number; vehicleId:
             <span>{formatCurrency(data?.total ?? 0)}</span>
           </li>
         </ul>
+      )}
+
+      {linked.length === 0 && (
+        <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+          <Checkbox
+            checked={!!data?.noInvoiceExpected}
+            onCheckedChange={(v) => noInvoice.mutate(v === true)}
+            disabled={noInvoice.isPending}
+            data-testid="checkbox-visit-no-invoice"
+          />
+          {t("visitCosts.noInvoiceExpected")}
+        </label>
       )}
 
       <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>

@@ -184,6 +184,7 @@ import { registerManualRoutes } from "./routes/manual";
 import { registerReservationWorklistRoutes } from "./routes/reservation-worklist";
 import { registerRdwTypeRemapRoutes } from "./routes/rdw-type-remap";
 import { registerExpenseRoutes } from "./routes/expenses";
+import { registerMissingInvoiceRoutes } from "./routes/missing-invoices";
 import { registerExpenseInboxRoutes } from "./routes/expense-inbox";
 import { registerPdfTemplateRoutes } from "./routes/pdf-templates";
 import { storedPathGuard, TEMPLATE_ROUTE_PREFIXES } from "./middleware/stored-path-guard";
@@ -6879,6 +6880,8 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
   registerExpenseInboxRoutes(app);
   registerExpenseRoutes(app, routeDeps);
+  // Round 2 punt 11 part B: "factuur ontbreekt".
+  registerMissingInvoiceRoutes(app);
 
   // ==================== VEHICLE-SPECIFIC CUSTOMER ROUTES ====================
   /**

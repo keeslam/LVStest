@@ -51,6 +51,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Vehicle, Reservation, Customer, CustomNotification, UserPermission } from "@shared/schema";
 import type { ZoneExpiringRow } from "@shared/zone-expiry";
+import type { MissingInvoiceRow } from "@shared/missing-invoice";
 import { formatDate, formatLicensePlate, formatMaintenanceCategory } from "@/lib/format-utils";
 import { displayNotification } from "@/lib/notification-display";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
@@ -73,6 +74,7 @@ import {
   ExternalLink,
   Search,
   Leaf,
+  FileWarning,
 } from "lucide-react";
 import { officeToday } from "@/lib/office-date";
 
@@ -161,6 +163,15 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
     queryKey: ["/api/vehicles/zone-expiring"],
     enabled: canViewVehicles,
   });
+
+  // Round 2 punt 11 part B: workshop visits whose invoice is missing.
+  const { data: missingInvoiceData } = useQuery<{ rows: MissingInvoiceRow[] }>({
+    queryKey: ["/api/maintenance-blocks/missing-invoices"],
+    enabled: canViewVehicles,
+  });
+  // The rentals in the coming days: as many days as the notification settings say (default 2).
+  const { data: notificationSystemSettings } = useQuery<{ upcomingReservationDays?: number }>({ queryKey: ["/api/system-settings"] });
+  const upcomingDays = notificationSystemSettings?.upcomingReservationDays ?? 2;
 
   const { data: upcomingReservations = [] } = useQuery<Reservation[]>({
     queryKey: ["/api/reservations/upcoming"],
@@ -290,10 +301,14 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
     .filter((z) => !isDismissed(`dismissed_zone_${z.kind}_${z.id}`))
     .filter((z) => matchesSearch(`${z.brand ?? ""} ${z.model ?? ""} ${z.licensePlate}`));
 
+  const missingInvoiceItems = (missingInvoiceData?.rows ?? [])
+    .filter((m) => !isDismissed(`dismissed_missing_invoice_${m.visitId}`))
+    .filter((m) => matchesSearch(`${m.brand} ${m.model} ${m.licensePlate} ${m.description}`));
+
   const upcomingReservationItems = upcomingReservations
     .filter((r) => {
       const daysUntil = differenceInDays(new Date(r.startDate), today);
-      return daysUntil >= 0 && daysUntil <= 2;
+      return daysUntil >= 0 && daysUntil <= upcomingDays;
     })
     .filter((r) => matchesSearch(`${vehicleSearchText(r.vehicleId)} ${customerSearchText(r.customerId)} ${r.id}`))
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
@@ -314,6 +329,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
     apkExpiringItems.length +
     warrantyExpiringItems.length +
     zoneExpiringItems.length +
+    missingInvoiceItems.length +
     upcomingReservationItems.length +
     upcomingMaintenanceItems.length +
     placeholderReservations.length +
@@ -772,6 +788,22 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                             date={z.date}
                             onView={() => openVehicleDialog(z.id)}
                             onDismiss={() => setPendingDismiss({ key: `dismissed_zone_${z.kind}_${z.id}`, label: formatLicensePlate(z.licensePlate) })}
+                          />
+                        ))}
+                      </>
+                    )}
+                    {missingInvoiceItems.length > 0 && (
+                      <>
+                        <div className="px-4 py-2 bg-muted/50 text-xs font-medium">{t('centerDialog.missingInvoice')}</div>
+                        {missingInvoiceItems.map((m) => (
+                          <NotificationCard
+                            key={`missing-invoice-${m.visitId}`}
+                            icon={<FileWarning className="h-5 w-5 text-red-600" />}
+                            title={t('centerDialog.missingInvoiceTitle', { plate: formatLicensePlate(m.licensePlate), days: m.daysSinceEnd })}
+                            description={[`${m.brand} ${m.model}`.trim(), m.description].filter(Boolean).join(" · ")}
+                            date={m.endDate}
+                            onView={() => openVehicleDialog(m.vehicleId)}
+                            onDismiss={() => setPendingDismiss({ key: `dismissed_missing_invoice_${m.visitId}`, label: formatLicensePlate(m.licensePlate) })}
                           />
                         ))}
                       </>

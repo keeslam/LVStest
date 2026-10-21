@@ -514,7 +514,11 @@
       "serviceReminderDaysLabel": "Herinnering vanaf (dagen vooraf)",
       "saveMaintenanceSettingsButton": "Onderhoudsinstellingen opslaan",
       "zoneRemindersLabel": "Herinnering milieuzone en Move IZI",
-      "zoneRemindersHint": "Zoveel dagen voor de einddatum komt een auto op de tegel en bij de meldingen"
+      "zoneRemindersHint": "Zoveel dagen voor de einddatum komt een auto op de tegel en bij de meldingen",
+      "missingInvoiceLabel": "Herinnering factuur ontbreekt",
+      "missingInvoiceHint": "Zoveel dagen na het einde van een werkplaatsbezoek zonder gekoppelde factuur",
+      "upcomingReservationsLabel": "Aankomende reserveringen",
+      "upcomingReservationsHint": "Zoveel dagen vooruit toont het meldingencentrum nieuwe huren"
     },
     "email": {
       "configurationTitle": "E-mailconfiguratie",
@@ -686,7 +690,8 @@
         "overdue": "Achterstallige huren",
         "warranty": "Garantie verloopt",
         "licenses": "Rijbewijzen",
-        "zones": "Milieuzone / Move IZI"
+        "zones": "Milieuzone / Move IZI",
+        "missingInvoices": "Factuur ontbreekt"
       }
     },
     "quickActions": {

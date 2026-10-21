@@ -343,5 +343,12 @@
     "none": "Nessuna data di zona ambientale o Move IZI in scadenza",
     "euroZone": "zona ambientale",
     "moveIzi": "Move IZI"
+  },
+  "missingInvoiceWidget": {
+    "title": "Fattura mancante",
+    "subtitle": "Visite in officina ancora senza fattura {{days}} giorni dopo la fine",
+    "none": "Tutte le fatture sono arrivate",
+    "print": "Stampa elenco",
+    "daysAgo": "{{count}} giorni"
   }
 }

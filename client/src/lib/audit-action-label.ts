@@ -46,7 +46,7 @@ const SUB_ACTIONS: Record<string, readonly string[]> = {
   dialog: ["open"],
   "apk-date-change": ["confirm", "dismiss"],
   // Background runs (server/utils/security/auditLogger.ts AuditLogger.system): one row per run.
-  system: ["apk-scan", "service-due-scan", "fiscal-nightly", "cjib-import", "invoice-inbox-import", "backup"],
+  system: ["apk-scan", "service-due-scan", "fiscal-nightly", "cjib-import", "invoice-inbox-import", "backup", "missing-invoice-mail"],
 };
 
 const RESOURCES = [

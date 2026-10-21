@@ -540,6 +540,8 @@
     "linkFailed": "Powiązanie nie powiodło się",
     "confirmTitle": "Która faktura należy do tej wizyty?",
     "confirmDescription": "Najnowsza jest już zaznaczona. Sprawdź kwotę, datę i opis: czasem w międzyczasie przychodzi inna faktura.",
-    "confirmLink": "Powiąż"
+    "confirmLink": "Powiąż",
+    "missingInvoice": "Brak faktury",
+    "noInvoiceExpected": "Faktura niepotrzebna (np. bezpłatna gwarancja)"
   }
 }

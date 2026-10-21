@@ -1025,6 +1025,8 @@ export const reservations = pgTable("reservations", {
   // Round 2 punt 11 (Kees, 2026-10-21): the kind of workshop visit (breakdown, tire_replacement, ...),
   // a real column instead of the "type: ..." prefix of the notes (shared/maintenance-type.ts).
   maintenanceType: text("maintenance_type"),
+  // Round 2 punt 11 part B: "Geen factuur nodig" (a free warranty visit, ...): never "factuur ontbreekt".
+  noInvoiceExpected: boolean("no_invoice_expected").notNull().default(false),
   spareAssignmentDecision: text("spare_assignment_decision"), // 'spare_assigned' | 'customer_arranging' | 'not_handled' for maintenance tracking
   affectedRentalId: integer("affected_rental_id"), // FK to the rental that's affected by this maintenance
   portalRequestId: integer("portal_request_id"), // Set on a maintenance block created from a customer portal request
@@ -2577,6 +2579,10 @@ export const settings = pgTable("settings", {
   warrantyReminderDays: integer("warranty_reminder_days").notNull().default(30),
   // Round 2 punt 9 (Kees, 2026-10-20): days ahead for the low-emission-zone and Move IZI end dates.
   zoneReminderDays: integer("zone_reminder_days").notNull().default(30),
+  // Round 2 punt 11 part B (Kees, 2026-10-21): days after a workshop visit ends before
+  // "factuur ontbreekt", and how many days ahead the notification centre lists rentals.
+  missingInvoiceDays: integer("missing_invoice_days").notNull().default(14),
+  upcomingReservationDays: integer("upcoming_reservation_days").notNull().default(2),
   showMaintenanceBlocks: boolean("show_maintenance_blocks").notNull().default(true),
   // Regular-service reminders: default interval (per vehicle overridable) and the
   // window before the due point in which "due soon" reminders start.
@@ -2613,6 +2619,8 @@ export const updateSettingsSchema = createInsertSchema(settings).pick({
   showWarrantyReminders: true,
   warrantyReminderDays: true,
   zoneReminderDays: true,
+  missingInvoiceDays: true,
+  upcomingReservationDays: true,
   showMaintenanceBlocks: true,
   showServiceReminders: true,
   defaultServiceIntervalKm: true,

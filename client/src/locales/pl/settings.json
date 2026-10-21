@@ -520,7 +520,11 @@
       "serviceReminderDaysLabel": "Przypomnienie od (dni wcześniej)",
       "saveMaintenanceSettingsButton": "Zapisz ustawienia serwisu",
       "zoneRemindersLabel": "Przypomnienie o strefie ekologicznej i Move IZI",
-      "zoneRemindersHint": "Tyle dni przed datą końcową auto pojawia się na kafelku i w powiadomieniach"
+      "zoneRemindersHint": "Tyle dni przed datą końcową auto pojawia się na kafelku i w powiadomieniach",
+      "missingInvoiceLabel": "Przypomnienie o brakującej fakturze",
+      "missingInvoiceHint": "Tyle dni po zakończeniu wizyty w warsztacie bez powiązanej faktury",
+      "upcomingReservationsLabel": "Nadchodzące rezerwacje",
+      "upcomingReservationsHint": "Z takim wyprzedzeniem centrum powiadomień pokazuje nowe wynajmy"
     },
     "email": {
       "configurationTitle": "Konfiguracja e-mail",
@@ -694,7 +698,8 @@
         "overdue": "Zaległe wynajmy",
         "warranty": "Gwarancja wygasa",
         "licenses": "Prawa jazdy",
-        "zones": "Strefa ekologiczna / Move IZI"
+        "zones": "Strefa ekologiczna / Move IZI",
+        "missingInvoices": "Brak faktury"
       }
     },
     "quickActions": {

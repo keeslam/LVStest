@@ -353,7 +353,8 @@
           "fiscal-nightly": "Wykonano nocną ocenę podatkową",
           "cjib-import": "Zaimportowano mandaty z CJIB",
           "invoice-inbox-import": "Zaimportowano faktury ze skrzynki pocztowej",
-          "backup": "Utworzono kopię zapasową"
+          "backup": "Utworzono kopię zapasową",
+          "missing-invoice-mail": "Cotygodniowy e-mail o brakujących fakturach"
         }
       }
     }
