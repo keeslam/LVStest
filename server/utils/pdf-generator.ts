@@ -223,39 +223,30 @@ export function pdfCarriesActiveContent(bytes: Buffer): boolean {
  * Returns the offending key, or null when the file is clean.
  */
 /**
- * Kees 2026-10-21: a background with an auto-action (Word's "open at full page", an
- * /OpenAction) or document JavaScript was refused, and the raw byte scan above also hits
- * /AA or /JS by chance inside compressed streams. Uploads are now cleaned instead: the
- * catalog's /OpenAction and /AA, the JavaScript and EmbeddedFiles name trees and every
- * page's /AA are removed and the PDF is saved again. Contracts embed the background's
- * pages into a fresh document anyway (BUG-180), so nothing of this reached them; the
- * cleaning keeps the stored file clean too.
+ * Kees 2026-10-21: what in a background PDF is really dangerous. The checks above refused
+ * every /OpenAction (Word's "open at full page" is one, a plain GoTo destination) and their
+ * raw byte scan also hits /AA or /JS by chance inside compressed streams. Re-saving the PDF
+ * to strip things broke real PDFs (no preview could be made), so the original is kept and
+ * only real active content is refused: an OpenAction that is an action other than GoTo,
+ * document or page /AA, document JavaScript or embedded files. Contracts embed the
+ * background's pages into a fresh document anyway (BUG-180).
  */
-export async function stripActivePdfContent(bytes: Buffer): Promise<Buffer> {
-  const doc = await PDFDocument.load(bytes, { throwOnInvalidObject: false });
-  doc.catalog.delete(PDFName.of("OpenAction"));
-  doc.catalog.delete(PDFName.of("AA"));
-  const names = doc.catalog.lookupMaybe(PDFName.of("Names"), PDFDict);
-  if (names) {
-    names.delete(PDFName.of("JavaScript"));
-    names.delete(PDFName.of("EmbeddedFiles"));
-  }
-  for (const page of doc.getPages()) page.node.delete(PDFName.of("AA"));
-  return Buffer.from(await doc.save());
-}
-
-/** The parsed check only (no raw byte scan): what is really in the catalog. */
-export async function structuralActivePdfContent(bytes: Buffer): Promise<string | null> {
+export async function dangerousPdfContent(bytes: Buffer): Promise<string | null> {
   try {
-    const doc = await PDFDocument.load(bytes, { throwOnInvalidObject: false });
-    if (doc.catalog.get(PDFName.of("OpenAction"))) return "/OpenAction";
+    const doc = await PDFDocument.load(bytes, { throwOnInvalidObject: false, updateMetadata: false });
+    const openAction = doc.catalog.lookup(PDFName.of("OpenAction"));
+    if (openAction instanceof PDFDict) {
+      const kind = openAction.get(PDFName.of("S"));
+      if (!kind || String(kind) !== "/GoTo") return "/OpenAction";
+    }
     if (doc.catalog.get(PDFName.of("AA"))) return "/AA";
     const names = doc.catalog.lookupMaybe(PDFName.of("Names"), PDFDict);
     if (names && (names.get(PDFName.of("JavaScript")) || names.get(PDFName.of("EmbeddedFiles")))) return "/JavaScript";
     if (doc.getPages().some((page) => page.node.get(PDFName.of("AA")))) return "/AA";
     return null;
   } catch {
-    return null;
+    // Not parseable by pdf-lib: fall back to a narrow text check for JavaScript.
+    return /\/JavaScript|\/JS\s*[(<]/.test(bytes.toString("latin1")) ? "/JavaScript" : null;
   }
 }
 

@@ -2250,11 +2250,20 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
                     >
                       {/* Thumbnail */}
                       <div className="aspect-[1/1.414] bg-gray-100 relative overflow-hidden">
-                        <img 
-                          src={`${uploadUrl(bg.previewPath)}?_cb=${Date.now()}`} 
-                          alt={bg.name}
-                          className="w-full h-full object-contain"
-                        />
+                        {/* When no preview image could be made the server stores the PDF itself as
+                            "preview"; an <img> cannot show that, so a document icon stands in. */}
+                        {bg.previewPath.toLowerCase().endsWith('.pdf') ? (
+                          <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                            <FileText className="h-12 w-12 opacity-50" />
+                            <span className="text-xs">PDF</span>
+                          </div>
+                        ) : (
+                          <img
+                            src={`${uploadUrl(bg.previewPath)}?_cb=${Date.now()}`}
+                            alt={bg.name}
+                            className="w-full h-full object-contain"
+                          />
+                        )}
                         {/* Selected indicator */}
                         {currentTemplate?.backgroundPath === bg.backgroundPath && (
                           <div className="absolute inset-0 bg-blue-500 bg-opacity-20 flex items-center justify-center">
