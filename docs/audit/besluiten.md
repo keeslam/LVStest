@@ -744,7 +744,7 @@ Kees koos uit de tweede lijst met suggesties punt 9. De einddatum van de milieuz
 - **Dashboardtegel** "Milieuzone / Move IZI". Op de tegel staat per auto en per soort de einddatum en het aantal dagen. Bij de dashboardtegels zet je hem aan of uit en verander je de volgorde.
 - **Meldingencentrum.** Bij het belletje, net als APK en garantie. De melding is weg te klikken.
 - **Boeken en ophalen.** Een gele waarschuwing als de datum vóór de huur ligt (verlopen) of in de huurperiode valt (verloopt tijdens de huur). Opslaan en meegeven mag wel.
-- **Termijn.** In **Instellingen > Kalender** staat "Herinnering milieuzone en Move IZI", standaard 30 dagen. Auto's waarvan de datum tot twee maanden verlopen is, blijven op de lijst staan.
+- **Termijn.** Standaard 30 dagen. Sinds 21-10 (B-58) stel je dit alleen in bij **Instellingen in het meldingencentrum**. Auto's waarvan de datum tot twee maanden verlopen is, blijven op de lijst staan.
 - **Welke auto's.** Dezelfde als bij APK en garantie: niet de uitgesloten statussen uit de onderhoudsinstellingen, en niet de auto's die uit de vloot zijn.
 
 ### B-57 — Werkplaatsbezoek: soort, kosten en stilstand (21-10-2026, deel A)
@@ -786,7 +786,8 @@ Kees koos met klikken: het aantal dagen voor "factuur ontbreekt" is instelbaar, 
 - **Meldingsinstellingen.** Het scherm Instellingen in het meldingencentrum sloeg niets op; in de code stond letterlijk "in a real application, save these settings". Nu bewaart het echt:
   - de dagen voor APK, garantie, milieuzone/Move IZI, aankomende reserveringen en factuur ontbreekt;
   - de mailinstellingen.
-  - Het zijn dezelfde waarden als in **App-instellingen > Kalender**. Aankomende reserveringen stond vast op 2 dagen en is nu een instelling.
+  - Aankomende reserveringen stond vast op 2 dagen en is nu een instelling.
+  - Kees (21-10): milieuzone/Move IZI en aankomende reserveringen stel je alleen in het meldingencentrum in. APK, garantie en factuur ontbreekt staan ook in **App-instellingen > Kalender**.
   - De nepschakelaars "App-meldingen" en "E-mailmeldingen" zijn weg.
   - Opslaan mag alleen wie instellingen mag beheren.
 

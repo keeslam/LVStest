@@ -710,7 +710,7 @@
     "noCustomNotificationsDescription": "Non ha ancora creato notifiche personalizzate."
   },
   "settingsCard": {
-    "description": "Le stesse impostazioni di Impostazioni app > Calendario; valgono per tutti.",
+    "description": "Vale per tutti. Revisione, garanzia e fattura mancante sono anche in Impostazioni app > Calendario.",
     "readOnly": "Solo chi può gestire le impostazioni può modificare questi valori.",
     "saved": "Impostazioni notifiche salvate",
     "saveFailed": "Salvataggio non riuscito",

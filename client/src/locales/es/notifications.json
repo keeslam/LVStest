@@ -710,7 +710,7 @@
     "noCustomNotificationsDescription": "Aún no ha creado ninguna notificación personalizada."
   },
   "settingsCard": {
-    "description": "Los mismos ajustes que en Ajustes de la app > Calendario; valen para todos.",
+    "description": "Vale para todos. ITV, garantía y factura pendiente también están en Ajustes de la app > Calendario.",
     "readOnly": "Solo quien puede gestionar ajustes puede cambiar estos valores.",
     "saved": "Ajustes de notificaciones guardados",
     "saveFailed": "No se pudo guardar",

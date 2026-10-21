@@ -710,7 +710,7 @@
     "noCustomNotificationsDescription": "Ainda não criou notificações personalizadas."
   },
   "settingsCard": {
-    "description": "As mesmas definições que em Definições da app > Calendário; valem para todos.",
+    "description": "Vale para todos. Inspeção, garantia e fatura em falta também estão em Definições da app > Calendário.",
     "readOnly": "Só quem pode gerir definições pode alterar estes valores.",
     "saved": "Definições de notificações guardadas",
     "saveFailed": "Falha ao guardar",

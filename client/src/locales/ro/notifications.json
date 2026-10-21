@@ -710,7 +710,7 @@
     "noCustomNotificationsDescription": "Încă nu ați creat notificări personalizate."
   },
   "settingsCard": {
-    "description": "Aceleași setări ca în Setări aplicație > Calendar; se aplică tuturor.",
+    "description": "Se aplică tuturor. ITP, garanția și factura lipsă sunt și în Setări aplicație > Calendar.",
     "readOnly": "Doar cine poate gestiona setările poate modifica aceste valori.",
     "saved": "Setările notificărilor au fost salvate",
     "saveFailed": "Salvarea a eșuat",

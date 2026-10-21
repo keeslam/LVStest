@@ -516,12 +516,8 @@
       "serviceReminderKmLabel": "Recordatorio a partir de (km de antelación)",
       "serviceReminderDaysLabel": "Recordatorio a partir de (días de antelación)",
       "saveMaintenanceSettingsButton": "Guardar ajustes de mantenimiento",
-      "zoneRemindersLabel": "Aviso de zona ambiental y Move IZI",
-      "zoneRemindersHint": "Tantos días antes de la fecha final el coche aparece en el mosaico y en las notificaciones",
       "missingInvoiceLabel": "Aviso de factura pendiente",
-      "missingInvoiceHint": "Tantos días después del fin de una visita al taller sin factura vinculada",
-      "upcomingReservationsLabel": "Próximas reservas",
-      "upcomingReservationsHint": "Con tantos días de antelación el centro de notificaciones muestra alquileres nuevos"
+      "missingInvoiceHint": "Tantos días después del fin de una visita al taller sin factura vinculada"
     },
     "email": {
       "configurationTitle": "Configuración de correo electrónico",

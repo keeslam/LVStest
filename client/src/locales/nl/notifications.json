@@ -685,7 +685,7 @@
     "noCustomNotificationsDescription": "Je hebt nog geen aangepaste meldingen aangemaakt."
   },
   "settingsCard": {
-    "description": "Dezelfde instellingen als in App-instellingen > Kalender; ze gelden voor iedereen.",
+    "description": "Geldt voor iedereen. APK, garantie en factuur ontbreekt staan ook in App-instellingen > Kalender.",
     "readOnly": "Alleen wie instellingen mag beheren kan deze waarden aanpassen.",
     "saved": "Meldingsinstellingen opgeslagen",
     "saveFailed": "Opslaan mislukt",

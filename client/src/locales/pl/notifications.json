@@ -735,7 +735,7 @@
     "noCustomNotificationsDescription": "Nie utworzono jeszcze żadnych powiadomień niestandardowych."
   },
   "settingsCard": {
-    "description": "Te same ustawienia co w Ustawienia aplikacji > Kalendarz; obowiązują wszystkich.",
+    "description": "Obowiązuje wszystkich. Przegląd, gwarancja i brak faktury są też w Ustawienia aplikacji > Kalendarz.",
     "readOnly": "Tylko osoby zarządzające ustawieniami mogą zmieniać te wartości.",
     "saved": "Ustawienia powiadomień zapisane",
     "saveFailed": "Zapis nie powiódł się",

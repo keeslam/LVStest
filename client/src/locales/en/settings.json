@@ -513,12 +513,8 @@
       "serviceReminderKmLabel": "Remind from (km ahead)",
       "serviceReminderDaysLabel": "Remind from (days ahead)",
       "saveMaintenanceSettingsButton": "Save Maintenance Settings",
-      "zoneRemindersLabel": "Emission zone and Move IZI reminder",
-      "zoneRemindersHint": "This many days before the end date a car appears on the tile and in the notifications",
       "missingInvoiceLabel": "Missing invoice reminder",
-      "missingInvoiceHint": "This many days after a workshop visit ends without a linked invoice",
-      "upcomingReservationsLabel": "Upcoming reservations",
-      "upcomingReservationsHint": "This many days ahead the notification centre shows new rentals"
+      "missingInvoiceHint": "This many days after a workshop visit ends without a linked invoice"
     },
     "email": {
       "configurationTitle": "Email Configuration",

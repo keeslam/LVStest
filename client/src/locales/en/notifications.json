@@ -685,7 +685,7 @@
     "noCustomNotificationsDescription": "You haven't created any custom notifications yet."
   },
   "settingsCard": {
-    "description": "The same settings as App settings > Calendar; they apply to everyone.",
+    "description": "Applies to everyone. MOT, warranty and missing invoice are also in App settings > Calendar.",
     "readOnly": "Only people who may manage settings can change these values.",
     "saved": "Notification settings saved",
     "saveFailed": "Saving failed",
