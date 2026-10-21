@@ -49,7 +49,10 @@
     "errorTitle": "Error",
     "updateExpenseFailedDescription": "Error al actualizar el gasto: {{error}}",
     "recordExpenseFailedDescription": "Error al registrar el gasto: {{error}}",
-    "uploadReceiptFailed": "Error al subir el justificante"
+    "uploadReceiptFailed": "Error al subir el justificante",
+    "workshopVisit": "Pertenece a la visita al taller",
+    "workshopVisitNone": "Sin visita al taller",
+    "visitLinkFailed": "Costes guardados, pero no se pudo vincular a la visita al taller"
   },
   "viewDialog": {
     "viewAllExpenses": "Ver todos los gastos",

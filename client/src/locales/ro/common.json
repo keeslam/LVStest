@@ -304,7 +304,8 @@
         },
         "expense": {
           "with-receipt": "Cheltuială salvată cu bon",
-          "receipt-view": "Bon vizualizat"
+          "receipt-view": "Bon vizualizat",
+          "maintenance-block": "Cost legat de vizita la service"
         },
         "driver": {
           "license-view": "Permis de conducere vizualizat"

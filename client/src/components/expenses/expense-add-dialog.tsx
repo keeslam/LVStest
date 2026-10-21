@@ -18,6 +18,8 @@ interface ExpenseAddDialogProps {
   category?: string | null;
   children?: React.ReactNode;
   onSuccess?: () => void;
+  /** Round 2 punt 11: the workshop visit the new cost belongs to. */
+  maintenanceBlockId?: number | null;
   /**
    * Controlled use: the /expenses/add route renders this dialog open and goes
    * back to the Kosten list when it closes. Without these the dialog keeps its
@@ -33,7 +35,7 @@ interface ExpenseAddDialogProps {
  * /expenses/add link used to be two different things (a page and a dialog);
  * they all open this one now.
  */
-export function ExpenseAddDialog({ vehicleId, category, children, onSuccess, open: controlledOpen, onOpenChange }: ExpenseAddDialogProps) {
+export function ExpenseAddDialog({ vehicleId, category, children, onSuccess, open: controlledOpen, onOpenChange, maintenanceBlockId }: ExpenseAddDialogProps) {
   const { t } = useTranslation("expenses");
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
@@ -76,6 +78,7 @@ export function ExpenseAddDialog({ vehicleId, category, children, onSuccess, ope
           <ExpenseForm 
             preselectedVehicleId={vehicleId}
             preselectedCategory={category}
+            preselectedMaintenanceBlockId={maintenanceBlockId}
             onSuccess={handleSuccess}
           />
         </div>

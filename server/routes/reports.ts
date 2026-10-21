@@ -165,6 +165,36 @@ export function registerReportRoutes(app: Express): void {
     }
   });
 
+  // Round 2 punt 11 (Kees, 2026-10-21): workshop downtime per vehicle and per brand/model —
+  // visits, days in the workshop, breakdowns and the costs linked to those visits.
+  app.get("/api/reports/workshop-downtime", hasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS), async (req: Request, res: Response) => {
+    try {
+      const range = parseReportRange(req.query);
+      const { db } = await import("../db");
+      const { reservations, expenses } = await import("../../shared/schema");
+      const { and, eq, isNull, isNotNull } = await import("drizzle-orm");
+      const { officeDate } = await import("../services/lifecycle");
+      const { downtimeRows, downtimeByModel } = await import("../../shared/workshop-visit");
+      const [vehicles, visits, linked] = await Promise.all([
+        storage.getAllVehicles(),
+        db.select().from(reservations).where(and(eq(reservations.type, "maintenance_block"), isNull(reservations.deletedAt))),
+        db.select({ maintenanceBlockId: expenses.maintenanceBlockId, amount: expenses.amount }).from(expenses).where(isNotNull(expenses.maintenanceBlockId)),
+      ]);
+      const rows = downtimeRows(
+        vehicles,
+        visits.filter((v) => v.vehicleId != null).map((v) => ({ ...v, vehicleId: v.vehicleId as number })),
+        linked,
+        range.from,
+        range.to,
+        officeDate(new Date()),
+      );
+      res.json({ from: range.from, to: range.to, rows, byModel: downtimeByModel(rows) });
+    } catch (error) {
+      console.error("Error building workshop downtime report:", error);
+      res.status(500).json({ message: "Error building workshop downtime report" });
+    }
+  });
+
   // Kilometres driven per month, derived from every dated odometer reading we have
   app.get("/api/reports/mileage-per-month", hasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS), async (req: Request, res: Response) => {
     try {

@@ -36,7 +36,7 @@ const SUB_ACTIONS: Record<string, readonly string[]> = {
   ],
   document: ["email", "regenerate"],
   fine: ["letter", "link", "unlink", "reactivate", "status", "letter-view"],
-  expense: ["with-receipt", "receipt-view"],
+  expense: ["with-receipt", "receipt-view", "maintenance-block"],
   driver: ["license-view"],
   "portal-request": ["attachment-view"],
   "interactive-damage-check": ["pdf"],

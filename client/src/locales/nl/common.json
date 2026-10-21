@@ -300,7 +300,8 @@
         },
         "expense": {
           "with-receipt": "Kostenpost met bon opgeslagen",
-          "receipt-view": "Bon bekeken"
+          "receipt-view": "Bon bekeken",
+          "maintenance-block": "Kostenpost aan werkplaatsbezoek gekoppeld"
         },
         "driver": {
           "license-view": "Rijbewijs bekeken"

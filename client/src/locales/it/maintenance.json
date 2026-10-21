@@ -521,5 +521,20 @@
       "soon": "Tagliando: solo imminenti",
       "off": "Tagliando: non mostrare"
     }
+  },
+  "visitCosts": {
+    "title": "Costi di questa visita",
+    "add": "Aggiungi costi",
+    "invoiceFound": "Nuova fattura trovata per quest'auto ({{count}}). Appartiene a questa visita?",
+    "linkInvoice": "Collega fattura…",
+    "none": "Nessun costo collegato.",
+    "unlink": "Scollega",
+    "total": "Totale",
+    "linked": "Fattura collegata a questa visita",
+    "unlinked": "Costi scollegati",
+    "linkFailed": "Collegamento non riuscito",
+    "confirmTitle": "Quale fattura appartiene a questa visita?",
+    "confirmDescription": "La più recente è già selezionata. Controlla importo, data e descrizione: a volte arriva un'altra fattura nel frattempo.",
+    "confirmLink": "Collega"
   }
 }

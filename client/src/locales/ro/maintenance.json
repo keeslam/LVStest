@@ -521,5 +521,20 @@
       "soon": "Revizie: doar în curând",
       "off": "Revizie: nu afișa"
     }
+  },
+  "visitCosts": {
+    "title": "Costurile acestei vizite",
+    "add": "Adaugă costuri",
+    "invoiceFound": "Factură nouă găsită pentru această mașină ({{count}}). Aparține acestei vizite?",
+    "linkInvoice": "Leagă factura…",
+    "none": "Niciun cost legat încă.",
+    "unlink": "Dezleagă",
+    "total": "Total",
+    "linked": "Factura a fost legată de această vizită",
+    "unlinked": "Costuri dezlegate",
+    "linkFailed": "Legarea a eșuat",
+    "confirmTitle": "Ce factură aparține acestei vizite?",
+    "confirmDescription": "Cea mai nouă este deja selectată. Verificați suma, data și descrierea: uneori între timp sosește altă factură.",
+    "confirmLink": "Leagă"
   }
 }

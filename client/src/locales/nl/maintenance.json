@@ -516,5 +516,20 @@
       "soon": "Onderhoud: alleen binnenkort",
       "off": "Onderhoud: niet tonen"
     }
+  },
+  "visitCosts": {
+    "title": "Kosten van dit bezoek",
+    "add": "Kosten toevoegen",
+    "invoiceFound": "Nieuwe factuur gevonden voor deze auto ({{count}}). Hoort die bij dit bezoek?",
+    "linkInvoice": "Factuur koppelen…",
+    "none": "Nog geen kosten gekoppeld.",
+    "unlink": "Ontkoppelen",
+    "total": "Totaal",
+    "linked": "Factuur gekoppeld aan dit bezoek",
+    "unlinked": "Kosten ontkoppeld",
+    "linkFailed": "Koppelen mislukt",
+    "confirmTitle": "Welke factuur hoort bij dit bezoek?",
+    "confirmDescription": "De nieuwste staat al aangevinkt. Controleer bedrag, datum en omschrijving: soms komt er tussendoor een andere factuur binnen.",
+    "confirmLink": "Koppelen"
   }
 }

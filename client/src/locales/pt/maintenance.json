@@ -521,5 +521,20 @@
       "soon": "Revisão: só em breve",
       "off": "Revisão: não mostrar"
     }
+  },
+  "visitCosts": {
+    "title": "Custos desta visita",
+    "add": "Adicionar custos",
+    "invoiceFound": "Nova fatura encontrada para este carro ({{count}}). Pertence a esta visita?",
+    "linkInvoice": "Associar fatura…",
+    "none": "Ainda sem custos associados.",
+    "unlink": "Desassociar",
+    "total": "Total",
+    "linked": "Fatura associada a esta visita",
+    "unlinked": "Custos desassociados",
+    "linkFailed": "Falha ao associar",
+    "confirmTitle": "Que fatura pertence a esta visita?",
+    "confirmDescription": "A mais recente já está selecionada. Verifique valor, data e descrição: por vezes chega outra fatura entretanto.",
+    "confirmLink": "Associar"
   }
 }

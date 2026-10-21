@@ -49,7 +49,10 @@
     "errorTitle": "Błąd",
     "updateExpenseFailedDescription": "Nie udało się zaktualizować kosztu: {{error}}",
     "recordExpenseFailedDescription": "Nie udało się zarejestrować kosztu: {{error}}",
-    "uploadReceiptFailed": "Nie udało się przesłać paragonu"
+    "uploadReceiptFailed": "Nie udało się przesłać paragonu",
+    "workshopVisit": "Należy do wizyty w warsztacie",
+    "workshopVisitNone": "Bez wizyty w warsztacie",
+    "visitLinkFailed": "Koszty zapisane, ale powiązanie z wizytą w warsztacie nie powiodło się"
   },
   "viewDialog": {
     "viewAllExpenses": "Zobacz wszystkie koszty",

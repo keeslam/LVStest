@@ -747,6 +747,25 @@ Kees koos uit de tweede lijst met suggesties punt 9. De einddatum van de milieuz
 - **Termijn.** In **Instellingen > Kalender** staat "Herinnering milieuzone en Move IZI", standaard 30 dagen. Auto's waarvan de datum tot twee maanden verlopen is, blijven op de lijst staan.
 - **Welke auto's.** Dezelfde als bij APK en garantie: niet de uitgesloten statussen uit de onderhoudsinstellingen, en niet de auto's die uit de vloot zijn.
 
+### B-57 — Werkplaatsbezoek: soort, kosten en stilstand (21-10-2026, deel A)
+
+Kees koos uit de tweede lijst met suggesties punt 11. Hij koos met klikken alle drie de onderdelen en vroeg daarnaast om de herinnering "factuur ontbreekt" en een wekelijkse mail. Die komen in deel B.
+
+- **Soort als eigen veld.** Een werkplaatsbezoek heeft nu een kolom `maintenanceType` (pech, banden, APK, …). Tot nu toe stond de soort alleen voor de dubbele punt in de notitie.
+  - De notitie blijft er hetzelfde uitzien.
+  - Bestaande bezoeken worden gelezen uit het begin van de notitie, als dat een bekende soort is.
+  - De oude regels "Vehicle maintenance block" hebben geen soort.
+- **Kosten per bezoek.** In het venster van het bezoek staan de gekoppelde kosten met het totaal, en er is een knop **Kosten toevoegen**.
+  - Bij **Kosten registreren** kies je "Hoort bij werkplaatsbezoek".
+  - De server controleert dat het bezoek bij dezelfde auto hoort.
+- **Factuur die later komt.** Kees: de garagefactuur komt meestal pas later.
+  - Het bezoek meldt "Nieuwe factuur gevonden" voor kosten van die auto die nog niet gekoppeld zijn. Het gaat om kosten vanaf het begin van het bezoek tot 60 dagen na het einde, ook facturen uit het factuurpostvak.
+  - Koppelen gebeurt alleen via een bevestiging met de facturen op een rij, de nieuwste al aangevinkt. Soms komt er tussendoor een andere factuur binnen.
+  - Ontkoppelen kan per kostenpost.
+- **Stilstandrapport.** Staat in **Rapporten > Voertuigen** en volgt de periode bovenaan de pagina, met CSV-export.
+  - Per auto: het aantal bezoeken, de dagen in de werkplaats (alleen binnen de periode), hoe vaak het pech was en de gekoppelde kosten.
+  - Daaronder dezelfde cijfers per merk en model.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).

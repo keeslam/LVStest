@@ -35,7 +35,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Vehicle, UserPermission } from "@shared/schema";
 import { format } from "date-fns";
-import { formatFileSize, formatExpenseCategory, formatVehicleType } from "@/lib/format-utils";
+import { formatFileSize, formatExpenseCategory, formatVehicleType, formatDate, formatMaintenanceType } from "@/lib/format-utils";
+import { maintenanceTypeOf } from "@shared/maintenance-type";
 import { EXPENSE_CATEGORIES, isExpenseCategory, normalizeExpenseCategory } from "@shared/expense-categories";
 import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
@@ -100,6 +101,8 @@ interface ExpenseFormProps {
   initialData?: any;
   preselectedVehicleId?: number | null;
   preselectedCategory?: string | null;
+  /** Round 2 punt 11: the workshop visit the cost belongs to (from the visit dialog). */
+  preselectedMaintenanceBlockId?: number | null;
   onSuccess?: () => void;
 }
 
@@ -108,9 +111,14 @@ export function ExpenseForm({
   initialData, 
   preselectedVehicleId,
   preselectedCategory,
+  preselectedMaintenanceBlockId,
   onSuccess
 }: ExpenseFormProps) {
   const { t } = useTranslation(["expenses", "common"]);
+  // Round 2 punt 11 (Kees, 2026-10-21): "hoort bij werkplaatsbezoek". Linked after the save
+  // through PUT /api/expenses/:id/maintenance-block, which checks the visit is of this car.
+  const initialVisitId: number | null = preselectedMaintenanceBlockId ?? initialData?.maintenanceBlockId ?? null;
+  const [visitId, setVisitId] = useState<number | null>(initialVisitId);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [_, navigate] = useLocation();
@@ -186,6 +194,20 @@ export function ExpenseForm({
       receiptUrl: "",
     },
   });
+
+  // Round 2 punt 11: the chosen car's workshop visits, newest first, for "hoort bij werkplaatsbezoek".
+  const watchedVehicleId = form.watch("vehicleId");
+  const { data: vehicleReservations } = useQuery<any[]>({
+    queryKey: [`/api/reservations/vehicle/${watchedVehicleId}`],
+    enabled: !!watchedVehicleId && Number(watchedVehicleId) > 0,
+  });
+  const visitOptions = useMemo(
+    () => (vehicleReservations ?? [])
+      .filter((r: any) => r.type === "maintenance_block")
+      .sort((a: any, b: any) => String(b.startDate).localeCompare(String(a.startDate)))
+      .slice(0, 12),
+    [vehicleReservations],
+  );
   
   // When the form is first created, update with the vehicleId from preselectedVehicleId prop
   useEffect(() => {
@@ -264,14 +286,24 @@ export function ExpenseForm({
       } else {
         console.log("Sending regular JSON expense without file");
         // Regular JSON request for URL-based receipts
-        return await apiRequest(
+        const response = await apiRequest(
           editMode ? "PATCH" : "POST", 
           editMode ? `/api/expenses/${initialData?.id}` : "/api/expenses", 
           data
         );
+        return await response.json().catch(() => null);
       }
     },
     onSuccess: async (result) => {
+      const savedId: number | undefined = result?.id ?? initialData?.id;
+      if (savedId && visitId !== initialVisitId) {
+        try {
+          await apiRequest("PUT", `/api/expenses/${savedId}/maintenance-block`, { blockId: visitId });
+          invalidateByPrefix("/api/maintenance-blocks");
+        } catch (error) {
+          toast({ title: t('form.visitLinkFailed'), description: describeApiError(error), variant: "destructive" });
+        }
+      }
       // Extract vehicle ID from result or use current vehicleId state
       const expenseVehicleId = result?.vehicleId || vehicleId || (result && 'id' in result ? result.id : null);
       
@@ -416,6 +448,27 @@ export function ExpenseForm({
                 )}
               />
               
+              {/* Round 2 punt 11: the workshop visit this cost belongs to. */}
+              {visitOptions.length > 0 && (
+                <FormItem>
+                  <FormLabel>{t('form.workshopVisit')}</FormLabel>
+                  <Select value={visitId ? String(visitId) : "none"} onValueChange={(v) => setVisitId(v === "none" ? null : Number(v))}>
+                    <SelectTrigger data-testid="select-expense-visit">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{t('form.workshopVisitNone')}</SelectItem>
+                      {visitOptions.map((v: any) => (
+                        <SelectItem key={v.id} value={String(v.id)}>
+                          {formatDate(v.startDate)}{v.endDate && v.endDate !== v.startDate ? ` – ${formatDate(v.endDate)}` : ""}
+                          {maintenanceTypeOf(v) ? ` · ${formatMaintenanceType(maintenanceTypeOf(v))}` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+
               <FormField
                 control={form.control}
                 name="amount"

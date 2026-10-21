@@ -42,6 +42,7 @@ import { DateRange } from "react-day-picker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ReportBuilderPage from "@/pages/reports/report-builder";
 import MaintenanceCostsPage from "@/pages/reports/maintenance-costs";
+import { WorkshopDowntimeCard } from "./workshop-downtime-card";
 import { FinancialTab } from "@/pages/reports/financial-tab";
 import { FiscalReportTab } from "@/components/fiscal/fiscal-report-tab";
 import { useFiscalPermissions } from "@/components/fiscal/use-fiscal-permissions";
@@ -2329,6 +2330,9 @@ function FullReportsPage() {
               <UtilizationChart data={utilizationChartData} />
             </CardContent>
           </Card>
+
+          {/* Round 2 punt 11: workshop downtime per vehicle and per brand/model. */}
+          <WorkshopDowntimeCard dateRange={dateRange} />
           </>
           )}
         </TabsContent>

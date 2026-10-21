@@ -2083,6 +2083,13 @@
         "default": null
       },
       {
+        "name": "maintenance_block_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
         "name": "created_at",
         "type": "timestamp with time zone",
         "notNull": true,
@@ -5142,6 +5149,13 @@
       },
       {
         "name": "maintenance_category",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "maintenance_type",
         "type": "text",
         "notNull": false,
         "primary": false,

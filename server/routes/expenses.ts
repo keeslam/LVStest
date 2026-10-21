@@ -476,8 +476,74 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
     }
   });
 
+  // Round 2 punt 11 (Kees, 2026-10-21): the costs of a workshop visit, and the vehicle's
+  // unlinked expenses from the visit's start up to 60 days after its end ("Nieuwe factuur
+  // gevonden"; the garage's invoice usually comes later). Nothing is linked here.
+  app.get("/api/maintenance-blocks/:id/costs", hasPermission(UserPermission.MANAGE_EXPENSES), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (!Number.isInteger(id) || id <= 0 || id > MAX_INT4) return res.status(400).json({ message: "Invalid visit ID" });
+      const { db } = await import("../db");
+      const { reservations, expenses } = await import("../../shared/schema");
+      const { and, eq, gte, lte, isNull, desc } = await import("drizzle-orm");
+      const { officeDate } = await import("../services/lifecycle");
+      const { invoiceCandidateWindow } = await import("../../shared/workshop-visit");
+      const [visit] = await db.select().from(reservations).where(and(eq(reservations.id, id), isNull(reservations.deletedAt)));
+      if (!visit || visit.type !== "maintenance_block" || visit.vehicleId == null) {
+        return res.status(404).json({ message: "Workshop visit not found" });
+      }
+      const linked = await db.select().from(expenses).where(eq(expenses.maintenanceBlockId, id)).orderBy(desc(expenses.date));
+      const window = invoiceCandidateWindow(visit, officeDate(new Date()));
+      const candidates = window
+        ? await db.select().from(expenses).where(and(
+            eq(expenses.vehicleId, visit.vehicleId),
+            isNull(expenses.maintenanceBlockId),
+            gte(expenses.date, window.from),
+            lte(expenses.date, window.to),
+          )).orderBy(desc(expenses.date), desc(expenses.id))
+        : [];
+      const total = linked.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+      res.json({ linked, candidates, total, window });
+    } catch (error) {
+      console.error("Error fetching workshop visit costs:", error);
+      res.status(500).json({ message: "Error fetching workshop visit costs" });
+    }
+  });
+
+  // Link an expense to a workshop visit of the same vehicle, or unlink it (blockId null).
+  app.put("/api/expenses/:id/maintenance-block", hasPermission(UserPermission.MANAGE_EXPENSES), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (!Number.isInteger(id) || id <= 0 || id > MAX_INT4) return res.status(400).json({ message: "Invalid expense ID" });
+      const raw = req.body?.blockId;
+      const blockId = raw === null ? null : Number(raw);
+      if (blockId !== null && (!Number.isInteger(blockId) || blockId <= 0 || blockId > MAX_INT4)) {
+        return res.status(400).json({ message: "blockId must be a visit id or null" });
+      }
+      const { db } = await import("../db");
+      const { reservations, expenses } = await import("../../shared/schema");
+      const { and, eq, isNull } = await import("drizzle-orm");
+      const [expense] = await db.select().from(expenses).where(eq(expenses.id, id));
+      if (!expense) return res.status(404).json({ message: "Expense not found" });
+      if (blockId !== null) {
+        const [visit] = await db.select().from(reservations).where(and(eq(reservations.id, blockId), isNull(reservations.deletedAt)));
+        if (!visit || visit.type !== "maintenance_block") return res.status(404).json({ message: "Workshop visit not found" });
+        if (visit.vehicleId !== expense.vehicleId) {
+          return res.status(400).json({ message: "The expense and the workshop visit belong to different vehicles", code: "VEHICLE_MISMATCH" });
+        }
+      }
+      const [updated] = await db.update(expenses).set({ maintenanceBlockId: blockId, updatedAt: new Date(), updatedBy: req.user?.username ?? null })
+        .where(eq(expenses.id, id)).returning();
+      realtimeEvents.expenses.updated(updated);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error linking expense to workshop visit:", error);
+      res.status(500).json({ message: "Error linking expense to workshop visit" });
+    }
+  });
+
   // Update expense with receipt upload
-  app.patch("/api/expenses/:id", hasPermission(UserPermission.MANAGE_EXPENSES), expenseReceiptUpload.single('receiptFile'), async (req, res) => {
+  app.patch("/api/expenses/:id",hasPermission(UserPermission.MANAGE_EXPENSES), expenseReceiptUpload.single('receiptFile'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {

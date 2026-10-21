@@ -300,7 +300,8 @@
         },
         "expense": {
           "with-receipt": "Expense saved with receipt",
-          "receipt-view": "Receipt viewed"
+          "receipt-view": "Receipt viewed",
+          "maintenance-block": "Cost linked to workshop visit"
         },
         "driver": {
           "license-view": "Driving licence viewed"

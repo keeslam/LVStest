@@ -502,6 +502,21 @@
       "noTransports": "Geen transporten",
       "selectedTransportsCount": "{{count}} geselecteerde transport(en)",
       "transportsCount": "{{count}} transport(en)"
+    },
+    "downtime": {
+      "title": "Stilstand in de werkplaats",
+      "description": "Per auto het aantal werkplaatsbezoeken in de gekozen periode, de dagen in de werkplaats, hoe vaak het pech was en de gekoppelde kosten.",
+      "none": "Geen werkplaatsbezoeken in deze periode.",
+      "csvSubject": "stilstand-werkplaats",
+      "brand": "Merk",
+      "model": "Model",
+      "brandModel": "Merk en model",
+      "visits": "Bezoeken",
+      "days": "Dagen",
+      "breakdowns": "Pech",
+      "costs": "Kosten",
+      "perModel": "Per merk en model",
+      "vehicles": "Auto's"
     }
   }
 }

@@ -502,6 +502,21 @@
       "noTransports": "No transports",
       "selectedTransportsCount": "{{count}} selected transport(s)",
       "transportsCount": "{{count}} transport(s)"
+    },
+    "downtime": {
+      "title": "Workshop downtime",
+      "description": "Per car the workshop visits in the chosen period, the days in the workshop, how often it was a breakdown and the linked costs.",
+      "none": "No workshop visits in this period.",
+      "csvSubject": "workshop-downtime",
+      "brand": "Make",
+      "model": "Model",
+      "brandModel": "Make and model",
+      "visits": "Visits",
+      "days": "Days",
+      "breakdowns": "Breakdowns",
+      "costs": "Costs",
+      "perModel": "Per make and model",
+      "vehicles": "Cars"
     }
   }
 }

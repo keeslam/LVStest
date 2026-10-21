@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { maintenanceTypeKey, maintenanceTypeOf } from "@shared/maintenance-type";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { parseISO } from "date-fns";
@@ -87,7 +88,7 @@ export function CompleteMaintenanceDialog({
     mutationFn: async () => {
       if (!block) throw new Error("Missing required data");
 
-      const maintenanceType = block.notes?.split(":")[0] || t("calendarPage.maintenanceTypeFallback");
+      const maintenanceType = maintenanceTypeKey(block) || t("calendarPage.maintenanceTypeFallback");
       const notes = details
         ? `${maintenanceType}:\n${details}`
         : block.notes || t("calendarPage.maintenanceCompletedNotesFallback");
@@ -139,7 +140,7 @@ export function CompleteMaintenanceDialog({
   });
 
   const maintenanceType = block
-    ? formatMaintenanceType(block.notes?.split(":")[0]) || t("calendarPage.maintenanceTypeFallback")
+    ? formatMaintenanceType(maintenanceTypeKey(block)) || t("calendarPage.maintenanceTypeFallback")
     : "";
 
   return (

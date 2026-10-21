@@ -1,4 +1,5 @@
 import { notifyFileReady } from "@/lib/file-ready";
+import { maintenanceTypeKey, maintenanceTypeOf } from "@shared/maintenance-type";
 import { v } from "@/lib/zod-i18n";
 import { describeApiError } from "@/lib/api-error";
 import { useState } from "react";
@@ -3147,7 +3148,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           .sort((a: any, b: any) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
                           .slice(0, showAllScheduledMaintenance ? undefined : 5)
                           .map((maintenance: any) => {
-                            const maintenanceType = formatMaintenanceType(maintenance.notes?.split(':')[0]) || t('details.maintenance.generalMaintenanceFallback');
+                            const maintenanceType = formatMaintenanceType(maintenanceTypeKey(maintenance)) || t('details.maintenance.generalMaintenanceFallback');
                             const maintenanceDetails = maintenance.notes?.split('\n')?.[1] || '';
                             
                             return (
@@ -3224,7 +3225,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           .sort((a: any, b: any) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
                           .slice(0, showAllRepairs ? undefined : 5)
                           .map((maintenance: any) => {
-                            const maintenanceType = formatMaintenanceType(maintenance.notes?.split(':')[0]) || t('details.maintenance.repairFallback');
+                            const maintenanceType = formatMaintenanceType(maintenanceTypeKey(maintenance)) || t('details.maintenance.repairFallback');
                             const maintenanceDetails = maintenance.notes?.split('\n')?.[1] || '';
                             
                             return (

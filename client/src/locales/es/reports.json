@@ -513,6 +513,21 @@
       "noTransports": "Sin transportes",
       "selectedTransportsCount": "{{count}} transporte(s) seleccionado(s)",
       "transportsCount": "{{count}} transporte(s)"
+    },
+    "downtime": {
+      "title": "Inmovilización en el taller",
+      "description": "Por coche, las visitas al taller en el periodo elegido, los días en el taller, cuántas fueron averías y los costes vinculados.",
+      "none": "No hay visitas al taller en este periodo.",
+      "csvSubject": "inmovilizacion-taller",
+      "brand": "Marca",
+      "model": "Modelo",
+      "brandModel": "Marca y modelo",
+      "visits": "Visitas",
+      "days": "Días",
+      "breakdowns": "Averías",
+      "costs": "Costes",
+      "perModel": "Por marca y modelo",
+      "vehicles": "Coches"
     }
   }
 }

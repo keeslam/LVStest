@@ -516,5 +516,20 @@
       "soon": "Service: due soon only",
       "off": "Service: hide"
     }
+  },
+  "visitCosts": {
+    "title": "Costs of this visit",
+    "add": "Add costs",
+    "invoiceFound": "New invoice found for this car ({{count}}). Does it belong to this visit?",
+    "linkInvoice": "Link invoice…",
+    "none": "No costs linked yet.",
+    "unlink": "Unlink",
+    "total": "Total",
+    "linked": "Invoice linked to this visit",
+    "unlinked": "Costs unlinked",
+    "linkFailed": "Linking failed",
+    "confirmTitle": "Which invoice belongs to this visit?",
+    "confirmDescription": "The newest is already selected. Check amount, date and description: another invoice sometimes comes in between.",
+    "confirmLink": "Link"
   }
 }

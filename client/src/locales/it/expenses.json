@@ -49,7 +49,10 @@
     "errorTitle": "Errore",
     "updateExpenseFailedDescription": "Aggiornamento del costo non riuscito: {{error}}",
     "recordExpenseFailedDescription": "Registrazione del costo non riuscita: {{error}}",
-    "uploadReceiptFailed": "Caricamento della ricevuta non riuscito"
+    "uploadReceiptFailed": "Caricamento della ricevuta non riuscito",
+    "workshopVisit": "Appartiene alla visita in officina",
+    "workshopVisitNone": "Nessuna visita in officina",
+    "visitLinkFailed": "Costi salvati, ma il collegamento alla visita in officina non è riuscito"
   },
   "viewDialog": {
     "viewAllExpenses": "Visualizzare tutti i costi",

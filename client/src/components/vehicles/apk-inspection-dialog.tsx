@@ -1,4 +1,5 @@
 import { v } from "@/lib/zod-i18n";
+import { maintenanceTypeKey, maintenanceTypeOf } from "@shared/maintenance-type";
 import { describeApiError } from "@/lib/api-error";
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -378,7 +379,7 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
                       <div className="space-y-2">
                         {getMaintenanceForDay(selectedDate).map(m => {
                           // Parse maintenance type from notes field (format: "maintenanceType: description\nnotes")
-                          const maintenanceType = formatMaintenanceType(m.notes?.split(':')[0]) || 'maintenance';
+                          const maintenanceType = formatMaintenanceType(maintenanceTypeKey(m)) || 'maintenance';
                           
                           return (
                             <div key={m.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded text-sm">

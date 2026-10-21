@@ -524,6 +524,21 @@
       "noTransports": "Brak transportów",
       "selectedTransportsCount": "Wybrane transporty: {{count}}",
       "transportsCount": "Transporty: {{count}}"
+    },
+    "downtime": {
+      "title": "Przestój w warsztacie",
+      "description": "Na auto: wizyty w warsztacie w wybranym okresie, dni w warsztacie, ile było awarii i powiązane koszty.",
+      "none": "Brak wizyt w warsztacie w tym okresie.",
+      "csvSubject": "przestoj-warsztat",
+      "brand": "Marka",
+      "model": "Model",
+      "brandModel": "Marka i model",
+      "visits": "Wizyty",
+      "days": "Dni",
+      "breakdowns": "Awarie",
+      "costs": "Koszty",
+      "perModel": "Według marki i modelu",
+      "vehicles": "Auta"
     }
   }
 }

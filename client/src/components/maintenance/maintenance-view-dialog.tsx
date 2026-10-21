@@ -48,6 +48,7 @@ import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { InlineDocumentUpload } from "@/components/documents/inline-document-upload";
 import { InvoiceScanner } from "@/components/invoice-scanner";
+import { VisitCosts } from "@/components/maintenance/visit-costs";
 import { Link } from "wouter";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { isPickedUpRightRefusal, pickedUpRefusalOf } from "@/components/reservations/picked-up-cancellation";
@@ -713,6 +714,16 @@ export function MaintenanceViewDialog({
                 </div>
               </div>
             </>
+          )}
+
+          {/* Round 2 punt 11: the costs of this visit, and a garage invoice that came in later. */}
+          {reservation?.id && vehicle?.id && (
+            <RequiresPermission anyOf={[UserPermission.MANAGE_EXPENSES]}>
+              <div className="space-y-6">
+                <Separator />
+                <VisitCosts visitId={reservation.id} vehicleId={vehicle.id} />
+              </div>
+            </RequiresPermission>
           )}
 
           {/* Maintenance Documents */}

@@ -49,7 +49,10 @@
     "errorTitle": "Error",
     "updateExpenseFailedDescription": "Failed to update expense: {{error}}",
     "recordExpenseFailedDescription": "Failed to record expense: {{error}}",
-    "uploadReceiptFailed": "Failed to upload receipt"
+    "uploadReceiptFailed": "Failed to upload receipt",
+    "workshopVisit": "Belongs to workshop visit",
+    "workshopVisitNone": "No workshop visit",
+    "visitLinkFailed": "Costs saved, but linking to the workshop visit failed"
   },
   "viewDialog": {
     "viewAllExpenses": "View All Expenses",

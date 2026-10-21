@@ -49,7 +49,10 @@
     "errorTitle": "Fout",
     "updateExpenseFailedDescription": "Kosten bijwerken mislukt: {{error}}",
     "recordExpenseFailedDescription": "Kosten registreren mislukt: {{error}}",
-    "uploadReceiptFailed": "Bon uploaden mislukt"
+    "uploadReceiptFailed": "Bon uploaden mislukt",
+    "workshopVisit": "Hoort bij werkplaatsbezoek",
+    "workshopVisitNone": "Geen werkplaatsbezoek",
+    "visitLinkFailed": "Kosten opgeslagen, maar koppelen aan het werkplaatsbezoek is mislukt"
   },
   "viewDialog": {
     "viewAllExpenses": "Alle kosten bekijken",

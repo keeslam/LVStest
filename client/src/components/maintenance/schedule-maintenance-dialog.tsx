@@ -1,4 +1,5 @@
 import { UserFacingError, describeApiError } from "@/lib/api-error";
+import { maintenanceTypeKey, maintenanceTypeOf } from "@shared/maintenance-type";
 import { v } from "@/lib/zod-i18n";
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -172,7 +173,7 @@ export function ScheduleMaintenanceDialog({
     if (editingReservation) {
       // Parse maintenance data from the reservation
       const noteParts = editingReservation.notes?.split(':') || [];
-      const maintenanceType = noteParts[0] || "breakdown";
+      const maintenanceType = maintenanceTypeOf(editingReservation) ?? (noteParts[0] || "breakdown");
       const descriptionPart = noteParts[1]?.split('\n')[0]?.trim() || "";
       const notesPart = editingReservation.notes?.split('\n')[1]?.trim() || "";
       
@@ -368,6 +369,8 @@ export function ScheduleMaintenanceDialog({
         ...(isFinishedBlock ? {} : { status: data.maintenanceStatus }),
         type: "maintenance_block",
         notes: `${data.maintenanceType}: ${data.description || ''}\n${data.notes || ''}`.trim(),
+        // Round 2 punt 11: the kind as its own column too (the notes keep their shape).
+        maintenanceType: data.maintenanceType,
         totalPrice: 0, // No price for maintenance
         maintenanceDuration: data.maintenanceDuration,
         ...(isFinishedBlock ? {} : { maintenanceStatus: data.maintenanceStatus }),

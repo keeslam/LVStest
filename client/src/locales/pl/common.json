@@ -308,7 +308,8 @@
         },
         "expense": {
           "with-receipt": "Pozycję kosztową zapisano z paragonem",
-          "receipt-view": "Wyświetlono paragon"
+          "receipt-view": "Wyświetlono paragon",
+          "maintenance-block": "Koszt powiązany z wizytą w warsztacie"
         },
         "driver": {
           "license-view": "Wyświetlono prawo jazdy"

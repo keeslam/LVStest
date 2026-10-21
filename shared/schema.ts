@@ -1022,6 +1022,9 @@ export const reservations = pgTable("reservations", {
   maintenanceDuration: integer("maintenance_duration"), // Duration in days for maintenance_block type
   maintenanceStatus: text("maintenance_status"), // 'scheduled' | 'in' | 'out' for maintenance_block type
   maintenanceCategory: text("maintenance_category"), // 'scheduled_maintenance' | 'repair' to distinguish service types
+  // Round 2 punt 11 (Kees, 2026-10-21): the kind of workshop visit (breakdown, tire_replacement, ...),
+  // a real column instead of the "type: ..." prefix of the notes (shared/maintenance-type.ts).
+  maintenanceType: text("maintenance_type"),
   spareAssignmentDecision: text("spare_assignment_decision"), // 'spare_assigned' | 'customer_arranging' | 'not_handled' for maintenance tracking
   affectedRentalId: integer("affected_rental_id"), // FK to the rental that's affected by this maintenance
   portalRequestId: integer("portal_request_id"), // Set on a maintenance block created from a customer portal request
@@ -1353,6 +1356,10 @@ export const expenses = pgTable("expenses", {
   // minutes finds the expense it already booked. Server-set only (omitted below).
   source: text("source"),
   sourceRef: text("source_ref"),
+  // Round 2 punt 11 (Kees, 2026-10-21): the workshop visit (a maintenance_block reservation)
+  // this cost belongs to. Set only through PUT /api/expenses/:id/maintenance-block, which
+  // checks the visit is one of the same vehicle (omitted from the insert schema below).
+  maintenanceBlockId: integer("maintenance_block_id"),
 
   // Tracking
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -1372,6 +1379,7 @@ export const expenses = pgTable("expenses", {
 
 export const insertExpenseSchema = createInsertSchema(expenses).omit({
   id: true,
+  maintenanceBlockId: true,
   createdAt: true,
   updatedAt: true,
   createdByUser: true,

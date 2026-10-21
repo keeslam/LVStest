@@ -49,7 +49,10 @@
     "errorTitle": "Eroare",
     "updateExpenseFailedDescription": "Actualizarea cheltuielii a eșuat: {{error}}",
     "recordExpenseFailedDescription": "Înregistrarea cheltuielii a eșuat: {{error}}",
-    "uploadReceiptFailed": "Încărcarea chitanței a eșuat"
+    "uploadReceiptFailed": "Încărcarea chitanței a eșuat",
+    "workshopVisit": "Aparține vizitei la service",
+    "workshopVisitNone": "Fără vizită la service",
+    "visitLinkFailed": "Costuri salvate, dar legarea de vizita la service a eșuat"
   },
   "viewDialog": {
     "viewAllExpenses": "Vizualizați toate cheltuielile",

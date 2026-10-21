@@ -49,7 +49,10 @@
     "errorTitle": "Erro",
     "updateExpenseFailedDescription": "Não foi possível atualizar a despesa: {{error}}",
     "recordExpenseFailedDescription": "Não foi possível registar a despesa: {{error}}",
-    "uploadReceiptFailed": "Não foi possível carregar o recibo"
+    "uploadReceiptFailed": "Não foi possível carregar o recibo",
+    "workshopVisit": "Pertence à visita à oficina",
+    "workshopVisitNone": "Sem visita à oficina",
+    "visitLinkFailed": "Custos guardados, mas a associação à visita à oficina falhou"
   },
   "viewDialog": {
     "viewAllExpenses": "Ver todas as despesas",

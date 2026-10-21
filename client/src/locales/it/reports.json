@@ -513,6 +513,21 @@
       "noTransports": "Nessun trasporto",
       "selectedTransportsCount": "{{count}} trasporto/i selezionato/i",
       "transportsCount": "{{count}} trasporto/i"
+    },
+    "downtime": {
+      "title": "Fermo in officina",
+      "description": "Per auto le visite in officina nel periodo scelto, i giorni in officina, quante erano guasti e i costi collegati.",
+      "none": "Nessuna visita in officina in questo periodo.",
+      "csvSubject": "fermo-officina",
+      "brand": "Marca",
+      "model": "Modello",
+      "brandModel": "Marca e modello",
+      "visits": "Visite",
+      "days": "Giorni",
+      "breakdowns": "Guasti",
+      "costs": "Costi",
+      "perModel": "Per marca e modello",
+      "vehicles": "Auto"
     }
   }
 }

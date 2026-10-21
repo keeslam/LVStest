@@ -513,6 +513,21 @@
       "noTransports": "Niciun transport",
       "selectedTransportsCount": "{{count}} transport(uri) selectate",
       "transportsCount": "{{count}} transport(uri)"
+    },
+    "downtime": {
+      "title": "Imobilizare în service",
+      "description": "Pe mașină, vizitele la service din perioada aleasă, zilele în service, câte au fost defecțiuni și costurile legate.",
+      "none": "Nicio vizită la service în această perioadă.",
+      "csvSubject": "imobilizare-service",
+      "brand": "Marcă",
+      "model": "Model",
+      "brandModel": "Marcă și model",
+      "visits": "Vizite",
+      "days": "Zile",
+      "breakdowns": "Defecțiuni",
+      "costs": "Costuri",
+      "perModel": "Pe marcă și model",
+      "vehicles": "Mașini"
     }
   }
 }

@@ -513,6 +513,21 @@
       "noTransports": "Sem transportes",
       "selectedTransportsCount": "{{count}} transporte(s) selecionado(s)",
       "transportsCount": "{{count}} transporte(s)"
+    },
+    "downtime": {
+      "title": "Imobilização na oficina",
+      "description": "Por carro, as visitas à oficina no período escolhido, os dias na oficina, quantas foram avarias e os custos associados.",
+      "none": "Sem visitas à oficina neste período.",
+      "csvSubject": "imobilizacao-oficina",
+      "brand": "Marca",
+      "model": "Modelo",
+      "brandModel": "Marca e modelo",
+      "visits": "Visitas",
+      "days": "Dias",
+      "breakdowns": "Avarias",
+      "costs": "Custos",
+      "perModel": "Por marca e modelo",
+      "vehicles": "Carros"
     }
   }
 }

@@ -1,3 +1,4 @@
+import { isMaintenanceType, maintenanceTypeFromNotes } from "../shared/maintenance-type";
 import { 
   users, type User, type InsertUser,
   vehicles, type Vehicle, type InsertVehicle,
@@ -1978,8 +1979,27 @@ export class DatabaseStorage implements IStorage {
    * and canonicalised here, so no writer can get past it.
    */
   private gateReservationStatus<T extends Record<string, any>>(data: T): T {
+    data = this.withMaintenanceType(data);
     if (data == null || !('status' in data) || data.status === undefined || data.status === null) return data;
     return { ...data, status: assertReservationStatusValue(data.status) };
+  }
+
+  /**
+   * Round 2 punt 11: a workshop visit's kind is its own column. A write that sends no
+   * (known) kind but notes starting with one ("breakdown: ...", the dialog's shape)
+   * gets it from there; an unknown kind is dropped rather than stored. Only for writes
+   * that are about a maintenance block, so a rental's notes never set it.
+   */
+  private withMaintenanceType<T extends Record<string, any>>(data: T): T {
+    if (data == null) return data;
+    const aboutBlock = data.type === 'maintenance_block' || data.maintenanceDuration != null || data.maintenanceStatus != null;
+    if ('maintenanceType' in data && !isMaintenanceType(data.maintenanceType)) {
+      const { maintenanceType: _dropped, ...rest } = data;
+      data = rest as T;
+    }
+    if (!aboutBlock || 'maintenanceType' in data || typeof data.notes !== 'string') return data;
+    const fromNotes = maintenanceTypeFromNotes(data.notes);
+    return fromNotes ? { ...data, maintenanceType: fromNotes } : data;
   }
 
   async createReservation(reservationData: InsertReservation): Promise<Reservation> {

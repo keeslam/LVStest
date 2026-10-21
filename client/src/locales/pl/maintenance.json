@@ -526,5 +526,20 @@
       "soon": "Przegląd: tylko wkrótce",
       "off": "Przegląd: nie pokazuj"
     }
+  },
+  "visitCosts": {
+    "title": "Koszty tej wizyty",
+    "add": "Dodaj koszty",
+    "invoiceFound": "Znaleziono nową fakturę dla tego auta ({{count}}). Czy należy do tej wizyty?",
+    "linkInvoice": "Powiąż fakturę…",
+    "none": "Brak powiązanych kosztów.",
+    "unlink": "Odłącz",
+    "total": "Razem",
+    "linked": "Faktura powiązana z tą wizytą",
+    "unlinked": "Koszty odłączone",
+    "linkFailed": "Powiązanie nie powiodło się",
+    "confirmTitle": "Która faktura należy do tej wizyty?",
+    "confirmDescription": "Najnowsza jest już zaznaczona. Sprawdź kwotę, datę i opis: czasem w międzyczasie przychodzi inna faktura.",
+    "confirmLink": "Powiąż"
   }
 }

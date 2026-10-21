@@ -1,4 +1,5 @@
 import { describeApiError } from "@/lib/api-error";
+import { maintenanceTypeKey, maintenanceTypeOf } from "@shared/maintenance-type";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, subDays, addWeeks, isSameDay, parseISO, startOfMonth, endOfMonth, getDate, getDay, getMonth, getYear, isSameMonth, addMonths, subMonths, startOfDay, endOfDay, isBefore, isAfter, differenceInDays, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
@@ -832,7 +833,7 @@ export default function MaintenanceCalendar() {
       
       // Extract maintenance type from notes (format: "{maintenanceType}: {description}\n{notes}")
       const noteParts = reservation.notes?.split(':') || [];
-      const maintenanceTypeRaw = noteParts[0]?.trim() || 'regular_maintenance';
+      const maintenanceTypeRaw = maintenanceTypeOf(reservation) ?? (noteParts[0]?.trim() || 'regular_maintenance');
       
       // Map maintenance type to display label
       const maintenanceTypeMap: Record<string, string> = {
@@ -1943,7 +1944,7 @@ export default function MaintenanceCalendar() {
                   .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
                   .map((maintenance) => {
                     const vehicle = vehicles?.find(v => v.id === maintenance.vehicleId);
-                    const maintenanceType = formatMaintenanceType(maintenance.notes?.split(':')[0]) || t('calendarPage.maintenanceTypeFallback');
+                    const maintenanceType = formatMaintenanceType(maintenanceTypeKey(maintenance)) || t('calendarPage.maintenanceTypeFallback');
                     const maintenanceDetails = maintenance.notes?.split('\n')?.[1] || '';
                     const categoryBadge = maintenance.maintenanceCategory === 'scheduled_maintenance' ? t('calendarPage.completedHistoryDialog.scheduledBadge') : t('calendarPage.completeMaintenanceDialog.repairOption');
                     const categoryColor = maintenance.maintenanceCategory === 'scheduled_maintenance' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800';
