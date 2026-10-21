@@ -1728,6 +1728,26 @@ export const keyAudits = pgTable("key_audits", {
 export type KeyAudit = typeof keyAudits.$inferSelect;
 
 // Custom Notifications table
+// Round 2 punt 12 (Kees, 2026-10-21): a dismissed APK / warranty / zone / missing-invoice
+// notification, for the whole team instead of per browser (it used to live in localStorage).
+// `until` ends a "1 week" or "1 month" dismissal; "until_change" has no end and holds while
+// `fingerprint` (the date the notice was about) is still the vehicle's date. Who did it is
+// in the activity log as well.
+export const notificationDismissals = pgTable("notification_dismissals", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull(),
+  mode: text("mode").notNull(), // week | month | until_change
+  until: timestamp("until", { withTimezone: true }),
+  fingerprint: text("fingerprint"),
+  dismissedBy: text("dismissed_by"),
+  dismissedByUser: integer("dismissed_by_user_id").references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  keyIdx: uniqueIndex("notification_dismissals_key_idx").on(table.key),
+}));
+
+export type NotificationDismissal = typeof notificationDismissals.$inferSelect;
+
 export const customNotifications = pgTable("custom_notifications", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),

@@ -10,6 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { useDismissedNotifications } from "@/hooks/use-dismissed-notifications";
+import { DISMISSAL_MODES, type DismissalMode } from "@shared/notification-dismissal";
 import { NotificationsDialog } from "@/components/notifications/notifications-dialog";
 import {
   Dialog,
@@ -118,7 +119,9 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
   const [editingNotification, setEditingNotification] = useState<CustomNotification | null>(null);
   const [deleteNotification, setDeleteNotification] = useState<CustomNotification | null>(null);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
-  const [pendingDismiss, setPendingDismiss] = useState<{ key: string; label: string } | null>(null);
+  // Round 2 punt 12: dismissing counts for the team; how long is chosen in the dialog.
+  const [pendingDismiss, setPendingDismiss] = useState<{ key: string; label: string; fingerprint?: string | null } | null>(null);
+  const [dismissMode, setDismissMode] = useState<DismissalMode>("week");
   const [searchQuery, setSearchQuery] = useState("");
   const { isDismissed, dismiss } = useDismissedNotifications();
   const today = new Date();
@@ -288,21 +291,21 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
   };
 
   const apkExpiringItems = apkExpiringVehicles
-    .filter((v) => !isDismissed(`dismissed_apk_${v.id}`))
+    .filter((v) => !isDismissed(`dismissed_apk_${v.id}`, v.apkDate))
     .filter((v) => matchesSearch(`${v.brand} ${v.model} ${v.licensePlate}`))
     .sort((a, b) => new Date(a.apkDate || "").getTime() - new Date(b.apkDate || "").getTime());
 
   const warrantyExpiringItems = warrantyExpiringVehicles
-    .filter((v) => !isDismissed(`dismissed_warranty_${v.id}`))
+    .filter((v) => !isDismissed(`dismissed_warranty_${v.id}`, v.warrantyEndDate))
     .filter((v) => matchesSearch(`${v.brand} ${v.model} ${v.licensePlate}`))
     .sort((a, b) => new Date(a.warrantyEndDate || "").getTime() - new Date(b.warrantyEndDate || "").getTime());
 
   const zoneExpiringItems = zoneExpiringRows
-    .filter((z) => !isDismissed(`dismissed_zone_${z.kind}_${z.id}`))
+    .filter((z) => !isDismissed(`dismissed_zone_${z.kind}_${z.id}`, z.date))
     .filter((z) => matchesSearch(`${z.brand ?? ""} ${z.model ?? ""} ${z.licensePlate}`));
 
   const missingInvoiceItems = (missingInvoiceData?.rows ?? [])
-    .filter((m) => !isDismissed(`dismissed_missing_invoice_${m.visitId}`))
+    .filter((m) => !isDismissed(`dismissed_missing_invoice_${m.visitId}`, m.endDate))
     .filter((m) => matchesSearch(`${m.brand} ${m.model} ${m.licensePlate} ${m.description}`));
 
   const upcomingReservationItems = upcomingReservations
@@ -755,7 +758,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                             description={`${v.brand} ${v.model}`}
                             date={v.apkDate || ""}
                             onView={() => openAPKDialog(v.id)}
-                            onDismiss={() => setPendingDismiss({ key: `dismissed_apk_${v.id}`, label: formatLicensePlate(v.licensePlate) })}
+                            onDismiss={() => setPendingDismiss({ key: `dismissed_apk_${v.id}`, label: formatLicensePlate(v.licensePlate), fingerprint: v.apkDate })}
                           />
                         ))}
                       </>
@@ -771,7 +774,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                             description={`${v.brand} ${v.model}`}
                             date={v.warrantyEndDate || ""}
                             onView={() => openVehicleDialog(v.id)}
-                            onDismiss={() => setPendingDismiss({ key: `dismissed_warranty_${v.id}`, label: formatLicensePlate(v.licensePlate) })}
+                            onDismiss={() => setPendingDismiss({ key: `dismissed_warranty_${v.id}`, label: formatLicensePlate(v.licensePlate), fingerprint: v.warrantyEndDate })}
                           />
                         ))}
                       </>
@@ -787,7 +790,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                             description={`${z.brand ?? ""} ${z.model ?? ""}`.trim()}
                             date={z.date}
                             onView={() => openVehicleDialog(z.id)}
-                            onDismiss={() => setPendingDismiss({ key: `dismissed_zone_${z.kind}_${z.id}`, label: formatLicensePlate(z.licensePlate) })}
+                            onDismiss={() => setPendingDismiss({ key: `dismissed_zone_${z.kind}_${z.id}`, label: formatLicensePlate(z.licensePlate), fingerprint: z.date })}
                           />
                         ))}
                       </>
@@ -803,7 +806,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                             description={[`${m.brand} ${m.model}`.trim(), m.description].filter(Boolean).join(" · ")}
                             date={m.endDate}
                             onView={() => openVehicleDialog(m.vehicleId)}
-                            onDismiss={() => setPendingDismiss({ key: `dismissed_missing_invoice_${m.visitId}`, label: formatLicensePlate(m.licensePlate) })}
+                            onDismiss={() => setPendingDismiss({ key: `dismissed_missing_invoice_${m.visitId}`, label: formatLicensePlate(m.licensePlate), fingerprint: m.endDate })}
                           />
                         ))}
                       </>
@@ -887,7 +890,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                       description={`${v.brand} ${v.model}`}
                       date={v.apkDate || ""}
                       onView={() => openAPKDialog(v.id)}
-                      onDismiss={() => setPendingDismiss({ key: `dismissed_apk_${v.id}`, label: formatLicensePlate(v.licensePlate) })}
+                      onDismiss={() => setPendingDismiss({ key: `dismissed_apk_${v.id}`, label: formatLicensePlate(v.licensePlate), fingerprint: v.apkDate })}
                     />
                   ))
                 )}
@@ -909,7 +912,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                       description={`${v.brand} ${v.model}`}
                       date={v.warrantyEndDate || ""}
                       onView={() => openVehicleDialog(v.id)}
-                      onDismiss={() => setPendingDismiss({ key: `dismissed_warranty_${v.id}`, label: formatLicensePlate(v.licensePlate) })}
+                      onDismiss={() => setPendingDismiss({ key: `dismissed_warranty_${v.id}`, label: formatLicensePlate(v.licensePlate), fingerprint: v.warrantyEndDate })}
                     />
                   ))
                 )}
@@ -995,15 +998,31 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
           <AlertDialogHeader>
             <AlertDialogTitle>{t('centerDialog.dismissNotificationTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('centerDialog.dismissConfirm', { label: pendingDismiss?.label })}
+              {t('centerDialog.dismissConfirmTeam', { label: pendingDismiss?.label })}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="space-y-2" role="radiogroup" aria-label={t('centerDialog.dismissHowLong')} data-testid="dismiss-mode">
+            <p className="text-sm font-medium">{t('centerDialog.dismissHowLong')}</p>
+            {DISMISSAL_MODES.map((mode) => (
+              <label key={mode} className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="radio"
+                  name="dismiss-mode"
+                  checked={dismissMode === mode}
+                  onChange={() => setDismissMode(mode)}
+                  data-testid={`radio-dismiss-${mode}`}
+                />
+                {t(`centerDialog.dismissModes.${mode}`)}
+              </label>
+            ))}
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                if (pendingDismiss) dismiss(pendingDismiss.key);
+                if (pendingDismiss) dismiss(pendingDismiss.key, dismissMode, pendingDismiss.fingerprint);
                 setPendingDismiss(null);
+                setDismissMode("week");
               }}
               data-testid="button-confirm-dismiss"
             >

@@ -791,6 +791,17 @@ Kees koos met klikken: het aantal dagen voor "factuur ontbreekt" is instelbaar, 
   - De nepschakelaars "App-meldingen" en "E-mailmeldingen" zijn weg.
   - Opslaan mag alleen wie instellingen mag beheren.
 
+### B-59 — Weggeklikte meldingen gelden voor het hele team (21-10-2026)
+
+Kees koos uit de tweede lijst met suggesties punt 12. Tot nu toe onthield alleen de eigen browser dat je een melding had weggeklikt. Daardoor zag elke collega op elke pc dezelfde herinneringen opnieuw. Na herladen kwamen weggeklikte milieuzone- en factuurmeldingen zelfs terug.
+
+- **Voor iedereen.** Wegklikken bewaart de server. Het werkt voor APK, garantie, milieuzone/Move IZI en factuur ontbreekt, in het meldingencentrum en bij het belletje.
+- **Hoe lang.** Bij het wegklikken kies je: **1 week** (standaard, zoals voorheen), **1 maand**, of **tot de datum verandert**.
+  - Bij de laatste keuze komt de melding terug zodra de APK-datum, de garantiedatum, de einddatum van de milieuzone of het werkplaatsbezoek verandert.
+- **Wie.** Wie wat wegklikte, staat alleen in het logboek als "Weggeklikte melding aangemaakt". Kees koos geen aparte tab.
+- **Terug.** Een APK- of garantiebeurt plannen of afronden zet de melding weer terug voor iedereen, zoals die eerder alleen in de eigen browser terugkwam.
+- **Overgang.** Wat in een browser was weggeklikt, vervalt. Die meldingen komen één keer terug.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).

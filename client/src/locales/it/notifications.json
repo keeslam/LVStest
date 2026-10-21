@@ -85,7 +85,14 @@
       "moveIzi": "Move IZI in scadenza - {{plate}}"
     },
     "missingInvoice": "Fattura mancante",
-    "missingInvoiceTitle": "Fattura mancante - {{plate}} ({{days}} giorni dopo la fine)"
+    "missingInvoiceTitle": "Fattura mancante - {{plate}} ({{days}} giorni dopo la fine)",
+    "dismissConfirmTeam": "La notifica per {{label}} scompare per tutti.",
+    "dismissHowLong": "Per quanto tempo?",
+    "dismissModes": {
+      "week": "1 settimana",
+      "month": "1 mese",
+      "until_change": "Finché la data non cambia"
+    }
   },
   "customerCommunications": {
     "pageTitle": "Comunicazioni con i clienti",

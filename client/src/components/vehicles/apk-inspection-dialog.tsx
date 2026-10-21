@@ -1,4 +1,5 @@
 import { v } from "@/lib/zod-i18n";
+import { clearDismissal } from "@/hooks/use-dismissed-notifications";
 import { maintenanceTypeKey, maintenanceTypeOf } from "@shared/maintenance-type";
 import { describeApiError } from "@/lib/api-error";
 import { useState, useEffect, useMemo } from "react";
@@ -200,7 +201,7 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
       
       // Clear any localStorage dismissal for this vehicle's APK notification
       // This ensures if the user deletes the maintenance, the notification will reappear
-      localStorage.removeItem(`dismissed_apk_${vehicle.id}`);
+      void clearDismissal(`dismissed_apk_${vehicle.id}`);
       
       invalidateByPrefix('/api/reservations');
       invalidateByPrefix(`/api/vehicles/${vehicle.id}`);

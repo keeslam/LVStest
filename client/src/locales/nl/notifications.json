@@ -84,7 +84,14 @@
       "moveIzi": "Move IZI verloopt - {{plate}}"
     },
     "missingInvoice": "Factuur ontbreekt",
-    "missingInvoiceTitle": "Factuur ontbreekt - {{plate}} ({{days}} dagen na einde)"
+    "missingInvoiceTitle": "Factuur ontbreekt - {{plate}} ({{days}} dagen na einde)",
+    "dismissConfirmTeam": "De melding voor {{label}} verdwijnt voor iedereen.",
+    "dismissHowLong": "Hoe lang?",
+    "dismissModes": {
+      "week": "1 week",
+      "month": "1 maand",
+      "until_change": "Tot de datum verandert"
+    }
   },
   "customerCommunications": {
     "pageTitle": "Klantcommunicatie",

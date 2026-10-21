@@ -246,7 +246,8 @@
         "user": "Utilizador",
         "session": "Sessão",
         "password": "Palavra-passe",
-        "key-audit": "Controlo do armário de chaves"
+        "key-audit": "Controlo do armário de chaves",
+        "notification-dismissal": "Notificação dispensada"
       },
       "verbs": {
         "create": "criação",

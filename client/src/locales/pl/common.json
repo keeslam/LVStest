@@ -250,7 +250,8 @@
         "user": "Użytkownik",
         "session": "Sesja",
         "password": "Hasło",
-        "key-audit": "Kontrola szafki na klucze"
+        "key-audit": "Kontrola szafki na klucze",
+        "notification-dismissal": "Ukryte powiadomienie"
       },
       "verbs": {
         "create": "utworzono",

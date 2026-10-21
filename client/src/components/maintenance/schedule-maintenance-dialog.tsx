@@ -1,4 +1,5 @@
 import { UserFacingError, describeApiError } from "@/lib/api-error";
+import { clearDismissal } from "@/hooks/use-dismissed-notifications";
 import { maintenanceTypeKey, maintenanceTypeOf } from "@shared/maintenance-type";
 import { v } from "@/lib/zod-i18n";
 import { useState, useEffect, useRef } from "react";
@@ -431,9 +432,9 @@ export function ScheduleMaintenanceDialog({
       // Clear localStorage dismissals for APK/warranty notifications when scheduling that type
       // This ensures if the user deletes the maintenance, the notification will reappear
       if (variables.maintenanceType === 'apk_inspection') {
-        localStorage.removeItem(`dismissed_apk_${variables.vehicleId}`);
+        void clearDismissal(`dismissed_apk_${variables.vehicleId}`);
       } else if (variables.maintenanceType === 'warranty_service') {
-        localStorage.removeItem(`dismissed_warranty_${variables.vehicleId}`);
+        void clearDismissal(`dismissed_warranty_${variables.vehicleId}`);
       }
       
       invalidateRelatedQueries('reservations');
@@ -635,9 +636,9 @@ export function ScheduleMaintenanceDialog({
       // Clear localStorage dismissals for APK/warranty notifications when scheduling that type
       // This ensures if the user deletes the maintenance, the notification will reappear
       if (maintenanceData?.maintenanceType === 'apk_inspection') {
-        localStorage.removeItem(`dismissed_apk_${maintenanceData.vehicleId}`);
+        void clearDismissal(`dismissed_apk_${maintenanceData.vehicleId}`);
       } else if (maintenanceData?.maintenanceType === 'warranty_service') {
-        localStorage.removeItem(`dismissed_warranty_${maintenanceData.vehicleId}`);
+        void clearDismissal(`dismissed_warranty_${maintenanceData.vehicleId}`);
       }
       
       // Show success message first

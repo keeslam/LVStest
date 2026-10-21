@@ -246,7 +246,8 @@
         "user": "Utilizator",
         "session": "Sesiune",
         "password": "Parolă",
-        "key-audit": "Verificare dulap chei"
+        "key-audit": "Verificare dulap chei",
+        "notification-dismissal": "Notificare ascunsă"
       },
       "verbs": {
         "create": "creat",

@@ -86,7 +86,14 @@
       "moveIzi": "Move IZI wygasa - {{plate}}"
     },
     "missingInvoice": "Brak faktury",
-    "missingInvoiceTitle": "Brak faktury - {{plate}} ({{days}} dni po zakończeniu)"
+    "missingInvoiceTitle": "Brak faktury - {{plate}} ({{days}} dni po zakończeniu)",
+    "dismissConfirmTeam": "Powiadomienie dla {{label}} znika dla wszystkich.",
+    "dismissHowLong": "Na jak długo?",
+    "dismissModes": {
+      "week": "1 tydzień",
+      "month": "1 miesiąc",
+      "until_change": "Do zmiany daty"
+    }
   },
   "customerCommunications": {
     "pageTitle": "Komunikacja z klientami",

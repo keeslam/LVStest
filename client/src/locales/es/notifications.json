@@ -85,7 +85,14 @@
       "moveIzi": "Caduca Move IZI - {{plate}}"
     },
     "missingInvoice": "Falta la factura",
-    "missingInvoiceTitle": "Falta la factura - {{plate}} ({{days}} días tras el fin)"
+    "missingInvoiceTitle": "Falta la factura - {{plate}} ({{days}} días tras el fin)",
+    "dismissConfirmTeam": "La notificación de {{label}} desaparece para todos.",
+    "dismissHowLong": "¿Durante cuánto tiempo?",
+    "dismissModes": {
+      "week": "1 semana",
+      "month": "1 mes",
+      "until_change": "Hasta que cambie la fecha"
+    }
   },
   "customerCommunications": {
     "pageTitle": "Comunicación con clientes",

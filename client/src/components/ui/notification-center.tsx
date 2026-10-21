@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useDismissedNotifications } from "@/hooks/use-dismissed-notifications";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { differenceInDays } from "date-fns";
@@ -71,32 +72,23 @@ export function NotificationCenter() {
     enabled: canViewReservations,
   });
 
-  const isDismissed = (key: string): boolean => {
-    const dismissedTimestamp = localStorage.getItem(key);
-    if (!dismissedTimestamp) return false;
-    const dismissedDate = new Date(parseInt(dismissedTimestamp));
-    const daysSinceDismissal = differenceInDays(today, dismissedDate);
-    if (daysSinceDismissal > 7) {
-      localStorage.removeItem(key);
-      return false;
-    }
-    return true;
-  };
+  // Round 2 punt 12: the team's dismissals (server), the same as the notification centre.
+  const { isDismissed } = useDismissedNotifications();
 
   const apkExpiringItems = apkExpiringVehicles.filter(
-    (vehicle) => !isDismissed(`dismissed_apk_${vehicle.id}`)
+    (vehicle) => !isDismissed(`dismissed_apk_${vehicle.id}`, vehicle.apkDate)
   );
 
   const warrantyExpiringItems = warrantyExpiringVehicles.filter(
-    (vehicle) => !isDismissed(`dismissed_warranty_${vehicle.id}`)
+    (vehicle) => !isDismissed(`dismissed_warranty_${vehicle.id}`, vehicle.warrantyEndDate)
   );
 
   const zoneExpiringItems = zoneExpiringRows.filter(
-    (z) => !isDismissed(`dismissed_zone_${z.kind}_${z.id}`)
+    (z) => !isDismissed(`dismissed_zone_${z.kind}_${z.id}`, z.date)
   );
 
   const missingInvoiceItems = (missingInvoiceData?.rows ?? []).filter(
-    (m) => !isDismissed(`dismissed_missing_invoice_${m.visitId}`)
+    (m) => !isDismissed(`dismissed_missing_invoice_${m.visitId}`, m.endDate)
   );
 
   const upcomingReservationItems = upcomingReservations.filter((reservation) => {

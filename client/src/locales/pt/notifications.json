@@ -85,7 +85,14 @@
       "moveIzi": "Move IZI expira - {{plate}}"
     },
     "missingInvoice": "Fatura em falta",
-    "missingInvoiceTitle": "Fatura em falta - {{plate}} ({{days}} dias após o fim)"
+    "missingInvoiceTitle": "Fatura em falta - {{plate}} ({{days}} dias após o fim)",
+    "dismissConfirmTeam": "A notificação de {{label}} desaparece para todos.",
+    "dismissHowLong": "Durante quanto tempo?",
+    "dismissModes": {
+      "week": "1 semana",
+      "month": "1 mês",
+      "until_change": "Até a data mudar"
+    }
   },
   "customerCommunications": {
     "pageTitle": "Comunicação com clientes",

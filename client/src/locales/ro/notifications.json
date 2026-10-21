@@ -85,7 +85,14 @@
       "moveIzi": "Move IZI expiră - {{plate}}"
     },
     "missingInvoice": "Factură lipsă",
-    "missingInvoiceTitle": "Factură lipsă - {{plate}} ({{days}} zile după sfârșit)"
+    "missingInvoiceTitle": "Factură lipsă - {{plate}} ({{days}} zile după sfârșit)",
+    "dismissConfirmTeam": "Notificarea pentru {{label}} dispare pentru toată lumea.",
+    "dismissHowLong": "Pentru cât timp?",
+    "dismissModes": {
+      "week": "1 săptămână",
+      "month": "1 lună",
+      "until_change": "Până se schimbă data"
+    }
   },
   "customerCommunications": {
     "pageTitle": "Comunicarea cu clienții",

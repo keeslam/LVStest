@@ -242,7 +242,8 @@
         "user": "Gebruiker",
         "session": "Sessie",
         "password": "Wachtwoord",
-        "key-audit": "Sleutelkastcontrole"
+        "key-audit": "Sleutelkastcontrole",
+        "notification-dismissal": "Weggeklikte melding"
       },
       "verbs": {
         "create": "aangemaakt",

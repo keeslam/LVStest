@@ -242,7 +242,8 @@
         "user": "User",
         "session": "Session",
         "password": "Password",
-        "key-audit": "Key-cabinet audit"
+        "key-audit": "Key-cabinet audit",
+        "notification-dismissal": "Dismissed notification"
       },
       "verbs": {
         "create": "created",

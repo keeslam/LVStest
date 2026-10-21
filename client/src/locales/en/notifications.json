@@ -84,7 +84,14 @@
       "moveIzi": "Move IZI expires - {{plate}}"
     },
     "missingInvoice": "Invoice missing",
-    "missingInvoiceTitle": "Invoice missing - {{plate}} ({{days}} days after end)"
+    "missingInvoiceTitle": "Invoice missing - {{plate}} ({{days}} days after end)",
+    "dismissConfirmTeam": "The notification for {{label}} disappears for everyone.",
+    "dismissHowLong": "For how long?",
+    "dismissModes": {
+      "week": "1 week",
+      "month": "1 month",
+      "until_change": "Until the date changes"
+    }
   },
   "customerCommunications": {
     "pageTitle": "Customer Communications",

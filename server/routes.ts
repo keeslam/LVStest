@@ -185,6 +185,7 @@ import { registerReservationWorklistRoutes } from "./routes/reservation-worklist
 import { registerRdwTypeRemapRoutes } from "./routes/rdw-type-remap";
 import { registerExpenseRoutes } from "./routes/expenses";
 import { registerMissingInvoiceRoutes } from "./routes/missing-invoices";
+import { registerNotificationDismissalRoutes } from "./routes/notification-dismissals";
 import { registerExpenseInboxRoutes } from "./routes/expense-inbox";
 import { registerPdfTemplateRoutes } from "./routes/pdf-templates";
 import { storedPathGuard, TEMPLATE_ROUTE_PREFIXES } from "./middleware/stored-path-guard";
@@ -6882,6 +6883,8 @@ export async function registerRoutes(app: Express): Promise<void> {
   registerExpenseRoutes(app, routeDeps);
   // Round 2 punt 11 part B: "factuur ontbreekt".
   registerMissingInvoiceRoutes(app);
+  // Round 2 punt 12: dismissed notifications for the whole team.
+  registerNotificationDismissalRoutes(app, routeDeps);
 
   // ==================== VEHICLE-SPECIFIC CUSTOMER ROUTES ====================
   /**

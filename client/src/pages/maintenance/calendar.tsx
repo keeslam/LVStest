@@ -1,4 +1,5 @@
 import { describeApiError } from "@/lib/api-error";
+import { clearDismissal } from "@/hooks/use-dismissed-notifications";
 import { FileWarning } from "lucide-react";
 import type { MissingInvoiceRow } from "@shared/missing-invoice";
 import { maintenanceTypeKey, maintenanceTypeOf } from "@shared/maintenance-type";
@@ -226,9 +227,9 @@ export default function MaintenanceCalendar() {
       // This ensures the notification will reappear after deletion
       const notes = reservation.notes?.toLowerCase() || '';
       if (notes.includes('apk_inspection:') || notes.includes('apk')) {
-        localStorage.removeItem(`dismissed_apk_${reservation.vehicleId}`);
+        void clearDismissal(`dismissed_apk_${reservation.vehicleId}`);
       } else if (notes.includes('warranty_service:') || notes.includes('warranty') || notes.includes('garantie')) {
-        localStorage.removeItem(`dismissed_warranty_${reservation.vehicleId}`);
+        void clearDismissal(`dismissed_warranty_${reservation.vehicleId}`);
       }
 
       // Show success toast
