@@ -1,4 +1,5 @@
 import { notifyFileReady } from "@/lib/file-ready";
+import { BARCODE_SOURCE, DEFAULT_BARCODE_BOX, pictureBoxSize } from "@shared/contract-signature-box";
 import { uploadUrl } from "@/lib/upload-url";
 import { describeApiError } from "@/lib/api-error";
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -118,7 +119,7 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
     'customerEmail', 'companyName', 'driverLicense', 'driverName', 'driverFirstName',
     'driverLastName', 'driverEmail', 'driverPhone', 'driverLicenseNumber', 'driverLicenseExpiry',
     'startDate', 'endDate', 'duration', 'totalPrice', 'pickupMileage', 'returnMileage',
-    'fuelLevelPickup', 'fuelLevelReturn', 'deductibleDomestic', 'deductibleAbroad', 'signingPlace', 'damageNote', 'signatureLandlord', 'signatureTenant',
+    'fuelLevelPickup', 'fuelLevelReturn', 'deductibleDomestic', 'deductibleAbroad', 'signingPlace', 'damageNote', 'signatureLandlord', 'signatureTenant', 'reservationBarcode',
   ];
   const [templates, setTemplates] = useState<Template[]>([]);
   const [currentTemplate, setCurrentTemplate] = useState<Template | null>(null);
@@ -1794,7 +1795,29 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
                           <div className="absolute left-0 right-0 h-px bg-blue-500" style={{ top: `${alignmentGuides.y * zoomLevel}px` }} />
                         )}
                         
-                        {currentTemplate.fields.map(field => (
+                        {/* Kees 2026-10-21: the barcode prints top right until the template has its own
+                            "Barcode reservering" field; this shows where, so it is not a surprise on paper. */}
+                        {!currentTemplate.fields.some((f) => f.source === BARCODE_SOURCE) && (
+                          <div
+                            className="absolute pointer-events-none flex items-center justify-center rounded border-2 border-dashed border-gray-400 bg-white/70 text-center text-gray-500"
+                            style={{
+                              left: `${DEFAULT_BARCODE_BOX.x * zoomLevel}px`,
+                              top: `${DEFAULT_BARCODE_BOX.y * zoomLevel}px`,
+                              width: `${DEFAULT_BARCODE_BOX.width * zoomLevel}px`,
+                              height: `${DEFAULT_BARCODE_BOX.height * zoomLevel}px`,
+                              fontSize: `${8 * zoomLevel}px`,
+                              lineHeight: 1.1,
+                            }}
+                            data-testid="barcode-default-place"
+                          >
+                            {t('templateEditor.barcodeDefaultPlace')}
+                          </div>
+                        )}
+
+                        {currentTemplate.fields.map(field => {
+                          // Barcode and signatures print as a picture in a box: show the box at its real size.
+                          const box = pictureBoxSize(field.source);
+                          return (
                           <div
                             key={field.id}
                             className={`absolute cursor-pointer p-1 rounded transition-all ${
@@ -1815,15 +1838,29 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
                               display: 'inline-flex',
                               alignItems: 'center',
                               justifyContent: field.textAlign === 'left' ? 'flex-start' : field.textAlign === 'right' ? 'flex-end' : 'center',
-                              lineHeight: 1.2
+                              lineHeight: 1.2,
+                              ...(box ? {
+                                width: `${box.width * zoomLevel}px`,
+                                height: `${box.height * zoomLevel}px`,
+                                fontSize: `${9 * zoomLevel}px`,
+                                justifyContent: 'center',
+                                border: '1px dashed #6b7280',
+                                background: field.source === BARCODE_SOURCE
+                                  ? 'repeating-linear-gradient(90deg, #111 0 2px, #fff 2px 4px, #111 4px 5px, #fff 5px 8px)'
+                                  : 'rgba(255, 255, 255, 0.85)',
+                              } : {}),
                             }}
+                            data-testid={box ? `picture-field-${field.source}` : undefined}
                             onClick={(e) => handleFieldClick(field, e)}
                             onMouseDown={(e) => handleMouseDown(e, field)}
                           >
                             {field.locked && <Lock className="h-3 w-3 mr-1" />}
-                            {field.name}
+                            {field.source === BARCODE_SOURCE
+                              ? <span className="rounded bg-white px-1">{field.name}</span>
+                              : field.name}
                           </div>
-                        ))}
+                          );
+                        })}
                         
                         {selectionBox && (
                           <div

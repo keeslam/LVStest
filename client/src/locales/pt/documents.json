@@ -390,7 +390,8 @@
       "signatureLandlord": "Assinatura do locador",
       "signatureTenant": "Assinatura do locatário",
       "signingPlace": "Assinado em",
-      "damageNote": "Danos no veículo"
+      "damageNote": "Danos no veículo",
+      "reservationBarcode": "Código de barras da reserva"
     },
     "backToDocuments": "Voltar aos documentos",
     "createFirstTemplateTitle": "Crie o seu primeiro modelo",
@@ -524,7 +525,8 @@
     "unsavedSwitchTitle": "Alterações não guardadas",
     "unsavedSwitchDescription": "Este modelo tem alterações que ainda não foram guardadas. Se escolher outro modelo, serão perdidas.",
     "unsavedSwitchConfirm": "Descartar alterações",
-    "unsavedKeepEditing": "Continuar a editar"
+    "unsavedKeepEditing": "Continuar a editar",
+    "barcodeDefaultPlace": "Código de barras (local padrão). Adicione o campo Código de barras da reserva para o mover"
   },
   "transportTemplateEditor": {
     "templateNamePlaceholder": "p. ex. Formulário de entrega do condutor",

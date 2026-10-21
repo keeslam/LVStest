@@ -397,7 +397,8 @@
       "signatureLandlord": "Podpis wynajmującego",
       "signatureTenant": "Podpis najemcy",
       "signingPlace": "Podpisano w",
-      "damageNote": "Szkody pojazdu"
+      "damageNote": "Szkody pojazdu",
+      "reservationBarcode": "Kod kreskowy rezerwacji"
     },
     "backToDocuments": "Powrót do dokumentów",
     "createFirstTemplateTitle": "Utwórz pierwszy szablon",
@@ -532,7 +533,8 @@
     "unsavedSwitchTitle": "Zmiany niezapisane",
     "unsavedSwitchDescription": "Ten szablon ma zmiany, które nie zostały jeszcze zapisane. Jeśli wybiorą Państwo inny szablon, zostaną utracone.",
     "unsavedSwitchConfirm": "Odrzuć zmiany",
-    "unsavedKeepEditing": "Kontynuuj edycję"
+    "unsavedKeepEditing": "Kontynuuj edycję",
+    "barcodeDefaultPlace": "Kod kreskowy (miejsce domyślne). Dodaj pole Kod kreskowy rezerwacji, aby go przenieść"
   },
   "transportTemplateEditor": {
     "templateNamePlaceholder": "np. Formularz przekazania dla kierowcy",

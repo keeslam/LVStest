@@ -390,7 +390,8 @@
       "signatureLandlord": "Firma del arrendador",
       "signatureTenant": "Firma del arrendatario",
       "signingPlace": "Firmado en",
-      "damageNote": "Daños del vehículo"
+      "damageNote": "Daños del vehículo",
+      "reservationBarcode": "Código de barras de la reserva"
     },
     "backToDocuments": "Volver a documentos",
     "createFirstTemplateTitle": "Cree su primera plantilla",
@@ -524,7 +525,8 @@
     "unsavedSwitchTitle": "Cambios sin guardar",
     "unsavedSwitchDescription": "Esta plantilla tiene cambios que aún no se han guardado. Si elige otra plantilla, se perderán.",
     "unsavedSwitchConfirm": "Descartar cambios",
-    "unsavedKeepEditing": "Seguir editando"
+    "unsavedKeepEditing": "Seguir editando",
+    "barcodeDefaultPlace": "Código de barras (lugar estándar). Añada el campo Código de barras de la reserva para moverlo"
   },
   "transportTemplateEditor": {
     "templateNamePlaceholder": "p. ej. Formulario de entrega del conductor",

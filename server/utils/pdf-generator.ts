@@ -3,7 +3,7 @@
  * Using the ELENA AVL ALL contract template or custom templates
  */
 
-import { DEFAULT_SIGNATURE_BOX, SIGNATURE_LANDLORD_SOURCE, SIGNATURE_SOURCES, SIGNATURE_TENANT_SOURCE, fitInBox, tenantSignatureKeyword, type SignatureBox } from "../../shared/contract-signature-box";
+import { BARCODE_SOURCE, DEFAULT_BARCODE_BOX, DEFAULT_SIGNATURE_BOX, SIGNATURE_LANDLORD_SOURCE, SIGNATURE_SOURCES, SIGNATURE_TENANT_SOURCE, fitInBox, tenantSignatureKeyword, type SignatureBox } from "../../shared/contract-signature-box";
 import { STAFF_SIGNATURE_KEY, isValidStaffSignature } from "../../shared/staff-signature";
 import { currentRequestUserId } from "../services/request-user";
 import { customerDeductibleFor } from "../../shared/customer-deductibles";
@@ -413,6 +413,7 @@ export async function generateRentalContractFromTemplate(
   let tenantBox: SignatureBox | null = null;
 
   for (const field of fields) {
+    if (field.source === BARCODE_SOURCE) continue; // drawn below
     if (field.source && SIGNATURE_SOURCES.has(field.source)) {
       const box: SignatureBox = {
         x: field.x,
@@ -458,19 +459,27 @@ export async function generateRentalContractFromTemplate(
     });
   }
 
-  // Draw the reservation barcode top-right of page 1 (never fail contract
-  // generation because of the barcode).
+  // Draw the reservation barcode (never fail contract generation because of the barcode).
+  // Kees 2026-10-21: in the template's "Barcode reservering" box when it has one, else top
+  // right of page 1 as before.
   try {
     const barcodePng = renderBarcodePng(formatReservationBarcode(reservation.id));
     const barcodeImage = await pdfDoc.embedPng(barcodePng);
-    const scaledDims = barcodeImage.scale(0.5);
-    const { width: pageWidth, height: pageHeight } = page.getSize();
-    page.drawImage(barcodeImage, {
-      x: pageWidth - scaledDims.width - 24,
-      y: pageHeight - scaledDims.height - 20,
-      width: scaledDims.width,
-      height: scaledDims.height,
-    });
+    const barcodeField = fields.find((f) => f.source === BARCODE_SOURCE);
+    if (barcodeField) {
+      const width = barcodeField.width || DEFAULT_BARCODE_BOX.width;
+      const height = barcodeField.height || DEFAULT_BARCODE_BOX.height;
+      page.drawImage(barcodeImage, fitInBox(barcodeImage.width, barcodeImage.height, { x: barcodeField.x, y: PAGE_HEIGHT - barcodeField.y - height, width, height }));
+    } else {
+      const scaledDims = barcodeImage.scale(0.5);
+      const { width: pageWidth, height: pageHeight } = page.getSize();
+      page.drawImage(barcodeImage, {
+        x: pageWidth - scaledDims.width - 24,
+        y: pageHeight - scaledDims.height - 20,
+        width: scaledDims.width,
+        height: scaledDims.height,
+      });
+    }
   } catch (e) {
     console.warn('Contract barcode skipped:', e);
   }

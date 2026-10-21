@@ -383,7 +383,8 @@
       "signatureLandlord": "Handtekening verhuurder",
       "signatureTenant": "Handtekening huurder",
       "signingPlace": "Getekend te",
-      "damageNote": "Schade aan voertuig"
+      "damageNote": "Schade aan voertuig",
+      "reservationBarcode": "Barcode reservering"
     },
     "backToDocuments": "Terug naar documenten",
     "createFirstTemplateTitle": "Maak je eerste sjabloon",
@@ -516,7 +517,8 @@
     "unsavedSwitchTitle": "Wijzigingen niet opgeslagen",
     "unsavedSwitchDescription": "Dit sjabloon heeft wijzigingen die nog niet zijn opgeslagen. Als je een ander sjabloon kiest, gaan die verloren.",
     "unsavedSwitchConfirm": "Wijzigingen weggooien",
-    "unsavedKeepEditing": "Verder bewerken"
+    "unsavedKeepEditing": "Verder bewerken",
+    "barcodeDefaultPlace": "Barcode (standaardplek). Plaats het veld Barcode reservering om hem te verplaatsen"
   },
   "transportTemplateEditor": {
     "templateNamePlaceholder": "bijv. Chauffeursoverdrachtsformulier",

@@ -390,7 +390,8 @@
       "signatureLandlord": "Firma del locatore",
       "signatureTenant": "Firma del conduttore",
       "signingPlace": "Firmato a",
-      "damageNote": "Danni al veicolo"
+      "damageNote": "Danni al veicolo",
+      "reservationBarcode": "Codice a barre prenotazione"
     },
     "backToDocuments": "Torna ai documenti",
     "createFirstTemplateTitle": "Crei il Suo primo modello",
@@ -524,7 +525,8 @@
     "unsavedSwitchTitle": "Modifiche non salvate",
     "unsavedSwitchDescription": "Questo modello ha modifiche che non sono ancora state salvate. Se sceglie un altro modello, andranno perse.",
     "unsavedSwitchConfirm": "Scartare le modifiche",
-    "unsavedKeepEditing": "Continuare a modificare"
+    "unsavedKeepEditing": "Continuare a modificare",
+    "barcodeDefaultPlace": "Codice a barre (posizione standard). Aggiungi il campo Codice a barre prenotazione per spostarlo"
   },
   "transportTemplateEditor": {
     "templateNamePlaceholder": "ad es. Modulo di consegna per il conducente",

@@ -43,6 +43,23 @@ describe("contract texts and deductible", () => {
   });
 });
 
+describe("barcode field", () => {
+  it("prints the barcode in the template's box, and top right without one", async () => {
+    const { PDFName, PDFDict } = await import("pdf-lib");
+    const imageCount = async (pdf: Buffer) => {
+      const doc = await PDFDocument.load(pdf);
+      return doc.getPage(0).node.Resources()?.lookup(PDFName.of("XObject"), PDFDict)?.keys().length ?? 0;
+    };
+    const withField = { id: 1, name: "t", fields: [{ id: "b", source: "reservationBarcode", x: 50, y: 50, fontSize: 12 }] } as any;
+    const without = { id: 1, name: "t", fields: [] } as any;
+    // One barcode either way (the page also holds the embedded default background), never two.
+    const placed = await imageCount(await generateRentalContractFromTemplate(reservation(), withField, null));
+    const standard = await imageCount(await generateRentalContractFromTemplate(reservation(), without, null));
+    expect(placed).toBe(standard);
+    expect(placed).toBeGreaterThan(0);
+  });
+});
+
 describe("signature boxes", () => {
   it("records the tenant box at generation and fills it when the customer signs", async () => {
     const template = { id: 1, name: "t", fields: [{ id: "s", source: "signatureTenant", x: 300, y: 700, fontSize: 12 }] } as any;

@@ -390,7 +390,8 @@
       "signatureLandlord": "Semnătura locatorului",
       "signatureTenant": "Semnătura locatarului",
       "signingPlace": "Semnat la",
-      "damageNote": "Daune la vehicul"
+      "damageNote": "Daune la vehicul",
+      "reservationBarcode": "Cod de bare rezervare"
     },
     "backToDocuments": "Înapoi la documente",
     "createFirstTemplateTitle": "Creați primul șablon",
@@ -524,7 +525,8 @@
     "unsavedSwitchTitle": "Modificări nesalvate",
     "unsavedSwitchDescription": "Acest șablon are modificări care nu au fost încă salvate. Dacă alegeți alt șablon, ele se vor pierde.",
     "unsavedSwitchConfirm": "Renunțați la modificări",
-    "unsavedKeepEditing": "Continuați editarea"
+    "unsavedKeepEditing": "Continuați editarea",
+    "barcodeDefaultPlace": "Cod de bare (loc standard). Adăugați câmpul Cod de bare rezervare pentru a-l muta"
   },
   "transportTemplateEditor": {
     "templateNamePlaceholder": "de ex. Formular de predare pentru șofer",

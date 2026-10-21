@@ -40,3 +40,19 @@ export function fitInBox(iw: number, ih: number, box: SignatureBox): SignatureBo
   const height = ih * scale;
   return { x: box.x, y: box.y + (box.height - height) / 2, width, height };
 }
+
+/**
+ * Kees 2026-10-21: the reservation barcode as a template field ("Barcode reservering").
+ * A template with this field prints the barcode in the field's box; one without it keeps
+ * the old place, top right of page 1 (DEFAULT_BARCODE_BOX, in template coordinates: x, y
+ * from the top-left, as the editor shows it).
+ */
+export const BARCODE_SOURCE = "reservationBarcode";
+export const DEFAULT_BARCODE_BOX = { x: 440, y: 20, width: 131, height: 41 };
+
+/** The sources drawn as a picture in a box instead of text, with their default size. */
+export function pictureBoxSize(source: string | null | undefined): { width: number; height: number } | null {
+  if (source === BARCODE_SOURCE) return { width: DEFAULT_BARCODE_BOX.width, height: DEFAULT_BARCODE_BOX.height };
+  if (source === SIGNATURE_LANDLORD_SOURCE || source === SIGNATURE_TENANT_SOURCE) return DEFAULT_SIGNATURE_BOX;
+  return null;
+}
