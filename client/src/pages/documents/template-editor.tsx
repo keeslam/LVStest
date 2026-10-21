@@ -1670,7 +1670,16 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
                             </div>
                             <div>
                               <Label htmlFor="field-source">{t('templateEditor.dataSourceLabel')}</Label>
-                              <Select value={newFieldSource} onValueChange={setNewFieldSource}>
+                              {/* Kees 2026-10-21: picking a source fills in the field name (still editable); a name
+                                  typed by hand is kept, one filled in from an earlier source follows the new one. */}
+                              <Select
+                                value={newFieldSource}
+                                onValueChange={(key) => {
+                                  const previousLabel = newFieldSource ? t(`templateEditor.dataSourceOptions.${newFieldSource}`) : "";
+                                  if (!newFieldName.trim() || newFieldName === previousLabel) setNewFieldName(t(`templateEditor.dataSourceOptions.${key}`));
+                                  setNewFieldSource(key);
+                                }}
+                              >
                                 <SelectTrigger id="field-source" data-testid="select-field-source">
                                   <SelectValue placeholder={t('templateEditor.dataSourcePlaceholder')} />
                                 </SelectTrigger>
@@ -1870,8 +1879,11 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
                           value={selectedField.source}
                           onValueChange={(value) => {
                             if (!currentTemplate) return;
+                            // Same rule as when adding: a name that came from the old source follows the new one.
+                            const previousLabel = selectedField.source ? t(`templateEditor.dataSourceOptions.${selectedField.source}`) : "";
+                            const followName = !selectedField.name?.trim() || selectedField.name === previousLabel;
                             const updatedFields = currentTemplate.fields.map(f =>
-                              f.id === selectedField.id ? { ...f, source: value } : f
+                              f.id === selectedField.id ? { ...f, source: value, ...(followName ? { name: t(`templateEditor.dataSourceOptions.${value}`) } : {}) } : f
                             );
                             setCurrentTemplate({ ...currentTemplate, fields: updatedFields });
                           }}
