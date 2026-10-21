@@ -76,7 +76,7 @@ function withProviders(node: React.ReactNode) {
 // and /api/system-settings are requireAuth only and stay unconditional.
 // dashboard_tiles (Kees 2026-10-19): which tiles show, also requireAuth only.
 // dashboard_quick_actions (Kees 2026-10-20, B-53): which quick actions show, the same.
-const ALWAYS_ALLOWED = ["/api/app-settings/key/calendar_settings", "/api/system-settings", "/api/app-settings/key/dashboard_tiles", "/api/app-settings/key/dashboard_quick_actions"];
+const ALWAYS_ALLOWED = ["/api/app-settings/key/calendar_settings", "/api/system-settings", "/api/user-settings/dashboard_tiles", "/api/user-settings/dashboard_quick_actions"];
 
 describe("Dashboard (full page) — a view_dashboard-only user (the reports-only shape) triggers no other family's query", () => {
   it("fires nothing but requireAuth-only settings routes, and every widget shows NoDataAccess where it has a list to show", async () => {

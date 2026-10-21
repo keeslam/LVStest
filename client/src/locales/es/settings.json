@@ -679,7 +679,7 @@
     },
     "dashboardTiles": {
       "title": "Mosaicos del panel",
-      "description": "Elija qué mosaicos ven todos en el panel y en qué orden.",
+      "description": "Elija qué mosaicos ve usted en el panel y en qué orden. Solo vale para usted.",
       "saved": "Los mosaicos del panel se han guardado.",
       "saveFailed": "Error al guardar",
       "moveUp": "Subir",
@@ -696,7 +696,7 @@
     },
     "quickActions": {
       "title": "Acciones rápidas",
-      "description": "Elija para cada acción si todos la ven en el panel como mosaico grande (como máximo {{max}}, menos también vale) o como botón debajo. Sin marcar: no se muestra.",
+      "description": "Elija para cada acción si la ve en su panel como mosaico grande (como máximo {{max}}, menos también vale) o como botón debajo. Sin marcar: no se muestra. Solo vale para usted.",
       "saved": "Las acciones rápidas se han guardado.",
       "tilesColumn": "Mosaicos ({{count}}/{{max}})",
       "buttonsColumn": "Botones debajo",
@@ -716,6 +716,13 @@
       "invalid": "Introduzca solo números de 0 o más.",
       "saved": "Las tarifas por kilómetro se han guardado.",
       "saveFailed": "Error al guardar"
+    },
+    "dashboardLayout": {
+      "gear": "Personalizar mi panel",
+      "title": "Mi panel",
+      "description": "Elija qué mosaicos y acciones rápidas ve usted, y en qué orden. Solo vale para usted.",
+      "backToStandard": "Volver al estándar",
+      "backToStandardDone": "Su panel vuelve al estándar."
     }
   },
   "damageCheckFieldsPage": {

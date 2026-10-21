@@ -679,7 +679,7 @@
     },
     "dashboardTiles": {
       "title": "Riquadri della dashboard",
-      "description": "Scelga quali riquadri vedono tutti nella dashboard e in quale ordine.",
+      "description": "Scegli quali riquadri vedi nella dashboard e in quale ordine. Vale solo per te.",
       "saved": "I riquadri della dashboard sono stati salvati.",
       "saveFailed": "Salvataggio non riuscito",
       "moveUp": "Sposta su",
@@ -696,7 +696,7 @@
     },
     "quickActions": {
       "title": "Azioni rapide",
-      "description": "Scegli per ogni azione se tutti la vedono nella dashboard come riquadro grande (al massimo {{max}}, anche meno) o come pulsante sotto. Non selezionata: non mostrata.",
+      "description": "Scegli per ogni azione se la vedi nella tua dashboard come riquadro grande (al massimo {{max}}, anche meno) o come pulsante sotto. Non selezionata: non mostrata. Vale solo per te.",
       "saved": "Le azioni rapide sono state salvate.",
       "tilesColumn": "Riquadri ({{count}}/{{max}})",
       "buttonsColumn": "Pulsanti sotto",
@@ -716,6 +716,13 @@
       "invalid": "Inserisca solo numeri uguali o superiori a 0.",
       "saved": "Le tariffe chilometriche sono state salvate.",
       "saveFailed": "Salvataggio non riuscito"
+    },
+    "dashboardLayout": {
+      "gear": "Personalizza la mia dashboard",
+      "title": "La mia dashboard",
+      "description": "Scegli quali riquadri e azioni rapide vedi, e in quale ordine. Vale solo per te.",
+      "backToStandard": "Torna allo standard",
+      "backToStandardDone": "La tua dashboard è tornata allo standard."
     }
   },
   "damageCheckFieldsPage": {

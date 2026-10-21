@@ -247,7 +247,8 @@
         "session": "Sessão",
         "password": "Palavra-passe",
         "key-audit": "Controlo do armário de chaves",
-        "notification-dismissal": "Notificação dispensada"
+        "notification-dismissal": "Notificação dispensada",
+        "user-setting": "Definição própria"
       },
       "verbs": {
         "create": "criação",

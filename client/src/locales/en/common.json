@@ -243,7 +243,8 @@
         "session": "Session",
         "password": "Password",
         "key-audit": "Key-cabinet audit",
-        "notification-dismissal": "Dismissed notification"
+        "notification-dismissal": "Dismissed notification",
+        "user-setting": "Own setting"
       },
       "verbs": {
         "create": "created",

@@ -247,7 +247,8 @@
         "session": "Sesión",
         "password": "Contraseña",
         "key-audit": "Control del armario de llaves",
-        "notification-dismissal": "Notificación descartada"
+        "notification-dismissal": "Notificación descartada",
+        "user-setting": "Ajuste propio"
       },
       "verbs": {
         "create": "creado",

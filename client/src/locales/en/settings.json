@@ -675,7 +675,7 @@
     },
     "dashboardTiles": {
       "title": "Dashboard tiles",
-      "description": "Choose which tiles everyone sees on the dashboard, and in which order.",
+      "description": "Choose which tiles you see on the dashboard, and in what order. This applies to you only.",
       "saved": "The dashboard tiles have been saved.",
       "saveFailed": "Saving failed",
       "moveUp": "Move up",
@@ -692,7 +692,7 @@
     },
     "quickActions": {
       "title": "Quick actions",
-      "description": "Choose per action whether everyone sees it on the dashboard as a large tile (at most {{max}}, fewer is fine) or as a button below. Unticked: not shown.",
+      "description": "Choose per action whether you see it on your dashboard as a large tile (at most {{max}}, fewer is fine) or as a button below. Unticked: not shown. This applies to you only.",
       "saved": "The quick actions have been saved.",
       "tilesColumn": "Tiles ({{count}}/{{max}})",
       "buttonsColumn": "Buttons below",
@@ -712,6 +712,13 @@
       "invalid": "Only enter numbers of 0 or more.",
       "saved": "The kilometre rates have been saved.",
       "saveFailed": "Saving failed"
+    },
+    "dashboardLayout": {
+      "gear": "Customise my dashboard",
+      "title": "My dashboard",
+      "description": "Choose which tiles and quick actions you see, and in what order. This applies to you only.",
+      "backToStandard": "Back to standard",
+      "backToStandardDone": "Your dashboard is back to the standard."
     }
   },
   "damageCheckFieldsPage": {

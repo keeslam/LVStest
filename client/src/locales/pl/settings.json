@@ -683,7 +683,7 @@
     },
     "dashboardTiles": {
       "title": "Kafelki pulpitu",
-      "description": "Wybierz, które kafelki wszyscy widzą na pulpicie i w jakiej kolejności.",
+      "description": "Wybierz, które kafelki widzisz na pulpicie i w jakiej kolejności. Dotyczy tylko Ciebie.",
       "saved": "Kafelki pulpitu zostały zapisane.",
       "saveFailed": "Zapis nie powiódł się",
       "moveUp": "W górę",
@@ -700,7 +700,7 @@
     },
     "quickActions": {
       "title": "Szybkie akcje",
-      "description": "Wybierz dla każdej akcji, czy wszyscy widzą ją na pulpicie jako duży kafelek (najwyżej {{max}}, mniej też może być) czy jako przycisk pod spodem. Odznaczona: nie jest pokazywana.",
+      "description": "Wybierz dla każdej akcji, czy widzisz ją na pulpicie jako duży kafelek (najwyżej {{max}}, mniej też może być) czy jako przycisk pod spodem. Odznaczona: nie jest pokazywana. Dotyczy tylko Ciebie.",
       "saved": "Szybkie akcje zostały zapisane.",
       "tilesColumn": "Kafelki ({{count}}/{{max}})",
       "buttonsColumn": "Przyciski pod spodem",
@@ -720,6 +720,13 @@
       "invalid": "Wpisz tylko liczby równe 0 lub większe.",
       "saved": "Stawki za kilometry zostały zapisane.",
       "saveFailed": "Zapis nie powiódł się"
+    },
+    "dashboardLayout": {
+      "gear": "Dostosuj mój pulpit",
+      "title": "Mój pulpit",
+      "description": "Wybierz, które kafelki i szybkie akcje widzisz i w jakiej kolejności. Dotyczy tylko Ciebie.",
+      "backToStandard": "Wróć do standardu",
+      "backToStandardDone": "Twój pulpit wrócił do standardu."
     }
   },
   "damageCheckFieldsPage": {

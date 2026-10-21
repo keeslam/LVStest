@@ -464,7 +464,7 @@ export function QuickActions() {
 
   // Kees, 2026-10-20: which actions show, in what order (Instellingen > Dashboard).
   const { data: quickActionSetting, isSuccess: quickActionSettingLoaded } = useQuery<{ value?: unknown } | null>({
-    queryKey: [`/api/app-settings/key/${QUICK_ACTIONS_KEY}`],
+    queryKey: [`/api/user-settings/${QUICK_ACTIONS_KEY}`],
   });
   const quickActionLayout = quickActionsLayout(quickActionSettingLoaded ? quickActionSetting?.value : null);
 

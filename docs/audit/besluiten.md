@@ -802,6 +802,18 @@ Kees koos uit de tweede lijst met suggesties punt 12. Tot nu toe onthield alleen
 - **Terug.** Een APK- of garantiebeurt plannen of afronden zet de melding weer terug voor iedereen, zoals die eerder alleen in de eigen browser terugkwam.
 - **Overgang.** Wat in een browser was weggeklikt, vervalt. Die meldingen komen één keer terug.
 
+### B-60 — Dashboardindeling per gebruiker (21-10-2026)
+
+Kees wilde dat ieder zijn eigen dashboard kan indelen: welke tegels en snelle acties, en in welke volgorde. Dit vervangt de instelling voor iedereen uit B-46 en B-53.
+
+- **Waar.** In **App-instellingen > Dashboard**, zoals voorheen.
+  - Ook via het **tandwieltje** rechtsboven in het blok Snelle acties op het dashboard. Via dat tandwieltje kunnen ook collega's die App-instellingen niet mogen openen hun eigen indeling maken.
+- **Per gebruiker.** Wat je opslaat, geldt alleen voor jou.
+  - Een beheerder kan het dashboard van een ander niet instellen. Kees koos "ieder zelf".
+- **Standaard.** Wie niets zelf heeft ingesteld, ziet de indeling die vóór deze wijziging voor iedereen was opgeslagen. Is daar niets opgeslagen, dan de vaste volgorde van de app.
+  - Die standaard is niet meer te wijzigen.
+- **Terug naar standaard.** Deze knop staat alleen in App-instellingen > Dashboard, niet onder het tandwieltje (Kees). De eigen indeling verdwijnt en de standaard geldt weer.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).

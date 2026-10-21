@@ -61,6 +61,8 @@ const RESOURCES = [
   "invoice-inbox-item", "portal-request", "label", "barcode-book", "report", "key-audit",
   // Round 2 punt 12: dismissed notifications are shared by the team.
   "notification-dismissal",
+  // Kees 2026-10-21: a user's own dashboard layout.
+  "user-setting",
   "screen", "dialog", "access", "user", "session", "password", "ui",
 ] as const;
 

@@ -2216,8 +2216,9 @@ export function SettingsPanel() {
 
         {/* Printers on this pc (Kees, 2026-10-19): DYMO label makers via DYMO Connect, per pc. */}
         <TabsContent value="dashboard" {...keepMounted("dashboard")} className="space-y-6 data-[state=inactive]:hidden">
-          <DashboardTilesCard />
-          <QuickActionsSettingsCard />
+          {/* Kees 2026-10-21: your own layout; only here "Terug naar standaard". */}
+          <DashboardTilesCard withStandardButton />
+          <QuickActionsSettingsCard withStandardButton />
         </TabsContent>
 
         <TabsContent value="printers" {...keepMounted("printers")} className="space-y-6 data-[state=inactive]:hidden">

@@ -251,7 +251,8 @@
         "session": "Sesja",
         "password": "Hasło",
         "key-audit": "Kontrola szafki na klucze",
-        "notification-dismissal": "Ukryte powiadomienie"
+        "notification-dismissal": "Ukryte powiadomienie",
+        "user-setting": "Własne ustawienie"
       },
       "verbs": {
         "create": "utworzono",

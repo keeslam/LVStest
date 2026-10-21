@@ -1728,6 +1728,22 @@ export const keyAudits = pgTable("key_audits", {
 export type KeyAudit = typeof keyAudits.$inferSelect;
 
 // Custom Notifications table
+// Kees, 2026-10-21: settings of one user — today the dashboard layout (which tiles and
+// quick actions, in what order). A user without a row sees the standard (the app setting
+// of the same key, else the app's own order). One row per user and key; the route replaces
+// it in a transaction, because the schema sync does not create indexes.
+export const userSettings = pgTable("user_settings", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  key: text("key").notNull(),
+  value: jsonb("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  userKeyIdx: uniqueIndex("user_settings_user_key_idx").on(table.userId, table.key),
+}));
+
+export type UserSetting = typeof userSettings.$inferSelect;
+
 // Round 2 punt 12 (Kees, 2026-10-21): a dismissed APK / warranty / zone / missing-invoice
 // notification, for the whole team instead of per browser (it used to live in localStorage).
 // `until` ends a "1 week" or "1 month" dismissal; "until_change" has no end and holds while

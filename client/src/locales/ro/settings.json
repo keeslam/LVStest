@@ -679,7 +679,7 @@
     },
     "dashboardTiles": {
       "title": "Plăcile panoului",
-      "description": "Alegeți ce plăci văd toți pe panou și în ce ordine.",
+      "description": "Alegeți ce plăci vedeți pe tabloul de bord și în ce ordine. Se aplică doar dumneavoastră.",
       "saved": "Plăcile panoului au fost salvate.",
       "saveFailed": "Salvarea a eșuat",
       "moveUp": "Mută în sus",
@@ -696,7 +696,7 @@
     },
     "quickActions": {
       "title": "Acțiuni rapide",
-      "description": "Alegeți pentru fiecare acțiune dacă toată lumea o vede pe tabloul de bord ca placă mare (cel mult {{max}}, mai puține e în regulă) sau ca buton dedesubt. Nebifată: nu se afișează.",
+      "description": "Alegeți pentru fiecare acțiune dacă o vedeți pe tabloul de bord ca placă mare (cel mult {{max}}, mai puține e în regulă) sau ca buton dedesubt. Nebifată: nu se afișează. Se aplică doar dumneavoastră.",
       "saved": "Acțiunile rapide au fost salvate.",
       "tilesColumn": "Plăci ({{count}}/{{max}})",
       "buttonsColumn": "Butoane dedesubt",
@@ -716,6 +716,13 @@
       "invalid": "Introduceți doar numere de 0 sau mai mari.",
       "saved": "Tarifele pe kilometru au fost salvate.",
       "saveFailed": "Salvarea a eșuat"
+    },
+    "dashboardLayout": {
+      "gear": "Personalizează tabloul meu de bord",
+      "title": "Tabloul meu de bord",
+      "description": "Alegeți ce plăci și acțiuni rapide vedeți și în ce ordine. Se aplică doar dumneavoastră.",
+      "backToStandard": "Înapoi la standard",
+      "backToStandardDone": "Tabloul de bord a revenit la standard."
     }
   },
   "damageCheckFieldsPage": {

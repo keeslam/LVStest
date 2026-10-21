@@ -3,6 +3,10 @@
  * what order. Tick to show, arrows to move. Stored as the `dashboard_tiles` app
  * setting (shared/dashboard-tiles.ts); the dashboard follows after saving.
  *
+ * Kees, 2026-10-21 — per user: each card edits the signed-in user's own layout
+ * (/api/user-settings), shown in App-instellingen > Dashboard (with "Terug naar
+ * standaard") and behind the gear on the dashboard (without).
+ *
  * Kees, 2026-10-20 — the "Snelle acties" next to it (shared/quick-actions-layout.ts):
  * two columns side by side, the large tiles (at most six, fewer is fine) and the
  * buttons below them. Tick to show, arrows to move, a side arrow to switch column.
@@ -32,12 +36,12 @@ import {
   type QuickActionPlace,
 } from "@shared/quick-actions-layout";
 
-/** Load one app setting, keep a local draft, save it with a toast. */
-function useSettingDraft<T>(settingKey: string, fromSetting: (value: unknown) => T, toSetting: (draft: T) => unknown, description: string, savedText: string) {
+/** Load the user's own value of one setting (or the standard), keep a draft, save it with a toast. */
+function useSettingDraft<T>(settingKey: string, fromSetting: (value: unknown) => T, toSetting: (draft: T) => unknown, savedText: string) {
   const { t } = useTranslation(["settings", "common"]);
   const { toast } = useToast();
-  const { data, isSuccess } = useQuery<{ value?: unknown } | null>({
-    queryKey: [`/api/app-settings/key/${settingKey}`],
+  const { data, isSuccess } = useQuery<{ value?: unknown; source?: "user" | "standard" } | null>({
+    queryKey: [`/api/user-settings/${settingKey}`],
   });
   const [draft, setDraft] = useState<T | null>(null);
   const stored = fromSetting(isSuccess ? data?.value : null);
@@ -47,24 +51,51 @@ function useSettingDraft<T>(settingKey: string, fromSetting: (value: unknown) =>
 
   const save = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/app-settings", { key: settingKey, value: toSetting(current), category: "general", description });
+      await apiRequest("PUT", `/api/user-settings/${settingKey}`, { value: toSetting(current) });
     },
     onSuccess: () => {
       setDraft(null);
-      invalidateByPrefix("/api/app-settings");
+      invalidateByPrefix("/api/user-settings");
       toast({ title: t("common:status.success"), description: savedText });
     },
     onError: (error) => {
       toast({ variant: "destructive", title: t("settingsPage.dashboardTiles.saveFailed"), description: describeApiError(error) });
     },
   });
-  return { current, change, dirty: draft !== null, reset: () => setDraft(null), save };
+  // "Terug naar standaard": the own layout goes, the standard shows again.
+  const toStandard = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", `/api/user-settings/${settingKey}`);
+    },
+    onSuccess: () => {
+      setDraft(null);
+      invalidateByPrefix("/api/user-settings");
+      toast({ title: t("common:status.success"), description: t("settingsPage.dashboardLayout.backToStandardDone") });
+    },
+    onError: (error) => {
+      toast({ variant: "destructive", title: t("settingsPage.dashboardTiles.saveFailed"), description: describeApiError(error) });
+    },
+  });
+  return { current, change, dirty: draft !== null, reset: () => setDraft(null), save, toStandard, isOwn: data?.source === "user" };
 }
 
-function SaveRow({ dirty, reset, save, testId }: { dirty: boolean; reset: () => void; save: { mutate: () => void; isPending: boolean }; testId: string }) {
-  const { t } = useTranslation(["common"]);
+function SaveRow({ dirty, reset, save, testId, toStandard }: {
+  dirty: boolean;
+  reset: () => void;
+  save: { mutate: () => void; isPending: boolean };
+  testId: string;
+  /** Only in App-instellingen (Kees): "Terug naar standaard", when the user has an own layout. */
+  toStandard?: { mutate: () => void; isPending: boolean; isOwn: boolean };
+}) {
+  const { t } = useTranslation(["common", "settings"]);
   return (
-    <div className="flex justify-end gap-2">
+    <div className="flex flex-wrap justify-end gap-2">
+      {toStandard && (
+        <Button type="button" variant="ghost" className="mr-auto" onClick={() => toStandard.mutate()}
+          disabled={!toStandard.isOwn || toStandard.isPending} data-testid={`${testId}-standard`}>
+          {t("settings:settingsPage.dashboardLayout.backToStandard")}
+        </Button>
+      )}
       {dirty && <Button type="button" variant="outline" onClick={reset}>{t("common:actions.cancel")}</Button>}
       <Button type="button" onClick={() => save.mutate()} disabled={!dirty || save.isPending} data-testid={testId}>
         {t("common:actions.save")}
@@ -88,13 +119,12 @@ function SettingCard({ icon, title, subtitle, children }: { icon: ReactNode; tit
   );
 }
 
-export function DashboardTilesCard() {
+export function DashboardTilesCard({ withStandardButton = false }: { withStandardButton?: boolean }) {
   const { t } = useTranslation(["settings"]);
-  const { current: tiles, change, dirty, reset, save } = useSettingDraft<DashboardTile[]>(
+  const { current: tiles, change, dirty, reset, save, toStandard, isOwn } = useSettingDraft<DashboardTile[]>(
     DASHBOARD_TILES_KEY,
     dashboardTilesFromSetting,
     dashboardTilesToSetting,
-    "Welke tegels het dashboard toont en in welke volgorde (voor iedereen)",
     t("settingsPage.dashboardTiles.saved"),
   );
 
@@ -136,18 +166,18 @@ export function DashboardTilesCard() {
           </li>
         ))}
       </ol>
-      <SaveRow dirty={dirty} reset={reset} save={save} testId="button-save-dashboard-tiles" />
+      <SaveRow dirty={dirty} reset={reset} save={save} testId="button-save-dashboard-tiles"
+        toStandard={withStandardButton ? { mutate: () => toStandard.mutate(), isPending: toStandard.isPending, isOwn } : undefined} />
     </SettingCard>
   );
 }
 
-export function QuickActionsSettingsCard() {
+export function QuickActionsSettingsCard({ withStandardButton = false }: { withStandardButton?: boolean }) {
   const { t } = useTranslation(["settings", "dashboard"]);
-  const { current: actions, change, dirty, reset, save } = useSettingDraft<QuickActionChoice[]>(
+  const { current: actions, change, dirty, reset, save, toStandard, isOwn } = useSettingDraft<QuickActionChoice[]>(
     QUICK_ACTIONS_KEY,
     quickActionsFromSetting,
     quickActionsToSetting,
-    "Welke snelle acties het dashboard toont, als tegel of als knop, en in welke volgorde (voor iedereen)",
     t("settingsPage.quickActions.saved"),
   );
   const tileCount = actions.filter((a) => a.place === "tile").length;
@@ -241,7 +271,8 @@ export function QuickActionsSettingsCard() {
         {column("tile")}
         {column("button")}
       </div>
-      <SaveRow dirty={dirty} reset={reset} save={save} testId="button-save-quick-actions" />
+      <SaveRow dirty={dirty} reset={reset} save={save} testId="button-save-quick-actions"
+        toStandard={withStandardButton ? { mutate: () => toStandard.mutate(), isPending: toStandard.isPending, isOwn } : undefined} />
     </SettingCard>
   );
 }

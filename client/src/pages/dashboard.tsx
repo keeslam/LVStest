@@ -7,6 +7,7 @@ import { UpcomingReservations } from "@/components/dashboard/upcoming-reservatio
 import { RecentExpenses } from "@/components/dashboard/recent-expenses";
 import { ReservationCalendar } from "@/components/dashboard/reservation-calendar";
 import { QuickActions } from "@/components/dashboard/quick-actions";
+import { DashboardLayoutButton } from "@/components/dashboard/dashboard-layout-button";
 import { BackupStalenessBanner } from "@/components/backup/backup-staleness-banner";
 import { AccessDeniedBanner } from "@/components/security/access-denied-banner";
 import { DriverLicenseWidget } from "@/components/dashboard/driver-license-widget";
@@ -44,7 +45,8 @@ export function tileGridClass(count: number): string {
 
 export default function Dashboard() {
   const { data: tileSetting, isLoading: tilesLoading } = useQuery<{ value?: unknown } | null>({
-    queryKey: [`/api/app-settings/key/${DASHBOARD_TILES_KEY}`],
+    // Kees 2026-10-21: the signed-in user's own layout, or the standard.
+    queryKey: [`/api/user-settings/${DASHBOARD_TILES_KEY}`],
   });
   const tiles = dashboardTilesFromSetting(tileSetting?.value).filter((tile) => tile.visible);
 
@@ -58,8 +60,13 @@ export default function Dashboard() {
 
       {/* OPT-001 - the entry to the work-day screen, above everything else. */}
 
-      {/* Quick Actions */}
-      <QuickActions />
+      {/* Quick Actions, with the gear for your own layout in the corner (Kees 2026-10-21). */}
+      <div className="relative">
+        <div className="absolute right-2 top-2 z-10">
+          <DashboardLayoutButton />
+        </div>
+        <QuickActions />
+      </div>
       
       {/* Dashboard Widgets */}
       {!tilesLoading && tiles.length > 0 && (

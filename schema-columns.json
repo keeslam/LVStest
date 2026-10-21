@@ -6149,6 +6149,46 @@
     ]
   },
   {
+    "name": "user_settings",
+    "columns": [
+      {
+        "name": "id",
+        "type": "serial",
+        "notNull": true,
+        "primary": true,
+        "default": null
+      },
+      {
+        "name": "user_id",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "key",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "value",
+        "type": "jsonb",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": "now()"
+      }
+    ]
+  },
+  {
     "name": "users",
     "columns": [
       {

@@ -247,7 +247,8 @@
         "session": "Sesiune",
         "password": "Parolă",
         "key-audit": "Verificare dulap chei",
-        "notification-dismissal": "Notificare ascunsă"
+        "notification-dismissal": "Notificare ascunsă",
+        "user-setting": "Setare proprie"
       },
       "verbs": {
         "create": "creat",

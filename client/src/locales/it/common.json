@@ -247,7 +247,8 @@
         "session": "Sessione",
         "password": "Password",
         "key-audit": "Controllo armadietto chiavi",
-        "notification-dismissal": "Notifica nascosta"
+        "notification-dismissal": "Notifica nascosta",
+        "user-setting": "Impostazione personale"
       },
       "verbs": {
         "create": "creazione",

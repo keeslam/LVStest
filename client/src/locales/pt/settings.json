@@ -679,7 +679,7 @@
     },
     "dashboardTiles": {
       "title": "Mosaicos do painel",
-      "description": "Escolha que mosaicos todos veem no painel e por que ordem.",
+      "description": "Escolha que blocos vê no painel e em que ordem. Só se aplica a si.",
       "saved": "Os mosaicos do painel foram guardados.",
       "saveFailed": "Falha ao guardar",
       "moveUp": "Subir",
@@ -696,7 +696,7 @@
     },
     "quickActions": {
       "title": "Ações rápidas",
-      "description": "Escolha para cada ação se todos a veem no painel como bloco grande (no máximo {{max}}, menos também pode) ou como botão por baixo. Desmarcada: não aparece.",
+      "description": "Escolha para cada ação se a vê no seu painel como bloco grande (no máximo {{max}}, menos também pode) ou como botão por baixo. Desmarcada: não aparece. Só se aplica a si.",
       "saved": "As ações rápidas foram guardadas.",
       "tilesColumn": "Blocos ({{count}}/{{max}})",
       "buttonsColumn": "Botões por baixo",
@@ -716,6 +716,13 @@
       "invalid": "Introduza apenas números iguais ou superiores a 0.",
       "saved": "As tarifas por quilómetro foram guardadas.",
       "saveFailed": "Falha ao guardar"
+    },
+    "dashboardLayout": {
+      "gear": "Personalizar o meu painel",
+      "title": "O meu painel",
+      "description": "Escolha que blocos e ações rápidas vê, e em que ordem. Só se aplica a si.",
+      "backToStandard": "Voltar ao padrão",
+      "backToStandardDone": "O seu painel voltou ao padrão."
     }
   },
   "damageCheckFieldsPage": {

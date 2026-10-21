@@ -675,7 +675,7 @@
     },
     "dashboardTiles": {
       "title": "Dashboardtegels",
-      "description": "Kies welke tegels iedereen op het dashboard ziet, en in welke volgorde.",
+      "description": "Kies welke tegels jij op het dashboard ziet, en in welke volgorde. Dit geldt alleen voor jou.",
       "saved": "De dashboardtegels zijn opgeslagen.",
       "saveFailed": "Opslaan mislukt",
       "moveUp": "Omhoog",
@@ -692,7 +692,7 @@
     },
     "quickActions": {
       "title": "Snelle acties",
-      "description": "Kies per actie of iedereen hem op het dashboard ziet als grote tegel (hoogstens {{max}}, minder mag ook) of als knop eronder. Vinkje uit: niet tonen.",
+      "description": "Kies per actie of je hem op je dashboard ziet als grote tegel (hoogstens {{max}}, minder mag ook) of als knop eronder. Vinkje uit: niet tonen. Dit geldt alleen voor jou.",
       "saved": "De snelle acties zijn opgeslagen.",
       "tilesColumn": "Tegels ({{count}}/{{max}})",
       "buttonsColumn": "Knoppen eronder",
@@ -712,6 +712,13 @@
       "invalid": "Vul alleen getallen van 0 of hoger in.",
       "saved": "De kilometertarieven zijn opgeslagen.",
       "saveFailed": "Opslaan mislukt"
+    },
+    "dashboardLayout": {
+      "gear": "Mijn dashboard aanpassen",
+      "title": "Mijn dashboard",
+      "description": "Kies welke tegels en snelle acties jij ziet, en in welke volgorde. Dit geldt alleen voor jou.",
+      "backToStandard": "Terug naar standaard",
+      "backToStandardDone": "Je dashboard staat weer op de standaard."
     }
   },
   "damageCheckFieldsPage": {
