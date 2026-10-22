@@ -831,6 +831,16 @@ Kees koos met klikken:
   - Het contract toont het bedrag voor de soort van de gehuurde auto.
   - Leeg betekent het algemene bedrag uit Bedrijfsregels.
 
+### B-62 — Vervangers scannen en innemen, meegeven vanuit de reserveringsscan (22-10-2026)
+
+Kees koos met klikken:
+
+- **Scan van een vervanger.** Scan je een auto met een vervangende reservering, dan biedt de scan ook ophalen of inleveren aan, net als bij een gewone huur.
+  - Een vervanger zonder auto ("nog te bepalen") telt niet mee.
+- **Inleveren van een vervanger.** "Markeer als ingeleverd" in het vervanger-blok op het dashboard opent hetzelfde inleverscherm als een gewone huur: km-stand, brandstof en schadecheck.
+  - Dit geldt alleen als de vervanger echt is opgehaald. Is hij alleen als "opgehaald" gemarkeerd, dan blijft het bij het wijzigen van de status.
+- **Scan van een reservering of contract.** De kaart toont een knop "Ophalen starten" of "Inleveren starten". Het scherm start niet vanzelf; je klikt zelf.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).

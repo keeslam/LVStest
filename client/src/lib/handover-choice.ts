@@ -54,3 +54,19 @@ export function matchesIntent(choice: HandoverChoice | null, intent: HandoverKin
   if (!choice || !intent) return false;
   return choice.kind === intent;
 }
+
+/**
+ * Kees 2026-10-22: a scanned contract or reservation barcode. A rental or spare that is out
+ * comes back (return); one that is booked goes out (pickup); anything else (returned,
+ * cancelled, a maintenance block, no car yet) offers no handover.
+ */
+export function handoverForReservation(
+  reservation: (HandoverReservationLike & { type?: string | null }) | null | undefined,
+  hasVehicle: boolean,
+): HandoverChoice | null {
+  if (!reservation || !hasVehicle) return null;
+  if (reservation.type && reservation.type !== "standard" && reservation.type !== "replacement") return null;
+  if (reservation.status === "picked_up") return { kind: "return", reservationId: reservation.id };
+  if (["booked", "confirmed", "pending"].includes(reservation.status)) return { kind: "pickup", reservationId: reservation.id };
+  return null;
+}

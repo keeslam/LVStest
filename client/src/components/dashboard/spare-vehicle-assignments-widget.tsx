@@ -9,7 +9,7 @@ import { Reservation, VehicleTransport, UserPermission } from "@shared/schema";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { useState, useEffect } from "react";
 import { SpareVehicleAssignmentDialog } from "@/components/reservations/spare-vehicle-assignment-dialog";
-import { PickupDialog } from "@/components/reservations/pickup-return-dialogs";
+import { PickupDialog, ReturnDialog } from "@/components/reservations/pickup-return-dialogs";
 import { apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -67,6 +67,9 @@ export function SpareVehicleAssignmentsWidget() {
   const [selectedPlaceholder, setSelectedPlaceholder] = useState<Reservation | null>(null);
   const [pickupDialogOpen, setPickupDialogOpen] = useState(false);
   const [selectedSpareForPickup, setSelectedSpareForPickup] = useState<Reservation | null>(null);
+  // Kees 2026-10-22: a spare comes back through the real return screen (km, fuel, damage check).
+  const [returnDialogOpen, setReturnDialogOpen] = useState(false);
+  const [selectedSpareForReturn, setSelectedSpareForReturn] = useState<Reservation | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   // Finding 2b (task-6-report.md): the server guards /api/customers with
@@ -295,6 +298,18 @@ export function SpareVehicleAssignmentsWidget() {
     setPickupDialogOpen(true);
   };
 
+  const handleStartReturn = (spare: Reservation) => {
+    // Only a spare that was really picked up has the pickup readings the return compares
+    // against; one that was only marked "picked up" keeps the old status-only step.
+    if (spare.status !== 'picked_up') {
+      handleStatusChange(spare.id, 'returned');
+      return;
+    }
+    const vehicleData = spare.vehicleId ? vehicleMap[spare.vehicleId] : null;
+    setSelectedSpareForReturn(vehicleData ? { ...spare, vehicle: vehicleData } : spare);
+    setReturnDialogOpen(true);
+  };
+
   const handlePickupDialogClose = (open: boolean) => {
     setPickupDialogOpen(open);
     if (!open) setSelectedSpareForPickup(null);
@@ -508,7 +523,7 @@ export function SpareVehicleAssignmentsWidget() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleStatusChange(spare.id, 'returned')}
+                                onClick={() => handleStartReturn(spare)}
                                 disabled={updateStatusMutation.isPending}
                                 className="text-xs"
                                 data-testid="button-mark-returned-spare-assigned"
@@ -581,7 +596,7 @@ export function SpareVehicleAssignmentsWidget() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleStatusChange(spare.id, 'returned')}
+                            onClick={() => handleStartReturn(spare)}
                             disabled={updateStatusMutation.isPending}
                             className="text-xs"
                             data-testid="button-mark-returned-spare"
@@ -606,6 +621,18 @@ export function SpareVehicleAssignmentsWidget() {
           open={assignmentDialogOpen}
           onOpenChange={handleDialogClose}
           placeholderReservations={[selectedPlaceholder]}
+        />
+      )}
+
+      {selectedSpareForReturn && (
+        <ReturnDialog
+          key={`return-${selectedSpareForReturn.id}`}
+          open={returnDialogOpen}
+          onOpenChange={(open) => { setReturnDialogOpen(open); if (!open) setSelectedSpareForReturn(null); }}
+          reservation={selectedSpareForReturn}
+          onSuccess={() => {
+            invalidateRelatedQueries('reservations');
+          }}
         />
       )}
 

@@ -48,3 +48,17 @@ describe("OPT-002 — ophalen of innemen", () => {
     expect(matchesIntent(null, "return")).toBe(false);
   });
 });
+
+describe("handoverForReservation (Kees 2026-10-22: scanned contract)", () => {
+  it("returns a car that is out and hands over one that is booked", async () => {
+    const { handoverForReservation } = await import("@/lib/handover-choice");
+    expect(handoverForReservation({ id: 1, status: "picked_up", type: "standard" }, true)).toEqual({ kind: "return", reservationId: 1 });
+    expect(handoverForReservation({ id: 2, status: "booked", type: "replacement" }, true)).toEqual({ kind: "pickup", reservationId: 2 });
+  });
+  it("offers nothing without a car, when finished, or for a maintenance block", async () => {
+    const { handoverForReservation } = await import("@/lib/handover-choice");
+    expect(handoverForReservation({ id: 3, status: "booked", type: "standard" }, false)).toBeNull();
+    expect(handoverForReservation({ id: 4, status: "returned", type: "standard" }, true)).toBeNull();
+    expect(handoverForReservation({ id: 5, status: "booked", type: "maintenance_block" }, true)).toBeNull();
+  });
+});

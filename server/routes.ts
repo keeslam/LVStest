@@ -898,6 +898,8 @@ export async function registerRoutes(app: Express): Promise<void> {
       const projectReservationForScan = (r: any) => r ? ({
         id: r.id,
         status: r.status,
+        // Kees 2026-10-22: the scan panel offers pickup/return for rentals and spares only.
+        type: r.type,
         startDate: r.startDate,
         endDate: r.endDate,
         customer: r.customer ? { name: r.customer.name } : null,
@@ -962,7 +964,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       // non-cancelled reservation regardless of its workflow status.
       const allReservations = (await storage.getReservationsByVehicle(vehicle.id))
         .filter(r => !r.deletedAt);
-      const reservations = allReservations.filter(r => r.type === "standard");
+      // Kees 2026-10-22: a spare (replacement) car on this vehicle is handed over at the counter
+      // like a rental, so it counts too; a placeholder without a car never reaches this list.
+      const reservations = allReservations.filter(r => r.type === "standard" || (r.type === "replacement" && !r.placeholderSpare));
 
       // Nearest open maintenance block (not completed/cancelled), so scanning
       // a vehicle that's in — or headed to — the workshop shows it. Projection

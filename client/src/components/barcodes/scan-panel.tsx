@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Camera, Truck, CalendarRange, User, RotateCcw, CalendarPlus, ShieldCheck, FileCheck, LogOut, LogIn, Receipt, Wrench, ChevronDown, ChevronUp, History, Car, FileUp, Undo2, Check, Play, Fuel, Gauge } from "lucide-react";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
-import { chooseHandover, matchesIntent, type HandoverKind } from "@/lib/handover-choice";
+import { chooseHandover, handoverForReservation, matchesIntent, type HandoverKind } from "@/lib/handover-choice";
 import { formatDate, formatLicensePlate, formatFuelLevel, formatReservationStatus } from "@/lib/format-utils";
 import { isTrueValue } from "@/lib/utils";
 import { BarcodeSvg } from "@/components/barcodes/barcode-svg";
@@ -655,6 +655,24 @@ export function ScanPanel({ active = true, intent = null, onHandoverActiveChange
           </CardHeader>
           <CardContent className="space-y-4">
             {reservationCard(result.reservation, "scanPage.reservationFound")}
+            {/* Kees 2026-10-22: a scanned contract goes straight to its handover. */}
+            {(() => {
+              const choice = handoverForReservation(result.reservation as any, !!result.vehicle);
+              if (!choice) return null;
+              return (
+                <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                  <Button
+                    variant="default"
+                    className={ACTION_TILE_CLASS}
+                    onClick={() => startHandover(choice.reservationId, choice.kind)}
+                    data-testid={choice.kind === "return" ? "button-scan-reservation-return" : "button-scan-reservation-pickup"}
+                  >
+                    {choice.kind === "return" ? <LogIn /> : <LogOut />}
+                    {choice.kind === "return" ? t("scanPage.actions.startReturn") : t("scanPage.actions.startPickup")}
+                  </Button>
+                </RequiresPermission>
+              );
+            })()}
             {result.vehicle && (
               <Button variant="outline" onClick={() => openVehicleDialog(result.vehicle!.id)}>
                 {t("scanPage.openVehicleButton")}
