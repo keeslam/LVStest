@@ -49,7 +49,7 @@ export function registerPortalColleagueRoutes(app: Express, deps: { requirePorta
     const customer = await storage.getCustomer(ctx.customerId);
     await notifyStaffOfPortalEvent({
       kind: "portal_customer_update", title: `${title}: ${customer?.companyName || customer?.name || ctx.customerId}`,
-      description, link: `/customers/${ctx.customerId}`, customerId: ctx.customerId,
+      description, link: `/customers?customer=${ctx.customerId}&tab=portal`, customerId: ctx.customerId,
     });
   }
   const audit = (req: Request, action: string, id: number, details: Record<string, unknown>) =>

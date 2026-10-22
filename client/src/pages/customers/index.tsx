@@ -1,8 +1,9 @@
 import { invalidateByPrefix } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { ReservationAddDialog } from "@/components/reservations/reservation-add-dialog";
 import { CustomerAddDialog } from "@/components/customers/customer-add-dialog";
 import { CustomerViewDialog } from "@/components/customers/customer-view-dialog";
@@ -25,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { X, Filter, ArrowUpDown, Archive } from "lucide-react";
 import { subDays } from "date-fns";
 import { useHasPermission } from "@/hooks/use-has-permission";
+import { customerMatchesSearch } from "@/lib/customer-search";
 
 type EnrichedCustomer = Customer & {
   reservationCount: number;
@@ -48,6 +50,15 @@ export default function CustomersIndex() {
   const [deleteCustomerTarget, setDeleteCustomerTarget] = useState<Customer | null>(null);
   const [recycleBinOpen, setRecycleBinOpen] = useState(false);
   const queryClient = useQueryClient();
+  // B-63: a bell notification links here as /customers?customer=12&tab=drivers.
+  const search = useSearch();
+  const { openCustomerDialog } = useGlobalDialog();
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    const id = Number(params.get("customer"));
+    if (Number.isInteger(id) && id > 0) openCustomerDialog(id, params.get("tab") ?? undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
   
   const { data: customers, isLoading } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
@@ -71,6 +82,17 @@ export default function CustomersIndex() {
   const { data: drivers } = useQuery<Driver[]>({
     queryKey: ["/api/drivers"],
   });
+  // B-63: the search also finds a customer by one of its drivers.
+  const driverNamesByCustomer = useMemo(() => {
+    const map = new Map<number, string[]>();
+    for (const d of drivers ?? []) {
+      if (!d.customerId) continue;
+      const names = map.get(d.customerId) ?? [];
+      names.push(d.displayName);
+      map.set(d.customerId, names);
+    }
+    return map;
+  }, [drivers]);
 
   const handleCustomerAdded = () => {
     // Refresh the customers list when a new customer is added
@@ -166,13 +188,7 @@ export default function CustomersIndex() {
 
     // Apply search query
     if (searchQuery) {
-      const searchLower = searchQuery.toLowerCase();
-      filtered = filtered.filter(customer =>
-        customer.name.toLowerCase().includes(searchLower) ||
-        (customer.email && customer.email.toLowerCase().includes(searchLower)) ||
-        (customer.phone && customer.phone.toLowerCase().includes(searchLower)) ||
-        (customer.city && customer.city.toLowerCase().includes(searchLower))
-      );
+      filtered = filtered.filter(customer => customerMatchesSearch(customer, searchQuery, driverNamesByCustomer.get(customer.id)));
     }
 
     // Apply filters
@@ -202,7 +218,7 @@ export default function CustomersIndex() {
     }
 
     return filtered;
-  }, [sortedCustomers, searchQuery, filters]);
+  }, [sortedCustomers, searchQuery, filters, driverNamesByCustomer]);
 
   // Toggle filter
   const toggleFilter = (filterKey: string) => {

@@ -264,7 +264,9 @@
       "spareTbd": "- Nog te bepalen",
       "replacementForLabel": "Vervanging voor:",
       "upcomingReservation": "Aankomende reservering",
-      "openEnded": "Open einde"
+      "openEnded": "Open einde",
+      "customerReportedMileage": "Door klant ingevulde km-stand: {{km}} km {{date}}",
+      "customerReportedMileageShort": "Klant: {{km}} km"
     },
     "tabs": {
       "general": "Algemeen",

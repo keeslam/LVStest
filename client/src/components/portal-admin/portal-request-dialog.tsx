@@ -102,7 +102,7 @@ export function PortalRequestDialog() {
             )}
             {r.type === "other" && p.subject && <div><Label>{t("admin.requests.dialog.subject")}</Label><div>{p.subject}</div></div>}
             {(r.type === "maintenance" || r.type === "maintenance_change") && <MaintenanceSummary request={r} blockDate={r.reservationLabel} />}
-            {r.type === "mileage" && <div><Label>{t("admin.requests.dialog.mileage")}</Label><div>{p.mileage}</div></div>}
+            {r.type === "mileage" && <MileageTakeOver request={r} canManage={canManage} onApplied={done} />}
             <div><Label>{t("admin.requests.dialog.message")}</Label><p className="whitespace-pre-wrap rounded-md bg-muted p-2">{r.message}</p></div>
             {r.attachments.length > 0 && (
               <div>
@@ -167,4 +167,49 @@ export function PortalRequestDialog() {
       </DialogContent>
     </Dialog>
   </>);
+}
+
+type MileageRequest = PortalRequestDto & { mileageVehicle?: { id: number; licensePlate: string; currentMileage: number | null } | null };
+
+/**
+ * B-63: the reported reading next to what the car is on now. "Overnemen" makes it the
+ * car's current mileage, only when it is higher; otherwise the reason is shown instead.
+ * The reading itself is already kept on the car as "Door klant ingevulde km-stand".
+ */
+function MileageTakeOver({ request, canManage, onApplied }: { request: MileageRequest; canManage: boolean; onApplied: () => void }) {
+  const { t } = useTranslation("portal");
+  const { toast } = useToast();
+  const reported = Number((request.payload as Record<string, unknown>).mileage);
+  const appliedAt = (request.payload as Record<string, unknown>).mileageAppliedAt as string | undefined;
+  const vehicle = request.mileageVehicle;
+  const current = vehicle?.currentMileage ?? null;
+  const km = (n: number) => n.toLocaleString("nl-NL");
+  const apply = useMutation({
+    mutationFn: async () => (await apiRequest("POST", `/api/portal-requests/${request.id}/apply-mileage`)).json(),
+    onSuccess: () => {
+      onApplied();
+      invalidateByPrefix("/api/vehicles");
+      toast({ title: t("admin.requests.dialog.mileageApplied", { km: km(reported) }) });
+    },
+    onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
+  });
+  return (
+    <div className="space-y-2" data-testid="mileage-take-over">
+      <div className="grid grid-cols-2 gap-2">
+        <div><Label>{t("admin.requests.dialog.mileage")}</Label><div data-testid="reported-mileage">{Number.isFinite(reported) ? `${km(reported)} km` : "—"}</div></div>
+        <div><Label>{t("admin.requests.dialog.mileageCurrent")}</Label><div>{vehicle ? `${current === null ? "—" : `${km(current)} km`} · ${vehicle.licensePlate}` : "—"}</div></div>
+      </div>
+      {appliedAt ? (
+        <p className="text-xs text-muted-foreground" data-testid="mileage-applied">{t("admin.requests.dialog.mileageAlreadyApplied")}</p>
+      ) : !vehicle || !Number.isFinite(reported) ? null : current !== null && reported <= current ? (
+        <p className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900" data-testid="mileage-not-higher">
+          {t("admin.requests.dialog.mileageNotHigher", { current: km(current), reported: km(reported) })}
+        </p>
+      ) : canManage ? (
+        <Button size="sm" variant="outline" onClick={() => apply.mutate()} disabled={apply.isPending} data-testid="button-apply-mileage">
+          {t("admin.requests.dialog.mileageApply", { km: km(reported) })}
+        </Button>
+      ) : null}
+    </div>
+  );
 }

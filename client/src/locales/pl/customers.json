@@ -318,7 +318,7 @@
     "title": "Klienci",
     "cardTitle": "Baza klientów",
     "cardDescription": "Zarządzaj klientami, przeglądaj ich dane i twórz rezerwacje.",
-    "searchPlaceholder": "Szukaj klientów",
+    "searchPlaceholder": "Szukaj po nazwie, nr dłużnika, KRS lub kierowcy",
     "sortPlaceholder": "Sortuj według...",
     "sortNameAsc": "Nazwa (A-Z)",
     "sortNameDesc": "Nazwa (Z-A)",

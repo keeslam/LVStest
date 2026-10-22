@@ -310,7 +310,7 @@
     "title": "Clientes",
     "cardTitle": "Base de dados de clientes",
     "cardDescription": "Gira os seus clientes, veja os dados e crie reservas.",
-    "searchPlaceholder": "Pesquisar clientes",
+    "searchPlaceholder": "Pesquisar por nome, n.º de devedor, CC ou condutor",
     "sortPlaceholder": "Ordenar por...",
     "sortNameAsc": "Nome (A-Z)",
     "sortNameDesc": "Nome (Z-A)",

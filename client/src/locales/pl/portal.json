@@ -1148,7 +1148,12 @@
         "standardRejected": "Odrzucenie",
         "newCompanyName": "Wnioskowana nazwa firmy",
         "approveCompanyName": "Zatwierdź (zmienia nazwę firmy)",
-        "approveCancellation": "Zatwierdź anulowanie"
+        "approveCancellation": "Zatwierdź anulowanie",
+        "mileageCurrent": "Auto ma teraz",
+        "mileageApply": "Przejmij: {{km}} km",
+        "mileageApplied": "Przebieg auta to teraz {{km}} km",
+        "mileageNotHigher": "Nie można przejąć: auto ma już {{current}} km, a klient podał {{reported}} km. Niższy lub równy stan nie jest przejmowany. Podany stan zostaje przy aucie jako \"Przebieg podany przez klienta\".",
+        "mileageAlreadyApplied": "Ten stan został już przejęty."
       },
       "standard": {
         "received": {

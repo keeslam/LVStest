@@ -1226,6 +1226,19 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                 </Tooltip>
               )}
             </div>
+            {/* B-63: the last reading a customer reported in the portal, also when it was not taken over. */}
+            {vehicle.customerReportedMileage != null && (
+              <p
+                className="mt-0.5 truncate text-xs text-muted-foreground"
+                title={t('details.infoCards.customerReportedMileage', {
+                  km: Number(vehicle.customerReportedMileage).toLocaleString(),
+                  date: vehicle.customerReportedMileageAt ? formatDate(vehicle.customerReportedMileageAt) : '',
+                })}
+                data-testid="text-customer-reported-mileage"
+              >
+                {t('details.infoCards.customerReportedMileageShort', { km: Number(vehicle.customerReportedMileage).toLocaleString() })}
+              </p>
+            )}
           </CardContent>
         </Card>
         

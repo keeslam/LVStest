@@ -548,7 +548,7 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
       kind: "portal_customer_update",
       title: `E-mailadressen gewijzigd: ${customer.companyName || customer.name}`,
       description: `${ctx.user.fullName} heeft via het portaal bijgewerkt: ${Object.keys(data).map((k) => COMPANY_EMAIL_LABEL[k] ?? k).join(", ")}.`,
-      link: `/customers/${ctx.customerId}`, customerId: ctx.customerId,
+      link: `/customers?customer=${ctx.customerId}&tab=portal`, customerId: ctx.customerId,
     });
     const { ctx: fresh } = await loadContext(ctx.user.id);
     res.json(await buildMe(fresh!));
@@ -605,7 +605,7 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
       kind: "portal_customer_update",
       title: `Bedrijfsgegevens gewijzigd: ${customer.companyName || customer.name}`,
       description: `${ctx.user.fullName} heeft via het portaal bijgewerkt: ${Object.keys(data).map((k) => COMPANY_DETAIL_LABEL[k] ?? k).join(", ")}.`,
-      link: `/customers/${ctx.customerId}`, customerId: ctx.customerId,
+      link: `/customers?customer=${ctx.customerId}&tab=portal`, customerId: ctx.customerId,
     });
     const { ctx: fresh } = await loadContext(ctx.user.id);
     res.json(await buildMe(fresh!));

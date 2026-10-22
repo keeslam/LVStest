@@ -302,7 +302,7 @@
     "title": "Customers",
     "cardTitle": "Customer Database",
     "cardDescription": "Manage your customers, view details, and create reservations.",
-    "searchPlaceholder": "Search Customers",
+    "searchPlaceholder": "Search by name, debtor no., CoC or driver",
     "sortPlaceholder": "Sort by...",
     "sortNameAsc": "Name (A-Z)",
     "sortNameDesc": "Name (Z-A)",

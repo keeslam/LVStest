@@ -310,7 +310,7 @@
     "title": "Clienți",
     "cardTitle": "Baza de date a clienților",
     "cardDescription": "Gestionați clienții, vizualizați datele și creați rezervări.",
-    "searchPlaceholder": "Căutați clienți",
+    "searchPlaceholder": "Caută după nume, nr. debitor, CCI sau șofer",
     "sortPlaceholder": "Sortați după...",
     "sortNameAsc": "Nume (A-Z)",
     "sortNameDesc": "Nume (Z-A)",

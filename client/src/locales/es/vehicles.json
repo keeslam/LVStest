@@ -266,7 +266,9 @@
       "spareTbd": "- Por determinar",
       "replacementForLabel": "Sustituye a:",
       "upcomingReservation": "Próxima reserva",
-      "openEnded": "Sin fecha de fin"
+      "openEnded": "Sin fecha de fin",
+      "customerReportedMileage": "Kilometraje indicado por el cliente: {{km}} km {{date}}",
+      "customerReportedMileageShort": "Cliente: {{km}} km"
     },
     "tabs": {
       "general": "General",

@@ -44,7 +44,7 @@ describe("portal company details", () => {
     const csrf = (await agent.get("/api/portal/csrf-token")).body.token as string;
     return { agent, csrf };
   }
-  const staffNotes = async () => (await storage.getUnreadCustomNotifications()).filter((n) => n.link === `/customers/${customerId}` && n.type === "portal_customer_update");
+  const staffNotes = async () => (await storage.getUnreadCustomNotifications()).filter((n) => n.link === `/customers?customer=${customerId}&tab=portal` && n.type === "portal_customer_update");
 
   it("shows the company details to an admin, never to a driver", async () => {
     const a = await login(`cd-admin@${TEST_EMAIL_DOMAIN}`);

@@ -1135,7 +1135,12 @@
         "standardRejected": "Rejeição",
         "newCompanyName": "Nome da empresa pedido",
         "approveCompanyName": "Aprovar (altera o nome da empresa)",
-        "approveCancellation": "Aprovar cancelamento"
+        "approveCancellation": "Aprovar cancelamento",
+        "mileageCurrent": "O carro marca agora",
+        "mileageApply": "Adotar: {{km}} km",
+        "mileageApplied": "A quilometragem do carro é agora {{km}} km",
+        "mileageNotHigher": "Não pode ser adotado: o carro já marca {{current}} km e o cliente indicou {{reported}} km. Uma leitura inferior ou igual não é adotada. A leitura indicada fica no carro como \"Quilometragem indicada pelo cliente\".",
+        "mileageAlreadyApplied": "Esta leitura já foi adotada."
       },
       "standard": {
         "received": {

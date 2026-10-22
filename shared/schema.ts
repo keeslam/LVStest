@@ -313,7 +313,11 @@ export const vehicles = pgTable("vehicles", {
   // Regular-service interval for this vehicle; null = use the defaults from settings
   serviceIntervalKm: integer("service_interval_km"),
   serviceIntervalMonths: integer("service_interval_months"),
-  
+  // B-63: the last odometer reading a customer reported in the portal, kept even when
+  // staff do not take it over as currentMileage. Server-owned.
+  customerReportedMileage: integer("customer_reported_mileage"),
+  customerReportedMileageAt: timestamp("customer_reported_mileage_at", { withTimezone: true }),
+
   // Mileage decrease tracking (admin-only visibility)
   mileageDecreasedBy: text("mileage_decreased_by"), // Username who decreased the mileage
   mileageDecreasedAt: timestamp("mileage_decreased_at", { withTimezone: true }), // When mileage was decreased
@@ -444,6 +448,9 @@ export const insertVehicleSchema = createInsertSchema(vehicles).omit({
   remarksConfirmedBy: true,
   // D6 - server-owned: written only by the workshop-flag writers, never by a request body.
   maintenanceStatusBlockId: true,
+  // B-63 - server-owned: written only when a customer reports a reading in the portal.
+  customerReportedMileage: true,
+  customerReportedMileageAt: true,
   // No longer omit these fields so they can be set during insert/update
   // createdBy: true,
   // updatedBy: true,

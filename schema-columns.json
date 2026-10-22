@@ -7802,6 +7802,20 @@
         "default": null
       },
       {
+        "name": "customer_reported_mileage",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "customer_reported_mileage_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
         "name": "mileage_decreased_by",
         "type": "text",
         "notNull": false,

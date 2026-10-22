@@ -268,7 +268,9 @@
       "spareTbd": "- Do ustalenia",
       "replacementForLabel": "Zastępstwo dla:",
       "upcomingReservation": "Nadchodząca rezerwacja",
-      "openEnded": "Bez daty końcowej"
+      "openEnded": "Bez daty końcowej",
+      "customerReportedMileage": "Przebieg podany przez klienta: {{km}} km {{date}}",
+      "customerReportedMileageShort": "Klient: {{km}} km"
     },
     "tabs": {
       "general": "Ogólne",

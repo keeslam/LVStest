@@ -42,6 +42,7 @@ import { requestsStorage, toRequestDto } from "../services/portal-requests-stora
 import { requestPayloadSchemas, REQUEST_NEEDS, PortalRequestType } from "../../shared/portal-requests";
 import { listMyVehicles } from "../services/portal-vehicles";
 import { findPortalCustomerForBlock, canCustomerChangeMaintenance } from "../services/portal-maintenance-events";
+import { recordCustomerReportedMileage } from "../services/portal-mileage";
 import { cancellationState } from "../services/portal-cancellation";
 import { installAsyncErrorHandling } from "../middleware/asyncHandler.js";
 import { vehicleName } from "../../shared/vehicle-name";
@@ -807,6 +808,10 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
       await requestsStorage.addAttachment({ requestId: created.id, fileName: sanitizeFilename(f.originalname), filePath: getRelativePath(f.path), contentType: f.mimetype, fileSize: f.size });
     }
     await logPortalActivity(req, "request_submitted", { entity: "request", entityId: created.id, details: { type } });
+    // B-63: the reading is kept on the car straight away; staff decide later whether it becomes the current mileage.
+    if (type === "mileage" && reservation?.vehicle?.id && Number.isFinite(Number(p.mileage))) {
+      await recordCustomerReportedMileage(reservation.vehicle.id, Number(p.mileage));
+    }
     const customer = await storage.getCustomer(ctx.customerId);
     const isMaint = type === "maintenance" || type === "maintenance_change";
     const plate = reservation?.vehicle?.licensePlate ?? (block?.vehicleId ? (await storage.getVehicle(block.vehicleId))?.licensePlate : undefined);
@@ -855,6 +860,17 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
   const manageDrivers: RequestHandler[] = [requirePortalUser, requireFeature("canManageDrivers"), requirePortalRole("admin")];
 
   // Only the screens of an admin with the drivers switch read this list; a driver account must not get its colleagues' contact data and licence numbers.
+  // B-63: staff hear about driver changes made in the portal at the bell only, no e-mail.
+  async function notifyDriverChange(ctx: PortalRequestContext, what: string, driverName: string) {
+    const customer = await storage.getCustomer(ctx.customerId);
+    await notifyStaffOfPortalEvent({
+      kind: "portal_driver_update",
+      title: `${what}: ${driverName} (${customer?.companyName || customer?.name || ctx.customerId})`,
+      description: `Via het klantportaal door ${ctx.user.email}`,
+      link: `/customers?customer=${ctx.customerId}&tab=drivers`, customerId: ctx.customerId, email: false,
+    });
+  }
+
   app.get("/api/portal/drivers", ...manageDrivers, async (req, res) => {
     const ctx = ctxOf(req);
     const rows = await portalStorage.listDriversForCustomer(ctx.customerId);
@@ -869,6 +885,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     if (!parsed.data.email && !parsed.data.phone?.trim()) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Vul een e-mailadres of telefoonnummer in");
     const driver = await storage.createDriver({ ...parsed.data, customerId: ctx.customerId, status: "active", createdBy: ctx.user.email, updatedBy: ctx.user.email });
     await logPortalActivity(req, "driver_created", { entity: "driver", entityId: driver.id });
+    await notifyDriverChange(ctx, "Nieuwe bestuurder", driver.displayName);
     res.status(201).json(toDriverDto(driver));
   });
 
@@ -881,6 +898,8 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, parsed.error.errors[0]?.message ?? "Invalid input");
     const driver = await storage.updateDriver(id, { ...parsed.data, updatedBy: ctx.user.email });
     await logPortalActivity(req, "driver_updated", { entity: "driver", entityId: id, details: parsed.data });
+    const deactivated = parsed.data.status === "inactive" && existing.status !== "inactive";
+    await notifyDriverChange(ctx, deactivated ? "Bestuurder op inactief gezet" : "Bestuurder gewijzigd", driver?.displayName ?? existing.displayName);
     res.json(toDriverDto(driver!));
   });
 
@@ -916,6 +935,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     const previous = existing.licenseFilePath ? resolveDocumentFilePath(existing.licenseFilePath) : null;
     if (previous && previous !== req.file.path) fs.rmSync(previous, { force: true });
     await logPortalActivity(req, "driver_license_uploaded", { entity: "driver", entityId: id });
+    await notifyDriverChange(ctx, "Rijbewijs geüpload", existing.displayName);
     res.json(toDriverDto(driver!));
   });
 

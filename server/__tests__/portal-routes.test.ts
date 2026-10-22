@@ -53,6 +53,17 @@ describe("portal routes", () => {
   });
   afterAll(async () => { await cleanupPortalTestData(); fs.rmSync(path.dirname(docFile), { recursive: true, force: true }); });
 
+  it("tells staff at the bell only when a driver is added, changed or gets a licence (B-63)", async () => {
+    const { agent, csrf } = await loginAs(app, emailB);
+    notify.mockClear();
+    const created = await agent.post("/api/portal/drivers").set("X-CSRF-Token", csrf).send({ displayName: "Bel Test", phone: "0611111111" });
+    expect(created.status).toBe(201);
+    expect(notify).toHaveBeenLastCalledWith(expect.objectContaining({ kind: "portal_driver_update", email: false, customerId: b, link: `/customers?customer=${b}&tab=drivers` }));
+    expect(notify.mock.lastCall?.[0].title).toMatch(/^Nieuwe bestuurder: Bel Test/);
+    await agent.patch(`/api/portal/drivers/${created.body.id}`).set("X-CSRF-Token", csrf).send({ status: "inactive" });
+    expect(notify.mock.lastCall?.[0].title).toMatch(/^Bestuurder op inactief gezet: Bel Test/);
+  });
+
   it("lists own reservations only, without prices by default", async () => {
     const { agent } = await loginAs(app, emailA);
     const res = await agent.get("/api/portal/reservations");
@@ -243,6 +254,10 @@ describe("portal routes", () => {
       .field("type", "mileage").field("message", "Stand doorgegeven").field("reservationId", String(resA)).field("payload", JSON.stringify({ mileage: "12400" }));
     expect(km.status).toBe(201);
     expect(km.body.payload.mileage).toBe(12400);
+    // B-63: the reading is kept on the car as "Door klant ingevulde km-stand" right away.
+    const car = await storage.getVehicle(vehicleId);
+    expect(car?.customerReportedMileage).toBe(12400);
+    expect(car?.customerReportedMileageAt).toBeTruthy();
     expect((await agent.post("/api/portal/requests").set("X-CSRF-Token", csrf).field("type", "maintenance").field("message", "x").field("reservationId", String(resA)).field("payload", JSON.stringify({}))).status).toBe(400);
 
     // Conversation: the customer can add to an open request, not to a closed one.

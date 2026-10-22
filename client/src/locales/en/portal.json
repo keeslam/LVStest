@@ -1122,7 +1122,12 @@
         "standardRejected": "Rejection",
         "newCompanyName": "Requested company name",
         "approveCompanyName": "Approve (changes the company name)",
-        "approveCancellation": "Approve cancellation"
+        "approveCancellation": "Approve cancellation",
+        "mileageCurrent": "Car is now on",
+        "mileageApply": "Take over: {{km}} km",
+        "mileageApplied": "The car's mileage is now {{km}} km",
+        "mileageNotHigher": "Cannot be taken over: the car is already on {{current}} km and the customer reported {{reported}} km. A lower or equal reading is not taken over. The reported reading is kept on the car as \"Mileage reported by customer\".",
+        "mileageAlreadyApplied": "This reading has already been taken over."
       },
       "standard": {
         "received": {

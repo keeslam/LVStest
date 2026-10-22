@@ -841,6 +841,21 @@ Kees koos met klikken:
   - Dit geldt alleen als de vervanger echt is opgehaald. Is hij alleen als "opgehaald" gemarkeerd, dan blijft het bij het wijzigen van de status.
 - **Scan van een reservering of contract.** De kaart toont een knop "Ophalen starten" of "Inleveren starten". Het scherm start niet vanzelf; je klikt zelf.
 
+### B-63 — Km uit het portaal, melding bij bestuurders, klant zoeken (22-10-2026)
+
+Kees koos met klikken:
+
+- **Km-melding uit het portaal.** In de aanvraag staat naast de gemelde stand de huidige stand van de auto.
+  - Is de gemelde stand hoger, dan neemt de knop **Overnemen** hem over als huidige km-stand. De aanvraag blijft open voor een antwoord aan de klant.
+  - Is hij lager of gelijk, dan is er geen knop. De app legt uit waarom niet.
+- **Door klant ingevulde km-stand.** Kees voegde dit toe. Elke gemelde stand wordt meteen bij de auto bewaard, ook als hij niet wordt overgenomen.
+  - De voertuigkaart toont hem onder de huidige km-stand als "Klant: … km".
+  - De volledige tekst met datum verschijnt bij aanwijzen.
+- **Bestuurder of rijbewijs in het portaal.** Medewerkers krijgen alleen een melding bij het belletje, zonder e-mail. Dat gebeurt bij een nieuwe bestuurder, een gewijzigde of op inactief gezette bestuurder en een geüpload rijbewijs.
+  - De melding opent de klant op het tabblad Chauffeurs.
+- **Klant zoeken.** Je vindt een klant ook op debiteurnummer, bedrijfsnaam, KvK-nummer en de naam van een bestuurder. Nummers vind je ook terug zonder spaties of streepjes.
+- **Bijvangst.** Meldingen uit het portaal linkten naar `/customers/<id>`, en die pagina bestaat niet. Ze openen nu de klant zelf.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).

@@ -264,7 +264,9 @@
       "spareTbd": "- TBD",
       "replacementForLabel": "Replacement for:",
       "upcomingReservation": "Upcoming Reservation",
-      "openEnded": "Open-ended"
+      "openEnded": "Open-ended",
+      "customerReportedMileage": "Mileage reported by customer: {{km}} km {{date}}",
+      "customerReportedMileageShort": "Customer: {{km}} km"
     },
     "tabs": {
       "general": "General",

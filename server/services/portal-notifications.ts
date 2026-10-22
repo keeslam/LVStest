@@ -30,6 +30,8 @@ export interface PortalStaffEvent {
   customerId?: number;
   /** Defaults to 'normal'; use 'high' for urgent maintenance reports (spec §4). */
   priority?: "normal" | "high";
+  /** False = bell only, no e-mail to the notification address (B-63: driver changes). Defaults to true. */
+  email?: boolean;
 }
 
 /**
@@ -58,6 +60,7 @@ export async function notifyStaffOfPortalEvent(event: PortalStaffEvent): Promise
   } catch (error) {
     console.error("portal notification (in-app) failed:", error);
   }
+  if (event.email === false) return;
 
   try {
     const config = await getPortalConfig();

@@ -1135,7 +1135,12 @@
         "standardRejected": "Rifiuto",
         "newCompanyName": "Ragione sociale richiesta",
         "approveCompanyName": "Approvare (modifica la ragione sociale)",
-        "approveCancellation": "Approva annullamento"
+        "approveCancellation": "Approva annullamento",
+        "mileageCurrent": "L'auto segna ora",
+        "mileageApply": "Adotta: {{km}} km",
+        "mileageApplied": "Il chilometraggio dell'auto è ora {{km}} km",
+        "mileageNotHigher": "Non adottabile: l'auto segna già {{current}} km e il cliente ha indicato {{reported}} km. Una lettura inferiore o uguale non viene adottata. La lettura indicata resta sull'auto come \"Chilometraggio indicato dal cliente\".",
+        "mileageAlreadyApplied": "Questa lettura è già stata adottata."
       },
       "standard": {
         "received": {

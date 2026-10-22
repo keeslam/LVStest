@@ -310,7 +310,7 @@
     "title": "Clienti",
     "cardTitle": "Database clienti",
     "cardDescription": "Gestisca i Suoi clienti, visualizzi i dati e crei prenotazioni.",
-    "searchPlaceholder": "Cerca clienti",
+    "searchPlaceholder": "Cerca per nome, n. debitore, CCIAA o conducente",
     "sortPlaceholder": "Ordina per...",
     "sortNameAsc": "Nome (A-Z)",
     "sortNameDesc": "Nome (Z-A)",

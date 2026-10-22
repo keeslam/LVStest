@@ -27,6 +27,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { isoToday, normalizeReservationStatus } from "../services/lifecycle";
 import type { RouteDeps } from "./deps";
 import { portalCompanyName } from "../services/company-name";
+import { decideMileageTakeOver } from "../services/portal-mileage";
 
 const canView = hasPermission(UserPermission.VIEW_PORTAL, UserPermission.MANAGE_PORTAL);
 const canManage = hasPermission(UserPermission.MANAGE_PORTAL);
@@ -87,7 +88,45 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     const id = idParam(req, res); if (id === null) return;
     const row = await requestsStorage.getRequest(id);
     if (!row) return res.status(404).json({ message: "Request not found" });
-    res.json(toRequestDto(row, true));
+    const dto = toRequestDto(row, true);
+    if (row.type !== "mileage") return res.json(dto);
+    // B-63: staff see what the car is on now, so they know whether "Overnemen" applies.
+    const vehicle = await mileageVehicle(row);
+    res.json({
+      ...dto,
+      mileageVehicle: vehicle ? { id: vehicle.id, licensePlate: vehicle.licensePlate, currentMileage: vehicle.currentMileage ?? null } : null,
+    });
+  });
+
+  async function mileageVehicle(row: Row) {
+    const rental = row.reservationId ? await storage.getReservation(row.reservationId) : undefined;
+    return rental?.vehicleId ? storage.getVehicle(rental.vehicleId) : undefined;
+  }
+
+  // B-63: take a reported reading over as the car's current mileage, only when it is higher.
+  // The request stays open; staff still answer the customer.
+  app.post("/api/portal-requests/:id/apply-mileage", canManage, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const row = await requestsStorage.getRequest(id);
+    if (!row || row.type !== "mileage") return res.status(404).json({ message: "Request not found" });
+    const p = row.payload as Record<string, unknown>;
+    if (p.mileageAppliedAt) return res.status(409).json({ message: "De km-stand is al overgenomen", code: "MILEAGE_ALREADY_APPLIED" });
+    const reported = Number(p.mileage);
+    if (!Number.isInteger(reported) || reported < 0) return res.status(400).json({ message: "Geen geldige km-stand in de aanvraag" });
+    const vehicle = await mileageVehicle(row);
+    if (!vehicle) return res.status(400).json({ message: "Geen auto bij deze aanvraag" });
+    const decision = decideMileageTakeOver(vehicle.currentMileage, reported);
+    if (!decision.ok) {
+      return res.status(409).json({
+        message: `Niet overgenomen: de auto staat al op ${decision.current} km, de klant meldde ${decision.reported} km`,
+        code: "MILEAGE_NOT_HIGHER", current: decision.current, reported: decision.reported,
+      });
+    }
+    const updated = await storage.updateVehicle(vehicle.id, { currentMileage: decision.mileage, updatedBy: actor(req) });
+    await requestsStorage.updateRequest(id, { payload: { ...p, mileageAppliedAt: new Date().toISOString(), mileageAppliedBy: actor(req) } });
+    if (updated) realtimeEvents.vehicles.updated(updated);
+    await AuditLogger.logFromRequest(req, "vehicle.update", "vehicle", vehicle.id, { currentMileage: { from: decision.previous, to: decision.mileage }, viaPortalRequest: id });
+    res.json({ vehicleId: vehicle.id, previous: decision.previous, currentMileage: decision.mileage });
   });
 
   app.get("/api/portal-requests/:id/attachments/:attachmentId", canView, async (req, res) => {

@@ -266,7 +266,9 @@
       "spareTbd": "- De stabilit",
       "replacementForLabel": "Înlocuiește:",
       "upcomingReservation": "Rezervare viitoare",
-      "openEnded": "Fără dată de sfârșit"
+      "openEnded": "Fără dată de sfârșit",
+      "customerReportedMileage": "Kilometraj raportat de client: {{km}} km {{date}}",
+      "customerReportedMileageShort": "Client: {{km}} km"
     },
     "tabs": {
       "general": "General",

@@ -1135,7 +1135,12 @@
         "standardRejected": "Respingere",
         "newCompanyName": "Numele de firmă solicitat",
         "approveCompanyName": "Aprobă (modifică numele firmei)",
-        "approveCancellation": "Aprobă anularea"
+        "approveCancellation": "Aprobă anularea",
+        "mileageCurrent": "Mașina are acum",
+        "mileageApply": "Preia: {{km}} km",
+        "mileageApplied": "Kilometrajul mașinii este acum {{km}} km",
+        "mileageNotHigher": "Nu se poate prelua: mașina are deja {{current}} km, iar clientul a raportat {{reported}} km. O valoare mai mică sau egală nu se preia. Valoarea raportată rămâne la mașină ca \"Kilometraj raportat de client\".",
+        "mileageAlreadyApplied": "Această valoare a fost deja preluată."
       },
       "standard": {
         "received": {

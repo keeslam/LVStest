@@ -1122,7 +1122,12 @@
         "standardRejected": "Afwijzing",
         "newCompanyName": "Gevraagde bedrijfsnaam",
         "approveCompanyName": "Goedkeuren (past de bedrijfsnaam aan)",
-        "approveCancellation": "Annuleren goedkeuren"
+        "approveCancellation": "Annuleren goedkeuren",
+        "mileageCurrent": "Auto staat nu op",
+        "mileageApply": "Overnemen: {{km}} km",
+        "mileageApplied": "Km-stand van de auto staat nu op {{km}} km",
+        "mileageNotHigher": "Niet over te nemen: de auto staat al op {{current}} km en de klant meldde {{reported}} km. Een lagere of gelijke stand wordt niet overgenomen. De gemelde stand staat wel bij de auto als \"Door klant ingevulde km-stand\".",
+        "mileageAlreadyApplied": "Deze km-stand is al overgenomen."
       },
       "standard": {
         "received": {
