@@ -940,7 +940,8 @@
           "linked": "Multa vinculada.",
           "unlinked": "Multa desvinculada.",
           "cancelled": "Multa cancelada.",
-          "reactivated": "Multa reactivada."
+          "reactivated": "Multa reactivada.",
+          "reattributed": "Multa vinculada de nuevo."
         },
         "viewLetter": "Ver la carta",
         "save": "Guardar",
@@ -962,7 +963,9 @@
         "noCustomerRight": "Para vincular un cliente a esta multa necesita además el permiso Ver clientes.",
         "deleteTitle": "¿Eliminar la multa?",
         "deleteConfirmNamed": "¿Mover la multa {{plate}} de {{amount}} a la papelera? Quien pueda gestionar la papelera podrá restaurarla desde allí.",
-        "deleteConfirmButton": "Eliminar"
+        "deleteConfirmButton": "Eliminar",
+        "linkMismatch": "La matrícula o el momento ya no encajan con la reserva #{{id}}: entonces no tenía el coche.",
+        "reattribute": "Volver a vincular"
       },
       "cjib": {
         "button": "Importaciones del CJIB",
@@ -1041,7 +1044,10 @@
           "MAIL_FAILED": "fallo del correo",
           "FAILED": "error",
           "NO_CUSTOMER": "sin cliente",
-          "PORTAL_DISABLED": "correo desactivado para este cliente"
+          "PORTAL_DISABLED": "correo desactivado para este cliente",
+          "NOT_NEW": "ya vinculada o tramitada",
+          "NO_MATCH": "ninguna reserva en ese momento",
+          "SEVERAL_MATCHES": "varias reservas, elija usted"
         },
         "selected_one": "{{count}} multa seleccionada",
         "selected_many": "{{count}} de multas seleccionadas",
@@ -1060,7 +1066,9 @@
         "confirmCancelTitle_other": "¿Anular {{count}} multas?",
         "confirmNotifyTitle_one": "¿Informar al cliente de {{count}} multa?",
         "confirmNotifyTitle_many": "¿Informar a los clientes de {{count}} de multas?",
-        "confirmNotifyTitle_other": "¿Informar a los clientes de {{count}} multas?"
+        "confirmNotifyTitle_other": "¿Informar a los clientes de {{count}} multas?",
+        "attribute": "Volver a vincular",
+        "attributedTitle": "Vinculadas: {{count}}"
       }
     },
     "requests": {

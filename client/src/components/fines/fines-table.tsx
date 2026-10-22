@@ -58,11 +58,11 @@ export function FinesTable({ customerId, initialPlate, importFileId, preview }: 
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const bulk = useMutation({
-    mutationFn: async (action: "notify" | "cancel") => (await apiRequest("POST", "/api/fines/bulk", { action, ids: Array.from(selected) })).json() as Promise<{ action: string; done: number[]; skipped: Array<{ id: number; reason: string }> }>,
+    mutationFn: async (action: "notify" | "cancel" | "attribute") => (await apiRequest("POST", "/api/fines/bulk", { action, ids: Array.from(selected) })).json() as Promise<{ action: string; done: number[]; skipped: Array<{ id: number; reason: string }> }>,
     onSuccess: (r) => {
       const reasons = Array.from(new Set(r.skipped.map((s) => s.reason))).map((code) => t(`admin.fines.bulk.reasons.${code}`, { defaultValue: code }));
       toast({
-        title: t(r.action === "notify" ? "admin.fines.bulk.notifiedTitle" : "admin.fines.bulk.cancelledTitle", { count: r.done.length }),
+        title: t(r.action === "notify" ? "admin.fines.bulk.notifiedTitle" : r.action === "attribute" ? "admin.fines.bulk.attributedTitle" : "admin.fines.bulk.cancelledTitle", { count: r.done.length }),
         description: r.skipped.length > 0 ? `${t("admin.fines.bulk.skipped", { count: r.skipped.length })}: ${reasons.join(", ")}` : undefined,
         variant: r.done.length === 0 ? "destructive" : undefined,
       });
@@ -136,6 +136,8 @@ export function FinesTable({ customerId, initialPlate, importFileId, preview }: 
         <div className="flex flex-wrap items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm dark:bg-blue-950/30" data-testid="fines-bulk-bar">
           <span className="font-medium">{t("admin.fines.bulk.selected", { count: selected.size })}</span>
           <Button size="sm" onClick={() => setConfirm("notify")} data-testid="button-bulk-notify">{t("admin.fines.bulk.notify")}</Button>
+          {/* B-64: links the ticked fines without a customer again; nothing is mailed, so no confirmation. */}
+          <Button size="sm" variant="outline" disabled={bulk.isPending} onClick={() => bulk.mutate("attribute")} data-testid="button-bulk-attribute">{t("admin.fines.bulk.attribute")}</Button>
           <Button size="sm" variant="outline" onClick={() => setConfirm("cancel")} data-testid="button-bulk-cancel">{t("admin.fines.bulk.cancel")}</Button>
           <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>{t("admin.fines.bulk.clear")}</Button>
         </div>

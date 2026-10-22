@@ -438,5 +438,9 @@
         "runs": "Nie zapisano jeszcze cykli pobierania."
       }
     }
+  },
+  "noReceipt": {
+    "badge": "Brak paragonu",
+    "filter": "Tylko bez paragonu"
   }
 }

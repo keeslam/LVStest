@@ -30,6 +30,15 @@ type FineDetail = FineRow & {
   /** B-41 D10: when "Klant informeren" last mailed the customer; and, for managers on a linked fine, the address it would go to (null = none known). */
   customerNotifiedAt?: string | null; notifyAddress?: string | null;
   candidates?: { covering: Candidate[]; near: Candidate[] };
+  /** B-64: plate or moment were corrected and the linked reservation did not have the car then. */
+  linkMismatch?: boolean;
+};
+
+/** The browser's own clock, the same way the new-fine form reads its datetime-local field. */
+const toLocalInput = (iso: string) => {
+  const d = new Date(iso);
+  const p2 = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}T${p2(d.getHours())}:${p2(d.getMinutes())}`;
 };
 
 /** View/edit one fine: attribution picker while `new`, status actions afterwards. Driven by GlobalDialogContext. */
@@ -45,14 +54,14 @@ export function FineDialog() {
   const key = ["/api/fines", id];
   const { data: fine } = useQuery<FineDetail>({ queryKey: key, queryFn: async () => (await apiRequest("GET", `/api/fines/${id}`)).json(), enabled: open });
 
-  const [edit, setEdit] = useState({ description: "", amount: "", adminFee: "", reference: "", internalNotes: "", customerNote: "" });
+  const [edit, setEdit] = useState({ licensePlate: "", offenceAt: "", description: "", amount: "", adminFee: "", reference: "", internalNotes: "", customerNote: "" });
   const [pick, setPick] = useState({ customerId: "", reservationId: "", driverId: "" });
   // A-19-6 / A-12-6: the delete asks in our own dialog (window.confirm is ignored by the built-in browser), naming plate and amount.
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   // A-12-5: "Bekeuring annuleren" cancels the FINE, so it asks first; closing the dialog is a separate "Sluiten".
   const [confirmingCancel, setConfirmingCancel] = useState(false);
   useEffect(() => {
-    if (fine) setEdit({ description: fine.description, amount: fine.amount, adminFee: fine.adminFee, reference: fine.reference ?? "", internalNotes: fine.internalNotes ?? "", customerNote: fine.customerNote ?? "" });
+    if (fine) setEdit({ licensePlate: fine.licensePlate, offenceAt: toLocalInput(fine.offenceAt), description: fine.description, amount: fine.amount, adminFee: fine.adminFee, reference: fine.reference ?? "", internalNotes: fine.internalNotes ?? "", customerNote: fine.customerNote ?? "" });
   }, [fine]);
   // Linking a fine to a customer reads the customer list (and a customer's drivers): view_customers or
   // manage_customers. A view_fines-only account on the Bekeuringen screen must not fire those requests,
@@ -64,7 +73,7 @@ export function FineDialog() {
 
   const done = () => { queryClient.invalidateQueries({ queryKey: key }); invalidateByPrefix("/api/fines"); };
   // A-12-8: every action names what it did ("gekoppeld", "ontkoppeld", ...) instead of the save text.
-  type Outcome = "saved" | "linked" | "unlinked" | "cancelled" | "reactivated";
+  type Outcome = "saved" | "linked" | "unlinked" | "cancelled" | "reactivated" | "reattributed";
   const call = useMutation({
     mutationFn: async ({ method, url, body }: { method: string; url: string; body?: unknown; outcome: Outcome }) => (await apiRequest(method, url, body)).json(),
     onSuccess: (_data, { outcome }) => { done(); toast({ title: t(`admin.fines.dialog.outcome.${outcome}`) }); },
@@ -93,9 +102,20 @@ export function FineDialog() {
   const choose = (c: Candidate) => setPick({ customerId: String(c.customerId ?? ""), reservationId: String(c.id), driverId: c.driverId ? String(c.driverId) : "" });
   const disabled = !canManage || closed;
   // Unsaved typing in the detail: Escape, the X and "Sluiten" ask before throwing it away (same hook as the other forms).
-  const dirty = !!fine && (edit.description !== fine.description || edit.amount !== fine.amount || edit.reference !== (fine.reference ?? "")
+  const plateChanged = !!fine && edit.licensePlate.trim() !== "" && edit.licensePlate.trim().toUpperCase() !== fine.licensePlate.toUpperCase();
+  const momentChanged = !!fine && edit.offenceAt !== "" && edit.offenceAt !== toLocalInput(fine.offenceAt);
+  const dirty = !!fine && (plateChanged || momentChanged || edit.description !== fine.description || edit.amount !== fine.amount || edit.reference !== (fine.reference ?? "")
     || edit.internalNotes !== (fine.internalNotes ?? "") || edit.customerNote !== (fine.customerNote ?? ""));
   const guard = useUnsavedChangesGuard({ close: closeFineDialog });
+  // Plate and moment only go along when they changed, so a plain save never triggers a new link.
+  const saveBody = () => {
+    const { licensePlate, offenceAt, ...rest } = edit;
+    return {
+      ...rest, amount: Number(edit.amount), adminFee: Number(edit.adminFee),
+      ...(plateChanged ? { licensePlate: licensePlate.trim() } : {}),
+      ...(momentChanged ? { offenceAt: new Date(offenceAt).toISOString() } : {}),
+    };
+  };
   useEffect(() => { guard.setDirty(dirty); }, [dirty, guard.setDirty]);
 
   if (!open) return null;
@@ -111,8 +131,9 @@ export function FineDialog() {
         {fine && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><Label>{t("admin.fines.fields.plate")}</Label><div className="font-mono">{formatLicensePlate(fine.licensePlate)}</div></div>
-              <div><Label>{t("admin.fines.fields.offenceAt")}</Label><div>{formatDateTime(fine.offenceAt)}</div></div>
+              {/* B-64: plate and moment can be corrected; a fine without a customer is linked again on save. */}
+              <div><Label htmlFor="fd-plate">{t("admin.fines.fields.plate")}</Label><Input id="fd-plate" className="font-mono uppercase" value={edit.licensePlate} disabled={disabled} onChange={(e) => setEdit({ ...edit, licensePlate: e.target.value })} data-testid="input-fine-plate" /></div>
+              <div><Label htmlFor="fd-at">{t("admin.fines.fields.offenceAt")}</Label><Input id="fd-at" type="datetime-local" value={edit.offenceAt} disabled={disabled} onChange={(e) => setEdit({ ...edit, offenceAt: e.target.value })} data-testid="input-fine-offence-at" /></div>
               <div><Label htmlFor="fd-desc">{t("admin.fines.fields.description")}</Label><Input id="fd-desc" value={edit.description} disabled={disabled} onChange={(e) => setEdit({ ...edit, description: e.target.value })} /></div>
               <div><Label htmlFor="fd-ref">{t("admin.fines.fields.reference")}</Label><Input id="fd-ref" value={edit.reference} disabled={disabled} onChange={(e) => setEdit({ ...edit, reference: e.target.value })} /></div>
               <div><Label htmlFor="fd-amount">{t("admin.fines.fields.amount")}</Label><Input id="fd-amount" type="number" step="0.01" value={edit.amount} disabled={disabled} onChange={(e) => setEdit({ ...edit, amount: e.target.value })} /></div>
@@ -130,6 +151,18 @@ export function FineDialog() {
               {fine.linkedBy && <span className="text-muted-foreground">· {t("admin.fines.dialog.linkedBy", { by: fine.linkedBy, at: fine.linkedAt ? formatDateTime(fine.linkedAt) : "" })}</span>}
               {fine.letterFilePath && <Button size="sm" variant="outline" onClick={() => preview.open(`/api/fines/${id}/letter`, t("admin.fines.dialog.viewLetter"))} data-testid="button-view-letter">{t("admin.fines.dialog.viewLetter")}</Button>}
             </div>
+
+            {fine.linkMismatch && (
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 space-y-2" data-testid="fine-link-mismatch">
+                <p>{t("admin.fines.dialog.linkMismatch", { id: fine.reservationId })}</p>
+                {canManage && allowed.includes("new") && (
+                  <Button size="sm" variant="outline" disabled={call.isPending} data-testid="button-reattribute-fine"
+                    onClick={() => call.mutate({ method: "POST", url: `/api/fines/${id}/reattribute`, outcome: "reattributed" })}>
+                    {t("admin.fines.dialog.reattribute")}
+                  </Button>
+                )}
+              </div>
+            )}
 
             {fine.status === "new" && canManage && (
               <div className="rounded-md border p-3 space-y-2" data-testid="fine-link-panel">
@@ -180,7 +213,7 @@ export function FineDialog() {
               {/* Closes the dialog and nothing else: the fine itself is left as it is (A-12-5). */}
               <Button size="sm" variant="outline" onClick={guard.requestClose} data-testid="button-close-fine">{t("common:actions.close")}</Button>
               {canManage && (<>
-                {!closed && <Button size="sm" data-testid="button-save-fine-detail" onClick={() => call.mutate({ method: "PATCH", url: `/api/fines/${id}`, body: { ...edit, amount: Number(edit.amount), adminFee: Number(edit.adminFee) }, outcome: "saved" })}>{t("admin.fines.dialog.save")}</Button>}
+                {!closed && <Button size="sm" data-testid="button-save-fine-detail" onClick={() => call.mutate({ method: "PATCH", url: `/api/fines/${id}`, body: saveBody(), outcome: "saved" })}>{t("admin.fines.dialog.save")}</Button>}
                 {fine.status === "linked" && fine.customerId && (
                   <Button size="sm" variant="outline" disabled={notify.isPending} onClick={() => setConfirmingNotify(true)} data-testid="button-notify-customer">
                     {fine.customerNotifiedAt ? t("admin.fines.dialog.notifyAgain") : t("admin.fines.dialog.notifyCustomer")}

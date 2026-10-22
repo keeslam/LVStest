@@ -431,5 +431,9 @@
         "runs": "Aún no hay rondas de recuperación guardadas."
       }
     }
+  },
+  "noReceipt": {
+    "badge": "Sin recibo",
+    "filter": "Solo sin recibo"
   }
 }

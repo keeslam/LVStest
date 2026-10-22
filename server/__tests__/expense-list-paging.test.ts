@@ -101,6 +101,18 @@ describe("GET /api/expenses paging, sorting, search and totals", () => {
     expect((await get(`/api/expenses?${mine()}${vehicleA}&q=%25`)).body).toHaveLength(0);
   });
 
+  it("noReceipt=1 keeps only the costs with neither a receipt file nor a receipt link (B-64)", async () => {
+    const withFile = await add(vehicleB, "parking", "2026-10-02", "4.00", "met bon");
+    const withLink = await add(vehicleB, "parking", "2026-10-03", "5.00", "met link");
+    await db.update(expenses).set({ receiptFilePath: "receipts/x.pdf" }).where(eq(expenses.id, withFile));
+    await db.update(expenses).set({ receiptUrl: "https://example.nl/bon" }).where(eq(expenses.id, withLink));
+    const all = await get(`/api/expenses?${mine()}${vehicleB}`);
+    expect(all.body).toHaveLength(3);
+    const res = await get(`/api/expenses?${mine()}${vehicleB}&noReceipt=1`);
+    expect(res.body.map((e: any) => e.description)).toEqual(["parkeren"]);
+    await db.delete(expenses).where(inArray(expenses.id, [withFile, withLink]));
+  });
+
   it("refuses a bad sort, dir, page or pageSize", async () => {
     expect((await get("/api/expenses?sort=colour")).status).toBe(400);
     expect((await get("/api/expenses?dir=sideways")).status).toBe(400);

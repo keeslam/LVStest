@@ -129,3 +129,21 @@ export async function unlinkFine(fineId: number, by: string): Promise<Fine> {
   if (!updated) throw new Error("Fine not found");
   return updated;
 }
+
+/**
+ * B-64: whether a fine's reservation still holds the car at the offence moment.
+ * Plate or moment may have been corrected after linking; a fine without a
+ * reservation (linked to a customer only) has nothing to compare and fits.
+ */
+export async function linkStillFits(fine: Pick<Fine, "licensePlate" | "offenceAt" | "reservationId">): Promise<boolean> {
+  if (!fine.reservationId) return true;
+  const { covering } = await findCandidates(fine.licensePlate, fine.offenceAt);
+  return covering.some((c) => c.id === fine.reservationId);
+}
+
+/** B-64: drop the current link and try the automatic one again. Staff ask for it; it is never done on its own. */
+export async function reattributeFine(fineId: number, by: string): Promise<{ fine: Fine; linked: boolean }> {
+  await unlinkFine(fineId, by);
+  const { fine } = await attributeFine(fineId);
+  return { fine, linked: fine.status === "linked" };
+}

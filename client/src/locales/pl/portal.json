@@ -947,7 +947,8 @@
           "linked": "Mandat powiązany.",
           "unlinked": "Mandat rozłączony.",
           "cancelled": "Mandat anulowany.",
-          "reactivated": "Mandat ponownie aktywowany."
+          "reactivated": "Mandat ponownie aktywowany.",
+          "reattributed": "Mandat powiązany ponownie."
         },
         "viewLetter": "Wyświetl pismo",
         "save": "Zapisz",
@@ -969,7 +970,9 @@
         "noCustomerRight": "Aby powiązać klienta z tym mandatem, potrzebne jest także uprawnienie do wyświetlania klientów.",
         "deleteTitle": "Usunąć grzywnę?",
         "deleteConfirmNamed": "Przenieść grzywnę {{plate}} na kwotę {{amount}} do kosza? Osoba z uprawnieniem do zarządzania koszem może ją stamtąd przywrócić.",
-        "deleteConfirmButton": "Usuń"
+        "deleteConfirmButton": "Usuń",
+        "linkMismatch": "Numer rejestracyjny lub czas nie pasuje już do rezerwacji #{{id}}: nie miała wtedy auta.",
+        "reattribute": "Powiąż ponownie"
       },
       "cjib": {
         "button": "Importy z CJIB",
@@ -1048,7 +1051,10 @@
           "MAIL_FAILED": "błąd wysyłki e-mail",
           "FAILED": "błąd",
           "NO_CUSTOMER": "brak klienta",
-          "PORTAL_DISABLED": "e-mail wyłączony dla tego klienta"
+          "PORTAL_DISABLED": "e-mail wyłączony dla tego klienta",
+          "NOT_NEW": "już powiązane lub załatwione",
+          "NO_MATCH": "brak rezerwacji w tym czasie",
+          "SEVERAL_MATCHES": "kilka rezerwacji, wybierz sam"
         },
         "selected_one": "Wybrano {{count}} mandat",
         "selected_few": "Wybrano {{count}} mandaty",
@@ -1073,7 +1079,9 @@
         "confirmNotifyTitle_one": "Poinformować klienta o {{count}} mandacie?",
         "confirmNotifyTitle_few": "Poinformować klientów o {{count}} mandatach?",
         "confirmNotifyTitle_many": "Poinformować klientów o {{count}} mandatach?",
-        "confirmNotifyTitle_other": "Poinformować klientów o {{count}} mandatu?"
+        "confirmNotifyTitle_other": "Poinformować klientów o {{count}} mandatu?",
+        "attribute": "Powiąż ponownie",
+        "attributedTitle": "Powiązane: {{count}}"
       }
     },
     "requests": {

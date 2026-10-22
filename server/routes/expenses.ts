@@ -203,6 +203,7 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
     }
     filters.category = one(req.query.category);
     filters.q = one(req.query.q)?.slice(0, 200);
+    if (one(req.query.noReceipt) === "1") filters.noReceipt = true;
     return filters;
   };
 

@@ -856,6 +856,20 @@ Kees koos met klikken:
 - **Klant zoeken.** Je vindt een klant ook op debiteurnummer, bedrijfsnaam, KvK-nummer en de naam van een bestuurder. Nummers vind je ook terug zonder spaties of streepjes.
 - **Bijvangst.** Meldingen uit het portaal linkten naar `/customers/<id>`, en die pagina bestaat niet. Ze openen nu de klant zelf.
 
+### B-64 — Boetes opnieuw koppelen, kosten zonder bon (22-10-2026)
+
+Kees koos met klikken:
+
+- **Kenteken en tijdstip aanpassen.** In het boetevenster zijn kenteken en tijdstip van de overtreding nu te wijzigen.
+- **Boete zonder klant.** Na het opslaan van een nieuw kenteken of tijdstip koppelt de app hem meteen opnieuw.
+- **Gekoppelde boete.** De app verandert niets vanzelf. Past de reservering niet meer bij kenteken of tijdstip, dan toont het venster een waarschuwing met de knop **Opnieuw koppelen**.
+  - De knop ontkoppelt de boete en probeert de automatische koppeling opnieuw.
+- **Bulk "Opnieuw koppelen".** Deze knop staat in de boetelijst en neemt alleen boetes met status Nieuw mee.
+  - Bij overgeslagen boetes noemt de app de reden: al gekoppeld, geen reservering op dat moment, of meerdere reserveringen.
+  - Er gaat geen mail uit, dus de app vraagt niet om bevestiging.
+- **Kosten zonder bon.** Een kostenregel zonder bijlage en zonder bonlink krijgt het label **Geen bon**. Dit geldt voor alle kosten.
+  - De knop **Alleen zonder bon** toont alleen die regels. De samenvatting per categorie telt dan ook alleen die regels.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).

@@ -424,5 +424,9 @@
         "runs": "Nog geen ophaalrondes bewaard."
       }
     }
+  },
+  "noReceipt": {
+    "badge": "Geen bon",
+    "filter": "Alleen zonder bon"
   }
 }

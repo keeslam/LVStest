@@ -431,5 +431,9 @@
         "runs": "Încă nu au fost păstrate runde de preluare."
       }
     }
+  },
+  "noReceipt": {
+    "badge": "Fără bon",
+    "filter": "Doar fără bon"
   }
 }

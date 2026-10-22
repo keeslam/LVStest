@@ -940,7 +940,8 @@
           "linked": "Multa collegata.",
           "unlinked": "Multa scollegata.",
           "cancelled": "Multa annullata.",
-          "reactivated": "Multa riattivata."
+          "reactivated": "Multa riattivata.",
+          "reattributed": "Multa ricollegata."
         },
         "viewLetter": "Visualizzare la lettera",
         "save": "Salvare",
@@ -962,7 +963,9 @@
         "noCustomerRight": "Per collegare un cliente a questa multa serve anche il permesso Visualizzare i clienti.",
         "deleteTitle": "Eliminare la multa?",
         "deleteConfirmNamed": "Spostare la multa {{plate}} di {{amount}} nel cestino? Chi può gestire il cestino potrà ripristinarla da lì.",
-        "deleteConfirmButton": "Eliminare"
+        "deleteConfirmButton": "Eliminare",
+        "linkMismatch": "Targa o momento non corrispondono più alla prenotazione #{{id}}: in quel momento non aveva l'auto.",
+        "reattribute": "Ricollega"
       },
       "cjib": {
         "button": "Importazioni CJIB",
@@ -1041,7 +1044,10 @@
           "MAIL_FAILED": "invio e-mail non riuscito",
           "FAILED": "errore",
           "NO_CUSTOMER": "nessun cliente",
-          "PORTAL_DISABLED": "e-mail disattivata per questo cliente"
+          "PORTAL_DISABLED": "e-mail disattivata per questo cliente",
+          "NOT_NEW": "già collegata o gestita",
+          "NO_MATCH": "nessuna prenotazione in quel momento",
+          "SEVERAL_MATCHES": "più prenotazioni, scegli tu"
         },
         "selected_one": "{{count}} multa selezionata",
         "selected_many": "{{count}} di multe selezionate",
@@ -1060,7 +1066,9 @@
         "confirmCancelTitle_other": "Annullare {{count}} multe?",
         "confirmNotifyTitle_one": "Informare il cliente su {{count}} multa?",
         "confirmNotifyTitle_many": "Informare i clienti su {{count}} di multe?",
-        "confirmNotifyTitle_other": "Informare i clienti su {{count}} multe?"
+        "confirmNotifyTitle_other": "Informare i clienti su {{count}} multe?",
+        "attribute": "Ricollega",
+        "attributedTitle": "Collegate: {{count}}"
       }
     },
     "requests": {

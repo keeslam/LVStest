@@ -424,5 +424,9 @@
         "runs": "No fetch runs stored yet."
       }
     }
+  },
+  "noReceipt": {
+    "badge": "No receipt",
+    "filter": "Only without receipt"
   }
 }

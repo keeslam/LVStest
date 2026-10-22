@@ -940,7 +940,8 @@
           "linked": "Multa associada.",
           "unlinked": "Multa desassociada.",
           "cancelled": "Multa cancelada.",
-          "reactivated": "Multa reativada."
+          "reactivated": "Multa reativada.",
+          "reattributed": "Multa associada novamente."
         },
         "viewLetter": "Ver carta",
         "save": "Guardar",
@@ -962,7 +963,9 @@
         "noCustomerRight": "Para associar um cliente a esta multa necessita também da permissão Ver clientes.",
         "deleteTitle": "Eliminar multa?",
         "deleteConfirmNamed": "Mover a multa {{plate}} de {{amount}} para a reciclagem? Quem pode gerir a reciclagem pode restaurá-la de lá.",
-        "deleteConfirmButton": "Eliminar"
+        "deleteConfirmButton": "Eliminar",
+        "linkMismatch": "A matrícula ou o momento já não corresponde à reserva #{{id}}: nessa altura não tinha o carro.",
+        "reattribute": "Voltar a associar"
       },
       "cjib": {
         "button": "Importações do CJIB",
@@ -1041,7 +1044,10 @@
           "MAIL_FAILED": "falha no e-mail",
           "FAILED": "erro",
           "NO_CUSTOMER": "sem cliente",
-          "PORTAL_DISABLED": "e-mail desativado para este cliente"
+          "PORTAL_DISABLED": "e-mail desativado para este cliente",
+          "NOT_NEW": "já associada ou tratada",
+          "NO_MATCH": "nenhuma reserva nesse momento",
+          "SEVERAL_MATCHES": "várias reservas, escolha você"
         },
         "selected_one": "{{count}} coima selecionada",
         "selected_many": "{{count}} de coimas selecionadas",
@@ -1060,7 +1066,9 @@
         "confirmCancelTitle_other": "Anular {{count}} coimas?",
         "confirmNotifyTitle_one": "Informar o cliente sobre {{count}} coima?",
         "confirmNotifyTitle_many": "Informar os clientes sobre {{count}} de coimas?",
-        "confirmNotifyTitle_other": "Informar os clientes sobre {{count}} coimas?"
+        "confirmNotifyTitle_other": "Informar os clientes sobre {{count}} coimas?",
+        "attribute": "Voltar a associar",
+        "attributedTitle": "Associadas: {{count}}"
       }
     },
     "requests": {

@@ -57,6 +57,8 @@ export default function ExpensesIndex() {
   const [categoryFilter, setCategoryFilter] = useState(ALL);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  // B-64: only the costs without a receipt, to chase the missing ones.
+  const [noReceipt, setNoReceipt] = useState(false);
   const [view, setView] = useState<View>("categories");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
@@ -108,6 +110,7 @@ export default function ExpensesIndex() {
     from: from || undefined,
     to: to || undefined,
     q: debouncedSearch,
+    noReceipt,
   };
   const params = expenseQueryParams(filters);
   const anyFilter = Object.values(params).some((value) => value !== undefined);
@@ -154,6 +157,7 @@ export default function ExpensesIndex() {
     setCategoryFilter(ALL);
     setFrom("");
     setTo("");
+    setNoReceipt(false);
   };
 
   // The whole selection, newest first, whatever page is on screen.
@@ -273,6 +277,9 @@ export default function ExpensesIndex() {
                   </Button>
                 ))}
               </div>
+              <Button size="sm" variant={noReceipt ? "default" : "outline"} aria-pressed={noReceipt} onClick={() => setNoReceipt(!noReceipt)} data-testid="button-filter-no-receipt">
+                {t('noReceipt.filter')}
+              </Button>
               {anyFilter && (
                 <Button variant="ghost" size="sm" onClick={clearFilters} data-testid="button-clear-expense-filters">
                   {t('indexPage.clearFilters')}

@@ -12,7 +12,7 @@ import { hasPermission } from "../middleware/permissions.js";
 import { UserPermission, UserRole, insertFineSchema } from "../../shared/schema";
 import { isValidFineTransition, isLegacyFineStatus, FINE_TRANSITIONS, LEGACY_FINE_STATUS_COUNTS_HEADER, normalizeLicensePlate, type FineStatusValue } from "../../shared/fines";
 import { finesStorage } from "../services/fines-storage";
-import { findCandidates, linkFineManually, unlinkFine } from "../services/fine-attribution";
+import { attributeFine, findCandidates, linkFineManually, linkStillFits, reattributeFine, unlinkFine } from "../services/fine-attribution";
 import { createFineWithAttribution } from "../services/fine-create";
 import { sendFineLinkedMailDetailed, fineMailAddress } from "../services/portal-mail";
 import { customerNotifications } from "../services/portal-customer-notifications";
@@ -235,7 +235,9 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
     const notifyAddress = mayManageFines(req) && fine.status === "linked"
       ? fineMailAddress(fine.customerId ? await storage.getCustomer(fine.customerId) : null)
       : undefined;
-    res.json({ ...fine, candidates, ...(notifyAddress !== undefined ? { notifyAddress } : {}) });
+    // B-64: a corrected plate or moment can leave the link pointing at a rental that did not have the car.
+    const linkMismatch = fine.status !== "new" && fine.status !== "cancelled" && fine.reservationId ? !(await linkStillFits(fine)) : false;
+    res.json({ ...fine, candidates, linkMismatch, ...(notifyAddress !== undefined ? { notifyAddress } : {}) });
   });
 
   app.post("/api/fines", canManage, letterUpload.single("letterFile"), async (req, res) => {
@@ -275,6 +277,15 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
       amount: money(amount), adminFee: money(adminFee), totalAmount: money(amount + adminFee), updatedBy: actor(req),
     });
     await AuditLogger.logFromRequest(req, "fine.update", "fine", id, parsed.data);
+    // B-64: a fine without a customer is linked again right away when plate or moment changed.
+    // A linked one is not touched; the detail shows a warning when the link no longer fits.
+    const moved = (parsed.data.licensePlate && normalizeLicensePlate(parsed.data.licensePlate) !== existing.licensePlate)
+      || (parsed.data.offenceAt && new Date(parsed.data.offenceAt).getTime() !== existing.offenceAt.getTime());
+    if (moved && updated?.status === "new") {
+      const { fine } = await attributeFine(id);
+      if (fine.status === "linked") await AuditLogger.logFromRequest(req, "fine.link", "fine", id, { automatic: true, reservationId: fine.reservationId });
+      return res.json(fine);
+    }
     res.json(updated);
   });
 
@@ -365,8 +376,8 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
    * per fine with the reason, and one fine failing never stops the rest. Audit rows are per fine.
    */
   app.post("/api/fines/bulk", canManage, async (req, res) => {
-    const parsed = z.object({ action: z.enum(["notify", "cancel"]), ids: z.array(z.number().int().positive()).min(1).max(200) }).strict().safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ message: "Send { action: 'notify' | 'cancel', ids: number[] (1-200) }", code: "INVALID_BULK_REQUEST" });
+    const parsed = z.object({ action: z.enum(["notify", "cancel", "attribute"]), ids: z.array(z.number().int().positive()).min(1).max(200) }).strict().safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ message: "Send { action: 'notify' | 'cancel' | 'attribute', ids: number[] (1-200) }", code: "INVALID_BULK_REQUEST" });
     const { action, ids } = parsed.data;
     const done: number[] = [];
     const skipped: Array<{ id: number; reason: string }> = [];
@@ -379,6 +390,16 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
         }
         const fine = await finesStorage.getFine(id);
         if (!fine) { skipped.push({ id, reason: "FINE_NOT_FOUND" }); continue; }
+        if (action === "attribute") {
+          // B-64: only fines without a customer; a linked one is left as it is.
+          if (fine.status !== "new") { skipped.push({ id, reason: "NOT_NEW" }); continue; }
+          const { fine: after, candidates } = await attributeFine(id);
+          if (after.status === "linked") {
+            await AuditLogger.logFromRequest(req, "fine.link", "fine", id, { automatic: true, bulk: true, reservationId: after.reservationId });
+            done.push(id);
+          } else skipped.push({ id, reason: candidates.covering.length > 1 ? "SEVERAL_MATCHES" : "NO_MATCH" });
+          continue;
+        }
         if (fine.status === "cancelled") { skipped.push({ id, reason: "ALREADY_CANCELLED" }); continue; }
         if (!isValidFineTransition(fine.status, "cancelled")) { skipped.push({ id, reason: "CANNOT_CANCEL" }); continue; }
         await finesStorage.updateFine(id, { status: "cancelled", updatedBy: actor(req) });
@@ -390,6 +411,17 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
       }
     }
     res.json({ action, done, skipped });
+  });
+
+  // B-64: staff confirm the warning "past niet meer": unlink and try the automatic link again.
+  app.post("/api/fines/:id/reattribute", canManage, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const fine = await finesStorage.getFine(id);
+    if (!fine) return res.status(404).json({ message: "Fine not found" });
+    if (!isValidFineTransition(fine.status, "new")) return res.status(400).json({ message: "Deze bekeuring kan niet opnieuw gekoppeld worden", code: "CANNOT_REATTRIBUTE" });
+    const result = await reattributeFine(id, actor(req));
+    await AuditLogger.logFromRequest(req, "fine.link", "fine", id, { reattributed: true, from: fine.reservationId, to: result.fine.reservationId });
+    res.json(result);
   });
 
   app.post("/api/fines/:id/unlink", canManage, async (req, res) => {

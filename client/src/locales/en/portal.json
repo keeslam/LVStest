@@ -933,7 +933,8 @@
           "linked": "Fine linked.",
           "unlinked": "Fine unlinked.",
           "cancelled": "Fine cancelled.",
-          "reactivated": "Fine reactivated."
+          "reactivated": "Fine reactivated.",
+          "reattributed": "Fine linked again."
         },
         "viewLetter": "View letter",
         "save": "Save",
@@ -955,7 +956,9 @@
         "noCustomerRight": "To link a customer to this fine you also need the right to view customers.",
         "deleteTitle": "Delete fine?",
         "deleteConfirmNamed": "Move fine {{plate}} of {{amount}} to the recycle bin? Anyone who may manage the recycle bin can restore it from there.",
-        "deleteConfirmButton": "Delete"
+        "deleteConfirmButton": "Delete",
+        "linkMismatch": "Plate or moment no longer fits reservation #{{id}}: it did not have the car then.",
+        "reattribute": "Link again"
       },
       "cjib": {
         "button": "CJIB imports",
@@ -1034,7 +1037,10 @@
           "MAIL_FAILED": "email failed",
           "FAILED": "error",
           "NO_CUSTOMER": "no customer",
-          "PORTAL_DISABLED": "mail off for this customer"
+          "PORTAL_DISABLED": "mail off for this customer",
+          "NOT_NEW": "already linked or handled",
+          "NO_MATCH": "no reservation at that moment",
+          "SEVERAL_MATCHES": "several reservations, choose yourself"
         },
         "selected_one": "{{count}} fine selected",
         "selected_other": "{{count}} fines selected",
@@ -1047,7 +1053,9 @@
         "confirmCancelTitle_one": "Cancel {{count}} fine?",
         "confirmCancelTitle_other": "Cancel {{count}} fines?",
         "confirmNotifyTitle_one": "Inform the customer about {{count}} fine?",
-        "confirmNotifyTitle_other": "Inform customers about {{count}} fines?"
+        "confirmNotifyTitle_other": "Inform customers about {{count}} fines?",
+        "attribute": "Link again",
+        "attributedTitle": "Linked: {{count}}"
       }
     },
     "requests": {

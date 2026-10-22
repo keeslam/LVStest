@@ -3406,6 +3406,7 @@ export class DatabaseStorage implements IStorage {
     if (filters.from) conditions.push(gte(expenses.date, filters.from));
     if (filters.to) conditions.push(lte(expenses.date, filters.to));
     if (filters.category) conditions.push(sql`lower(btrim(${expenses.category})) = ${filters.category.trim().toLowerCase()}`);
+    if (filters.noReceipt) conditions.push(sql`coalesce(btrim(${expenses.receiptFilePath}), '') = '' and coalesce(btrim(${expenses.receiptUrl}), '') = ''`);
     const q = (filters.q ?? "").trim().toLowerCase();
     if (q) {
       const like = `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;

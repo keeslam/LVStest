@@ -74,6 +74,8 @@ export interface ExpenseFilters {
   category?: string;
   /** Kosten (2026-10-16): free text, matched against plate (dashes ignored), category and description. */
   q?: string;
+  /** B-64: only costs with neither an attached receipt nor a receipt link. */
+  noReceipt?: boolean;
 }
 
 import { EXPENSE_SORT_KEYS, type ExpenseSortKey, type ExpensePage, type ExpenseSummary, type ExpenseFacets, type ExpenseVehicleGroup } from "../shared/expense-list";

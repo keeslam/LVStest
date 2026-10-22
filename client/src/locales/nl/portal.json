@@ -933,7 +933,8 @@
           "linked": "Bekeuring gekoppeld.",
           "unlinked": "Bekeuring ontkoppeld.",
           "cancelled": "Bekeuring geannuleerd.",
-          "reactivated": "Bekeuring heractiveerd."
+          "reactivated": "Bekeuring heractiveerd.",
+          "reattributed": "Bekeuring opnieuw gekoppeld."
         },
         "viewLetter": "Brief bekijken",
         "save": "Opslaan",
@@ -955,7 +956,9 @@
         "noCustomerRight": "Om een klant aan deze bekeuring te koppelen heb je ook het recht Klanten bekijken nodig.",
         "deleteTitle": "Boete verwijderen?",
         "deleteConfirmNamed": "Boete {{plate}} van {{amount}} naar de prullenbak verplaatsen? Wie de prullenbak mag beheren kan hem daar terugzetten.",
-        "deleteConfirmButton": "Verwijderen"
+        "deleteConfirmButton": "Verwijderen",
+        "linkMismatch": "Kenteken of tijdstip past niet meer bij reservering #{{id}}: die had de auto toen niet.",
+        "reattribute": "Opnieuw koppelen"
       },
       "cjib": {
         "button": "CJIB-importen",
@@ -1034,7 +1037,10 @@
           "MAIL_FAILED": "mail mislukt",
           "FAILED": "fout",
           "NO_CUSTOMER": "geen klant",
-          "PORTAL_DISABLED": "mail uit voor deze klant"
+          "PORTAL_DISABLED": "mail uit voor deze klant",
+          "NOT_NEW": "al gekoppeld of afgehandeld",
+          "NO_MATCH": "geen reservering op dat moment",
+          "SEVERAL_MATCHES": "meerdere reserveringen, kies zelf"
         },
         "selected_one": "{{count}} bekeuring gekozen",
         "selected_other": "{{count}} bekeuringen gekozen",
@@ -1047,7 +1053,9 @@
         "confirmCancelTitle_one": "{{count}} bekeuring annuleren?",
         "confirmCancelTitle_other": "{{count}} bekeuringen annuleren?",
         "confirmNotifyTitle_one": "Klant informeren over {{count}} bekeuring?",
-        "confirmNotifyTitle_other": "Klanten informeren over {{count}} bekeuringen?"
+        "confirmNotifyTitle_other": "Klanten informeren over {{count}} bekeuringen?",
+        "attribute": "Opnieuw koppelen",
+        "attributedTitle": "Gekoppeld: {{count}}"
       }
     },
     "requests": {

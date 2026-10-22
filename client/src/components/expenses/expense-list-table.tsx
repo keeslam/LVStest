@@ -22,9 +22,16 @@ export interface ExpenseListFilters {
   from?: string;
   to?: string;
   q?: string;
+  /** B-64: only costs without a receipt. */
+  noReceipt?: boolean;
 }
 
 /** The query-string object for a selection: only the filters that are set. */
+/** B-64: an attached file or a typed receipt link both count as a receipt. */
+export function hasReceipt(expense: Pick<Expense, "receiptFilePath" | "receiptUrl">): boolean {
+  return Boolean(expense.receiptFilePath?.trim() || expense.receiptUrl?.trim());
+}
+
 export function expenseQueryParams(filters: ExpenseListFilters): Record<string, string | undefined> {
   return {
     vehicleId: filters.vehicleId || undefined,
@@ -32,6 +39,7 @@ export function expenseQueryParams(filters: ExpenseListFilters): Record<string, 
     from: filters.from || undefined,
     to: filters.to || undefined,
     q: filters.q?.trim() || undefined,
+    noReceipt: filters.noReceipt ? "1" : undefined,
   };
 }
 
@@ -74,7 +82,15 @@ export function ExpenseRows({ rows, onDelete, testIdPrefix = "row-expense", show
             </TableCell>
           )}
           <TableCell className="max-w-0">
-            <span className="block truncate" title={expense.description || undefined}>{expense.description || "—"}</span>
+            <span className="flex min-w-0 items-center gap-1.5">
+              <span className="truncate" title={expense.description || undefined}>{expense.description || "—"}</span>
+              {/* B-64: a cost with no attached receipt and no receipt link. */}
+              {!hasReceipt(expense) && (
+                <Badge variant="outline" className="shrink-0 border-amber-300 bg-amber-50 px-1.5 py-0 text-[11px] font-normal text-amber-800" data-testid={`badge-no-receipt-${expense.id}`}>
+                  {t("expenses:noReceipt.badge")}
+                </Badge>
+              )}
+            </span>
           </TableCell>
           <TableCell className="whitespace-nowrap text-right tabular-nums font-medium">
             <Price value={Number(expense.amount) || 0} />

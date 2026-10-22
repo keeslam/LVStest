@@ -940,7 +940,8 @@
           "linked": "Amenda a fost asociată.",
           "unlinked": "Asocierea amenzii a fost desfăcută.",
           "cancelled": "Amenda a fost anulată.",
-          "reactivated": "Amenda a fost reactivată."
+          "reactivated": "Amenda a fost reactivată.",
+          "reattributed": "Amenda a fost legată din nou."
         },
         "viewLetter": "Vezi scrisoarea",
         "save": "Salvează",
@@ -962,7 +963,9 @@
         "noCustomerRight": "Pentru a asocia un client acestei amenzi aveți nevoie și de dreptul Vizualizare clienți.",
         "deleteTitle": "Ștergeți amenda?",
         "deleteConfirmNamed": "Mutați amenda {{plate}} de {{amount}} în coșul de reciclare? Cine are dreptul de a gestiona coșul de reciclare o poate restaura de acolo.",
-        "deleteConfirmButton": "Șterge"
+        "deleteConfirmButton": "Șterge",
+        "linkMismatch": "Numărul sau momentul nu mai corespund rezervării #{{id}}: atunci nu avea mașina.",
+        "reattribute": "Leagă din nou"
       },
       "cjib": {
         "button": "Importuri CJIB",
@@ -1041,7 +1044,10 @@
           "MAIL_FAILED": "e-mail eșuat",
           "FAILED": "eroare",
           "NO_CUSTOMER": "fără client",
-          "PORTAL_DISABLED": "e-mail dezactivat pentru acest client"
+          "PORTAL_DISABLED": "e-mail dezactivat pentru acest client",
+          "NOT_NEW": "deja legată sau rezolvată",
+          "NO_MATCH": "nicio rezervare în acel moment",
+          "SEVERAL_MATCHES": "mai multe rezervări, alegeți dvs."
         },
         "selected_one": "{{count}} amendă selectată",
         "selected_few": "{{count}} amenzi selectate",
@@ -1060,7 +1066,9 @@
         "confirmCancelTitle_other": "Anulați {{count}} de amenzi?",
         "confirmNotifyTitle_one": "Informați clientul despre {{count}} amendă?",
         "confirmNotifyTitle_few": "Informați clienții despre {{count}} amenzi?",
-        "confirmNotifyTitle_other": "Informați clienții despre {{count}} de amenzi?"
+        "confirmNotifyTitle_other": "Informați clienții despre {{count}} de amenzi?",
+        "attribute": "Leagă din nou",
+        "attributedTitle": "Legate: {{count}}"
       }
     },
     "requests": {
