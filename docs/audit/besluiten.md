@@ -870,6 +870,25 @@ Kees koos met klikken:
 - **Kosten zonder bon.** Een kostenregel zonder bijlage en zonder bonlink krijgt het label **Geen bon**. Dit geldt voor alle kosten.
   - De knop **Alleen zonder bon** toont alleen die regels. De samenvatting per categorie telt dan ook alleen die regels.
 
+### B-65 — Gebruikers, rolrechten, documenten als ZIP, snellere rapporten (22-10-2026)
+
+Kees koos met klikken:
+
+- **Gebruikers.** De lijst en het detail tonen wanneer iemand voor het laatst inlogde.
+  - Een actief account dat langer dan 90 dagen niet inlogde, krijgt het label **Slapend**. Een account dat nog nooit inlogde, telt vanaf de dag dat het is aangemaakt.
+- **Ingelogd op.** Het detail toont de apparaten waarop de gebruiker is ingelogd, met browser, systeem, IP en laatste activiteit.
+  - De knop **Overal uitloggen** sluit al die sessies.
+  - Bij je eigen account blijft het apparaat waarmee je klikt ingelogd.
+  - Sessies worden nu tijdens gebruik bijgehouden, maximaal één keer per minuut. Eerder schreef de app ze alleen bij het inloggen en verdwenen ze na 15 minuten uit de lijst.
+- **Rechten per rol.** Bij een nieuw account vinkt de gekozen rol meteen zijn standaardrechten aan. Het zijn de rolprofielen die Kees goedkeurde, vastgelegd in `shared/role-presets.ts`. De E2E-tests gebruiken dezelfde lijst.
+  - Bestaande accounts veranderen nooit vanzelf. De knop **Rechten van de rol …** zet ze alleen op verzoek.
+  - **Rechten kopiëren van…** neemt de rechten van een collega over.
+  - Rechten die alleen een beheerder kan gebruiken, blijven bij andere rollen uit.
+- **Documenten als ZIP.** Op het tabblad Documenten van een voertuig staat de knop **Download als ZIP**. Alles is aangevinkt; vink uit wat niet mee moet.
+  - Twee bestanden met dezelfde naam krijgen een volgnummer.
+  - Een bestand dat op de server ontbreekt, staat in "ontbrekend.txt" in de ZIP.
+- **Rapporten.** De rapportpagina laadt alleen de kosten van de gekozen periode, plus de drie maanden van de trendkaart. Eerder laadde hij alle kosten ooit.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).

@@ -199,7 +199,29 @@
     "cannotDeleteLastAdmin": "Dit is de laatste actieve beheerder; die kan niet worden verwijderd",
     "lastAdmin": "De laatste actieve beheerder kan niet worden verwijderd, gedeactiveerd of een andere rol krijgen",
     "permissionCeiling": "U kunt alleen rechten geven die u zelf heeft.",
-    "adminAccountProtected": "Alleen een beheerder kan het account van een beheerder wijzigen of verwijderen."
+    "adminAccountProtected": "Alleen een beheerder kan het account van een beheerder wijzigen of verwijderen.",
+    "dormant": "Slapend",
+    "dormantHint": "Langer dan {{days}} dagen niet ingelogd",
+    "lastLogin": "Laatste login",
+    "lastLoginShort": "laatst ingelogd {{at}}",
+    "neverLoggedIn": "nog nooit ingelogd",
+    "sessions": {
+      "title": "Ingelogd op",
+      "revokeAll": "Overal uitloggen",
+      "none": "Nergens ingelogd.",
+      "on": " op ",
+      "unknownDevice": "Onbekend apparaat",
+      "thisDevice": "dit apparaat",
+      "lastActive": "actief {{at}}",
+      "confirmTitle": "Overal uitloggen?",
+      "confirmOther": "Deze gebruiker wordt op alle apparaten uitgelogd en moet opnieuw inloggen.",
+      "confirmSelf": "Je wordt op alle andere apparaten uitgelogd. Dit apparaat blijft ingelogd.",
+      "revoked": "Uitgelogd op {{count}} apparaat/apparaten",
+      "revokeFailed": "Uitloggen is niet gelukt"
+    },
+    "rolePreset": "Rechten van de rol {{role}}",
+    "copyRightsFrom": "Rechten kopiëren van…",
+    "rightsCopied": "Rechten van {{username}} overgenomen. Nog niet opgeslagen."
   },
   "accessDenied": {
     "banner_one": "Sinds je vorige inlog ({{date}}) probeerde {{count}} medewerker iets waarvoor die geen recht heeft",

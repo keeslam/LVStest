@@ -1,4 +1,6 @@
-import { formatDate } from "@/lib/format-utils";
+import { formatDate, formatDateTime } from "@/lib/format-utils";
+import { deviceLabel, isDormant, DORMANT_AFTER_DAYS } from "@/lib/user-activity";
+import { presetRightsFor } from "@shared/role-presets";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -17,7 +19,7 @@ import {
   missingOptional,
   missingRequired,
 } from "@shared/permission-dependencies";
-import { Shield, ShieldCheck, User as UserIcon, UserX, Trash2, Plus, Edit, Mail, Calendar, Check, X, Loader2, ArrowLeft, AlertTriangle } from "lucide-react";
+import { Shield, ShieldCheck, User as UserIcon, UserX, Trash2, Plus, Edit, Mail, Calendar, Check, X, Loader2, ArrowLeft, AlertTriangle, Monitor, LogOut, Clock } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -274,9 +276,16 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
                       <Badge variant={user.active ? "success" : "secondary"} className="text-xs">
                         {user.active ? t('usersDialog.active') : t('usersDialog.inactive')}
                       </Badge>
+                      {isDormant(user) && (
+                        <Badge variant="outline" className="text-xs border-amber-300 bg-amber-50 text-amber-800" data-testid={`badge-dormant-${user.id}`}
+                          title={t('usersDialog.dormantHint', { days: DORMANT_AFTER_DAYS })}>
+                          {t('usersDialog.dormant')}
+                        </Badge>
+                      )}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {user.fullName || "-"} {user.email ? `• ${user.email}` : ""}
+                      {" • "}{user.lastLoginAt ? t('usersDialog.lastLoginShort', { at: formatDate(user.lastLoginAt) }) : t('usersDialog.neverLoggedIn')}
                     </div>
                   </div>
                 </div>
@@ -416,6 +425,16 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
                   <p className="font-medium">{createdAt} / {updatedAt}</p>
                 </div>
               </div>
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-muted-foreground text-xs">{t('usersDialog.lastLogin')}</p>
+                  <p className="font-medium" data-testid="user-last-login">
+                    {selectedUser.lastLoginAt ? formatDateTime(selectedUser.lastLoginAt) : t('usersDialog.neverLoggedIn')}
+                    {isDormant(selectedUser) && <Badge variant="outline" className="ml-2 text-xs border-amber-300 bg-amber-50 text-amber-800">{t('usersDialog.dormant')}</Badge>}
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -463,6 +482,7 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
             </CardContent>
           </Card>
         </div>
+        <UserSessionsCard userId={selectedUser.id} isSelf={isSelf} />
       </div>
     );
   };
@@ -593,7 +613,8 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
       email: user?.email || "",
       fullName: user?.fullName || "",
       role: user?.role || UserRole.USER,
-      permissions: user?.permissions || [],
+      // B-65: a new account starts with the rights of its default role.
+      permissions: user ? user.permissions || [] : presetRightsFor(UserRole.USER),
       active: user?.active !== undefined ? user?.active : true,
       hidePrices: (user as any)?.hidePrices || false,
     },
@@ -605,6 +626,13 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
   const heldRights = effectiveRights(tickedRole, tickedRights);
   const isAdminTarget = tickedRole === UserRole.ADMIN;
   const anyRequiredMissing = !isAdminTarget && tickedRights.some((right) => missingRequired(right, tickedRights).length > 0);
+
+  // B-65: rights from the role's preset, or copied from a colleague. Both only fill the boxes;
+  // nothing is saved until the form is. A right only an admin can use is left off for others.
+  const { data: colleagues = [] } = useQuery<ListedUser[]>({ queryKey: ["/api/users"] });
+  const copyCandidates = colleagues.filter((u) => u.id !== user?.id && u.role !== UserRole.ADMIN);
+  const applyRights = (rights: readonly string[]) =>
+    form.setValue("permissions", isAdminTarget ? [...rights] : rights.filter((right) => !isAdminOnlyRight(right)), { shouldDirty: true });
 
   const createMutation = useMutation({
     mutationFn: async (userData: UserFormValues) => {
@@ -726,7 +754,15 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
             render={({ field }) => (
               <FormItem>
                 <FormLabel>{t('usersDialog.role')}</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select
+                  onValueChange={(role) => {
+                    field.onChange(role);
+                    // A new account starts with the role's rights; an existing one keeps its own
+                    // until "Rechten van de rol" is clicked below.
+                    if (!isEdit) form.setValue("permissions", presetRightsFor(role), { shouldDirty: true });
+                  }}
+                  defaultValue={field.value}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder={t('usersDialog.selectRole')} />
@@ -806,6 +842,29 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
                 </Button>
                 <span className="text-xs text-muted-foreground">{t('usersDialog.enableRequiredRightsHint')}</span>
               </div>
+              <div className="flex flex-wrap items-center gap-2 pt-1" data-testid="rights-presets">
+                <Button type="button" variant="outline" size="sm" onClick={() => applyRights(presetRightsFor(tickedRole))} data-testid="button-role-preset">
+                  {t('usersDialog.rolePreset', { role: t(`usersDialog.roles.${tickedRole}`) })}
+                </Button>
+                {copyCandidates.length > 0 && (
+                  <Select value="" onValueChange={(id) => {
+                    const source = copyCandidates.find((u) => String(u.id) === id);
+                    if (source) {
+                      applyRights(source.permissions ?? []);
+                      toast({ title: t('usersDialog.rightsCopied', { username: source.username }) });
+                    }
+                  }}>
+                    <SelectTrigger className="h-8 w-auto min-w-[14rem] text-sm" data-testid="select-copy-rights">
+                      <SelectValue placeholder={t('usersDialog.copyRightsFrom')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {copyCandidates.map((u) => (
+                        <SelectItem key={u.id} value={String(u.id)}>{u.fullName ? `${u.fullName} (${u.username})` : u.username}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
                 {Object.values(UserPermission).map((permission) => (
                   <FormField
@@ -857,5 +916,73 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
         </div>
       </form>
     </Form>
+  );
+}
+
+interface UserSessionRow { id: number; ipAddress: string | null; userAgent: string | null; lastActivity: string; createdAt: string; current: boolean }
+
+/**
+ * B-65: where this account is logged in, and "Overal uitloggen". On your own account the
+ * session you are using stays; every other browser has to log in again.
+ */
+function UserSessionsCard({ userId, isSelf }: { userId: number; isSelf: boolean }) {
+  const { t } = useTranslation(["settings", "common"]);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [confirming, setConfirming] = useState(false);
+  const key = [`/api/users/${userId}/sessions`];
+  const { data: sessions = [], isLoading } = useQuery<UserSessionRow[]>({ queryKey: key });
+  const revoke = useMutation({
+    mutationFn: async () => (await apiRequest("POST", `/api/users/${userId}/revoke-sessions`)).json() as Promise<{ revoked: number }>,
+    onSuccess: (r) => {
+      queryClient.invalidateQueries({ queryKey: key });
+      toast({ title: t('usersDialog.sessions.revoked', { count: r.revoked }) });
+      setConfirming(false);
+    },
+    onError: () => { toast({ title: t('usersDialog.sessions.revokeFailed'), variant: "destructive" }); setConfirming(false); },
+  });
+  const others = sessions.filter((s) => !s.current).length;
+  return (
+    <Card data-testid="user-sessions-card">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+        <CardTitle className="text-base flex items-center gap-2"><Monitor className="h-4 w-4" />{t('usersDialog.sessions.title')}</CardTitle>
+        <Button size="sm" variant="outline" disabled={(isSelf ? others : sessions.length) === 0 || revoke.isPending}
+          onClick={() => setConfirming(true)} data-testid="button-revoke-sessions">
+          <LogOut className="h-4 w-4 mr-1" />{t('usersDialog.sessions.revokeAll')}
+        </Button>
+      </CardHeader>
+      <CardContent className="text-sm">
+        {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : sessions.length === 0 ? (
+          <p className="text-muted-foreground">{t('usersDialog.sessions.none')}</p>
+        ) : (
+          <ul className="divide-y">
+            {sessions.map((s) => {
+              const d = deviceLabel(s.userAgent);
+              const name = [d.browser, d.os].filter(Boolean).join(t('usersDialog.sessions.on')) || t('usersDialog.sessions.unknownDevice');
+              return (
+                <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 py-1.5" data-testid={`user-session-${s.id}`}>
+                  <span className="font-medium">{name}{s.current && <Badge variant="secondary" className="ml-2 text-[11px]">{t('usersDialog.sessions.thisDevice')}</Badge>}</span>
+                  <span className="text-xs text-muted-foreground">{s.ipAddress ?? "—"} · {t('usersDialog.sessions.lastActive', { at: formatDateTime(s.lastActivity) })}</span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </CardContent>
+      <AlertDialog open={confirming} onOpenChange={setConfirming}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('usersDialog.sessions.confirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t(isSelf ? 'usersDialog.sessions.confirmSelf' : 'usersDialog.sessions.confirmOther')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); revoke.mutate(); }} data-testid="button-confirm-revoke-sessions">
+              {t('usersDialog.sessions.revokeAll')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card>
   );
 }

@@ -200,7 +200,29 @@
     "cannotDeleteLastAdmin": "Acesta este ultimul administrator activ; nu poate fi șters",
     "lastAdmin": "Ultimul administrator activ nu poate fi șters, dezactivat sau mutat într-un alt rol",
     "permissionCeiling": "Puteți acorda doar drepturile pe care le aveți dumneavoastră.",
-    "adminAccountProtected": "Doar un administrator poate modifica sau șterge contul unui administrator."
+    "adminAccountProtected": "Doar un administrator poate modifica sau șterge contul unui administrator.",
+    "dormant": "Inactiv",
+    "dormantHint": "Nu s-a conectat de peste {{days}} de zile",
+    "lastLogin": "Ultima conectare",
+    "lastLoginShort": "ultima conectare {{at}}",
+    "neverLoggedIn": "nu s-a conectat niciodată",
+    "sessions": {
+      "title": "Conectat pe",
+      "revokeAll": "Deconectare peste tot",
+      "none": "Nicio sesiune activă.",
+      "on": " pe ",
+      "unknownDevice": "Dispozitiv necunoscut",
+      "thisDevice": "acest dispozitiv",
+      "lastActive": "activ {{at}}",
+      "confirmTitle": "Deconectare peste tot?",
+      "confirmOther": "Acest utilizator este deconectat de pe toate dispozitivele și trebuie să se conecteze din nou.",
+      "confirmSelf": "Veți fi deconectat de pe toate celelalte dispozitive. Acest dispozitiv rămâne conectat.",
+      "revoked": "Deconectat de pe {{count}} dispozitiv(e)",
+      "revokeFailed": "Deconectarea nu a reușit"
+    },
+    "rolePreset": "Drepturile rolului {{role}}",
+    "copyRightsFrom": "Copiază drepturile de la…",
+    "rightsCopied": "Drepturile lui {{username}} au fost copiate. Încă nesalvate."
   },
   "accessDenied": {
     "banner_one": "De la ultima autentificare ({{date}}), {{count}} angajat a încercat ceva pentru care nu are drept",

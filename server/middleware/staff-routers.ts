@@ -1,5 +1,6 @@
 import type { Express, RequestHandler } from 'express';
 import { requestUserContext } from "../services/request-user";
+import { touchActiveSession } from "../utils/security/sessionManager";
 import { auditMutations } from './audit';
 import { hasPermission } from './permissions';
 import { UserPermission } from '../../shared/schema';
@@ -11,6 +12,7 @@ import emailLogsRoutes from '../routes/email-logs';
 import apkDateChangesRoutes from '../routes/apk-date-changes';
 import contractSignaturesRoutes from '../routes/contract-signatures';
 import keyAuditsRoutes from '../routes/key-audits';
+import vehicleDocumentsZipRoutes from '../routes/vehicle-documents-zip';
 
 /**
  * The staff routers that are `Router` objects rather than `register*()`
@@ -31,6 +33,8 @@ import keyAuditsRoutes from '../routes/key-audits';
 export function mountStaffRouters(app: Express, requireAuth: RequestHandler): void {
   // Kees 2026-10-21: who makes the request, for the landlord signature on a contract.
   app.use(requestUserContext);
+  // B-65: "Ingelogd op" in the user screen lists sessions that are really in use.
+  app.use(touchActiveSession);
   app.use(auditMutations);
 
   app.use('/api/notifications', requireAuth, hasPermission(UserPermission.MANAGE_NOTIFICATIONS), notificationRoutes);
@@ -42,4 +46,6 @@ export function mountStaffRouters(app: Express, requireAuth: RequestHandler): vo
   app.use('/api/contract-signatures', requireAuth, hasPermission(UserPermission.VIEW_DOCUMENTS, UserPermission.MANAGE_DOCUMENTS), contractSignaturesRoutes);
   // Punt 15 / OPT-032: finished key-cabinet audits, for anyone who may view vehicles.
   app.use('/api/key-audits', requireAuth, hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), keyAuditsRoutes);
+  // B-65: the ticked documents of one vehicle as one ZIP.
+  app.use('/api/vehicle-documents', requireAuth, hasPermission(UserPermission.VIEW_DOCUMENTS, UserPermission.MANAGE_DOCUMENTS), vehicleDocumentsZipRoutes);
 }

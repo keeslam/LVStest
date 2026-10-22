@@ -1,4 +1,5 @@
 import { UserPermission as P, UserRole } from "../../shared/schema";
+import { ROLE_PRESETS } from "../../shared/role-presets";
 
 // A role is only a label in this application; rights are an explicit list per
 // user (server/middleware/permissions.ts; `admin` bypasses the list). These
@@ -45,20 +46,10 @@ export const ACCOUNTS: readonly Account[] = [...ROLES, ...TWINS];
 export const profileOf = (account: Account): Role =>
   (Object.keys(TWIN_OF) as Array<keyof typeof TWIN_OF>).find((role) => TWIN_OF[role] === account) ?? (account as Role);
 
-const ALL = Object.values(P) as string[];
-const without = (...denied: string[]) => ALL.filter((permission) => !denied.includes(permission));
-
+// The seven real roles take their rights from the presets the user form pre-fills (B-65),
+// so the suite and the app cannot drift apart.
 export const PROFILES: Record<Role, string[]> = {
-  admin: ALL,
-  manager: without(P.MANAGE_USERS, P.MANAGE_BACKUPS, P.MANAGE_SETTINGS),
-  user: [P.VIEW_DASHBOARD, P.VIEW_VEHICLES, P.VIEW_CUSTOMERS, P.MANAGE_CUSTOMERS, P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS,
-    P.VIEW_DOCUMENTS, P.MANAGE_DOCUMENTS, P.VIEW_DAMAGE_CHECKS, P.MANAGE_DAMAGE_CHECKS, P.VIEW_FINES],
-  cleaner: [P.VIEW_DASHBOARD, P.VIEW_VEHICLES, P.VIEW_RESERVATIONS],
-  viewer: [P.VIEW_DASHBOARD, P.VIEW_VEHICLES, P.VIEW_CUSTOMERS, P.VIEW_RESERVATIONS, P.VIEW_DOCUMENTS, P.VIEW_DAMAGE_CHECKS, P.VIEW_REPORTS],
-  accountant: [P.VIEW_DASHBOARD, P.VIEW_VEHICLES, P.VIEW_CUSTOMERS, P.VIEW_RESERVATIONS, P.MANAGE_EXPENSES, P.VIEW_DOCUMENTS,
-    P.VIEW_REPORTS, P.MANAGE_REPORTS, P.VIEW_FINES, P.VIEW_FISCAL],
-  maintenance: [P.VIEW_DASHBOARD, P.VIEW_VEHICLES, P.MANAGE_VEHICLES, P.MANAGE_MAINTENANCE, P.VIEW_RESERVATIONS,
-    P.VIEW_DAMAGE_CHECKS, P.MANAGE_DAMAGE_CHECKS, P.VIEW_DOCUMENTS],
+  ...ROLE_PRESETS,
   // Task 5 (docs/superpowers/specs/2026-09-21-toegang-design.md, §6) — the
   // deliberately narrow profile that exposes "a part of a screen needs
   // another permission family than the screen itself": only view_dashboard

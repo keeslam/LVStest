@@ -402,6 +402,14 @@
         "pdfGeneratedDescription": "Schadecheck-PDF succesvol gedownload",
         "errorTitle": "Fout",
         "pdfFailedDescription": "PDF genereren mislukt"
+      },
+      "zip": {
+        "open": "Download als ZIP",
+        "title": "Documenten als ZIP",
+        "description": "Alle documenten zijn aangevinkt. Vink uit wat niet mee moet.",
+        "all": "Alles ({{count}})",
+        "download": "Downloaden ({{count}})",
+        "done": "ZIP met {{count}} document(en) gedownload"
       }
     },
     "reservations": {

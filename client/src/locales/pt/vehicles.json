@@ -406,6 +406,14 @@
         "pdfGeneratedDescription": "PDF da verificação de danos transferido com sucesso",
         "errorTitle": "Erro",
         "pdfFailedDescription": "Não foi possível gerar o PDF"
+      },
+      "zip": {
+        "open": "Transferir como ZIP",
+        "title": "Documentos como ZIP",
+        "description": "Todos os documentos estão assinalados. Desmarque o que não deve ser incluído.",
+        "all": "Todos ({{count}})",
+        "download": "Transferir ({{count}})",
+        "done": "ZIP com {{count}} documento(s) transferido"
       }
     },
     "reservations": {

@@ -200,7 +200,29 @@
     "cannotDeleteLastAdmin": "Este es el último administrador activo; no se puede eliminar",
     "lastAdmin": "El último administrador activo no se puede eliminar, desactivar ni cambiar de rol",
     "permissionCeiling": "Solo puede conceder permisos que usted mismo tiene.",
-    "adminAccountProtected": "Solo un administrador puede modificar o eliminar la cuenta de un administrador."
+    "adminAccountProtected": "Solo un administrador puede modificar o eliminar la cuenta de un administrador.",
+    "dormant": "Inactiva",
+    "dormantHint": "Sin iniciar sesión desde hace más de {{days}} días",
+    "lastLogin": "Último inicio de sesión",
+    "lastLoginShort": "último acceso {{at}}",
+    "neverLoggedIn": "nunca ha iniciado sesión",
+    "sessions": {
+      "title": "Sesión iniciada en",
+      "revokeAll": "Cerrar sesión en todas partes",
+      "none": "Sin sesiones abiertas.",
+      "on": " en ",
+      "unknownDevice": "Dispositivo desconocido",
+      "thisDevice": "este dispositivo",
+      "lastActive": "activo {{at}}",
+      "confirmTitle": "¿Cerrar sesión en todas partes?",
+      "confirmOther": "Este usuario cerrará sesión en todos los dispositivos y tendrá que volver a iniciarla.",
+      "confirmSelf": "Se cerrará su sesión en todos los demás dispositivos. Este dispositivo sigue conectado.",
+      "revoked": "Sesión cerrada en {{count}} dispositivo(s)",
+      "revokeFailed": "No se pudo cerrar la sesión"
+    },
+    "rolePreset": "Permisos del rol {{role}}",
+    "copyRightsFrom": "Copiar permisos de…",
+    "rightsCopied": "Permisos de {{username}} copiados. Aún no guardados."
   },
   "accessDenied": {
     "banner_one": "Desde su último inicio de sesión ({{date}}) {{count}} empleado intentó hacer algo para lo que no tiene permiso",

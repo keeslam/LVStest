@@ -70,6 +70,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { VehicleDocumentsZipDialog } from "@/components/vehicles/vehicle-documents-zip-dialog";
 import { Bell, Mail, User, Eye, Edit, Calendar, Plus, Upload, X, FileCheck, Printer, Trash2, Download, ChevronDown, ChevronRight, ChevronLeft, AlertTriangle, Car, ScanLine, Info, History } from "lucide-react";
 import { RecordHistoryDialog } from "@/components/audit/record-history-dialog";
 import { withPrintIntent } from "@/lib/audit-events";
@@ -682,6 +683,8 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
   const { data: documents, isLoading: isLoadingDocuments } = useQuery<Document[]>({
     queryKey: [`/api/documents/vehicle/${vehicleId}`],
   });
+  // B-65: the documents tab's "Download als ZIP".
+  const [zipOpen, setZipOpen] = useState(false);
   
   // Fetch interactive damage checks for this vehicle
   const { data: interactiveDamageChecks = [], isLoading: isLoadingDamageChecks } = useQuery<any[]>({
@@ -2037,6 +2040,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
         
         {/* Documents Tab */}
         <TabsContent value="documents" className="mt-6">
+          <VehicleDocumentsZipDialog open={zipOpen} onOpenChange={setZipOpen} vehicleId={vehicleId} documents={documents ?? []} />
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -2044,6 +2048,13 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                   <CardTitle>{t('details.documents.title')}</CardTitle>
                   <CardDescription>{t('details.documents.description')}</CardDescription>
                 </div>
+                <div className="flex items-center gap-2">
+                {(documents?.length ?? 0) > 0 && (
+                  <Button variant="outline" size="sm" onClick={() => setZipOpen(true)} data-testid="button-documents-zip">
+                    <Download className="h-4 w-4 mr-2" />
+                    {t('details.documents.zip.open')}
+                  </Button>
+                )}
                 <InlineDocumentUpload 
                   vehicleId={vehicleId} 
                   onSuccess={() => {
@@ -2052,6 +2063,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                     invalidateByPrefix(`/api/documents/vehicle/${vehicleId}`);
                   }}
                 />
+                </div>
               </div>
             </CardHeader>
             <CardContent>

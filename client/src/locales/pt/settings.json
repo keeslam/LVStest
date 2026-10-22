@@ -200,7 +200,29 @@
     "cannotDeleteLastAdmin": "Este é o último administrador ativo; não pode ser eliminado",
     "lastAdmin": "O último administrador ativo não pode ser eliminado, desativado nem passar a ter outra função",
     "permissionCeiling": "Só pode atribuir permissões que o próprio tem.",
-    "adminAccountProtected": "Só um administrador pode alterar ou eliminar a conta de um administrador."
+    "adminAccountProtected": "Só um administrador pode alterar ou eliminar a conta de um administrador.",
+    "dormant": "Inativa",
+    "dormantHint": "Sem iniciar sessão há mais de {{days}} dias",
+    "lastLogin": "Último início de sessão",
+    "lastLoginShort": "último acesso {{at}}",
+    "neverLoggedIn": "nunca iniciou sessão",
+    "sessions": {
+      "title": "Sessão iniciada em",
+      "revokeAll": "Terminar sessão em todo o lado",
+      "none": "Sem sessões abertas.",
+      "on": " em ",
+      "unknownDevice": "Dispositivo desconhecido",
+      "thisDevice": "este dispositivo",
+      "lastActive": "ativo {{at}}",
+      "confirmTitle": "Terminar sessão em todo o lado?",
+      "confirmOther": "Este utilizador termina sessão em todos os dispositivos e tem de voltar a iniciar sessão.",
+      "confirmSelf": "Termina sessão em todos os outros dispositivos. Este dispositivo continua com sessão iniciada.",
+      "revoked": "Sessão terminada em {{count}} dispositivo(s)",
+      "revokeFailed": "Não foi possível terminar a sessão"
+    },
+    "rolePreset": "Permissões da função {{role}}",
+    "copyRightsFrom": "Copiar permissões de…",
+    "rightsCopied": "Permissões de {{username}} copiadas. Ainda não guardadas."
   },
   "accessDenied": {
     "banner_one": "Desde o seu último início de sessão ({{date}}), {{count}} colaborador tentou fazer algo para que não tem permissão",

@@ -25,7 +25,7 @@ import { NoDataAccess } from "@/components/ui/no-data-access";
 import { formatDate, formatDateTime, formatCurrency, formatLicensePlate, sumMoney, plateMatches, formatExpenseCategory, formatReservationStatus } from "@/lib/format-utils";
 import { isMaintenanceExpenseCategory } from "@shared/expense-categories";
 import { officeToday } from "@/lib/office-date";
-import { monthChange, categoryKey, presentCategories, type MonthChange } from "@/pages/reports/report-helpers";
+import { monthChange, categoryKey, presentCategories, expenseFetchWindow, type MonthChange } from "@/pages/reports/report-helpers";
 import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox";
 import { Price } from "@/components/ui/price";
 import { isTrueValue } from "@/lib/utils";
@@ -182,16 +182,23 @@ function FullReportsPage() {
     enabled: canViewVehicles,
   });
 
-  // Fetch expenses with date filtering
+  // BUG-205 phase B (2026-10-19): only the reservations that touch the chosen period, from the server.
+  const reportFrom = dateRange.from ? format(dateRange.from, "yyyy-MM-dd") : undefined;
+  const reportTo = dateRange.to ? format(dateRange.to, "yyyy-MM-dd") : undefined;
+
+  // B-65: only the expenses of the period (plus the trend's three months), not every expense ever booked.
+  const expenseWindow = expenseFetchWindow(reportFrom, reportTo);
   const { data: expenses = [], isFetching: expensesFetching } = useQuery<Expense[]>({
-    queryKey: ["/api/expenses"],
+    queryKey: ["/api/expenses", expenseWindow],
+    enabled: canViewExpenses,
+  });
+  // The category filter offers every category in use, also outside the fetched window.
+  const { data: expenseFacets } = useQuery<{ categories: string[] }>({
+    queryKey: ["/api/expenses/facets"],
     enabled: canViewExpenses,
   });
 
   // Fetch reservations with date filtering
-  // BUG-205 phase B (2026-10-19): only the reservations that touch the chosen period, from the server.
-  const reportFrom = dateRange.from ? format(dateRange.from, "yyyy-MM-dd") : undefined;
-  const reportTo = dateRange.to ? format(dateRange.to, "yyyy-MM-dd") : undefined;
   const { data: reservations = [], isFetching: reservationsFetching } = useQuery<Reservation[]>({
     queryKey: ["/api/reservations", { from: reportFrom, to: reportTo }],
     enabled: canViewReservations && !!reportFrom && !!reportTo,
@@ -269,7 +276,7 @@ function FullReportsPage() {
   
   // The category filter offers what the data holds (A-14-4); a chosen category stays
   // listed even when a refresh no longer returns it, so the Select never shows a blank.
-  const categoryOptions = presentCategories(expenses);
+  const categoryOptions = presentCategories(Array.isArray(expenseFacets?.categories) ? expenseFacets.categories.map((category) => ({ category })) : expenses);
   if (selectedCategory !== "all" && !categoryOptions.includes(selectedCategory)) categoryOptions.push(selectedCategory);
 
   // The vehicle filter is a searchable picker: the plate is the label and the search

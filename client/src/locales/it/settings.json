@@ -200,7 +200,29 @@
     "cannotDeleteLastAdmin": "Questo è l’ultimo amministratore attivo; non può essere eliminato",
     "lastAdmin": "L’ultimo amministratore attivo non può essere eliminato, disattivato né ricevere un altro ruolo",
     "permissionCeiling": "Può concedere solo i permessi che possiede Lei stesso.",
-    "adminAccountProtected": "Solo un amministratore può modificare o eliminare l'account di un amministratore."
+    "adminAccountProtected": "Solo un amministratore può modificare o eliminare l'account di un amministratore.",
+    "dormant": "Inattivo",
+    "dormantHint": "Nessun accesso da più di {{days}} giorni",
+    "lastLogin": "Ultimo accesso",
+    "lastLoginShort": "ultimo accesso {{at}}",
+    "neverLoggedIn": "mai effettuato l'accesso",
+    "sessions": {
+      "title": "Accesso attivo su",
+      "revokeAll": "Esci ovunque",
+      "none": "Nessun accesso attivo.",
+      "on": " su ",
+      "unknownDevice": "Dispositivo sconosciuto",
+      "thisDevice": "questo dispositivo",
+      "lastActive": "attivo {{at}}",
+      "confirmTitle": "Uscire ovunque?",
+      "confirmOther": "Questo utente viene disconnesso da tutti i dispositivi e dovrà accedere di nuovo.",
+      "confirmSelf": "Verrai disconnesso da tutti gli altri dispositivi. Questo dispositivo resta connesso.",
+      "revoked": "Disconnesso da {{count}} dispositivo/i",
+      "revokeFailed": "Disconnessione non riuscita"
+    },
+    "rolePreset": "Permessi del ruolo {{role}}",
+    "copyRightsFrom": "Copia permessi da…",
+    "rightsCopied": "Permessi di {{username}} copiati. Non ancora salvati."
   },
   "accessDenied": {
     "banner_one": "Dal suo ultimo accesso ({{date}}) {{count}} collaboratore ha tentato un’operazione per cui non ha il permesso",

@@ -216,3 +216,26 @@ export function startSessionCleanupScheduler(intervalMinutes: number = 60): Node
     console.log(`Cleaned up ${count} expired sessions`);
   }, intervalMinutes * 60 * 1000);
 }
+
+const lastTouched = new Map<string, number>();
+const TOUCH_EVERY_MS = 60_000;
+
+/**
+ * B-65: keeps the active_sessions row of a logged-in staff session alive while it is used.
+ * The row was only written at login with the cookie's 15-minute lifetime, so a session that
+ * was in use for hours had no row any more and "Ingelogd op" showed nothing. At most once a
+ * minute per session; recreates the row when the cleaner already removed it. Never fails a request.
+ */
+export function touchActiveSession(req: Request, _res: unknown, next: () => void): void {
+  const user = (req as Request & { user?: { id: number; username: string } }).user;
+  const sessionId = req.sessionID;
+  if (!user || !sessionId || typeof req.isAuthenticated !== "function" || !req.isAuthenticated()) return next();
+  const now = Date.now();
+  if (now - (lastTouched.get(sessionId) ?? 0) < TOUCH_EVERY_MS) return next();
+  lastTouched.set(sessionId, now);
+  if (lastTouched.size > 5000) lastTouched.clear();
+  // originalMaxAge is the configured lifetime; maxAge is what is left of the old expiry.
+  const maxAge = req.session?.cookie?.originalMaxAge ?? 15 * 60 * 1000;
+  void trackSession(sessionId, user.id, user.username, req, new Date(now + maxAge));
+  next();
+}

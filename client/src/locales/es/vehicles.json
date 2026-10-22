@@ -406,6 +406,14 @@
         "pdfGeneratedDescription": "El PDF de la inspección de daños se ha descargado correctamente",
         "errorTitle": "Error",
         "pdfFailedDescription": "No se ha podido generar el PDF"
+      },
+      "zip": {
+        "open": "Descargar como ZIP",
+        "title": "Documentos como ZIP",
+        "description": "Todos los documentos están marcados. Desmarque lo que no deba incluirse.",
+        "all": "Todos ({{count}})",
+        "download": "Descargar ({{count}})",
+        "done": "ZIP con {{count}} documento(s) descargado"
       }
     },
     "reservations": {

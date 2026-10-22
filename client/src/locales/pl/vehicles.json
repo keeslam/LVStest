@@ -410,6 +410,14 @@
         "pdfGeneratedDescription": "PDF kontroli uszkodzeń został pobrany",
         "errorTitle": "Błąd",
         "pdfFailedDescription": "Nie udało się wygenerować PDF"
+      },
+      "zip": {
+        "open": "Pobierz jako ZIP",
+        "title": "Dokumenty jako ZIP",
+        "description": "Wszystkie dokumenty są zaznaczone. Odznacz te, których nie chcesz dołączyć.",
+        "all": "Wszystkie ({{count}})",
+        "download": "Pobierz ({{count}})",
+        "done": "Pobrano ZIP z {{count}} dokumentem/dokumentami"
       }
     },
     "reservations": {

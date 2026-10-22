@@ -36,3 +36,19 @@ export function presentCategories(rows: ReadonlyArray<{ category: string | null 
   const unknown = [...present].filter((c) => !(EXPENSE_CATEGORIES as readonly string[]).includes(c)).sort();
   return [...known, ...unknown];
 }
+
+const isoDay = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+/**
+ * B-65: the expenses the report page asks the server for. The chosen period, widened to
+ * cover the three calendar months of the trend card, which does not follow the period
+ * (A-14-4). The page used to fetch every expense ever booked.
+ */
+export function expenseFetchWindow(reportFrom: string | undefined, reportTo: string | undefined, now: Date = new Date()): { from: string; to: string } {
+  const trendFrom = isoDay(new Date(now.getFullYear(), now.getMonth() - 2, 1));
+  const trendTo = isoDay(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+  return {
+    from: reportFrom && reportFrom < trendFrom ? reportFrom : trendFrom,
+    to: reportTo && reportTo > trendTo ? reportTo : trendTo,
+  };
+}

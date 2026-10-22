@@ -406,6 +406,14 @@
         "pdfGeneratedDescription": "PDF-ul verificării daunelor a fost descărcat cu succes",
         "errorTitle": "Eroare",
         "pdfFailedDescription": "Generarea PDF-ului a eșuat"
+      },
+      "zip": {
+        "open": "Descarcă ca ZIP",
+        "title": "Documente ca ZIP",
+        "description": "Toate documentele sunt bifate. Debifați ce nu trebuie inclus.",
+        "all": "Toate ({{count}})",
+        "download": "Descarcă ({{count}})",
+        "done": "ZIP cu {{count}} document(e) descărcat"
       }
     },
     "reservations": {

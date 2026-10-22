@@ -201,7 +201,29 @@
     "cannotDeleteLastAdmin": "To ostatni aktywny administrator; nie można go usunąć",
     "lastAdmin": "Ostatniego aktywnego administratora nie można usunąć, dezaktywować ani przypisać mu innej roli",
     "permissionCeiling": "Mogą Państwo nadać tylko uprawnienia, które sami Państwo posiadają.",
-    "adminAccountProtected": "Tylko administrator może zmienić lub usunąć konto administratora."
+    "adminAccountProtected": "Tylko administrator może zmienić lub usunąć konto administratora.",
+    "dormant": "Uśpione",
+    "dormantHint": "Brak logowania od ponad {{days}} dni",
+    "lastLogin": "Ostatnie logowanie",
+    "lastLoginShort": "ostatnio zalogowany {{at}}",
+    "neverLoggedIn": "jeszcze nigdy nie zalogowany",
+    "sessions": {
+      "title": "Zalogowany na",
+      "revokeAll": "Wyloguj wszędzie",
+      "none": "Brak aktywnych sesji.",
+      "on": " na ",
+      "unknownDevice": "Nieznane urządzenie",
+      "thisDevice": "to urządzenie",
+      "lastActive": "aktywny {{at}}",
+      "confirmTitle": "Wylogować wszędzie?",
+      "confirmOther": "Ten użytkownik zostanie wylogowany na wszystkich urządzeniach i musi zalogować się ponownie.",
+      "confirmSelf": "Zostaniesz wylogowany na wszystkich innych urządzeniach. To urządzenie pozostanie zalogowane.",
+      "revoked": "Wylogowano na {{count}} urządzeniu/urządzeniach",
+      "revokeFailed": "Wylogowanie nie powiodło się"
+    },
+    "rolePreset": "Uprawnienia roli {{role}}",
+    "copyRightsFrom": "Kopiuj uprawnienia od…",
+    "rightsCopied": "Skopiowano uprawnienia {{username}}. Jeszcze nie zapisano."
   },
   "accessDenied": {
     "banner_one": "Od ostatniego logowania ({{date}}) {{count}} pracownik próbował wykonać czynność, do której nie ma uprawnień",

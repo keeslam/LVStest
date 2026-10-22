@@ -406,6 +406,14 @@
         "pdfGeneratedDescription": "PDF del controllo danni scaricato correttamente",
         "errorTitle": "Errore",
         "pdfFailedDescription": "Generazione del PDF non riuscita"
+      },
+      "zip": {
+        "open": "Scarica come ZIP",
+        "title": "Documenti come ZIP",
+        "description": "Tutti i documenti sono selezionati. Deseleziona quelli da escludere.",
+        "all": "Tutti ({{count}})",
+        "download": "Scarica ({{count}})",
+        "done": "ZIP con {{count}} documento/i scaricato"
       }
     },
     "reservations": {

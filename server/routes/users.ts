@@ -9,7 +9,7 @@ import { insertUserSchema, UserRole, UserPermission } from "../../shared/schema"
 import { hashPassword, comparePasswords } from "../auth";
 import { realtimeEvents } from "../realtime-events";
 import { hasPermission, recordAccessDenied, ACCESS_DENIED_ACTION } from "../middleware/permissions.js";
-import { auditLogs } from "../../shared/schema";
+import { auditLogs, activeSessions } from "../../shared/schema";
 import { canOpenPage, pageAccessFor } from "../../shared/page-access";
 import { passwordPolicyIssues, passwordTooWeakBody } from "../../shared/password-policy";
 import type { Express } from "express";
@@ -306,6 +306,30 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
     }
   });
   
+  // B-65: the devices a user is logged in on, newest activity first. Only what an admin needs to
+  // recognise a device; the session id itself never leaves the server.
+  app.get("/api/users/:id/sessions", requireAuth, hasPermission(UserPermission.MANAGE_USERS), async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid user ID" });
+    const rows = await db.select({
+      id: activeSessions.id, sessionId: activeSessions.sessionId, ipAddress: activeSessions.ipAddress, userAgent: activeSessions.userAgent,
+      lastActivity: activeSessions.lastActivity, createdAt: activeSessions.createdAt, expiresAt: activeSessions.expiresAt,
+    }).from(activeSessions)
+      .where(and(eq(activeSessions.userId, id), gt(activeSessions.expiresAt, new Date())))
+      .orderBy(desc(activeSessions.lastActivity));
+    res.json(rows.map(({ sessionId, ...r }) => ({ ...r, current: sessionId === req.sessionID })));
+  });
+
+  // B-65: "Overal uitloggen". Ends every session of the user; for your own account the one you
+  // are using stays, so the button does not throw you out of the screen you clicked it in.
+  app.post("/api/users/:id/revoke-sessions", requireAuth, hasPermission(UserPermission.MANAGE_USERS), async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid user ID" });
+    if (!(await storage.getUser(id))) return res.status(404).json({ message: "User not found" });
+    const revoked = await revokeUserSessions(id, req.user?.id === id ? req.sessionID : undefined);
+    res.json({ revoked });
+  });
+
   // Create user (requires MANAGE_USERS permission)
   app.post("/api/users", requireAuth, hasPermission(UserPermission.MANAGE_USERS), async (req, res) => {
     try {

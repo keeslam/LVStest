@@ -402,6 +402,14 @@
         "pdfGeneratedDescription": "Damage check PDF downloaded successfully",
         "errorTitle": "Error",
         "pdfFailedDescription": "Failed to generate PDF"
+      },
+      "zip": {
+        "open": "Download as ZIP",
+        "title": "Documents as ZIP",
+        "description": "All documents are ticked. Untick what should stay out.",
+        "all": "All ({{count}})",
+        "download": "Download ({{count}})",
+        "done": "ZIP with {{count}} document(s) downloaded"
       }
     },
     "reservations": {
