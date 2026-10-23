@@ -518,7 +518,10 @@
     "unsavedSwitchDescription": "This template has changes that are not saved yet. If you pick another template, they are lost.",
     "unsavedSwitchConfirm": "Discard changes",
     "unsavedKeepEditing": "Keep editing",
-    "barcodeDefaultPlace": "Barcode (default place). Add the Reservation barcode field to move it"
+    "barcodeDefaultPlace": "Barcode (default place). Add the Reservation barcode field to move it",
+    "widthLabel": "Width",
+    "heightLabel": "Height",
+    "boxSizeHint": "In points. Or drag the blue corner of the box on the canvas."
   },
   "transportTemplateEditor": {
     "templateNamePlaceholder": "e.g., Driver Handoff Sheet",

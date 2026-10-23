@@ -534,7 +534,10 @@
     "unsavedSwitchDescription": "Ten szablon ma zmiany, które nie zostały jeszcze zapisane. Jeśli wybiorą Państwo inny szablon, zostaną utracone.",
     "unsavedSwitchConfirm": "Odrzuć zmiany",
     "unsavedKeepEditing": "Kontynuuj edycję",
-    "barcodeDefaultPlace": "Kod kreskowy (miejsce domyślne). Dodaj pole Kod kreskowy rezerwacji, aby go przenieść"
+    "barcodeDefaultPlace": "Kod kreskowy (miejsce domyślne). Dodaj pole Kod kreskowy rezerwacji, aby go przenieść",
+    "widthLabel": "Szerokość",
+    "heightLabel": "Wysokość",
+    "boxSizeHint": "W punktach. Albo przeciągnij niebieski róg pola na płótnie."
   },
   "transportTemplateEditor": {
     "templateNamePlaceholder": "np. Formularz przekazania dla kierowcy",

@@ -124,6 +124,8 @@ export default function DamageCheckTemplateCanvasEditor({
 
   // Drag state
   const [dragging, setDragging] = useState<{ id: string; offX: number; offY: number } | null>(null);
+  // Kees 2026-10-23: dragging the blue corner of a signature, box or diagram field resizes it.
+  const [resizing, setResizing] = useState<{ id: string; startX: number; startY: number; width: number; height: number } | null>(null);
   const [selectionBox, setSelectionBox] = useState<{ sx: number; sy: number; ex: number; ey: number } | null>(null);
   const [clipboard, setClipboard] = useState<CanvasField[]>([]);
 
@@ -534,7 +536,25 @@ export default function DamageCheckTemplateCanvasEditor({
   // canvas can flood the React scheduler and crash the tab.
   const rafRef = useRef<number | null>(null);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  function onResizeStart(e: React.MouseEvent, f: CanvasField, width: number, height: number) {
+    e.stopPropagation();
+    e.preventDefault();
+    if (f.locked) return;
+    setSelectedIds([f.id]);
+    const p = getCanvasPoint(e);
+    setResizing({ id: f.id, startX: p.x, startY: p.y, width, height });
+  }
+
   function onCanvasMouseMove(e: React.MouseEvent) {
+    if (resizing) {
+      const p = getCanvasPoint(e);
+      const width = Math.round(Math.max(MIN_RESIZE, Math.min(PAGE_W, resizing.width + p.x - resizing.startX)));
+      const height = Math.round(Math.max(MIN_RESIZE, Math.min(PAGE_H, resizing.height + p.y - resizing.startY)));
+      const next = fieldsRef.current.map(f => f.id === resizing.id ? { ...f, width, height } : f);
+      fieldsRef.current = next;
+      setFields(next);
+      return;
+    }
     if (dragging) {
       lastPointRef.current = getCanvasPoint(e);
       if (rafRef.current != null) return;
@@ -566,6 +586,11 @@ export default function DamageCheckTemplateCanvasEditor({
   }, []);
 
   function onCanvasMouseUp() {
+    if (resizing) {
+      pushHistory(fieldsRef.current);
+      setResizing(null);
+      return;
+    }
     if (dragging) {
       // Flush any pending drag frame so the final position is in fieldsRef
       // before we snapshot history.
@@ -1027,6 +1052,7 @@ export default function DamageCheckTemplateCanvasEditor({
                         zoom={zoom}
                         selected={selectedIds.includes(f.id)}
                         onMouseDown={(e) => onFieldMouseDown(e, f)}
+                        onResizeStart={(e, w, h) => onResizeStart(e, f, w, h)}
                         diagramTemplates={diagramTemplates}
                       />
                     ))}
@@ -1148,6 +1174,9 @@ export default function DamageCheckTemplateCanvasEditor({
                       </div>
                     </div>
                   )}
+                  {(selectedField.type === 'signature' || selectedField.type === 'box' || selectedField.type === 'diagram') && (
+                    <p className="text-[11px] leading-tight text-muted-foreground">{t('templateEditorPage.resizeHint')}</p>
+                  )}
                   {(selectedField.type === 'text' || selectedField.type === 'dynamic' || selectedField.type === 'inspection' || selectedField.type === 'checkbox') && (
                     <>
                       <div className="space-y-1"><Label className="text-xs">{t('templateEditorPage.fontSizeLabel')}</Label>
@@ -1223,11 +1252,24 @@ export default function DamageCheckTemplateCanvasEditor({
 }
 
 // Render a single canvas field
-function FieldRender({ field, zoom, selected, onMouseDown, diagramTemplates }: {
+/** The smallest a field can be dragged down to, in points. */
+const MIN_RESIZE = 10;
+
+function FieldRender({ field, zoom, selected, onMouseDown, onResizeStart, diagramTemplates }: {
   field: CanvasField; zoom: number; selected: boolean; onMouseDown: (e: React.MouseEvent) => void;
+  onResizeStart?: (e: React.MouseEvent, width: number, height: number) => void;
   diagramTemplates?: DiagramTemplateSummary[];
 }) {
   const { t } = useTranslation("settings");
+  // The blue corner that resizes a selected box-shaped field (width/height in points).
+  const resizeHandle = (width: number, height: number) => selected && !field.locked && onResizeStart ? (
+    <span
+      role="presentation"
+      onMouseDown={(e) => onResizeStart(e, width, height)}
+      style={{ position: 'absolute', right: -5, bottom: -5, width: 10, height: 10, background: '#2563eb', border: '1px solid #fff', borderRadius: 2, cursor: 'se-resize' }}
+      data-testid={`resize-handle-${field.id}`}
+    />
+  ) : null;
   const baseStyle: React.CSSProperties = {
     position: 'absolute',
     left: field.x * zoom,
@@ -1245,7 +1287,9 @@ function FieldRender({ field, zoom, selected, onMouseDown, diagramTemplates }: {
   }
   if (field.type === 'box') {
     return (
-      <div onMouseDown={onMouseDown} style={{ ...baseStyle, width: (field.width ?? 100) * zoom, height: (field.height ?? 50) * zoom, border: '1px solid #111', background: 'transparent' }} />
+      <div onMouseDown={onMouseDown} style={{ ...baseStyle, width: (field.width ?? 100) * zoom, height: (field.height ?? 50) * zoom, border: '1px solid #111', background: 'transparent' }}>
+        {resizeHandle(field.width ?? 100, field.height ?? 50)}
+      </div>
     );
   }
   if (field.type === 'signature') {
@@ -1255,6 +1299,7 @@ function FieldRender({ field, zoom, selected, onMouseDown, diagramTemplates }: {
         {damageCheckSignatureRole(field) === 'customer' && (
           <span style={{ marginLeft: 'auto', fontSize: 8 * zoom, color: '#2563eb' }}>{t('templateEditorPage.signatureWho.portalTag')}</span>
         )}
+        {resizeHandle(field.width ?? 200, field.height ?? 40)}
       </div>
     );
   }
@@ -1274,13 +1319,14 @@ function FieldRender({ field, zoom, selected, onMouseDown, diagramTemplates }: {
     return (
       <div
         onMouseDown={onMouseDown}
-        style={{ ...baseStyle, width: w, height: h, border: '1px dashed #6b7280', background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
+        style={{ ...baseStyle, width: w, height: h, border: '1px dashed #6b7280', background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: selected ? 'visible' : 'hidden' }}
       >
         {imgSrc ? (
           <img src={imgSrc} alt={t('templateEditorPage.vehicleDiagramAlt')} style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }} draggable={false} />
         ) : (
           <span style={{ fontSize: 11 * zoom, color: '#6b7280' }}>{t('templateEditorPage.noDiagramTemplatesUploaded')}</span>
         )}
+        {resizeHandle(field.width ?? 400, field.height ?? 220)}
       </div>
     );
   }

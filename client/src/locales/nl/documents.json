@@ -518,7 +518,10 @@
     "unsavedSwitchDescription": "Dit sjabloon heeft wijzigingen die nog niet zijn opgeslagen. Als je een ander sjabloon kiest, gaan die verloren.",
     "unsavedSwitchConfirm": "Wijzigingen weggooien",
     "unsavedKeepEditing": "Verder bewerken",
-    "barcodeDefaultPlace": "Barcode (standaardplek). Plaats het veld Barcode reservering om hem te verplaatsen"
+    "barcodeDefaultPlace": "Barcode (standaardplek). Plaats het veld Barcode reservering om hem te verplaatsen",
+    "widthLabel": "Breedte",
+    "heightLabel": "Hoogte",
+    "boxSizeHint": "In punten. Of sleep het blauwe hoekje van het vak op het canvas."
   },
   "transportTemplateEditor": {
     "templateNamePlaceholder": "bijv. Chauffeursoverdrachtsformulier",

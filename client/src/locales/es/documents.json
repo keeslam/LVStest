@@ -526,7 +526,10 @@
     "unsavedSwitchDescription": "Esta plantilla tiene cambios que aún no se han guardado. Si elige otra plantilla, se perderán.",
     "unsavedSwitchConfirm": "Descartar cambios",
     "unsavedKeepEditing": "Seguir editando",
-    "barcodeDefaultPlace": "Código de barras (lugar estándar). Añada el campo Código de barras de la reserva para moverlo"
+    "barcodeDefaultPlace": "Código de barras (lugar estándar). Añada el campo Código de barras de la reserva para moverlo",
+    "widthLabel": "Ancho",
+    "heightLabel": "Alto",
+    "boxSizeHint": "En puntos. O arrastre la esquina azul del recuadro en el lienzo."
   },
   "transportTemplateEditor": {
     "templateNamePlaceholder": "p. ej. Formulario de entrega del conductor",

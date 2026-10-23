@@ -1028,7 +1028,8 @@
       "staffHint": "Qui va la firma del collaboratore che completa il controllo sul tablet.",
       "noneHint": "Nessuno: resta una riga vuota da firmare su carta.",
       "portalTag": "cliente / portale"
-    }
+    },
+    "resizeHint": "Trascina l'angolo blu sulla tela per ingrandire o ridurre il riquadro."
   },
   "backupSettingsPanel": {
     "toasts": {

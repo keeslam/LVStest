@@ -1033,7 +1033,8 @@
       "staffHint": "Tu trafia podpis pracownika, który kończy kontrolę na tablecie.",
       "noneHint": "Nikt: zostaje pusta linia do podpisu na papierze.",
       "portalTag": "klient / portal"
-    }
+    },
+    "resizeHint": "Przeciągnij niebieski róg na płótnie, aby powiększyć lub zmniejszyć pole."
   },
   "backupSettingsPanel": {
     "toasts": {

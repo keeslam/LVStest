@@ -1023,7 +1023,8 @@
       "staffHint": "The signature of the staff member who completes the check on the tablet goes here.",
       "noneHint": "Nobody: this stays an empty line to sign on paper.",
       "portalTag": "customer / portal"
-    }
+    },
+    "resizeHint": "Drag the blue corner on the canvas to make the box larger or smaller."
   },
   "backupSettingsPanel": {
     "toasts": {

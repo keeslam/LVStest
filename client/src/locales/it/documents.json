@@ -526,7 +526,10 @@
     "unsavedSwitchDescription": "Questo modello ha modifiche che non sono ancora state salvate. Se sceglie un altro modello, andranno perse.",
     "unsavedSwitchConfirm": "Scartare le modifiche",
     "unsavedKeepEditing": "Continuare a modificare",
-    "barcodeDefaultPlace": "Codice a barre (posizione standard). Aggiungi il campo Codice a barre prenotazione per spostarlo"
+    "barcodeDefaultPlace": "Codice a barre (posizione standard). Aggiungi il campo Codice a barre prenotazione per spostarlo",
+    "widthLabel": "Larghezza",
+    "heightLabel": "Altezza",
+    "boxSizeHint": "In punti. Oppure trascina l'angolo blu del riquadro sulla tela."
   },
   "transportTemplateEditor": {
     "templateNamePlaceholder": "ad es. Modulo di consegna per il conducente",

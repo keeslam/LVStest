@@ -526,7 +526,10 @@
     "unsavedSwitchDescription": "Este modelo tem alterações que ainda não foram guardadas. Se escolher outro modelo, serão perdidas.",
     "unsavedSwitchConfirm": "Descartar alterações",
     "unsavedKeepEditing": "Continuar a editar",
-    "barcodeDefaultPlace": "Código de barras (local padrão). Adicione o campo Código de barras da reserva para o mover"
+    "barcodeDefaultPlace": "Código de barras (local padrão). Adicione o campo Código de barras da reserva para o mover",
+    "widthLabel": "Largura",
+    "heightLabel": "Altura",
+    "boxSizeHint": "Em pontos. Ou arraste o canto azul da caixa na tela."
   },
   "transportTemplateEditor": {
     "templateNamePlaceholder": "p. ex. Formulário de entrega do condutor",

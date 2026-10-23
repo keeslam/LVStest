@@ -526,7 +526,10 @@
     "unsavedSwitchDescription": "Acest șablon are modificări care nu au fost încă salvate. Dacă alegeți alt șablon, ele se vor pierde.",
     "unsavedSwitchConfirm": "Renunțați la modificări",
     "unsavedKeepEditing": "Continuați editarea",
-    "barcodeDefaultPlace": "Cod de bare (loc standard). Adăugați câmpul Cod de bare rezervare pentru a-l muta"
+    "barcodeDefaultPlace": "Cod de bare (loc standard). Adăugați câmpul Cod de bare rezervare pentru a-l muta",
+    "widthLabel": "Lățime",
+    "heightLabel": "Înălțime",
+    "boxSizeHint": "În puncte. Sau trageți colțul albastru al casetei pe pânză."
   },
   "transportTemplateEditor": {
     "templateNamePlaceholder": "de ex. Formular de predare pentru șofer",

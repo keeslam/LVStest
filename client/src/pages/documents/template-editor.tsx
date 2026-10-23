@@ -59,7 +59,13 @@ interface TemplateField {
   source: string;
   textAlign: 'left' | 'center' | 'right';
   locked?: boolean;
+  /** Kees 2026-10-23: the box of a signature or barcode field, in points; absent = the default size. */
+  width?: number;
+  height?: number;
 }
+
+/** The smallest box a picture field can be dragged or typed down to. */
+const MIN_PICTURE_BOX = 10;
 
 interface Template {
   id: number;
@@ -125,6 +131,8 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
   const [currentTemplate, setCurrentTemplate] = useState<Template | null>(null);
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
   const [isMoving, setIsMoving] = useState(false);
+  // Kees 2026-10-23: dragging the corner of a signature or barcode box resizes it.
+  const [resizing, setResizing] = useState<{ fieldId: string; startX: number; startY: number; width: number; height: number } | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
@@ -745,7 +753,21 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
     setDraggedField(field);
   };
 
+  const startResize = (e: React.MouseEvent, field: TemplateField, box: { width: number; height: number }) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (field.locked) return;
+    setSelectedFields([field.id]);
+    setResizing({ fieldId: field.id, startX: e.clientX, startY: e.clientY, width: field.width || box.width, height: field.height || box.height });
+  };
+
   const handleMouseMove = (e: React.MouseEvent) => {
+    if (resizing && currentTemplate) {
+      const width = Math.round(Math.max(MIN_PICTURE_BOX, Math.min(595, resizing.width + (e.clientX - resizing.startX) / zoomLevel)));
+      const height = Math.round(Math.max(MIN_PICTURE_BOX, Math.min(842, resizing.height + (e.clientY - resizing.startY) / zoomLevel)));
+      setCurrentTemplate({ ...currentTemplate, fields: currentTemplate.fields.map(f => f.id === resizing.fieldId ? { ...f, width, height } : f) });
+      return;
+    }
     if (!isMoving || !draggedField || !currentTemplate || !pdfContainerRef.current || !dragOffset) return;
     
     const containerRect = pdfContainerRef.current.getBoundingClientRect();
@@ -797,6 +819,11 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
   };
 
   const handleMouseUp = () => {
+    if (resizing && currentTemplate) {
+      addToHistory(currentTemplate.fields);
+      setResizing(null);
+      return;
+    }
     if (draggedField && currentTemplate) {
       addToHistory(currentTemplate.fields);
     }
@@ -1164,7 +1191,9 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
         isBold: field.isBold,
         source: field.source,
         textAlign: field.textAlign,
-        locked: field.locked || false
+        locked: field.locked || false,
+        ...(field.width ? { width: field.width } : {}),
+        ...(field.height ? { height: field.height } : {}),
       }))
     };
     
@@ -1230,7 +1259,9 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
         isBold: field.isBold,
         source: field.source,
         textAlign: field.textAlign,
-        locked: field.locked || false
+        locked: field.locked || false,
+        ...(field.width ? { width: field.width } : {}),
+        ...(field.height ? { height: field.height } : {}),
       }))
     };
     
@@ -1840,8 +1871,8 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
                               justifyContent: field.textAlign === 'left' ? 'flex-start' : field.textAlign === 'right' ? 'flex-end' : 'center',
                               lineHeight: 1.2,
                               ...(box ? {
-                                width: `${box.width * zoomLevel}px`,
-                                height: `${box.height * zoomLevel}px`,
+                                width: `${(field.width || box.width) * zoomLevel}px`,
+                                height: `${(field.height || box.height) * zoomLevel}px`,
                                 fontSize: `${9 * zoomLevel}px`,
                                 justifyContent: 'center',
                                 border: '1px dashed #6b7280',
@@ -1858,6 +1889,15 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
                             {field.source === BARCODE_SOURCE
                               ? <span className="rounded bg-white px-1">{field.name}</span>
                               : field.name}
+                            {box && selectedFields.includes(field.id) && !field.locked && (
+                              <span
+                                role="presentation"
+                                className="absolute -bottom-1 -right-1 h-2.5 w-2.5 cursor-se-resize rounded-sm border border-white bg-blue-600"
+                                onMouseDown={(e) => startResize(e, field, box)}
+                                onClick={(e) => e.stopPropagation()}
+                                data-testid={`resize-handle-${field.id}`}
+                              />
+                            )}
                           </div>
                           );
                         })}
@@ -1968,6 +2008,29 @@ const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = 
                           />
                         </div>
                       </div>
+                      {pictureBoxSize(selectedField.source) && (() => {
+                        const box = pictureBoxSize(selectedField.source)!;
+                        const setSize = (key: 'width' | 'height', value: number) => {
+                          if (!currentTemplate || !Number.isFinite(value)) return;
+                          const size = Math.max(MIN_PICTURE_BOX, Math.min(key === 'width' ? 595 : 842, Math.round(value)));
+                          setCurrentTemplate({ ...currentTemplate, fields: currentTemplate.fields.map(f => f.id === selectedField.id ? { ...f, [key]: size } : f) });
+                        };
+                        return (
+                          <div className="space-y-1">
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <Label className="text-xs">{t('templateEditor.widthLabel')}</Label>
+                                <Input type="number" min={MIN_PICTURE_BOX} value={selectedField.width || box.width} onChange={(e) => setSize('width', Number(e.target.value))} data-testid="input-field-width" />
+                              </div>
+                              <div>
+                                <Label className="text-xs">{t('templateEditor.heightLabel')}</Label>
+                                <Input type="number" min={MIN_PICTURE_BOX} value={selectedField.height || box.height} onChange={(e) => setSize('height', Number(e.target.value))} data-testid="input-field-height" />
+                              </div>
+                            </div>
+                            <p className="text-[11px] leading-tight text-muted-foreground">{t('templateEditor.boxSizeHint')}</p>
+                          </div>
+                        );
+                      })()}
                       <div>
                         <Label>{t('templateEditor.fontSizeLabel')}</Label>
                         <Input

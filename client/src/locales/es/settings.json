@@ -1028,7 +1028,8 @@
       "staffHint": "Aquí va la firma del empleado que completa la revisión en la tableta.",
       "noneHint": "Nadie: queda una línea vacía para firmar en papel.",
       "portalTag": "cliente / portal"
-    }
+    },
+    "resizeHint": "Arrastre la esquina azul en el lienzo para agrandar o reducir el recuadro."
   },
   "backupSettingsPanel": {
     "toasts": {

@@ -1028,7 +1028,8 @@
       "staffHint": "Aqui fica a assinatura do funcionário que conclui a verificação no tablet.",
       "noneHint": "Ninguém: fica uma linha vazia para assinar em papel.",
       "portalTag": "cliente / portal"
-    }
+    },
+    "resizeHint": "Arraste o canto azul na tela para aumentar ou diminuir a caixa."
   },
   "backupSettingsPanel": {
     "toasts": {
