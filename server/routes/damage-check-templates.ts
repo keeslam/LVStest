@@ -209,11 +209,15 @@ export function registerDamageCheckTemplateRoutes(app: Express, deps: RouteDeps)
         } catch {
           // Best-effort — preview still renders without seeded checklist data.
         }
+        // Kees 2026-10-23: both signature boxes show a sample signature, so their place and size can be judged.
+        const { sampleSignatureDataUrl } = await import("../utils/sample-signature");
         const sampleInteractiveCheck = {
           mileage: 12345,
           fuelLevel: "vol",
           notes: "Sample inspection notes recorded during the check.",
           checklistData: JSON.stringify(sampleChecklistData),
+          renterSignature: sampleSignatureDataUrl(),
+          customerSignature: sampleSignatureDataUrl(),
         };
 
         const { generateDamageCheckPDFWithTemplate } = await import(
@@ -224,6 +228,7 @@ export function registerDamageCheckTemplateRoutes(app: Express, deps: RouteDeps)
           templateForRender,
           sampleReservation,
           sampleInteractiveCheck,
+          "Voorbeeld Medewerker",
         );
 
         res.setHeader("Content-Type", "application/pdf");

@@ -6,6 +6,7 @@
 import { BARCODE_SOURCE, DEFAULT_BARCODE_BOX, DEFAULT_SIGNATURE_BOX, SIGNATURE_LANDLORD_SOURCE, SIGNATURE_SOURCES, SIGNATURE_TENANT_SOURCE, fitInBox, tenantSignatureKeyword, type SignatureBox } from "../../shared/contract-signature-box";
 import { STAFF_SIGNATURE_KEY, isValidStaffSignature } from "../../shared/staff-signature";
 import { currentRequestUserId } from "../services/request-user";
+import { sampleSignaturePng } from "./sample-signature";
 import { customerDeductibleFor } from "../../shared/customer-deductibles";
 import { Reservation, PdfTemplate, VehicleTransport, TransportReportTemplate } from "../../shared/schema";
 // Only the contract *number* still uses date-fns (a yyyyMMdd stamp); every
@@ -385,6 +386,8 @@ export async function generateRentalContractFromTemplate(
   reservation: Reservation,
   template?: PdfTemplate,
   businessRules?: unknown,
+  /** Kees 2026-10-23: a template preview fills both signature boxes with a sample signature. */
+  options: { preview?: boolean } = {},
 ): Promise<Buffer> {
   const contractData = prepareContractData(reservation, businessRules === undefined ? await loadBusinessRules() : businessRules);
   const pdfDoc = await PDFDocument.create();
@@ -408,8 +411,11 @@ export async function generateRentalContractFromTemplate(
 
   // Kees 2026-10-21: signature boxes. The landlord's is the signature of whoever generates
   // the contract; the tenant's box is only recorded, for the portal signing (contract-signature-box.ts).
-  const landlordPng = fields.some((f) => f.source === SIGNATURE_LANDLORD_SOURCE) ? await loadStaffSignaturePng(currentRequestUserId()) : null;
+  const landlordPng = fields.some((f) => f.source === SIGNATURE_LANDLORD_SOURCE)
+    ? (await loadStaffSignaturePng(currentRequestUserId())) ?? (options.preview ? sampleSignaturePng() : null)
+    : null;
   const landlordImage = landlordPng ? await pdfDoc.embedPng(landlordPng).catch(() => null) : null;
+  const sampleImage = options.preview ? await pdfDoc.embedPng(sampleSignaturePng()).catch(() => null) : null;
   let tenantBox: SignatureBox | null = null;
 
   for (const field of fields) {
@@ -421,8 +427,11 @@ export async function generateRentalContractFromTemplate(
         width: field.width || DEFAULT_SIGNATURE_BOX.width,
         height: field.height || DEFAULT_SIGNATURE_BOX.height,
       };
-      if (field.source === SIGNATURE_TENANT_SOURCE) tenantBox = box;
-      else if (landlordImage) page.drawImage(landlordImage, fitInBox(landlordImage.width, landlordImage.height, box));
+      if (field.source === SIGNATURE_TENANT_SOURCE) {
+        // A preview shows where the customer's signature will land; a real contract only records the box.
+        if (sampleImage) page.drawImage(sampleImage, fitInBox(sampleImage.width, sampleImage.height, box));
+        else tenantBox = box;
+      } else if (landlordImage) page.drawImage(landlordImage, fitInBox(landlordImage.width, landlordImage.height, box));
       continue;
     }
     const raw = resolveContractFieldValue(field.source, contractData);

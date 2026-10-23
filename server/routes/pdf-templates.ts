@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { contractPreviewReservation } from "../utils/preview-sample";
 // FIX-R (BUG-086): multer parses the multipart body inside the route chain,
 // long after app.use(sanitizeInput) ran — so these wrappers sanitize what it
 // parsed.
@@ -103,39 +104,8 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
         return res.status(404).json({ message: "Template not found" });
       }
       
-      // Create a dummy reservation for preview purposes
-      const dummyReservation = {
-        id: 0, // Use 0 to indicate preview mode
-        vehicleId: 0,
-        customerId: 0,
-        startDate: new Date().toISOString(),
-        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days later
-        totalPrice: '750',
-        status: 'Booked',
-        notes: 'Preview reservation',
-        vehicle: {
-          id: 0,
-          brand: 'Preview Brand',
-          model: 'Preview Model',
-          licensePlate: 'XX-YY-99',
-          chassisNumber: 'PREVIEW123456789',
-          currentMileage: 10000,
-        },
-        customer: {
-          id: 0,
-          name: 'Preview Customer',
-          address: 'Preview Street 123',
-          city: 'Preview City',
-          postalCode: '1234 AB',
-          phone: '0612345678',
-          email: 'preview@example.com',
-          driverLicenseNumber: 'PREV123456789',
-        },
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        createdBy: 'system',
-        updatedBy: null,
-      } as unknown as Reservation;
+      // Kees 2026-10-23: a complete sample rental, so every placed field shows a value.
+      const dummyReservation = contractPreviewReservation();
       
       // Make sure the template fields are properly formatted
       let fieldsLength = 0;
@@ -160,7 +130,7 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       const { generateRentalContractFromTemplate } = await import('../utils/pdf-generator');
       
       // Generate PDF with the template
-      const pdfBuffer = await generateRentalContractFromTemplate(dummyReservation, template);
+      const pdfBuffer = await generateRentalContractFromTemplate(dummyReservation, template, undefined, { preview: true });
       
       // Set headers for PDF display in browser (not forcing download)
       res.setHeader('Content-Type', 'application/pdf');
