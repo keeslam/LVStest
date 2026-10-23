@@ -1,4 +1,5 @@
 import { describeApiError } from "@/lib/api-error";
+import { damageCheckSignatureRole, SIGNATURE_LANDLORD_SOURCE, SIGNATURE_TENANT_SOURCE } from "@shared/contract-signature-box";
 import { uploadUrl } from "@/lib/upload-url";
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -1077,6 +1078,30 @@ export default function DamageCheckTemplateCanvasEditor({
                       </Select>
                     </div>
                   )}
+                  {selectedField.type === 'signature' && (
+                    <div className="space-y-1">
+                      {/* Kees 2026-10-23: the customer's box is where a signature from the portal lands. */}
+                      <Label className="text-xs">{t('templateEditorPage.signatureWhoLabel')}</Label>
+                      <Select
+                        value={selectedField.source === SIGNATURE_TENANT_SOURCE || selectedField.source === SIGNATURE_LANDLORD_SOURCE ? selectedField.source : 'auto'}
+                        onValueChange={(v) => updateSelected({ source: v === 'auto' ? undefined : v })}
+                      >
+                        <SelectTrigger data-testid="select-signature-who"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={SIGNATURE_TENANT_SOURCE}>{t('templateEditorPage.signatureWho.customer')}</SelectItem>
+                          <SelectItem value={SIGNATURE_LANDLORD_SOURCE}>{t('templateEditorPage.signatureWho.staff')}</SelectItem>
+                          <SelectItem value="auto">{t('templateEditorPage.signatureWho.auto')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[11px] leading-tight text-muted-foreground">
+                        {damageCheckSignatureRole(selectedField) === 'customer'
+                          ? t('templateEditorPage.signatureWho.customerHint')
+                          : damageCheckSignatureRole(selectedField) === 'staff'
+                            ? t('templateEditorPage.signatureWho.staffHint')
+                            : t('templateEditorPage.signatureWho.noneHint')}
+                      </p>
+                    </div>
+                  )}
                   {selectedField.type === 'diagram' && (
                     <div className="space-y-1">
                       <Label className="text-xs">{t('templateEditorPage.vehicleDiagramLabel')}</Label>
@@ -1227,6 +1252,9 @@ function FieldRender({ field, zoom, selected, onMouseDown, diagramTemplates }: {
     return (
       <div onMouseDown={onMouseDown} style={{ ...baseStyle, width: (field.width ?? 200) * zoom, height: (field.height ?? 40) * zoom, borderBottom: '1px solid #111', display: 'flex', alignItems: 'flex-end', paddingBottom: 2 * zoom, fontSize: 9 * zoom, color: '#666' }}>
         {field.name || t('templateEditorPage.signaturePlaceholder')}
+        {damageCheckSignatureRole(field) === 'customer' && (
+          <span style={{ marginLeft: 'auto', fontSize: 8 * zoom, color: '#2563eb' }}>{t('templateEditorPage.signatureWho.portalTag')}</span>
+        )}
       </div>
     );
   }

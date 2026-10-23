@@ -889,6 +889,17 @@ Kees koos met klikken:
   - Een bestand dat op de server ontbreekt, staat in "ontbrekend.txt" in de ZIP.
 - **Rapporten.** De rapportpagina laadt alleen de kosten van de gekozen periode, plus de drie maanden van de trendkaart. Eerder laadde hij alle kosten ooit.
 
+### B-66 — Handtekening uit het portaal op de schadecheck (23-10-2026)
+
+Kees: de handtekening die de klant in het portaal op een schadecheck zet, moet in het schadecheck-sjabloon een vaste plek hebben.
+
+- **Wie tekent hier?** Een handtekeningveld in de schadecheck-sjablooneditor heeft nu deze keuze. De opties zijn **Handtekening klant**, **Handtekening medewerker** en **Afleiden uit de naam**.
+  - "Afleiden uit de naam" werkt zoals het al werkte: een naam met huurder of klant betekent de klant, een naam met verhuurder de medewerker.
+  - Het veld van de klant toont op het canvas "klant / portaal".
+- **Tekent de klant op de tablet,** dan staat die handtekening in het vak, zoals altijd.
+- **Tekent de klant niet op de tablet,** dan bewaart de PDF waar het vak staat, ook als het op pagina 2 of verder staat. Tekent de klant later in het portaal, dan komt de handtekening in dat vak. De bewijspagina blijft erbij, net als bij het contract (B-61).
+- **Bestaande schadechecks** zijn gemaakt voordat dit bestond. Daar staat de handtekening alleen op de bewijspagina.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).

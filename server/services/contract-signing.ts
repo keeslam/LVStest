@@ -146,9 +146,11 @@ export async function buildSignedPdf(original: Buffer, signaturePng: Buffer, inf
   const image = await pdf.embedPng(signaturePng);
   // Kees 2026-10-21: the customer's signature also goes into the template's "Handtekening
   // huurder" box, recorded in the contract's keywords when it was made (older contracts have none).
-  const tenantBox = info.kind === "contract" ? tenantSignatureBoxFrom(pdf.getKeywords()) : null;
-  if (tenantBox && pdf.getPageCount() > 0) {
-    pdf.getPage(0).drawImage(image, fitInBox(image.width, image.height, tenantBox));
+  // Kees 2026-10-23: a damage check gets the same, in the box its template marks as the customer's.
+  const tenantBox = tenantSignatureBoxFrom(pdf.getKeywords());
+  const boxPage = tenantBox?.page ?? 0;
+  if (tenantBox && boxPage < pdf.getPageCount()) {
+    pdf.getPage(boxPage).drawImage(image, fitInBox(image.width, image.height, tenantBox));
   }
   const page = pdf.addPage([595.28, 841.89]);
   const left = 56;

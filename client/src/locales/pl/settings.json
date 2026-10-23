@@ -1023,7 +1023,17 @@
       "inspectorName": "Inspektor / zalogowany użytkownik (Kontrolę wykonał)"
     },
     "confirmTitle": "Zastąpić pola?",
-    "confirmReplaceLayoutButton": "Zastąp"
+    "confirmReplaceLayoutButton": "Zastąp",
+    "signatureWhoLabel": "Kto tu podpisuje?",
+    "signatureWho": {
+      "customer": "Podpis klienta",
+      "staff": "Podpis pracownika",
+      "auto": "Na podstawie nazwy",
+      "customerHint": "Tu trafia podpis złożony na tablecie. W przeciwnym razie podpis klienta z portalu.",
+      "staffHint": "Tu trafia podpis pracownika, który kończy kontrolę na tablecie.",
+      "noneHint": "Nikt: zostaje pusta linia do podpisu na papierze.",
+      "portalTag": "klient / portal"
+    }
   },
   "backupSettingsPanel": {
     "toasts": {

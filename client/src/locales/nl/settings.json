@@ -1013,7 +1013,17 @@
       "inspectorName": "Inspecteur / ingelogde gebruiker (Controle door)"
     },
     "confirmTitle": "Velden vervangen?",
-    "confirmReplaceLayoutButton": "Vervangen"
+    "confirmReplaceLayoutButton": "Vervangen",
+    "signatureWhoLabel": "Wie tekent hier?",
+    "signatureWho": {
+      "customer": "Handtekening klant",
+      "staff": "Handtekening medewerker",
+      "auto": "Afleiden uit de naam",
+      "customerHint": "Tekent de klant op de tablet, dan komt die handtekening hier. Anders komt hier de handtekening die de klant in het portaal zet.",
+      "staffHint": "Hier komt de handtekening van de medewerker die de schadecheck op de tablet afrondt.",
+      "noneHint": "Niemand: dit blijft een lege lijn om op papier te tekenen.",
+      "portalTag": "klant / portaal"
+    }
   },
   "backupSettingsPanel": {
     "toasts": {

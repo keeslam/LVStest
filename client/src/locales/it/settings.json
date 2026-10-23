@@ -1018,7 +1018,17 @@
       "inspectorName": "Ispettore / utente connesso (Controllo eseguito da)"
     },
     "confirmTitle": "Sostituire i campi?",
-    "confirmReplaceLayoutButton": "Sostituire"
+    "confirmReplaceLayoutButton": "Sostituire",
+    "signatureWhoLabel": "Chi firma qui?",
+    "signatureWho": {
+      "customer": "Firma del cliente",
+      "staff": "Firma del collaboratore",
+      "auto": "Dedurre dal nome",
+      "customerHint": "Qui va la firma fatta sul tablet. Altrimenti quella che il cliente mette nel portale.",
+      "staffHint": "Qui va la firma del collaboratore che completa il controllo sul tablet.",
+      "noneHint": "Nessuno: resta una riga vuota da firmare su carta.",
+      "portalTag": "cliente / portale"
+    }
   },
   "backupSettingsPanel": {
     "toasts": {

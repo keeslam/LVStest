@@ -12,6 +12,7 @@ import { prepareHeaderImage } from './utils/header-image-cache';
 import { resolveDocumentFilePath } from './services/document-paths';
 import { sanitizeForWinAnsi, wrapTextToWidth } from './utils/pdf-text';
 import { parseCanvasFields, pageCountFor, MAX_TEMPLATE_PAGES } from '../shared/template-fields';
+import { damageCheckSignatureRole, tenantSignatureKeyword, type SignatureBox } from '../shared/contract-signature-box';
 
 /**
  * Format a license plate consistently throughout the application
@@ -458,6 +459,10 @@ async function generateDamageCheckPDFFromCanvas(
     console.warn('Damage check header embed failed:', (e as Error).message);
   }
 
+  // Kees 2026-10-23: the customer's signature box, kept in the PDF's keywords so a signature
+  // given in the portal lands there (buildSignedPdf). Only when nobody signed it on the tablet.
+  let tenantBox: SignatureBox | null = null;
+
   for (const f of fields) {
    try {
     const p = pages[(Number(f.page) || 1) - 1];
@@ -532,14 +537,12 @@ async function generateDamageCheckPDFFromCanvas(
     if (f.type === 'signature') {
       const w = Number(f.width) || 200;
       const h = Number(f.height) || 40;
-      // If the interactive check captured a signature image, draw it inside
-      // the box. Pick renter vs customer based on the field's name.
-      const lname = String(f.name || '').toLowerCase();
-      let sigImg: any = null;
-      if (lname.includes('verhuurder') || lname.includes('renter') || lname.includes('staff')) {
-        sigImg = renterSigImg;
-      } else if (lname.includes('huurder') || lname.includes('customer') || lname.includes('klant')) {
-        sigImg = customerSigImg;
+      // If the interactive check captured a signature image, draw it inside the box.
+      // Who signs here comes from the field's source, else from its name.
+      const role = damageCheckSignatureRole(f);
+      const sigImg: any = role === 'staff' ? renterSigImg : role === 'customer' ? customerSigImg : null;
+      if (role === 'customer' && !sigImg && !tenantBox) {
+        tenantBox = { x, y: PAGE_H - yTop - h, width: w, height: h, page: (Number(f.page) || 1) - 1 };
       }
       if (sigImg) {
         const iw = sigImg.width;
@@ -780,6 +783,7 @@ async function generateDamageCheckPDFFromCanvas(
 
   // Ensure at least one page
   if (pdfDoc.getPageCount() === 0) pdfDoc.addPage([595, 842]);
+  if (tenantBox) pdfDoc.setKeywords([tenantSignatureKeyword(tenantBox)]);
 
   const bytes = await pdfDoc.save();
   return Buffer.from(bytes);

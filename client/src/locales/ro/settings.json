@@ -1018,7 +1018,17 @@
       "inspectorName": "Inspector / utilizator autentificat (Verificat de)"
     },
     "confirmTitle": "Înlocuiți câmpurile?",
-    "confirmReplaceLayoutButton": "Înlocuiește"
+    "confirmReplaceLayoutButton": "Înlocuiește",
+    "signatureWhoLabel": "Cine semnează aici?",
+    "signatureWho": {
+      "customer": "Semnătura clientului",
+      "staff": "Semnătura angajatului",
+      "auto": "Dedus din nume",
+      "customerHint": "Aici apare semnătura de pe tabletă. Altfel, semnătura pe care clientul o pune în portal.",
+      "staffHint": "Aici apare semnătura angajatului care finalizează verificarea pe tabletă.",
+      "noneHint": "Nimeni: rămâne o linie goală pentru semnat pe hârtie.",
+      "portalTag": "client / portal"
+    }
   },
   "backupSettingsPanel": {
     "toasts": {

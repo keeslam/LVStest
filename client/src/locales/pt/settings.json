@@ -1018,7 +1018,17 @@
       "inspectorName": "Inspetor / utilizador com sessão iniciada (Verificação por)"
     },
     "confirmTitle": "Substituir campos?",
-    "confirmReplaceLayoutButton": "Substituir"
+    "confirmReplaceLayoutButton": "Substituir",
+    "signatureWhoLabel": "Quem assina aqui?",
+    "signatureWho": {
+      "customer": "Assinatura do cliente",
+      "staff": "Assinatura do funcionário",
+      "auto": "Deduzir do nome",
+      "customerHint": "Aqui fica a assinatura feita no tablet. Caso contrário, a assinatura que o cliente faz no portal.",
+      "staffHint": "Aqui fica a assinatura do funcionário que conclui a verificação no tablet.",
+      "noneHint": "Ninguém: fica uma linha vazia para assinar em papel.",
+      "portalTag": "cliente / portal"
+    }
   },
   "backupSettingsPanel": {
     "toasts": {

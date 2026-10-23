@@ -15,11 +15,14 @@ export const DEFAULT_SIGNATURE_BOX = { width: 170, height: 55 };
 
 const PREFIX = "lvs-tenant-signature:";
 
-/** A box in PDF points, origin bottom-left, on page 1. */
-export interface SignatureBox { x: number; y: number; width: number; height: number }
+/** A box in PDF points, origin bottom-left; `page` is 0-based (absent = page 1). */
+export interface SignatureBox { x: number; y: number; width: number; height: number; page?: number }
 
+/** The box as a PDF keyword. A box on page 1 keeps the four-number form older contracts carry. */
 export function tenantSignatureKeyword(box: SignatureBox): string {
-  return `${PREFIX}${[box.x, box.y, box.width, box.height].map((n) => Math.round(n * 100) / 100).join(",")}`;
+  const nums = [box.x, box.y, box.width, box.height].map((n) => Math.round(n * 100) / 100);
+  if (box.page && box.page > 0) nums.push(Math.floor(box.page));
+  return `${PREFIX}${nums.join(",")}`;
 }
 
 /** The tenant box from a PDF's keywords string, or null for contracts made before this existed. */
@@ -27,10 +30,10 @@ export function tenantSignatureBoxFrom(keywords: string | null | undefined): Sig
   const part = (keywords ?? "").split(/[\s,;]+(?=lvs-)|\s+/).find((k) => k.startsWith(PREFIX));
   if (!part) return null;
   const nums = part.slice(PREFIX.length).split(",").map(Number);
-  if (nums.length !== 4 || nums.some((n) => !Number.isFinite(n))) return null;
-  const [x, y, width, height] = nums;
-  if (width <= 0 || height <= 0 || x < 0 || y < 0 || x > 1000 || y > 1000) return null;
-  return { x, y, width, height };
+  if ((nums.length !== 4 && nums.length !== 5) || nums.some((n) => !Number.isFinite(n))) return null;
+  const [x, y, width, height, page = 0] = nums;
+  if (width <= 0 || height <= 0 || x < 0 || y < 0 || x > 1000 || y > 1000 || page < 0 || page > 50) return null;
+  return page > 0 ? { x, y, width, height, page } : { x, y, width, height };
 }
 
 /** Fit an image of iw x ih into the box, keeping its shape, centred vertically, left-aligned. */
@@ -54,5 +57,20 @@ export const DEFAULT_BARCODE_BOX = { x: 440, y: 20, width: 131, height: 41 };
 export function pictureBoxSize(source: string | null | undefined): { width: number; height: number } | null {
   if (source === BARCODE_SOURCE) return { width: DEFAULT_BARCODE_BOX.width, height: DEFAULT_BARCODE_BOX.height };
   if (source === SIGNATURE_LANDLORD_SOURCE || source === SIGNATURE_TENANT_SOURCE) return DEFAULT_SIGNATURE_BOX;
+  return null;
+}
+
+/**
+ * Kees, 2026-10-23: who signs a signature field on a damage-check template. The field's
+ * source says it ("Handtekening klant" / "Handtekening medewerker"); a field without one
+ * keeps the old rule and is read from its name (verhuurder/renter/staff vs huurder/klant/customer).
+ * The customer's box is where a signature from the portal lands.
+ */
+export function damageCheckSignatureRole(field: { source?: string | null; name?: string | null }): "customer" | "staff" | null {
+  if (field.source === SIGNATURE_TENANT_SOURCE) return "customer";
+  if (field.source === SIGNATURE_LANDLORD_SOURCE) return "staff";
+  const name = String(field.name ?? "").toLowerCase();
+  if (name.includes("verhuurder") || name.includes("renter") || name.includes("staff")) return "staff";
+  if (name.includes("huurder") || name.includes("customer") || name.includes("klant")) return "customer";
   return null;
 }

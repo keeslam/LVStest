@@ -1018,7 +1018,17 @@
       "inspectorName": "Inspector / usuario con sesión iniciada (Control realizado por)"
     },
     "confirmTitle": "¿Sustituir los campos?",
-    "confirmReplaceLayoutButton": "Sustituir"
+    "confirmReplaceLayoutButton": "Sustituir",
+    "signatureWhoLabel": "¿Quién firma aquí?",
+    "signatureWho": {
+      "customer": "Firma del cliente",
+      "staff": "Firma del empleado",
+      "auto": "Deducir del nombre",
+      "customerHint": "Aquí va la firma hecha en la tableta. Si no, la firma que el cliente pone en el portal.",
+      "staffHint": "Aquí va la firma del empleado que completa la revisión en la tableta.",
+      "noneHint": "Nadie: queda una línea vacía para firmar en papel.",
+      "portalTag": "cliente / portal"
+    }
   },
   "backupSettingsPanel": {
     "toasts": {
