@@ -119,9 +119,20 @@ export function apiLimiterKey(req: Request & { user?: { id?: number } }): string
   return `ip:${ipKeyGenerator(firstUntrustedAddress(req))}`;
 }
 
+/**
+ * Kees, 2026-10-23: a receptionist entering many reservations in a row ran into "too many
+ * requests" at 1000 — every screen refresh after a save counts too. A logged-in staff member
+ * now gets 5000 per 15 minutes; anonymous traffic keeps 1000 per IP.
+ */
+export const API_LIMIT_STAFF = 5000;
+export const API_LIMIT_ANONYMOUS = 1000;
+export function apiLimiterMax(req: Request & { user?: { id?: number } }): number {
+  return typeof req.user?.id === 'number' ? API_LIMIT_STAFF : API_LIMIT_ANONYMOUS;
+}
+
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // per user (or per IP when anonymous)
+  max: apiLimiterMax, // per user (or per IP when anonymous)
   message: 'Too many requests, please try again later.',
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers

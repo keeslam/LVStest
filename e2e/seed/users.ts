@@ -26,7 +26,7 @@ export type Role = (typeof ROLES)[number];
 
 // Twin sessions: the same profile as `admin` / `manager` / `user` under another
 // username, so a spec can spread its requests over two per-user buckets of the API
-// limiter (1000 requests per user per 15 minutes, one server process and one window
+// limiter (5000 requests per logged-in user per 15 minutes since 2026-10-23, was 1000, one server process and one window
 // per run, counters in memory; server/middleware/security/rateLimiter.ts). The
 // server keeps its production limits and a 429 stays a page-health violation
 // (e2e/support/guards.ts); the remedy for a bucket that runs dry is another seeded

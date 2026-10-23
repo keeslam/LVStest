@@ -17,7 +17,7 @@ import {
 import { resolveDefaultAdminPassword } from "../initAdmin";
 import {
   checkAccountLockout, reserveLoginAttempt, settleLoginAttempt, clearFailedAttempts,
-  loginLimiter, portalLoginLimiter, portalForgotLimiter, portalActivateLimiter, apiLimiterKey,
+  loginLimiter, portalLoginLimiter, portalForgotLimiter, portalActivateLimiter, apiLimiterKey, apiLimiterMax,
   LOCKOUT_THRESHOLD,
 } from "../middleware/security/rateLimiter";
 
@@ -257,6 +257,11 @@ describe("FIX-K — auth, session and rate-limit hardening", () => {
       expect(asUser).toBe("user:42");
       expect(asAnon).toBe("ip:10.0.0.1");
       expect(asUser).not.toBe(asAnon);
+    });
+
+    it("gives a logged-in staff member 5000 requests per window, anonymous traffic 1000 (Kees, 2026-10-23)", () => {
+      expect(apiLimiterMax({ user: { id: 42 } } as any)).toBe(5000);
+      expect(apiLimiterMax({} as any)).toBe(1000);
     });
   });
 

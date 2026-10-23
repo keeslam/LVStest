@@ -102,7 +102,7 @@ daarna rechtstreeks in `lvs_e2e` (alleen daar), zoals oude gegevens eruit kunnen
 **Terugdraaien en een opgehaalde huur annuleren (deelproject C, taak 4 en 5): vier verhalen in
 `e2e/layer-b/desk/edge-cases.spec.ts`.** De bestaande baliestroom en zijn budgetten zijn niet aangeraakt.
 De verhalen draaien als `manager` (heeft de rechten) of als `user` (heeft ze niet), nooit als `admin`: die
-account is door laag A al het verst richting de grens van 1000 verzoeken (zie *Het verzoekbudget*). Elk
+account is door laag A al het verst richting de grens van 1000 verzoeken (sinds 23-10-2026 is die grens 5000 voor ingelogde medewerkers) (zie *Het verzoekbudget*). Elk
 verhaal maakt zijn voertuig en boeking via de API en laat het eigenlijke werk op het scherm doen.
 
 | Verhaal | Account | Budget (handelingen) | Wat het bewijst |
