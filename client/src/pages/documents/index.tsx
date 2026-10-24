@@ -1891,14 +1891,16 @@ function DiagramTemplateManager() {
 
       {/* Upload Dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg md:max-w-4xl">
           <DialogHeader>
             <DialogTitle>{t('indexPage.diagramTemplates.addDialogTitle')}</DialogTitle>
             <DialogDescription>
               {t('indexPage.diagramTemplates.addDialogDescription')}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          {/* Kees 2026-10-24: details left, picture right, so a desktop needs no scrolling. */}
+          <div className="grid gap-6 py-2 md:grid-cols-2">
+          <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="make">{t('indexPage.diagramTemplates.makeLabel')}</Label>
@@ -1958,6 +1960,7 @@ function DiagramTemplateManager() {
               />
             </div>
 
+          </div>
             <div className="space-y-2">
               <Label htmlFor="diagram">{t('indexPage.diagramTemplates.diagramImageLabel')}</Label>
               <Input
@@ -1967,7 +1970,7 @@ function DiagramTemplateManager() {
                 onChange={(e) => setDiagramFile(e.target.files?.[0] || null)}
                 data-testid="input-diagram-file"
               />
-              {diagramFile && <DiagramImagePreview file={diagramFile} alt={`${make} ${model}`} className="h-48" />}
+              <DiagramImagePreview file={diagramFile} alt={`${make} ${model}`} className="h-48 md:h-64" />
               {diagramFile && (
                 <p className="text-sm text-gray-600">{t('indexPage.diagramTemplates.selectedFileLabel', { filename: diagramFile.name })}</p>
               )}
@@ -1996,14 +1999,16 @@ function DiagramTemplateManager() {
           resetForm();
         }
       }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg md:max-w-4xl">
           <DialogHeader>
             <DialogTitle>{t('indexPage.diagramTemplates.editDialogTitle')}</DialogTitle>
             <DialogDescription>
               {t('indexPage.diagramTemplates.editDialogDescription')}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          {/* Kees 2026-10-24: details left, picture right, so a desktop needs no scrolling. */}
+          <div className="grid gap-6 py-2 md:grid-cols-2">
+          <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-make">{t('indexPage.diagramTemplates.makeLabel')}</Label>
@@ -2063,6 +2068,7 @@ function DiagramTemplateManager() {
               />
             </div>
 
+          </div>
             <div className="space-y-2">
               <Label htmlFor="edit-diagram">{t('indexPage.diagramTemplates.newDiagramImageLabel')}</Label>
               <Input
@@ -2073,7 +2079,7 @@ function DiagramTemplateManager() {
                 data-testid="input-edit-diagram-file"
               />
               {editingTemplate && (
-                <DiagramImagePreview src={diagramImageUrl(editingTemplate)} file={diagramFile} alt={`${make} ${model}`} className="h-48" />
+                <DiagramImagePreview src={diagramImageUrl(editingTemplate)} file={diagramFile} alt={`${make} ${model}`} className="h-48 md:h-64" />
               )}
               {diagramFile && (
                 <p className="text-sm text-green-600">{t('indexPage.diagramTemplates.newImageSelectedLabel', { filename: diagramFile.name })}</p>
