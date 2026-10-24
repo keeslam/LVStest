@@ -24,6 +24,7 @@ import { buildMaintenanceCostReport } from "../utils/maintenance-costs";
 import { buildVehicleFinancials, buildMileagePerMonth, type DateRangeYmd } from "../utils/financial-reports";
 import { mountReport } from "../services/reports/report-kit";
 import { finesReport } from "../services/reports/fines-report";
+import { extraCostsReport } from "../services/reports/extra-costs-report";
 
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -50,6 +51,12 @@ export function registerReportRoutes(app: Express): void {
     hasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS),
     hasPermission(UserPermission.VIEW_FINES, UserPermission.MANAGE_FINES),
   ], finesReport);
+
+  // Rapporten fase 2: extra km and fuel report on Rapporten > Financieel (needs the report and a reservations permission)
+  mountReport(app, "/api/reports/extra-costs", [
+    hasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS),
+    hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS),
+  ], extraCostsReport);
 
 
   // ============================================

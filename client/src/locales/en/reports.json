@@ -565,6 +565,31 @@
         "driver": "Driver"
       },
       "csvSubject": "fines"
+    },
+    "extraCosts": {
+      "title": "Extra km and fuel",
+      "description": "Extra kilometres and fuel costs charged on rentals, by the day the rental started. Click a tile for the list.",
+      "tiles": {
+        "extraKm": "Extra km costs",
+        "fuel": "Fuel costs",
+        "withExtraKm": "Rentals with extra km"
+      },
+      "totalExtraKm": "{{km}} extra km driven in total",
+      "byMonth": "Amount per month",
+      "byCustomer": "Per customer",
+      "byVehicle": "Per vehicle",
+      "noCustomer": "No customer",
+      "columns": {
+        "reservation": "Reservation",
+        "startDate": "Start",
+        "returnDate": "Return",
+        "licensePlate": "License plate",
+        "customer": "Customer",
+        "extraKm": "Extra km",
+        "extraKmCost": "Extra km costs",
+        "fuelCost": "Fuel"
+      },
+      "csvSubject": "extra-km-and-fuel"
     }
   },
   "reportKit": {

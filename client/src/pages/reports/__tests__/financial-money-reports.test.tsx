@@ -50,6 +50,12 @@ beforeEach(() => {
         avgDaysToLink: 3, byMonth: [], byCustomer: [], byVehicle: [], byDriver: [],
       });
     }
+    if (path.startsWith("/api/reports/extra-costs/summary")) {
+      return json({
+        tiles: { extraKm: { count: 1, amount: 30 }, fuel: { count: 2, amount: 65.5 }, withExtraKm: { count: 1, amount: 30 } },
+        totalExtraKm: 120, byMonth: [], byCustomer: [], byVehicle: [],
+      });
+    }
     if (path.startsWith("/api/reports/fines/rows")) return json({ rows: [FINE_ROW], total: 1, page: 1, pageSize: 50 });
     return json([]);
   });
@@ -91,5 +97,24 @@ describe("Financieel - bekeuringenrapport", () => {
     ));
     const dialog = await screen.findByTestId("dialog-fines-report");
     expect(await within(dialog).findByText("Te hard gereden op de A2")).toBeInTheDocument();
+  });
+});
+
+describe("Financieel - meer-km en brandstof", () => {
+  it("zonder reserveringenrecht geen kaart en geen verzoek", async () => {
+    permissions = ["view_reports"];
+    renderTab();
+    expect(await screen.findByTestId("financial-tab")).toBeInTheDocument();
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(screen.queryByTestId("card-extra-costs-report")).not.toBeInTheDocument();
+    expect(fetchedPaths().some((p) => p.startsWith("/api/reports/extra-costs"))).toBe(false);
+  });
+
+  it("met reserveringenrecht: brandstoftegel toont aantal en bedrag", async () => {
+    permissions = ["view_reports", "view_reservations"];
+    renderTab();
+    const tile = await screen.findByTestId("button-extra-costs-tile-fuel");
+    await waitFor(() => expect(within(tile).getByTestId("extra-costs-tile-fuel-value")).toHaveTextContent("2"));
+    expect((tile.textContent ?? "").replace(/\s/g, " ")).toContain(formatCurrency(65.5).replace(/\s/g, " "));
   });
 });

@@ -576,6 +576,31 @@
         "driver": "Conducente"
       },
       "csvSubject": "multe"
+    },
+    "extraCosts": {
+      "title": "Km extra e carburante",
+      "description": "Chilometri extra e costi di carburante addebitati nei noleggi, secondo il giorno di inizio del noleggio. Clicca su un riquadro per l'elenco.",
+      "tiles": {
+        "extraKm": "Costi km extra",
+        "fuel": "Costi carburante",
+        "withExtraKm": "Noleggi con km extra"
+      },
+      "totalExtraKm": "{{km}} km extra percorsi in totale",
+      "byMonth": "Importo per mese",
+      "byCustomer": "Per cliente",
+      "byVehicle": "Per veicolo",
+      "noCustomer": "Nessun cliente",
+      "columns": {
+        "reservation": "Prenotazione",
+        "startDate": "Inizio",
+        "returnDate": "Riconsegna",
+        "licensePlate": "Targa",
+        "customer": "Cliente",
+        "extraKm": "Km extra",
+        "extraKmCost": "Costo km extra",
+        "fuelCost": "Carburante"
+      },
+      "csvSubject": "km-extra-e-carburante"
     }
   },
   "reportKit": {

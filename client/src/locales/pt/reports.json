@@ -576,6 +576,31 @@
         "driver": "Condutor"
       },
       "csvSubject": "multas"
+    },
+    "extraCosts": {
+      "title": "Km extra e combustível",
+      "description": "Quilómetros extra e custos de combustível cobrados nos aluguéis, pelo dia de início do aluguel. Clique num cartão para ver a lista.",
+      "tiles": {
+        "extraKm": "Custos de km extra",
+        "fuel": "Custos de combustível",
+        "withExtraKm": "Aluguéis com km extra"
+      },
+      "totalExtraKm": "{{km}} km extra percorridos no total",
+      "byMonth": "Valor por mês",
+      "byCustomer": "Por cliente",
+      "byVehicle": "Por veículo",
+      "noCustomer": "Sem cliente",
+      "columns": {
+        "reservation": "Reserva",
+        "startDate": "Início",
+        "returnDate": "Devolução",
+        "licensePlate": "Matrícula",
+        "customer": "Cliente",
+        "extraKm": "Km extra",
+        "extraKmCost": "Custo km extra",
+        "fuelCost": "Combustível"
+      },
+      "csvSubject": "km-extra-e-combustivel"
     }
   },
   "reportKit": {

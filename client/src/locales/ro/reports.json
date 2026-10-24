@@ -576,6 +576,31 @@
         "driver": "Șofer"
       },
       "csvSubject": "amenzi"
+    },
+    "extraCosts": {
+      "title": "Km în plus și combustibil",
+      "description": "Kilometri în plus și costuri de combustibil facturate la închirieri, după ziua în care a început închirierea. Faceți clic pe un card pentru listă.",
+      "tiles": {
+        "extraKm": "Costuri km în plus",
+        "fuel": "Costuri combustibil",
+        "withExtraKm": "Închirieri cu km în plus"
+      },
+      "totalExtraKm": "{{km}} km în plus parcurși în total",
+      "byMonth": "Sumă pe lună",
+      "byCustomer": "Pe client",
+      "byVehicle": "Pe vehicul",
+      "noCustomer": "Fără client",
+      "columns": {
+        "reservation": "Rezervare",
+        "startDate": "Început",
+        "returnDate": "Returnare",
+        "licensePlate": "Număr de înmatriculare",
+        "customer": "Client",
+        "extraKm": "Km în plus",
+        "extraKmCost": "Cost km în plus",
+        "fuelCost": "Combustibil"
+      },
+      "csvSubject": "km-in-plus-si-combustibil"
     }
   },
   "reportKit": {

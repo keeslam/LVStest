@@ -565,6 +565,31 @@
         "driver": "Bestuurder"
       },
       "csvSubject": "bekeuringen"
+    },
+    "extraCosts": {
+      "title": "Meer-km en brandstof",
+      "description": "Extra kilometers en brandstofkosten die bij verhuringen in rekening zijn gebracht, op de dag dat de verhuur begon. Klik op een tegel voor de lijst.",
+      "tiles": {
+        "extraKm": "Meer-km-kosten",
+        "fuel": "Brandstofkosten",
+        "withExtraKm": "Verhuur met meer-km"
+      },
+      "totalExtraKm": "In totaal {{km}} extra km gereden",
+      "byMonth": "Bedrag per maand",
+      "byCustomer": "Per klant",
+      "byVehicle": "Per voertuig",
+      "noCustomer": "Geen klant",
+      "columns": {
+        "reservation": "Reservering",
+        "startDate": "Start",
+        "returnDate": "Inlevering",
+        "licensePlate": "Kenteken",
+        "customer": "Klant",
+        "extraKm": "Meer-km",
+        "extraKmCost": "Meer-km-kosten",
+        "fuelCost": "Brandstof"
+      },
+      "csvSubject": "meer-km-en-brandstof"
     }
   },
   "reportKit": {

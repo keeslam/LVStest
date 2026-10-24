@@ -587,6 +587,31 @@
         "driver": "Kierowca"
       },
       "csvSubject": "mandaty"
+    },
+    "extraCosts": {
+      "title": "Dodatkowe km i paliwo",
+      "description": "Dodatkowe kilometry i koszty paliwa naliczone przy wynajmach, według dnia rozpoczęcia wynajmu. Kliknij kafelek, aby zobaczyć listę.",
+      "tiles": {
+        "extraKm": "Koszty dodatkowych km",
+        "fuel": "Koszty paliwa",
+        "withExtraKm": "Wynajmy z dodatkowymi km"
+      },
+      "totalExtraKm": "Łącznie przejechano {{km}} dodatkowych km",
+      "byMonth": "Kwota na miesiąc",
+      "byCustomer": "Według klienta",
+      "byVehicle": "Według pojazdu",
+      "noCustomer": "Brak klienta",
+      "columns": {
+        "reservation": "Rezerwacja",
+        "startDate": "Start",
+        "returnDate": "Zwrot",
+        "licensePlate": "Numer rejestracyjny",
+        "customer": "Klient",
+        "extraKm": "Dodatkowe km",
+        "extraKmCost": "Koszt dodatkowych km",
+        "fuelCost": "Paliwo"
+      },
+      "csvSubject": "dodatkowe-km-i-paliwo"
     }
   },
   "reportKit": {

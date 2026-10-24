@@ -576,6 +576,31 @@
         "driver": "Conductor"
       },
       "csvSubject": "multas"
+    },
+    "extraCosts": {
+      "title": "Km extra y combustible",
+      "description": "Kilómetros extra y costes de combustible cobrados en los alquileres, según el día de inicio del alquiler. Haga clic en un cuadro para ver la lista.",
+      "tiles": {
+        "extraKm": "Costes de km extra",
+        "fuel": "Costes de combustible",
+        "withExtraKm": "Alquileres con km extra"
+      },
+      "totalExtraKm": "{{km}} km extra recorridos en total",
+      "byMonth": "Importe por mes",
+      "byCustomer": "Por cliente",
+      "byVehicle": "Por vehículo",
+      "noCustomer": "Sin cliente",
+      "columns": {
+        "reservation": "Reserva",
+        "startDate": "Inicio",
+        "returnDate": "Devolución",
+        "licensePlate": "Matrícula",
+        "customer": "Cliente",
+        "extraKm": "Km extra",
+        "extraKmCost": "Coste km extra",
+        "fuelCost": "Combustible"
+      },
+      "csvSubject": "km-extra-y-combustible"
     }
   },
   "reportKit": {

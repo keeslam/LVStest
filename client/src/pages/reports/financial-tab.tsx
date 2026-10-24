@@ -11,6 +11,7 @@ import { formatCurrency, formatLicensePlate, formatExpenseCategory } from "@/lib
 import { useAuth } from "@/hooks/use-auth";
 import { UserRole } from "@shared/schema";
 import { FinesReportCard } from "./fines-report-card";
+import { ExtraCostsReportCard } from "./extra-costs-report-card";
 
 // Mirrors server/utils/financial-reports.ts
 interface VehicleFinancialRow {
@@ -202,6 +203,9 @@ export function FinancialTab({ dateRange, selectedVehicle }: FinancialTabProps) 
 
       {/* Fines (needs the fines permission; the card checks it itself) */}
       <FinesReportCard from={from} to={to} vehicleId={selectedVehicle} />
+
+      {/* Extra km and fuel (needs a reservations permission; the card checks it itself) */}
+      <ExtraCostsReportCard from={from} to={to} vehicleId={selectedVehicle} />
 
       {/* Kilometres per month (admin only) */}
       {isAdmin && (
