@@ -17,7 +17,8 @@ import { officeToday } from "@/lib/office-date";
 import { csvDateTime, downloadCsv } from "@/lib/csv";
 import { useToast } from "@/hooks/use-toast";
 import type { EmailLogRow, EmailLogStatus } from "./email-log-detail-dialog";
-import { EmailFailureReasons } from "./email-failure-reasons";
+import { summariseFailureReasons } from "@shared/email-failure";
+import { failureLines } from "@/lib/email-failure-text";
 
 /**
  * The E-maillogboek as a table (Kees, 2026-10-24): search, filters, sortable
@@ -31,6 +32,10 @@ interface EmailLogPage { rows: EmailLogTableRow[]; total: number; page: number; 
 type SortKey = "sentAt" | "subject" | "recipient" | "status";
 type Period = "all" | "today" | "week" | "month" | "year" | "custom";
 const KINDS = ["apk", "maintenance", "custom", "gps", "documents", "fine_linked", "other"] as const;
+const STATUSES = ["sent", "failed", "partial", "problem"] as const;
+
+/** Filters a list starts with: an Analyse tile opens the log already narrowed to what it counts. */
+export interface EmailLogPreset { status?: string; kind?: string; scope?: string }
 const ALL = "all";
 
 /** yyyy-mm-dd plus or minus whole days, on the calendar (no time zone can shift it). */
@@ -54,10 +59,11 @@ export function periodRange(period: Period, today: string = officeToday()): { fr
   }
 }
 
-export function EmailLogTable({ statusOf, kindLabel, onOpenDetail }: {
+export function EmailLogTable({ statusOf, kindLabel, onOpenDetail, preset = {} }: {
   statusOf: (row: EmailLogRow) => EmailLogStatus;
   kindLabel: (template: string) => string;
   onOpenDetail: (row: EmailLogRow) => void;
+  preset?: EmailLogPreset;
 }) {
   const { t } = useTranslation(["notifications", "common"]);
   const h = (key: string, options?: Record<string, unknown>) => t(`notifications:customerCommunications.history.table.${key}`, options);
@@ -65,9 +71,9 @@ export function EmailLogTable({ statusOf, kindLabel, onOpenDetail }: {
   const { toast } = useToast();
 
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<string>(ALL);
-  const [kind, setKind] = useState<string>(ALL);
-  const [scope, setScope] = useState<string>(ALL);
+  const [status, setStatus] = useState<string>(preset.status ?? ALL);
+  const [kind, setKind] = useState<string>(preset.kind ?? ALL);
+  const [scope, setScope] = useState<string>(preset.scope ?? ALL);
   const [period, setPeriod] = useState<Period>("all");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
@@ -139,8 +145,8 @@ export function EmailLogTable({ statusOf, kindLabel, onOpenDetail }: {
           <SelectTrigger className="w-[10.5rem]" aria-label={h("statusFilter")} data-testid="email-log-filter-status"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>{h("statusAll")}</SelectItem>
-            {(["sent", "failed", "partial"] as const).map((s) => (
-              <SelectItem key={s} value={s}>{t(`notifications:customerCommunications.history.statusLabels.${s}`)}</SelectItem>
+            {STATUSES.map((s) => (
+              <SelectItem key={s} value={s}>{s === "problem" ? h("statusProblem") : t(`notifications:customerCommunications.history.statusLabels.${s}`)}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -149,6 +155,7 @@ export function EmailLogTable({ statusOf, kindLabel, onOpenDetail }: {
           <SelectContent>
             <SelectItem value={ALL}>{h("kindAll")}</SelectItem>
             {KINDS.map((k) => <SelectItem key={k} value={k}>{kindLabel(k)}</SelectItem>)}
+            <SelectItem value="rest">{h("kindRest")}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={scope} onValueChange={setScope}>
@@ -216,16 +223,14 @@ export function EmailLogTable({ statusOf, kindLabel, onOpenDetail }: {
                 {(data?.rows ?? []).map((row) => {
                   const rowStatus = statusOf(row);
                   return (
-                    <TableRow key={row.id} data-testid="email-log-row">
+                    <TableRow key={row.id} className="[&>td]:py-2" data-testid="email-log-row">
                       <TableCell className="text-sm">{formatDateTimeNl(row.sentAt)}</TableCell>
                       <TableCell>
                         <div className="truncate font-medium" title={row.subject}>{row.subject}</div>
                         <div className="truncate text-xs text-muted-foreground">
                           {row.recipient ? kindLabel(row.template) : `${t("notifications:customerCommunications.history.runKind")} · ${kindLabel(row.template)}`}
                         </div>
-                        {row.failureReason && (
-                          <div className="mt-1 text-xs" data-testid="email-log-reason"><EmailFailureReasons reason={row.failureReason} /></div>
-                        )}
+                        {row.failureReason && <FailureLine reason={row.failureReason} />}
                       </TableCell>
                       <TableCell className="text-sm">
                         {row.recipient ? (
@@ -269,6 +274,22 @@ export function EmailLogTable({ statusOf, kindLabel, onOpenDetail }: {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/**
+ * Why a mail failed, on one line in the row (Kees, 2026-10-24: the rows were too
+ * tall). The Dutch reason is shown, cut off when long; hovering shows it whole
+ * with the stored technical text, and Details has everything.
+ */
+function FailureLine({ reason }: { reason: string }) {
+  const { t } = useTranslation("notifications");
+  const lines = failureLines(t as any, reason);
+  const { details } = summariseFailureReasons(reason);
+  return (
+    <div className="mt-0.5 truncate text-xs text-red-700" title={[...lines, ...details].join("\n")} data-testid="email-log-reason">
+      {lines.join(" · ")}
     </div>
   );
 }

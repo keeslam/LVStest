@@ -115,12 +115,13 @@ describe("CustomerCommunications - E-maillogboek shows the real log", () => {
     expect(within(rows[2]).getByTestId("email-log-status")).toHaveTextContent(/^verzonden$/);
 
     // The error text of a failed send is on screen, exactly as the log holds it.
-    expect(within(rows[0]).getByText(/No valid email configuration for purpose: custom/)).toBeInTheDocument();
+    // The Dutch reason is one line in the row; the stored text is in its tooltip (rows kept low, 2026-10-24).
+    expect(within(rows[0]).getByTestId("email-log-reason").getAttribute("title")).toMatch(/No valid email configuration for purpose: custom/);
 
     // A run that partly failed says so, with its counts and reason.
     expect(within(rows[1]).getByTestId("email-log-status")).toHaveTextContent(/^deels mislukt$/);
     expect(within(rows[1]).getByText(/8 ontvangers/)).toBeInTheDocument();
-    expect(within(rows[1]).getByText(/No suitable email for DD-444-D/)).toBeInTheDocument();
+    expect(within(rows[1]).getByTestId("email-log-reason").getAttribute("title")).toMatch(/No suitable email for DD-444-D/);
 
     // None of the hard-coded March 2024 rows survives.
     expect(screen.queryByText("APK Reminder - Inspection due soon")).not.toBeInTheDocument();
@@ -303,5 +304,50 @@ describe("periodRange", () => {
     expect(periodRange("month", "2026-10-23")).toEqual({ from: "2026-10-01", to: "2026-10-23" });
     expect(periodRange("year", "2026-10-23")).toEqual({ from: "2026-01-01", to: "2026-10-23" });
     expect(periodRange("all", "2026-10-23")).toBeNull();
+  });
+});
+
+describe("CustomerCommunications - an Analyse tile opens the mails it counts (Kees, 2026-10-24)", () => {
+  const searchesWith = (key: string, value: string) => fetchMock.mock.calls
+    .map(([input]) => (typeof input === "string" ? input : (input as Request)?.url ?? ""))
+    .filter((u) => u.includes("/api/email-logs/search"))
+    .some((u) => new URL(u, "http://localhost").searchParams.get(key) === value);
+
+  async function openAnalyse() {
+    role = UserRole.USER;
+    permissions = [UserPermission.MANAGE_EMAIL_TEMPLATES];
+    const user = userEvent.setup();
+    withClient(<CustomerCommunications />);
+    await user.click(screen.getByRole("tab", { name: "Analyse" }));
+    await screen.findByTestId("analytics-sent");
+    return user;
+  }
+
+  it("Mislukte e-mails opens a dialog with just the failed single mails", async () => {
+    const user = await openAnalyse();
+    await user.click(screen.getByTestId("button-analytics-failed"));
+    const dialog = await screen.findByTestId("dialog-analytics-log");
+    expect(within(dialog).getByRole("heading", { name: "Mislukte e-mails" })).toBeInTheDocument();
+    const rows = await within(dialog).findAllByTestId("email-log-row");
+    expect(rows).toHaveLength(1);
+    expect(within(rows[0]).getByText("Mislukte testmail")).toBeInTheDocument();
+    expect(searchesWith("status", "failed") && searchesWith("scope", "mails")).toBe(true);
+  });
+
+  it("Rondes met mislukkingen asks for runs that failed in full or in part", async () => {
+    const user = await openAnalyse();
+    await user.click(screen.getByTestId("button-analytics-runs-failed"));
+    const dialog = await screen.findByTestId("dialog-analytics-log");
+    const rows = await within(dialog).findAllByTestId("email-log-row");
+    expect(rows).toHaveLength(1);
+    expect(within(rows[0]).getByText("Onderhoudsronde oktober")).toBeInTheDocument();
+    expect(searchesWith("status", "problem")).toBe(true);
+  });
+
+  it("the per-kind tiles are buttons too; Overige e-mails asks for every other kind", async () => {
+    const user = await openAnalyse();
+    await user.click(screen.getByTestId("analytics-kind-other"));
+    await screen.findByTestId("dialog-analytics-log");
+    await waitFor(() => expect(searchesWith("kind", "rest")).toBe(true));
   });
 });

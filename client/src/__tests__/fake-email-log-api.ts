@@ -28,7 +28,7 @@ function matching(rows: Row[], params: URLSearchParams): Row[] {
   const scope = params.get("scope");
   return rows
     .filter((r) => !q || [r.subject, r.recipient, r.failureReason].some((v) => v?.toLowerCase().includes(q)))
-    .filter((r) => !status || statusOf(r) === status)
+    .filter((r) => !status || statusOf(r) === status || (status === "problem" && statusOf(r) !== "sent"))
     .filter((r) => scope !== "mails" || r.recipient !== null)
     .filter((r) => scope !== "runs" || r.recipient === null)
     .sort((a, b) => b.sentAt.localeCompare(a.sentAt) || b.id - a.id)

@@ -412,7 +412,9 @@
           "plates": "Numere de înmatriculare",
           "status": "Stare",
           "reason": "Motiv"
-        }
+        },
+        "statusProblem": "Eșuat sau parțial eșuat",
+        "kindRest": "Toate celelalte tipuri"
       }
     },
     "analytics": {
@@ -428,7 +430,8 @@
       "otherMessages": "Alte e-mailuri",
       "emailsSentLabel": "E-mailuri trimise",
       "failedCount": "{{count}} eșuate",
-      "basisNote": "Numărate din liniile pe destinatar din jurnalul de e-mailuri; o rundă de trimitere se numără separat. Eșecurile dinainte de trimitere (precum un client fără adresă de e-mail) și trimiterile mai vechi fără linie pe destinatar apar doar la runda lor și nu sunt incluse aici."
+      "basisNote": "Numărate din liniile pe destinatar din jurnalul de e-mailuri; o rundă de trimitere se numără separat. Eșecurile dinainte de trimitere (precum un client fără adresă de e-mail) și trimiterile mai vechi fără linie pe destinatar apar doar la runda lor și nu sunt incluse aici.",
+      "tileDialogDescription": "E-mailurile din spatele acestei casete. Puteți căuta, sorta, schimba filtrele și descărca un CSV."
     },
     "templates": {
       "sectionTitle": "Șabloane de e-mail",

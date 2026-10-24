@@ -423,7 +423,9 @@
           "plates": "Numery rejestracyjne",
           "status": "Status",
           "reason": "Powód"
-        }
+        },
+        "statusProblem": "Nieudane lub częściowo nieudane",
+        "kindRest": "Wszystkie pozostałe rodzaje"
       }
     },
     "analytics": {
@@ -439,7 +441,8 @@
       "otherMessages": "Pozostałe e-maile",
       "emailsSentLabel": "Wysłane e-maile",
       "failedCount": "Nieudane: {{count}}",
-      "basisNote": "Policzone na podstawie wierszy według odbiorcy w dzienniku e-maili; cykl wysyłki jest liczony osobno. Niepowodzenia przed wysłaniem (np. klient bez adresu e-mail) oraz starsze wysyłki bez wiersza według odbiorcy są widoczne tylko przy swoim cyklu i nie są tu uwzględniane."
+      "basisNote": "Policzone na podstawie wierszy według odbiorcy w dzienniku e-maili; cykl wysyłki jest liczony osobno. Niepowodzenia przed wysłaniem (np. klient bez adresu e-mail) oraz starsze wysyłki bez wiersza według odbiorcy są widoczne tylko przy swoim cyklu i nie są tu uwzględniane.",
+      "tileDialogDescription": "E-maile kryjące się za tym kafelkiem. Możesz wyszukiwać, sortować, zmieniać filtry i pobrać plik CSV."
     },
     "templates": {
       "sectionTitle": "Szablony e-maili",

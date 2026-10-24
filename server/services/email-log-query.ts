@@ -18,12 +18,15 @@ export const EMAIL_LOG_EXPORT_LIMIT = 20000;
 /** Kinds with their own label in the log; anything else is "other". */
 export const EMAIL_LOG_KINDS = ["apk", "maintenance", "custom", "gps", "documents", "fine_linked"] as const;
 
-const STATUSES = ["sent", "failed", "partial"] as const;
+// "problem" is failed or partial: the Analyse tile "Rondes met mislukkingen".
+const STATUSES = ["sent", "failed", "partial", "problem"] as const;
 const SCOPES = ["all", "mails", "runs"] as const;
 const SORTS = ["sentAt", "subject", "recipient", "status"] as const;
 
 type Status = (typeof STATUSES)[number];
-type Kind = (typeof EMAIL_LOG_KINDS)[number] | "other";
+// "other" is a kind without its own label; "rest" is everything but apk,
+// maintenance and custom, which is what the Analyse tile "Overige e-mails" counts.
+type Kind = (typeof EMAIL_LOG_KINDS)[number] | "other" | "rest";
 type Scope = (typeof SCOPES)[number];
 type Sort = (typeof SORTS)[number];
 
@@ -61,7 +64,7 @@ export function parseEmailLogQuery(input: Record<string, unknown>): EmailLogQuer
   return {
     q: typeof input.q === "string" ? input.q.trim().slice(0, 200) : "",
     status: one(input.status, STATUSES),
-    kind: one(input.kind, [...EMAIL_LOG_KINDS, "other"] as const),
+    kind: one(input.kind, [...EMAIL_LOG_KINDS, "other", "rest"] as const),
     scope: one(input.scope, SCOPES) ?? "all",
     from: isoDate(input.from),
     to: isoDate(input.to),
@@ -111,9 +114,12 @@ function whereSql(query: EmailLogQuery): SQL {
     parts.push(sql`(${sql.join(or, sql` OR `)})`);
   }
 
-  if (query.status) parts.push(sql`${STATUS_SQL} = ${query.status}`);
+  if (query.status === "problem") parts.push(sql`${STATUS_SQL} IN ('failed', 'partial')`);
+  else if (query.status) parts.push(sql`${STATUS_SQL} = ${query.status}`);
 
-  if (query.kind === "other") {
+  if (query.kind === "rest") {
+    parts.push(sql`${emailLogs.template} NOT IN ('apk', 'maintenance', 'custom')`);
+  } else if (query.kind === "other") {
     parts.push(sql`${emailLogs.template} NOT IN (${sql.join(EMAIL_LOG_KINDS.map((k) => sql`${k}`), sql`, `)})`);
   } else if (query.kind) {
     parts.push(sql`${emailLogs.template} = ${query.kind}`);

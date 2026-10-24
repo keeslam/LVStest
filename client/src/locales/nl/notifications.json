@@ -401,7 +401,9 @@
           "plates": "Kentekens",
           "status": "Status",
           "reason": "Reden"
-        }
+        },
+        "statusProblem": "Mislukt of deels mislukt",
+        "kindRest": "Alle overige soorten"
       }
     },
     "analytics": {
@@ -417,7 +419,8 @@
       "otherMessages": "Overige e-mails",
       "emailsSentLabel": "E-mails verstuurd",
       "failedCount": "{{count}} mislukt",
-      "basisNote": "Geteld uit de regels per ontvanger in het e-maillogboek; een verzendronde telt apart. Mislukkingen vóór het versturen (zoals een klant zonder e-mailadres) en oudere verzendingen zonder regel per ontvanger staan alleen bij hun ronde en tellen hier niet mee."
+      "basisNote": "Geteld uit de regels per ontvanger in het e-maillogboek; een verzendronde telt apart. Mislukkingen vóór het versturen (zoals een klant zonder e-mailadres) en oudere verzendingen zonder regel per ontvanger staan alleen bij hun ronde en tellen hier niet mee.",
+      "tileDialogDescription": "De e-mails achter deze tegel. Je kunt zoeken, sorteren, de filters aanpassen en een CSV downloaden."
     },
     "templates": {
       "sectionTitle": "E-mailsjablonen",

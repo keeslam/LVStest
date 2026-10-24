@@ -401,7 +401,9 @@
           "plates": "Plates",
           "status": "Status",
           "reason": "Reason"
-        }
+        },
+        "statusProblem": "Failed or partly failed",
+        "kindRest": "All other kinds"
       }
     },
     "analytics": {
@@ -417,7 +419,8 @@
       "otherMessages": "Other emails",
       "emailsSentLabel": "Emails sent",
       "failedCount": "{{count}} failed",
-      "basisNote": "Counted from the per-recipient lines in the email log; a send run is counted separately. Failures before sending (such as a customer without an email address) and older sends without a per-recipient line appear only on their run and are not counted here."
+      "basisNote": "Counted from the per-recipient lines in the email log; a send run is counted separately. Failures before sending (such as a customer without an email address) and older sends without a per-recipient line appear only on their run and are not counted here.",
+      "tileDialogDescription": "The e-mails behind this tile. You can search, sort, change the filters and download a CSV."
     },
     "templates": {
       "sectionTitle": "Email Templates",

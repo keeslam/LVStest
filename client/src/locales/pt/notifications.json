@@ -412,7 +412,9 @@
           "plates": "Matrículas",
           "status": "Estado",
           "reason": "Motivo"
-        }
+        },
+        "statusProblem": "Falhado ou parcialmente falhado",
+        "kindRest": "Todos os outros tipos"
       }
     },
     "analytics": {
@@ -428,7 +430,8 @@
       "otherMessages": "Outros e-mails",
       "emailsSentLabel": "E-mails enviados",
       "failedCount": "{{count}} com falha",
-      "basisNote": "Contagem a partir das linhas por destinatário no registo de e-mails; um envio em lote conta em separado. As falhas antes do envio (como um cliente sem endereço de e-mail) e os envios mais antigos sem linha por destinatário constam apenas do respetivo envio e não são contados aqui."
+      "basisNote": "Contagem a partir das linhas por destinatário no registo de e-mails; um envio em lote conta em separado. As falhas antes do envio (como um cliente sem endereço de e-mail) e os envios mais antigos sem linha por destinatário constam apenas do respetivo envio e não são contados aqui.",
+      "tileDialogDescription": "Os e-mails por trás deste cartão. Pode pesquisar, ordenar, alterar os filtros e descarregar um CSV."
     },
     "templates": {
       "sectionTitle": "Modelos de e-mail",

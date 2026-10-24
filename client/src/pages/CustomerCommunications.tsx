@@ -33,7 +33,7 @@ import { classifySendResult, firstFailureCode } from "@/lib/communication-send";
 import { failureCodeText } from "@/lib/email-failure-text";
 import { EmailFailureReasons } from "@/components/communications/email-failure-reasons";
 import { EmailLogDetailDialog, type EmailLogRow, type EmailLogStatus } from "@/components/communications/email-log-detail-dialog";
-import { EmailLogTable } from "@/components/communications/email-log-table";
+import { EmailLogTable, type EmailLogPreset } from "@/components/communications/email-log-table";
 
 function emailLogStatus(row: EmailLogRow): EmailLogStatus {
   if (row.result === 'sent') return 'sent';
@@ -89,6 +89,8 @@ export default function CustomerCommunications() {
   const [previewRecipientKey, setPreviewRecipientKey] = useState<string | null>(null);
   const [massSendAcknowledged, setMassSendAcknowledged] = useState(false);
   const [logDetailRow, setLogDetailRow] = useState<EmailLogRow | null>(null);
+  // An Analyse tile opens the log narrowed to what it counts (Kees, 2026-10-24).
+  const [logPreset, setLogPreset] = useState<{ title: string; preset: EmailLogPreset } | null>(null);
 
   // Vehicle filter is now based on communication mode
   const vehicleFilter = communicationMode === 'custom' ? 'all' : communicationMode;
@@ -1512,69 +1514,30 @@ export default function CustomerCommunications() {
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center">
-                      <div className="p-3 bg-green-100 rounded-full mr-4">
-                        <CheckCircle className="h-6 w-6 text-green-600" />
+                {([
+                  ['sent', emailLogSummary.sent, 'totalEmailsSent', CheckCircle, 'bg-green-100', 'text-green-600', { scope: 'mails', status: 'sent' }],
+                  ['failed', emailLogSummary.failed, 'failedEmails', AlertTriangle, 'bg-red-100', 'text-red-600', { scope: 'mails', status: 'failed' }],
+                  ['runs', emailLogSummary.runs, 'totalCampaigns', Mail, 'bg-blue-100', 'text-blue-600', { scope: 'runs' }],
+                  ['runs-failed', emailLogSummary.runsWithFailures, 'runsWithFailures', Users, 'bg-purple-100', 'text-purple-600', { scope: 'runs', status: 'problem' }],
+                ] as const).map(([id, value, labelKey, Icon, bg, color, preset]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setLogPreset({ title: t(`customerCommunications.analytics.${labelKey}`), preset })}
+                    className="rounded-lg border bg-card text-left shadow-sm transition hover:border-primary/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    data-testid={`button-analytics-${id}`}
+                  >
+                    <div className="flex items-center p-6">
+                      <div className={`p-3 ${bg} rounded-full mr-4`}>
+                        <Icon className={`h-6 w-6 ${color}`} />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-green-600" data-testid="analytics-sent">
-                          {emailLogSummary.sent}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{t('customerCommunications.analytics.totalEmailsSent')}</p>
+                        <p className={`text-2xl font-bold ${color}`} data-testid={`analytics-${id}`}>{value}</p>
+                        <p className="text-sm text-muted-foreground">{t(`customerCommunications.analytics.${labelKey}`)}</p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center">
-                      <div className="p-3 bg-red-100 rounded-full mr-4">
-                        <AlertTriangle className="h-6 w-6 text-red-600" />
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold text-red-600" data-testid="analytics-failed">
-                          {emailLogSummary.failed}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{t('customerCommunications.analytics.failedEmails')}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center">
-                      <div className="p-3 bg-blue-100 rounded-full mr-4">
-                        <Mail className="h-6 w-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold text-blue-600" data-testid="analytics-runs">
-                          {emailLogSummary.runs}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{t('customerCommunications.analytics.totalCampaigns')}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center">
-                      <div className="p-3 bg-purple-100 rounded-full mr-4">
-                        <Users className="h-6 w-6 text-purple-600" />
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold text-purple-600" data-testid="analytics-runs-failed">
-                          {emailLogSummary.runsWithFailures}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{t('customerCommunications.analytics.runsWithFailures')}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                  </button>
+                ))}
               </div>
 
               <Card>
@@ -1585,19 +1548,25 @@ export default function CustomerCommunications() {
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {([
-                      ['apk', 'apkNotifications', 'text-orange-600'],
-                      ['maintenance', 'maintenanceReminders', 'text-blue-600'],
-                      ['custom', 'customMessages', 'text-green-600'],
-                      ['other', 'otherMessages', 'text-muted-foreground'],
-                    ] as const).map(([kind, labelKey, color]) => (
-                      <div key={kind} className="p-4 border rounded-lg" data-testid={`analytics-kind-${kind}`}>
+                      ['apk', 'apkNotifications', 'text-orange-600', 'apk'],
+                      ['maintenance', 'maintenanceReminders', 'text-blue-600', 'maintenance'],
+                      ['custom', 'customMessages', 'text-green-600', 'custom'],
+                      ['other', 'otherMessages', 'text-muted-foreground', 'rest'],
+                    ] as const).map(([kind, labelKey, color, filterKind]) => (
+                      <button
+                        key={kind}
+                        type="button"
+                        onClick={() => setLogPreset({ title: t(`customerCommunications.analytics.${labelKey}`), preset: { scope: 'mails', kind: filterKind } })}
+                        className="p-4 border rounded-lg text-left transition hover:border-primary/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        data-testid={`analytics-kind-${kind}`}
+                      >
                         <h4 className="font-medium text-sm mb-2">{t(`customerCommunications.analytics.${labelKey}`)}</h4>
                         <div className={`text-2xl font-bold ${color}`}>{emailLogSummary.kinds[kind].sent}</div>
                         <p className="text-xs text-muted-foreground">{t('customerCommunications.analytics.emailsSentLabel')}</p>
                         <p className="text-xs text-muted-foreground">
                           {t('customerCommunications.analytics.failedCount', { count: emailLogSummary.kinds[kind].failed })}
                         </p>
-                      </div>
+                      </button>
                     ))}
                   </div>
                   <p className="text-xs text-muted-foreground mt-4" data-testid="analytics-basis-note">
@@ -2258,6 +2227,18 @@ export default function CustomerCommunications() {
               </>
             );
           })()}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={logPreset !== null} onOpenChange={(open) => { if (!open) setLogPreset(null); }}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto" data-testid="dialog-analytics-log">
+          <DialogHeader>
+            <DialogTitle>{logPreset?.title}</DialogTitle>
+            <DialogDescription>{t('customerCommunications.analytics.tileDialogDescription')}</DialogDescription>
+          </DialogHeader>
+          {logPreset && (
+            <EmailLogTable statusOf={emailLogStatus} kindLabel={logKindLabel} onOpenDetail={setLogDetailRow} preset={logPreset.preset} />
+          )}
         </DialogContent>
       </Dialog>
 

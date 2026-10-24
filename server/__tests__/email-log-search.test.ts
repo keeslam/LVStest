@@ -91,6 +91,12 @@ describe("GET /api/email-logs/search, /summary, /export", () => {
     expect(gps.body.rows.map((r: { subject: string }) => r.subject)).toEqual([`${MARK} GPS melding`]);
     expect((await search({ kind: "other" })).body.total).toBe(0);
 
+    // the Analyse tiles: failed-or-partial, and every kind but apk/maintenance/custom
+    const problems = await search({ status: "problem" });
+    expect(problems.body.rows.map((r: { subject: string }) => r.subject).sort()).toEqual([`${MARK} Eigen bericht`, `${MARK} Onderhoudsronde`]);
+    const rest = await search({ kind: "rest" });
+    expect(rest.body.rows.map((r: { subject: string }) => r.subject)).toEqual([`${MARK} GPS melding`]);
+
     const runs = await search({ scope: "runs" });
     expect(runs.body.total).toBe(1);
     const mails = await search({ scope: "mails" });

@@ -605,13 +605,13 @@ describe("A-13-13 and the log in Dutch", () => {
   it("shows the reason in Dutch with the stored text kept as the detail", async () => {
     const rows = await openLog(userEvent.setup());
     expect(within(rows[0]).getByText(/geen werkende e-mailconfiguratie/i)).toBeInTheDocument();
-    expect(within(rows[0]).getByText("NO_EMAIL_CONFIG: No valid email configuration for purpose: custom")).toBeInTheDocument();
+    expect(within(rows[0]).getByTestId("email-log-reason").getAttribute("title")).toContain("NO_EMAIL_CONFIG: No valid email configuration for purpose: custom");
     expect(within(rows[2]).getByText(/duurde te lang/i)).toBeInTheDocument();
     // A run counts its reasons per code.
     expect(within(rows[3]).getByText(/2× Geen geschikt e-mailadres/)).toBeInTheDocument();
     // A row from before the codes: the generic Dutch line plus the stored text.
     expect(within(rows[4]).getByText(/Verzenden mislukt/)).toBeInTheDocument();
-    expect(within(rows[4]).getByText("No valid email configuration for purpose: custom")).toBeInTheDocument();
+    expect(within(rows[4]).getByTestId("email-log-reason").getAttribute("title")).toContain("No valid email configuration for purpose: custom");
   });
 
   it("opens a detail view of a row with everything the log knows, and says the body is not kept", async () => {

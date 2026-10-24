@@ -412,7 +412,9 @@
           "plates": "Targhe",
           "status": "Stato",
           "reason": "Motivo"
-        }
+        },
+        "statusProblem": "Non riuscita o in parte non riuscita",
+        "kindRest": "Tutti gli altri tipi"
       }
     },
     "analytics": {
@@ -428,7 +430,8 @@
       "otherMessages": "Altre e-mail",
       "emailsSentLabel": "E-mail inviate",
       "failedCount": "{{count}} non riuscite",
-      "basisNote": "Conteggio basato sulle righe per destinatario nel registro e-mail; un invio multiplo viene conteggiato a parte. Gli errori precedenti all'invio (ad esempio un cliente senza indirizzo e-mail) e gli invii meno recenti senza riga per destinatario compaiono solo nel relativo invio e qui non vengono conteggiati."
+      "basisNote": "Conteggio basato sulle righe per destinatario nel registro e-mail; un invio multiplo viene conteggiato a parte. Gli errori precedenti all'invio (ad esempio un cliente senza indirizzo e-mail) e gli invii meno recenti senza riga per destinatario compaiono solo nel relativo invio e qui non vengono conteggiati.",
+      "tileDialogDescription": "Le e-mail dietro questo riquadro. Puoi cercare, ordinare, cambiare i filtri e scaricare un CSV."
     },
     "templates": {
       "sectionTitle": "Modelli e-mail",

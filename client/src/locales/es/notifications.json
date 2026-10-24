@@ -412,7 +412,9 @@
           "plates": "Matrículas",
           "status": "Estado",
           "reason": "Motivo"
-        }
+        },
+        "statusProblem": "Fallido o parcialmente fallido",
+        "kindRest": "Todos los demás tipos"
       }
     },
     "analytics": {
@@ -428,7 +430,8 @@
       "otherMessages": "Otros correos",
       "emailsSentLabel": "Correos enviados",
       "failedCount": "{{count}} fallidos",
-      "basisNote": "Contados a partir de las líneas por destinatario del registro de correos; un envío masivo cuenta aparte. Los fallos anteriores al envío (como un cliente sin dirección de correo) y los envíos antiguos sin línea por destinatario solo figuran en su envío y no se cuentan aquí."
+      "basisNote": "Contados a partir de las líneas por destinatario del registro de correos; un envío masivo cuenta aparte. Los fallos anteriores al envío (como un cliente sin dirección de correo) y los envíos antiguos sin línea por destinatario solo figuran en su envío y no se cuentan aquí.",
+      "tileDialogDescription": "Los correos detrás de este recuadro. Puede buscar, ordenar, cambiar los filtros y descargar un CSV."
     },
     "templates": {
       "sectionTitle": "Plantillas de correo",
