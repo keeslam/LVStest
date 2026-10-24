@@ -64,6 +64,20 @@ export function ReportDetailDialog<Row, S extends string>({
   const [busy, setBusy] = useState<"csv" | "print" | null>(null);
   const [printHtml, setPrintHtml] = useState<string | null>(null);
 
+  // A parent may keep this dialog mounted and reuse it for another tile: on a
+  // new tile, or on opening again, start over with the default sort on page 1.
+  // Adjusted during render (not in an effect) so no request goes out with the
+  // previous tile's page or sort first.
+  const [shownFor, setShownFor] = useState({ tile, open });
+  if (shownFor.tile !== tile || shownFor.open !== open) {
+    setShownFor({ tile, open });
+    if (open) {
+      setSort(defaultSort);
+      setPage(1);
+      setPageSize(50);
+    }
+  }
+
   const { data, isLoading, isError, isFetching } = useQuery<ReportPage<Row>>({
     queryKey: [`${endpoint}/rows`, { ...params, tile, sort: sort.key, dir: sort.dir, page, pageSize }],
     placeholderData: keepPreviousData,

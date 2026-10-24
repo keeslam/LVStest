@@ -63,6 +63,45 @@ const COLUMNS: ReportColumn<Row, "date" | "amount">[] = [
   { id: "amount", label: "Bedrag", sortKey: "amount", align: "right", cell: (r) => String(r.amount), csv: () => "12,50" },
 ];
 
+/** Rows answer with 120 rows in total, so the pager shows and page 2 exists. */
+function manyRows() {
+  fetchMock.mockImplementation(async (input: unknown) => {
+    const path = pathOf(input);
+    const q = new URLSearchParams(path.split("?")[1] ?? "");
+    if (path.startsWith("/api/reports/x/rows")) {
+      return json({ rows: [ROW], total: 120, page: Number(q.get("page")), pageSize: Number(q.get("pageSize")) });
+    }
+    return json({ rows: [ROW], truncated: false });
+  });
+}
+
+function dialog(tile = "a", open = true) {
+  return (
+    <ReportDetailDialog<Row, "date" | "amount">
+      open={open}
+      onOpenChange={() => {}}
+      title="Details"
+      endpoint="/api/reports/x"
+      params={{ from: "2026-01-01", to: "2026-12-31" }}
+      tile={tile}
+      columns={COLUMNS}
+      defaultSort={{ key: "date", dir: "desc" }}
+      rowKey={(r) => r.id}
+      csvSubject="x-subject"
+      reportName="x"
+      testId="x"
+    />
+  );
+}
+
+function renderKept(node: React.ReactNode) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { queryFn: getQueryFn({ on401: "throw" }), retry: false, gcTime: 0 } },
+  });
+  const view = render(<QueryClientProvider client={client}>{node}</QueryClientProvider>);
+  return { rerender: (next: React.ReactNode) => view.rerender(<QueryClientProvider client={client}>{next}</QueryClientProvider>) };
+}
+
 function openDialog() {
   return withClient(
     <ReportDetailDialog<Row, "date" | "amount">
@@ -99,9 +138,59 @@ describe("report kit", () => {
     openDialog();
     await waitFor(() => expect(lastPath()).toBe("/api/reports/x/rows?from=2026-01-01&to=2026-12-31&tile=a&sort=date&dir=desc&page=1&pageSize=50"));
     expect(await screen.findByText("2026-03-01")).toBeInTheDocument();
+  });
+
+  it("sorteren zet de dialoog terug op pagina 1", async () => {
+    manyRows();
+    const user = userEvent.setup();
+    renderKept(dialog());
+    await screen.findByText("2026-03-01");
+    await user.click(screen.getByTestId("pager-x-next-page"));
+    await waitFor(() => expect(lastPath()).toContain("sort=date&dir=desc&page=2&pageSize=50"));
     await user.click(screen.getByTestId("sort-x-amount"));
-    await waitFor(() => expect(lastPath()).toContain("sort=amount&dir=asc"));
-    expect(lastPath()).toContain("page=1");
+    await waitFor(() => expect(lastPath()).toBe("/api/reports/x/rows?from=2026-01-01&to=2026-12-31&tile=a&sort=amount&dir=asc&page=1&pageSize=50"));
+  });
+
+  it("een andere paginagrootte zet de dialoog terug op pagina 1", async () => {
+    manyRows();
+    const user = userEvent.setup();
+    renderKept(dialog());
+    await screen.findByText("2026-03-01");
+    await user.click(screen.getByTestId("pager-x-next-page"));
+    await waitFor(() => expect(lastPath()).toContain("page=2&pageSize=50"));
+    await user.selectOptions(screen.getByTestId("pager-x-page-size"), "25");
+    await waitFor(() => expect(lastPath()).toContain("page=1&pageSize=25"));
+  });
+
+  it("een andere tegel in dezelfde dialoog begint opnieuw: standaardsortering, pagina 1", async () => {
+    manyRows();
+    const user = userEvent.setup();
+    const { rerender } = renderKept(dialog("a"));
+    await screen.findByText("2026-03-01");
+    await user.click(screen.getByTestId("pager-x-next-page"));
+    await user.click(screen.getByTestId("sort-x-amount"));
+    await user.click(screen.getByTestId("pager-x-next-page"));
+    await waitFor(() => expect(lastPath()).toContain("tile=a&sort=amount&dir=asc&page=2"));
+    const before = rowPaths().length;
+    rerender(dialog("b"));
+    await waitFor(() => expect(lastPath()).toBe("/api/reports/x/rows?from=2026-01-01&to=2026-12-31&tile=b&sort=date&dir=desc&page=1&pageSize=50"));
+    // No request for tile b with the old page or sort went out first.
+    expect(rowPaths().slice(before).every((p) => p.includes("sort=date&dir=desc&page=1"))).toBe(true);
+  });
+
+  it("opnieuw openen begint opnieuw: standaardsortering, pagina 1", async () => {
+    manyRows();
+    const user = userEvent.setup();
+    const { rerender } = renderKept(dialog("a"));
+    await screen.findByText("2026-03-01");
+    await user.click(screen.getByTestId("sort-x-amount"));
+    await user.click(screen.getByTestId("pager-x-next-page"));
+    await waitFor(() => expect(lastPath()).toContain("sort=amount&dir=asc&page=2"));
+    rerender(dialog("a", false));
+    const before = rowPaths().length;
+    rerender(dialog("a", true));
+    await waitFor(() => expect(rowPaths().length).toBeGreaterThan(before));
+    expect(rowPaths().slice(before).every((p) => p.endsWith("tile=a&sort=date&dir=desc&page=1&pageSize=50"))).toBe(true);
   });
 
   it("CSV haalt alle rijen via /export", async () => {
