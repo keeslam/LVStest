@@ -1,6 +1,6 @@
 /**
- * Rapporten fase 2 - the money report cards on Rapporten > Financieel. The fines
- * card needs the fines permission next to the report permission: without it the
+ * Rapporten fase 2 - the money report cards on Rapporten > Financieel. Every money
+ * card needs only the report permission (Kees): without it the
  * card is not there and /api/reports/fines is never asked; with it the tiles show
  * count and amount, and a tile opens its rows from the server.
  *
@@ -95,8 +95,8 @@ function renderTab() {
 }
 
 describe("Financieel - bekeuringenrapport", () => {
-  it("zonder bekeuringenrecht geen kaart en geen verzoek", async () => {
-    permissions = ["view_reports"];
+  it("zonder rapportrecht geen kaart en geen verzoek", async () => {
+    permissions = ["view_fines", "view_reservations", "view_vehicles"];
     renderTab();
     expect(await screen.findByTestId("financial-tab")).toBeInTheDocument();
     await new Promise((resolve) => setTimeout(resolve, 30));
@@ -104,8 +104,8 @@ describe("Financieel - bekeuringenrapport", () => {
     expect(fetchedPaths().some((p) => p.startsWith("/api/reports/fines"))).toBe(false);
   });
 
-  it("met bekeuringenrecht: tegel met aantal en bedrag, klik opent de rijen van de server", async () => {
-    permissions = ["view_reports", "view_fines"];
+  it("alleen rapportrecht: tegel met aantal en bedrag, klik opent de rijen van de server", async () => {
+    permissions = ["view_reports"];
     const user = userEvent.setup();
     renderTab();
     const tile = await screen.findByTestId("button-fines-tile-legacy");
@@ -121,8 +121,8 @@ describe("Financieel - bekeuringenrapport", () => {
 });
 
 describe("Financieel - meer-km en brandstof", () => {
-  it("zonder reserveringenrecht geen kaart en geen verzoek", async () => {
-    permissions = ["view_reports"];
+  it("zonder rapportrecht geen kaart en geen verzoek", async () => {
+    permissions = ["view_fines", "view_reservations", "view_vehicles"];
     renderTab();
     expect(await screen.findByTestId("financial-tab")).toBeInTheDocument();
     await new Promise((resolve) => setTimeout(resolve, 30));
@@ -130,8 +130,8 @@ describe("Financieel - meer-km en brandstof", () => {
     expect(fetchedPaths().some((p) => p.startsWith("/api/reports/extra-costs"))).toBe(false);
   });
 
-  it("met reserveringenrecht: brandstoftegel toont aantal en bedrag", async () => {
-    permissions = ["view_reports", "view_reservations"];
+  it("alleen rapportrecht: brandstoftegel toont aantal en bedrag", async () => {
+    permissions = ["view_reports"];
     renderTab();
     const tile = await screen.findByTestId("button-extra-costs-tile-fuel");
     await waitFor(() => expect(within(tile).getByTestId("extra-costs-tile-fuel-value")).toHaveTextContent("2"));
@@ -140,8 +140,8 @@ describe("Financieel - meer-km en brandstof", () => {
 });
 
 describe("Financieel - transport en facturatie", () => {
-  it("zonder voertuigen- of reserveringenrecht geen kaart en geen verzoek", async () => {
-    permissions = ["view_reports"];
+  it("zonder rapportrecht geen kaart en geen verzoek", async () => {
+    permissions = ["view_fines", "view_reservations", "view_vehicles"];
     renderTab();
     expect(await screen.findByTestId("financial-tab")).toBeInTheDocument();
     await new Promise((resolve) => setTimeout(resolve, 30));
@@ -149,8 +149,8 @@ describe("Financieel - transport en facturatie", () => {
     expect(fetchedPaths().some((p) => p.startsWith("/api/reports/transport-billing"))).toBe(false);
   });
 
-  it("met recht: tegel toont aantal, bedrag en hoeveel zonder bedrag", async () => {
-    permissions = ["view_reports", "view_vehicles"];
+  it("alleen rapportrecht: tegel toont aantal, bedrag en hoeveel zonder bedrag", async () => {
+    permissions = ["view_reports"];
     renderTab();
     const tile = await screen.findByTestId("button-transport-billing-tile-notInvoiced");
     await waitFor(() => expect(within(tile).getByTestId("transport-billing-tile-notInvoiced-value")).toHaveTextContent("2"));
@@ -160,7 +160,7 @@ describe("Financieel - transport en facturatie", () => {
   });
 
   it("rij zonder bedrag: 'bedrag ontbreekt' in de lijst en een lege CSV-cel", async () => {
-    permissions = ["view_reports", "view_vehicles"];
+    permissions = ["view_reports"];
     downloadCsv.mockClear();
     const user = userEvent.setup();
     renderTab();
@@ -178,7 +178,7 @@ describe("Financieel - transport en facturatie", () => {
   });
 
   it("de tegel voor alle perioden vraagt de lijst zonder periode", async () => {
-    permissions = ["view_reports", "view_reservations"];
+    permissions = ["manage_reports"];
     const user = userEvent.setup();
     renderTab();
     await user.click(await screen.findByTestId("button-transport-billing-tile-openAllTime"));

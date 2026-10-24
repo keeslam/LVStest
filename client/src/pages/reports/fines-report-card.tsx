@@ -2,7 +2,7 @@
  * Rapporten fase 2, onderdeel 1: the fines report on Rapporten > Financieel.
  * Tiles per step (new, linked, cancelled, old statuses, total), the average
  * time from receipt to linking, a stacked month chart, three top lists and the
- * rows behind a tile. Only shown to someone who may open the fines.
+ * rows behind a tile. Needs only the report permission, like the Financieel tab.
  */
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -30,7 +30,7 @@ const TILE_TONE: Partial<Record<FineReportTile, ReportTile<FineReportTile>["tone
 
 export function FinesReportCard({ from, to, vehicleId }: { from: string; to: string; vehicleId?: string }) {
   const { t } = useTranslation("reports");
-  const allowed = useHasPermission(UserPermission.VIEW_FINES, UserPermission.MANAGE_FINES);
+  const allowed = useHasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS);
   const [openTile, setOpenTile] = useState<FineReportTile | null>(null);
   const [shownTile, setShownTile] = useState<FineReportTile>("total");
 

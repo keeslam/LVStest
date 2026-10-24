@@ -47,23 +47,12 @@ function parseVehicleIdFilter(query: Record<string, unknown>): number | null {
 // Moved verbatim out of server/routes.ts (registerRoutes) - see git history for context.
 export function registerReportRoutes(app: Express): void {
 
-  // Rapporten fase 2: fines report on Rapporten > Financieel (needs the report and the fines permission)
-  mountReport(app, "/api/reports/fines", [
-    hasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS),
-    hasPermission(UserPermission.VIEW_FINES, UserPermission.MANAGE_FINES),
-  ], finesReport);
-
-  // Rapporten fase 2: extra km and fuel report on Rapporten > Financieel (needs the report and a reservations permission)
-  mountReport(app, "/api/reports/extra-costs", [
-    hasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS),
-    hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS),
-  ], extraCostsReport);
-
-  // Rapporten fase 2: transport billing report on Rapporten > Financieel (needs the report and a vehicles or reservations permission, like GET /api/transports)
-  mountReport(app, "/api/reports/transport-billing", [
-    hasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS),
-    hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES, UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS),
-  ], transportBillingReport);
+  // Rapporten fase 2: the money reports on Rapporten > Financieel (fines, extra km and fuel, transport billing).
+  // Like the Financieel tab itself they need only the report permission (Kees, 2026-10-25), no extra source right.
+  const moneyReportGuards = [hasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS)];
+  mountReport(app, "/api/reports/fines", moneyReportGuards, finesReport);
+  mountReport(app, "/api/reports/extra-costs", moneyReportGuards, extraCostsReport);
+  mountReport(app, "/api/reports/transport-billing", moneyReportGuards, transportBillingReport);
 
 
   // ============================================

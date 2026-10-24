@@ -1,7 +1,7 @@
 /**
  * Rapporten fase 2, Task 4 - the extra km and fuel report: same set as
  * "waarvan extra kosten" on Financieel, every tile equal to its list, and the
- * permission pair (rapport + reserveringen).
+ * report permission alone (Kees: money reports need only the report right).
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { eq } from "drizzle-orm";
@@ -73,12 +73,10 @@ describe("extra km and fuel report", () => {
     await expectTilesMatchRows(staff, "/api/reports/extra-costs", Q, EXTRA_COSTS_TILES);
   });
 
-  it("rechten: rapport + reserveringen", async () => {
-    for (const p of [["view_reports"], ["view_reservations"]]) {
-      const a = await agentFor(p);
-      expect((await a.get("/api/reports/extra-costs/summary").query(Q)).status).toBe(403);
-    }
-    const both = await agentFor(["view_reports", "view_reservations"]);
-    expect((await both.get("/api/reports/extra-costs/summary").query(Q)).status).toBe(200);
+  it("rechten: alleen het rapportrecht", async () => {
+    const reservationsOnly = await agentFor(["view_reservations", "manage_reservations"]);
+    expect((await reservationsOnly.get("/api/reports/extra-costs/summary").query(Q)).status).toBe(403);
+    const reportsOnly = await agentFor(["view_reports"]);
+    expect((await reportsOnly.get("/api/reports/extra-costs/summary").query(Q)).status).toBe(200);
   });
 });

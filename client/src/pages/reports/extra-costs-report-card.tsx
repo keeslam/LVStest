@@ -2,7 +2,7 @@
  * Rapporten fase 2, onderdeel 2: the extra km and fuel report on Rapporten >
  * Financieel. Tiles (extra km costs, fuel costs, rentals with extra km), the
  * total of extra km driven, a stacked month chart, two top lists and the rows
- * behind a tile. Only shown to someone who may open the reservations.
+ * behind a tile. Needs only the report permission, like the Financieel tab.
  */
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -29,7 +29,7 @@ const ENDPOINT = "/api/reports/extra-costs";
 
 export function ExtraCostsReportCard({ from, to, vehicleId }: { from: string; to: string; vehicleId?: string }) {
   const { t } = useTranslation("reports");
-  const allowed = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
+  const allowed = useHasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS);
   const [openTile, setOpenTile] = useState<ExtraCostsTile | null>(null);
   const [shownTile, setShownTile] = useState<ExtraCostsTile>("extraKm");
 

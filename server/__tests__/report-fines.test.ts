@@ -1,7 +1,7 @@
 /**
  * Rapporten fase 2, Task 3 - the fines report: tiles per step, old statuses
  * apart, total without cancelled, every tile equal to its list, and the
- * permission pair (rapport + bekeuringen).
+ * report permission alone (Kees: money reports need only the report right).
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { inArray } from "drizzle-orm";
@@ -79,9 +79,10 @@ describe("fines report", () => {
     expect(r.rows.map((x: { status: string }) => x.status)).toEqual(["charged", "paid"]);
   });
 
-  it("rechten: rapport + bekeuringen", async () => {
-    for (const a of [reportsOnly, finesOnly]) expect((await a.get("/api/reports/fines/summary").query(Q)).status).toBe(403);
-    const both = await agentFor(["manage_reports", "manage_fines"]);
-    expect((await both.get("/api/reports/fines/rows").query({ ...Q, tile: "new" })).status).toBe(200);
+  it("rechten: alleen het rapportrecht", async () => {
+    expect((await reportsOnly.get("/api/reports/fines/summary").query(Q)).status).toBe(200);
+    expect((await finesOnly.get("/api/reports/fines/summary").query(Q)).status).toBe(403);
+    const manager = await agentFor(["manage_reports"]);
+    expect((await manager.get("/api/reports/fines/rows").query({ ...Q, tile: "new" })).status).toBe(200);
   });
 });

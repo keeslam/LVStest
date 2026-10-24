@@ -2,7 +2,7 @@
  * Rapporten fase 2, onderdeel 3: the transport billing report on Rapporten >
  * Financieel. Tiles (still to invoice, invoiced, toll, still to invoice over all
  * periods), a month chart, a table per transport type and the rows behind a
- * tile. Only shown to someone who may open vehicles or reservations.
+ * tile. Needs only the report permission, like the Financieel tab.
  */
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -35,12 +35,7 @@ const TILE_TONE: Partial<Record<TransportBillingTile, ReportTile<TransportBillin
 
 export function TransportBillingReportCard({ from, to, vehicleId }: { from: string; to: string; vehicleId?: string }) {
   const { t } = useTranslation("reports");
-  const allowed = useHasPermission(
-    UserPermission.VIEW_VEHICLES,
-    UserPermission.MANAGE_VEHICLES,
-    UserPermission.VIEW_RESERVATIONS,
-    UserPermission.MANAGE_RESERVATIONS,
-  );
+  const allowed = useHasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS);
   const [openTile, setOpenTile] = useState<TransportBillingTile | null>(null);
   const [shownTile, setShownTile] = useState<TransportBillingTile>("notInvoiced");
 
