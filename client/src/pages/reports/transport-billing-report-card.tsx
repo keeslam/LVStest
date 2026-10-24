@@ -99,9 +99,9 @@ export function TransportBillingReportCard({ from, to, vehicleId }: { from: stri
   });
 
   const series = [
-    { key: "notInvoiced", label: t("moneyReports.transport.series.notInvoiced"), color: "#f59e0b" },
-    { key: "invoiced", label: t("moneyReports.transport.series.invoiced"), color: "#16a34a" },
-    { key: "toll", label: t("moneyReports.transport.series.toll"), color: "#6b7280" },
+    { key: "notInvoiced" as const, label: t("moneyReports.transport.series.notInvoiced"), color: "#f59e0b" },
+    { key: "invoiced" as const, label: t("moneyReports.transport.series.invoiced"), color: "#16a34a" },
+    { key: "toll" as const, label: t("moneyReports.transport.series.toll"), color: "#6b7280" },
   ];
 
   return (
@@ -124,7 +124,7 @@ export function TransportBillingReportCard({ from, to, vehicleId }: { from: stri
             />
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("moneyReports.transport.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth as unknown as Array<{ month: string } & Record<string, number>>} series={series} money testId="transport-billing-month-chart" />
+              <ReportMonthChart data={data.byMonth} series={series} money testId="transport-billing-month-chart" />
             </div>
             <div className="space-y-2" data-testid="transport-billing-by-type">
               <h4 className="text-sm font-medium">{t("moneyReports.transport.byType")}</h4>

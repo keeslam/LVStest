@@ -8,7 +8,7 @@
  */
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Download, Printer } from "lucide-react";
 import type { ReportExport, ReportPage } from "@shared/report-kit";
 import { REPORT_EXPORT_LIMIT } from "@shared/report-kit";
@@ -22,6 +22,7 @@ import { downloadCsv, type Cell } from "@/lib/csv";
 import { formatDateNl } from "@/lib/format-date-nl";
 import { reportTableHtml } from "@/lib/report-table-print";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
 
 export interface ReportColumn<Row, S extends string> {
@@ -78,9 +79,14 @@ export function ReportDetailDialog<Row, S extends string>({
     }
   }
 
+  // Keep the previous page on screen only while paging or sorting the same list.
+  // For another tile or other filters the old rows and count would sit under the
+  // new tile's title (a tile that does not match its list), so show loading instead.
+  const listKey = JSON.stringify({ endpoint, params, tile });
   const { data, isLoading, isError, isFetching } = useQuery<ReportPage<Row>>({
     queryKey: [`${endpoint}/rows`, { ...params, tile, sort: sort.key, dir: sort.dir, page, pageSize }],
-    placeholderData: keepPreviousData,
+    meta: { listKey },
+    placeholderData: (previous, previousQuery) => (previousQuery?.meta?.listKey === listKey ? previous : undefined),
     enabled: open,
     staleTime: 0,
   });
@@ -91,9 +97,9 @@ export function ReportDetailDialog<Row, S extends string>({
   const onPageSize = (n: number) => { setPageSize(n); setPage(1); };
 
   const fetchExport = async (): Promise<ReportExport<Row>> => {
+    // The app's request path: timeout, and a 401 logs out like every other query.
     const query = new URLSearchParams({ ...params, tile, sort: sort.key, dir: sort.dir });
-    const response = await fetch(`${endpoint}/export?${query}`, { credentials: "include" });
-    if (!response.ok) throw new Error(String(response.status));
+    const response = await apiRequest("GET", `${endpoint}/export?${query}`);
     return response.json();
   };
 

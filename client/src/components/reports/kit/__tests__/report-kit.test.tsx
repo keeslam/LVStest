@@ -193,6 +193,84 @@ describe("report kit", () => {
     expect(rowPaths().slice(before).every((p) => p.endsWith("tile=a&sort=date&dir=desc&page=1&pageSize=50"))).toBe(true);
   });
 
+  it("een andere tegel of andere filters tonen niet de rijen en het aantal van de vorige tegel", async () => {
+    const ROW_B: Row = { id: 2, date: "2026-04-02", amount: 7 };
+    const pending: Array<() => void> = [];
+    fetchMock.mockImplementation(async (input: unknown) => {
+      const path = pathOf(input);
+      const body = path.includes("tile=a&")
+        ? (path.includes("to=2026-12-31") ? { rows: [ROW], total: 1, page: 1, pageSize: 50 } : { rows: [ROW_B], total: 9, page: 1, pageSize: 50 })
+        : { rows: [ROW_B], total: 5, page: 1, pageSize: 50 };
+      if (path.includes("tile=a&") && path.includes("to=2026-12-31")) return json(body);
+      // tile b and the changed period answer only when the test lets them
+      return new Promise<Response>((resolve) => pending.push(() => resolve(json(body))));
+    });
+    const { rerender } = renderKept(dialog("a"));
+    await screen.findByText("2026-03-01");
+    expect(screen.getByTestId("x-count")).toHaveTextContent("1");
+
+    rerender(dialog("b"));
+    await waitFor(() => expect(lastPath()).toContain("tile=b&"));
+    expect(screen.queryByText("2026-03-01")).not.toBeInTheDocument();
+    expect(screen.getByTestId("x-count")).toHaveTextContent(/^$/);
+    expect(screen.getByTestId("x-loading")).toBeInTheDocument();
+    pending.shift()!();
+    expect(await screen.findByText("2026-04-02")).toBeInTheDocument();
+
+    // same tile, other period (another filter): no old rows either
+    rerender(dialog("a"));
+    await screen.findByText("2026-03-01");
+    rerender(
+      <ReportDetailDialog<Row, "date" | "amount">
+        open onOpenChange={() => {}} title="Details" endpoint="/api/reports/x"
+        params={{ from: "2026-01-01", to: "2026-06-30" }} tile="a" columns={COLUMNS}
+        defaultSort={{ key: "date", dir: "desc" }} rowKey={(r) => r.id} csvSubject="x-subject" reportName="x" testId="x"
+      />,
+    );
+    await waitFor(() => expect(lastPath()).toContain("to=2026-06-30"));
+    expect(screen.queryByText("2026-03-01")).not.toBeInTheDocument();
+    pending.shift()!();
+    expect(await screen.findByText("2026-04-02")).toBeInTheDocument();
+  });
+
+  it("bladeren binnen dezelfde tegel houdt de vorige pagina zichtbaar tot de nieuwe er is", async () => {
+    const pending: Array<() => void> = [];
+    fetchMock.mockImplementation(async (input: unknown) => {
+      const path = pathOf(input);
+      if (path.includes("page=1&")) return json({ rows: [ROW], total: 120, page: 1, pageSize: 50 });
+      return new Promise<Response>((resolve) => pending.push(() => resolve(json({ rows: [{ ...ROW, id: 3, date: "2026-05-05" }], total: 120, page: 2, pageSize: 50 }))));
+    });
+    const user = userEvent.setup();
+    renderKept(dialog("a"));
+    await screen.findByText("2026-03-01");
+    await user.click(screen.getByTestId("pager-x-next-page"));
+    await waitFor(() => expect(lastPath()).toContain("page=2&"));
+    expect(screen.getByText("2026-03-01")).toBeInTheDocument();
+    pending.shift()!();
+    expect(await screen.findByText("2026-05-05")).toBeInTheDocument();
+  });
+
+  it("CSV bij een verlopen sessie: de app meldt af (zelfde fetch-pad als de rest)", async () => {
+    const { registerSessionExpiredHandler, unregisterSessionExpiredHandler } = await import("@/lib/session-expiry");
+    const expired = vi.fn();
+    registerSessionExpiredHandler(expired);
+    try {
+      fetchMock.mockImplementation(async (input: unknown) => {
+        const path = pathOf(input);
+        if (path.startsWith("/api/reports/x/export")) return json({ message: "Not authenticated" }, 401);
+        return json({ rows: [ROW], total: 1, page: 1, pageSize: 50 });
+      });
+      const user = userEvent.setup();
+      openDialog();
+      await screen.findByText("2026-03-01");
+      await user.click(screen.getByTestId("button-x-csv"));
+      await waitFor(() => expect(expired).toHaveBeenCalled());
+      expect(downloadCsv).not.toHaveBeenCalled();
+    } finally {
+      unregisterSessionExpiredHandler();
+    }
+  });
+
   it("CSV haalt alle rijen via /export", async () => {
     const user = userEvent.setup();
     openDialog();
@@ -231,7 +309,10 @@ describe("report kit", () => {
   });
 
   it("een lege grafiek toont 'geen gegevens'", () => {
-    render(<ReportMonthChart data={[]} series={[{ key: "a", label: "A", color: "#000" }]} testId="c" />);
+    render(<ReportMonthChart data={[] as Array<{ month: string; a: number }>} series={[{ key: "a", label: "A", color: "#000" }]} testId="c" />);
     expect(screen.getByTestId("c-empty")).toBeInTheDocument();
+    // The series keys are checked against the month row (tsc): an unknown key does not compile.
+    // @ts-expect-error "zz" is not a field of the month row
+    render(<ReportMonthChart data={[] as Array<{ month: string; a: number }>} series={[{ key: "zz", label: "Z", color: "#000" }]} testId="d" />);
   });
 });

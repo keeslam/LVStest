@@ -115,7 +115,7 @@ export function FinesReportCard({ from, to, vehicleId }: { from: string; to: str
             </p>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("moneyReports.fines.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth as unknown as Array<{ month: string } & Record<string, number>>} series={series} money stacked testId="fines-month-chart" />
+              <ReportMonthChart data={data.byMonth} series={series} money stacked testId="fines-month-chart" />
             </div>
             <div className="grid gap-6 lg:grid-cols-3">
               <ReportBreakdownTable title={t("moneyReports.fines.byCustomer")} rows={data.byCustomer} nullLabel={notLinked} money testId="fines-by-customer" />

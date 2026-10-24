@@ -8,17 +8,18 @@ import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAx
 import { formatCurrency } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
 
-export interface ReportMonthSeries {
-  key: string;
+export interface ReportMonthSeries<K extends string = string> {
+  key: K;
   label: string;
   color: string;
 }
 
 const monthLabel = (month: string) => formatDateNl(`${month}-01T12:00:00`, "MMM yyyy");
 
-export function ReportMonthChart({ data, series, money, stacked, testId }: {
-  data: Array<{ month: string } & Record<string, number>>;
-  series: ReportMonthSeries[];
+/** Generic over the month row, so a series key must be one of its fields (no cast in the cards). */
+export function ReportMonthChart<T extends { month: string }>({ data, series, money, stacked, testId }: {
+  data: T[];
+  series: Array<ReportMonthSeries<Exclude<Extract<keyof T, string>, "month">>>;
   money?: boolean;
   stacked?: boolean;
   testId: string;

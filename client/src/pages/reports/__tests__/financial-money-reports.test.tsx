@@ -44,7 +44,7 @@ const FINE_ROW = {
   customerId: null, customerName: null, driverName: null, linkedAt: null,
 };
 const TRANSPORT_ROW = {
-  id: 4, date: "2026-06-01", transportType: "other", status: "scheduled", vehicleId: 3, licensePlate: "AB12CD", isExternalVehicle: false,
+  id: 4, date: "2026-06-01", transportType: "other", status: "completed", vehicleId: 3, licensePlate: "AB12CD", isExternalVehicle: false,
   customerId: 1, customerName: "Klant BV", billable: true, billableAmount: null, tollCost: null, invoiced: false, invoicedDate: null,
   distanceKm: null, amount: 0,
 };

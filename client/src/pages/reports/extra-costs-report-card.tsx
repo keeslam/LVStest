@@ -73,8 +73,8 @@ export function ExtraCostsReportCard({ from, to, vehicleId }: { from: string; to
   });
 
   const series = [
-    { key: "extraKmCost", label: t("moneyReports.extraCosts.tiles.extraKm"), color: "#2563eb" },
-    { key: "fuelCost", label: t("moneyReports.extraCosts.tiles.fuel"), color: "#f59e0b" },
+    { key: "extraKmCost" as const, label: t("moneyReports.extraCosts.tiles.extraKm"), color: "#2563eb" },
+    { key: "fuelCost" as const, label: t("moneyReports.extraCosts.tiles.fuel"), color: "#f59e0b" },
   ];
 
   return (
@@ -100,7 +100,7 @@ export function ExtraCostsReportCard({ from, to, vehicleId }: { from: string; to
             </p>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("moneyReports.extraCosts.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth as unknown as Array<{ month: string } & Record<string, number>>} series={series} money stacked testId="extra-costs-month-chart" />
+              <ReportMonthChart data={data.byMonth} series={series} money stacked testId="extra-costs-month-chart" />
             </div>
             <div className="grid gap-6 lg:grid-cols-2">
               <ReportBreakdownTable title={t("moneyReports.extraCosts.byCustomer")} rows={data.byCustomer} nullLabel={t("moneyReports.extraCosts.noCustomer")} money testId="extra-costs-by-customer" />
