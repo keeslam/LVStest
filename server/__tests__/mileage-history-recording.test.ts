@@ -12,7 +12,7 @@ import { db } from "../db";
 import {
   deletedRecords, interactiveDamageChecks, portalRequests, portalUsers, reservations, vehicleMileageReadings, vehicles,
 } from "../../shared/schema";
-import { day } from "./helpers/dates";
+import { day, weekday } from "./helpers/dates";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import {
   createFixtureCustomer, createFixtureVehicle, createFixtureReservation, cleanupFixtures, FIXTURE_PLATE_PREFIX,
@@ -173,7 +173,10 @@ describe("km-historie - handmatig, portaal, onderhoud", () => {
       customerId, portalUserId: user.id, type: "mileage", reservationId: rental.id,
       payload: { mileage: 20_400 }, message: "Stand doorgeven",
     });
+    // Sent three days ago, taken over now: the reading is dated at the take-over.
+    await db.update(portalRequests).set({ createdAt: new Date(Date.now() - 3 * 86_400_000) }).where(eq(portalRequests.id, reqRow.id));
 
+    const before = Date.now();
     const res = await admin.post(`/api/portal-requests/${reqRow.id}/apply-mileage`);
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     const rows = await readingsOf(vehicle.id);
@@ -182,7 +185,31 @@ describe("km-historie - handmatig, portaal, onderhoud", () => {
       source: "portal", sourceTable: "portal_requests", sourceId: reqRow.id,
       mileage: 20_400, actorName: "Jan Klant",
     });
+    expect(rows[0].recordedAt.getTime()).toBeGreaterThanOrEqual(before - 1000);
   });
+
+  it("portaal: onderhoud goedkeuren met een hogere stand dateert de regel op het moment van overnemen", async () => {
+    const vehicle = await createFixtureVehicle({ currentMileage: 30_000 });
+    const rental = await createFixtureReservation({
+      customerId, vehicleId: vehicle.id, startDate: day(-5), endDate: day(30), status: "picked_up",
+    });
+    const user = await portalStorage.createPortalUser({
+      customerId, email: `kmh-m-${Date.now().toString(36)}@portal-test.invalid`, fullName: "Jan Klant", role: "admin",
+    }, "t");
+    const reqRow = await requestsStorage.createRequest({
+      customerId, portalUserId: user.id, type: "maintenance", reservationId: rental.id,
+      payload: { issue: "Ruitenwisser", mileage: 30_500 }, message: "Graag inplannen",
+    });
+    await db.update(portalRequests).set({ createdAt: new Date(Date.now() - 3 * 86_400_000) }).where(eq(portalRequests.id, reqRow.id));
+
+    const before = Date.now();
+    const res = await admin.post(`/api/portal-requests/${reqRow.id}/approve`).send({ startDate: weekday(14), durationDays: 1 });
+    expect(res.status, JSON.stringify(res.body)).toBe(200);
+    const rows = (await readingsOf(vehicle.id)).filter((r) => r.source === "portal");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ sourceTable: "portal_requests", sourceId: reqRow.id, mileage: 30_500, actorName: "systeem" });
+    expect(rows[0].recordedAt.getTime()).toBeGreaterThanOrEqual(before - 1000);
+  }, 60_000);
 
   it("onderhoud afronden met een stand legt een service-regel vast", async () => {
     const vehicle = await createFixtureVehicle({

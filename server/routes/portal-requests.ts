@@ -127,7 +127,7 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     // Rapporten fase 1 - the customer's reading goes into the km history under their own name.
     if (updated) {
       await recordMileageReadingLogged({
-        vehicleId: vehicle.id, mileage: decision.mileage, recordedAt: row.createdAt ?? new Date(),
+        vehicleId: vehicle.id, mileage: decision.mileage, recordedAt: new Date(), // the moment the office took it over
         source: "portal", sourceTable: "portal_requests", sourceId: id,
         actorName: row.submittedBy || row.customerName || "portal",
       }, `portal request ${id} apply-mileage`);
@@ -487,7 +487,7 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
         await storage.updateVehicle(vehicle.id, { currentMileage: km });
         // Rapporten fase 1 - taken over automatically, so the system is the actor.
         await recordMileageReadingLogged({
-          vehicleId: vehicle.id, mileage: km, recordedAt: row.createdAt ?? new Date(),
+          vehicleId: vehicle.id, mileage: km, recordedAt: new Date(), // the moment the office took it over
           source: "portal", sourceTable: "portal_requests", sourceId: id, actorName: "systeem",
         }, `portal request ${id} maintenance approval`);
       }
