@@ -682,6 +682,45 @@
     "periodTooLong": "Alegeți o perioadă de cel mult un an ({{days}} de zile)."
   },
   "fleetReports": {
+    "outlook": {
+      "title": "Mentenanță și ITP în perioada următoare",
+      "description": "Ce mașini au nevoie de service sau de ITP în perioada următoare, pe săptămâni. Data estimată a service-ului vine din kilometrii parcurși și lunile de la ultimul service.",
+      "horizon": "Privire înainte",
+      "horizonOption_one": "{{count}} lună",
+      "horizonOption_few": "{{count}} luni",
+      "horizonOption_other": "{{count}} de luni",
+      "tiles": {
+        "apk": "ITP",
+        "service": "Service",
+        "overdue": "Întârziat",
+        "all": "Toate"
+      },
+      "overdue": "Întârziat: {{count}}",
+      "overdueOpen": "Arată întârziatele",
+      "weekLabel": "Săptămâna {{week}} · {{from}} – {{to}}",
+      "noWeeks": "Niciun service sau ITP în această perioadă.",
+      "kinds": {
+        "apk": "ITP",
+        "service": "Service"
+      },
+      "basis": {
+        "apk": "ITP",
+        "km": "După kilometri",
+        "months": "După luni"
+      },
+      "tooFewReadings": "prea puține citiri de km",
+      "columns": {
+        "licensePlate": "Număr de înmatriculare",
+        "brandModel": "Marcă și model",
+        "kind": "Tip",
+        "dueDate": "Scadență",
+        "basis": "Bază",
+        "currentMileage": "Citire actuală",
+        "kmUntilService": "Km până la service",
+        "kmPerDay": "Km pe zi"
+      },
+      "csvSubject": "mentenanta-urmatoare"
+    },
     "occupancy": {
       "title": "Ocupare pe zi",
       "description": "Câte mașini din flotă au fost închiriate în fiecare zi. Atelierul și mașinile de înlocuire apar separat și nu contează ca ocupate. Faceți clic pe o zi pentru mașinile din acea zi.",

@@ -682,6 +682,45 @@
     "periodTooLong": "Elige un periodo de un año como máximo ({{days}} días)."
   },
   "fleetReports": {
+    "outlook": {
+      "title": "Mantenimiento e ITV próximos",
+      "description": "Qué coches necesitan una revisión o la ITV en el próximo periodo, por semana. La fecha prevista de la revisión sale de los kilómetros recorridos y los meses desde la última.",
+      "horizon": "Mirar hacia delante",
+      "horizonOption_one": "{{count}} mes",
+      "horizonOption_many": "{{count}} meses",
+      "horizonOption_other": "{{count}} meses",
+      "tiles": {
+        "apk": "ITV",
+        "service": "Revisión",
+        "overdue": "Atrasado",
+        "all": "Todo"
+      },
+      "overdue": "Atrasado: {{count}}",
+      "overdueOpen": "Mostrar atrasados",
+      "weekLabel": "Semana {{week}} · {{from}} – {{to}}",
+      "noWeeks": "Ninguna revisión ni ITV en este periodo.",
+      "kinds": {
+        "apk": "ITV",
+        "service": "Revisión"
+      },
+      "basis": {
+        "apk": "ITV",
+        "km": "Por kilómetros",
+        "months": "Por meses"
+      },
+      "tooFewReadings": "pocas lecturas de km",
+      "columns": {
+        "licensePlate": "Matrícula",
+        "brandModel": "Marca y modelo",
+        "kind": "Tipo",
+        "dueDate": "Fecha límite",
+        "basis": "Base",
+        "currentMileage": "Lectura actual",
+        "kmUntilService": "Km hasta la revisión",
+        "kmPerDay": "Km por día"
+      },
+      "csvSubject": "mantenimiento-proximo"
+    },
     "occupancy": {
       "title": "Ocupación por día",
       "description": "Cuántos coches de la flota estaban alquilados cada día. El taller y los coches de sustitución se muestran aparte y no cuentan como ocupados. Haz clic en un día para ver los coches de ese día.",

@@ -694,6 +694,46 @@
     "periodTooLong": "Wybierz okres najwyżej jednego roku ({{days}} dni)."
   },
   "fleetReports": {
+    "outlook": {
+      "title": "Przeglądy i serwis w przyszłości",
+      "description": "Które auta potrzebują serwisu lub przeglądu w najbliższym okresie, tydzień po tygodniu. Przewidywany termin serwisu wynika z przejechanych kilometrów i miesięcy od ostatniego serwisu.",
+      "horizon": "Patrz do przodu",
+      "horizonOption_one": "{{count}} miesiąc",
+      "horizonOption_few": "{{count}} miesiące",
+      "horizonOption_many": "{{count}} miesięcy",
+      "horizonOption_other": "{{count}} miesiąca",
+      "tiles": {
+        "apk": "Przegląd",
+        "service": "Serwis",
+        "overdue": "Zaległe",
+        "all": "Wszystko"
+      },
+      "overdue": "Zaległe: {{count}}",
+      "overdueOpen": "Pokaż zaległe",
+      "weekLabel": "Tydzień {{week}} · {{from}} – {{to}}",
+      "noWeeks": "Brak serwisu i przeglądu w tym okresie.",
+      "kinds": {
+        "apk": "Przegląd",
+        "service": "Serwis"
+      },
+      "basis": {
+        "apk": "Przegląd",
+        "km": "Wg kilometrów",
+        "months": "Wg miesięcy"
+      },
+      "tooFewReadings": "za mało odczytów km",
+      "columns": {
+        "licensePlate": "Numer rejestracyjny",
+        "brandModel": "Marka i model",
+        "kind": "Rodzaj",
+        "dueDate": "Termin",
+        "basis": "Podstawa",
+        "currentMileage": "Aktualny stan",
+        "kmUntilService": "Km do serwisu",
+        "kmPerDay": "Km dziennie"
+      },
+      "csvSubject": "serwis-w-przyszlosci"
+    },
     "occupancy": {
       "title": "Obłożenie na dzień",
       "description": "Ile aut z floty było wynajętych każdego dnia. Warsztat i auta zastępcze są pokazane osobno i nie liczą się jako zajęte. Kliknij dzień, aby zobaczyć auta z tego dnia.",

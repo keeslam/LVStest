@@ -682,6 +682,45 @@
     "periodTooLong": "Escolha um período de no máximo um ano ({{days}} dias)."
   },
   "fleetReports": {
+    "outlook": {
+      "title": "Manutenção e inspeção a seguir",
+      "description": "Que carros precisam de revisão ou inspeção no próximo período, por semana. A data prevista da revisão vem dos quilómetros percorridos e dos meses desde a última.",
+      "horizon": "Olhar em frente",
+      "horizonOption_one": "{{count}} mês",
+      "horizonOption_many": "{{count}} meses",
+      "horizonOption_other": "{{count}} meses",
+      "tiles": {
+        "apk": "Inspeção",
+        "service": "Revisão",
+        "overdue": "Em atraso",
+        "all": "Tudo"
+      },
+      "overdue": "Em atraso: {{count}}",
+      "overdueOpen": "Mostrar em atraso",
+      "weekLabel": "Semana {{week}} · {{from}} – {{to}}",
+      "noWeeks": "Nenhuma revisão nem inspeção neste período.",
+      "kinds": {
+        "apk": "Inspeção",
+        "service": "Revisão"
+      },
+      "basis": {
+        "apk": "Inspeção",
+        "km": "Por quilómetros",
+        "months": "Por meses"
+      },
+      "tooFewReadings": "poucas leituras de km",
+      "columns": {
+        "licensePlate": "Matrícula",
+        "brandModel": "Marca e modelo",
+        "kind": "Tipo",
+        "dueDate": "Data limite",
+        "basis": "Base",
+        "currentMileage": "Leitura atual",
+        "kmUntilService": "Km até à revisão",
+        "kmPerDay": "Km por dia"
+      },
+      "csvSubject": "manutencao-a-seguir"
+    },
     "occupancy": {
       "title": "Ocupação por dia",
       "description": "Quantos carros da frota estavam alugados em cada dia. Oficina e carros de substituição aparecem à parte e não contam como ocupados. Clique num dia para ver os carros desse dia.",

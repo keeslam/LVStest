@@ -682,6 +682,45 @@
     "periodTooLong": "Scegli un periodo di al massimo un anno ({{days}} giorni)."
   },
   "fleetReports": {
+    "outlook": {
+      "title": "Manutenzione e revisione in arrivo",
+      "description": "Quali auto hanno bisogno di un tagliando o della revisione nel prossimo periodo, per settimana. La data prevista del tagliando deriva dai chilometri percorsi e dai mesi dall'ultimo.",
+      "horizon": "Guarda avanti",
+      "horizonOption_one": "{{count}} mese",
+      "horizonOption_many": "{{count}} mesi",
+      "horizonOption_other": "{{count}} mesi",
+      "tiles": {
+        "apk": "Revisione",
+        "service": "Tagliando",
+        "overdue": "Scaduto",
+        "all": "Tutto"
+      },
+      "overdue": "Scaduto: {{count}}",
+      "overdueOpen": "Mostra scaduti",
+      "weekLabel": "Settimana {{week}} · {{from}} – {{to}}",
+      "noWeeks": "Nessun tagliando né revisione in questo periodo.",
+      "kinds": {
+        "apk": "Revisione",
+        "service": "Tagliando"
+      },
+      "basis": {
+        "apk": "Revisione",
+        "km": "In base ai km",
+        "months": "In base ai mesi"
+      },
+      "tooFewReadings": "poche letture km",
+      "columns": {
+        "licensePlate": "Targa",
+        "brandModel": "Marca e modello",
+        "kind": "Tipo",
+        "dueDate": "Scadenza",
+        "basis": "Base",
+        "currentMileage": "Lettura attuale",
+        "kmUntilService": "Km al tagliando",
+        "kmPerDay": "Km al giorno"
+      },
+      "csvSubject": "manutenzione-in-arrivo"
+    },
     "occupancy": {
       "title": "Occupazione per giorno",
       "description": "Quante auto della flotta erano noleggiate ogni giorno. Officina e auto sostitutive sono mostrate a parte e non contano come occupate. Clicca su un giorno per vedere le auto di quel giorno.",

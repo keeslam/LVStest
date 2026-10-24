@@ -670,6 +670,44 @@
     "periodTooLong": "Kies een periode van maximaal een jaar ({{days}} dagen)."
   },
   "fleetReports": {
+    "outlook": {
+      "title": "Onderhoud en APK vooruit",
+      "description": "Welke auto's de komende tijd een beurt of APK nodig hebben, per week. De verwachte datum van een beurt komt uit de gereden kilometers en de maanden sinds de vorige beurt.",
+      "horizon": "Vooruitkijken",
+      "horizonOption_one": "{{count}} maand",
+      "horizonOption_other": "{{count}} maanden",
+      "tiles": {
+        "apk": "APK",
+        "service": "Beurt",
+        "overdue": "Achterstallig",
+        "all": "Alles"
+      },
+      "overdue": "Achterstallig: {{count}}",
+      "overdueOpen": "Toon achterstallige",
+      "weekLabel": "Week {{week}} · {{from}} – {{to}}",
+      "noWeeks": "Geen beurt of APK in deze periode.",
+      "kinds": {
+        "apk": "APK",
+        "service": "Beurt"
+      },
+      "basis": {
+        "apk": "APK",
+        "km": "Op kilometers",
+        "months": "Op maanden"
+      },
+      "tooFewReadings": "te weinig km-standen",
+      "columns": {
+        "licensePlate": "Kenteken",
+        "brandModel": "Merk en model",
+        "kind": "Soort",
+        "dueDate": "Vervaldatum",
+        "basis": "Basis",
+        "currentMileage": "Huidige stand",
+        "kmUntilService": "Km tot beurt",
+        "kmPerDay": "Km per dag"
+      },
+      "csvSubject": "onderhoud-vooruit"
+    },
     "occupancy": {
       "title": "Bezetting per dag",
       "description": "Hoeveel auto's van de vloot elke dag verhuurd waren. Werkplaats en vervangend vervoer staan apart en tellen niet als bezet. Klik op een dag voor de auto's van die dag.",

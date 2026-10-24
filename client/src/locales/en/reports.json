@@ -670,6 +670,44 @@
     "periodTooLong": "Choose a period of at most one year ({{days}} days)."
   },
   "fleetReports": {
+    "outlook": {
+      "title": "Maintenance and MOT ahead",
+      "description": "Which cars need a service or an MOT in the coming period, per week. The expected service date comes from the kilometres driven and the months since the last service.",
+      "horizon": "Look ahead",
+      "horizonOption_one": "{{count}} month",
+      "horizonOption_other": "{{count}} months",
+      "tiles": {
+        "apk": "MOT",
+        "service": "Service",
+        "overdue": "Overdue",
+        "all": "All"
+      },
+      "overdue": "Overdue: {{count}}",
+      "overdueOpen": "Show overdue",
+      "weekLabel": "Week {{week}} · {{from}} – {{to}}",
+      "noWeeks": "No service or MOT in this period.",
+      "kinds": {
+        "apk": "MOT",
+        "service": "Service"
+      },
+      "basis": {
+        "apk": "MOT",
+        "km": "By kilometres",
+        "months": "By months"
+      },
+      "tooFewReadings": "too few km readings",
+      "columns": {
+        "licensePlate": "License plate",
+        "brandModel": "Make and model",
+        "kind": "Type",
+        "dueDate": "Due date",
+        "basis": "Basis",
+        "currentMileage": "Current reading",
+        "kmUntilService": "Km until service",
+        "kmPerDay": "Km per day"
+      },
+      "csvSubject": "maintenance-outlook"
+    },
     "occupancy": {
       "title": "Occupancy per day",
       "description": "How many cars of the fleet were rented out each day. Workshop and replacement cars are shown separately and do not count as occupied. Click a day to see that day's cars.",
