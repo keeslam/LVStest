@@ -20,6 +20,7 @@ import { loadOfficeTimeZone } from "./services/office-time";
 import { loadCompanyName } from "./services/company-name";
 import { runOneOffCleanups } from "./services/one-off-cleanups";
 import { startInvoiceInboxScheduler, stopInvoiceInboxScheduler } from "./services/invoice-inbox/poller";
+import { backfillMileageHistory } from "./services/mileage-backfill";
 import { registerPortalRoutes } from "./routes/portal";
 import { getUploadsDir as getPortalUploadsDir } from "../shared/paths";
 import { mountUploads } from "./middleware/uploads-mount";
@@ -535,6 +536,10 @@ portalAlertScheduler.start();
 // Seed the portal e-mail templates once (staff edit them afterwards).
 startCjibScheduler().catch((e) => console.error("CJIB scheduler failed to start:", e));
 startInvoiceInboxScheduler().catch((e) => console.error("Invoice inbox scheduler failed to start:", e));
+// Kilometerstand-geschiedenis: eenmalig het verleden terughalen, op de achtergrond en nooit fataal.
+backfillMileageHistory()
+  .then((r) => { if (r.inserted || r.skipped) console.log(`🛣️ Kilometergeschiedenis teruggehaald: ${r.inserted} nieuw, ${r.skipped} overgeslagen`); })
+  .catch((e) => console.error("mileage history backfill:", e));
   ensurePortalEmailTemplates().catch((e) => console.error("portal e-mail templates:", e));
   // Fiscal mobility check: the first rule version as a draft, and the usage periods of existing reservations (docs/fiscaal).
   ensureFiscalDraftVersion()

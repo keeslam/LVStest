@@ -57,6 +57,32 @@ export async function recordMileageReading(exec: DbOrTx, r: MileageReadingInput)
 }
 
 /**
+ * Zoals `recordMileageReading`, maar laat een bestaande regel (ook een vervallen)
+ * ongemoeid. Voor het terughalen van het verleden. Geeft terug of er iets is
+ * toegevoegd.
+ */
+export async function insertMileageReadingIfAbsent(exec: DbOrTx, r: MileageReadingInput): Promise<boolean> {
+  if (!Number.isFinite(r.mileage) || r.mileage <= 0) return false;
+  if (r.sourceId != null && !r.sourceTable) {
+    throw new Error("insertMileageReadingIfAbsent: sourceTable is required when sourceId is given");
+  }
+  const values = {
+    vehicleId: r.vehicleId,
+    mileage: Math.round(r.mileage),
+    recordedAt: r.recordedAt,
+    source: r.source,
+    sourceTable: r.sourceTable ?? null,
+    sourceId: r.sourceId ?? null,
+    actorName: r.actorName ?? null,
+  };
+  const res = await exec.insert(vehicleMileageReadings).values(values).onConflictDoNothing({
+    target: [vehicleMileageReadings.source, vehicleMileageReadings.sourceTable, vehicleMileageReadings.sourceId],
+    where: sql`source_id is not null`,
+  }).returning({ id: vehicleMileageReadings.id });
+  return res.length > 0;
+}
+
+/**
  * Het moment van een stand bij een overdracht die alleen een kantoordatum kent
  * (ophalen, inleveren, onderhoud afronden). Vandaag of geen datum = nu; een
  * andere datum = die dag op de huidige kantoorklok, zodat een terug-gedateerde
