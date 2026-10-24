@@ -84,9 +84,13 @@ export function parseReportPaging<S extends string>(
   };
 }
 
-/** A timestamptz as the calendar date in the office time zone. */
+/**
+ * A timestamp as the calendar date in the office time zone. Works for timestamptz and for a
+ * naive `timestamp` column (still the case in some databases until the timestamptz conversion
+ * runs): a naive value holds UTC wall time, because Drizzle writes ISO strings with Z.
+ */
 export function officeDaySql(column: SQL | AnyPgColumn): SQL {
-  return sql`((${column}) AT TIME ZONE ${officeTimeZone()})::date`;
+  return sql`((CASE WHEN pg_typeof(${column}) = 'timestamp with time zone'::regtype THEN (${column})::timestamptz ELSE ((${column})::timestamp AT TIME ZONE 'UTC') END) AT TIME ZONE ${officeTimeZone()})::date`;
 }
 
 /** A text date (`yyyy-mm-dd…`) as a date; text that does not start with a date gives NULL instead of breaking the query. */

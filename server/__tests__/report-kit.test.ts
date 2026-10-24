@@ -91,6 +91,16 @@ describe("SQL-hulpjes", () => {
       nothing: 0,
     });
   });
+
+  it("officeDaySql leest een naieve timestamp als UTC en een timestamptz als moment", async () => {
+    const { db } = await import("../db");
+    const { sql } = await import("drizzle-orm");
+    const result = await db.execute(sql`SELECT
+      ${officeDaySql(sql`'2026-03-04T23:30:00'::timestamp`)}::text AS naive_winter,
+      ${officeDaySql(sql`'2026-03-31T23:30:00'::timestamp`)}::text AS naive_summer,
+      ${officeDaySql(sql`'2026-03-04T23:30:00Z'::timestamptz`)}::text AS tz_winter`);
+    expect(result.rows[0]).toEqual({ naive_winter: "2026-03-05", naive_summer: "2026-04-01", tz_winter: "2026-03-05" });
+  });
 });
 
 type Row = { id: number; amount: number };
