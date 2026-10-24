@@ -1,3 +1,5 @@
+import { DEFAULT_OFFICE_TIMEZONE, dateInZone } from "./office-timezone";
+
 export const MILEAGE_SOURCES = ["pickup", "return", "damage_check", "manual", "portal", "service", "import"] as const;
 export type MileageSource = (typeof MILEAGE_SOURCES)[number];
 
@@ -33,8 +35,6 @@ export interface MileageSummary {
   periodFrom: string | null;
   periodTo: string | null;
 }
-
-import { DEFAULT_OFFICE_TIMEZONE, dateInZone } from "./office-timezone";
 
 const DAY_MS = 86_400_000;
 
@@ -83,7 +83,8 @@ export function analyseMileage(
         const days = Math.max(1, Math.round((Date.parse(r.recordedAt) - Date.parse(prev.recordedAt)) / DAY_MS));
         if (driven / days > MILEAGE_JUMP_KM_PER_DAY) warning = "jump";
       }
-      if (driven > 0) {
+      // A jump is listed but not counted: it is as likely a typo as a real distance.
+      if (driven > 0 && warning !== "jump") {
         if (prev === opts.baseline) {
           // Only the part of the baseline delta inside the period counts, pro-rated by office days.
           const span = officeDay(r.recordedAt) - officeDay(prev.recordedAt);
@@ -94,7 +95,9 @@ export function analyseMileage(
       }
     }
     if (warning) warnings += 1;
-    prev = r;
+    // A lower reading stays listed with its warning but is not trusted as the next "previous",
+    // so one typo (124 900 -> 12 500 -> 125 000) does not add the whole odometer to driven km.
+    if (warning !== "decrease") prev = r;
     return { ...r, drivenSincePrevious: driven, warning };
   });
 
