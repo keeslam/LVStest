@@ -17,7 +17,7 @@ describe("maintenance outlook report", () => {
   const W = { from: "2026-11-02", to: "2027-02-02" };
   let admin: TestAgent;
   let staff: TestAgent;
-  let V7a: number, V7b: number, V7c: number, V7d: number;
+  let V7a: number, V7b: number, V7c: number, V7d: number, V7e: number, V7f: number;
 
   beforeAll(async () => {
     admin = await agentFor("admin");
@@ -38,6 +38,16 @@ describe("maintenance outlook report", () => {
     V7b = (await createFixtureVehicle({ apkDate: "2026-10-20" })).id;
     V7c = (await createFixtureVehicle({ apkDate: "2026-11-10", outOfFleetDate: "2026-10-01" })).id;
     V7d = (await createFixtureVehicle({ apkDate: "2027-03-01" })).id;
+    // Over its km limit, no km history: the months date (2027-06-01) lies beyond the horizon.
+    V7e = (await createFixtureVehicle({
+      lastServiceDate: "2026-06-01", serviceIntervalMonths: 12, serviceIntervalKm: 30000,
+      lastServiceMileage: 50000, currentMileage: 85000,
+    })).id;
+    // Too few readings: falls back to the months date inside the horizon.
+    V7f = (await createFixtureVehicle({
+      lastServiceDate: "2026-01-15", serviceIntervalMonths: 12, serviceIntervalKm: 30000,
+      lastServiceMileage: 10000, currentMileage: 12000,
+    })).id;
   });
 
   afterAll(async () => {
@@ -75,6 +85,22 @@ describe("maintenance outlook report", () => {
     const s = (await staff.get("/api/reports/maintenance-outlook/summary").query({ ...W, vehicleId: V7b })).body;
     expect(s.tiles.overdue).toEqual({ count: 1, amount: 0 });
     expect(s.byWeek).toEqual([]);
+  });
+
+  it("V7e over de km-grens zonder standen staat als achterstallig in de lijst", async () => {
+    const s = (await admin.get("/api/reports/maintenance-outlook/summary").query({ ...W, vehicleId: V7e })).body;
+    expect(s.tiles).toEqual({ apk: { count: 0, amount: 0 }, service: { count: 0, amount: 0 }, overdue: { count: 1, amount: 0 }, all: { count: 1, amount: 0 } });
+    expect(s.byWeek).toEqual([]);
+    const rows = (await admin.get("/api/reports/maintenance-outlook/rows").query({ ...W, vehicleId: V7e, tile: "overdue" })).body.rows;
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ kind: "service", overdue: true, basis: "km", tooFewReadings: true, kmUntilService: -5000 });
+    await expectTilesMatchRows(staff, "/api/reports/maintenance-outlook", { ...W, vehicleId: String(V7e) }, MAINTENANCE_OUTLOOK_TILES);
+  });
+
+  it("V7f te weinig standen: beurt op maanden binnen de horizon", async () => {
+    const rows = (await admin.get("/api/reports/maintenance-outlook/rows").query({ ...W, vehicleId: V7f, tile: "service" })).body.rows;
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ dueDate: "2027-01-15", weekStart: "2027-01-11", basis: "months", tooFewReadings: true, overdue: false, kmPerDay: null });
   });
 
   it("V7c uit de vloot en V7d buiten de horizon tellen niet", async () => {

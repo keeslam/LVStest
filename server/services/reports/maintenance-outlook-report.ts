@@ -34,8 +34,9 @@ import { isRealDate, type ReportDefinition, type ReportFilter, type ReportViewer
 
 function inTile(row: MaintenanceOutlookRow, tile: MaintenanceOutlookTile, filter: ReportFilter): boolean {
   if (tile === "overdue") return row.overdue;
-  if (tile === "all") return row.dueDate <= filter.to;
-  return row.kind === tile && row.dueDate >= filter.from && row.dueDate <= filter.to;
+  if (tile === "all") return row.overdue || row.dueDate <= filter.to;
+  // An overdue row (also a km-overdue one dated today) belongs to the overdue tile only.
+  return !row.overdue && row.kind === tile && row.dueDate >= filter.from && row.dueDate <= filter.to;
 }
 
 /** yyyy-mm-dd as a local midnight Date, the form `computeServiceDue` reads "today" in. */
@@ -58,9 +59,10 @@ export async function loadOutlookRows(filter: ReportFilter): Promise<Maintenance
   const defaults = serviceDueDefaultsFromSettings(settings);
 
   const rows: MaintenanceOutlookRow[] = [];
-  const push = (vehicle: (typeof fleet)[number], kind: "apk" | "service", dueDate: string, rest: Pick<MaintenanceOutlookRow,
-    "basis" | "tooFewReadings" | "currentMileage" | "nextServiceMileage" | "kmUntilService" | "kmPerDay">) => {
-    if (dueDate > filter.to) return;
+  const push = (vehicle: (typeof fleet)[number], kind: "apk" | "service", dueDate: string, { overdue, ...rest }: Pick<MaintenanceOutlookRow,
+    "basis" | "tooFewReadings" | "currentMileage" | "nextServiceMileage" | "kmUntilService" | "kmPerDay"> & { overdue?: boolean }) => {
+    const isOverdue = overdue === true || dueDate < filter.from;
+    if (!isOverdue && dueDate > filter.to) return;
     rows.push({
       id: `${vehicle.id}-${kind}`,
       vehicleId: vehicle.id,
@@ -70,7 +72,7 @@ export async function loadOutlookRows(filter: ReportFilter): Promise<Maintenance
       kind,
       dueDate,
       weekStart: isoWeekStart(dueDate),
-      overdue: dueDate < filter.from,
+      overdue: isOverdue,
       ...rest,
       amount: 0,
     });
@@ -88,9 +90,25 @@ export async function loadOutlookRows(filter: ReportFilter): Promise<Maintenance
     const serviceDue = computeServiceDue(vehicle, defaults, localDate(today));
     if (!serviceDue.hasData) continue;
     const forecast = forecastService(serviceDue, kmPerDayFromReadings(readings.get(vehicle.id) ?? []), today);
-    if (!forecast.expectedDate || !forecast.basis) continue;
-    push(vehicle, "service", forecast.expectedDate, {
-      basis: forecast.basis,
+    // Already over the limit (by date or by km): always overdue, whatever the forecast says.
+    // A forecast would put a km-overdue car on "today" (not overdue), or without a km pace on
+    // the months date, possibly beyond the horizon, so the most urgent car would drop out.
+    let dueDate = forecast.expectedDate;
+    let basis = forecast.basis;
+    let overdue: boolean | undefined;
+    if (serviceDue.isDueByDate && serviceDue.nextServiceDate) {
+      dueDate = serviceDue.nextServiceDate.slice(0, 10);
+      basis = "months";
+      overdue = true;
+    } else if (serviceDue.isDueByMileage) {
+      dueDate = today;
+      basis = "km";
+      overdue = true;
+    }
+    if (!dueDate || !basis) continue;
+    push(vehicle, "service", dueDate, {
+      overdue,
+      basis,
       tooFewReadings: forecast.tooFewReadings,
       currentMileage: vehicle.currentMileage ?? null,
       nextServiceMileage: serviceDue.nextServiceMileage,
@@ -135,7 +153,7 @@ export const maintenanceOutlookReport: ReportDefinition<MaintenanceOutlookTile, 
       [tile, { count: rows.filter((r) => inTile(r, tile, filter)).length, amount: 0 }])) as MaintenanceOutlookSummary["tiles"];
     const weeks = new Map<string, MaintenanceOutlookWeek>();
     for (const row of [...rows].sort(compareRows("dueDate", "asc"))) {
-      if (row.dueDate < filter.from) continue;
+      if (row.overdue) continue;
       const week = weeks.get(row.weekStart) ?? { weekStart: row.weekStart, apk: 0, service: 0, items: [] };
       week[row.kind] += 1;
       week.items.push({ vehicleId: row.vehicleId, licensePlate: row.licensePlate, kind: row.kind, dueDate: row.dueDate });

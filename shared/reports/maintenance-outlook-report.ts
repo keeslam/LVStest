@@ -39,7 +39,7 @@ export interface MaintenanceOutlookRow {
   dueDate: string;
   /** Monday of the ISO week of dueDate. */
   weekStart: string;
-  /** dueDate before the horizon's from. */
+  /** dueDate before the horizon's from, or a service already over its km limit (then dueDate = from). Overdue rows count only in the overdue and all tiles. */
   overdue: boolean;
   /** apk for an APK row; km or months: which service limit is reached first. */
   basis: "apk" | "km" | "months";
