@@ -1549,6 +1549,40 @@ function DamageCheckManager() {
   );
 }
 
+/** The URL of a diagram's image; the update time makes the browser fetch a replaced image again. */
+const diagramImageUrl = (template: { id: number; updatedAt?: string | Date | null }) =>
+  `/api/vehicle-diagram-templates/${template.id}/image${template.updatedAt ? `?v=${encodeURIComponent(String(template.updatedAt))}` : ""}`;
+
+/**
+ * Kees 2026-10-24: the diagram picture, or a clear note when its file is gone from the server
+ * (the browser's broken-image icon said nothing). Also shows a picture chosen but not uploaded yet.
+ */
+function DiagramImagePreview({ src, file, alt, className = "aspect-video" }: { src?: string | null; file?: File | null; alt: string; className?: string }) {
+  const { t } = useTranslation("documents");
+  const [failed, setFailed] = useState(false);
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!file) { setFileUrl(null); return; }
+    const url = URL.createObjectURL(file);
+    setFileUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+  const shown = fileUrl ?? src ?? null;
+  useEffect(() => { setFailed(false); }, [shown]);
+  return (
+    <div className={`${className} relative flex items-center justify-center overflow-hidden rounded-md bg-gray-100`} data-testid="diagram-image-preview">
+      {shown && !failed ? (
+        <img src={shown} alt={alt} className="h-full w-full object-contain" onError={() => setFailed(true)} />
+      ) : (
+        <div className="flex flex-col items-center gap-1 p-4 text-center text-sm text-muted-foreground">
+          <Image className="h-8 w-8 text-gray-400" />
+          <span>{shown ? t('indexPage.diagramTemplates.imageMissing') : t('indexPage.diagramTemplates.noImageYet')}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DiagramTemplateManager() {
   const { t } = useTranslation("documents");
   const { toast } = useToast();
@@ -1806,13 +1840,7 @@ function DiagramTemplateManager() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {shownTemplates.map((template) => (
               <Card key={template.id} className="overflow-hidden">
-                <div className="aspect-video bg-gray-100 relative">
-                  <img
-                    src={`/api/vehicle-diagram-templates/${template.id}/image`}
-                    alt={`${template.make} ${template.model} diagram`}
-                    className="w-full h-full object-contain"
-                  />
-                </div>
+                <DiagramImagePreview src={diagramImageUrl(template)} alt={`${template.make} ${template.model} diagram`} className="aspect-video rounded-none" />
                 <div className="p-4">
                   <h4 className="font-medium text-lg">{template.make} {template.model}</h4>
                   {(template.yearFrom || template.yearTo) && (
@@ -1939,6 +1967,7 @@ function DiagramTemplateManager() {
                 onChange={(e) => setDiagramFile(e.target.files?.[0] || null)}
                 data-testid="input-diagram-file"
               />
+              {diagramFile && <DiagramImagePreview file={diagramFile} alt={`${make} ${model}`} className="h-48" />}
               {diagramFile && (
                 <p className="text-sm text-gray-600">{t('indexPage.diagramTemplates.selectedFileLabel', { filename: diagramFile.name })}</p>
               )}
@@ -2043,6 +2072,9 @@ function DiagramTemplateManager() {
                 onChange={(e) => setDiagramFile(e.target.files?.[0] || null)}
                 data-testid="input-edit-diagram-file"
               />
+              {editingTemplate && (
+                <DiagramImagePreview src={diagramImageUrl(editingTemplate)} file={diagramFile} alt={`${make} ${model}`} className="h-48" />
+              )}
               {diagramFile && (
                 <p className="text-sm text-green-600">{t('indexPage.diagramTemplates.newImageSelectedLabel', { filename: diagramFile.name })}</p>
               )}

@@ -271,7 +271,9 @@
       "yearFilterPlaceholder": "Rok produkcji",
       "clearFilters": "Wyczyść filtry",
       "shownCount": "{{shown}} z {{total}}",
-      "noMatches": "Brak diagramów pasujących do wyszukiwania."
+      "noMatches": "Brak diagramów pasujących do wyszukiwania.",
+      "imageMissing": "Brak pliku obrazu na serwerze. Wybierz nowy obraz w Edytuj.",
+      "noImageYet": "Nie wybrano jeszcze obrazu."
     },
     "tabBarcodeLabels": "Etykiety z kodem kreskowym",
     "barcodeLabelEditorTitle": "Szablony etykiet z kodem kreskowym",

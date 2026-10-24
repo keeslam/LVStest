@@ -268,7 +268,9 @@
       "yearFilterPlaceholder": "An fabricație",
       "clearFilters": "Șterge filtrele",
       "shownCount": "{{shown}} din {{total}}",
-      "noMatches": "Nicio diagramă nu corespunde căutării."
+      "noMatches": "Nicio diagramă nu corespunde căutării.",
+      "imageMissing": "Fișierul imaginii lipsește de pe server. Alegeți o imagine nouă prin Editare.",
+      "noImageYet": "Nicio imagine aleasă încă."
     },
     "tabBarcodeLabels": "Etichete cu cod de bare",
     "barcodeLabelEditorTitle": "Șabloane de etichete cu cod de bare",

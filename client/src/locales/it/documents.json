@@ -268,7 +268,9 @@
       "yearFilterPlaceholder": "Anno",
       "clearFilters": "Cancella filtri",
       "shownCount": "{{shown}} di {{total}}",
-      "noMatches": "Nessun diagramma corrisponde alla ricerca."
+      "noMatches": "Nessun diagramma corrisponde alla ricerca.",
+      "imageMissing": "Il file immagine manca sul server. Scegli una nuova immagine tramite Modifica.",
+      "noImageYet": "Nessuna immagine scelta."
     },
     "tabBarcodeLabels": "Etichette con codice a barre",
     "barcodeLabelEditorTitle": "Modelli di etichette con codice a barre",
