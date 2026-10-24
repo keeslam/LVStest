@@ -401,7 +401,14 @@
       "warrantyEndDate": "Einddatum garantie",
       "noWarrantyData": "Geen garantiegegevens beschikbaar",
       "utilizationVisualizationTitle": "Voertuigbenutting visualisatie",
-      "utilizationVisualizationDesc": "Top voertuigen op benuttingspercentage"
+      "utilizationVisualizationDesc": "Top voertuigen op benuttingspercentage",
+      "mileageHistory": {
+        "title": "Km-historie per voertuig",
+        "description": "Kies een voertuig en zie alle km-standen in de periode.",
+        "vehicle": "Voertuig",
+        "pickVehicle": "Kies een voertuig",
+        "noVehicle": "Kies eerst een voertuig."
+      }
     },
     "customersTab": {
       "impactTitle": "Klantimpactanalyse",

@@ -277,7 +277,8 @@
       "reservations": "Rezervări",
       "maintenance": "Întreținere",
       "history": "Istoric",
-      "fiscal": "Fiscal"
+      "fiscal": "Fiscal",
+      "mileage": "Istoric km"
     },
     "general": {
       "title": "Datele vehiculului",
@@ -1125,5 +1126,54 @@
     "backTitle": "Înapoi în flotă",
     "bannerTitle": "Scos din flotă din {{date}}",
     "bannerHint": "Nu mai poate fi rezervat. Rezervările, costurile, documentele și contractele rămân disponibile mai jos."
+  },
+  "mileageHistory": {
+    "title": "Istoric km",
+    "period": "Perioadă",
+    "from": "De la",
+    "to": "Până la (inclusiv)",
+    "tiles": {
+      "drivenKm": "Km parcurși",
+      "avgPerMonth": "Medie pe lună",
+      "freeKm": "Km gratuiți",
+      "overFreeKm": "Peste km gratuiți",
+      "noFreeKm": "Nesetat",
+      "warnings": "Avertizări",
+      "readings": "Număr de citiri: {{n}}",
+      "showAll": "Faceți clic pentru a vedea toate citirile",
+      "showWarnings": "Faceți clic pentru a vedea doar avertizările"
+    },
+    "chartTitle": "Kilometraj în timp",
+    "columns": {
+      "date": "Dată",
+      "mileage": "Kilometraj",
+      "driven": "Parcurși de la anterioara",
+      "source": "Sursă",
+      "actor": "De către cine",
+      "warning": "Avertizare"
+    },
+    "sources": {
+      "pickup": "Ridicare",
+      "return": "Returnare",
+      "damage_check": "Verificare daune",
+      "manual": "Manual",
+      "portal": "Portal clienți",
+      "service": "Întreținere",
+      "import": "Import"
+    },
+    "warningTypes": {
+      "decrease": "Mai mic decât citirea anterioară",
+      "jump": "Salt nelogic"
+    },
+    "voided": "anulată",
+    "empty": "Încă nu există citiri în această perioadă",
+    "noWarnings": "Nicio avertizare în această perioadă",
+    "filterWarnings": "Doar avertizări",
+    "showAll": "Arată tot",
+    "print": "Tipărire",
+    "csv": "CSV",
+    "loading": "Se încarcă...",
+    "error": "Istoricul km nu a putut fi încărcat.",
+    "invalidPeriod": "Alegeți o perioadă validă: data de început trebuie să fie înaintea datei de sfârșit."
   }
 }

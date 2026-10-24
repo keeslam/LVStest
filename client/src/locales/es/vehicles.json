@@ -277,7 +277,8 @@
       "reservations": "Reservas",
       "maintenance": "Mantenimiento",
       "history": "Historial",
-      "fiscal": "Fiscal"
+      "fiscal": "Fiscal",
+      "mileage": "Historial de km"
     },
     "general": {
       "title": "Datos del vehículo",
@@ -1125,5 +1126,54 @@
     "backTitle": "De vuelta en la flota",
     "bannerTitle": "Fuera de la flota desde {{date}}",
     "bannerHint": "Ya no se puede reservar. Las reservas, costes, documentos y contratos siguen disponibles abajo."
+  },
+  "mileageHistory": {
+    "title": "Historial de km",
+    "period": "Periodo",
+    "from": "Desde",
+    "to": "Hasta (incluido)",
+    "tiles": {
+      "drivenKm": "Km recorridos",
+      "avgPerMonth": "Media por mes",
+      "freeKm": "Km libres",
+      "overFreeKm": "Por encima de los km libres",
+      "noFreeKm": "No configurado",
+      "warnings": "Avisos",
+      "readings": "Número de lecturas: {{n}}",
+      "showAll": "Haga clic para ver todas las lecturas",
+      "showWarnings": "Haga clic para ver solo los avisos"
+    },
+    "chartTitle": "Kilometraje en el tiempo",
+    "columns": {
+      "date": "Fecha",
+      "mileage": "Kilometraje",
+      "driven": "Recorrido desde la anterior",
+      "source": "Origen",
+      "actor": "Por quién",
+      "warning": "Aviso"
+    },
+    "sources": {
+      "pickup": "Recogida",
+      "return": "Devolución",
+      "damage_check": "Control de daños",
+      "manual": "Manual",
+      "portal": "Portal de clientes",
+      "service": "Mantenimiento",
+      "import": "Importación"
+    },
+    "warningTypes": {
+      "decrease": "Inferior a la lectura anterior",
+      "jump": "Salto ilógico"
+    },
+    "voided": "anulada",
+    "empty": "Aún no hay lecturas en este periodo",
+    "noWarnings": "No hay avisos en este periodo",
+    "filterWarnings": "Solo avisos",
+    "showAll": "Mostrar todo",
+    "print": "Imprimir",
+    "csv": "CSV",
+    "loading": "Cargando...",
+    "error": "No se pudo cargar el historial de km.",
+    "invalidPeriod": "Elija un periodo válido: la fecha de inicio debe ser anterior a la fecha final."
   }
 }

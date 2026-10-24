@@ -19,7 +19,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { ExpenseChart, type ExpenseChartData } from "@/components/reports/expense-chart";
 import { UtilizationChart, type UtilizationChartData } from "@/components/reports/utilization-chart";
-import { Vehicle, Expense, Reservation, Customer, VehicleTransport, UserPermission } from "@shared/schema";
+import { Vehicle, Expense, Reservation, Customer, VehicleTransport, UserPermission, UserRole } from "@shared/schema";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { NoDataAccess } from "@/components/ui/no-data-access";
 import { formatDate, formatDateTime, formatCurrency, formatLicensePlate, sumMoney, plateMatches, formatExpenseCategory, formatReservationStatus } from "@/lib/format-utils";
@@ -46,6 +46,8 @@ import { WorkshopDowntimeCard } from "./workshop-downtime-card";
 import { FinancialTab } from "@/pages/reports/financial-tab";
 import { FiscalReportTab } from "@/components/fiscal/fiscal-report-tab";
 import { useFiscalPermissions } from "@/components/fiscal/use-fiscal-permissions";
+import { MileageHistoryPanel } from "@/components/vehicles/mileage-history-panel";
+import { useAuth } from "@/hooks/use-auth";
 
 /**
  * Reports Page - Generate and display reports for the car rental business
@@ -97,6 +99,11 @@ function FullReportsPage() {
   
   // Vehicle filter
   const [selectedVehicle, setSelectedVehicle] = useState<string>("all");
+
+  // Km-historie card (Voertuigen tab): admin only, like GET /api/mileage-history.
+  const { user: currentUser } = useAuth();
+  const isAdmin = currentUser?.role === UserRole.ADMIN;
+  const [mileageVehicle, setMileageVehicle] = useState<string>("");
   
   // Expense category filter
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -2340,6 +2347,40 @@ function FullReportsPage() {
 
           {/* Round 2 punt 11: workshop downtime per vehicle and per brand/model. */}
           <WorkshopDowntimeCard dateRange={dateRange} />
+
+          {/* Km-historie of one vehicle (admin only). */}
+          {isAdmin && (
+            <Card data-testid="card-report-mileage-history">
+              <CardHeader>
+                <CardTitle>{t('reportsPage.vehiclesTab.mileageHistory.title')}</CardTitle>
+                <CardDescription>{t('reportsPage.vehiclesTab.mileageHistory.description')}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="max-w-sm space-y-2">
+                  <label className="text-sm font-medium">{t('reportsPage.vehiclesTab.mileageHistory.vehicle')}</label>
+                  <SearchableCombobox
+                    options={vehicleFilterOptions.filter((o) => o.value !== "all")}
+                    value={mileageVehicle}
+                    onChange={setMileageVehicle}
+                    placeholder={t('reportsPage.vehiclesTab.mileageHistory.pickVehicle')}
+                    searchPlaceholder={t('reportsPage.filters.vehicleSearchPlaceholder')}
+                    emptyMessage={t('reportsPage.filters.noVehicleFound')}
+                    data-testid="select-report-mileage-vehicle"
+                  />
+                </div>
+                {mileageVehicle ? (
+                  <MileageHistoryPanel
+                    key={`${mileageVehicle}-${reportFrom}-${reportTo}`}
+                    vehicleId={Number(mileageVehicle)}
+                    defaultFrom={reportFrom}
+                    defaultTo={reportTo}
+                  />
+                ) : (
+                  <p className="text-sm text-gray-500">{t('reportsPage.vehiclesTab.mileageHistory.noVehicle')}</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
           </>
           )}
         </TabsContent>

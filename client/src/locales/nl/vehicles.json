@@ -275,7 +275,8 @@
       "reservations": "Reserveringen",
       "maintenance": "Onderhoud",
       "history": "Geschiedenis",
-      "fiscal": "Fiscaal"
+      "fiscal": "Fiscaal",
+      "mileage": "Km-historie"
     },
     "general": {
       "title": "Voertuiggegevens",
@@ -1115,5 +1116,54 @@
     "backTitle": "Terug in de vloot",
     "bannerTitle": "Uit de vloot sinds {{date}}",
     "bannerHint": "Niet meer te boeken. Reserveringen, kosten, documenten en contracten blijven hieronder beschikbaar."
+  },
+  "mileageHistory": {
+    "title": "Km-historie",
+    "period": "Periode",
+    "from": "Van",
+    "to": "Tot en met",
+    "tiles": {
+      "drivenKm": "Gereden km",
+      "avgPerMonth": "Gemiddeld per maand",
+      "freeKm": "Vrije km",
+      "overFreeKm": "Boven vrije km",
+      "noFreeKm": "Niet ingesteld",
+      "warnings": "Waarschuwingen",
+      "readings": "Aantal km-standen: {{n}}",
+      "showAll": "Klik om alle km-standen te zien",
+      "showWarnings": "Klik om alleen de waarschuwingen te zien"
+    },
+    "chartTitle": "Km-stand in de tijd",
+    "columns": {
+      "date": "Datum",
+      "mileage": "Km-stand",
+      "driven": "Gereden sinds vorige",
+      "source": "Bron",
+      "actor": "Door wie",
+      "warning": "Waarschuwing"
+    },
+    "sources": {
+      "pickup": "Ophalen",
+      "return": "Inleveren",
+      "damage_check": "Schadecheck",
+      "manual": "Handmatig",
+      "portal": "Klantportaal",
+      "service": "Onderhoud",
+      "import": "Import"
+    },
+    "warningTypes": {
+      "decrease": "Km-stand lager dan vorige",
+      "jump": "Onlogische sprong"
+    },
+    "voided": "vervallen",
+    "empty": "Nog geen km-standen in deze periode",
+    "noWarnings": "Geen waarschuwingen in deze periode",
+    "filterWarnings": "Alleen waarschuwingen",
+    "showAll": "Toon alles",
+    "print": "Afdrukken",
+    "csv": "CSV",
+    "loading": "Laden...",
+    "error": "De km-historie kon niet worden geladen.",
+    "invalidPeriod": "Kies een geldige periode: de begindatum moet voor de einddatum liggen."
   }
 }

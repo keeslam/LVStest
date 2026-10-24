@@ -412,7 +412,14 @@
       "warrantyEndDate": "Data de fim da garantia",
       "noWarrantyData": "Não há dados de garantia disponíveis",
       "utilizationVisualizationTitle": "Visualização da utilização dos veículos",
-      "utilizationVisualizationDesc": "Principais veículos por percentagem de utilização"
+      "utilizationVisualizationDesc": "Principais veículos por percentagem de utilização",
+      "mileageHistory": {
+        "title": "Histórico de km por veículo",
+        "description": "Escolha um veículo para ver todas as leituras do período.",
+        "vehicle": "Veículo",
+        "pickVehicle": "Escolha um veículo",
+        "noVehicle": "Escolha primeiro um veículo."
+      }
     },
     "customersTab": {
       "impactTitle": "Análise do impacto dos clientes",

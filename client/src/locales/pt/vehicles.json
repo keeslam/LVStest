@@ -277,7 +277,8 @@
       "reservations": "Reservas",
       "maintenance": "Manutenção",
       "history": "Histórico",
-      "fiscal": "Fiscal"
+      "fiscal": "Fiscal",
+      "mileage": "Histórico de km"
     },
     "general": {
       "title": "Dados do veículo",
@@ -1125,5 +1126,54 @@
     "backTitle": "De volta à frota",
     "bannerTitle": "Fora da frota desde {{date}}",
     "bannerHint": "Já não pode ser reservado. Reservas, custos, documentos e contratos continuam disponíveis abaixo."
+  },
+  "mileageHistory": {
+    "title": "Histórico de km",
+    "period": "Período",
+    "from": "De",
+    "to": "Até (inclusive)",
+    "tiles": {
+      "drivenKm": "Km percorridos",
+      "avgPerMonth": "Média por mês",
+      "freeKm": "Km livres",
+      "overFreeKm": "Acima dos km livres",
+      "noFreeKm": "Não definido",
+      "warnings": "Avisos",
+      "readings": "Número de leituras: {{n}}",
+      "showAll": "Clique para ver todas as leituras",
+      "showWarnings": "Clique para ver só os avisos"
+    },
+    "chartTitle": "Quilometragem ao longo do tempo",
+    "columns": {
+      "date": "Data",
+      "mileage": "Quilometragem",
+      "driven": "Percorrido desde a anterior",
+      "source": "Origem",
+      "actor": "Por quem",
+      "warning": "Aviso"
+    },
+    "sources": {
+      "pickup": "Levantamento",
+      "return": "Devolução",
+      "damage_check": "Verificação de danos",
+      "manual": "Manual",
+      "portal": "Portal do cliente",
+      "service": "Manutenção",
+      "import": "Importação"
+    },
+    "warningTypes": {
+      "decrease": "Inferior à leitura anterior",
+      "jump": "Salto ilógico"
+    },
+    "voided": "anulada",
+    "empty": "Ainda não há leituras neste período",
+    "noWarnings": "Sem avisos neste período",
+    "filterWarnings": "Só avisos",
+    "showAll": "Mostrar tudo",
+    "print": "Imprimir",
+    "csv": "CSV",
+    "loading": "A carregar...",
+    "error": "Não foi possível carregar o histórico de km.",
+    "invalidPeriod": "Escolha um período válido: a data de início deve ser anterior à data de fim."
   }
 }

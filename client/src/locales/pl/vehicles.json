@@ -279,7 +279,8 @@
       "reservations": "Rezerwacje",
       "maintenance": "Serwis",
       "history": "Historia",
-      "fiscal": "Podatki"
+      "fiscal": "Podatki",
+      "mileage": "Historia km"
     },
     "general": {
       "title": "Dane pojazdu",
@@ -1135,5 +1136,54 @@
     "backTitle": "Przywrócono do floty",
     "bannerTitle": "Poza flotą od {{date}}",
     "bannerHint": "Nie można już rezerwować. Rezerwacje, koszty, dokumenty i umowy są nadal dostępne poniżej."
+  },
+  "mileageHistory": {
+    "title": "Historia km",
+    "period": "Okres",
+    "from": "Od",
+    "to": "Do (włącznie)",
+    "tiles": {
+      "drivenKm": "Przejechane km",
+      "avgPerMonth": "Średnio na miesiąc",
+      "freeKm": "Wolne km",
+      "overFreeKm": "Ponad wolne km",
+      "noFreeKm": "Nie ustawiono",
+      "warnings": "Ostrzeżenia",
+      "readings": "Liczba odczytów: {{n}}",
+      "showAll": "Kliknij, aby zobaczyć wszystkie odczyty",
+      "showWarnings": "Kliknij, aby zobaczyć tylko ostrzeżenia"
+    },
+    "chartTitle": "Przebieg w czasie",
+    "columns": {
+      "date": "Data",
+      "mileage": "Przebieg",
+      "driven": "Przejechane od poprzedniego",
+      "source": "Źródło",
+      "actor": "Przez kogo",
+      "warning": "Ostrzeżenie"
+    },
+    "sources": {
+      "pickup": "Odbiór",
+      "return": "Zwrot",
+      "damage_check": "Kontrola szkód",
+      "manual": "Ręcznie",
+      "portal": "Portal klienta",
+      "service": "Serwis",
+      "import": "Import"
+    },
+    "warningTypes": {
+      "decrease": "Niższy niż poprzedni odczyt",
+      "jump": "Nielogiczny skok"
+    },
+    "voided": "unieważniony",
+    "empty": "Brak odczytów w tym okresie",
+    "noWarnings": "Brak ostrzeżeń w tym okresie",
+    "filterWarnings": "Tylko ostrzeżenia",
+    "showAll": "Pokaż wszystko",
+    "print": "Drukuj",
+    "csv": "CSV",
+    "loading": "Ładowanie...",
+    "error": "Nie udało się wczytać historii km.",
+    "invalidPeriod": "Wybierz prawidłowy okres: data początkowa musi być przed datą końcową."
   }
 }

@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatLicensePlate, formatExpenseCategory } from "@/lib/format-utils";
+import { useAuth } from "@/hooks/use-auth";
+import { UserRole } from "@shared/schema";
 
 // Mirrors server/utils/financial-reports.ts
 interface VehicleFinancialRow {
@@ -52,8 +54,12 @@ export function FinancialTab({ dateRange, selectedVehicle }: FinancialTabProps) 
   const { data: financials, isLoading: loadingFinancials } = useQuery<VehicleFinancialsReport>({
     queryKey: [`/api/reports/vehicle-financials?from=${from}&to=${to}${vehicleParam}`],
   });
+  // GET /api/reports/mileage-per-month is admin only (km-historie, task 6): a non-admin neither asks nor sees the card.
+  const { user } = useAuth();
+  const isAdmin = user?.role === UserRole.ADMIN;
   const { data: mileage, isLoading: loadingMileage } = useQuery<MileagePerMonthReport>({
     queryKey: [`/api/reports/mileage-per-month?from=${from}&to=${to}${vehicleParam}`],
+    enabled: isAdmin,
   });
 
   const activeRows = useMemo(() => (financials?.rows || []).filter(r => r.rentals > 0 || r.expenses > 0), [financials]);
@@ -193,8 +199,9 @@ export function FinancialTab({ dateRange, selectedVehicle }: FinancialTabProps) 
         </CardContent>
       </Card>
 
-      {/* Kilometres per month */}
-      <Card>
+      {/* Kilometres per month (admin only) */}
+      {isAdmin && (
+      <Card data-testid="card-mileage-per-month">
         <CardHeader>
           <CardTitle>{t('financialTab.mileage.title')}</CardTitle>
           <CardDescription>{t('financialTab.mileage.description')}</CardDescription>
@@ -249,6 +256,7 @@ export function FinancialTab({ dateRange, selectedVehicle }: FinancialTabProps) 
           </div>
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }

@@ -275,7 +275,8 @@
       "reservations": "Reservations",
       "maintenance": "Maintenance",
       "history": "History",
-      "fiscal": "Fiscal"
+      "fiscal": "Fiscal",
+      "mileage": "Mileage history"
     },
     "general": {
       "title": "Vehicle Details",
@@ -1115,5 +1116,54 @@
     "backTitle": "Back in the fleet",
     "bannerTitle": "Out of the fleet since {{date}}",
     "bannerHint": "Can no longer be booked. Reservations, costs, documents and contracts stay available below."
+  },
+  "mileageHistory": {
+    "title": "Mileage history",
+    "period": "Period",
+    "from": "From",
+    "to": "Up to and including",
+    "tiles": {
+      "drivenKm": "Km driven",
+      "avgPerMonth": "Average per month",
+      "freeKm": "Free km",
+      "overFreeKm": "Above free km",
+      "noFreeKm": "Not set",
+      "warnings": "Warnings",
+      "readings": "Number of readings: {{n}}",
+      "showAll": "Click to see all readings",
+      "showWarnings": "Click to see only the warnings"
+    },
+    "chartTitle": "Mileage over time",
+    "columns": {
+      "date": "Date",
+      "mileage": "Mileage",
+      "driven": "Driven since previous",
+      "source": "Source",
+      "actor": "By whom",
+      "warning": "Warning"
+    },
+    "sources": {
+      "pickup": "Pickup",
+      "return": "Return",
+      "damage_check": "Damage check",
+      "manual": "Manual",
+      "portal": "Customer portal",
+      "service": "Maintenance",
+      "import": "Import"
+    },
+    "warningTypes": {
+      "decrease": "Lower than previous reading",
+      "jump": "Illogical jump"
+    },
+    "voided": "void",
+    "empty": "No readings in this period yet",
+    "noWarnings": "No warnings in this period",
+    "filterWarnings": "Warnings only",
+    "showAll": "Show all",
+    "print": "Print",
+    "csv": "CSV",
+    "loading": "Loading...",
+    "error": "The mileage history could not be loaded.",
+    "invalidPeriod": "Choose a valid period: the start date must be before the end date."
   }
 }

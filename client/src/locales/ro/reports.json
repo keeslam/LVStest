@@ -412,7 +412,14 @@
       "warrantyEndDate": "Data de sfârșit a garanției",
       "noWarrantyData": "Nu există date despre garanție disponibile",
       "utilizationVisualizationTitle": "Vizualizarea gradului de utilizare a vehiculelor",
-      "utilizationVisualizationDesc": "Primele vehicule după procentul de utilizare"
+      "utilizationVisualizationDesc": "Primele vehicule după procentul de utilizare",
+      "mileageHistory": {
+        "title": "Istoric km pe vehicul",
+        "description": "Alegeți un vehicul pentru a vedea toate citirile din perioadă.",
+        "vehicle": "Vehicul",
+        "pickVehicle": "Alegeți un vehicul",
+        "noVehicle": "Alegeți mai întâi un vehicul."
+      }
     },
     "customersTab": {
       "impactTitle": "Analiza impactului clienților",

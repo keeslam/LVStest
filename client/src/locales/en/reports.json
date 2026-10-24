@@ -401,7 +401,14 @@
       "warrantyEndDate": "Warranty End Date",
       "noWarrantyData": "No warranty data available",
       "utilizationVisualizationTitle": "Vehicle Utilization Visualization",
-      "utilizationVisualizationDesc": "Top vehicles by utilization percentage"
+      "utilizationVisualizationDesc": "Top vehicles by utilization percentage",
+      "mileageHistory": {
+        "title": "Mileage history per vehicle",
+        "description": "Choose a vehicle to see all readings in the period.",
+        "vehicle": "Vehicle",
+        "pickVehicle": "Choose a vehicle",
+        "noVehicle": "Choose a vehicle first."
+      }
     },
     "customersTab": {
       "impactTitle": "Customer Impact Analysis",

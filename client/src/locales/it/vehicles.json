@@ -277,7 +277,8 @@
       "reservations": "Prenotazioni",
       "maintenance": "Manutenzione",
       "history": "Cronologia",
-      "fiscal": "Fiscale"
+      "fiscal": "Fiscale",
+      "mileage": "Storico km"
     },
     "general": {
       "title": "Dati del veicolo",
@@ -1125,5 +1126,54 @@
     "backTitle": "Di nuovo nella flotta",
     "bannerTitle": "Fuori flotta dal {{date}}",
     "bannerHint": "Non più prenotabile. Prenotazioni, costi, documenti e contratti restano disponibili qui sotto."
+  },
+  "mileageHistory": {
+    "title": "Storico km",
+    "period": "Periodo",
+    "from": "Dal",
+    "to": "Fino al (incluso)",
+    "tiles": {
+      "drivenKm": "Km percorsi",
+      "avgPerMonth": "Media al mese",
+      "freeKm": "Km liberi",
+      "overFreeKm": "Oltre i km liberi",
+      "noFreeKm": "Non impostato",
+      "warnings": "Avvisi",
+      "readings": "Numero di letture: {{n}}",
+      "showAll": "Clicca per vedere tutte le letture",
+      "showWarnings": "Clicca per vedere solo gli avvisi"
+    },
+    "chartTitle": "Chilometraggio nel tempo",
+    "columns": {
+      "date": "Data",
+      "mileage": "Chilometraggio",
+      "driven": "Percorsi dalla precedente",
+      "source": "Origine",
+      "actor": "Da chi",
+      "warning": "Avviso"
+    },
+    "sources": {
+      "pickup": "Ritiro",
+      "return": "Riconsegna",
+      "damage_check": "Controllo danni",
+      "manual": "Manuale",
+      "portal": "Portale clienti",
+      "service": "Manutenzione",
+      "import": "Importazione"
+    },
+    "warningTypes": {
+      "decrease": "Inferiore alla lettura precedente",
+      "jump": "Salto illogico"
+    },
+    "voided": "annullata",
+    "empty": "Ancora nessuna lettura in questo periodo",
+    "noWarnings": "Nessun avviso in questo periodo",
+    "filterWarnings": "Solo avvisi",
+    "showAll": "Mostra tutto",
+    "print": "Stampa",
+    "csv": "CSV",
+    "loading": "Caricamento...",
+    "error": "Impossibile caricare lo storico km.",
+    "invalidPeriod": "Scegli un periodo valido: la data di inizio deve precedere la data di fine."
   }
 }

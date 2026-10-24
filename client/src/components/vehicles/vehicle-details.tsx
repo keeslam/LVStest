@@ -107,6 +107,7 @@ import { format, addDays, parseISO } from "date-fns";
 import { useMemo } from "react";
 
 import { VehicleFiscalTab } from "@/components/fiscal/vehicle-fiscal-tab";
+import { MileageHistoryPanel } from "@/components/vehicles/mileage-history-panel";
 
 interface VehicleDetailsProps {
   vehicleId: number;
@@ -1479,7 +1480,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
 
       {/* Tabs */}
       <Tabs defaultValue="general" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-7 w-full">
+        <TabsList className={`grid ${isAdmin ? "grid-cols-8" : "grid-cols-7"} w-full`}>
           <TabsTrigger value="general">{t('details.tabs.general')}</TabsTrigger>
           <TabsTrigger value="expenses">{t('details.tabs.expenses')}</TabsTrigger>
           <TabsTrigger value="documents">{t('details.tabs.documents')}</TabsTrigger>
@@ -1487,7 +1488,15 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
           <TabsTrigger value="maintenance">{t('details.tabs.maintenance')}</TabsTrigger>
           <TabsTrigger value="history">{t('details.tabs.history')}</TabsTrigger>
           <TabsTrigger value="fiscal">{t('details.tabs.fiscal')}</TabsTrigger>
+          {/* Km-historie: GET /api/mileage-history is admin only, so the tab is too. */}
+          {isAdmin && <TabsTrigger value="mileage" data-testid="tab-vehicle-mileage">{t('details.tabs.mileage')}</TabsTrigger>}
         </TabsList>
+
+        {isAdmin && (
+          <TabsContent value="mileage" className="mt-6">
+            <MileageHistoryPanel vehicleId={vehicleId} />
+          </TabsContent>
+        )}
 
         {/* Fiscal mobility check (docs/fiscaal): profile with provenance, manual corrections, assessments. */}
         <TabsContent value="fiscal" className="mt-6">
