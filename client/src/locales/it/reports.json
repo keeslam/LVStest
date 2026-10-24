@@ -250,6 +250,22 @@
       "expenses": "Costi",
       "margin": "Margine"
     },
+    "csv": {
+      "subject": "finanze-veicoli",
+      "button": "CSV",
+      "licensePlate": "Targa",
+      "brand": "Marca",
+      "model": "Modello",
+      "rentals": "Noleggi",
+      "rentalDays": "Giorni di noleggio",
+      "revenue": "Fatturato",
+      "extraCosts": "Di cui costi aggiuntivi",
+      "perDay": "Per giorno di noleggio",
+      "dailyPrice": "Prezzo giornaliero",
+      "expenses": "Costi",
+      "margin": "Margine",
+      "marginPct": "Margine %"
+    },
     "table": {
       "title": "Costi e ricavi per veicolo",
       "description": "Fatturato dei noleggi standard iniziati nel periodo, costi in base alla data nel periodo",

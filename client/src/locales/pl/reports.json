@@ -257,6 +257,22 @@
       "expenses": "Koszty",
       "margin": "Marża"
     },
+    "csv": {
+      "subject": "finanse-pojazdow",
+      "button": "CSV",
+      "licensePlate": "Numer rejestracyjny",
+      "brand": "Marka",
+      "model": "Model",
+      "rentals": "Wynajmy",
+      "rentalDays": "Dni wynajmu",
+      "revenue": "Przychód",
+      "extraCosts": "W tym dodatkowe koszty",
+      "perDay": "Za dzień wynajmu",
+      "dailyPrice": "Cena dzienna",
+      "expenses": "Koszty",
+      "margin": "Marża",
+      "marginPct": "Marża %"
+    },
     "table": {
       "title": "Koszty i przychody według pojazdu",
       "description": "Przychód ze standardowych wynajmów rozpoczętych w okresie, koszty według daty w okresie",

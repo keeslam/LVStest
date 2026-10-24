@@ -243,6 +243,22 @@
       "expenses": "Kosten",
       "margin": "Marge"
     },
+    "csv": {
+      "subject": "voertuigfinancien",
+      "button": "CSV",
+      "licensePlate": "Kenteken",
+      "brand": "Merk",
+      "model": "Model",
+      "rentals": "Verhuringen",
+      "rentalDays": "Huurdagen",
+      "revenue": "Omzet",
+      "extraCosts": "Waarvan extra kosten",
+      "perDay": "Per huurdag",
+      "dailyPrice": "Dagprijs",
+      "expenses": "Kosten",
+      "margin": "Marge",
+      "marginPct": "Marge %"
+    },
     "table": {
       "title": "Kosten en opbrengst per voertuig",
       "description": "Omzet uit standaardverhuringen gestart in de periode, kosten op datum in de periode",

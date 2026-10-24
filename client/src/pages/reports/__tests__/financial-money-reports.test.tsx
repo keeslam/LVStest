@@ -11,7 +11,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
-import { formatCurrency } from "@/lib/format-utils";
+import { formatCurrency, formatLicensePlate } from "@/lib/format-utils";
 import { csvDate } from "@/lib/csv";
 
 let permissions: string[] = [];
@@ -154,8 +154,8 @@ describe("Financieel - transport en facturatie", () => {
     renderTab();
     const tile = await screen.findByTestId("button-transport-billing-tile-notInvoiced");
     await waitFor(() => expect(within(tile).getByTestId("transport-billing-tile-notInvoiced-value")).toHaveTextContent("2"));
-    const text = (tile.textContent ?? "").replace(/s/g, " ");
-    expect(text).toContain(formatCurrency(150).replace(/s/g, " "));
+    const text = (tile.textContent ?? "").replace(/\s/g, " ");
+    expect(text).toContain(formatCurrency(150).replace(/\s/g, " "));
     expect(text).toContain("1 zonder bedrag");
   });
 
@@ -186,5 +186,37 @@ describe("Financieel - transport en facturatie", () => {
     const rowsPath = fetchedPaths().find((p) => p.startsWith("/api/reports/transport-billing/rows"))!;
     expect(rowsPath).not.toContain("from=");
     expect(rowsPath).not.toContain("to=");
+  });
+});
+
+describe("Financieel - CSV van de voertuigtabel", () => {
+  it("schrijft de rijen van het scherm plus een totaalrij", async () => {
+    permissions = ["view_reports"];
+    downloadCsv.mockClear();
+    const base = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation(async (input: unknown) => {
+      if (pathOf(input).startsWith("/api/reports/vehicle-financials")) {
+        return json({
+          rows: [{
+            vehicleId: 1, licensePlate: "ABC12D", brand: "Volkswagen", model: "Golf", dailyPrice: 90, rentals: 2, rentalDays: 10,
+            revenue: 1000, extraCosts: 95.5, expenses: 400, expensesByCategory: {}, margin: 600,
+          }],
+          totals: { rentals: 2, rentalDays: 10, revenue: 1000, extraCosts: 95.5, expenses: 400, margin: 600 },
+        });
+      }
+      return base(input);
+    });
+    const user = userEvent.setup();
+    renderTab();
+    await screen.findByTestId("row-financial-1");
+    await user.click(screen.getByTestId("button-financial-csv"));
+    expect(downloadCsv).toHaveBeenCalledTimes(1);
+    const [subject, header, rows] = downloadCsv.mock.calls[0] as any[];
+    expect(subject).toBe("voertuigfinancien");
+    expect(header).toHaveLength(12);
+    expect(rows).toEqual([
+      [formatLicensePlate("ABC12D"), "Volkswagen", "Golf", 2, 10, "1000,00", "95,50", "100,00", "90,00", "400,00", "600,00", "60"],
+      ["Totaal", "", "", 2, 10, "1000,00", "95,50", "100,00", "", "400,00", "600,00", "60"],
+    ]);
   });
 });

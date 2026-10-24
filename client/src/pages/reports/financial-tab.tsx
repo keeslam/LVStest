@@ -8,6 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatLicensePlate, formatExpenseCategory } from "@/lib/format-utils";
+import { downloadCsv, csvNumber } from "@/lib/csv";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { UserRole } from "@shared/schema";
 import { FinesReportCard } from "./fines-report-card";
@@ -78,6 +81,28 @@ export function FinancialTab({ dateRange, selectedVehicle }: FinancialTabProps) 
   const marginPct = (row: { revenue: number; margin: number }) =>
     row.revenue > 0 ? `${Math.round((row.margin / row.revenue) * 100)}%` : "–";
 
+  const marginPctCsv = (row: { revenue: number; margin: number }) =>
+    row.revenue > 0 ? String(Math.round((row.margin / row.revenue) * 100)) : "";
+
+  const exportCsv = () => {
+    if (!financials) return;
+    const c = (key: string) => t(`financialTab.csv.${key}`);
+    const header = ["licensePlate", "brand", "model", "rentals", "rentalDays", "revenue", "extraCosts", "perDay", "dailyPrice", "expenses", "margin", "marginPct"].map(c);
+    const perDay = (r: { revenue: number; rentalDays: number }) => (r.rentalDays > 0 ? csvNumber(r.revenue / r.rentalDays) : "");
+    const rows = activeRows.map(r => [
+      formatLicensePlate(r.licensePlate), r.brand, r.model, r.rentals, r.rentalDays,
+      csvNumber(r.revenue), csvNumber(r.extraCosts ?? 0), perDay(r), csvNumber(r.dailyPrice),
+      csvNumber(r.expenses), csvNumber(r.margin), marginPctCsv(r),
+    ]);
+    const tot = financials.totals;
+    rows.push([
+      t('financialTab.table.total'), "", "", tot.rentals, tot.rentalDays,
+      csvNumber(tot.revenue), csvNumber(tot.extraCosts ?? 0), perDay(tot), "",
+      csvNumber(tot.expenses), csvNumber(tot.margin), marginPctCsv(tot),
+    ]);
+    downloadCsv(t('financialTab.csv.subject'), header, rows);
+  };
+
   return (
     <div className="space-y-6" data-testid="financial-tab">
       {/* Summary */}
@@ -134,9 +159,15 @@ export function FinancialTab({ dateRange, selectedVehicle }: FinancialTabProps) 
 
       {/* Per-vehicle table */}
       <Card>
-        <CardHeader>
-          <CardTitle>{t('financialTab.table.title')}</CardTitle>
-          <CardDescription>{t('financialTab.table.description')}</CardDescription>
+        <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
+          <div className="space-y-1.5">
+            <CardTitle>{t('financialTab.table.title')}</CardTitle>
+            <CardDescription>{t('financialTab.table.description')}</CardDescription>
+          </div>
+          <Button variant="outline" size="sm" onClick={exportCsv} disabled={activeRows.length === 0} data-testid="button-financial-csv">
+            <Download className="h-4 w-4 mr-1" />
+            {t('financialTab.csv.button')}
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">

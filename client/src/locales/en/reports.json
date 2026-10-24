@@ -243,6 +243,22 @@
       "expenses": "Expenses",
       "margin": "Margin"
     },
+    "csv": {
+      "subject": "vehicle-financials",
+      "button": "CSV",
+      "licensePlate": "License plate",
+      "brand": "Brand",
+      "model": "Model",
+      "rentals": "Rentals",
+      "rentalDays": "Rental days",
+      "revenue": "Revenue",
+      "extraCosts": "Of which extra costs",
+      "perDay": "Per rental day",
+      "dailyPrice": "Daily price",
+      "expenses": "Expenses",
+      "margin": "Margin",
+      "marginPct": "Margin %"
+    },
     "table": {
       "title": "Costs and revenue per vehicle",
       "description": "Revenue from standard rentals started in the period, expenses dated in the period",

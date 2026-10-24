@@ -250,6 +250,22 @@
       "expenses": "Cheltuieli",
       "margin": "Marjă"
     },
+    "csv": {
+      "subject": "finante-vehicule",
+      "button": "CSV",
+      "licensePlate": "Număr de înmatriculare",
+      "brand": "Marcă",
+      "model": "Model",
+      "rentals": "Închirieri",
+      "rentalDays": "Zile de închiriere",
+      "revenue": "Venituri",
+      "extraCosts": "Din care costuri suplimentare",
+      "perDay": "Pe zi de închiriere",
+      "dailyPrice": "Preț zilnic",
+      "expenses": "Cheltuieli",
+      "margin": "Marjă",
+      "marginPct": "Marjă %"
+    },
     "table": {
       "title": "Cheltuieli și venituri pe vehicul",
       "description": "Venituri din închirieri standard începute în perioadă, cheltuieli după data din perioadă",

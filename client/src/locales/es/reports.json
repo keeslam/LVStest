@@ -250,6 +250,22 @@
       "expenses": "Gastos",
       "margin": "Margen"
     },
+    "csv": {
+      "subject": "finanzas-vehiculos",
+      "button": "CSV",
+      "licensePlate": "Matrícula",
+      "brand": "Marca",
+      "model": "Modelo",
+      "rentals": "Alquileres",
+      "rentalDays": "Días de alquiler",
+      "revenue": "Ingresos",
+      "extraCosts": "De los cuales costes adicionales",
+      "perDay": "Por día de alquiler",
+      "dailyPrice": "Precio diario",
+      "expenses": "Gastos",
+      "margin": "Margen",
+      "marginPct": "Margen %"
+    },
     "table": {
       "title": "Gastos e ingresos por vehículo",
       "description": "Ingresos de alquileres estándar iniciados en el periodo, gastos con fecha dentro del periodo",

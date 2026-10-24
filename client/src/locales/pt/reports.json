@@ -250,6 +250,22 @@
       "expenses": "Despesas",
       "margin": "Margem"
     },
+    "csv": {
+      "subject": "financas-veiculos",
+      "button": "CSV",
+      "licensePlate": "Matrícula",
+      "brand": "Marca",
+      "model": "Modelo",
+      "rentals": "Alugueres",
+      "rentalDays": "Dias de aluguer",
+      "revenue": "Receitas",
+      "extraCosts": "Dos quais custos extra",
+      "perDay": "Por dia de aluguer",
+      "dailyPrice": "Preço diário",
+      "expenses": "Despesas",
+      "margin": "Margem",
+      "marginPct": "Margem %"
+    },
     "table": {
       "title": "Despesas e rendimento por veículo",
       "description": "Receitas de alugueres padrão iniciados no período, despesas com data no período",
