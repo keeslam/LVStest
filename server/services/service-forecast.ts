@@ -1,17 +1,17 @@
 /**
  * Punt 6 (Kees, 2026-10-20) — the expected date of the next service, per
- * vehicle. The dated odometer readings are gathered in one SQL query (the
- * reservation list is far too big to load for this, BUG-205):
- *  - pickup and return readings of reservations that are not deleted,
- *  - interactive damage checks,
- *  - the last service,
- *  - the current reading, on the day the vehicle row was last changed.
+ * vehicle. Rapporten fase 3 (2026-10-25): the km per day comes from the km
+ * history (`vehicle_mileage_readings`, every reading that is not voided), the
+ * same source as the maintenance outlook report, so the maintenance calendar,
+ * the vehicle card and the report never disagree. The history already holds
+ * pickup and return readings, damage checks, services and manual readings, and
+ * a reading someone voided (a typo) no longer counts.
  * The rule itself lives in shared/service-forecast.ts.
  */
-import { sql } from "drizzle-orm";
+import { and, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "../db";
 import { storage } from "../storage";
-import type { Vehicle } from "../../shared/schema";
+import { vehicleMileageReadings, type Vehicle } from "../../shared/schema";
 import { computeServiceDue, serviceDueDefaultsFromSettings, type ServiceDueInfo } from "../../shared/service-due";
 import { forecastService, kmPerDayFromReadings, type DatedReading, type ServiceForecast } from "../../shared/service-forecast";
 import { isoToday } from "./lifecycle";
@@ -22,34 +22,28 @@ export interface VehicleServiceForecast extends Vehicle {
   forecast: ServiceForecast;
 }
 
-/** Every dated reading per vehicle; `vehicleId` narrows it to one. */
-export async function odometerReadingsByVehicle(vehicleId?: number): Promise<Map<number, DatedReading[]>> {
-  const zone = officeTimeZone();
-  const only = vehicleId != null ? sql`AND vehicle_id = ${vehicleId}` : sql``;
-  const result = await db.execute(sql`
-    SELECT vehicle_id, day, mileage FROM (
-      SELECT vehicle_id, COALESCE(NULLIF(actual_pickup_date, ''), start_date) AS day, pickup_mileage AS mileage
-        FROM reservations WHERE deleted_at IS NULL AND pickup_mileage > 0
-      UNION ALL
-      SELECT vehicle_id, COALESCE(NULLIF(actual_return_date, ''), NULLIF(end_date, '')) AS day, return_mileage AS mileage
-        FROM reservations WHERE deleted_at IS NULL AND return_mileage > 0
-      UNION ALL
-      SELECT vehicle_id, to_char(check_date AT TIME ZONE ${zone}, 'YYYY-MM-DD') AS day, mileage
-        FROM interactive_damage_checks WHERE mileage > 0
-      UNION ALL
-      SELECT id AS vehicle_id, last_service_date AS day, last_service_mileage AS mileage
-        FROM vehicles WHERE last_service_mileage > 0
-      UNION ALL
-      SELECT id AS vehicle_id, to_char(updated_at AT TIME ZONE ${zone}, 'YYYY-MM-DD') AS day, current_mileage AS mileage
-        FROM vehicles WHERE current_mileage > 0
-    ) readings
-    WHERE vehicle_id IS NOT NULL AND day ~ '^\\d{4}-\\d{2}-\\d{2}' ${only}
-  `);
+/**
+ * Every km reading from the km history that is not voided, per vehicle, dated as
+ * the office day it was recorded. One query; `vehicleIds` narrows it (empty = none).
+ */
+export async function mileageHistoryReadingsByVehicle(vehicleIds?: number[]): Promise<Map<number, DatedReading[]>> {
   const byVehicle = new Map<number, DatedReading[]>();
-  for (const row of result.rows as Array<{ vehicle_id: number; day: string; mileage: number }>) {
-    const list = byVehicle.get(Number(row.vehicle_id)) ?? [];
-    list.push({ date: String(row.day).slice(0, 10), mileage: Number(row.mileage) });
-    byVehicle.set(Number(row.vehicle_id), list);
+  if (vehicleIds && vehicleIds.length === 0) return byVehicle;
+  const rows = await db
+    .select({
+      vehicleId: vehicleMileageReadings.vehicleId,
+      date: sql<string>`to_char(${vehicleMileageReadings.recordedAt} AT TIME ZONE ${officeTimeZone()}, 'YYYY-MM-DD')`,
+      mileage: vehicleMileageReadings.mileage,
+    })
+    .from(vehicleMileageReadings)
+    .where(and(
+      isNull(vehicleMileageReadings.voidedAt),
+      vehicleIds ? inArray(vehicleMileageReadings.vehicleId, vehicleIds) : undefined,
+    ));
+  for (const row of rows) {
+    const list = byVehicle.get(row.vehicleId) ?? [];
+    list.push({ date: String(row.date), mileage: Number(row.mileage) });
+    byVehicle.set(row.vehicleId, list);
   }
   return byVehicle;
 }
@@ -63,7 +57,7 @@ export async function serviceForecasts(): Promise<VehicleServiceForecast[]> {
   const [settings, vehicles, readings] = await Promise.all([
     storage.getSettings(),
     storage.getAllVehicles(),
-    odometerReadingsByVehicle(),
+    mileageHistoryReadingsByVehicle(),
   ]);
   const defaults = serviceDueDefaultsFromSettings(settings);
   const excluded = settings?.maintenanceExcludedStatuses || ["not_for_rental"];
@@ -85,7 +79,7 @@ export async function serviceForecastFor(vehicleId: number): Promise<{ serviceDu
   const [settings, vehicle, readings] = await Promise.all([
     storage.getSettings(),
     storage.getVehicle(vehicleId),
-    odometerReadingsByVehicle(vehicleId),
+    mileageHistoryReadingsByVehicle([vehicleId]),
   ]);
   if (!vehicle) return null;
   const serviceDue = computeServiceDue(vehicle, serviceDueDefaultsFromSettings(settings));
