@@ -18,7 +18,7 @@ import { countSql } from "./helpers/sqlCounter";
 describe("occupancy report", () => {
   const P = { from: "2026-03-01", to: "2026-03-10" };
   let staff: TestAgent;
-  let V1: number, V2: number, V3: number, V4: number;
+  let V1: number, V2: number, V3: number, V4: number, V5: number;
 
   beforeAll(async () => {
     staff = await agentFor(["view_reports", "view_reservations"]);
@@ -38,6 +38,10 @@ describe("occupancy report", () => {
 
     V4 = (await createFixtureVehicle()).id;
     await createFixtureReservation({ vehicleId: V4, startDate: "2026-03-08", endDate: null, status: "picked_up" });
+
+    V5 = (await createFixtureVehicle()).id;
+    const lateOnly = await createFixtureReservation({ vehicleId: V5, startDate: "2026-03-02", endDate: "2026-03-03", status: "returned" });
+    await db.update(reservations).set({ actualReturnDate: "2026-03-04" }).where(eq(reservations.id, lateOnly.id));
   });
 
   afterAll(async () => {
@@ -74,6 +78,12 @@ describe("occupancy report", () => {
   it("V4 open huur loopt door tot vandaag", async () => {
     const s = (await staff.get("/api/reports/occupancy/summary").query({ ...P, vehicleId: V4 })).body;
     expect(s.tiles.rented).toEqual({ count: 1, amount: 3 });
+  });
+
+  it("V5 later ingeleverd dan gepland, zonder overlap: de extra dag telt als verhuurd", async () => {
+    const s = (await staff.get("/api/reports/occupancy/summary").query({ ...P, vehicleId: V5 })).body;
+    expect(s.tiles.rented).toEqual({ count: 1, amount: 3 });
+    expect(s.days.find((d: OccupancyDay) => d.date === "2026-03-04")).toMatchObject({ rented: 1, available: 0 });
   });
 
   it("een dag apart geeft dezelfde aantallen als die dag in de periode", async () => {

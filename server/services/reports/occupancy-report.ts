@@ -51,14 +51,16 @@ export function vehicleDaysSql(filter: ReportFilter, today: string): SQL {
   const fleetVehicle = filter.vehicleId === null ? sql`` : sql` WHERE fv.id = ${filter.vehicleId}`;
   return sql`
     WITH days AS (SELECT g::date AS day FROM generate_series(${from}, ${to}, interval '1 day') g),
-    spans AS (
+    all_spans AS MATERIALIZED (
       SELECT ${r.vehicleId} AS vehicle_id,
         (CASE ${r.type} WHEN 'maintenance_block' THEN 1 WHEN 'standard' THEN 2 ELSE 3 END) AS rank,
         ${start} AS s, ${end} AS e
       FROM ${r}
       WHERE ${r.deletedAt} IS NULL AND ${r.status} <> 'cancelled' AND ${r.vehicleId} IS NOT NULL
-        AND ${r.type} IN ('standard', 'replacement', 'maintenance_block') AND ${start} <= ${to}${reservationVehicle}
+        AND ${r.type} IN ('standard', 'replacement', 'maintenance_block')${reservationVehicle}
     ),
+    -- MATERIALIZED: the text-date parsing runs once per reservation, then only spans that touch the period join the days
+    spans AS (SELECT * FROM all_spans WHERE s <= ${to} AND e >= ${from}),
     busy AS (
       SELECT sp.vehicle_id, d.day, min(sp.rank) AS rank
       FROM spans sp JOIN days d ON d.day BETWEEN sp.s AND sp.e
@@ -78,7 +80,7 @@ export function vehicleDaysSql(filter: ReportFilter, today: string): SQL {
 /** The one condition a vehicle-day must meet to count for a tile. */
 const stateIs = (tile: OccupancyTile): SQL => sql`vd.state = ${tile}`;
 
-const vehicleDays = (filter: ReportFilter): SQL => sql`(${vehicleDaysSql(filter, isoToday())}) vd`;
+const vehicleDays = (filter: ReportFilter, today: string = isoToday()): SQL => sql`(${vehicleDaysSql(filter, today)}) vd`;
 
 const daysIn = (tile: OccupancyTile): SQL => sql`count(*) FILTER (WHERE ${stateIs(tile)})::int`;
 
@@ -88,13 +90,15 @@ async function summary(filter: ReportFilter): Promise<OccupancySummary> {
       ${daysIn(tile)} AS ${sql.raw(`"a_${tile}"`)}`),
     sql`, `,
   );
+  // One "today" for both statements, so tiles and day series cannot straddle midnight.
+  const today = isoToday();
   const [totals, dayRows] = await Promise.all([
-    rowsOf<Record<string, number>>(sql`SELECT ${tileColumns}, count(*)::int AS "fleetDays" FROM ${vehicleDays(filter)}`),
+    rowsOf<Record<string, number>>(sql`SELECT ${tileColumns}, count(*)::int AS "fleetDays" FROM ${vehicleDays(filter, today)}`),
     rowsOf<Record<string, number | string>>(sql`
       SELECT to_char(vd.day, 'YYYY-MM-DD') AS date, count(*)::int AS fleet,
         ${daysIn("rented")} AS rented, ${daysIn("replacement")} AS replacement,
         ${daysIn("workshop")} AS workshop, ${daysIn("available")} AS available
-      FROM ${vehicleDays(filter)}
+      FROM ${vehicleDays(filter, today)}
       GROUP BY vd.day`),
   ]);
   const t = totals[0] ?? {};
