@@ -2,7 +2,7 @@ import type { Express, RequestHandler } from 'express';
 import { requestUserContext } from "../services/request-user";
 import { touchActiveSession } from "../utils/security/sessionManager";
 import { auditMutations } from './audit';
-import { hasPermission } from './permissions';
+import { hasPermission, requireAdmin } from './permissions';
 import { UserPermission } from '../../shared/schema';
 import notificationRoutes from '../routes/notifications';
 import vehiclesWithReservationsRoutes from '../routes/vehicles-with-reservations';
@@ -13,6 +13,7 @@ import apkDateChangesRoutes from '../routes/apk-date-changes';
 import contractSignaturesRoutes from '../routes/contract-signatures';
 import keyAuditsRoutes from '../routes/key-audits';
 import vehicleDocumentsZipRoutes from '../routes/vehicle-documents-zip';
+import mileageHistoryRoutes from '../routes/mileage-history';
 
 /**
  * The staff routers that are `Router` objects rather than `register*()`
@@ -48,4 +49,6 @@ export function mountStaffRouters(app: Express, requireAuth: RequestHandler): vo
   app.use('/api/key-audits', requireAuth, hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), keyAuditsRoutes);
   // B-65: the ticked documents of one vehicle as one ZIP.
   app.use('/api/vehicle-documents', requireAuth, hasPermission(UserPermission.VIEW_DOCUMENTS, UserPermission.MANAGE_DOCUMENTS), vehicleDocumentsZipRoutes);
+  // Kilometerhistorie: alleen beheerders (bekijken, printen, CSV).
+  app.use('/api/mileage-history', requireAuth, requireAdmin, mileageHistoryRoutes);
 }

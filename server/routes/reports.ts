@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { storage } from "../storage";
 import { ReportValidationError } from "../database-storage";
 import { UserPermission } from "../../shared/schema";
-import { hasPermission } from "../middleware/permissions.js";
+import { hasPermission, requireAdmin } from "../middleware/permissions.js";
 import { getDataSource } from "../../shared/report-builder-config";
 import { UserRole } from "../../shared/schema";
 
@@ -199,7 +199,7 @@ export function registerReportRoutes(app: Express): void {
   });
 
   // Kilometres driven per month, derived from every dated odometer reading we have
-  app.get("/api/reports/mileage-per-month", hasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS), async (req: Request, res: Response) => {
+  app.get("/api/reports/mileage-per-month", requireAdmin, async (req: Request, res: Response) => {
     try {
       const range = parseReportRange(req.query);
       const vehicleId = parseVehicleIdFilter(req.query);
