@@ -36,8 +36,13 @@ FROM node:20-trixie-slim
 # endpoint. pg_dump refuses to dump from a server newer than itself, so the
 # client major version must be at least the database server's (PostgreSQL 17).
 # Bump this in step with the database. Debian trixie ships PostgreSQL 17.
+#
+# curl is required by Coolify: its own health check (Healthcheck tab) runs
+# `curl ... || wget ...` inside the container. The slim image has neither, so
+# without curl every check fails, the container stays unhealthy ("degraded")
+# and Traefik stops routing traffic to it.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends postgresql-client-17 ca-certificates \
+ && apt-get install -y --no-install-recommends postgresql-client-17 ca-certificates curl \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -56,7 +61,7 @@ ENV PORT=3000
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 3000) + '/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+  CMD curl -fsS -o /dev/null "http://127.0.0.1:${PORT:-3000}/health" || exit 1
 
 # The migration is chained with || rather than && so a schema step that fails
 # cannot stop the app from booting; a failing boot made Coolify restart the
