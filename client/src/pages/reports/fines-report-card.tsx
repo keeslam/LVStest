@@ -71,7 +71,7 @@ export function FinesReportCard({ from, to, vehicleId }: { from: string; to: str
   if (!allowed) return null;
 
   const tiles: Array<ReportTile<FineReportTile>> = FINE_REPORT_TILES.map((id) => {
-    const total = data?.tiles[id];
+    const total = data?.tiles?.[id];
     const count = (total?.count ?? 0).toLocaleString("nl-NL");
     const amount = formatCurrency(total?.amount ?? 0);
     return {
@@ -109,18 +109,18 @@ export function FinesReportCard({ from, to, vehicleId }: { from: string; to: str
               onOpen={(id) => { setShownTile(id); setOpenTile(id); }}
             />
             <p className="text-sm text-muted-foreground" data-testid="fines-avg-days">
-              {data.avgDaysToLink === null
+              {data.avgDaysToLink == null
                 ? t("moneyReports.fines.avgDaysToLinkNone")
                 : t("moneyReports.fines.avgDaysToLink", { days: data.avgDaysToLink.toLocaleString("nl-NL") })}
             </p>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("moneyReports.fines.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth} series={series} money stacked testId="fines-month-chart" />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} money stacked testId="fines-month-chart" />
             </div>
             <div className="grid gap-6 lg:grid-cols-3">
-              <ReportBreakdownTable title={t("moneyReports.fines.byCustomer")} rows={data.byCustomer} nullLabel={notLinked} money testId="fines-by-customer" />
-              <ReportBreakdownTable title={t("moneyReports.fines.byVehicle")} rows={data.byVehicle} nullLabel={notLinked} money testId="fines-by-vehicle" />
-              <ReportBreakdownTable title={t("moneyReports.fines.byDriver")} rows={data.byDriver} nullLabel={notLinked} money testId="fines-by-driver" />
+              <ReportBreakdownTable title={t("moneyReports.fines.byCustomer")} rows={data.byCustomer ?? []} nullLabel={notLinked} money testId="fines-by-customer" />
+              <ReportBreakdownTable title={t("moneyReports.fines.byVehicle")} rows={data.byVehicle ?? []} nullLabel={notLinked} money testId="fines-by-vehicle" />
+              <ReportBreakdownTable title={t("moneyReports.fines.byDriver")} rows={data.byDriver ?? []} nullLabel={notLinked} money testId="fines-by-driver" />
             </div>
           </>
         )}

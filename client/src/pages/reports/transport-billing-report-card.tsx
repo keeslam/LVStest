@@ -86,7 +86,7 @@ export function TransportBillingReportCard({ from, to, vehicleId }: { from: stri
   if (!allowed) return null;
 
   const tiles: Array<ReportTile<TransportBillingTile>> = TRANSPORT_BILLING_TILES.map((id) => {
-    const total = data?.tiles[id];
+    const total = data?.tiles?.[id];
     const amount = formatCurrency(total?.amount ?? 0);
     const missing = id === "notInvoiced" ? (data?.missingAmount ?? 0) : 0;
     return {
@@ -124,11 +124,11 @@ export function TransportBillingReportCard({ from, to, vehicleId }: { from: stri
             />
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("moneyReports.transport.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth} series={series} money testId="transport-billing-month-chart" />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} money testId="transport-billing-month-chart" />
             </div>
             <div className="space-y-2" data-testid="transport-billing-by-type">
               <h4 className="text-sm font-medium">{t("moneyReports.transport.byType")}</h4>
-              {data.byType.length === 0 ? (
+              {(data.byType ?? []).length === 0 ? (
                 <p className="text-sm text-muted-foreground" data-testid="transport-billing-by-type-empty">{t("reportKit.noData")}</p>
               ) : (
                 <div className="overflow-x-auto rounded-md border">
@@ -143,7 +143,7 @@ export function TransportBillingReportCard({ from, to, vehicleId }: { from: stri
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {data.byType.map((row) => (
+                      {(data.byType ?? []).map((row) => (
                         <TableRow key={row.type} data-testid="transport-billing-by-type-row">
                           <TableCell>{t(`delivery:transportDialog.typeLabels.${row.type}`, { defaultValue: row.type })}</TableCell>
                           <TableCell className="text-right tabular-nums">{row.count.toLocaleString("nl-NL")}</TableCell>

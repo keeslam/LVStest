@@ -79,6 +79,17 @@ beforeEach(() => {
     if (path.startsWith("/api/mileage-history/readings/")) return json({ id: 1, vehicleId: 1, voided: path.endsWith("/void") });
     if (path.startsWith("/api/mileage-history/")) return json(history);
     if (path === "/api/reports/vehicle-financials") return json({ rows: [], totals: { rentals: 0, rentalDays: 0, revenue: 0, expenses: 0, margin: 0 } });
+    // The money cards on Financieel (admin sees them): well-formed, empty summaries.
+    const zero = { count: 0, amount: 0 };
+    if (path === "/api/reports/fines/summary") {
+      return json({ tiles: { new: zero, linked: zero, cancelled: zero, legacy: zero, total: zero }, avgDaysToLink: null, byMonth: [], byCustomer: [], byVehicle: [], byDriver: [] });
+    }
+    if (path === "/api/reports/extra-costs/summary") {
+      return json({ tiles: { extraKm: zero, fuel: zero, withExtraKm: zero }, totalExtraKm: 0, byMonth: [], byCustomer: [], byVehicle: [] });
+    }
+    if (path === "/api/reports/transport-billing/summary") {
+      return json({ tiles: { notInvoiced: zero, invoiced: zero, toll: zero, openAllTime: zero }, missingAmount: 0, byMonth: [], byType: [] });
+    }
     return json([]);
   });
   vi.stubGlobal("fetch", fetchMock);

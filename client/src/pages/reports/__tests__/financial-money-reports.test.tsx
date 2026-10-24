@@ -220,3 +220,19 @@ describe("Financieel - CSV van de voertuigtabel", () => {
     ]);
   });
 });
+
+describe("Financieel - een kapotte samenvatting laat de kaarten niet crashen", () => {
+  it("samenvatting zonder tiles: kaarten tonen 0", async () => {
+    permissions = ["view_reports"];
+    const base = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation(async (input: unknown) =>
+      (/^\/api\/reports\/(fines|extra-costs|transport-billing)\/summary/.test(pathOf(input)) ? json([]) : base(input)));
+    renderTab();
+    for (const id of ["card-fines-report", "card-extra-costs-report", "card-transport-billing-report"]) {
+      expect(await screen.findByTestId(id)).toBeInTheDocument();
+    }
+    await waitFor(() => expect(fetchedPaths().some((p) => p.startsWith("/api/reports/fines/summary"))).toBe(true));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(within(screen.getByTestId("button-fines-tile-legacy")).getByTestId("fines-tile-legacy-value")).toHaveTextContent("0");
+  });
+});

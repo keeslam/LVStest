@@ -62,7 +62,7 @@ export function ExtraCostsReportCard({ from, to, vehicleId }: { from: string; to
   if (!allowed) return null;
 
   const tiles: Array<ReportTile<ExtraCostsTile>> = EXTRA_COSTS_TILES.map((id) => {
-    const total = data?.tiles[id];
+    const total = data?.tiles?.[id];
     return {
       id,
       label: t(`moneyReports.extraCosts.tiles.${id}`),
@@ -96,15 +96,15 @@ export function ExtraCostsReportCard({ from, to, vehicleId }: { from: string; to
               onOpen={(id) => { setShownTile(id); setOpenTile(id); }}
             />
             <p className="text-sm text-muted-foreground" data-testid="extra-costs-total-km">
-              {t("moneyReports.extraCosts.totalExtraKm", { km: data.totalExtraKm.toLocaleString("nl-NL") })}
+              {t("moneyReports.extraCosts.totalExtraKm", { km: (data.totalExtraKm ?? 0).toLocaleString("nl-NL") })}
             </p>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("moneyReports.extraCosts.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth} series={series} money stacked testId="extra-costs-month-chart" />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} money stacked testId="extra-costs-month-chart" />
             </div>
             <div className="grid gap-6 lg:grid-cols-2">
-              <ReportBreakdownTable title={t("moneyReports.extraCosts.byCustomer")} rows={data.byCustomer} nullLabel={t("moneyReports.extraCosts.noCustomer")} money testId="extra-costs-by-customer" />
-              <ReportBreakdownTable title={t("moneyReports.extraCosts.byVehicle")} rows={data.byVehicle} nullLabel={t("moneyReports.extraCosts.noCustomer")} money testId="extra-costs-by-vehicle" />
+              <ReportBreakdownTable title={t("moneyReports.extraCosts.byCustomer")} rows={data.byCustomer ?? []} nullLabel={t("moneyReports.extraCosts.noCustomer")} money testId="extra-costs-by-customer" />
+              <ReportBreakdownTable title={t("moneyReports.extraCosts.byVehicle")} rows={data.byVehicle ?? []} nullLabel={t("moneyReports.extraCosts.noCustomer")} money testId="extra-costs-by-vehicle" />
             </div>
           </>
         )}
