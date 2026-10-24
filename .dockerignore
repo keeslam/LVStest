@@ -2,7 +2,8 @@ node_modules
 dist
 .git
 .env
-.env.local
+.env.*
+!.env.sample
 *.log
 npm-debug.log*
 .DS_Store
@@ -11,3 +12,15 @@ npm-debug.log*
 coverage
 .replit
 replit.nix
+
+# Local-only data and scratch output; never part of the image. Coolify builds
+# from a git clone, where these are not present anyway.
+uploads
+backups
+temp
+.tmp
+.worktrees
+.superpowers
+graphify-out
+e2e/.tmp
+cookies.txt
