@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../db";
 import { appSettings, auditLogs, interactiveDamageChecks, reservations, vehicleMileageReadings, vehicles } from "../../shared/schema";
@@ -15,6 +15,14 @@ let auditChangesId: number;
 let auditPortalId: number;
 let auditBadId: number;
 let auditFutureId: number;
+let revertedResId: number;
+let revertedPickupCheckId: number;
+let revertedReturnCheckId: number;
+let looseCheckId: number;
+let noonResId: number;
+let brokenResId: number;
+const BROKEN_VEHICLE_ID = 2147480000;
+let warnSpy: ReturnType<typeof vi.spyOn>;
 const auditIds: number[] = [];
 
 async function readingsFor(vid: number) {
@@ -56,12 +64,39 @@ describe("mileage backfill", () => {
       vehicleId, reservationId: deletedResId, checkType: "return", checkDate: new Date("2026-04-05T10:00:00Z"), mileage: 51500,
     } as any).returning();
     deletedCheckId = dchk.id;
+    // A pickup reverted before the deploy: reservation km cleared, check kept. The return stands.
+    const r3 = await createFixtureReservation({ customerId: c.id, vehicleId, startDate: "2026-03-20", endDate: "2026-03-22" });
+    revertedResId = r3.id;
+    await db.update(reservations).set({ returnMileage: 53000 } as any).where(eq(reservations.id, revertedResId));
+    const [rpc] = await db.insert(interactiveDamageChecks).values({
+      vehicleId, reservationId: revertedResId, checkType: "pickup", checkDate: new Date("2026-03-20T10:00:00Z"), mileage: 49000,
+    } as any).returning();
+    revertedPickupCheckId = rpc.id;
+    const [rrc] = await db.insert(interactiveDamageChecks).values({
+      vehicleId, reservationId: revertedResId, checkType: "return", checkDate: new Date("2026-03-23T10:00:00Z"), mileage: 53010,
+    } as any).returning();
+    revertedReturnCheckId = rrc.id;
+    // A check without a reservation still counts.
+    const [loose] = await db.insert(interactiveDamageChecks).values({
+      vehicleId, reservationId: null, checkType: "pickup", checkDate: new Date("2026-03-25T10:00:00Z"), mileage: 53100,
+    } as any).returning();
+    looseCheckId = loose.id;
+    const r4 = await createFixtureReservation({ customerId: c.id, vehicleId, startDate: "2026-03-10", endDate: "2026-03-12" });
+    noonResId = r4.id;
+    await db.update(reservations).set({ pickupMileage: 50700 } as any).where(eq(reservations.id, noonResId));
+    // reservations.vehicle_id has no FK: a row pointing at a missing car makes the insert throw.
+    const r5 = await createFixtureReservation({ customerId: c.id, vehicleId, startDate: "2026-03-01", endDate: "2026-03-02" });
+    brokenResId = r5.id;
+    await db.update(reservations).set({ vehicleId: BROKEN_VEHICLE_ID, pickupMileage: 1000 } as any).where(eq(reservations.id, brokenResId));
+    warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     auditChangesId = await audit({ changes: [{ field: "currentMileage", from: 50400, to: 50500 }] }, new Date("2026-03-06T10:00:00Z"));
     auditPortalId = await audit({ currentMileage: { from: 50500, to: 50600 }, viaPortalRequest: 1 }, new Date("2026-03-07T10:00:00Z"));
     auditBadId = await audit({ changes: [{ field: "currentMileage", from: 1, to: "abc" }] }, new Date("2026-03-08T10:00:00Z"));
     auditFutureId = await audit({ changes: [{ field: "currentMileage", from: 1, to: 60000 }] }, new Date(Date.now() + 3_600_000));
   });
   afterAll(async () => {
+    warnSpy?.mockRestore();
+    await db.delete(reservations).where(eq(reservations.id, brokenResId));
     await db.delete(vehicleMileageReadings).where(eq(vehicleMileageReadings.vehicleId, vehicleId));
     if (auditIds.length) await db.delete(auditLogs).where(inArray(auditLogs.id, auditIds));
     await db.delete(interactiveDamageChecks).where(eq(interactiveDamageChecks.vehicleId, vehicleId));
@@ -93,7 +128,33 @@ describe("mileage backfill", () => {
     expect(find("import", auditFutureId)).toHaveLength(0);
     // soft-deleted reservations and their checks stay out
     expect(rows.filter((r) => r.sourceId === deletedResId || r.sourceId === deletedCheckId)).toHaveLength(0);
-    expect(rows).toHaveLength(6);
+    expect(rows).toHaveLength(10);
+  });
+
+  it("slaat de schadecheck van een teruggedraaide overdracht over, niet die zonder reservering", async () => {
+    const rows = await readingsFor(vehicleId);
+    const find = (source: string, sourceId: number) => rows.filter((r) => r.source === source && r.sourceId === sourceId);
+    expect(find("damage_check", revertedPickupCheckId)).toHaveLength(0);
+    expect(find("damage_check", revertedReturnCheckId)).toHaveLength(1);
+    expect(find("return", revertedResId)[0].mileage).toBe(53000);
+    expect(find("pickup", revertedResId)).toHaveLength(0);
+    expect(find("damage_check", looseCheckId)).toHaveLength(1);
+    expect(find("damage_check", looseCheckId)[0].mileage).toBe(53100);
+  });
+
+  it("dateert een teruggehaalde overdracht op 12:00 kantoortijd", async () => {
+    const rows = await readingsFor(vehicleId);
+    const [p] = rows.filter((r) => r.source === "pickup" && r.sourceId === noonResId);
+    expect(p.recordedAt.toISOString()).toBe("2026-03-10T11:00:00.000Z");
+    const [first] = rows.filter((r) => r.source === "pickup" && r.sourceId === resId);
+    expect(first.recordedAt.toISOString()).toBe("2026-03-02T11:00:00.000Z");
+  });
+
+  it("een regel die niet kan worden ingevoegd breekt de run niet af", async () => {
+    const broken = await db.select().from(vehicleMileageReadings).where(eq(vehicleMileageReadings.sourceId, brokenResId));
+    expect(broken.filter((r) => r.sourceTable === "reservations")).toHaveLength(0);
+    const warned = warnSpy.mock.calls.map((args) => args.map(String).join(" "));
+    expect(warned.some((w) => w.includes("reservations") && w.includes(String(brokenResId)))).toBe(true);
   });
 
   it("zet de vlag; een volgende run slaat over", async () => {
@@ -114,6 +175,6 @@ describe("mileage backfill", () => {
     const [p] = await db.select().from(vehicleMileageReadings)
       .where(and(eq(vehicleMileageReadings.source, "pickup"), eq(vehicleMileageReadings.sourceId, resId)));
     expect(p.voidedAt).not.toBeNull();
-    expect(await readingsFor(vehicleId)).toHaveLength(6);
+    expect(await readingsFor(vehicleId)).toHaveLength(10);
   });
 });

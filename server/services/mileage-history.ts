@@ -99,6 +99,15 @@ export function readingInstantForOfficeDate(date: string | null | undefined, now
 }
 
 /**
+ * 12:00 kantoortijd op een kantoordatum (yyyy-mm-dd). Voor het terughalen van
+ * het verleden: een overdracht met alleen een datum krijgt een vast tijdstip in
+ * plaats van de klok van de run.
+ */
+export function officeNoonInstant(date: string): Date {
+  return zonedDateTimeToInstant(date, "12:00", officeTimeZone());
+}
+
+/**
  * Voor routes zonder transactie: de stand is al op voertuig of reservering
  * geschreven, dus een fout bij het vastleggen mag de overdracht niet alsnog
  * laten mislukken. Wordt gelogd, niet stil ingeslikt.

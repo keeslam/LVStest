@@ -3,7 +3,7 @@ import { db } from "../db";
 import { appSettings, auditLogs, interactiveDamageChecks, reservations, vehicles } from "../../shared/schema";
 import { dateInZone } from "../../shared/office-timezone";
 import { officeTimeZone } from "./office-time";
-import { insertMileageReadingIfAbsent, readingInstantForOfficeDate, type MileageReadingInput } from "./mileage-history";
+import { insertMileageReadingIfAbsent, officeNoonInstant, type MileageReadingInput } from "./mileage-history";
 
 export const MILEAGE_BACKFILL_KEY = "mileage_history_backfill_v1";
 const BATCH = 500;
@@ -29,11 +29,19 @@ export async function backfillMileageHistory(opts: { force?: boolean } = {}): Pr
   const runStart = new Date();
   const zone = officeTimeZone();
   const counts: BackfillResult = { inserted: 0, skipped: 0 };
+  // One bad row (e.g. a reservation pointing at a car that no longer exists) is logged and
+  // skipped; it must not abort the run, or the one-shot backfill would fail on every boot.
   const put = async (r: MileageReadingInput) => {
-    if (await insertMileageReadingIfAbsent(db, r)) counts.inserted++;
-    else counts.skipped++;
+    try {
+      if (await insertMileageReadingIfAbsent(db, r)) counts.inserted++;
+      else counts.skipped++;
+    } catch (error) {
+      counts.skipped++;
+      console.warn(`[mileage-history] backfill skipped ${r.sourceTable ?? r.source} ${r.sourceId ?? "?"}:`, error instanceof Error ? error.message : error);
+    }
   };
-  const atDate = (d: string | null | undefined): Date | null => (d && YMD.test(d) ? readingInstantForOfficeDate(d, runStart) : null);
+  // Handovers that only know an office date are placed at 12:00 office time on that date.
+  const atDate = (d: string | null | undefined): Date | null => (d && YMD.test(d) ? officeNoonInstant(d) : null);
 
   // Reservations (not deleted): pickup and return.
   for (let last = 0; ;) {
@@ -64,6 +72,7 @@ export async function backfillMileageHistory(opts: { force?: boolean } = {}): Pr
       pickupMileage: reservations.pickupMileage, returnMileage: reservations.returnMileage,
       actualPickupDate: reservations.actualPickupDate, startDate: reservations.startDate,
       actualReturnDate: reservations.actualReturnDate, endDate: reservations.endDate,
+      reservationFound: reservations.id, reservationDeletedAt: reservations.deletedAt,
     }).from(interactiveDamageChecks)
       .leftJoin(reservations, eq(reservations.id, interactiveDamageChecks.reservationId))
       .where(and(gt(interactiveDamageChecks.id, last), isNotNull(interactiveDamageChecks.mileage)))
@@ -71,13 +80,17 @@ export async function backfillMileageHistory(opts: { force?: boolean } = {}): Pr
     if (!batch.length) break;
     last = batch[batch.length - 1].id;
     for (const c of batch) {
-      if (c.reservationId != null) {
-        const [live] = await db.select({ id: reservations.id }).from(reservations)
-          .where(and(eq(reservations.id, c.reservationId), isNull(reservations.deletedAt)));
-        if (!live) continue;
-      }
       const isReturn = c.checkType === "return";
       const handoverMileage = isReturn ? c.returnMileage : c.pickupMileage;
+      if (c.reservationId != null) {
+        // Reservation gone or soft-deleted: its readings do not count.
+        if (c.reservationFound == null || c.reservationDeletedAt != null) continue;
+        // The handover this check measured was reverted (km cleared on the reservation).
+        if (handoverMileage == null) {
+          counts.skipped++;
+          continue;
+        }
+      }
       const handoverDate = isReturn ? (c.actualReturnDate ?? c.endDate) : (c.actualPickupDate ?? c.startDate);
       if (handoverMileage != null && handoverMileage === c.mileage && handoverDate === dateInZone(c.checkDate, zone)) {
         counts.skipped++;
