@@ -601,6 +601,50 @@
         "fuelCost": "Combustible"
       },
       "csvSubject": "km-extra-y-combustible"
+    },
+    "transport": {
+      "title": "Transporte y facturación",
+      "description": "Transportes no cancelados, en el día en que se completaron (si no, el día previsto). Haz clic en un mosaico para ver la lista.",
+      "tiles": {
+        "notInvoiced": "Pendiente de facturar",
+        "invoiced": "Facturado",
+        "toll": "Costes de peaje",
+        "openAllTime": "Pendiente de facturar (todos los periodos)"
+      },
+      "missingAmount": "{{n}} sin importe",
+      "byMonth": "Importe por mes",
+      "byType": "Por tipo de transporte",
+      "series": {
+        "invoiced": "Facturado",
+        "notInvoiced": "Pendiente de facturar",
+        "toll": "Peaje"
+      },
+      "typeColumns": {
+        "type": "Tipo",
+        "count": "Cantidad",
+        "billable": "Facturable",
+        "notInvoiced": "Pendiente de facturar",
+        "toll": "Peaje"
+      },
+      "statuses": {
+        "scheduled": "Planificado",
+        "in_progress": "En curso",
+        "completed": "Completado",
+        "cancelled": "Cancelado"
+      },
+      "amountMissing": "falta el importe",
+      "columns": {
+        "date": "Fecha",
+        "type": "Tipo",
+        "status": "Estado",
+        "licensePlate": "Matrícula",
+        "customer": "Cliente",
+        "billableAmount": "A facturar",
+        "tollCost": "Peaje",
+        "invoicedDate": "Facturado el",
+        "distanceKm": "Km"
+      },
+      "csvSubject": "transporte-facturacion"
     }
   },
   "reportKit": {

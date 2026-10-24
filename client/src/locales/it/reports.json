@@ -601,6 +601,50 @@
         "fuelCost": "Carburante"
       },
       "csvSubject": "km-extra-e-carburante"
+    },
+    "transport": {
+      "title": "Trasporto e fatturazione",
+      "description": "Trasporti non annullati, nel giorno in cui sono stati completati (altrimenti il giorno previsto). Fai clic su un riquadro per l'elenco.",
+      "tiles": {
+        "notInvoiced": "Ancora da fatturare",
+        "invoiced": "Fatturato",
+        "toll": "Costi di pedaggio",
+        "openAllTime": "Ancora da fatturare (tutti i periodi)"
+      },
+      "missingAmount": "{{n}} senza importo",
+      "byMonth": "Importo per mese",
+      "byType": "Per tipo di trasporto",
+      "series": {
+        "invoiced": "Fatturato",
+        "notInvoiced": "Ancora da fatturare",
+        "toll": "Pedaggio"
+      },
+      "typeColumns": {
+        "type": "Tipo",
+        "count": "Numero",
+        "billable": "Fatturabile",
+        "notInvoiced": "Ancora da fatturare",
+        "toll": "Pedaggio"
+      },
+      "statuses": {
+        "scheduled": "Pianificato",
+        "in_progress": "In corso",
+        "completed": "Completato",
+        "cancelled": "Annullato"
+      },
+      "amountMissing": "importo mancante",
+      "columns": {
+        "date": "Data",
+        "type": "Tipo",
+        "status": "Stato",
+        "licensePlate": "Targa",
+        "customer": "Cliente",
+        "billableAmount": "Da fatturare",
+        "tollCost": "Pedaggio",
+        "invoicedDate": "Fatturato il",
+        "distanceKm": "Km"
+      },
+      "csvSubject": "trasporto-fatturazione"
     }
   },
   "reportKit": {

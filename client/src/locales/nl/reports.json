@@ -590,6 +590,50 @@
         "fuelCost": "Brandstof"
       },
       "csvSubject": "meer-km-en-brandstof"
+    },
+    "transport": {
+      "title": "Transport en facturatie",
+      "description": "Transporten die niet vervallen zijn, op de dag dat ze klaar waren (anders de geplande dag). Klik op een tegel voor de lijst.",
+      "tiles": {
+        "notInvoiced": "Nog te factureren",
+        "invoiced": "Gefactureerd",
+        "toll": "Tolkosten",
+        "openAllTime": "Nog te factureren (alle perioden)"
+      },
+      "missingAmount": "{{n}} zonder bedrag",
+      "byMonth": "Bedrag per maand",
+      "byType": "Per soort transport",
+      "series": {
+        "invoiced": "Gefactureerd",
+        "notInvoiced": "Nog te factureren",
+        "toll": "Tol"
+      },
+      "typeColumns": {
+        "type": "Soort",
+        "count": "Aantal",
+        "billable": "Factureerbaar",
+        "notInvoiced": "Nog te factureren",
+        "toll": "Tol"
+      },
+      "statuses": {
+        "scheduled": "Gepland",
+        "in_progress": "Onderweg",
+        "completed": "Klaar",
+        "cancelled": "Vervallen"
+      },
+      "amountMissing": "bedrag ontbreekt",
+      "columns": {
+        "date": "Datum",
+        "type": "Soort",
+        "status": "Status",
+        "licensePlate": "Kenteken",
+        "customer": "Klant",
+        "billableAmount": "Te factureren",
+        "tollCost": "Tol",
+        "invoicedDate": "Gefactureerd op",
+        "distanceKm": "Km"
+      },
+      "csvSubject": "transport-facturatie"
     }
   },
   "reportKit": {

@@ -601,6 +601,50 @@
         "fuelCost": "Combustibil"
       },
       "csvSubject": "km-in-plus-si-combustibil"
+    },
+    "transport": {
+      "title": "Transport și facturare",
+      "description": "Transporturi care nu sunt anulate, în ziua în care au fost finalizate (altfel ziua planificată). Apasă pe o casetă pentru listă.",
+      "tiles": {
+        "notInvoiced": "De facturat",
+        "invoiced": "Facturat",
+        "toll": "Costuri de taxă de drum",
+        "openAllTime": "De facturat (toate perioadele)"
+      },
+      "missingAmount": "{{n}} fără sumă",
+      "byMonth": "Suma pe lună",
+      "byType": "Pe tip de transport",
+      "series": {
+        "invoiced": "Facturat",
+        "notInvoiced": "De facturat",
+        "toll": "Taxă de drum"
+      },
+      "typeColumns": {
+        "type": "Tip",
+        "count": "Număr",
+        "billable": "Facturabil",
+        "notInvoiced": "De facturat",
+        "toll": "Taxă de drum"
+      },
+      "statuses": {
+        "scheduled": "Planificat",
+        "in_progress": "În desfășurare",
+        "completed": "Finalizat",
+        "cancelled": "Anulat"
+      },
+      "amountMissing": "lipsește suma",
+      "columns": {
+        "date": "Data",
+        "type": "Tip",
+        "status": "Stare",
+        "licensePlate": "Număr de înmatriculare",
+        "customer": "Client",
+        "billableAmount": "De facturat",
+        "tollCost": "Taxă de drum",
+        "invoicedDate": "Facturat la",
+        "distanceKm": "Km"
+      },
+      "csvSubject": "transport-facturare"
     }
   },
   "reportKit": {

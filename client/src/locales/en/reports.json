@@ -590,6 +590,50 @@
         "fuelCost": "Fuel"
       },
       "csvSubject": "extra-km-and-fuel"
+    },
+    "transport": {
+      "title": "Transport and invoicing",
+      "description": "Transports that are not cancelled, on the day they were completed (otherwise the scheduled day). Click a tile for the list.",
+      "tiles": {
+        "notInvoiced": "Still to invoice",
+        "invoiced": "Invoiced",
+        "toll": "Toll costs",
+        "openAllTime": "Still to invoice (all periods)"
+      },
+      "missingAmount": "{{n}} without amount",
+      "byMonth": "Amount per month",
+      "byType": "Per transport type",
+      "series": {
+        "invoiced": "Invoiced",
+        "notInvoiced": "Still to invoice",
+        "toll": "Toll"
+      },
+      "typeColumns": {
+        "type": "Type",
+        "count": "Count",
+        "billable": "Billable",
+        "notInvoiced": "Still to invoice",
+        "toll": "Toll"
+      },
+      "statuses": {
+        "scheduled": "Scheduled",
+        "in_progress": "In progress",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "amountMissing": "amount missing",
+      "columns": {
+        "date": "Date",
+        "type": "Type",
+        "status": "Status",
+        "licensePlate": "License plate",
+        "customer": "Customer",
+        "billableAmount": "To invoice",
+        "tollCost": "Toll",
+        "invoicedDate": "Invoiced on",
+        "distanceKm": "Km"
+      },
+      "csvSubject": "transport-invoicing"
     }
   },
   "reportKit": {

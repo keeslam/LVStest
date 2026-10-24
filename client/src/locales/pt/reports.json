@@ -601,6 +601,50 @@
         "fuelCost": "Combustível"
       },
       "csvSubject": "km-extra-e-combustivel"
+    },
+    "transport": {
+      "title": "Transporte e faturação",
+      "description": "Transportes não cancelados, no dia em que foram concluídos (caso contrário, o dia previsto). Clique num mosaico para ver a lista.",
+      "tiles": {
+        "notInvoiced": "Por faturar",
+        "invoiced": "Faturado",
+        "toll": "Custos de portagem",
+        "openAllTime": "Por faturar (todos os períodos)"
+      },
+      "missingAmount": "{{n}} sem valor",
+      "byMonth": "Valor por mês",
+      "byType": "Por tipo de transporte",
+      "series": {
+        "invoiced": "Faturado",
+        "notInvoiced": "Por faturar",
+        "toll": "Portagem"
+      },
+      "typeColumns": {
+        "type": "Tipo",
+        "count": "Quantidade",
+        "billable": "Faturável",
+        "notInvoiced": "Por faturar",
+        "toll": "Portagem"
+      },
+      "statuses": {
+        "scheduled": "Agendado",
+        "in_progress": "Em curso",
+        "completed": "Concluído",
+        "cancelled": "Cancelado"
+      },
+      "amountMissing": "falta o valor",
+      "columns": {
+        "date": "Data",
+        "type": "Tipo",
+        "status": "Estado",
+        "licensePlate": "Matrícula",
+        "customer": "Cliente",
+        "billableAmount": "A faturar",
+        "tollCost": "Portagem",
+        "invoicedDate": "Faturado em",
+        "distanceKm": "Km"
+      },
+      "csvSubject": "transporte-faturacao"
     }
   },
   "reportKit": {

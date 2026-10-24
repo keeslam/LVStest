@@ -12,10 +12,17 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/format-utils";
+import { csvDate } from "@/lib/csv";
 
 let permissions: string[] = [];
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: 1, username: "tester", role: "user", permissions, hidePrices: false }, isLoading: false }),
+}));
+
+const downloadCsv = vi.fn(() => "x.csv");
+vi.mock("@/lib/csv", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/csv")>()),
+  downloadCsv: (...a: any[]) => (downloadCsv as any)(...a),
 }));
 
 import { FinancialTab } from "@/pages/reports/financial-tab";
@@ -35,6 +42,11 @@ const FINE_ROW = {
   id: 9, offenceAt: "2026-04-15T10:00:00.000Z", receivedAt: "2026-04-16", licensePlate: "AB12CD", vehicleId: 3,
   description: "Te hard gereden op de A2", reference: "CJ-1", status: "charged", amount: 20,
   customerId: null, customerName: null, driverName: null, linkedAt: null,
+};
+const TRANSPORT_ROW = {
+  id: 4, date: "2026-06-01", transportType: "other", status: "scheduled", vehicleId: 3, licensePlate: "AB12CD", isExternalVehicle: false,
+  customerId: 1, customerName: "Klant BV", billable: true, billableAmount: null, tollCost: null, invoiced: false, invoicedDate: null,
+  distanceKm: null, amount: 0,
 };
 const zero = { count: 0, amount: 0 };
 
@@ -56,6 +68,14 @@ beforeEach(() => {
         totalExtraKm: 120, byMonth: [], byCustomer: [], byVehicle: [],
       });
     }
+    if (path.startsWith("/api/reports/transport-billing/summary")) {
+      return json({
+        tiles: { notInvoiced: { count: 2, amount: 150 }, invoiced: { count: 1, amount: 80 }, toll: { count: 2, amount: 20 }, openAllTime: { count: 3, amount: 190 } },
+        missingAmount: 1, byMonth: [], byType: [{ type: "tow", count: 1, billable: 150, notInvoiced: 150, toll: 12.4 }],
+      });
+    }
+    if (path.startsWith("/api/reports/transport-billing/rows")) return json({ rows: [TRANSPORT_ROW], total: 1, page: 1, pageSize: 50 });
+    if (path.startsWith("/api/reports/transport-billing/export")) return json({ rows: [TRANSPORT_ROW], truncated: false });
     if (path.startsWith("/api/reports/fines/rows")) return json({ rows: [FINE_ROW], total: 1, page: 1, pageSize: 50 });
     return json([]);
   });
@@ -116,5 +136,55 @@ describe("Financieel - meer-km en brandstof", () => {
     const tile = await screen.findByTestId("button-extra-costs-tile-fuel");
     await waitFor(() => expect(within(tile).getByTestId("extra-costs-tile-fuel-value")).toHaveTextContent("2"));
     expect((tile.textContent ?? "").replace(/\s/g, " ")).toContain(formatCurrency(65.5).replace(/\s/g, " "));
+  });
+});
+
+describe("Financieel - transport en facturatie", () => {
+  it("zonder voertuigen- of reserveringenrecht geen kaart en geen verzoek", async () => {
+    permissions = ["view_reports"];
+    renderTab();
+    expect(await screen.findByTestId("financial-tab")).toBeInTheDocument();
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(screen.queryByTestId("card-transport-billing-report")).not.toBeInTheDocument();
+    expect(fetchedPaths().some((p) => p.startsWith("/api/reports/transport-billing"))).toBe(false);
+  });
+
+  it("met recht: tegel toont aantal, bedrag en hoeveel zonder bedrag", async () => {
+    permissions = ["view_reports", "view_vehicles"];
+    renderTab();
+    const tile = await screen.findByTestId("button-transport-billing-tile-notInvoiced");
+    await waitFor(() => expect(within(tile).getByTestId("transport-billing-tile-notInvoiced-value")).toHaveTextContent("2"));
+    const text = (tile.textContent ?? "").replace(/s/g, " ");
+    expect(text).toContain(formatCurrency(150).replace(/s/g, " "));
+    expect(text).toContain("1 zonder bedrag");
+  });
+
+  it("rij zonder bedrag: 'bedrag ontbreekt' in de lijst en een lege CSV-cel", async () => {
+    permissions = ["view_reports", "view_vehicles"];
+    downloadCsv.mockClear();
+    const user = userEvent.setup();
+    renderTab();
+    await user.click(await screen.findByTestId("button-transport-billing-tile-notInvoiced"));
+    const dialog = await screen.findByTestId("dialog-transport-billing-report");
+    expect(await within(dialog).findByText("bedrag ontbreekt")).toBeInTheDocument();
+    await user.click(within(dialog).getByTestId("button-transport-billing-report-csv"));
+    await waitFor(() => expect(downloadCsv).toHaveBeenCalledTimes(1));
+    const [subject, header, cells] = downloadCsv.mock.calls[0] as any[];
+    expect(subject).toBe("transport-facturatie");
+    const amountColumn = (header as string[]).indexOf("Te factureren");
+    expect(amountColumn).toBeGreaterThan(-1);
+    expect(cells[0][amountColumn]).toBe("");
+    expect(cells[0][0]).toBe(csvDate("2026-06-01"));
+  });
+
+  it("de tegel voor alle perioden vraagt de lijst zonder periode", async () => {
+    permissions = ["view_reports", "view_reservations"];
+    const user = userEvent.setup();
+    renderTab();
+    await user.click(await screen.findByTestId("button-transport-billing-tile-openAllTime"));
+    await waitFor(() => expect(fetchedPaths().some((p) => p.startsWith("/api/reports/transport-billing/rows") && p.includes("tile=openAllTime"))).toBe(true));
+    const rowsPath = fetchedPaths().find((p) => p.startsWith("/api/reports/transport-billing/rows"))!;
+    expect(rowsPath).not.toContain("from=");
+    expect(rowsPath).not.toContain("to=");
   });
 });

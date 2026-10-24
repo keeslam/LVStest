@@ -612,6 +612,50 @@
         "fuelCost": "Paliwo"
       },
       "csvSubject": "dodatkowe-km-i-paliwo"
+    },
+    "transport": {
+      "title": "Transport i fakturowanie",
+      "description": "Transporty, które nie zostały anulowane, według dnia ich zakończenia (w przeciwnym razie dnia zaplanowanego). Kliknij kafelek, aby zobaczyć listę.",
+      "tiles": {
+        "notInvoiced": "Do zafakturowania",
+        "invoiced": "Zafakturowane",
+        "toll": "Koszty opłat drogowych",
+        "openAllTime": "Do zafakturowania (wszystkie okresy)"
+      },
+      "missingAmount": "{{n}} bez kwoty",
+      "byMonth": "Kwota na miesiąc",
+      "byType": "Według rodzaju transportu",
+      "series": {
+        "invoiced": "Zafakturowane",
+        "notInvoiced": "Do zafakturowania",
+        "toll": "Opłaty drogowe"
+      },
+      "typeColumns": {
+        "type": "Rodzaj",
+        "count": "Liczba",
+        "billable": "Do fakturowania",
+        "notInvoiced": "Do zafakturowania",
+        "toll": "Opłaty drogowe"
+      },
+      "statuses": {
+        "scheduled": "Zaplanowany",
+        "in_progress": "W trakcie",
+        "completed": "Zakończony",
+        "cancelled": "Anulowany"
+      },
+      "amountMissing": "brak kwoty",
+      "columns": {
+        "date": "Data",
+        "type": "Rodzaj",
+        "status": "Status",
+        "licensePlate": "Numer rejestracyjny",
+        "customer": "Klient",
+        "billableAmount": "Do zafakturowania",
+        "tollCost": "Opłaty drogowe",
+        "invoicedDate": "Zafakturowano dnia",
+        "distanceKm": "Km"
+      },
+      "csvSubject": "transport-fakturowanie"
     }
   },
   "reportKit": {
