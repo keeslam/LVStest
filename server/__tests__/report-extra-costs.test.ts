@@ -48,10 +48,15 @@ describe("extra km and fuel report", () => {
 
   it("tegels, totaal meer-km en maandverdeling", async () => {
     const s = (await staff.get("/api/reports/extra-costs/summary").query(Q)).body;
-    expect(s.tiles).toEqual({ extraKm: { count: 1, amount: 30 }, fuel: { count: 3, amount: 75.5 }, withExtraKm: { count: 1, amount: 30 } });
+    expect(s.tiles).toEqual({ extraKm: { count: 2, amount: 25 }, fuel: { count: 3, amount: 75.5 }, withExtraKm: { count: 1, amount: 30 } });
     expect(s.totalExtraKm).toBe(120);
-    expect(s.byMonth).toEqual([{ month: "2026-02", extraKmCost: 30, fuelCost: 75.5 }]);
+    expect(s.byMonth).toEqual([{ month: "2026-02", extraKmCost: 25, fuelCost: 75.5 }]);
     // the chart adds up the same rows as the tiles (a negative correction stays out of the extra km tile)
+    // money is net: tiles = chart = breakdowns = Financieel
+    const net = s.tiles.extraKm.amount + s.tiles.fuel.amount;
+    expect(net).toBe(100.5);
+    expect(s.byCustomer.reduce((n: number, r: { amount: number }) => n + r.amount, 0)).toBe(net);
+    expect(s.byVehicle.reduce((n: number, r: { amount: number }) => n + r.amount, 0)).toBe(net);
     expect(s.byMonth.reduce((n: number, m: { extraKmCost: number }) => n + m.extraKmCost, 0)).toBe(s.tiles.extraKm.amount);
     expect(s.byMonth.reduce((n: number, m: { fuelCost: number }) => n + m.fuelCost, 0)).toBe(s.tiles.fuel.amount);
     expect(s.byCustomer).toEqual([{ key: C, label: customerName, count: 3, amount: 100.5 }]);

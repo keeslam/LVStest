@@ -2,7 +2,7 @@
  * Rapporten fase 2, onderdeel 2: the extra km and fuel report. Same set of
  * rentals as buildVehicleFinancials ("waarvan extra kosten"): standard,
  * not cancelled, not deleted, with an existing vehicle; period day = start day.
- * Tiles: extraKm (extra km cost > 0), fuel (fuel cost > 0), withExtraKm (extra km > 0).
+ * Money is NET, like Financieel: extraKm (extra km cost <> 0), fuel (fuel cost <> 0), withExtraKm (extra km > 0).
  */
 import { sql, type SQL } from "drizzle-orm";
 import { db } from "../../db";
@@ -30,8 +30,8 @@ function periodWhere(filter: ReportFilter): SQL {
 
 function tileWhere(tile: ExtraCostsTile): SQL {
   switch (tile) {
-    case "extraKm": return sql`${extraKmCost} > 0`;
-    case "fuel": return sql`${fuelCost} > 0`;
+    case "extraKm": return sql`${extraKmCost} <> 0`;
+    case "fuel": return sql`${fuelCost} <> 0`;
     case "withExtraKm": return sql`coalesce(${reservations.extraKm}, 0) > 0`;
   }
 }
@@ -54,7 +54,7 @@ async function breakdown(filter: ReportFilter, key: SQL, label: SQL): Promise<Re
   const rows = await rowsOf<{ key: number | string | null; label: string | null; count: number; amount: number }>(sql`
     SELECT ${key} AS key, ${label} AS label, count(*)::int AS count, ${money(sql`sum(${extraKmCost} + ${fuelCost})`)} AS amount
     ${FROM}
-    WHERE ${periodWhere(filter)} AND (${extraKmCost} > 0 OR ${fuelCost} > 0)
+    WHERE ${periodWhere(filter)} AND (${tileWhere("extraKm")} OR ${tileWhere("fuel")})
     GROUP BY 1, 2
     ORDER BY amount DESC, count DESC, 2 ASC NULLS LAST
     LIMIT ${REPORT_BREAKDOWN_LIMIT}`);
