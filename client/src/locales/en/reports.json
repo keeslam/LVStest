@@ -525,5 +525,21 @@
       "perModel": "Per make and model",
       "vehicles": "Cars"
     }
+  },
+  "reportKit": {
+    "csv": "CSV",
+    "print": "Print",
+    "empty": "No rows for this tile in this period.",
+    "noData": "No data to show.",
+    "loading": "Loading…",
+    "loadFailed": "The list could not be loaded.",
+    "exportFailed": "Fetching the list failed.",
+    "exportTruncated": "Only the first {{limit}} rows are included.",
+    "rowsCount_one": "{{count}} row",
+    "rowsCount_other": "{{count}} rows",
+    "period": "Period: {{from}} to {{to}}",
+    "name": "Name",
+    "count": "Count",
+    "amount": "Amount"
   }
 }

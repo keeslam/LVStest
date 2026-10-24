@@ -536,5 +536,22 @@
       "perModel": "Pe marcă și model",
       "vehicles": "Mașini"
     }
+  },
+  "reportKit": {
+    "csv": "CSV",
+    "print": "Tipărește",
+    "empty": "Nu există rânduri pentru această casetă în această perioadă.",
+    "noData": "Nu există date de afișat.",
+    "loading": "Se încarcă…",
+    "loadFailed": "Lista nu a putut fi încărcată.",
+    "exportFailed": "Preluarea listei a eșuat.",
+    "exportTruncated": "Sunt incluse doar primele {{limit}} rânduri.",
+    "rowsCount_one": "{{count}} rând",
+    "rowsCount_few": "{{count}} rânduri",
+    "rowsCount_other": "{{count}} de rânduri",
+    "period": "Perioada: {{from}} – {{to}}",
+    "name": "Nume",
+    "count": "Număr",
+    "amount": "Sumă"
   }
 }

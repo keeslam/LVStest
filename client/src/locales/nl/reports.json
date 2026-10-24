@@ -525,5 +525,21 @@
       "perModel": "Per merk en model",
       "vehicles": "Auto's"
     }
+  },
+  "reportKit": {
+    "csv": "CSV",
+    "print": "Afdrukken",
+    "empty": "Geen regels voor deze tegel in deze periode.",
+    "noData": "Geen gegevens om te tonen.",
+    "loading": "Laden…",
+    "loadFailed": "De lijst kon niet worden geladen.",
+    "exportFailed": "Ophalen van de lijst is mislukt.",
+    "exportTruncated": "Alleen de eerste {{limit}} regels zijn meegenomen.",
+    "rowsCount_one": "{{count}} regel",
+    "rowsCount_other": "{{count}} regels",
+    "period": "Periode: {{from}} t/m {{to}}",
+    "name": "Naam",
+    "count": "Aantal",
+    "amount": "Bedrag"
   }
 }

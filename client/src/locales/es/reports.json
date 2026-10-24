@@ -536,5 +536,22 @@
       "perModel": "Por marca y modelo",
       "vehicles": "Coches"
     }
+  },
+  "reportKit": {
+    "csv": "CSV",
+    "print": "Imprimir",
+    "empty": "No hay filas para esta casilla en este periodo.",
+    "noData": "No hay datos para mostrar.",
+    "loading": "Cargando…",
+    "loadFailed": "No se pudo cargar la lista.",
+    "exportFailed": "No se pudo obtener la lista.",
+    "exportTruncated": "Solo se incluyen las primeras {{limit}} filas.",
+    "rowsCount_one": "{{count}} fila",
+    "rowsCount_many": "{{count}} filas",
+    "rowsCount_other": "{{count}} filas",
+    "period": "Periodo: {{from}} a {{to}}",
+    "name": "Nombre",
+    "count": "Cantidad",
+    "amount": "Importe"
   }
 }

@@ -547,5 +547,23 @@
       "perModel": "Według marki i modelu",
       "vehicles": "Auta"
     }
+  },
+  "reportKit": {
+    "csv": "CSV",
+    "print": "Drukuj",
+    "empty": "Brak wierszy dla tego kafelka w tym okresie.",
+    "noData": "Brak danych do wyświetlenia.",
+    "loading": "Ładowanie…",
+    "loadFailed": "Nie udało się wczytać listy.",
+    "exportFailed": "Nie udało się pobrać listy.",
+    "exportTruncated": "Uwzględniono tylko pierwsze {{limit}} wierszy.",
+    "rowsCount_one": "{{count}} wiersz",
+    "rowsCount_few": "{{count}} wiersze",
+    "rowsCount_many": "{{count}} wierszy",
+    "rowsCount_other": "{{count}} wiersza",
+    "period": "Okres: {{from}} – {{to}}",
+    "name": "Nazwa",
+    "count": "Liczba",
+    "amount": "Kwota"
   }
 }
