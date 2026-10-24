@@ -18,6 +18,7 @@ import {
   oneOf,
   positiveInt,
   mountReport,
+  periodDays,
   type ReportDefinition,
 } from "../services/reports/report-kit";
 import { REPORT_EXPORT_LIMIT, type ReportTileTotal } from "../../shared/report-kit";
@@ -226,5 +227,52 @@ describe("mountReport", () => {
     for (const path of ["summary", "rows?tile=a", "export?tile=a"]) {
       expect((await request(app).get(`/api/reports/fake/${path}`)).status).toBe(403);
     }
+  });
+});
+
+describe("mountReport: maxDays en redact", () => {
+  type SecretRow = { id: number; secret: number | null; amount: number };
+  type SecretDef = ReportDefinition<"a", "date", SecretRow, Summary>;
+  const secretDef = (overrides: Partial<SecretDef> = {}): SecretDef => ({
+    key: "fake-thing",
+    tiles: ["a"],
+    sorts: ["date"],
+    defaultSort: "date",
+    defaultDir: "desc",
+    summary: async () => ({ tiles: { a: { count: 1, amount: 0 } } }),
+    count: async () => 1,
+    list: async () => [{ id: 1, secret: 42, amount: 0 }],
+    ...overrides,
+  });
+  const appAs = (role: string, def: SecretDef) => {
+    const app = express();
+    mountReport(app, "/x", [(req, _res, next) => { (req as any).user = { role }; next(); }], def);
+    return app;
+  };
+
+  it("maxDays: 32 dagen geweigerd, 31 toegestaan", async () => {
+    const app = appAs("admin", secretDef({ maxDays: 31 }));
+    expect((await request(app).get("/x/summary?from=2026-01-01&to=2026-02-01")).body).toEqual({ message: "Period too long", code: "PERIOD_TOO_LONG" });
+    expect((await request(app).get("/x/rows?tile=a&from=2026-01-01&to=2026-02-01")).status).toBe(400);
+    expect((await request(app).get("/x/export?tile=a&from=2026-01-01&to=2026-02-01")).body.code).toBe("PERIOD_TOO_LONG");
+    expect((await request(app).get("/x/summary?from=2026-01-01&to=2026-01-31")).status).toBe(200);
+  });
+
+  it("zonder maxDays is elke periode toegestaan", async () => {
+    const app = appAs("admin", secretDef());
+    expect((await request(app).get("/x/summary?from=2000-01-01&to=2050-12-31")).status).toBe(200);
+  });
+
+  it("redact: niet-admin krijgt secret null in rows en export, admin niet", async () => {
+    const def = secretDef({ redact: (r, v) => (v.isAdmin ? r : { ...r, secret: null }) });
+    expect((await request(appAs("user", def)).get("/x/rows?tile=a")).body.rows[0].secret).toBeNull();
+    expect((await request(appAs("user", def)).get("/x/export?tile=a")).body.rows[0].secret).toBeNull();
+    expect((await request(appAs("admin", def)).get("/x/rows?tile=a")).body.rows[0].secret).toBe(42);
+    expect((await request(appAs("admin", def)).get("/x/export?tile=a")).body.rows[0].secret).toBe(42);
+  });
+
+  it("periodDays telt beide grenzen", () => {
+    expect(periodDays({ from: "2024-01-01", to: "2024-12-31", vehicleId: null })).toBe(366);
+    expect(periodDays({ from: "2026-03-05", to: "2026-03-05", vehicleId: null })).toBe(1);
   });
 });

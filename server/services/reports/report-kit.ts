@@ -13,6 +13,7 @@ import { sql, type SQL } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { officeTimeZone } from "../office-time";
 import { dateInZone } from "../../../shared/office-timezone";
+import { UserRole } from "../../../shared/schema";
 import {
   REPORT_EXPORT_LIMIT,
   type ReportExport,
@@ -67,6 +68,17 @@ export function parseReportFilter(
     if (!Number.isSafeInteger(vehicleId) || vehicleId <= 0) return { ok: false, code: "INVALID_VEHICLE" };
   }
   return { ok: true, filter: { from, to, vehicleId } };
+}
+
+/** Number of calendar days in the period, both ends included. */
+export function periodDays(filter: ReportFilter): number {
+  const ms = (day: string) => Date.parse(`${day}T00:00:00Z`);
+  return Math.round((ms(filter.to) - ms(filter.from)) / 86_400_000) + 1;
+}
+
+/** Who is looking at the report; a definition's `redact` decides what this viewer may see. */
+export interface ReportViewer {
+  isAdmin: boolean;
 }
 
 /** Sort, direction and page; unknown values fall back, the page size is at most 250 (default 50). */
@@ -127,6 +139,10 @@ export interface ReportDefinition<Tile extends string, Sort extends string, Row,
   summary(filter: ReportFilter): Promise<Summary>;
   count(filter: ReportFilter, tile: Tile): Promise<number>;
   list(filter: ReportFilter, tile: Tile, order: { sort: Sort; dir: "asc" | "desc" }, limit: number, offset: number): Promise<Row[]>;
+  /** Longest period in days; a longer one is refused with 400 PERIOD_TOO_LONG on all three routes. */
+  maxDays?: number;
+  /** Applied to every row of /rows and /export for this viewer (e.g. blank out km readings for non-admins). */
+  redact?: (row: Row, viewer: ReportViewer) => Row;
 }
 
 /**
@@ -142,7 +158,7 @@ export function mountReport<Tile extends string, Sort extends string, Row, Summa
   const failedCode = `${def.key.toUpperCase().replace(/-/g, "_")}_REPORT_FAILED`;
   const failedMessage = `Failed to load the ${def.key} report`;
 
-  type Handler = (query: Record<string, unknown>, filter: ReportFilter) => Promise<{ status: number; body: unknown }>;
+  type Handler = (query: Record<string, unknown>, filter: ReportFilter, viewer: ReportViewer) => Promise<{ status: number; body: unknown }>;
   const route = (path: string, handler: Handler) => {
     app.get(`${basePath}/${path}`, ...guards, async (req, res) => {
       try {
@@ -152,7 +168,11 @@ export function mountReport<Tile extends string, Sort extends string, Row, Summa
           const message = parsed.code === "INVALID_DATE" ? "Invalid date range" : "Invalid vehicle";
           return res.status(400).json({ message, code: parsed.code });
         }
-        const { status, body } = await handler(query, parsed.filter);
+        if (def.maxDays !== undefined && periodDays(parsed.filter) > def.maxDays) {
+          return res.status(400).json({ message: "Period too long", code: "PERIOD_TOO_LONG" });
+        }
+        const viewer: ReportViewer = { isAdmin: (req as { user?: { role?: string } }).user?.role === UserRole.ADMIN };
+        const { status, body } = await handler(query, parsed.filter, viewer);
         res.status(status).json(body);
       } catch (error) {
         console.error(`Error loading the ${def.key} report:`, error);
@@ -160,6 +180,7 @@ export function mountReport<Tile extends string, Sort extends string, Row, Summa
       }
     });
   };
+  const redactRows = (rows: Row[], viewer: ReportViewer): Row[] => (def.redact ? rows.map((r) => def.redact!(r, viewer)) : rows);
   const invalidTile = { status: 400, body: { message: "Invalid tile", code: "INVALID_TILE" } };
 
   route("summary", async (_query, filter) => {
@@ -167,7 +188,7 @@ export function mountReport<Tile extends string, Sort extends string, Row, Summa
     return { status: 200, body: { ...summary, from: filter.from, to: filter.to } };
   });
 
-  route("rows", async (query, filter) => {
+  route("rows", async (query, filter, viewer) => {
     const tile = oneOf(query.tile, def.tiles);
     if (!tile) return invalidTile;
     const paging = parseReportPaging(query, def.sorts, def.defaultSort, def.defaultDir);
@@ -175,16 +196,16 @@ export function mountReport<Tile extends string, Sort extends string, Row, Summa
     const pages = Math.max(1, Math.ceil(total / paging.pageSize));
     const page = Math.min(paging.page, pages);
     const rows = await def.list(filter, tile, { sort: paging.sort, dir: paging.dir }, paging.pageSize, (page - 1) * paging.pageSize);
-    const body: ReportPage<Row> = { rows, total, page, pageSize: paging.pageSize };
+    const body: ReportPage<Row> = { rows: redactRows(rows, viewer), total, page, pageSize: paging.pageSize };
     return { status: 200, body };
   });
 
-  route("export", async (query, filter) => {
+  route("export", async (query, filter, viewer) => {
     const tile = oneOf(query.tile, def.tiles);
     if (!tile) return invalidTile;
     const paging = parseReportPaging(query, def.sorts, def.defaultSort, def.defaultDir);
     const rows = await def.list(filter, tile, { sort: paging.sort, dir: paging.dir }, REPORT_EXPORT_LIMIT + 1, 0);
-    const body: ReportExport<Row> = { rows: rows.slice(0, REPORT_EXPORT_LIMIT), truncated: rows.length > REPORT_EXPORT_LIMIT };
+    const body: ReportExport<Row> = { rows: redactRows(rows.slice(0, REPORT_EXPORT_LIMIT), viewer), truncated: rows.length > REPORT_EXPORT_LIMIT };
     return { status: 200, body };
   });
 }
