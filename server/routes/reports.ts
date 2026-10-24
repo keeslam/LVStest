@@ -26,6 +26,7 @@ import { mountReport } from "../services/reports/report-kit";
 import { finesReport } from "../services/reports/fines-report";
 import { extraCostsReport } from "../services/reports/extra-costs-report";
 import { transportBillingReport } from "../services/reports/transport-billing-report";
+import { occupancyReport } from "../services/reports/occupancy-report";
 
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -53,6 +54,11 @@ export function registerReportRoutes(app: Express): void {
   mountReport(app, "/api/reports/fines", moneyReportGuards, finesReport);
   mountReport(app, "/api/reports/extra-costs", moneyReportGuards, extraCostsReport);
   mountReport(app, "/api/reports/transport-billing", moneyReportGuards, transportBillingReport);
+
+  // Rapporten fase 3: the fleet reports on Rapporten > Voertuigen need the report right and the source right.
+  const reportRight = hasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS);
+  mountReport(app, "/api/reports/occupancy",
+    [reportRight, hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS)], occupancyReport);
 
 
   // ============================================
