@@ -90,12 +90,12 @@ export function OccupancyReportCard({ from, to, vehicleId }: { from?: string; to
     return [
       { id: "licensePlate", label: c("licensePlate"), sortKey: "licensePlate", cell: plate, csv: plate },
       { id: "brandModel", label: c("brandModel"), cell: brandModel, csv: brandModel },
-      { id: "fleetDays", label: c("fleetDays"), align: "right", cell: (r) => n(r.fleetDays), csv: (r) => csvNumber(r.fleetDays), print: (r) => n(r.fleetDays) },
-      { id: "rentedDays", label: c("rentedDays"), align: "right", cell: (r) => n(r.rentedDays), csv: (r) => csvNumber(r.rentedDays), print: (r) => n(r.rentedDays) },
-      { id: "workshopDays", label: c("workshopDays"), align: "right", cell: (r) => n(r.workshopDays), csv: (r) => csvNumber(r.workshopDays), print: (r) => n(r.workshopDays) },
-      { id: "replacementDays", label: c("replacementDays"), align: "right", cell: (r) => n(r.replacementDays), csv: (r) => csvNumber(r.replacementDays), print: (r) => n(r.replacementDays) },
-      { id: "availableDays", label: c("availableDays"), align: "right", cell: (r) => n(r.availableDays), csv: (r) => csvNumber(r.availableDays), print: (r) => n(r.availableDays) },
-      { id: "pct", label: c("pct"), sortKey: "pct", align: "right", cell: (r) => pctText(r.pct), csv: (r) => csvNumber(r.pct), print: (r) => pctText(r.pct) },
+      { id: "fleetDays", label: c("fleetDays"), align: "right", cell: (r) => n(r.fleetDays), csv: (r) => csvNumber(r.fleetDays, 0), print: (r) => n(r.fleetDays) },
+      { id: "rentedDays", label: c("rentedDays"), align: "right", cell: (r) => n(r.rentedDays), csv: (r) => csvNumber(r.rentedDays, 0), print: (r) => n(r.rentedDays) },
+      { id: "workshopDays", label: c("workshopDays"), align: "right", cell: (r) => n(r.workshopDays), csv: (r) => csvNumber(r.workshopDays, 0), print: (r) => n(r.workshopDays) },
+      { id: "replacementDays", label: c("replacementDays"), align: "right", cell: (r) => n(r.replacementDays), csv: (r) => csvNumber(r.replacementDays, 0), print: (r) => n(r.replacementDays) },
+      { id: "availableDays", label: c("availableDays"), align: "right", cell: (r) => n(r.availableDays), csv: (r) => csvNumber(r.availableDays, 0), print: (r) => n(r.availableDays) },
+      { id: "pct", label: c("pct"), sortKey: "pct", align: "right", cell: (r) => pctText(r.pct), csv: (r) => csvNumber(r.pct, 1), print: (r) => pctText(r.pct) },
     ];
   }, [t]);
 

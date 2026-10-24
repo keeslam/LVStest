@@ -87,17 +87,17 @@ export function MaintenanceOutlookCard({ vehicleId }: { vehicleId?: string }) {
       { id: "basis", label: c("basis"), cell: basis, csv: basis },
     ];
     if (!isAdmin) return base;
-    const km = (id: string, value: (r: MaintenanceOutlookRow) => number | null) => ({
+    const km = (id: string, value: (r: MaintenanceOutlookRow) => number | null, decimals = 0) => ({
       id, label: c(id), align: "right" as const,
       cell: (r: MaintenanceOutlookRow) => kmText(value(r)),
-      csv: (r: MaintenanceOutlookRow) => csvNumber(value(r)),
+      csv: (r: MaintenanceOutlookRow) => csvNumber(value(r), decimals),
       print: (r: MaintenanceOutlookRow) => kmText(value(r)),
     });
     return [
       ...base,
       km("currentMileage", (r) => r.currentMileage),
       km("kmUntilService", (r) => r.kmUntilService),
-      km("kmPerDay", (r) => r.kmPerDay),
+      km("kmPerDay", (r) => r.kmPerDay, 1),
     ];
   }, [t, isAdmin]);
 

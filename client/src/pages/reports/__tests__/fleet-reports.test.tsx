@@ -141,6 +141,18 @@ beforeEach(() => {
     if (path.startsWith("/api/reports/fleet-mileage/rows")) {
       return json({ rows: [mileageVehicleRow], total: 1, page: 1, pageSize: 50 });
     }
+    if (path.startsWith("/api/reports/occupancy/export")) {
+      return json({
+        rows: [{
+          vehicleId: 3, licensePlate: "AB12CD", brand: "Ford", model: "Transit", fleetDays: 31,
+          rentedDays: 14, replacementDays: 1, workshopDays: 2, availableDays: 14, pct: 45.16, amount: 14,
+        }],
+        total: 1, truncated: false,
+      });
+    }
+    if (path.startsWith("/api/reports/maintenance-outlook/export")) {
+      return json({ rows: [{ ...outlookRow(true), currentMileage: 78000, kmUntilService: 2000, kmPerDay: 98.44 }], total: 1, truncated: false });
+    }
     if (path.startsWith("/api/reports/fleet-mileage/export")) return json({ rows: [mileageVehicleRow], total: 1, truncated: false });
     return json([]);
   });
@@ -231,6 +243,17 @@ describe("Bezettings-heatmap - kaart", () => {
     expect(await screen.findByText("AB-12-CD", { exact: false })).toBeInTheDocument();
   });
 
+  it("CSV: dagen zonder decimalen, procent met 1 decimaal", async () => {
+    permissions = ["view_reports", "view_reservations"];
+    const user = userEvent.setup();
+    renderCard("2026-03-01", "2026-03-10");
+    await user.click(await screen.findByTestId("button-occupancy-tile-rented"));
+    await user.click(await screen.findByTestId("button-occupancy-report-csv"));
+    await waitFor(() => expect(downloadCsv).toHaveBeenCalled());
+    const rows = downloadCsv.mock.calls[0][2] as unknown[][];
+    expect(rows[0].slice(2)).toEqual(["31", "14", "2", "1", "14", "45,2"]);
+  });
+
   it("een periodetegel vraagt de lijst van de hele periode", async () => {
     permissions = ["view_reports", "view_reservations"];
     const user = userEvent.setup();
@@ -305,6 +328,18 @@ describe("Onderhoud en APK vooruit - kaart", () => {
     await user.click(await screen.findByTestId("button-outlook-tile-service"));
     expect(await screen.findByText("Km tot beurt")).toBeInTheDocument();
     expect(await screen.findByText("2.000")).toBeInTheDocument();
+  });
+
+  it("CSV (admin): km zonder decimalen, km per dag met 1 decimaal", async () => {
+    permissions = ["view_reports", "view_vehicles"];
+    role = "admin";
+    const user = userEvent.setup();
+    renderOutlook();
+    await user.click(await screen.findByTestId("button-outlook-tile-service"));
+    await user.click(await screen.findByTestId("button-maintenance-outlook-csv"));
+    await waitFor(() => expect(downloadCsv).toHaveBeenCalled());
+    const rows = downloadCsv.mock.calls[0][2] as unknown[][];
+    expect(rows[0].slice(-3)).toEqual(["78000", "2000", "98,4"]);
   });
 });
 
