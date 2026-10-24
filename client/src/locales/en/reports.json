@@ -526,6 +526,47 @@
       "vehicles": "Cars"
     }
   },
+  "moneyReports": {
+    "fines": {
+      "title": "Fines",
+      "description": "Fines from the police and the CJIB in this period, by date of the offence. Click a tile for the list.",
+      "tiles": {
+        "new": "New",
+        "linked": "Linked",
+        "cancelled": "Cancelled",
+        "legacy": "Old statuses",
+        "total": "Total (without cancelled)"
+      },
+      "avgDaysToLink": "On average {{days}} days from receipt to linking",
+      "avgDaysToLinkNone": "No fines linked in this period yet",
+      "byMonth": "Amount per month",
+      "byCustomer": "Per customer",
+      "byVehicle": "Per vehicle",
+      "byDriver": "Per driver",
+      "notLinked": "Not linked",
+      "legacyBadge": "old",
+      "statuses": {
+        "new": "New",
+        "linked": "Linked",
+        "cancelled": "Cancelled",
+        "charged": "Charged on",
+        "paid": "Paid",
+        "disputed": "Disputed"
+      },
+      "columns": {
+        "offenceAt": "Offence",
+        "receivedAt": "Received",
+        "licensePlate": "License plate",
+        "description": "Description",
+        "reference": "Reference",
+        "status": "Status",
+        "amount": "Amount",
+        "customer": "Customer",
+        "driver": "Driver"
+      },
+      "csvSubject": "fines"
+    }
+  },
   "reportKit": {
     "csv": "CSV",
     "print": "Print",

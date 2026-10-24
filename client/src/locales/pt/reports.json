@@ -537,6 +537,47 @@
       "vehicles": "Carros"
     }
   },
+  "moneyReports": {
+    "fines": {
+      "title": "Multas",
+      "description": "Multas da polícia e do CJIB neste período, pela data da infração. Clique num cartão para ver a lista.",
+      "tiles": {
+        "new": "Novas",
+        "linked": "Associadas",
+        "cancelled": "Anuladas",
+        "legacy": "Estados antigos",
+        "total": "Total (sem anuladas)"
+      },
+      "avgDaysToLink": "Em média {{days}} dias desde a receção até à associação",
+      "avgDaysToLinkNone": "Ainda não há multas associadas neste período",
+      "byMonth": "Valor por mês",
+      "byCustomer": "Por cliente",
+      "byVehicle": "Por veículo",
+      "byDriver": "Por condutor",
+      "notLinked": "Não associado",
+      "legacyBadge": "antigo",
+      "statuses": {
+        "new": "Nova",
+        "linked": "Associada",
+        "cancelled": "Anulada",
+        "charged": "Debitada",
+        "paid": "Paga",
+        "disputed": "Contestada"
+      },
+      "columns": {
+        "offenceAt": "Infração",
+        "receivedAt": "Recebida",
+        "licensePlate": "Matrícula",
+        "description": "Descrição",
+        "reference": "Referência",
+        "status": "Estado",
+        "amount": "Valor",
+        "customer": "Cliente",
+        "driver": "Condutor"
+      },
+      "csvSubject": "multas"
+    }
+  },
   "reportKit": {
     "csv": "CSV",
     "print": "Imprimir",

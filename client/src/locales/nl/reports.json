@@ -526,6 +526,47 @@
       "vehicles": "Auto's"
     }
   },
+  "moneyReports": {
+    "fines": {
+      "title": "Bekeuringen",
+      "description": "Boetes van de politie en het CJIB in deze periode, op datum van de overtreding. Klik op een tegel voor de lijst.",
+      "tiles": {
+        "new": "Nieuw",
+        "linked": "Gekoppeld",
+        "cancelled": "Vervallen",
+        "legacy": "Oude statussen",
+        "total": "Totaal (zonder vervallen)"
+      },
+      "avgDaysToLink": "Gemiddeld {{days}} dagen van ontvangst tot koppelen",
+      "avgDaysToLinkNone": "Nog geen bekeuringen gekoppeld in deze periode",
+      "byMonth": "Bedrag per maand",
+      "byCustomer": "Per klant",
+      "byVehicle": "Per voertuig",
+      "byDriver": "Per bestuurder",
+      "notLinked": "Niet gekoppeld",
+      "legacyBadge": "oud",
+      "statuses": {
+        "new": "Nieuw",
+        "linked": "Gekoppeld",
+        "cancelled": "Vervallen",
+        "charged": "Doorbelast",
+        "paid": "Betaald",
+        "disputed": "Betwist"
+      },
+      "columns": {
+        "offenceAt": "Overtreding",
+        "receivedAt": "Ontvangen",
+        "licensePlate": "Kenteken",
+        "description": "Omschrijving",
+        "reference": "Kenmerk",
+        "status": "Status",
+        "amount": "Bedrag",
+        "customer": "Klant",
+        "driver": "Bestuurder"
+      },
+      "csvSubject": "bekeuringen"
+    }
+  },
   "reportKit": {
     "csv": "CSV",
     "print": "Afdrukken",

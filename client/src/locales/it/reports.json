@@ -537,6 +537,47 @@
       "vehicles": "Auto"
     }
   },
+  "moneyReports": {
+    "fines": {
+      "title": "Multe",
+      "description": "Multe della polizia e del CJIB in questo periodo, per data dell’infrazione. Fai clic su una scheda per vedere l’elenco.",
+      "tiles": {
+        "new": "Nuove",
+        "linked": "Collegate",
+        "cancelled": "Annullate",
+        "legacy": "Stati vecchi",
+        "total": "Totale (senza annullate)"
+      },
+      "avgDaysToLink": "In media {{days}} giorni dalla ricezione al collegamento",
+      "avgDaysToLinkNone": "Nessuna multa ancora collegata in questo periodo",
+      "byMonth": "Importo per mese",
+      "byCustomer": "Per cliente",
+      "byVehicle": "Per veicolo",
+      "byDriver": "Per conducente",
+      "notLinked": "Non collegato",
+      "legacyBadge": "vecchio",
+      "statuses": {
+        "new": "Nuova",
+        "linked": "Collegata",
+        "cancelled": "Annullata",
+        "charged": "Addebitata",
+        "paid": "Pagata",
+        "disputed": "Contestata"
+      },
+      "columns": {
+        "offenceAt": "Infrazione",
+        "receivedAt": "Ricevuta",
+        "licensePlate": "Targa",
+        "description": "Descrizione",
+        "reference": "Riferimento",
+        "status": "Stato",
+        "amount": "Importo",
+        "customer": "Cliente",
+        "driver": "Conducente"
+      },
+      "csvSubject": "multe"
+    }
+  },
   "reportKit": {
     "csv": "CSV",
     "print": "Stampa",

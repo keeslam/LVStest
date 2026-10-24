@@ -548,6 +548,47 @@
       "vehicles": "Auta"
     }
   },
+  "moneyReports": {
+    "fines": {
+      "title": "Mandaty",
+      "description": "Mandaty od policji i CJIB w tym okresie, według daty wykroczenia. Kliknij kafelek, aby zobaczyć listę.",
+      "tiles": {
+        "new": "Nowe",
+        "linked": "Powiązane",
+        "cancelled": "Anulowane",
+        "legacy": "Stare statusy",
+        "total": "Razem (bez anulowanych)"
+      },
+      "avgDaysToLink": "Średnio {{days}} dni od otrzymania do powiązania",
+      "avgDaysToLinkNone": "W tym okresie nie powiązano jeszcze żadnych mandatów",
+      "byMonth": "Kwota na miesiąc",
+      "byCustomer": "Na klienta",
+      "byVehicle": "Na pojazd",
+      "byDriver": "Na kierowcę",
+      "notLinked": "Niepowiązane",
+      "legacyBadge": "stare",
+      "statuses": {
+        "new": "Nowy",
+        "linked": "Powiązany",
+        "cancelled": "Anulowany",
+        "charged": "Obciążony",
+        "paid": "Zapłacony",
+        "disputed": "Zakwestionowany"
+      },
+      "columns": {
+        "offenceAt": "Wykroczenie",
+        "receivedAt": "Otrzymano",
+        "licensePlate": "Numer rejestracyjny",
+        "description": "Opis",
+        "reference": "Sygnatura",
+        "status": "Status",
+        "amount": "Kwota",
+        "customer": "Klient",
+        "driver": "Kierowca"
+      },
+      "csvSubject": "mandaty"
+    }
+  },
   "reportKit": {
     "csv": "CSV",
     "print": "Drukuj",

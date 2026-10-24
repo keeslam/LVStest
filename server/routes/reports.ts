@@ -22,6 +22,8 @@ function mayReportOn(user: Express.User | undefined, dataSources: unknown): bool
 import type { Express } from "express";
 import { buildMaintenanceCostReport } from "../utils/maintenance-costs";
 import { buildVehicleFinancials, buildMileagePerMonth, type DateRangeYmd } from "../utils/financial-reports";
+import { mountReport } from "../services/reports/report-kit";
+import { finesReport } from "../services/reports/fines-report";
 
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -42,6 +44,12 @@ function parseVehicleIdFilter(query: Record<string, unknown>): number | null {
 
 // Moved verbatim out of server/routes.ts (registerRoutes) - see git history for context.
 export function registerReportRoutes(app: Express): void {
+
+  // Rapporten fase 2: fines report on Rapporten > Financieel (needs the report and the fines permission)
+  mountReport(app, "/api/reports/fines", [
+    hasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS),
+    hasPermission(UserPermission.VIEW_FINES, UserPermission.MANAGE_FINES),
+  ], finesReport);
 
 
   // ============================================

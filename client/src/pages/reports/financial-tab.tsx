@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatLicensePlate, formatExpenseCategory } from "@/lib/format-utils";
 import { useAuth } from "@/hooks/use-auth";
 import { UserRole } from "@shared/schema";
+import { FinesReportCard } from "./fines-report-card";
 
 // Mirrors server/utils/financial-reports.ts
 interface VehicleFinancialRow {
@@ -198,6 +199,9 @@ export function FinancialTab({ dateRange, selectedVehicle }: FinancialTabProps) 
           </div>
         </CardContent>
       </Card>
+
+      {/* Fines (needs the fines permission; the card checks it itself) */}
+      <FinesReportCard from={from} to={to} vehicleId={selectedVehicle} />
 
       {/* Kilometres per month (admin only) */}
       {isAdmin && (

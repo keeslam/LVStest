@@ -537,6 +537,47 @@
       "vehicles": "Mașini"
     }
   },
+  "moneyReports": {
+    "fines": {
+      "title": "Amenzi",
+      "description": "Amenzile de la poliție și de la CJIB în această perioadă, după data abaterii. Apăsați pe un card pentru listă.",
+      "tiles": {
+        "new": "Noi",
+        "linked": "Asociate",
+        "cancelled": "Anulate",
+        "legacy": "Stări vechi",
+        "total": "Total (fără anulate)"
+      },
+      "avgDaysToLink": "În medie {{days}} zile de la primire până la asociere",
+      "avgDaysToLinkNone": "Încă nu există amenzi asociate în această perioadă",
+      "byMonth": "Sumă pe lună",
+      "byCustomer": "Pe client",
+      "byVehicle": "Pe vehicul",
+      "byDriver": "Pe șofer",
+      "notLinked": "Neasociat",
+      "legacyBadge": "vechi",
+      "statuses": {
+        "new": "Nouă",
+        "linked": "Asociată",
+        "cancelled": "Anulată",
+        "charged": "Refacturată",
+        "paid": "Plătită",
+        "disputed": "Contestată"
+      },
+      "columns": {
+        "offenceAt": "Abatere",
+        "receivedAt": "Primită",
+        "licensePlate": "Număr de înmatriculare",
+        "description": "Descriere",
+        "reference": "Referință",
+        "status": "Stare",
+        "amount": "Sumă",
+        "customer": "Client",
+        "driver": "Șofer"
+      },
+      "csvSubject": "amenzi"
+    }
+  },
   "reportKit": {
     "csv": "CSV",
     "print": "Tipărește",
