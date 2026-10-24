@@ -17,7 +17,7 @@ describe("maintenance outlook report", () => {
   const W = { from: "2026-11-02", to: "2027-02-02" };
   let admin: TestAgent;
   let staff: TestAgent;
-  let V7a: number, V7b: number, V7c: number, V7d: number, V7e: number, V7f: number;
+  let V7a: number, V7b: number, V7c: number, V7d: number, V7e: number, V7f: number, V7g: number;
 
   beforeAll(async () => {
     admin = await agentFor("admin");
@@ -34,6 +34,16 @@ describe("maintenance outlook report", () => {
       { vehicleId: V7a, mileage: 70000, recordedAt: new Date("2026-08-01T10:00:00Z"), source: "manual" },
       { vehicleId: V7a, mileage: 76000, recordedAt: new Date("2026-10-01T10:00:00Z"), source: "manual" },
       { vehicleId: V7a, mileage: 99999, recordedAt: new Date("2026-09-01T10:00:00Z"), source: "manual", voidedAt: new Date("2026-09-02T10:00:00Z"), voidedBy: "FIXT-test" },
+    ]);
+    // Same car as V7a, but a typo (760 000) sits between the readings and a correction follows it.
+    V7g = (await createFixtureVehicle({
+      lastServiceDate: "2026-03-01", serviceIntervalMonths: 12, serviceIntervalKm: 30000,
+      lastServiceMileage: 50000, currentMileage: 78000,
+    })).id;
+    await db.insert(vehicleMileageReadings).values([
+      { vehicleId: V7g, mileage: 70000, recordedAt: new Date("2026-08-01T10:00:00Z"), source: "manual" },
+      { vehicleId: V7g, mileage: 760000, recordedAt: new Date("2026-09-01T10:00:00Z"), source: "manual" },
+      { vehicleId: V7g, mileage: 76000, recordedAt: new Date("2026-10-01T10:00:00Z"), source: "manual" },
     ]);
     V7b = (await createFixtureVehicle({ apkDate: "2026-10-20" })).id;
     V7c = (await createFixtureVehicle({ apkDate: "2026-11-10", outOfFleetDate: "2026-10-01" })).id;
@@ -112,6 +122,18 @@ describe("maintenance outlook report", () => {
   it("rechten: rapport + voertuigen", async () => {
     for (const perms of [["view_reports"], ["view_vehicles"]]) expect((await (await agentFor(perms)).get("/api/reports/maintenance-outlook/summary").query(W)).status).toBe(403);
     expect((await staff.get("/api/reports/maintenance-outlook/summary").query(W)).status).toBe(200);
+  });
+
+  it("V7g tikfout met correctie: zelfde tempo en datum als zonder tikfout, in rapport en kalender", async () => {
+    const a = (await admin.get("/api/reports/maintenance-outlook/rows").query({ ...W, vehicleId: V7a, tile: "service" })).body.rows[0];
+    const g = (await admin.get("/api/reports/maintenance-outlook/rows").query({ ...W, vehicleId: V7g, tile: "service" })).body.rows;
+    expect(g).toHaveLength(1);
+    expect(g[0]).toMatchObject({ dueDate: a.dueDate, basis: "km", kmPerDay: 98.4, overdue: false });
+    const list = (await staff.get("/api/vehicles/service-forecast")).body as Array<{ id: number; forecast: { kmPerDay: number | null; basis: string | null; expectedDate: string | null } }>;
+    const calA = list.find((v) => v.id === V7a)!.forecast;
+    expect(calA.expectedDate).not.toBeNull();
+    expect(list.find((v) => v.id === V7g)?.forecast).toMatchObject({ kmPerDay: 98.4, basis: "km", expectedDate: calA.expectedDate });
+    expect((await staff.get(`/api/vehicles/${V7g}/service-forecast`)).body.forecast).toMatchObject({ kmPerDay: 98.4, expectedDate: calA.expectedDate });
   });
 
   it("onderhoudskalender rekent km per dag uit dezelfde km-historie", async () => {

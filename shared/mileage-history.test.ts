@@ -33,10 +33,22 @@ describe("analyseMileage", () => {
     expect(out.summary.warnings).toBe(1);
   });
   it("de delta van een onlogische sprong telt niet mee in gereden km", () => {
-    const out = analyseMileage([row(1, 10000, "2026-01-01"), row(2, 20000, "2026-01-02"), row(3, 20100, "2026-01-03")], P);
+    const out = analyseMileage([row(1, 10000, "2026-01-01"), row(2, 20000, "2026-01-02"), row(3, 10100, "2026-01-03")], P);
     expect(out.rows[1].warning).toBe("jump");
     expect(out.rows[1].drivenSincePrevious).toBe(10000);
     expect(out.summary.drivenKm).toBe(100);
+  });
+  it("een sprong wordt niet de vorige stand: tikfout en correctie herstellen zich", () => {
+    const out = analyseMileage([row(1, 70000, "2026-01-01"), row(2, 760000, "2026-01-10"), row(3, 76000, "2026-01-20")], P);
+    expect(out.rows[1]).toMatchObject({ warning: "jump", countedKm: 0 });
+    expect(out.rows[2]).toMatchObject({ warning: null, drivenSincePrevious: 6000, countedKm: 6000, countedSince: "2026-01-01" });
+    expect(out.summary).toMatchObject({ drivenKm: 6000, warnings: 1 });
+  });
+  it("na een sprong vergelijkt de volgende stand met de stand van voor de sprong", () => {
+    const out = analyseMileage([row(1, 10000, "2026-01-01"), row(2, 20000, "2026-01-02"), row(3, 20100, "2026-01-03")], P);
+    expect(out.rows[1].warning).toBe("jump");
+    expect(out.rows[2]).toMatchObject({ warning: "jump", drivenSincePrevious: 10100, countedKm: 0 });
+    expect(out.summary.drivenKm).toBe(0);
   });
   it("geen of één stand: geen deling door nul", () => {
     expect(analyseMileage([], P).summary).toMatchObject({ drivenKm: 0, avgPerMonth: null, readings: 0 });

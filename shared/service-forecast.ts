@@ -13,6 +13,7 @@
  * calculation stays as it is.
  */
 import type { ServiceDueInfo } from "./service-due";
+import { MILEAGE_JUMP_KM_PER_DAY } from "./mileage-history";
 
 export const FORECAST_MIN_SPAN_DAYS = 14;
 
@@ -42,8 +43,10 @@ function fromDayNumber(n: number): string {
 
 /**
  * Average km per day between the first and the last reading. A reading lower
- * than an earlier one is a typo or a swapped odometer and is skipped, the same
- * way the mileage report does. Null when there is not enough to go on.
+ * than the last kept one (a typo or a swapped odometer), or more than
+ * MILEAGE_JUMP_KM_PER_DAY above it (a typo like 760 000 for 76 000), is
+ * skipped, the same rule as the km history (analyseMileage), so a typo that is
+ * later corrected does not inflate the pace. Null when there is not enough to go on.
  */
 export function kmPerDayFromReadings(readings: DatedReading[]): KmPerDay | null {
   const usable = readings
@@ -54,6 +57,7 @@ export function kmPerDayFromReadings(readings: DatedReading[]): KmPerDay | null 
   for (const r of usable) {
     const prev = clean[clean.length - 1];
     if (prev && r.mileage < prev.mileage) continue;
+    if (prev && (r.mileage - prev.mileage) / Math.max(1, r.day - prev.day) > MILEAGE_JUMP_KM_PER_DAY) continue;
     clean.push(r);
   }
   if (clean.length < 2) return null;

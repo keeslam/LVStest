@@ -28,6 +28,24 @@ describe("kmPerDayFromReadings", () => {
     expect(pace?.readings).toBe(2);
   });
 
+  it("skips a jump: a typo followed by a correction gives the normal pace", () => {
+    const pace = kmPerDayFromReadings([
+      { date: "2026-01-01", mileage: 70_000 },
+      { date: "2026-02-01", mileage: 760_000 },
+      { date: "2026-03-02", mileage: 76_000 }, // 60 days, 6000 km
+    ]);
+    expect(pace).toEqual({ kmPerDay: 100, firstDate: "2026-01-01", lastDate: "2026-03-02", readings: 2 });
+  });
+
+  it("skips a jump on the same day as the correction", () => {
+    const pace = kmPerDayFromReadings([
+      { date: "2026-01-01", mileage: 70_000 },
+      { date: "2026-03-02", mileage: 760_000 },
+      { date: "2026-03-02", mileage: 76_000 },
+    ]);
+    expect(pace?.kmPerDay).toBe(100);
+  });
+
   it("predicts nothing with too few readings", () => {
     expect(kmPerDayFromReadings([])).toBeNull();
     expect(kmPerDayFromReadings([{ date: "2026-01-01", mileage: 10_000 }])).toBeNull();

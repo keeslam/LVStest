@@ -79,7 +79,12 @@ describe("POST /api/mileage-history/readings/:id/void and /unvoid (Kees, 2026-10
     const url = `/api/mileage-history/${vid}?from=2026-03-01&to=2026-03-31`;
 
     const before = (await admin.get(url)).body;
-    expect(before.rows[2].warning).toBe("decrease");
+    // The jump is listed with its warning but is not the next "previous" (final review 2026-10-25),
+    // so the correction already counts from 100 000; voiding only clears the warning.
+    expect(before.rows[1].warning).toBe("jump");
+    expect(before.rows[2].warning).toBeNull();
+    expect(before.rows[2].drivenSincePrevious).toBe(200);
+    expect(before.summary.warnings).toBe(1);
 
     const voided = await admin.post(`/api/mileage-history/readings/${typo.id}/void`);
     expect(voided.status).toBe(200);
@@ -89,11 +94,12 @@ describe("POST /api/mileage-history/readings/:id/void and /unvoid (Kees, 2026-10
     expect(after.rows[2].warning).toBeNull();
     expect(after.rows[2].drivenSincePrevious).toBe(200);
     expect(after.summary.drivenKm).toBe(200);
+    expect(after.summary.warnings).toBe(0);
 
     const back = await admin.post(`/api/mileage-history/readings/${typo.id}/unvoid`);
     expect(back.status).toBe(200);
     expect(back.body.voided).toBe(false);
-    expect((await admin.get(url)).body.rows[2].warning).toBe("decrease");
+    expect((await admin.get(url)).body.rows[1].warning).toBe("jump");
   });
 
   it("is admin only and answers 404 for an unknown reading", async () => {

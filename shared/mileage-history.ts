@@ -110,9 +110,10 @@ export function analyseMileage(
       }
     }
     if (warning) warnings += 1;
-    // A lower reading stays listed with its warning but is not trusted as the next "previous",
-    // so one typo (124 900 -> 12 500 -> 125 000) does not add the whole odometer to driven km.
-    if (warning !== "decrease") prev = r;
+    // A lower reading or a jump stays listed with its warning but is not trusted as the next
+    // "previous", so one typo (124 900 -> 12 500 -> 125 000, or 70 000 -> 760 000 -> 76 000)
+    // heals itself: the correction counts from the last reading before the typo.
+    if (warning === null) prev = r;
     return { ...r, drivenSincePrevious: driven, warning, countedKm, countedSince };
   });
 
