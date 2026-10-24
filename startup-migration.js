@@ -1863,6 +1863,24 @@ async function runMigrations() {
       )`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS portal_activity_customer_created_idx ON portal_activity_log (customer_id, created_at)`);
 
+    // Km history: one row per odometer reading per vehicle.
+    await createTableIfNotExists('vehicle_mileage_readings', `
+      CREATE TABLE vehicle_mileage_readings (
+        id SERIAL PRIMARY KEY,
+        vehicle_id INTEGER NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+        mileage INTEGER NOT NULL,
+        recorded_at TIMESTAMPTZ NOT NULL,
+        source TEXT NOT NULL,
+        source_table TEXT,
+        source_id INTEGER,
+        actor_name TEXT,
+        voided_at TIMESTAMPTZ,
+        voided_by TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS vehicle_mileage_readings_vehicle_recorded_idx ON vehicle_mileage_readings (vehicle_id, recorded_at)`);
+    await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS vehicle_mileage_readings_source_uniq ON vehicle_mileage_readings (source, source_table, source_id) WHERE source_id IS NOT NULL`);
+
     // One-off back-fill: every reservation that already has a driver gets one
     // open assignment row starting at its start date. Idempotent: skips
     // reservations that already have any assignment row.

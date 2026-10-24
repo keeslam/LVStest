@@ -6664,6 +6664,88 @@
     ]
   },
   {
+    "name": "vehicle_mileage_readings",
+    "columns": [
+      {
+        "name": "id",
+        "type": "serial",
+        "notNull": true,
+        "primary": true,
+        "default": null
+      },
+      {
+        "name": "vehicle_id",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "mileage",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "recorded_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "source",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "source_table",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "source_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "actor_name",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "voided_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "voided_by",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": "now()"
+      }
+    ]
+  },
+  {
     "name": "vehicle_transports",
     "columns": [
       {

@@ -1847,6 +1847,27 @@ export const insertEmailLogSchema = createInsertSchema(emailLogs)
 export type EmailLog = typeof emailLogs.$inferSelect;
 export type InsertEmailLog = z.infer<typeof insertEmailLogSchema>;
 
+// One row per odometer reading per vehicle (km history). `source` is one of
+// MileageSource in shared/mileage-history.ts; kept plain text here.
+export const vehicleMileageReadings = pgTable("vehicle_mileage_readings", {
+  id: serial("id").primaryKey(),
+  vehicleId: integer("vehicle_id").notNull().references(() => vehicles.id, { onDelete: "cascade" }),
+  mileage: integer("mileage").notNull(),
+  recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull(),
+  source: text("source").notNull(),
+  sourceTable: text("source_table"),
+  sourceId: integer("source_id"),
+  actorName: text("actor_name"),
+  voidedAt: timestamp("voided_at", { withTimezone: true }),
+  voidedBy: text("voided_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  vehicleRecordedIdx: index("vehicle_mileage_readings_vehicle_recorded_idx").on(table.vehicleId, table.recordedAt),
+  sourceUnique: uniqueIndex("vehicle_mileage_readings_source_uniq").on(table.source, table.sourceTable, table.sourceId).where(sql`source_id is not null`),
+}));
+
+export type VehicleMileageReading = typeof vehicleMileageReadings.$inferSelect;
+
 // RDW APK date changes - detected by the background scan that compares each
 // vehicle's stored APK expiry date against the RDW open data API. Stays
 // 'pending' until a user confirms (applies newApkDate to the vehicle) or
