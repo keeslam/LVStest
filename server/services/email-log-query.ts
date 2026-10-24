@@ -11,6 +11,7 @@ import { sql, type SQL } from "drizzle-orm";
 import { db } from "../db";
 import { emailLogs, vehicles, type EmailLog } from "@shared/schema";
 import { officeTimeZone } from "./office-time";
+import { oneOf, positiveInt } from "./reports/report-kit";
 
 export const EMAIL_LOG_PAGE_SIZES = [25, 50, 100, 250] as const;
 export const EMAIL_LOG_EXPORT_LIMIT = 20000;
@@ -45,17 +46,8 @@ export interface EmailLogQuery {
 
 export type EmailLogListRow = EmailLog & { vehicles: Array<{ id: number; licensePlate: string }> };
 
-function one<T extends string>(value: unknown, allowed: readonly T[]): T | null {
-  return typeof value === "string" && (allowed as readonly string[]).includes(value) ? (value as T) : null;
-}
-
 function isoDate(value: unknown): string | null {
   return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) ? value : null;
-}
-
-function positiveInt(value: unknown, fallback: number): number {
-  const n = typeof value === "string" ? Number.parseInt(value, 10) : NaN;
-  return Number.isFinite(n) && n >= 1 ? n : fallback;
 }
 
 /** The request's query string as a query; unknown or malformed values fall back to the defaults. */
@@ -63,12 +55,12 @@ export function parseEmailLogQuery(input: Record<string, unknown>): EmailLogQuer
   const size = positiveInt(input.pageSize, 50);
   return {
     q: typeof input.q === "string" ? input.q.trim().slice(0, 200) : "",
-    status: one(input.status, STATUSES),
-    kind: one(input.kind, [...EMAIL_LOG_KINDS, "other", "rest"] as const),
-    scope: one(input.scope, SCOPES) ?? "all",
+    status: oneOf(input.status, STATUSES),
+    kind: oneOf(input.kind, [...EMAIL_LOG_KINDS, "other", "rest"] as const),
+    scope: oneOf(input.scope, SCOPES) ?? "all",
     from: isoDate(input.from),
     to: isoDate(input.to),
-    sort: one(input.sort, SORTS) ?? "sentAt",
+    sort: oneOf(input.sort, SORTS) ?? "sentAt",
     dir: input.dir === "asc" ? "asc" : "desc",
     page: positiveInt(input.page, 1),
     pageSize: Math.min(size, 250),

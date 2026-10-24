@@ -3,18 +3,11 @@ import { installIdParamValidation } from '../middleware/parseIntParam';
 import { getMileageHistory, setMileageReadingVoided } from '../services/mileage-history';
 import { officeTimeZone } from '../services/office-time';
 import { dateInZone } from '../../shared/office-timezone';
+import { defaultReportPeriod, isRealDate } from '../services/reports/report-kit';
 
 const router = Router();
 // Express param callbacks do not cross a router mount, so validate `:vehicleId` here.
 installIdParamValidation(router);
-
-/** yyyy-mm-dd and a real calendar date (no 2026-02-30). */
-function isRealDate(value: string): boolean {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!m) return false;
-  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
-  return d.toISOString().slice(0, 10) === value;
-}
 
 // Kilometerhistorie of one vehicle (admin only; mounted with requireAdmin).
 router.get('/:vehicleId', async (req, res) => {
@@ -23,11 +16,11 @@ router.get('/:vehicleId', async (req, res) => {
     if (!Number.isInteger(vehicleId) || vehicleId <= 0) {
       return res.status(400).json({ message: 'Invalid vehicle id', code: 'INVALID_ID' });
     }
-    const today = dateInZone(new Date(), officeTimeZone());
+    const period = defaultReportPeriod(dateInZone(new Date(), officeTimeZone()));
     const rawFrom = req.query.from;
     const rawTo = req.query.to;
-    const from = rawFrom === undefined || rawFrom === '' ? `${today.slice(0, 4)}-01-01` : rawFrom;
-    const to = rawTo === undefined || rawTo === '' ? today : rawTo;
+    const from = rawFrom === undefined || rawFrom === '' ? period.from : rawFrom;
+    const to = rawTo === undefined || rawTo === '' ? period.to : rawTo;
     if (typeof from !== 'string' || typeof to !== 'string' || !isRealDate(from) || !isRealDate(to) || from > to) {
       return res.status(400).json({ message: 'Invalid date range', code: 'INVALID_DATE' });
     }
