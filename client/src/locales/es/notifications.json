@@ -362,7 +362,58 @@
       "detailVehicles": "Vehículos de este envío",
       "detailBodyNote": "El contenido de un correo enviado no se guarda; el registro solo conserva el resultado. Puede volver a enviarlo desde Enviar notificaciones.",
       "detailClose": "Cerrar",
-      "runKind": "Envío masivo"
+      "runKind": "Envío masivo",
+      "table": {
+        "searchPlaceholder": "Buscar por asunto, correo, matrícula o error",
+        "statusFilter": "Estado",
+        "statusAll": "Todos los estados",
+        "kindFilter": "Tipo",
+        "kindAll": "Todos los tipos",
+        "scopeFilter": "Correos sueltos o envíos",
+        "scopeAll": "Correos y envíos",
+        "scopeMails": "Solo correos sueltos",
+        "scopeRuns": "Solo envíos masivos",
+        "periodFilter": "Periodo",
+        "period": {
+          "all": "Siempre",
+          "today": "Hoy",
+          "week": "Esta semana",
+          "month": "Este mes",
+          "year": "Este año",
+          "custom": "Elegir fechas…"
+        },
+        "from": "Desde",
+        "to": "Hasta",
+        "clearFilters": "Borrar filtros",
+        "export": "CSV",
+        "exporting": "Procesando…",
+        "exportFailed": "No se pudo crear el CSV. Inténtelo de nuevo.",
+        "exportTruncated": "El CSV solo contiene las primeras 20.000 filas. Reduzca la selección para el resto.",
+        "noMatches": "No hay correos con esta búsqueda o estos filtros.",
+        "total_one": "{{count}} correo",
+        "total_other": "{{count}} correos",
+        "total_many": "{{count}} correos",
+        "csvSubject": "registro-correos",
+        "columns": {
+          "sentAt": "Fecha/hora",
+          "subject": "Asunto",
+          "recipient": "Destinatario",
+          "plates": "Matrícula",
+          "status": "Estado"
+        },
+        "csv": {
+          "sentAt": "Fecha/hora",
+          "kind": "Tipo",
+          "subject": "Asunto",
+          "recipient": "Destinatario",
+          "recipients": "Destinatarios",
+          "sent": "Enviados",
+          "failed": "Fallidos",
+          "plates": "Matrículas",
+          "status": "Estado",
+          "reason": "Motivo"
+        }
+      }
     },
     "analytics": {
       "totalEmailsSent": "Correos enviados",

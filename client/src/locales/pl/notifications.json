@@ -372,7 +372,59 @@
       "detailVehicles": "Pojazdy w tym cyklu",
       "detailBodyNote": "Treść wysłanego e-maila nie jest zapisywana; dziennik przechowuje tylko wynik. Ponowne wysłanie jest możliwe w sekcji Wysyłanie powiadomień.",
       "detailClose": "Zamknij",
-      "runKind": "Cykl wysyłki"
+      "runKind": "Cykl wysyłki",
+      "table": {
+        "searchPlaceholder": "Szukaj po temacie, adresie e-mail, numerze rejestracyjnym lub błędzie",
+        "statusFilter": "Status",
+        "statusAll": "Wszystkie statusy",
+        "kindFilter": "Rodzaj",
+        "kindAll": "Wszystkie rodzaje",
+        "scopeFilter": "Pojedyncze e-maile lub wysyłki",
+        "scopeAll": "E-maile i wysyłki",
+        "scopeMails": "Tylko pojedyncze e-maile",
+        "scopeRuns": "Tylko wysyłki zbiorcze",
+        "periodFilter": "Okres",
+        "period": {
+          "all": "Zawsze",
+          "today": "Dzisiaj",
+          "week": "Ten tydzień",
+          "month": "Ten miesiąc",
+          "year": "Ten rok",
+          "custom": "Wybierz daty…"
+        },
+        "from": "Od",
+        "to": "Do",
+        "clearFilters": "Wyczyść filtry",
+        "export": "CSV",
+        "exporting": "Trwa…",
+        "exportFailed": "Nie udało się utworzyć pliku CSV. Spróbuj ponownie.",
+        "exportTruncated": "CSV zawiera tylko pierwsze 20 000 wierszy. Zawęź wybór, aby uzyskać resztę.",
+        "noMatches": "Brak e-maili pasujących do tego wyszukiwania lub filtrów.",
+        "total_one": "{{count}} e-mail",
+        "total_few": "{{count}} e-maile",
+        "total_many": "{{count}} e-maili",
+        "total_other": "{{count}} e-maila",
+        "csvSubject": "dziennik-email",
+        "columns": {
+          "sentAt": "Data/godzina",
+          "subject": "Temat",
+          "recipient": "Odbiorca",
+          "plates": "Rejestracja",
+          "status": "Status"
+        },
+        "csv": {
+          "sentAt": "Data/godzina",
+          "kind": "Rodzaj",
+          "subject": "Temat",
+          "recipient": "Odbiorca",
+          "recipients": "Odbiorcy",
+          "sent": "Wysłane",
+          "failed": "Nieudane",
+          "plates": "Numery rejestracyjne",
+          "status": "Status",
+          "reason": "Powód"
+        }
+      }
     },
     "analytics": {
       "totalEmailsSent": "Wysłane e-maile",

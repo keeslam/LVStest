@@ -352,7 +352,57 @@
       "detailVehicles": "Voertuigen in deze ronde",
       "detailBodyNote": "De inhoud van een verstuurde e-mail wordt niet bewaard; het logboek houdt alleen het resultaat bij. Opnieuw versturen kan via Meldingen versturen.",
       "detailClose": "Sluiten",
-      "runKind": "Verzendronde"
+      "runKind": "Verzendronde",
+      "table": {
+        "searchPlaceholder": "Zoek op onderwerp, e-mailadres, kenteken of foutmelding",
+        "statusFilter": "Status",
+        "statusAll": "Alle statussen",
+        "kindFilter": "Soort",
+        "kindAll": "Alle soorten",
+        "scopeFilter": "Losse mails of rondes",
+        "scopeAll": "Mails en rondes",
+        "scopeMails": "Alleen losse mails",
+        "scopeRuns": "Alleen rondes",
+        "periodFilter": "Periode",
+        "period": {
+          "all": "Altijd",
+          "today": "Vandaag",
+          "week": "Deze week",
+          "month": "Deze maand",
+          "year": "Dit jaar",
+          "custom": "Kies datums…"
+        },
+        "from": "Van",
+        "to": "Tot en met",
+        "clearFilters": "Filters wissen",
+        "export": "CSV",
+        "exporting": "Bezig…",
+        "exportFailed": "De CSV kon niet worden gemaakt. Probeer het opnieuw.",
+        "exportTruncated": "Alleen de eerste 20.000 regels staan in de CSV. Maak de selectie kleiner voor de rest.",
+        "noMatches": "Geen e-mails gevonden met deze zoekterm of filters.",
+        "total_one": "{{count}} e-mail",
+        "total_other": "{{count}} e-mails",
+        "csvSubject": "e-maillogboek",
+        "columns": {
+          "sentAt": "Datum/tijd",
+          "subject": "Onderwerp",
+          "recipient": "Ontvanger",
+          "plates": "Kenteken",
+          "status": "Status"
+        },
+        "csv": {
+          "sentAt": "Datum/tijd",
+          "kind": "Soort",
+          "subject": "Onderwerp",
+          "recipient": "Ontvanger",
+          "recipients": "Aantal ontvangers",
+          "sent": "Verzonden",
+          "failed": "Mislukt",
+          "plates": "Kentekens",
+          "status": "Status",
+          "reason": "Reden"
+        }
+      }
     },
     "analytics": {
       "totalEmailsSent": "Verstuurde e-mails",

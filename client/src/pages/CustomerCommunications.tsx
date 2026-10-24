@@ -33,6 +33,7 @@ import { classifySendResult, firstFailureCode } from "@/lib/communication-send";
 import { failureCodeText } from "@/lib/email-failure-text";
 import { EmailFailureReasons } from "@/components/communications/email-failure-reasons";
 import { EmailLogDetailDialog, type EmailLogRow, type EmailLogStatus } from "@/components/communications/email-log-detail-dialog";
+import { EmailLogTable } from "@/components/communications/email-log-table";
 
 function emailLogStatus(row: EmailLogRow): EmailLogStatus {
   if (row.result === 'sent') return 'sent';
@@ -41,37 +42,19 @@ function emailLogStatus(row: EmailLogRow): EmailLogStatus {
   return 'sent';
 }
 
-function sentAtMs(row: EmailLogRow): number {
-  const ms = Date.parse(row.sentAt);
-  return Number.isNaN(ms) ? 0 : ms;
+/** The numbers on the Analyse tab, as GET /api/email-logs/summary counts them. */
+interface EmailLogSummary {
+  sent: number;
+  failed: number;
+  runs: number;
+  runsWithFailures: number;
+  kinds: Record<'apk' | 'maintenance' | 'custom' | 'other', { sent: number; failed: number }>;
 }
 
-/** Newest first, whatever order the route used; the id breaks a tie. */
-function newestFirst(rows: EmailLogRow[]): EmailLogRow[] {
-  return [...rows].sort((a, b) => sentAtMs(b) - sentAtMs(a) || b.id - a.id);
-}
-
-type EmailKind = 'apk' | 'maintenance' | 'custom' | 'other';
-
-/** The numbers on the Analyse tab, all counted from the rows themselves. */
-function summariseEmailLog(rows: EmailLogRow[]) {
-  const mails = rows.filter((row) => row.recipient);
-  const runs = rows.filter((row) => !row.recipient);
-  const count = (list: EmailLogRow[], status: EmailLogStatus) =>
-    list.filter((row) => emailLogStatus(row) === status).length;
-  const kind = (name: EmailKind) => {
-    const list = mails.filter((row) =>
-      name === 'other' ? !['apk', 'maintenance', 'custom'].includes(row.template) : row.template === name);
-    return { sent: count(list, 'sent'), failed: count(list, 'failed') };
-  };
-  return {
-    sent: count(mails, 'sent'),
-    failed: count(mails, 'failed'),
-    runs: runs.length,
-    runsWithFailures: runs.filter((row) => row.emailsFailed > 0).length,
-    kinds: { apk: kind('apk'), maintenance: kind('maintenance'), custom: kind('custom'), other: kind('other') },
-  };
-}
+const EMPTY_EMAIL_LOG_SUMMARY: EmailLogSummary = {
+  sent: 0, failed: 0, runs: 0, runsWithFailures: 0,
+  kinds: { apk: { sent: 0, failed: 0 }, maintenance: { sent: 0, failed: 0 }, custom: { sent: 0, failed: 0 }, other: { sent: 0, failed: 0 } },
+};
 
 interface EmailTemplate {
   id: string;
@@ -237,25 +220,19 @@ export default function CustomerCommunications() {
     enabled: canViewCustomers,
   });
 
-  // Fetch email logs - B-29a: GET /api/email-logs also accepts
-  // MANAGE_EMAIL_TEMPLATES only (server/index.ts:418). The E-maillogboek and
-  // Analyse tabs render exactly this, nothing else (audit 2026-10-09, module
-  // 13, finding 1: they used to show hard-coded rows from March 2024).
+  // The Analyse totals, counted by the server (GET /api/email-logs/summary;
+  // B-29a: MANAGE_EMAIL_TEMPLATES only). The E-maillogboek tab pages through
+  // the log itself (EmailLogTable), so no tab loads every row any more
+  // (Kees, 2026-10-24: the log must stay quick at 10,000 rows).
   const {
-    data: emailLogData,
+    data: emailLogSummaryData,
     isLoading: emailLogLoading,
     isError: emailLogError,
-  } = useQuery<EmailLogRow[]>({
-    queryKey: ['/api/email-logs'],
-    queryFn: async () => {
-      const response = await fetch('/api/email-logs');
-      if (!response.ok) throw new Error('Failed to fetch email logs');
-      return response.json();
-    },
+  } = useQuery<EmailLogSummary>({
+    queryKey: ['/api/email-logs/summary'],
     enabled: canManageEmailTemplates,
   });
-  const emailLogRows = newestFirst(Array.isArray(emailLogData) ? emailLogData : []);
-  const emailLogSummary = summariseEmailLog(emailLogRows);
+  const emailLogSummary = emailLogSummaryData?.kinds ? emailLogSummaryData : EMPTY_EMAIL_LOG_SUMMARY;
 
   const filteredVehicles = vehiclesWithReservations.filter((item: any) => {
     const vehicle = item.vehicle;
@@ -427,7 +404,7 @@ export default function CustomerCommunications() {
 
       // The send wrote to the e-mail log (one row per mail, one for the round);
       // the log tab and the analysis read it once on load and would never show it.
-      void queryClient.invalidateQueries({ queryKey: ['/api/email-logs'] });
+      void queryClient.invalidateQueries({ predicate: (q) => typeof q.queryKey[0] === 'string' && q.queryKey[0].startsWith('/api/email-logs') });
 
       // The route answers 200 also when nothing could be mailed (no e-mail
       // configuration, no usable address); only the counts say what happened
@@ -1514,83 +1491,8 @@ export default function CustomerCommunications() {
                 // GET /api/email-logs needs MANAGE_EMAIL_TEMPLATES alone: a
                 // visible hole, not a genuine "nothing sent yet" state.
                 <NoDataAccess permission={UserPermission.MANAGE_EMAIL_TEMPLATES} />
-              ) : emailLogLoading ? (
-                <p className="text-sm text-muted-foreground" data-testid="email-log-loading">
-                  {t('customerCommunications.history.loading')}
-                </p>
-              ) : emailLogError ? (
-                <p className="text-sm text-destructive" data-testid="email-log-error">
-                  {t('customerCommunications.history.loadError')}
-                </p>
-              ) : emailLogRows.length === 0 ? (
-                <div className="text-center py-8" data-testid="email-log-empty">
-                  <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">{t('customerCommunications.history.emptyTitle')}</h3>
-                  <p className="text-muted-foreground">{t('customerCommunications.history.emptyDescription')}</p>
-                </div>
               ) : (
-                <div className="space-y-4">
-                  {emailLogRows.map((row) => {
-                    const status = emailLogStatus(row);
-                    const knownKind = ['apk', 'maintenance', 'custom'].includes(row.template);
-                    const info = knownKind ? getTemplateInfo(row.template) : null;
-                    const Icon = info ? info.icon : Mail;
-                    const kindLabel = logKindLabel(row.template);
-
-                    return (
-                      <div key={row.id} className="p-4 border rounded-lg" data-testid="email-log-row">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-start space-x-4 min-w-0">
-                            <Icon className={`h-5 w-5 mt-0.5 shrink-0 ${info ? info.color : 'text-muted-foreground'}`} />
-                            <div className="min-w-0">
-                              <div className="font-medium break-words">{row.subject}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {formatDateTimeNl(row.sentAt)} · {kindLabel}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {row.recipient ? (
-                                  <>
-                                    <span>{t('customerCommunications.history.recipientLabel')}</span>{' '}
-                                    <span className="break-all">{row.recipient}</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <span>{t('customerCommunications.history.recipientsCount', { count: row.recipients })}</span>
-                                    {' · '}
-                                    <span>{t('customerCommunications.history.roundCounts', { sent: row.emailsSent, failed: row.emailsFailed })}</span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex shrink-0 flex-col items-end gap-2">
-                            <Badge
-                              variant={status === 'sent' ? 'default' : 'destructive'}
-                              data-testid="email-log-status"
-                            >
-                              {t(`customerCommunications.history.statusLabels.${status}`)}
-                            </Badge>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-7 px-2 text-xs"
-                              onClick={() => setLogDetailRow(row)}
-                              data-testid={`button-email-log-detail-${row.id}`}
-                            >
-                              {t('customerCommunications.history.detailButton')}
-                            </Button>
-                          </div>
-                        </div>
-
-                        {row.failureReason && (
-                          <div className="mt-3 p-2 bg-yellow-50 rounded border border-yellow-200">
-                            <EmailFailureReasons reason={row.failureReason} />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                <EmailLogTable statusOf={emailLogStatus} kindLabel={logKindLabel} onOpenDetail={setLogDetailRow} />
               )}
             </CardContent>
           </Card>

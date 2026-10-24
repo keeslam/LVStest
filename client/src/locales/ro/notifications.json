@@ -362,7 +362,58 @@
       "detailVehicles": "Vehiculele din această rundă",
       "detailBodyNote": "Conținutul unui e-mail trimis nu este păstrat; jurnalul reține doar rezultatul. Retrimiterea este posibilă prin Trimiteți notificări.",
       "detailClose": "Închideți",
-      "runKind": "Rundă de trimitere"
+      "runKind": "Rundă de trimitere",
+      "table": {
+        "searchPlaceholder": "Căutați după subiect, e-mail, număr de înmatriculare sau eroare",
+        "statusFilter": "Stare",
+        "statusAll": "Toate stările",
+        "kindFilter": "Tip",
+        "kindAll": "Toate tipurile",
+        "scopeFilter": "E-mailuri individuale sau runde",
+        "scopeAll": "E-mailuri și runde",
+        "scopeMails": "Doar e-mailuri individuale",
+        "scopeRuns": "Doar runde",
+        "periodFilter": "Perioadă",
+        "period": {
+          "all": "Oricând",
+          "today": "Astăzi",
+          "week": "Săptămâna aceasta",
+          "month": "Luna aceasta",
+          "year": "Anul acesta",
+          "custom": "Alegeți datele…"
+        },
+        "from": "De la",
+        "to": "Până la",
+        "clearFilters": "Ștergeți filtrele",
+        "export": "CSV",
+        "exporting": "Se lucrează…",
+        "exportFailed": "CSV-ul nu a putut fi creat. Încercați din nou.",
+        "exportTruncated": "CSV-ul conține doar primele 20.000 de rânduri. Restrângeți selecția pentru rest.",
+        "noMatches": "Niciun e-mail nu corespunde acestei căutări sau acestor filtre.",
+        "total_one": "{{count}} e-mail",
+        "total_few": "{{count}} e-mailuri",
+        "total_other": "{{count}} de e-mailuri",
+        "csvSubject": "jurnal-email",
+        "columns": {
+          "sentAt": "Data/ora",
+          "subject": "Subiect",
+          "recipient": "Destinatar",
+          "plates": "Nr. înmatriculare",
+          "status": "Stare"
+        },
+        "csv": {
+          "sentAt": "Data/ora",
+          "kind": "Tip",
+          "subject": "Subiect",
+          "recipient": "Destinatar",
+          "recipients": "Destinatari",
+          "sent": "Trimise",
+          "failed": "Eșuate",
+          "plates": "Numere de înmatriculare",
+          "status": "Stare",
+          "reason": "Motiv"
+        }
+      }
     },
     "analytics": {
       "totalEmailsSent": "E-mailuri trimise",

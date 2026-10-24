@@ -3,6 +3,7 @@ import { installIdParamValidation } from '../middleware/parseIntParam';
 import { db } from '../db.js';
 import { emailLogs } from '../../shared/schema.js';
 import { eq, desc } from 'drizzle-orm';
+import { parseEmailLogQuery, searchEmailLogs, summariseEmailLogs, exportEmailLogs } from '../services/email-log-query';
 
 const router = Router();
 // FIX-E (BUG-103): Express param callbacks do not cross a router mount,
@@ -22,6 +23,38 @@ router.get('/', async (req, res) => {
       message: 'Failed to fetch email logs',
       code: 'EMAIL_LOG_LIST_FAILED',
     });
+  }
+});
+
+// The E-maillogboek table: one page, searched, filtered and sorted here so the
+// browser never loads the whole log (services/email-log-query.ts). These three
+// are registered before `/:id`, which would otherwise take "search" as an id.
+router.get('/search', async (req, res) => {
+  try {
+    res.json(await searchEmailLogs(parseEmailLogQuery(req.query as Record<string, unknown>)));
+  } catch (error) {
+    console.error('Error searching email logs:', error);
+    res.status(500).json({ error: 'Failed to search email logs', message: 'Failed to search email logs', code: 'EMAIL_LOG_SEARCH_FAILED' });
+  }
+});
+
+// Totals for the Analyse tab.
+router.get('/summary', async (_req, res) => {
+  try {
+    res.json(await summariseEmailLogs());
+  } catch (error) {
+    console.error('Error summarising email logs:', error);
+    res.status(500).json({ error: 'Failed to summarise email logs', message: 'Failed to summarise email logs', code: 'EMAIL_LOG_SUMMARY_FAILED' });
+  }
+});
+
+// Every row matching the filters, for the CSV download the client writes.
+router.get('/export', async (req, res) => {
+  try {
+    res.json(await exportEmailLogs(parseEmailLogQuery(req.query as Record<string, unknown>)));
+  } catch (error) {
+    console.error('Error exporting email logs:', error);
+    res.status(500).json({ error: 'Failed to export email logs', message: 'Failed to export email logs', code: 'EMAIL_LOG_EXPORT_FAILED' });
   }
 });
 

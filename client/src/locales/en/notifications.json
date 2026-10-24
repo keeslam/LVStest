@@ -352,7 +352,57 @@
       "detailVehicles": "Vehicles in this round",
       "detailBodyNote": "The content of a sent e-mail is not kept; the log only records the result. To send again, use Send Notifications.",
       "detailClose": "Close",
-      "runKind": "Send round"
+      "runKind": "Send round",
+      "table": {
+        "searchPlaceholder": "Search by subject, e-mail address, plate or error",
+        "statusFilter": "Status",
+        "statusAll": "All statuses",
+        "kindFilter": "Kind",
+        "kindAll": "All kinds",
+        "scopeFilter": "Single mails or runs",
+        "scopeAll": "Mails and runs",
+        "scopeMails": "Single mails only",
+        "scopeRuns": "Runs only",
+        "periodFilter": "Period",
+        "period": {
+          "all": "Any time",
+          "today": "Today",
+          "week": "This week",
+          "month": "This month",
+          "year": "This year",
+          "custom": "Pick dates…"
+        },
+        "from": "From",
+        "to": "Up to and including",
+        "clearFilters": "Clear filters",
+        "export": "CSV",
+        "exporting": "Working…",
+        "exportFailed": "The CSV could not be made. Please try again.",
+        "exportTruncated": "Only the first 20,000 rows are in the CSV. Narrow the selection for the rest.",
+        "noMatches": "No e-mails match this search or these filters.",
+        "total_one": "{{count}} e-mail",
+        "total_other": "{{count}} e-mails",
+        "csvSubject": "email-log",
+        "columns": {
+          "sentAt": "Date/time",
+          "subject": "Subject",
+          "recipient": "Recipient",
+          "plates": "Plate",
+          "status": "Status"
+        },
+        "csv": {
+          "sentAt": "Date/time",
+          "kind": "Kind",
+          "subject": "Subject",
+          "recipient": "Recipient",
+          "recipients": "Recipients",
+          "sent": "Sent",
+          "failed": "Failed",
+          "plates": "Plates",
+          "status": "Status",
+          "reason": "Reason"
+        }
+      }
     },
     "analytics": {
       "totalEmailsSent": "Emails sent",

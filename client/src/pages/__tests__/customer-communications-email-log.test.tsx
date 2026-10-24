@@ -26,7 +26,10 @@ vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: 1, username: "tester", role, permissions }, isLoading: false }),
 }));
 
+vi.mock("@/contexts/GlobalDialogContext", () => ({ useGlobalDialog: () => ({ openVehicleDialog: vi.fn() }) }));
+
 import CustomerCommunications from "@/pages/CustomerCommunications";
+import { fakeEmailLogResponse } from "@/__tests__/fake-email-log-api";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -54,7 +57,8 @@ const LOG_ROWS = [
 ];
 
 let fetchMock: ReturnType<typeof vi.fn>;
-let logResponse: () => Response;
+let logRows: typeof LOG_ROWS;
+let logFails: boolean;
 
 function calledWith(url: string): boolean {
   return fetchMock.mock.calls.some(([input]) => {
@@ -64,10 +68,14 @@ function calledWith(url: string): boolean {
 }
 
 beforeEach(() => {
-  logResponse = () => json(LOG_ROWS);
+  logRows = LOG_ROWS;
+  logFails = false;
   fetchMock = vi.fn(async (input: unknown) => {
     const requestUrl = typeof input === "string" ? input : (input as Request)?.url ?? "";
-    if (requestUrl.includes("/api/email-logs")) return logResponse();
+    if (requestUrl.includes("/api/email-logs")) {
+      if (logFails) return json({ error: "Failed to fetch email logs" }, 500);
+      return fakeEmailLogResponse(requestUrl, logRows)!;
+    }
     return json([]);
   });
   vi.stubGlobal("fetch", fetchMock);
@@ -123,7 +131,7 @@ describe("CustomerCommunications - E-maillogboek shows the real log", () => {
   it("says so when the log is empty, and shows none of the old sample rows", async () => {
     role = UserRole.USER;
     permissions = [UserPermission.MANAGE_EMAIL_TEMPLATES];
-    logResponse = () => json([]);
+    logRows = [];
     const user = userEvent.setup();
     withClient(<CustomerCommunications />);
 
@@ -136,7 +144,7 @@ describe("CustomerCommunications - E-maillogboek shows the real log", () => {
   it("says the log could not be loaded when the route fails, instead of an empty list", async () => {
     role = UserRole.USER;
     permissions = [UserPermission.MANAGE_EMAIL_TEMPLATES];
-    logResponse = () => json({ error: "Failed to fetch email logs" }, 500);
+    logFails = true;
     const user = userEvent.setup();
     withClient(<CustomerCommunications />);
 
@@ -205,7 +213,7 @@ describe("CustomerCommunications - Analyse is computed from the same log", () =>
   it("shows zeros, not sample numbers, when the log is empty", async () => {
     role = UserRole.USER;
     permissions = [UserPermission.MANAGE_EMAIL_TEMPLATES];
-    logResponse = () => json([]);
+    logRows = [];
     const user = userEvent.setup();
     withClient(<CustomerCommunications />);
 
@@ -214,5 +222,86 @@ describe("CustomerCommunications - Analyse is computed from the same log", () =>
     expect(screen.getByTestId("analytics-failed")).toHaveTextContent("0");
     expect(screen.getByTestId("analytics-runs")).toHaveTextContent("0");
     expect(screen.queryByText("44")).not.toBeInTheDocument();
+  });
+});
+
+describe("CustomerCommunications - E-maillogboek search, filters, sorting and CSV (Kees, 2026-10-24)", () => {
+  const lastSearch = () => {
+    const urls = fetchMock.mock.calls
+      .map(([input]) => (typeof input === "string" ? input : (input as Request)?.url ?? ""))
+      .filter((u) => u.includes("/api/email-logs/search"));
+    return new URL(urls.at(-1)!, "http://localhost").searchParams;
+  };
+
+  async function openLog() {
+    role = UserRole.USER;
+    permissions = [UserPermission.MANAGE_EMAIL_TEMPLATES];
+    const user = userEvent.setup();
+    withClient(<CustomerCommunications />);
+    await user.click(screen.getByRole("tab", { name: "E-maillogboek" }));
+    await screen.findAllByTestId("email-log-row");
+    return user;
+  }
+
+  it("asks the server for one page, newest first", async () => {
+    await openLog();
+    const params = lastSearch();
+    expect(params.get("page")).toBe("1");
+    expect(params.get("pageSize")).toBe("50");
+    expect(params.get("sort")).toBe("sentAt");
+    expect(params.get("dir")).toBe("desc");
+    expect(screen.getByTestId("email-log-total")).toHaveTextContent("3 e-mails");
+  });
+
+  it("searches as you type and says so when nothing matches", async () => {
+    const user = await openLog();
+    await user.type(screen.getByTestId("email-log-search"), "audit@e2e");
+    await waitFor(() => expect(lastSearch().get("q")).toBe("audit@e2e"));
+    await waitFor(() => expect(screen.getAllByTestId("email-log-row")).toHaveLength(1));
+
+    await user.clear(screen.getByTestId("email-log-search"));
+    await user.type(screen.getByTestId("email-log-search"), "bestaat-niet");
+    expect(await screen.findByTestId("email-log-empty")).toHaveTextContent("Geen e-mails gevonden");
+
+    await user.click(screen.getByTestId("email-log-clear-filters"));
+    await waitFor(() => expect(screen.getAllByTestId("email-log-row")).toHaveLength(3));
+  });
+
+  it("sorts by a column header, and a second click turns the order around", async () => {
+    const user = await openLog();
+    await user.click(screen.getByTestId("sort-email-log-subject"));
+    await waitFor(() => expect(lastSearch().get("sort")).toBe("subject"));
+    expect(lastSearch().get("dir")).toBe("asc");
+    await user.click(screen.getByTestId("sort-email-log-subject"));
+    await waitFor(() => expect(lastSearch().get("dir")).toBe("desc"));
+  });
+
+  it("the CSV asks for every matching row with the same filters", async () => {
+    const created = vi.fn(() => "blob:csv");
+    vi.stubGlobal("URL", Object.assign(URL, { createObjectURL: created, revokeObjectURL: vi.fn() }));
+    const user = await openLog();
+    await user.type(screen.getByTestId("email-log-search"), "Onderhoud");
+    await waitFor(() => expect(lastSearch().get("q")).toBe("Onderhoud"));
+    await user.click(screen.getByTestId("email-log-export"));
+    await waitFor(() => expect(calledWith("/api/email-logs/export?")).toBe(true));
+    const exportUrl = fetchMock.mock.calls
+      .map(([input]) => (typeof input === "string" ? input : ""))
+      .find((u) => u.includes("/api/email-logs/export"))!;
+    const params = new URL(exportUrl, "http://localhost").searchParams;
+    expect(params.get("q")).toBe("Onderhoud");
+    expect(params.get("page")).toBeNull();
+  });
+});
+
+describe("periodRange", () => {
+  it("gives today, the week from Monday, the month and the year up to today", async () => {
+    const { periodRange } = await import("@/components/communications/email-log-table");
+    // Friday 23 October 2026
+    expect(periodRange("today", "2026-10-23")).toEqual({ from: "2026-10-23", to: "2026-10-23" });
+    expect(periodRange("week", "2026-10-23")).toEqual({ from: "2026-10-19", to: "2026-10-23" });
+    expect(periodRange("week", "2026-10-25")).toEqual({ from: "2026-10-19", to: "2026-10-25" });
+    expect(periodRange("month", "2026-10-23")).toEqual({ from: "2026-10-01", to: "2026-10-23" });
+    expect(periodRange("year", "2026-10-23")).toEqual({ from: "2026-01-01", to: "2026-10-23" });
+    expect(periodRange("all", "2026-10-23")).toBeNull();
   });
 });

@@ -362,7 +362,58 @@
       "detailVehicles": "Veicoli in questo invio",
       "detailBodyNote": "Il contenuto di un'e-mail inviata non viene conservato; il registro tiene traccia solo dell'esito. È possibile inviarla di nuovo tramite Inviare notifiche.",
       "detailClose": "Chiudere",
-      "runKind": "Invio multiplo"
+      "runKind": "Invio multiplo",
+      "table": {
+        "searchPlaceholder": "Cerca per oggetto, e-mail, targa o errore",
+        "statusFilter": "Stato",
+        "statusAll": "Tutti gli stati",
+        "kindFilter": "Tipo",
+        "kindAll": "Tutti i tipi",
+        "scopeFilter": "E-mail singole o invii",
+        "scopeAll": "E-mail e invii",
+        "scopeMails": "Solo e-mail singole",
+        "scopeRuns": "Solo invii multipli",
+        "periodFilter": "Periodo",
+        "period": {
+          "all": "Sempre",
+          "today": "Oggi",
+          "week": "Questa settimana",
+          "month": "Questo mese",
+          "year": "Quest'anno",
+          "custom": "Scegli date…"
+        },
+        "from": "Dal",
+        "to": "Al",
+        "clearFilters": "Cancella filtri",
+        "export": "CSV",
+        "exporting": "In corso…",
+        "exportFailed": "Impossibile creare il CSV. Riprova.",
+        "exportTruncated": "Il CSV contiene solo le prime 20.000 righe. Restringi la selezione per il resto.",
+        "noMatches": "Nessuna e-mail corrisponde a questa ricerca o a questi filtri.",
+        "total_one": "{{count}} e-mail",
+        "total_other": "{{count}} e-mail",
+        "total_many": "{{count}} e-mail",
+        "csvSubject": "registro-email",
+        "columns": {
+          "sentAt": "Data/ora",
+          "subject": "Oggetto",
+          "recipient": "Destinatario",
+          "plates": "Targa",
+          "status": "Stato"
+        },
+        "csv": {
+          "sentAt": "Data/ora",
+          "kind": "Tipo",
+          "subject": "Oggetto",
+          "recipient": "Destinatario",
+          "recipients": "Destinatari",
+          "sent": "Inviate",
+          "failed": "Non riuscite",
+          "plates": "Targhe",
+          "status": "Stato",
+          "reason": "Motivo"
+        }
+      }
     },
     "analytics": {
       "totalEmailsSent": "E-mail inviate",

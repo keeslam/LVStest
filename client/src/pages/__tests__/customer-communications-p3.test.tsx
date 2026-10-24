@@ -31,7 +31,10 @@ vi.mock("@/hooks/use-toast", () => ({
   toast: toastSpy,
 }));
 
+vi.mock("@/contexts/GlobalDialogContext", () => ({ useGlobalDialog: () => ({ openVehicleDialog: vi.fn() }) }));
+
 import CustomerCommunications from "@/pages/CustomerCommunications";
+import { fakeEmailLogResponse } from "@/__tests__/fake-email-log-api";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -94,7 +97,8 @@ beforeEach(() => {
       }
       return json(templates);
     }
-    if (url.includes("/api/email-logs")) return json(logRows);
+    const logResponse = fakeEmailLogResponse(url, logRows);
+    if (logResponse) return logResponse;
     if (url.includes("/api/vehicles/")) return json([{ vehicle: VEHICLE_1, customer: CUSTOMER_A, reservation: { startDate: "2026-10-01", endDate: "2026-10-09" } }]);
     if (url.includes("/api/app-settings/key/company_name")) return json({ key: "company_name", value: "Garage Voorbeeld" });
     if (url.includes("/api/customers/with-reservations")) return json([CUSTOMER_A, CUSTOMER_B]);
