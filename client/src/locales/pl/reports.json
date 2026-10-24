@@ -690,6 +690,58 @@
     "period": "Okres: {{from}} – {{to}}",
     "name": "Nazwa",
     "count": "Liczba",
-    "amount": "Kwota"
+    "amount": "Kwota",
+    "periodTooLong": "Wybierz okres najwyżej jednego roku ({{days}} dni)."
+  },
+  "fleetReports": {
+    "occupancy": {
+      "title": "Obłożenie na dzień",
+      "description": "Ile aut z floty było wynajętych każdego dnia. Warsztat i auta zastępcze są pokazane osobno i nie liczą się jako zajęte. Kliknij dzień, aby zobaczyć auta z tego dnia.",
+      "tiles": {
+        "rented": "Wynajęte",
+        "replacement": "Zastępcze",
+        "workshop": "Warsztat",
+        "available": "Dostępne"
+      },
+      "tileHint_one": "{{count}} dzień auta",
+      "tileHint_few": "{{count}} dni aut",
+      "tileHint_many": "{{count}} dni aut",
+      "tileHint_other": "{{count}} dnia aut",
+      "avgPct": "Średnie obłożenie: {{pct}}",
+      "dayTitle": "{{date}} · flota {{fleet}} · obłożenie {{pct}}",
+      "fleet": "Flota",
+      "pct": "Obłożenie",
+      "legend": {
+        "rented": "Wynajęte (ciemniej = więcej)",
+        "workshop": "Auto w warsztacie",
+        "replacement": "Auto zastępcze",
+        "none": "Brak floty"
+      },
+      "lines": {
+        "rented": "Wynajęte %",
+        "workshop": "Warsztat %",
+        "replacement": "Zastępcze %"
+      },
+      "weekdays": {
+        "mon": "pn",
+        "tue": "wt",
+        "wed": "śr",
+        "thu": "cz",
+        "fri": "pt",
+        "sat": "so",
+        "sun": "nd"
+      },
+      "columns": {
+        "licensePlate": "Numer rejestracyjny",
+        "brandModel": "Marka i model",
+        "fleetDays": "Dni we flocie",
+        "rentedDays": "Wynajęte",
+        "workshopDays": "Warsztat",
+        "replacementDays": "Zastępcze",
+        "availableDays": "Dostępne",
+        "pct": "Obłożenie %"
+      },
+      "csvSubject": "oblozenie"
+    }
   }
 }

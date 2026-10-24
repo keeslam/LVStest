@@ -666,6 +666,56 @@
     "period": "Period: {{from}} to {{to}}",
     "name": "Name",
     "count": "Count",
-    "amount": "Amount"
+    "amount": "Amount",
+    "periodTooLong": "Choose a period of at most one year ({{days}} days)."
+  },
+  "fleetReports": {
+    "occupancy": {
+      "title": "Occupancy per day",
+      "description": "How many cars of the fleet were rented out each day. Workshop and replacement cars are shown separately and do not count as occupied. Click a day to see that day's cars.",
+      "tiles": {
+        "rented": "Rented",
+        "replacement": "Replacement",
+        "workshop": "Workshop",
+        "available": "Available"
+      },
+      "tileHint_one": "{{count}} car-day",
+      "tileHint_other": "{{count}} car-days",
+      "avgPct": "Average occupancy: {{pct}}",
+      "dayTitle": "{{date}} · fleet {{fleet}} · occupancy {{pct}}",
+      "fleet": "Fleet",
+      "pct": "Occupancy",
+      "legend": {
+        "rented": "Rented (darker = busier)",
+        "workshop": "Car in workshop",
+        "replacement": "Replacement car",
+        "none": "No fleet"
+      },
+      "lines": {
+        "rented": "Rented %",
+        "workshop": "Workshop %",
+        "replacement": "Replacement %"
+      },
+      "weekdays": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      },
+      "columns": {
+        "licensePlate": "Licence plate",
+        "brandModel": "Make and model",
+        "fleetDays": "Days in fleet",
+        "rentedDays": "Rented",
+        "workshopDays": "Workshop",
+        "replacementDays": "Replacement",
+        "availableDays": "Available",
+        "pct": "Occupancy %"
+      },
+      "csvSubject": "occupancy"
+    }
   }
 }

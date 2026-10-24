@@ -678,6 +678,57 @@
     "period": "Período: {{from}} a {{to}}",
     "name": "Nome",
     "count": "Quantidade",
-    "amount": "Valor"
+    "amount": "Valor",
+    "periodTooLong": "Escolha um período de no máximo um ano ({{days}} dias)."
+  },
+  "fleetReports": {
+    "occupancy": {
+      "title": "Ocupação por dia",
+      "description": "Quantos carros da frota estavam alugados em cada dia. Oficina e carros de substituição aparecem à parte e não contam como ocupados. Clique num dia para ver os carros desse dia.",
+      "tiles": {
+        "rented": "Alugado",
+        "replacement": "Substituição",
+        "workshop": "Oficina",
+        "available": "Disponível"
+      },
+      "tileHint_one": "{{count}} dia-carro",
+      "tileHint_many": "{{count}} dias-carro",
+      "tileHint_other": "{{count}} dias-carro",
+      "avgPct": "Ocupação média: {{pct}}",
+      "dayTitle": "{{date}} · frota {{fleet}} · ocupação {{pct}}",
+      "fleet": "Frota",
+      "pct": "Ocupação",
+      "legend": {
+        "rented": "Alugado (mais escuro = mais ocupado)",
+        "workshop": "Carro na oficina",
+        "replacement": "Carro de substituição",
+        "none": "Sem frota"
+      },
+      "lines": {
+        "rented": "Alugado %",
+        "workshop": "Oficina %",
+        "replacement": "Substituição %"
+      },
+      "weekdays": {
+        "mon": "seg",
+        "tue": "ter",
+        "wed": "qua",
+        "thu": "qui",
+        "fri": "sex",
+        "sat": "sáb",
+        "sun": "dom"
+      },
+      "columns": {
+        "licensePlate": "Matrícula",
+        "brandModel": "Marca e modelo",
+        "fleetDays": "Dias na frota",
+        "rentedDays": "Alugado",
+        "workshopDays": "Oficina",
+        "replacementDays": "Substituição",
+        "availableDays": "Disponível",
+        "pct": "Ocupação %"
+      },
+      "csvSubject": "ocupacao"
+    }
   }
 }

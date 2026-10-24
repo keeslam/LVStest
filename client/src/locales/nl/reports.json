@@ -666,6 +666,56 @@
     "period": "Periode: {{from}} t/m {{to}}",
     "name": "Naam",
     "count": "Aantal",
-    "amount": "Bedrag"
+    "amount": "Bedrag",
+    "periodTooLong": "Kies een periode van maximaal een jaar ({{days}} dagen)."
+  },
+  "fleetReports": {
+    "occupancy": {
+      "title": "Bezetting per dag",
+      "description": "Hoeveel auto's van de vloot elke dag verhuurd waren. Werkplaats en vervangend vervoer staan apart en tellen niet als bezet. Klik op een dag voor de auto's van die dag.",
+      "tiles": {
+        "rented": "Verhuurd",
+        "replacement": "Vervangend",
+        "workshop": "Werkplaats",
+        "available": "Beschikbaar"
+      },
+      "tileHint_one": "{{count}} autodag",
+      "tileHint_other": "{{count}} autodagen",
+      "avgPct": "Gemiddelde bezetting: {{pct}}",
+      "dayTitle": "{{date}} · vloot {{fleet}} · bezetting {{pct}}",
+      "fleet": "Vloot",
+      "pct": "Bezetting",
+      "legend": {
+        "rented": "Verhuurd (donkerder = drukker)",
+        "workshop": "Auto in werkplaats",
+        "replacement": "Vervangende auto",
+        "none": "Geen vloot"
+      },
+      "lines": {
+        "rented": "Verhuurd %",
+        "workshop": "Werkplaats %",
+        "replacement": "Vervangend %"
+      },
+      "weekdays": {
+        "mon": "ma",
+        "tue": "di",
+        "wed": "wo",
+        "thu": "do",
+        "fri": "vr",
+        "sat": "za",
+        "sun": "zo"
+      },
+      "columns": {
+        "licensePlate": "Kenteken",
+        "brandModel": "Merk en model",
+        "fleetDays": "Dagen in vloot",
+        "rentedDays": "Verhuurd",
+        "workshopDays": "Werkplaats",
+        "replacementDays": "Vervangend",
+        "availableDays": "Beschikbaar",
+        "pct": "Bezetting %"
+      },
+      "csvSubject": "bezetting"
+    }
   }
 }

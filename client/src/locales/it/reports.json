@@ -678,6 +678,57 @@
     "period": "Periodo: dal {{from}} al {{to}}",
     "name": "Nome",
     "count": "Numero",
-    "amount": "Importo"
+    "amount": "Importo",
+    "periodTooLong": "Scegli un periodo di al massimo un anno ({{days}} giorni)."
+  },
+  "fleetReports": {
+    "occupancy": {
+      "title": "Occupazione per giorno",
+      "description": "Quante auto della flotta erano noleggiate ogni giorno. Officina e auto sostitutive sono mostrate a parte e non contano come occupate. Clicca su un giorno per vedere le auto di quel giorno.",
+      "tiles": {
+        "rented": "Noleggiata",
+        "replacement": "Sostitutiva",
+        "workshop": "Officina",
+        "available": "Disponibile"
+      },
+      "tileHint_one": "{{count}} giorno-auto",
+      "tileHint_many": "{{count}} giorni-auto",
+      "tileHint_other": "{{count}} giorni-auto",
+      "avgPct": "Occupazione media: {{pct}}",
+      "dayTitle": "{{date}} · flotta {{fleet}} · occupazione {{pct}}",
+      "fleet": "Flotta",
+      "pct": "Occupazione",
+      "legend": {
+        "rented": "Noleggiata (più scuro = più occupato)",
+        "workshop": "Auto in officina",
+        "replacement": "Auto sostitutiva",
+        "none": "Nessuna flotta"
+      },
+      "lines": {
+        "rented": "Noleggiata %",
+        "workshop": "Officina %",
+        "replacement": "Sostitutiva %"
+      },
+      "weekdays": {
+        "mon": "lun",
+        "tue": "mar",
+        "wed": "mer",
+        "thu": "gio",
+        "fri": "ven",
+        "sat": "sab",
+        "sun": "dom"
+      },
+      "columns": {
+        "licensePlate": "Targa",
+        "brandModel": "Marca e modello",
+        "fleetDays": "Giorni in flotta",
+        "rentedDays": "Noleggiata",
+        "workshopDays": "Officina",
+        "replacementDays": "Sostitutiva",
+        "availableDays": "Disponibile",
+        "pct": "Occupazione %"
+      },
+      "csvSubject": "occupazione"
+    }
   }
 }

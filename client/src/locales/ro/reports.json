@@ -678,6 +678,57 @@
     "period": "Perioada: {{from}} – {{to}}",
     "name": "Nume",
     "count": "Număr",
-    "amount": "Sumă"
+    "amount": "Sumă",
+    "periodTooLong": "Alegeți o perioadă de cel mult un an ({{days}} de zile)."
+  },
+  "fleetReports": {
+    "occupancy": {
+      "title": "Ocupare pe zi",
+      "description": "Câte mașini din flotă au fost închiriate în fiecare zi. Atelierul și mașinile de înlocuire apar separat și nu contează ca ocupate. Faceți clic pe o zi pentru mașinile din acea zi.",
+      "tiles": {
+        "rented": "Închiriată",
+        "replacement": "Înlocuire",
+        "workshop": "Atelier",
+        "available": "Disponibilă"
+      },
+      "tileHint_one": "{{count}} zi-mașină",
+      "tileHint_few": "{{count}} zile-mașină",
+      "tileHint_other": "{{count}} de zile-mașină",
+      "avgPct": "Ocupare medie: {{pct}}",
+      "dayTitle": "{{date}} · flotă {{fleet}} · ocupare {{pct}}",
+      "fleet": "Flotă",
+      "pct": "Ocupare",
+      "legend": {
+        "rented": "Închiriată (mai închis = mai aglomerat)",
+        "workshop": "Mașină în atelier",
+        "replacement": "Mașină de înlocuire",
+        "none": "Fără flotă"
+      },
+      "lines": {
+        "rented": "Închiriată %",
+        "workshop": "Atelier %",
+        "replacement": "Înlocuire %"
+      },
+      "weekdays": {
+        "mon": "lu",
+        "tue": "ma",
+        "wed": "mi",
+        "thu": "jo",
+        "fri": "vi",
+        "sat": "sâ",
+        "sun": "du"
+      },
+      "columns": {
+        "licensePlate": "Număr de înmatriculare",
+        "brandModel": "Marcă și model",
+        "fleetDays": "Zile în flotă",
+        "rentedDays": "Închiriată",
+        "workshopDays": "Atelier",
+        "replacementDays": "Înlocuire",
+        "availableDays": "Disponibilă",
+        "pct": "Ocupare %"
+      },
+      "csvSubject": "ocupare"
+    }
   }
 }

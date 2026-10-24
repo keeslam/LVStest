@@ -43,6 +43,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import ReportBuilderPage from "@/pages/reports/report-builder";
 import MaintenanceCostsPage from "@/pages/reports/maintenance-costs";
 import { WorkshopDowntimeCard } from "./workshop-downtime-card";
+import { OccupancyReportCard } from "./occupancy-report-card";
 import { FinancialTab } from "@/pages/reports/financial-tab";
 import { FiscalReportTab } from "@/components/fiscal/fiscal-report-tab";
 import { useFiscalPermissions } from "@/components/fiscal/use-fiscal-permissions";
@@ -2347,6 +2348,9 @@ function FullReportsPage() {
 
           {/* Round 2 punt 11: workshop downtime per vehicle and per brand/model. */}
           <WorkshopDowntimeCard dateRange={dateRange} />
+
+          {/* Rapporten fase 3: occupancy per day (report right + reservations right). */}
+          <OccupancyReportCard from={reportFrom} to={reportTo} vehicleId={selectedVehicle} />
 
           {/* Km-historie of one vehicle (admin only). */}
           {isAdmin && (
