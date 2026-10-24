@@ -8,7 +8,7 @@ import {
   type MileageSource,
   type MileageSummary,
 } from "../../shared/mileage-history";
-import { zonedDateTimeToInstant } from "../../shared/office-timezone";
+import { dateInZone, zonedDateTimeToInstant } from "../../shared/office-timezone";
 import { officeTimeZone } from "./office-time";
 
 export type DbOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -51,6 +51,48 @@ export async function recordMileageReading(exec: DbOrTx, r: MileageReadingInput)
       voidedBy: null,
     },
   });
+}
+
+/**
+ * Het moment van een stand bij een overdracht die alleen een kantoordatum kent
+ * (ophalen, inleveren, onderhoud afronden). Vandaag of geen datum = nu; een
+ * andere datum = die dag op de huidige kantoorklok, zodat een terug-gedateerde
+ * overdracht op de juiste dag staat en de volgorde binnen een dag blijft.
+ */
+export function readingInstantForOfficeDate(date: string | null | undefined, now: Date = new Date()): Date {
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return now;
+  const zone = officeTimeZone();
+  if (dateInZone(now, zone) === date) return now;
+  const clock = new Intl.DateTimeFormat("en-GB", {
+    timeZone: zone, hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).format(now);
+  return zonedDateTimeToInstant(date, clock, zone);
+}
+
+/**
+ * Voor routes zonder transactie: de stand is al op voertuig of reservering
+ * geschreven, dus een fout bij het vastleggen mag de overdracht niet alsnog
+ * laten mislukken. Wordt gelogd, niet stil ingeslikt.
+ */
+export async function recordMileageReadingLogged(r: MileageReadingInput, context: string): Promise<void> {
+  try {
+    await recordMileageReading(db, r);
+  } catch (error) {
+    console.error(`[mileage-history] Could not record reading (${context}):`, error);
+  }
+}
+
+/** Zelfde als `recordMileageReadingLogged`, voor het laten vervallen. */
+export async function voidMileageReadingsLogged(
+  m: { sourceTable: string; sourceId: number; source?: MileageSource },
+  by: string,
+  context: string,
+): Promise<void> {
+  try {
+    await voidMileageReadings(db, m, by);
+  } catch (error) {
+    console.error(`[mileage-history] Could not void readings (${context}):`, error);
+  }
 }
 
 /** Markeert de standen van een bron als vervallen; geeft het aantal gewijzigde regels terug. */

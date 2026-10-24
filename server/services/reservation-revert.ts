@@ -34,6 +34,7 @@
 import { createHash } from "crypto";
 import { and, eq, gt, gte, inArray, isNull, ne, or } from "drizzle-orm";
 import { db } from "../db";
+import { voidMileageReadings } from "./mileage-history";
 import {
   documents, reservations, vehicles,
   type Document, type Reservation, type Vehicle,
@@ -490,6 +491,15 @@ export async function applyRevert(
       updatedBy: actor.username,
       updatedAt: new Date(),
     }).where(eq(reservations.id, row.id));
+
+    // Rapporten fase 1 - the undone handover's reading stays in the km history,
+    // marked void, in this transaction. Keyed on what the step actually clears.
+    if (step.reset.includes("pickupMileage")) {
+      await voidMileageReadings(tx, { sourceTable: "reservations", sourceId: row.id, source: "pickup" }, actor.username);
+    }
+    if (step.reset.includes("returnMileage")) {
+      await voidMileageReadings(tx, { sourceTable: "reservations", sourceId: row.id, source: "return" }, actor.username);
+    }
 
     let vehicleRestored = false;
     const restoreTo = plan.vehicle.restoreTo;

@@ -175,6 +175,7 @@ export interface IStorage {
     pickupNotes?: string;
     allowMileageDecrease?: boolean;
     mileageDecreaseAuthorizedBy?: string;
+    actorName?: string | null;
   }): Promise<Reservation | undefined>;
   returnReservation(reservationId: number, returnData: {
     returnMileage: number;
@@ -182,6 +183,7 @@ export interface IStorage {
     returnDate?: string;
     returnNotes?: string;
     extraCosts?: { fuelCost: number | null; extraKm: number | null; extraKmCost: number | null };
+    actorName?: string | null;
   }): Promise<Reservation | undefined>;
   
   // Spare vehicle management methods

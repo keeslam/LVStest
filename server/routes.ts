@@ -204,6 +204,7 @@ import { onReservationChangedByStaff } from "./services/portal-reservation-event
 import { previewRevert, applyRevert } from "./services/reservation-revert";
 import { purgeDeletedRecords, purgeAllOfKind, fiscalCountsForBinRows, withFiscalCounts, type PurgeHooks } from "./services/recycle-bin-purge";
 import { checkPickedUpCancellation } from "./services/picked-up-cancellation";
+import { recordMileageReadingLogged, voidMileageReadingsLogged, readingInstantForOfficeDate } from "./services/mileage-history";
 import { REVERT_CODES } from "../shared/revert-codes";
 import type { RouteDeps } from "./routes/deps";
 import { installIdParamValidation, rejectNullBytesInPath } from "./middleware/parseIntParam";
@@ -1250,6 +1251,13 @@ export async function registerRoutes(app: Express): Promise<void> {
       
       // Create vehicle in database (this will throw on duplicate key)
       const vehicle = await storage.createVehicle(dataWithTracking);
+      // Rapporten fase 1 - the starting reading is the first entry of the km history.
+      if (vehicle.currentMileage != null) {
+        await recordMileageReadingLogged({
+          vehicleId: vehicle.id, mileage: vehicle.currentMileage, recordedAt: new Date(),
+          source: "manual", actorName: user?.username ?? "systeem",
+        }, `vehicle ${vehicle.id} created`);
+      }
       
       // Broadcast real-time update to all connected clients
       realtimeEvents.vehicles.created(vehicle);
@@ -1820,6 +1828,13 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (!vehicle) {
         return res.status(404).json({ message: "Vehicle not found" });
       }
+      // Rapporten fase 1 - a changed reading is a manual entry in the km history.
+      if (vehicle.currentMileage != null && vehicle.currentMileage !== oldMileage) {
+        await recordMileageReadingLogged({
+          vehicleId: vehicle.id, mileage: vehicle.currentMileage, recordedAt: new Date(),
+          source: "manual", actorName: user?.username ?? "systeem",
+        }, `vehicle ${vehicle.id} edited`);
+      }
       
       // Broadcast real-time update to all connected clients
       realtimeEvents.vehicles.updated(vehicle);
@@ -2010,6 +2025,13 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
         
         const updatedVehicle = await storage.updateVehicle(id, dataWithTracking);
+        // Rapporten fase 1 - a changed reading is a manual entry in the km history.
+        if (updatedVehicle && newMileage !== undefined && newMileage !== oldMileage) {
+          await recordMileageReadingLogged({
+            vehicleId: id, mileage: newMileage, recordedAt: new Date(),
+            source: "manual", actorName: user?.username ?? "systeem",
+          }, `vehicle ${id} mileage`);
+        }
         
         // Broadcast real-time update to all connected clients
         realtimeEvents.vehicles.updated(updatedVehicle);
@@ -5005,6 +5027,24 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (!reservation) {
         return res.status(404).json({ message: "Reservation not found" });
       }
+      // Rapporten fase 1 - the readings this route wrote go into the km history,
+      // keyed on the reservation like the pickup and return routes do it.
+      if (reservation.vehicleId && dataWithTracking.pickupMileage != null) {
+        await recordMileageReadingLogged({
+          vehicleId: reservation.vehicleId, mileage: dataWithTracking.pickupMileage,
+          recordedAt: readingInstantForOfficeDate(reservation.actualPickupDate),
+          source: "pickup", sourceTable: "reservations", sourceId: id,
+          actorName: user?.username ?? "systeem",
+        }, `reservation ${id} status pickup`);
+      }
+      if (reservation.vehicleId && dataWithTracking.returnMileage != null) {
+        await recordMileageReadingLogged({
+          vehicleId: reservation.vehicleId, mileage: dataWithTracking.returnMileage,
+          recordedAt: readingInstantForOfficeDate(reservation.actualReturnDate ?? reservation.completionDate),
+          source: "return", sourceTable: "reservations", sourceId: id,
+          actorName: user?.username ?? "systeem",
+        }, `reservation ${id} status return`);
+      }
       
       // besluiten B-04 (BUG-112) — cancelling closes what the caller asked to
       // close, and nothing else. The impact travels back in the response so the
@@ -5301,6 +5341,24 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "Reservation not found" });
       }
       void onMaintenanceBlockChanged(existingReservationForDiff, reservation);
+      // Rapporten fase 1 - an edited pickup or return reading follows into the
+      // km history (same key as the handover routes); cleared = no longer valid.
+      for (const kind of ["pickup", "return"] as const) {
+        const field = kind === "pickup" ? "pickupMileage" : "returnMileage";
+        if (!(field in reservationData)) continue;
+        const edited = reservation[field];
+        if (edited === existingReservationForDiff[field]) continue;
+        const actorName = user ? user.username : "systeem";
+        if (edited != null && reservation.vehicleId) {
+          await recordMileageReadingLogged({
+            vehicleId: reservation.vehicleId, mileage: edited,
+            recordedAt: readingInstantForOfficeDate(kind === "pickup" ? reservation.actualPickupDate : reservation.actualReturnDate),
+            source: kind, sourceTable: "reservations", sourceId: id, actorName,
+          }, `reservation ${id} edit ${kind}`);
+        } else if (edited == null) {
+          await voidMileageReadingsLogged({ sourceTable: "reservations", sourceId: id, source: kind }, actorName, `reservation ${id} edit ${kind}`);
+        }
+      }
       // Sub-project C, Task 8: "Uit" must free the car like every other writer
       // that finishes a block (before the closing sweep, which cannot clear the flag).
       await syncVehicleWithBlockChange(existingReservationForDiff, reservation);
@@ -6154,6 +6212,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         workshopOverride: workshopOverrideFrom(req),
         // besluiten B-16 — only set once the question has been answered "ja".
         ...(shiftStartDateTo ? { shiftStartDateTo } : {}),
+        actorName: req.user?.username ?? "systeem",
       });
 
       if (!updatedReservation) {
@@ -6361,6 +6420,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         returnDate,
         returnNotes,
         extraCosts: extraCosts.value,
+        actorName: req.user?.username ?? "systeem",
       });
 
       if (!updatedReservation) {
@@ -8923,6 +8983,18 @@ export async function registerRoutes(app: Express): Promise<void> {
           await storage.updateVehicle(created.vehicleId, vehicleUpdateData);
         }
       }
+
+      // Rapporten fase 1 - the check is the one km-history reading of this
+      // inspection. The pickup/return values copied onto the reservation above
+      // deliberately record nothing of their own.
+      if (created.mileage != null && created.vehicleId) {
+        await recordMileageReadingLogged({
+          vehicleId: created.vehicleId, mileage: created.mileage,
+          recordedAt: created.checkDate ? new Date(created.checkDate) : new Date(),
+          source: "damage_check", sourceTable: "interactive_damage_checks", sourceId: created.id,
+          actorName: user?.username ?? "systeem",
+        }, `damage check ${created.id} created`);
+      }
       
       // Generate and save PDF as a document
       try {
@@ -9078,6 +9150,18 @@ export async function registerRoutes(app: Express): Promise<void> {
         if (Object.keys(vehicleUpdateData).length > 0) {
           await storage.updateVehicle(updated.vehicleId, vehicleUpdateData);
         }
+      }
+
+      // Rapporten fase 1 - same reading, overwritten; a cleared mileage voids it.
+      if (updated.mileage != null && updated.vehicleId) {
+        await recordMileageReadingLogged({
+          vehicleId: updated.vehicleId, mileage: updated.mileage,
+          recordedAt: updated.checkDate ? new Date(updated.checkDate) : new Date(),
+          source: "damage_check", sourceTable: "interactive_damage_checks", sourceId: updated.id,
+          actorName: user?.username ?? "systeem",
+        }, `damage check ${updated.id} updated`);
+      } else if (updated.mileage == null) {
+        await voidMileageReadingsLogged({ sourceTable: "interactive_damage_checks", sourceId: updated.id }, user?.username ?? "systeem", `damage check ${updated.id} updated`);
       }
       
       // Regenerate PDF and mark old one as outdated
@@ -9325,6 +9409,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (!deleted) {
         return res.status(404).json({ message: "Damage check not found" });
       }
+
+      // Rapporten fase 1 - the check is gone, so is its reading (kept, marked void).
+      await voidMileageReadingsLogged({ sourceTable: "interactive_damage_checks", sourceId: id }, req.user?.username ?? "systeem", `damage check ${id} deleted`);
 
       if (
         existing &&

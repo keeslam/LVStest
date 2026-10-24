@@ -28,6 +28,7 @@ import { isoToday, normalizeReservationStatus } from "../services/lifecycle";
 import type { RouteDeps } from "./deps";
 import { portalCompanyName } from "../services/company-name";
 import { decideMileageTakeOver } from "../services/portal-mileage";
+import { recordMileageReadingLogged } from "../services/mileage-history";
 
 const canView = hasPermission(UserPermission.VIEW_PORTAL, UserPermission.MANAGE_PORTAL);
 const canManage = hasPermission(UserPermission.MANAGE_PORTAL);
@@ -123,6 +124,14 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
       });
     }
     const updated = await storage.updateVehicle(vehicle.id, { currentMileage: decision.mileage, updatedBy: actor(req) });
+    // Rapporten fase 1 - the customer's reading goes into the km history under their own name.
+    if (updated) {
+      await recordMileageReadingLogged({
+        vehicleId: vehicle.id, mileage: decision.mileage, recordedAt: row.createdAt ?? new Date(),
+        source: "portal", sourceTable: "portal_requests", sourceId: id,
+        actorName: row.submittedBy || row.customerName || "portal",
+      }, `portal request ${id} apply-mileage`);
+    }
     await requestsStorage.updateRequest(id, { payload: { ...p, mileageAppliedAt: new Date().toISOString(), mileageAppliedBy: actor(req) } });
     if (updated) realtimeEvents.vehicles.updated(updated);
     await AuditLogger.logFromRequest(req, "vehicle.update", "vehicle", vehicle.id, { currentMileage: { from: decision.previous, to: decision.mileage }, viaPortalRequest: id });
@@ -474,7 +483,14 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     const km = Number(p.mileage);
     if (Number.isFinite(km) && km > 0) {
       const vehicle = await storage.getVehicle(rental.vehicleId);
-      if (vehicle && km > (vehicle.currentMileage ?? 0)) await storage.updateVehicle(vehicle.id, { currentMileage: km });
+      if (vehicle && km > (vehicle.currentMileage ?? 0)) {
+        await storage.updateVehicle(vehicle.id, { currentMileage: km });
+        // Rapporten fase 1 - taken over automatically, so the system is the actor.
+        await recordMileageReadingLogged({
+          vehicleId: vehicle.id, mileage: km, recordedAt: row.createdAt ?? new Date(),
+          source: "portal", sourceTable: "portal_requests", sourceId: id, actorName: "systeem",
+        }, `portal request ${id} maintenance approval`);
+      }
     }
     await storage.syncVehicleAvailabilityWithReservations();
     realtimeEvents.reservations.created(block);

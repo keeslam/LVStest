@@ -126,6 +126,7 @@ import { formatVehicleBarcode, parseBarcode, normalizeScannedCode, expandShortKe
 import { recalculateTotalPrice } from "../shared/rental-pricing";
 import { normalizeExpenseCategory } from "../shared/expense-categories";
 import { syncUsagePeriodSafely } from "./services/fiscal/usage-periods";
+import { recordMileageReading, readingInstantForOfficeDate } from "./services/mileage-history";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -3153,6 +3154,8 @@ export class DatabaseStorage implements IStorage {
        * the confirmation; without it an early pickup is refused (BUG-211).
        */
       shiftStartDateTo?: string;
+      /** Who handed the car over; written to the km history (rapporten fase 1). */
+      actorName?: string | null;
     }
   ): Promise<Reservation | undefined> {
     const reservation = await this.getReservation(reservationId);
@@ -3261,6 +3264,18 @@ export class DatabaseStorage implements IStorage {
 
       await tx.update(vehicles).set(vehicleUpdate).where(eq(vehicles.id, vehicleId));
 
+      // Rapporten fase 1 - the reading goes into the km history in the same
+      // transaction, keyed on the reservation so a re-pickup overwrites it.
+      await recordMileageReading(tx, {
+        vehicleId,
+        mileage: pickupData.pickupMileage,
+        recordedAt: readingInstantForOfficeDate(pickupDate),
+        source: 'pickup',
+        sourceTable: 'reservations',
+        sourceId: reservationId,
+        actorName: pickupData.actorName ?? 'systeem',
+      });
+
       // FIX-H - the single writer decides what the status becomes. BUG-211: a
       // rental picked up before its start date now makes the vehicle `rented`,
       // where the date-window rule left it advertised as free. B-03: a forced
@@ -3293,6 +3308,8 @@ export class DatabaseStorage implements IStorage {
       returnNotes?: string;
       /** Punt 1 (Kees, 2026-10-19): extra costs settled at return; null = none. Left alone when absent. */
       extraCosts?: { fuelCost: number | null; extraKm: number | null; extraKmCost: number | null };
+      /** Who took the car back; written to the km history (rapporten fase 1). */
+      actorName?: string | null;
     }
   ): Promise<Reservation | undefined> {
     const reservation = await this.getReservation(reservationId);
@@ -3378,6 +3395,17 @@ export class DatabaseStorage implements IStorage {
           updatedAt: new Date()
         })
         .where(eq(vehicles.id, vehicleId));
+
+      // Rapporten fase 1 - same transaction, keyed on the reservation.
+      await recordMileageReading(tx, {
+        vehicleId,
+        mileage: returnData.returnMileage,
+        recordedAt: readingInstantForOfficeDate(returnDate),
+        source: 'return',
+        sourceTable: 'reservations',
+        sourceId: reservationId,
+        actorName: returnData.actorName ?? 'systeem',
+      });
 
       // besluiten B-03 - the workshop flag survives the return: the derivation
       // reads `maintenance_status` and the sticky manual status, so it cannot be
@@ -5887,6 +5915,20 @@ export class DatabaseStorage implements IStorage {
         ))
         .returning();
       if (!closedBlock) throw new AlreadyCompletedSignal();
+
+      // Rapporten fase 1 - a reading taken by the workshop goes into the km
+      // history, in this transaction, keyed on the block.
+      if (givenMileage != null) {
+        await recordMileageReading(tx, {
+          vehicleId,
+          mileage: givenMileage,
+          recordedAt: readingInstantForOfficeDate(input.completionDate),
+          source: 'service',
+          sourceTable: 'reservations',
+          sourceId: blockId,
+          actorName: input.username ?? 'systeem',
+        });
+      }
 
       // The APK file: tied to the vehicle AND to this block. Written before the
       // commit; the catch below unlinks the file when this transaction fails.
