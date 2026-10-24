@@ -269,3 +269,21 @@ export async function getMileageHistory(vehicleId: number, from: string, to: str
     summary,
   };
 }
+
+/**
+ * Eén stand handmatig laten vervallen of weer geldig maken (alleen beheerder).
+ * Voor een tikfout: een te hoge stand blijft anders het vergelijkingspunt en
+ * laat elke goede stand daarna als teruglopend zien. Geeft null bij een
+ * onbekende stand.
+ */
+export async function setMileageReadingVoided(
+  id: number,
+  voided: boolean,
+  by: string,
+): Promise<{ id: number; vehicleId: number; voided: boolean } | null> {
+  const [row] = await db.update(vehicleMileageReadings)
+    .set(voided ? { voidedAt: new Date(), voidedBy: by } : { voidedAt: null, voidedBy: null })
+    .where(eq(vehicleMileageReadings.id, id))
+    .returning({ id: vehicleMileageReadings.id, vehicleId: vehicleMileageReadings.vehicleId, voidedAt: vehicleMileageReadings.voidedAt });
+  return row ? { id: row.id, vehicleId: row.vehicleId, voided: row.voidedAt !== null } : null;
+}

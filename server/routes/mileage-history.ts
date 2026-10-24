@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { installIdParamValidation } from '../middleware/parseIntParam';
-import { getMileageHistory } from '../services/mileage-history';
+import { getMileageHistory, setMileageReadingVoided } from '../services/mileage-history';
 import { officeTimeZone } from '../services/office-time';
 import { dateInZone } from '../../shared/office-timezone';
 
@@ -39,5 +39,25 @@ router.get('/:vehicleId', async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch mileage history', code: 'MILEAGE_HISTORY_FAILED' });
   }
 });
+
+// Eén stand laten vervallen of weer geldig maken, bijv. een tikfout
+// (alleen beheerder, zoals de hele router). De auditlaag legt vast wie het deed.
+for (const [action, voided] of [['void', true], ['unvoid', false]] as const) {
+  router.post(`/readings/:id/${action}`, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({ message: 'Invalid reading id', code: 'INVALID_ID' });
+      }
+      const by = (req.user as { username?: string } | undefined)?.username ?? 'systeem';
+      const row = await setMileageReadingVoided(id, voided, by);
+      if (!row) return res.status(404).json({ message: 'Reading not found', code: 'READING_NOT_FOUND' });
+      res.json(row);
+    } catch (error) {
+      console.error(`Error trying to ${action} mileage reading:`, error);
+      res.status(500).json({ message: 'Failed to update mileage reading', code: 'MILEAGE_READING_UPDATE_FAILED' });
+    }
+  });
+}
 
 export default router;

@@ -1175,6 +1175,15 @@
     "loading": "Cargando...",
     "error": "No se pudo cargar el historial de km.",
     "invalidPeriod": "Elija un periodo válido: la fecha de inicio debe ser anterior a la fecha final.",
-    "effectivePeriod": "Media y km libres calculados sobre {{period}}"
+    "effectivePeriod": "Media y km libres calculados sobre {{period}}",
+    "actions": "Acciones",
+    "voidAction": "Anular",
+    "unvoidAction": "Volver a validar",
+    "voidConfirmTitle": "¿Anular esta lectura?",
+    "voidConfirmText": "La lectura de {{mileage}} del {{date}} dejará de contar. Úselo para un error de escritura. Puede volver a validarla más tarde.",
+    "unvoidConfirmTitle": "¿Volver a validar esta lectura?",
+    "unvoidConfirmText": "La lectura de {{mileage}} del {{date}} volverá a contar.",
+    "cancel": "Cancelar",
+    "voidFailed": "No se pudo cambiar la lectura. Inténtelo de nuevo."
   }
 }

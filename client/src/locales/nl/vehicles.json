@@ -1165,6 +1165,15 @@
     "loading": "Laden...",
     "error": "De km-historie kon niet worden geladen.",
     "invalidPeriod": "Kies een geldige periode: de begindatum moet voor de einddatum liggen.",
-    "effectivePeriod": "Gemiddelde en vrije km berekend over {{period}}"
+    "effectivePeriod": "Gemiddelde en vrije km berekend over {{period}}",
+    "actions": "Acties",
+    "voidAction": "Laten vervallen",
+    "unvoidAction": "Weer geldig maken",
+    "voidConfirmTitle": "Km-stand laten vervallen?",
+    "voidConfirmText": "De stand van {{mileage}} op {{date}} telt dan niet meer mee. Gebruik dit voor een tikfout. U kunt hem later weer geldig maken.",
+    "unvoidConfirmTitle": "Km-stand weer geldig maken?",
+    "unvoidConfirmText": "De stand van {{mileage}} op {{date}} telt dan weer mee.",
+    "cancel": "Annuleren",
+    "voidFailed": "Het lukte niet om de km-stand te wijzigen. Probeer het opnieuw."
   }
 }

@@ -1165,6 +1165,15 @@
     "loading": "Loading...",
     "error": "The mileage history could not be loaded.",
     "invalidPeriod": "Choose a valid period: the start date must be before the end date.",
-    "effectivePeriod": "Average and free km calculated over {{period}}"
+    "effectivePeriod": "Average and free km calculated over {{period}}",
+    "actions": "Actions",
+    "voidAction": "Void",
+    "unvoidAction": "Make valid again",
+    "voidConfirmTitle": "Void this reading?",
+    "voidConfirmText": "The reading of {{mileage}} on {{date}} will no longer count. Use this for a typo. You can make it valid again later.",
+    "unvoidConfirmTitle": "Make this reading valid again?",
+    "unvoidConfirmText": "The reading of {{mileage}} on {{date}} will count again.",
+    "cancel": "Cancel",
+    "voidFailed": "The reading could not be changed. Please try again."
   }
 }

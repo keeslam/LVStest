@@ -5,15 +5,21 @@
  */
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { FileDown, Printer } from "lucide-react";
+import { Ban, FileDown, Printer, RotateCcw } from "lucide-react";
 import { MILEAGE_SOURCES, type AnalysedRow, type MileageSource } from "@shared/mileage-history";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { HtmlPreviewDialog } from "@/components/documents/html-preview-dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { downloadCsv, csvDateTime, csvNumber } from "@/lib/csv";
 import { formatDateNl, formatDateRangeNl, formatDateTimeNl } from "@/lib/format-date-nl";
 import { officeToday } from "@/lib/office-date";
@@ -42,6 +48,17 @@ export function MileageHistoryPanel({ vehicleId, defaultFrom, defaultTo }: {
   const [to, setTo] = useState(defaultTo ?? today);
   const [filter, setFilter] = useState<Filter>("all");
   const [printHtml, setPrintHtml] = useState<string | null>(null);
+  // A reading to void (or make valid again), waiting for the admin to confirm.
+  const [toggleRow, setToggleRow] = useState<AnalysedRow | null>(null);
+  const { toast } = useToast();
+  const toggleVoided = useMutation({
+    mutationFn: async (r: AnalysedRow) => {
+      await apiRequest("POST", `/api/mileage-history/readings/${r.id}/${r.voided ? "unvoid" : "void"}`);
+    },
+    onSuccess: () => { void invalidateByPrefix("/api/mileage-history/"); },
+    onError: () => { toast({ title: t("mileageHistory.voidFailed"), variant: "destructive" }); },
+    onSettled: () => setToggleRow(null),
+  });
 
   const validPeriod = /^\d{4}-\d{2}-\d{2}$/.test(from) && /^\d{4}-\d{2}-\d{2}$/.test(to) && from <= to;
   const { data, isLoading, isError } = useQuery<MileageHistoryResponse>({
@@ -215,11 +232,12 @@ export function MileageHistoryPanel({ vehicleId, defaultFrom, defaultTo }: {
                       <TableHead>{labels.source}</TableHead>
                       <TableHead>{labels.actor}</TableHead>
                       <TableHead>{labels.warning}</TableHead>
+                      <TableHead className="w-10"><span className="sr-only">{t("mileageHistory.actions")}</span></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {visibleRows.length === 0 ? (
-                      <TableRow><TableCell colSpan={6} className="text-center text-gray-500">{t("mileageHistory.noWarnings")}</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={7} className="text-center text-gray-500">{t("mileageHistory.noWarnings")}</TableCell></TableRow>
                     ) : visibleRows.map((r) => (
                       <TableRow key={r.id} className={r.voided ? "text-gray-400" : r.warning ? "bg-amber-50" : ""} data-testid={`mileage-row-${r.id}`}>
                         <TableCell className={r.voided ? "line-through" : ""}>{formatDateTimeNl(r.recordedAt)}</TableCell>
@@ -235,6 +253,19 @@ export function MileageHistoryPanel({ vehicleId, defaultFrom, defaultTo }: {
                               {labels.warningTypes[r.warning]}
                             </Badge>
                           ) : null}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            title={r.voided ? t("mileageHistory.unvoidAction") : t("mileageHistory.voidAction")}
+                            aria-label={r.voided ? t("mileageHistory.unvoidAction") : t("mileageHistory.voidAction")}
+                            onClick={() => setToggleRow(r)}
+                            data-testid={`button-${r.voided ? "unvoid" : "void"}-reading-${r.id}`}
+                          >
+                            {r.voided ? <RotateCcw className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -253,6 +284,31 @@ export function MileageHistoryPanel({ vehicleId, defaultFrom, defaultTo }: {
         title={data ? `${labels.title} ${formatLicensePlate(data.vehicle.licensePlate)}` : labels.title}
         reportName="mileage-history"
       />
+      <AlertDialog open={toggleRow !== null} onOpenChange={(open) => { if (!open && !toggleVoided.isPending) setToggleRow(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {toggleRow?.voided ? t("mileageHistory.unvoidConfirmTitle") : t("mileageHistory.voidConfirmTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {toggleRow && t(toggleRow.voided ? "mileageHistory.unvoidConfirmText" : "mileageHistory.voidConfirmText", {
+                mileage: formatKm(toggleRow.mileage),
+                date: formatDateTimeNl(toggleRow.recordedAt),
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={toggleVoided.isPending}>{t("mileageHistory.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={toggleVoided.isPending}
+              onClick={(e) => { e.preventDefault(); if (toggleRow) toggleVoided.mutate(toggleRow); }}
+              data-testid="button-confirm-reading-voided"
+            >
+              {toggleRow?.voided ? t("mileageHistory.unvoidAction") : t("mileageHistory.voidAction")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

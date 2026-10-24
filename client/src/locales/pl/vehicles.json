@@ -1185,6 +1185,15 @@
     "loading": "Ładowanie...",
     "error": "Nie udało się wczytać historii km.",
     "invalidPeriod": "Wybierz prawidłowy okres: data początkowa musi być przed datą końcową.",
-    "effectivePeriod": "Średnia i wolne km obliczone za {{period}}"
+    "effectivePeriod": "Średnia i wolne km obliczone za {{period}}",
+    "actions": "Akcje",
+    "voidAction": "Unieważnij",
+    "unvoidAction": "Przywróć",
+    "voidConfirmTitle": "Unieważnić ten odczyt?",
+    "voidConfirmText": "Odczyt {{mileage}} z {{date}} nie będzie już liczony. Użyj tego przy literówce. Możesz go później przywrócić.",
+    "unvoidConfirmTitle": "Przywrócić ten odczyt?",
+    "unvoidConfirmText": "Odczyt {{mileage}} z {{date}} będzie znowu liczony.",
+    "cancel": "Anuluj",
+    "voidFailed": "Nie udało się zmienić odczytu. Spróbuj ponownie."
   }
 }

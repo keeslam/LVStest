@@ -76,6 +76,7 @@ beforeEach(() => {
     if (path === `/api/vehicles/${vehicle.id}`) return json(vehicle);
     if (path === `/api/vehicles/${vehicle.id}/spare-assignment`) return json(null, 404);
     if (path === `/api/vehicles/${vehicle.id}/acting-as-spare`) return json(null, 404);
+    if (path.startsWith("/api/mileage-history/readings/")) return json({ id: 1, vehicleId: 1, voided: path.endsWith("/void") });
     if (path.startsWith("/api/mileage-history/")) return json(history);
     if (path === "/api/reports/vehicle-financials") return json({ rows: [], totals: { rentals: 0, rentalDays: 0, revenue: 0, expenses: 0, margin: 0 } });
     if (path === "/api/reports/mileage-per-month") return json({ months: [], rows: [], totalKm: 0 });
@@ -141,6 +142,23 @@ describe("MileageHistoryPanel", () => {
     const voided = await screen.findByTestId("mileage-row-14");
     expect(within(voided).getByText("vervallen")).toBeInTheDocument();
     expect(voided.className).toMatch(/text-gray-400|opacity/);
+  });
+
+  it("an admin can void a mistyped reading after confirming, and make a voided one valid again", async () => {
+    const user = userEvent.setup();
+    renderPanel();
+    const typo = await screen.findByTestId("mileage-row-13");
+    await user.click(within(typo).getByTestId("button-void-reading-13"));
+    expect(calledWith("/api/mileage-history/readings/13/void")).toBe(false);
+    await user.click(await screen.findByTestId("button-confirm-reading-voided"));
+    await waitFor(() => expect(calledWith("/api/mileage-history/readings/13/void")).toBe(true));
+    const post = fetchMock.mock.calls.find(([input]) => String(typeof input === "string" ? input : (input as Request).url).includes("/readings/13/void"));
+    expect((post![1] as RequestInit).method).toBe("POST");
+
+    const voided = screen.getByTestId("mileage-row-14");
+    await user.click(within(voided).getByTestId("button-unvoid-reading-14"));
+    await user.click(await screen.findByTestId("button-confirm-reading-voided"));
+    await waitFor(() => expect(calledWith("/api/mileage-history/readings/14/unvoid")).toBe(true));
   });
 
   it("the warnings tile filters the list to warnings only", async () => {

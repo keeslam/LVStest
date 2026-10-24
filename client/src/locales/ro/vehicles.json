@@ -1175,6 +1175,15 @@
     "loading": "Se încarcă...",
     "error": "Istoricul km nu a putut fi încărcat.",
     "invalidPeriod": "Alegeți o perioadă validă: data de început trebuie să fie înaintea datei de sfârșit.",
-    "effectivePeriod": "Media și km gratuiți calculați pentru {{period}}"
+    "effectivePeriod": "Media și km gratuiți calculați pentru {{period}}",
+    "actions": "Acțiuni",
+    "voidAction": "Anulează",
+    "unvoidAction": "Fă din nou validă",
+    "voidConfirmTitle": "Anulați această citire?",
+    "voidConfirmText": "Citirea de {{mileage}} din {{date}} nu va mai fi luată în calcul. Folosiți acest lucru pentru o greșeală de tastare. O puteți face din nou validă mai târziu.",
+    "unvoidConfirmTitle": "Faceți din nou validă această citire?",
+    "unvoidConfirmText": "Citirea de {{mileage}} din {{date}} va fi din nou luată în calcul.",
+    "cancel": "Anulare",
+    "voidFailed": "Citirea nu a putut fi modificată. Încercați din nou."
   }
 }

@@ -63,3 +63,44 @@ describe("GET /api/reports/mileage-per-month", () => {
     expect((await admin.get("/api/reports/mileage-per-month")).status).toBe(200);
   });
 });
+
+describe("POST /api/mileage-history/readings/:id/void and /unvoid (Kees, 2026-10-24)", () => {
+  // A mistyped reading that is too high stays the previous reading, so every
+  // correct reading after it shows "teruglopende stand" until it is voided.
+  it("voiding a typo makes the next reading count again; un-voiding brings it back", async () => {
+    const { db } = await import("../db");
+    const { vehicleMileageReadings } = await import("@shared/schema");
+    const vid = (await createFixtureVehicle()).id;
+    const at = (d: string) => new Date(`${d}T11:00:00.000Z`);
+    const [, typo] = await db.insert(vehicleMileageReadings).values([
+      { vehicleId: vid, mileage: 100000, recordedAt: at("2026-03-01"), source: "manual" },
+      { vehicleId: vid, mileage: 1000000, recordedAt: at("2026-03-02"), source: "manual" },
+      { vehicleId: vid, mileage: 100200, recordedAt: at("2026-03-03"), source: "manual" },
+    ]).returning();
+    const url = `/api/mileage-history/${vid}?from=2026-03-01&to=2026-03-31`;
+
+    const before = (await admin.get(url)).body;
+    expect(before.rows[2].warning).toBe("decrease");
+
+    const voided = await admin.post(`/api/mileage-history/readings/${typo.id}/void`);
+    expect(voided.status).toBe(200);
+    expect(voided.body.voided).toBe(true);
+    const after = (await admin.get(url)).body;
+    expect(after.rows[1].voided).toBe(true);
+    expect(after.rows[2].warning).toBeNull();
+    expect(after.rows[2].drivenSincePrevious).toBe(200);
+    expect(after.summary.drivenKm).toBe(200);
+
+    const back = await admin.post(`/api/mileage-history/readings/${typo.id}/unvoid`);
+    expect(back.status).toBe(200);
+    expect(back.body.voided).toBe(false);
+    expect((await admin.get(url)).body.rows[2].warning).toBe("decrease");
+  });
+
+  it("is admin only and answers 404 for an unknown reading", async () => {
+    expect((await staff.post(`/api/mileage-history/readings/1/void`)).status).toBe(403);
+    const res = await admin.post(`/api/mileage-history/readings/999999999/void`);
+    expect(res.status).toBe(404);
+    expect(res.body.code).toBe("READING_NOT_FOUND");
+  });
+});
