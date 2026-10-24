@@ -1,7 +1,7 @@
 /**
  * Rapporten fase 2, Task 5 - the transport billing report: not invoiced / invoiced / toll tiles,
  * the open-all-periods tile, a missing amount counting 0, external vehicles, every tile equal to
- * its list, and the permission pair (rapport + voertuigen of reserveringen).
+ * its list, notInvoiced only for completed transports, and the report permission alone.
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { eq } from "drizzle-orm";
@@ -17,7 +17,7 @@ describe("transport billing report", () => {
   let V: number;
   let C: number;
   let Q: Record<string, string>;
-  let t1: number, t2: number, t4: number, tx: number, tOld: number;
+  let t1: number, t2: number, t4: number, tx: number, tOld: number, tSched: number, tBusy: number;
   let externalId: number;
 
   const transport = async (v: Record<string, unknown>) => {
@@ -33,14 +33,17 @@ describe("transport billing report", () => {
     t1 = await transport({ transportType: "tow", status: "completed", scheduledDate: "2026-05-02", completedDate: "2026-05-03", billable: true, billableAmount: "150.00", tollCost: "12.40" });
     t2 = await transport({ transportType: "swap", scheduledDate: "2026-05-10", billable: true, billableAmount: "80.00", invoiced: true, invoicedDate: "2026-05-20" });
     await transport({ transportType: "delivery", status: "cancelled", scheduledDate: "2026-05-12", billable: true, billableAmount: "500.00" });
-    t4 = await transport({ transportType: "other", scheduledDate: "2026-06-01", billable: true });
+    t4 = await transport({ transportType: "other", status: "completed", scheduledDate: "2026-06-01", billable: true });
     await transport({ transportType: "repossession", scheduledDate: "2026-06-03", billable: false, tollCost: "7.60" });
     // outside the period: only the open-all-periods tile sees it
-    tOld = await transport({ transportType: "tow", scheduledDate: "2026-01-15", billable: true, billableAmount: "40.00" });
+    tOld = await transport({ transportType: "tow", status: "completed", scheduledDate: "2026-01-15", billable: true, billableAmount: "40.00" });
+    // billable but not done yet: cannot be invoiced, so neither notInvoiced nor openAllTime counts it
+    tSched = await transport({ transportType: "delivery", status: "scheduled", scheduledDate: "2026-06-10", billable: true, billableAmount: "999.00" });
+    tBusy = await transport({ transportType: "tow", status: "in_progress", scheduledDate: "2026-05-15", billable: true, billableAmount: "333.00" });
     // external vehicle, no fleet vehicle
     const [ext] = await db.insert(vehicleTransports).values({
       vehicleId: null, isExternalVehicle: true, externalLicensePlate: "FIXT-EXT1", customerId: C,
-      transportType: "tow", status: "scheduled", scheduledDate: "2026-06-05", billable: true, billableAmount: "60.00",
+      transportType: "tow", status: "completed", scheduledDate: "2026-06-05", billable: true, billableAmount: "60.00",
     } as any).returning();
     tx = ext.id;
     externalId = ext.id;
@@ -63,8 +66,9 @@ describe("transport billing report", () => {
     expect(s.missingAmount).toBe(1);
     expect(s.byType).toEqual([
       { type: "swap", count: 1, billable: 80, notInvoiced: 0, toll: 0 },
-      { type: "tow", count: 1, billable: 150, notInvoiced: 150, toll: 12.4 },
+      { type: "tow", count: 2, billable: 483, notInvoiced: 150, toll: 12.4 },
       { type: "repossession", count: 1, billable: 0, notInvoiced: 0, toll: 7.6 },
+      { type: "delivery", count: 1, billable: 999, notInvoiced: 0, toll: 0 },
       { type: "other", count: 1, billable: 0, notInvoiced: 0, toll: 0 },
     ]);
     expect(s.byMonth.find((m: { month: string }) => m.month === "2026-05")).toEqual({ month: "2026-05", invoiced: 80, notInvoiced: 150, toll: 12.4 });
@@ -77,6 +81,14 @@ describe("transport billing report", () => {
     expect(period.rows.map((r: { id: number }) => r.id)).not.toContain(tOld);
     expect(period.rows.map((r: { id: number }) => r.id).sort()).toEqual([t1, t4].sort());
     expect(t2).toBeGreaterThan(0);
+  });
+
+  it("nog te factureren telt alleen afgeronde transporten (gepland of onderweg kan nog niet gefactureerd)", async () => {
+    for (const tile of ["notInvoiced", "openAllTime"]) {
+      const ids = (await staff.get("/api/reports/transport-billing/export").query({ ...Q, tile })).body.rows.map((r: { id: number }) => r.id);
+      expect(ids).not.toContain(tSched);
+      expect(ids).not.toContain(tBusy);
+    }
   });
 
   it("bedrag ontbreekt: telt mee met 0 en billableAmount null", async () => {
@@ -95,12 +107,10 @@ describe("transport billing report", () => {
     await expectTilesMatchRows(staff, "/api/reports/transport-billing", Q, TRANSPORT_BILLING_TILES);
   });
 
-  it("rechten: rapport + voertuigen of reserveringen", async () => {
-    for (const p of [["view_reports"], ["view_vehicles"]]) {
-      const a = await agentFor(p);
-      expect((await a.get("/api/reports/transport-billing/summary").query(Q)).status).toBe(403);
-    }
-    const both = await agentFor(["view_reports", "view_reservations"]);
-    expect((await both.get("/api/reports/transport-billing/summary").query(Q)).status).toBe(200);
+  it("rechten: alleen het rapportrecht", async () => {
+    const noReports = await agentFor(["view_vehicles", "view_reservations"]);
+    expect((await noReports.get("/api/reports/transport-billing/summary").query(Q)).status).toBe(403);
+    const reportsOnly = await agentFor(["manage_reports"]);
+    expect((await reportsOnly.get("/api/reports/transport-billing/summary").query(Q)).status).toBe(200);
   });
 });
