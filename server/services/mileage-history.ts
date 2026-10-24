@@ -117,7 +117,7 @@ export async function getMileageHistory(vehicleId: number, from: string, to: str
   )).orderBy(desc(vehicleMileageReadings.recordedAt), desc(vehicleMileageReadings.id)).limit(1);
 
   const { rows, summary } = analyseMileage(listed.map(toRow), {
-    from, to, freeKmPerDay, baseline: base ? toRow(base) : null,
+    from, to, freeKmPerDay, baseline: base ? toRow(base) : null, zone,
   });
   return {
     vehicle: { id: v.id, licensePlate: v.licensePlate, brand: v.brand, model: v.model, freeKmPerDay },

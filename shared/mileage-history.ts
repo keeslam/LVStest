@@ -27,6 +27,8 @@ export interface MileageSummary {
   warnings: number;
 }
 
+import { DEFAULT_OFFICE_TIMEZONE, dateInZone } from "./office-timezone";
+
 const DAY_MS = 86_400_000;
 
 function dayNumber(date: string): number {
@@ -41,7 +43,7 @@ function dayNumber(date: string): number {
  */
 export function analyseMileage(
   rows: MileageRow[],
-  opts: { from: string; to: string; freeKmPerDay: number | null; baseline?: MileageRow | null },
+  opts: { from: string; to: string; freeKmPerDay: number | null; baseline?: MileageRow | null; zone?: string },
 ): { rows: AnalysedRow[]; summary: MileageSummary } {
   const sorted = [...rows].sort((a, b) =>
     a.recordedAt < b.recordedAt ? -1 : a.recordedAt > b.recordedAt ? 1 : a.id - b.id);
@@ -50,6 +52,8 @@ export function analyseMileage(
   let drivenKm = 0;
   let warnings = 0;
   let readings = 0;
+  const zone = opts.zone ?? DEFAULT_OFFICE_TIMEZONE;
+  const officeDay = (iso: string) => dayNumber(dateInZone(new Date(iso), zone));
   const out: AnalysedRow[] = sorted.map((r) => {
     if (r.voided) return { ...r, drivenSincePrevious: null, warning: null };
     readings += 1;
@@ -62,7 +66,15 @@ export function analyseMileage(
         const days = Math.max(1, Math.round((Date.parse(r.recordedAt) - Date.parse(prev.recordedAt)) / DAY_MS));
         if (driven / days > MILEAGE_JUMP_KM_PER_DAY) warning = "jump";
       }
-      if (driven > 0) drivenKm += driven;
+      if (driven > 0) {
+        if (prev === opts.baseline) {
+          // Only the part of the baseline delta inside the period counts, pro-rated by office days.
+          const span = officeDay(r.recordedAt) - officeDay(prev.recordedAt);
+          const inside = officeDay(r.recordedAt) - dayNumber(opts.from);
+          const share = span <= 0 ? 1 : Math.min(1, Math.max(0, inside / span));
+          drivenKm += Math.round(driven * share);
+        } else drivenKm += driven;
+      }
     }
     if (warning) warnings += 1;
     prev = r;

@@ -32,8 +32,13 @@ describe("analyseMileage", () => {
     const out = analyseMileage([row(2, 10300, "2026-01-05")], { ...P, baseline: row(1, 10000, "2025-12-20") });
     expect(out.rows).toHaveLength(1);
     expect(out.rows[0].drivenSincePrevious).toBe(300);
-    expect(out.summary.drivenKm).toBe(300);
+    expect(out.summary.drivenKm).toBe(75); // 4 of 16 baseline days fall in the period
     expect(out.summary.overFreeKm).toBeNull();
+  });
+  it("basisdelta telt naar rato van dagen binnen de periode", () => {
+    const out = analyseMileage([row(2, 13000, "2026-01-31")], { ...P, baseline: row(1, 10000, "2025-12-02") });
+    expect(out.rows[0].drivenSincePrevious).toBe(3000);
+    expect(out.summary.drivenKm).toBe(1500);
   });
   it("boven de gratis km", () => {
     const out = analyseMileage([row(1, 10000, "2026-01-01"), row(2, 11000, "2026-01-10")], { ...P, freeKmPerDay: 10 });

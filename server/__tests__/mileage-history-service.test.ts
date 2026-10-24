@@ -61,7 +61,8 @@ describe("mileage history service", () => {
     // listed: 50130 (03-01) and 51000 (03-20); baseline 49000 (02-10)
     expect(h!.rows.map((r) => r.mileage)).toEqual([50130, 51000]);
     expect(h!.rows[0].drivenSincePrevious).toBe(1130);
-    expect(h!.summary.drivenKm).toBe(2000);
+    // first row is on `from`: none of the 1130 km baseline delta falls in the period
+    expect(h!.summary.drivenKm).toBe(870);
     expect(h!.summary.freeKm).toBe(3100);
   });
 
