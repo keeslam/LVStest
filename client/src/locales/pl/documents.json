@@ -273,7 +273,8 @@
       "shownCount": "{{shown}} z {{total}}",
       "noMatches": "Brak diagramów pasujących do wyszukiwania.",
       "imageMissing": "Brak pliku obrazu na serwerze. Wybierz nowy obraz w Edytuj.",
-      "noImageYet": "Nie wybrano jeszcze obrazu."
+      "noImageYet": "Nie wybrano jeszcze obrazu.",
+      "enlarge": "Pokaż większy"
     },
     "tabBarcodeLabels": "Etykiety z kodem kreskowym",
     "barcodeLabelEditorTitle": "Szablony etykiet z kodem kreskowym",

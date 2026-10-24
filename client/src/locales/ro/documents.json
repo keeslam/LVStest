@@ -270,7 +270,8 @@
       "shownCount": "{{shown}} din {{total}}",
       "noMatches": "Nicio diagramă nu corespunde căutării.",
       "imageMissing": "Fișierul imaginii lipsește de pe server. Alegeți o imagine nouă prin Editare.",
-      "noImageYet": "Nicio imagine aleasă încă."
+      "noImageYet": "Nicio imagine aleasă încă.",
+      "enlarge": "Vezi mai mare"
     },
     "tabBarcodeLabels": "Etichete cu cod de bare",
     "barcodeLabelEditorTitle": "Șabloane de etichete cu cod de bare",

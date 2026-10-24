@@ -1569,10 +1569,25 @@ function DiagramImagePreview({ src, file, alt, className = "aspect-video" }: { s
   }, [file]);
   const shown = fileUrl ?? src ?? null;
   useEffect(() => { setFailed(false); }, [shown]);
+  // Kees 2026-10-24: a click on the picture shows it large in a dialog of its own.
+  const [enlarged, setEnlarged] = useState(false);
   return (
     <div className={`${className} relative flex items-center justify-center overflow-hidden rounded-md bg-gray-100`} data-testid="diagram-image-preview">
       {shown && !failed ? (
-        <img src={shown} alt={alt} className="h-full w-full object-contain" onError={() => setFailed(true)} />
+        <>
+          <button type="button" className="h-full w-full cursor-zoom-in" onClick={() => setEnlarged(true)} title={t('indexPage.diagramTemplates.enlarge')} aria-label={t('indexPage.diagramTemplates.enlarge')} data-testid="button-enlarge-diagram">
+            <img src={shown} alt={alt} className="h-full w-full object-contain" onError={() => setFailed(true)} />
+          </button>
+          <Dialog open={enlarged} onOpenChange={setEnlarged}>
+            <DialogContent className="max-w-lg md:max-w-6xl">
+              <DialogHeader>
+                <DialogTitle>{alt}</DialogTitle>
+                <DialogDescription className="sr-only">{t('indexPage.diagramTemplates.enlarge')}</DialogDescription>
+              </DialogHeader>
+              <img src={shown} alt={alt} className="max-h-[80vh] w-full rounded-md bg-gray-100 object-contain" data-testid="diagram-image-large" />
+            </DialogContent>
+          </Dialog>
+        </>
       ) : (
         <div className="flex flex-col items-center gap-1 p-4 text-center text-sm text-muted-foreground">
           <Image className="h-8 w-8 text-gray-400" />

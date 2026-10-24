@@ -267,7 +267,8 @@
       "shownCount": "{{shown}} van {{total}}",
       "noMatches": "Geen diagrammen gevonden voor deze zoekopdracht.",
       "imageMissing": "Het afbeeldingsbestand ontbreekt op de server. Kies via Bewerken een nieuwe afbeelding.",
-      "noImageYet": "Nog geen afbeelding gekozen."
+      "noImageYet": "Nog geen afbeelding gekozen.",
+      "enlarge": "Groter bekijken"
     },
     "tabBarcodeLabels": "Barcodelabels",
     "barcodeLabelEditorTitle": "Barcodelabel-sjablonen",

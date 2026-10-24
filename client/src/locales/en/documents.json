@@ -267,7 +267,8 @@
       "shownCount": "{{shown}} of {{total}}",
       "noMatches": "No diagrams match this search.",
       "imageMissing": "The image file is missing on the server. Choose a new image via Edit.",
-      "noImageYet": "No image chosen yet."
+      "noImageYet": "No image chosen yet.",
+      "enlarge": "View larger"
     },
     "tabBarcodeLabels": "Barcode labels",
     "barcodeLabelEditorTitle": "Barcode label templates",

@@ -270,7 +270,8 @@
       "shownCount": "{{shown}} de {{total}}",
       "noMatches": "Ningún diagrama coincide con esta búsqueda.",
       "imageMissing": "Falta el archivo de imagen en el servidor. Elija una nueva imagen en Editar.",
-      "noImageYet": "Aún no se ha elegido ninguna imagen."
+      "noImageYet": "Aún no se ha elegido ninguna imagen.",
+      "enlarge": "Ver más grande"
     },
     "tabBarcodeLabels": "Etiquetas de código de barras",
     "barcodeLabelEditorTitle": "Plantillas de etiqueta de código de barras",
