@@ -1174,6 +1174,7 @@
     "csv": "CSV",
     "loading": "Se încarcă...",
     "error": "Istoricul km nu a putut fi încărcat.",
-    "invalidPeriod": "Alegeți o perioadă validă: data de început trebuie să fie înaintea datei de sfârșit."
+    "invalidPeriod": "Alegeți o perioadă validă: data de început trebuie să fie înaintea datei de sfârșit.",
+    "effectivePeriod": "Media și km gratuiți calculați pentru {{period}}"
   }
 }

@@ -1164,6 +1164,7 @@
     "csv": "CSV",
     "loading": "Loading...",
     "error": "The mileage history could not be loaded.",
-    "invalidPeriod": "Choose a valid period: the start date must be before the end date."
+    "invalidPeriod": "Choose a valid period: the start date must be before the end date.",
+    "effectivePeriod": "Average and free km calculated over {{period}}"
   }
 }

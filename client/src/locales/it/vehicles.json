@@ -1174,6 +1174,7 @@
     "csv": "CSV",
     "loading": "Caricamento...",
     "error": "Impossibile caricare lo storico km.",
-    "invalidPeriod": "Scegli un periodo valido: la data di inizio deve precedere la data di fine."
+    "invalidPeriod": "Scegli un periodo valido: la data di inizio deve precedere la data di fine.",
+    "effectivePeriod": "Media e km liberi calcolati su {{period}}"
   }
 }

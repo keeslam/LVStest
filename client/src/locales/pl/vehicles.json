@@ -1184,6 +1184,7 @@
     "csv": "CSV",
     "loading": "Ładowanie...",
     "error": "Nie udało się wczytać historii km.",
-    "invalidPeriod": "Wybierz prawidłowy okres: data początkowa musi być przed datą końcową."
+    "invalidPeriod": "Wybierz prawidłowy okres: data początkowa musi być przed datą końcową.",
+    "effectivePeriod": "Średnia i wolne km obliczone za {{period}}"
   }
 }

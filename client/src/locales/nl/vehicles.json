@@ -1164,6 +1164,7 @@
     "csv": "CSV",
     "loading": "Laden...",
     "error": "De km-historie kon niet worden geladen.",
-    "invalidPeriod": "Kies een geldige periode: de begindatum moet voor de einddatum liggen."
+    "invalidPeriod": "Kies een geldige periode: de begindatum moet voor de einddatum liggen.",
+    "effectivePeriod": "Gemiddelde en vrije km berekend over {{period}}"
   }
 }

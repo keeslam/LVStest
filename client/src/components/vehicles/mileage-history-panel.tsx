@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { HtmlPreviewDialog } from "@/components/documents/html-preview-dialog";
 import { downloadCsv, csvDateTime, csvNumber } from "@/lib/csv";
-import { formatDateNl, formatDateTimeNl } from "@/lib/format-date-nl";
+import { formatDateNl, formatDateRangeNl, formatDateTimeNl } from "@/lib/format-date-nl";
 import { officeToday } from "@/lib/office-date";
 import { formatLicensePlate } from "@/lib/format-utils";
 import {
@@ -161,6 +161,12 @@ export function MileageHistoryPanel({ vehicleId, defaultFrom, defaultTo }: {
               <div className={`text-2xl font-bold ${summary!.warnings > 0 ? "text-amber-700" : ""}`}>{summary!.warnings}</div>
             </button>
           </div>
+
+          {summary!.periodFrom && summary!.periodTo && (
+            <p className="text-xs text-gray-500" data-testid="mileage-effective-period">
+              {t("mileageHistory.effectivePeriod", { period: formatDateRangeNl(summary!.periodFrom, summary!.periodTo) })}
+            </p>
+          )}
 
           {rows.length === 0 ? (
             <p className="text-sm text-gray-500" data-testid="mileage-empty">{labels.empty}</p>

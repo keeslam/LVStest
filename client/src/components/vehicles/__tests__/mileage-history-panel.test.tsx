@@ -53,7 +53,7 @@ const HISTORY = {
     { id: 13, mileage: 11000, recordedAt: "2026-03-20T09:00:00.000Z", source: "manual", actorName: "Kees", voided: false, drivenSincePrevious: -1500, warning: "decrease" },
     { id: 14, mileage: 99999, recordedAt: "2026-03-21T09:00:00.000Z", source: "damage_check", actorName: null, voided: true, drivenSincePrevious: null, warning: null },
   ],
-  summary: { drivenKm: 2500, avgPerMonth: 1200, freeKm: 6300, overFreeKm: 0, readings: 3, warnings: 1 },
+  summary: { drivenKm: 2500, avgPerMonth: 1200, freeKm: 6300, overFreeKm: 0, readings: 3, warnings: 1, periodFrom: "2026-03-01", periodTo: "2026-03-20" },
 };
 
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -169,28 +169,91 @@ describe("MileageHistoryPanel", () => {
   });
 
   it("an empty period says so", async () => {
-    history = { ...HISTORY, rows: [], summary: { drivenKm: 0, avgPerMonth: null, freeKm: 3100, overFreeKm: 0, readings: 0, warnings: 0 } };
+    history = { ...HISTORY, rows: [], summary: { drivenKm: 0, avgPerMonth: null, freeKm: 3100, overFreeKm: 0, readings: 0, warnings: 0, periodFrom: null, periodTo: null } };
     renderPanel();
     expect(await screen.findByText("Nog geen km-standen in deze periode")).toBeInTheDocument();
+    expect(screen.queryByTestId("mileage-effective-period")).not.toBeInTheDocument();
+  });
+
+  it("names the effective period the numbers are computed over", async () => {
+    renderPanel();
+    const line = await screen.findByTestId("mileage-effective-period");
+    expect(line.textContent).toMatch(/1 mrt\.? 2026 – 20 mrt\.? 2026/);
+  });
+
+  it("a vehicle with exactly one reading: one row, no driven km, no NaN", async () => {
+    history = ONE_READING;
+    renderPanel();
+    const only = await screen.findByTestId("mileage-row-21");
+    expect(within(only).getByText("Ophalen")).toBeInTheDocument();
+    expect(within(only).getByText("–")).toBeInTheDocument();
+    expect(screen.getByTestId("mileage-tile-driven").textContent).toContain("0 km");
+    expect(screen.getByTestId("mileage-tile-average").textContent).toContain("0 km");
+    expect(screen.getByTestId("mileage-tile-warnings").textContent).toContain("0");
+    expect(document.body.textContent).not.toMatch(/NaN|undefined/);
   });
 });
 
+const ONE_READING = {
+  vehicle: HISTORY.vehicle,
+  rows: [{ id: 21, mileage: 54321, recordedAt: "2026-03-15T09:00:00.000Z", source: "pickup", actorName: "Piet", voided: false, drivenSincePrevious: null, warning: null }],
+  summary: { drivenKm: 0, avgPerMonth: 0, freeKm: 1700, overFreeKm: 0, readings: 1, warnings: 0, periodFrom: "2026-03-15", periodTo: "2026-03-31" },
+};
+
+const LABELS = {
+  title: "Km-historie", period: "Periode", drivenKm: "Gereden km", avgPerMonth: "Gemiddeld per maand",
+  freeKm: "Vrije km", overFreeKm: "Boven vrije km", warnings: "Waarschuwingen", chart: "Km-stand",
+  date: "Datum", mileage: "Km-stand", driven: "Gereden sinds vorige", source: "Bron", actor: "Door wie",
+  warning: "Waarschuwing", voided: "vervallen", empty: "Leeg",
+  sources: { pickup: "Ophalen", return: "Inleveren", damage_check: "Schadecheck", manual: "Handmatig", portal: "Klantportaal", service: "Onderhoud", import: "Import" },
+  warningTypes: { decrease: "Km-stand lager dan vorige", jump: "Onlogische sprong" },
+};
+type PrintData = Parameters<typeof mileageHistoryHtml>[0];
+const ASKED = { from: "2000-01-01", to: "2050-12-31" };
+
 describe("mileageHistoryHtml", () => {
+  it("the header shows the effective period, not the asked one", () => {
+    const html = mileageHistoryHtml(HISTORY as PrintData, LABELS, ASKED);
+    expect(html).toMatch(/1 mrt\.? 2026 – 20 mrt\.? 2026/);
+    expect(html).not.toContain("2050");
+  });
+
+  it("zero rows: the empty text, no chart, no table, the asked period", () => {
+    const data = { ...HISTORY, rows: [], summary: { drivenKm: 0, avgPerMonth: null, freeKm: null, overFreeKm: null, readings: 0, warnings: 0, periodFrom: null, periodTo: null } } as PrintData;
+    const html = mileageHistoryHtml(data, LABELS, { from: "2026-03-01", to: "2026-03-31" });
+    expect(html).toContain("<p>Leeg</p>");
+    expect(html).not.toContain("<polyline");
+    expect(html).not.toContain("<table");
+    expect(html).toMatch(/1 mrt\.? 2026 – 31 mrt\.? 2026/);
+    expect(html).not.toMatch(/NaN|undefined|null/);
+  });
+
+  it("all rows voided: no chart line, every row listed as vervallen", () => {
+    const rows = HISTORY.rows.map((r) => ({ ...r, voided: true, drivenSincePrevious: null, warning: null }));
+    const data = { ...HISTORY, rows, summary: { drivenKm: 0, avgPerMonth: null, freeKm: 3100, overFreeKm: 0, readings: 0, warnings: 0, periodFrom: null, periodTo: null } } as PrintData;
+    const html = mileageHistoryHtml(data, LABELS, { from: "2026-03-01", to: "2026-03-31" });
+    expect(html).not.toContain("<polyline");
+    expect(html.match(/<tr class="voided">/g)).toHaveLength(4);
+    expect(html.match(/<td>vervallen<\/td>/g)).toHaveLength(4);
+    expect(html).not.toMatch(/NaN|undefined/);
+  });
+
+  it("exactly one reading: one point, finite coordinates, no NaN", () => {
+    const html = mileageHistoryHtml(ONE_READING as PrintData, LABELS, { from: "2026-03-01", to: "2026-03-31" });
+    const points = /<polyline points="([^"]*)"/.exec(html)?.[1];
+    expect(points).toBe("350.0,100.0");
+    expect(html.match(/<circle /g)).toHaveLength(1);
+    expect(html.match(/<tbody>[\s\S]*<\/tbody>/)?.[0].match(/<tr/g)).toHaveLength(1);
+    expect(html).not.toMatch(/NaN|undefined/);
+  });
+
   it("escapes every value and draws the chart as an SVG polyline", () => {
     const data = {
       ...HISTORY,
       vehicle: { ...HISTORY.vehicle, brand: "<script>x</script>" },
       rows: HISTORY.rows.map((r) => (r.id === 12 ? { ...r, actorName: "<b>Klaas</b>" } : r)),
-    } as Parameters<typeof mileageHistoryHtml>[0];
-    const labels = {
-      title: "Km-historie", period: "Periode", drivenKm: "Gereden km", avgPerMonth: "Gemiddeld per maand",
-      freeKm: "Vrije km", overFreeKm: "Boven vrije km", warnings: "Waarschuwingen", chart: "Km-stand",
-      date: "Datum", mileage: "Km-stand", driven: "Gereden sinds vorige", source: "Bron", actor: "Door wie",
-      warning: "Waarschuwing", voided: "vervallen", empty: "Leeg",
-      sources: { pickup: "Ophalen", return: "Inleveren", damage_check: "Schadecheck", manual: "Handmatig", portal: "Klantportaal", service: "Onderhoud", import: "Import" },
-      warningTypes: { decrease: "Km-stand lager dan vorige", jump: "Onlogische sprong" },
-    };
-    const html = mileageHistoryHtml(data, labels, { from: "2026-03-01", to: "2026-03-31" });
+    } as PrintData;
+    const html = mileageHistoryHtml(data, LABELS, { from: "2026-03-01", to: "2026-03-31" });
     expect(html).not.toContain("<script>x</script>");
     expect(html).toContain("&lt;script&gt;");
     expect(html).not.toContain("<b>Klaas</b>");

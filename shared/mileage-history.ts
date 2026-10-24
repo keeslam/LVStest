@@ -25,6 +25,13 @@ export interface MileageSummary {
   overFreeKm: number | null;
   readings: number;
   warnings: number;
+  /**
+   * The period the averages and free km are computed over: the asked period, starting no
+   * earlier than the first known reading (baseline or first valid row) and ending no later
+   * than the office today. Null when the period has no readings.
+   */
+  periodFrom: string | null;
+  periodTo: string | null;
 }
 
 import { DEFAULT_OFFICE_TIMEZONE, dateInZone } from "./office-timezone";
@@ -43,7 +50,7 @@ function dayNumber(date: string): number {
  */
 export function analyseMileage(
   rows: MileageRow[],
-  opts: { from: string; to: string; freeKmPerDay: number | null; baseline?: MileageRow | null; zone?: string },
+  opts: { from: string; to: string; freeKmPerDay: number | null; baseline?: MileageRow | null; zone?: string; today?: string },
 ): { rows: AnalysedRow[]; summary: MileageSummary } {
   const sorted = [...rows].sort((a, b) =>
     a.recordedAt < b.recordedAt ? -1 : a.recordedAt > b.recordedAt ? 1 : a.id - b.id);
@@ -53,7 +60,17 @@ export function analyseMileage(
   let warnings = 0;
   let readings = 0;
   const zone = opts.zone ?? DEFAULT_OFFICE_TIMEZONE;
-  const officeDay = (iso: string) => dayNumber(dateInZone(new Date(iso), zone));
+  const officeDate = (iso: string) => dateInZone(new Date(iso), zone);
+  const officeDay = (iso: string) => dayNumber(officeDate(iso));
+
+  // Effective period: never before the first known reading, never after the office today,
+  // so "Alle tijd" or a period ending in the future does not dilute the average or credit free km.
+  const firstKnown = prev ?? sorted.find((r) => !r.voided) ?? null;
+  const firstDate = firstKnown ? officeDate(firstKnown.recordedAt) : null;
+  const today = opts.today ?? dateInZone(new Date(), zone);
+  const effFrom = firstDate && firstDate > opts.from ? firstDate : opts.from;
+  const clampedTo = opts.to < today ? opts.to : today;
+  const effTo = clampedTo < effFrom ? effFrom : clampedTo;
   const out: AnalysedRow[] = sorted.map((r) => {
     if (r.voided) return { ...r, drivenSincePrevious: null, warning: null };
     readings += 1;
@@ -70,7 +87,7 @@ export function analyseMileage(
         if (prev === opts.baseline) {
           // Only the part of the baseline delta inside the period counts, pro-rated by office days.
           const span = officeDay(r.recordedAt) - officeDay(prev.recordedAt);
-          const inside = officeDay(r.recordedAt) - dayNumber(opts.from);
+          const inside = officeDay(r.recordedAt) - dayNumber(effFrom);
           const share = span <= 0 ? 1 : Math.min(1, Math.max(0, inside / span));
           drivenKm += Math.round(driven * share);
         } else drivenKm += driven;
@@ -81,7 +98,7 @@ export function analyseMileage(
     return { ...r, drivenSincePrevious: driven, warning };
   });
 
-  const days = Math.max(1, Math.round(dayNumber(opts.to) - dayNumber(opts.from)) + 1);
+  const days = Math.max(1, Math.round(dayNumber(effTo) - dayNumber(effFrom)) + 1);
   const freeKm = opts.freeKmPerDay == null ? null : opts.freeKmPerDay * days;
   return {
     rows: out,
@@ -92,6 +109,8 @@ export function analyseMileage(
       overFreeKm: freeKm == null ? null : Math.max(0, drivenKm - freeKm),
       readings,
       warnings,
+      periodFrom: readings === 0 ? null : effFrom,
+      periodTo: readings === 0 ? null : effTo,
     },
   };
 }

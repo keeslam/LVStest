@@ -79,7 +79,8 @@ export function mileageHistoryHtml(
 ): string {
   const { vehicle, rows, summary } = data;
   const plate = formatLicensePlate(vehicle.licensePlate);
-  const periodText = `${formatDateNl(period.from, "medium")} – ${formatDateNl(period.to, "medium")}`;
+  // The effective period (first reading .. today at the latest) when the summary has one, else the asked period.
+  const periodText = `${formatDateNl(summary.periodFrom ?? period.from, "medium")} – ${formatDateNl(summary.periodTo ?? period.to, "medium")}`;
   const freeText = summary.freeKm == null
     ? "–"
     : `${formatKm(summary.freeKm)}${summary.overFreeKm ? ` (${labels.overFreeKm}: ${formatKm(summary.overFreeKm)})` : ""}`;

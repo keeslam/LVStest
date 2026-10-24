@@ -40,6 +40,35 @@ describe("analyseMileage", () => {
     expect(out.rows[0].drivenSincePrevious).toBe(3000);
     expect(out.summary.drivenKm).toBe(1500);
   });
+  it("een einddatum in de toekomst telt alleen tot vandaag", () => {
+    const out = analyseMileage([row(1, 10000, "2026-01-01"), row(2, 13000, "2026-01-10")], {
+      from: "2026-01-01", to: "2050-12-31", freeKmPerDay: 10, today: "2026-01-30",
+    });
+    expect(out.summary.periodFrom).toBe("2026-01-01");
+    expect(out.summary.periodTo).toBe("2026-01-30");
+    expect(out.summary.freeKm).toBe(300); // 30 days, not ~9,000
+    expect(out.summary.overFreeKm).toBe(2700);
+    expect(out.summary.avgPerMonth).toBe(Math.round(3000 / (30 / 30.44)));
+  });
+  it("een begindatum ver voor de eerste stand telt vanaf de eerste stand", () => {
+    const out = analyseMileage([row(1, 10000, "2026-01-01"), row(2, 13000, "2026-01-31")], {
+      from: "2000-01-01", to: "2026-01-31", freeKmPerDay: 10, today: "2026-10-24",
+    });
+    expect(out.summary.periodFrom).toBe("2026-01-01");
+    expect(out.summary.periodTo).toBe("2026-01-31");
+    expect(out.summary.freeKm).toBe(310);
+    expect(out.summary.avgPerMonth).toBe(Math.round(3000 / (31 / 30.44)));
+  });
+  it("met een basisregel blijft de begindatum van de periode staan", () => {
+    const out = analyseMileage([row(2, 10300, "2026-01-05")], { ...P, baseline: row(1, 10000, "2025-12-20"), today: "2026-10-24" });
+    expect(out.summary.periodFrom).toBe("2026-01-01");
+    expect(out.summary.drivenKm).toBe(75);
+  });
+  it("zonder standen is er geen effectieve periode", () => {
+    const out = analyseMileage([], { ...P, today: "2026-10-24" });
+    expect(out.summary.periodFrom).toBeNull();
+    expect(out.summary.periodTo).toBeNull();
+  });
   it("boven de gratis km", () => {
     const out = analyseMileage([row(1, 10000, "2026-01-01"), row(2, 11000, "2026-01-10")], { ...P, freeKmPerDay: 10 });
     expect(out.summary.freeKm).toBe(310);
