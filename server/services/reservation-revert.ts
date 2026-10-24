@@ -34,7 +34,7 @@
 import { createHash } from "crypto";
 import { and, eq, gt, gte, inArray, isNull, ne, or } from "drizzle-orm";
 import { db } from "../db";
-import { voidMileageReadings } from "./mileage-history";
+import { voidMileageReadings, voidDamageCheckReadingsOfReservation } from "./mileage-history";
 import {
   documents, reservations, vehicles,
   type Document, type Reservation, type Vehicle,
@@ -496,9 +496,12 @@ export async function applyRevert(
     // marked void, in this transaction. Keyed on what the step actually clears.
     if (step.reset.includes("pickupMileage")) {
       await voidMileageReadings(tx, { sourceTable: "reservations", sourceId: row.id, source: "pickup" }, actor.username);
+      // The pickup damage check measured the same handover; its reading goes too.
+      await voidDamageCheckReadingsOfReservation(tx, row.id, actor.username, { checkType: "pickup" });
     }
     if (step.reset.includes("returnMileage")) {
       await voidMileageReadings(tx, { sourceTable: "reservations", sourceId: row.id, source: "return" }, actor.username);
+      await voidDamageCheckReadingsOfReservation(tx, row.id, actor.username, { checkType: "return" });
     }
 
     let vehicleRestored = false;

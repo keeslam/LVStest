@@ -5343,11 +5343,13 @@ export async function registerRoutes(app: Express): Promise<void> {
       void onMaintenanceBlockChanged(existingReservationForDiff, reservation);
       // Rapporten fase 1 - an edited pickup or return reading follows into the
       // km history (same key as the handover routes); cleared = no longer valid.
+      // A swapped vehicle takes its readings along (the upsert moves vehicleId).
+      const vehicleSwapped = reservation.vehicleId !== existingReservationForDiff.vehicleId;
       for (const kind of ["pickup", "return"] as const) {
         const field = kind === "pickup" ? "pickupMileage" : "returnMileage";
-        if (!(field in reservationData)) continue;
         const edited = reservation[field];
-        if (edited === existingReservationForDiff[field]) continue;
+        const valueEdited = field in reservationData && edited !== existingReservationForDiff[field];
+        if (!valueEdited && !(vehicleSwapped && edited != null)) continue;
         const actorName = user ? user.username : "systeem";
         if (edited != null && reservation.vehicleId) {
           await recordMileageReadingLogged({

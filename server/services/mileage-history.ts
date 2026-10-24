@@ -1,6 +1,6 @@
-import { and, asc, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNotNull, isNull, lt, sql } from "drizzle-orm";
 import { db } from "../db";
-import { vehicleMileageReadings, vehicles } from "../../shared/schema";
+import { interactiveDamageChecks, vehicleMileageReadings, vehicles } from "../../shared/schema";
 import {
   analyseMileage,
   type AnalysedRow,
@@ -44,6 +44,9 @@ export async function recordMileageReading(exec: DbOrTx, r: MileageReadingInput)
     target: [vehicleMileageReadings.source, vehicleMileageReadings.sourceTable, vehicleMileageReadings.sourceId],
     targetWhere: sql`source_id is not null`,
     set: {
+      // The source can move to another car (a reservation or check whose vehicle
+      // was swapped); the reading follows it.
+      vehicleId: values.vehicleId,
       mileage: values.mileage,
       recordedAt: values.recordedAt,
       actorName: values.actorName,
@@ -100,6 +103,7 @@ export async function voidMileageReadings(
   exec: DbOrTx,
   m: { sourceTable: string; sourceId: number; source?: MileageSource },
   by: string,
+  at: Date = new Date(),
 ): Promise<number> {
   const conditions = [
     eq(vehicleMileageReadings.sourceTable, m.sourceTable),
@@ -108,10 +112,73 @@ export async function voidMileageReadings(
   ];
   if (m.source) conditions.push(eq(vehicleMileageReadings.source, m.source));
   const res = await exec.update(vehicleMileageReadings)
-    .set({ voidedAt: new Date(), voidedBy: by })
+    .set({ voidedAt: at, voidedBy: by })
     .where(and(...conditions))
     .returning({ id: vehicleMileageReadings.id });
   return res.length;
+}
+
+/**
+ * Tegenhanger van `voidMileageReadings`: maakt vervallen standen weer geldig.
+ * Met `voidedAt` alleen de standen die op precies dat moment vervielen (zo haalt
+ * een herstel uit de prullenbak niet terug wat eerder al was teruggedraaid).
+ */
+export async function unvoidMileageReadings(
+  exec: DbOrTx,
+  m: { sourceTable: string; sourceId: number; source?: MileageSource; voidedAt?: Date },
+): Promise<number> {
+  const conditions = [
+    eq(vehicleMileageReadings.sourceTable, m.sourceTable),
+    eq(vehicleMileageReadings.sourceId, m.sourceId),
+    m.voidedAt ? eq(vehicleMileageReadings.voidedAt, m.voidedAt) : isNotNull(vehicleMileageReadings.voidedAt),
+  ];
+  if (m.source) conditions.push(eq(vehicleMileageReadings.source, m.source));
+  const res = await exec.update(vehicleMileageReadings)
+    .set({ voidedAt: null, voidedBy: null })
+    .where(and(...conditions))
+    .returning({ id: vehicleMileageReadings.id });
+  return res.length;
+}
+
+async function damageCheckIdsOf(exec: DbOrTx, reservationId: number, checkType?: "pickup" | "return"): Promise<number[]> {
+  const rows = await exec.select({ id: interactiveDamageChecks.id }).from(interactiveDamageChecks).where(and(
+    eq(interactiveDamageChecks.reservationId, reservationId),
+    checkType ? eq(interactiveDamageChecks.checkType, checkType) : undefined,
+  ));
+  return rows.map((r) => r.id);
+}
+
+/** Laat de standen van de schadecheck(s) van een reservering vervallen (bij terugdraaien: alleen dat soort check). */
+export async function voidDamageCheckReadingsOfReservation(
+  exec: DbOrTx,
+  reservationId: number,
+  by: string,
+  opts: { checkType?: "pickup" | "return"; at?: Date } = {},
+): Promise<number> {
+  let n = 0;
+  for (const checkId of await damageCheckIdsOf(exec, reservationId, opts.checkType)) {
+    n += await voidMileageReadings(exec, { sourceTable: "interactive_damage_checks", sourceId: checkId }, by, opts.at);
+  }
+  return n;
+}
+
+/**
+ * Verwijderen van een reservering: alle standen die eraan hangen (ophalen,
+ * inleveren, onderhoud en de schadechecks) vervallen, met `at` = het moment
+ * van verwijderen zodat een herstel precies deze terugzet.
+ */
+export async function voidReadingsOfDeletedReservation(exec: DbOrTx, reservationId: number, by: string, at: Date): Promise<number> {
+  const own = await voidMileageReadings(exec, { sourceTable: "reservations", sourceId: reservationId }, by, at);
+  return own + await voidDamageCheckReadingsOfReservation(exec, reservationId, by, { at });
+}
+
+/** Herstel uit de prullenbak: alleen de standen die bij het verwijderen (op `deletedAt`) vervielen. */
+export async function unvoidReadingsOfRestoredReservation(exec: DbOrTx, reservationId: number, deletedAt: Date): Promise<number> {
+  let n = await unvoidMileageReadings(exec, { sourceTable: "reservations", sourceId: reservationId, voidedAt: deletedAt });
+  for (const checkId of await damageCheckIdsOf(exec, reservationId)) {
+    n += await unvoidMileageReadings(exec, { sourceTable: "interactive_damage_checks", sourceId: checkId, voidedAt: deletedAt });
+  }
+  return n;
 }
 
 function toRow(r: typeof vehicleMileageReadings.$inferSelect): MileageRow {

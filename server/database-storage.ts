@@ -126,7 +126,7 @@ import { formatVehicleBarcode, parseBarcode, normalizeScannedCode, expandShortKe
 import { recalculateTotalPrice } from "../shared/rental-pricing";
 import { normalizeExpenseCategory } from "../shared/expense-categories";
 import { syncUsagePeriodSafely } from "./services/fiscal/usage-periods";
-import { recordMileageReading, readingInstantForOfficeDate } from "./services/mileage-history";
+import { recordMileageReading, readingInstantForOfficeDate, voidReadingsOfDeletedReservation, unvoidReadingsOfRestoredReservation } from "./services/mileage-history";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -1065,6 +1065,9 @@ export class DatabaseStorage implements IStorage {
           updatedAt: new Date(),
           ...(contractNumber ? { contractNumber } : {}),
         }).where(eq(reservations.id, record.entityId));
+
+        // Rapporten fase 1 - the readings the delete voided count again.
+        await unvoidReadingsOfRestoredReservation(tx, record.entityId, current.deletedAt);
       });
     } catch (error) {
       if (error instanceof RestoreAbort) return { restored: false, reason: error.reason, record };
@@ -2344,6 +2347,11 @@ export class DatabaseStorage implements IStorage {
         .where(and(eq(reservations.id, id), isNull(reservations.deletedAt)))
         .returning();
       if (!row) return undefined;
+
+      // Rapporten fase 1 - a deleted reservation's readings (handovers, service,
+      // its damage checks) stop counting, stamped with the delete moment so a
+      // restore from the bin brings back exactly these.
+      await voidReadingsOfDeletedReservation(tx, id, actor?.username ?? 'systeem', row.deletedAt!);
 
       // besluiten **B-15** — "ja, allebei herstelbaar". Until this, a
       // soft-deleted reservation was filtered out everywhere and surfaced

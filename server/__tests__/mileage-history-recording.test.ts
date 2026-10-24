@@ -10,7 +10,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { and, eq, inArray, like } from "drizzle-orm";
 import { db } from "../db";
 import {
-  interactiveDamageChecks, portalRequests, portalUsers, reservations, vehicleMileageReadings, vehicles,
+  deletedRecords, interactiveDamageChecks, portalRequests, portalUsers, reservations, vehicleMileageReadings, vehicles,
 } from "../../shared/schema";
 import { day } from "./helpers/dates";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
@@ -204,4 +204,79 @@ describe("km-historie - handmatig, portaal, onderhoud", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ sourceTable: "reservations", sourceId: block.id, mileage: 41_000, actorName: admin.username });
   });
+});
+
+describe("km-historie - terugdraaien, verwisselen, verwijderen (fix-ronde 1)", () => {
+  it("terugdraaien van het ophalen laat ook de stand van de ophaal-schadecheck vervallen", async () => {
+    const { vehicle, rental } = await pickedUp(5000, 5100);
+    const check = await admin.post("/api/interactive-damage-checks").send({
+      vehicleId: vehicle.id, reservationId: rental.id, checkType: "pickup",
+      checkDate: new Date().toISOString(), mileage: 5100,
+    });
+    expect(check.status, JSON.stringify(check.body)).toBe(201);
+
+    const res = await revert(rental.id);
+    expect(res.status, JSON.stringify(res.body)).toBe(200);
+
+    const rows = await readingsOf(vehicle.id);
+    expect(rows.find((r) => r.source === "pickup")!.voidedAt).not.toBeNull();
+    expect(rows.find((r) => r.source === "damage_check")!.voidedAt).not.toBeNull();
+
+    // The vehicle is back at 5000; a later, lower-than-5100 reading is no decrease.
+    expect((await admin.patch(`/api/vehicles/${vehicle.id}`).send({ currentMileage: 5050 })).status).toBe(200);
+    const h = await getMileageHistory(vehicle.id, day(-10), day(1));
+    expect(h!.rows.some((r) => r.warning === "decrease")).toBe(false);
+
+    await admin.delete(`/api/interactive-damage-checks/${check.body.id}`);
+  }, 60_000);
+
+  it("een andere auto op de reservering of de schadecheck neemt de stand mee", async () => {
+    const { vehicle, rental } = await pickedUp(6000, 6100);
+    const other = await createFixtureVehicle({ currentMileage: 6000 });
+    const swap = await admin.patch(`/api/reservations/${rental.id}`).send({ vehicleId: other.id });
+    expect(swap.status, JSON.stringify(swap.body)).toBe(200);
+    expect(await readingsOf(vehicle.id)).toHaveLength(0);
+    const moved = await readingsOf(other.id);
+    expect(moved).toHaveLength(1);
+    expect(moved[0]).toMatchObject({ source: "pickup", sourceId: rental.id, mileage: 6100 });
+
+    const third = await createFixtureVehicle({ currentMileage: 100 });
+    const check = await admin.post("/api/interactive-damage-checks").send({
+      vehicleId: third.id, checkType: "pickup", checkDate: new Date().toISOString(), mileage: 150,
+    });
+    expect(check.status, JSON.stringify(check.body)).toBe(201);
+    const fourth = await createFixtureVehicle({ currentMileage: 100 });
+    const put = await admin.put(`/api/interactive-damage-checks/${check.body.id}`).send({ vehicleId: fourth.id, mileage: 160 });
+    expect(put.status, JSON.stringify(put.body)).toBe(200);
+    expect((await readingsOf(third.id)).filter((r) => r.source === "damage_check")).toHaveLength(0);
+    expect((await readingsOf(fourth.id)).filter((r) => r.source === "damage_check")).toHaveLength(1);
+    await admin.delete(`/api/interactive-damage-checks/${check.body.id}`);
+  }, 60_000);
+
+  it("verwijderen laat de standen vervallen, herstellen uit de prullenbak maakt ze weer geldig", async () => {
+    const { vehicle, rental } = await pickedUp(30_000, 30_010);
+    expect((await admin.post(`/api/reservations/${rental.id}/return`).send({
+      returnMileage: 30_300, fuelLevelReturn: "1/4", returnDate: day(-1),
+    })).status).toBe(200);
+    const check = await admin.post("/api/interactive-damage-checks").send({
+      vehicleId: vehicle.id, reservationId: rental.id, checkType: "return",
+      checkDate: new Date().toISOString(), mileage: 30_300,
+    });
+    expect(check.status, JSON.stringify(check.body)).toBe(201);
+    expect((await readingsOf(vehicle.id)).filter((r) => r.voidedAt == null)).toHaveLength(3);
+
+    const del = await admin.delete(`/api/reservations/${rental.id}`);
+    expect(del.status, JSON.stringify(del.body)).toBe(200);
+    expect((await readingsOf(vehicle.id)).filter((r) => r.voidedAt == null)).toHaveLength(0);
+    expect((await getMileageHistory(vehicle.id, day(-10), day(1)))!.summary.readings).toBe(0);
+
+    const [record] = await db.select().from(deletedRecords)
+      .where(and(eq(deletedRecords.entityType, "reservation"), eq(deletedRecords.entityId, rental.id)));
+    const restored = await admin.post(`/api/deleted-records/${record.id}/restore`).send({});
+    expect(restored.status, JSON.stringify(restored.body)).toBe(200);
+    expect((await readingsOf(vehicle.id)).filter((r) => r.voidedAt == null)).toHaveLength(3);
+    expect((await getMileageHistory(vehicle.id, day(-10), day(1)))!.summary.readings).toBe(3);
+
+    await admin.delete(`/api/interactive-damage-checks/${check.body.id}`);
+  }, 60_000);
 });
