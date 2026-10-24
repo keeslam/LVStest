@@ -262,7 +262,13 @@
       "deleteDialogTitle": "Ștergeți șablonul de diagramă",
       "deleteDialogDescription": "Sunteți sigur că doriți să ștergeți șablonul de diagramă pentru {{make}} {{model}}? Această acțiune nu poate fi anulată.",
       "imageTooFlat": "Această imagine are {{width}} × {{height}} pixeli: este prea îngustă pentru a marca daune pe ea. Folosiți o imagine a vehiculului văzut de sus sau din lateral.",
-      "imageTooSmall": "Această imagine are doar {{width}} × {{height}} pixeli: este prea mică pentru a marca daune pe ea. Folosiți o imagine mai mare."
+      "imageTooSmall": "Această imagine are doar {{width}} × {{height}} pixeli: este prea mică pentru a marca daune pe ea. Folosiți o imagine mai mare.",
+      "searchPlaceholder": "Caută marcă, model sau descriere",
+      "allMakes": "Toate mărcile",
+      "yearFilterPlaceholder": "An fabricație",
+      "clearFilters": "Șterge filtrele",
+      "shownCount": "{{shown}} din {{total}}",
+      "noMatches": "Nicio diagramă nu corespunde căutării."
     },
     "tabBarcodeLabels": "Etichete cu cod de bare",
     "barcodeLabelEditorTitle": "Șabloane de etichete cu cod de bare",

@@ -36,7 +36,8 @@ import {
 import PDFTemplateEditor from "./template-editor";
 import TransportReportTemplateEditor from "./transport-report-template-editor";
 import BarcodeLabelTemplateEditor from "./barcode-label-template-editor";
-import { FileEdit, Star, Trash2, Printer, Eye, ChevronDown, ChevronRight, Image, Plus, X, Edit, Settings as SettingsIcon, Truck, Barcode } from "lucide-react";
+import { FileEdit, Star, Trash2, Printer, Eye, ChevronDown, ChevronRight, Image, Plus, X, Edit, Settings as SettingsIcon, Truck, Barcode, Search } from "lucide-react";
+import { diagramMakes, filterDiagramTemplates } from "@/lib/diagram-template-filter";
 import DamageCheckTemplateStudio from "@/pages/settings/damage-check-template-studio";
 import { useAuth } from "@/hooks/use-auth";
 import { UserPermission, UserRole } from "@shared/schema";
@@ -1568,6 +1569,14 @@ function DiagramTemplateManager() {
   const { data: templates = [] } = useQuery<any[]>({
     queryKey: ['/api/vehicle-diagram-templates'],
   });
+  // Kees 2026-10-24: search and filter the diagrams.
+  const [diagramSearch, setDiagramSearch] = useState("");
+  const [diagramMake, setDiagramMake] = useState("all");
+  const [diagramYear, setDiagramYear] = useState("");
+  const makes = diagramMakes(templates);
+  const yearNumber = /^d{4}$/.test(diagramYear.trim()) ? Number(diagramYear.trim()) : null;
+  const shownTemplates = filterDiagramTemplates(templates, { q: diagramSearch, make: diagramMake === "all" ? "" : diagramMake, year: yearNumber });
+  const diagramFilterActive = diagramSearch.trim() !== "" || diagramMake !== "all" || diagramYear.trim() !== "";
 
   // A-11-1: the server refuses an image that cannot be drawn on, by code (the message is English).
   const diagramImageErrorText = (error: Error): string | null => {
@@ -1768,8 +1777,34 @@ function DiagramTemplateManager() {
             <p className="text-sm">{t('indexPage.diagramTemplates.noTemplatesDescription')}</p>
           </div>
         ) : (
+          <>
+          <div className="mb-4 flex flex-wrap items-center gap-2" data-testid="diagram-filters">
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input value={diagramSearch} onChange={(e) => setDiagramSearch(e.target.value)} placeholder={t('indexPage.diagramTemplates.searchPlaceholder')} className="pl-8" data-testid="input-diagram-search" />
+            </div>
+            <Select value={diagramMake} onValueChange={setDiagramMake}>
+              <SelectTrigger className="w-full sm:w-48" data-testid="select-diagram-make"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('indexPage.diagramTemplates.allMakes')}</SelectItem>
+                {makes.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Input value={diagramYear} onChange={(e) => setDiagramYear(e.target.value)} inputMode="numeric" maxLength={4} placeholder={t('indexPage.diagramTemplates.yearFilterPlaceholder')} className="w-full sm:w-36" data-testid="input-diagram-year" />
+            {diagramFilterActive && (
+              <Button variant="ghost" size="sm" onClick={() => { setDiagramSearch(""); setDiagramMake("all"); setDiagramYear(""); }} data-testid="button-clear-diagram-filters">
+                <X className="h-4 w-4 mr-1" />{t('indexPage.diagramTemplates.clearFilters')}
+              </Button>
+            )}
+            <span className="ml-auto text-sm text-muted-foreground" data-testid="diagram-count">
+              {t('indexPage.diagramTemplates.shownCount', { shown: shownTemplates.length, total: templates.length })}
+            </span>
+          </div>
+          {shownTemplates.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">{t('indexPage.diagramTemplates.noMatches')}</p>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {templates.map((template) => (
+            {shownTemplates.map((template) => (
               <Card key={template.id} className="overflow-hidden">
                 <div className="aspect-video bg-gray-100 relative">
                   <img
@@ -1821,6 +1856,8 @@ function DiagramTemplateManager() {
               </Card>
             ))}
           </div>
+          )}
+          </>
         )}
       </CardContent>
 

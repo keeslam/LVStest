@@ -262,7 +262,13 @@
       "deleteDialogTitle": "Eliminar plantilla de diagrama",
       "deleteDialogDescription": "¿Está seguro de que desea eliminar la plantilla de diagrama de {{make}} {{model}}? Esta acción no se puede deshacer.",
       "imageTooFlat": "Esta imagen mide {{width}} × {{height}} píxeles: es demasiado plana para marcar daños. Utilice una imagen del vehículo vista desde arriba o de lado.",
-      "imageTooSmall": "Esta imagen mide solo {{width}} × {{height}} píxeles: es demasiado pequeña para marcar daños. Utilice una imagen más grande."
+      "imageTooSmall": "Esta imagen mide solo {{width}} × {{height}} píxeles: es demasiado pequeña para marcar daños. Utilice una imagen más grande.",
+      "searchPlaceholder": "Buscar marca, modelo o descripción",
+      "allMakes": "Todas las marcas",
+      "yearFilterPlaceholder": "Año",
+      "clearFilters": "Borrar filtros",
+      "shownCount": "{{shown}} de {{total}}",
+      "noMatches": "Ningún diagrama coincide con esta búsqueda."
     },
     "tabBarcodeLabels": "Etiquetas de código de barras",
     "barcodeLabelEditorTitle": "Plantillas de etiqueta de código de barras",

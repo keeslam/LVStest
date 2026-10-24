@@ -259,7 +259,13 @@
       "deleteDialogTitle": "Diagramsjabloon verwijderen",
       "deleteDialogDescription": "Weet je zeker dat je het diagramsjabloon voor {{make}} {{model}} wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
       "imageTooFlat": "Deze afbeelding is {{width}} × {{height}} pixels: te plat om schade op te markeren. Gebruik een afbeelding van het voertuig van bovenaf of van opzij.",
-      "imageTooSmall": "Deze afbeelding is maar {{width}} × {{height}} pixels: te klein om schade op te markeren. Gebruik een grotere afbeelding."
+      "imageTooSmall": "Deze afbeelding is maar {{width}} × {{height}} pixels: te klein om schade op te markeren. Gebruik een grotere afbeelding.",
+      "searchPlaceholder": "Zoek op merk, model of omschrijving",
+      "allMakes": "Alle merken",
+      "yearFilterPlaceholder": "Bouwjaar",
+      "clearFilters": "Filters wissen",
+      "shownCount": "{{shown}} van {{total}}",
+      "noMatches": "Geen diagrammen gevonden voor deze zoekopdracht."
     },
     "tabBarcodeLabels": "Barcodelabels",
     "barcodeLabelEditorTitle": "Barcodelabel-sjablonen",

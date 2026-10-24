@@ -265,7 +265,13 @@
       "deleteDialogTitle": "Usuń szablon diagramu",
       "deleteDialogDescription": "Czy na pewno usunąć szablon diagramu dla {{make}} {{model}}? Tej operacji nie można cofnąć.",
       "imageTooFlat": "Ten obraz ma {{width}} × {{height}} pikseli: jest zbyt płaski, aby zaznaczać na nim uszkodzenia. Proszę użyć obrazu pojazdu widzianego z góry lub z boku.",
-      "imageTooSmall": "Ten obraz ma tylko {{width}} × {{height}} pikseli: jest zbyt mały, aby zaznaczać na nim uszkodzenia. Proszę użyć większego obrazu."
+      "imageTooSmall": "Ten obraz ma tylko {{width}} × {{height}} pikseli: jest zbyt mały, aby zaznaczać na nim uszkodzenia. Proszę użyć większego obrazu.",
+      "searchPlaceholder": "Szukaj marki, modelu lub opisu",
+      "allMakes": "Wszystkie marki",
+      "yearFilterPlaceholder": "Rok produkcji",
+      "clearFilters": "Wyczyść filtry",
+      "shownCount": "{{shown}} z {{total}}",
+      "noMatches": "Brak diagramów pasujących do wyszukiwania."
     },
     "tabBarcodeLabels": "Etykiety z kodem kreskowym",
     "barcodeLabelEditorTitle": "Szablony etykiet z kodem kreskowym",

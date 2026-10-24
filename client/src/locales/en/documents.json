@@ -259,7 +259,13 @@
       "deleteDialogTitle": "Delete Diagram Template",
       "deleteDialogDescription": "Are you sure you want to delete the diagram template for {{make}} {{model}}? This action cannot be undone.",
       "imageTooFlat": "This image is {{width}} × {{height}} pixels: too flat to mark damage on. Use a picture of the vehicle from above or from the side.",
-      "imageTooSmall": "This image is only {{width}} × {{height}} pixels: too small to mark damage on. Use a larger picture."
+      "imageTooSmall": "This image is only {{width}} × {{height}} pixels: too small to mark damage on. Use a larger picture.",
+      "searchPlaceholder": "Search make, model or description",
+      "allMakes": "All makes",
+      "yearFilterPlaceholder": "Build year",
+      "clearFilters": "Clear filters",
+      "shownCount": "{{shown}} of {{total}}",
+      "noMatches": "No diagrams match this search."
     },
     "tabBarcodeLabels": "Barcode labels",
     "barcodeLabelEditorTitle": "Barcode label templates",

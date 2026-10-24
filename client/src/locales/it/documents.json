@@ -262,7 +262,13 @@
       "deleteDialogTitle": "Eliminare il modello di diagramma",
       "deleteDialogDescription": "Eliminare il modello di diagramma per {{make}} {{model}}? Questa azione non può essere annullata.",
       "imageTooFlat": "Questa immagine misura {{width}} × {{height}} pixel: troppo bassa per segnarvi i danni. Usi un'immagine del veicolo vista dall'alto o di lato.",
-      "imageTooSmall": "Questa immagine misura solo {{width}} × {{height}} pixel: troppo piccola per segnarvi i danni. Usi un'immagine più grande."
+      "imageTooSmall": "Questa immagine misura solo {{width}} × {{height}} pixel: troppo piccola per segnarvi i danni. Usi un'immagine più grande.",
+      "searchPlaceholder": "Cerca marca, modello o descrizione",
+      "allMakes": "Tutte le marche",
+      "yearFilterPlaceholder": "Anno",
+      "clearFilters": "Cancella filtri",
+      "shownCount": "{{shown}} di {{total}}",
+      "noMatches": "Nessun diagramma corrisponde alla ricerca."
     },
     "tabBarcodeLabels": "Etichette con codice a barre",
     "barcodeLabelEditorTitle": "Modelli di etichette con codice a barre",
