@@ -1,7 +1,6 @@
 import type { Expense, Reservation, Vehicle, InteractiveDamageCheck } from "../../shared/schema";
 
-// Pure aggregation helpers behind /api/reports/vehicle-financials and
-// /api/reports/mileage-per-month. Kept free of storage access so they can be
+// Pure aggregation helpers behind /api/reports/vehicle-financials. Kept free of storage access so they can be
 // unit-tested and reused by the report builder later.
 
 export interface DateRangeYmd {
@@ -143,38 +142,13 @@ export function buildVehicleFinancials(
 }
 
 // ---------------------------------------------------------------------------
-// Kilometres per month from odometer readings
+// Odometer readings (the pure collection step; the km report itself is fleet-mileage)
 // ---------------------------------------------------------------------------
 
 export interface OdometerReading {
   date: string; // yyyy-MM-dd
   mileage: number;
   source: "pickup" | "return" | "damage_check" | "service" | "current";
-}
-
-export interface MileageMonth {
-  month: string; // yyyy-MM
-  km: number;
-  vehicles: number; // vehicles contributing km in this month
-}
-
-export interface VehicleMileageRow {
-  vehicleId: number;
-  licensePlate: string;
-  brand: string;
-  model: string;
-  km: number;
-  readings: number;      // readings used (monotonic) inside/around the range
-  firstReading: string | null;
-  lastReading: string | null;
-  sparse: boolean;       // fewer than 2 usable readings -> nothing to derive
-}
-
-export interface MileagePerMonthReport {
-  range: DateRangeYmd;
-  months: MileageMonth[];
-  rows: VehicleMileageRow[];
-  totalKm: number;
 }
 
 /** Collect every dated odometer reading we know of, per vehicle */
@@ -218,95 +192,4 @@ export function collectOdometerReadings(
     byVehicle.set(id, clean);
   }
   return byVehicle;
-}
-
-function monthOf(date: string): string {
-  return date.slice(0, 7);
-}
-
-function daysInMonthOf(month: string): number {
-  const [y, m] = month.split("-").map(Number);
-  return new Date(y, m, 0).getDate();
-}
-
-/** Distribute the km driven between two readings over the calendar months they span */
-function allocateKm(from: OdometerReading, to: OdometerReading, add: (month: string, km: number) => void): void {
-  const km = to.mileage - from.mileage;
-  const totalDays = daysBetweenYmd(from.date, to.date);
-  if (km <= 0) return;
-  if (totalDays <= 0) { add(monthOf(to.date), km); return; }
-  let cursor = from.date;
-  while (cursor < to.date) {
-    const month = monthOf(cursor);
-    const monthEnd = `${month}-${String(daysInMonthOf(month)).padStart(2, "0")}`;
-    const segmentEnd = monthEnd < to.date ? monthEnd : to.date;
-    // days from cursor (exclusive) to segmentEnd (inclusive), plus one day when we roll into the next month
-    let days = daysBetweenYmd(cursor, segmentEnd);
-    if (segmentEnd === monthEnd && monthEnd < to.date) days += 1;
-    add(month, (km * days) / totalDays);
-    cursor = segmentEnd === monthEnd && monthEnd < to.date
-      ? nextDay(monthEnd)
-      : segmentEnd;
-    if (cursor === segmentEnd && segmentEnd === to.date) break;
-  }
-}
-
-function nextDay(date: string): string {
-  const [y, m, d] = date.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
-}
-
-export function buildMileagePerMonth(
-  vehicles: Vehicle[],
-  reservations: Reservation[],
-  damageChecks: InteractiveDamageCheck[],
-  range: DateRangeYmd,
-): MileagePerMonthReport {
-  const readingsByVehicle = collectOdometerReadings(vehicles, reservations, damageChecks);
-  const monthTotals = new Map<string, { km: number; vehicles: Set<number> }>();
-  const rows: VehicleMileageRow[] = [];
-
-  for (const v of vehicles) {
-    const readings = readingsByVehicle.get(v.id) || [];
-    const perMonth = new Map<string, number>();
-    for (let i = 1; i < readings.length; i++) {
-      allocateKm(readings[i - 1], readings[i], (month, km) => {
-        perMonth.set(month, (perMonth.get(month) || 0) + km);
-      });
-    }
-    let km = 0;
-    for (const [month, monthKm] of perMonth) {
-      if (month < range.from.slice(0, 7) || month > range.to.slice(0, 7)) continue;
-      km += monthKm;
-      if (!monthTotals.has(month)) monthTotals.set(month, { km: 0, vehicles: new Set() });
-      const bucket = monthTotals.get(month)!;
-      bucket.km += monthKm;
-      if (monthKm > 0) bucket.vehicles.add(v.id);
-    }
-    rows.push({
-      vehicleId: v.id,
-      licensePlate: v.licensePlate,
-      brand: v.brand,
-      model: v.model,
-      km: Math.round(km),
-      readings: readings.length,
-      firstReading: readings[0]?.date ?? null,
-      lastReading: readings[readings.length - 1]?.date ?? null,
-      sparse: readings.length < 2,
-    });
-  }
-  rows.sort((a, b) => b.km - a.km);
-
-  // Every month in the range, even when nothing was driven
-  const months: MileageMonth[] = [];
-  let cursor = range.from.slice(0, 7);
-  const last = range.to.slice(0, 7);
-  while (cursor <= last && months.length < 240) {
-    const bucket = monthTotals.get(cursor);
-    months.push({ month: cursor, km: Math.round(bucket?.km || 0), vehicles: bucket?.vehicles.size || 0 });
-    const [y, m] = cursor.split("-").map(Number);
-    cursor = `${m === 12 ? y + 1 : y}-${String(m === 12 ? 1 : m + 1).padStart(2, "0")}`;
-  }
-
-  return { range, months, rows, totalKm: rows.reduce((s, r) => s + r.km, 0) };
 }

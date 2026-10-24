@@ -232,9 +232,7 @@
       "revenue": "Omzet",
       "rentals": "{{count}} verhuringen, {{days}} huurdagen",
       "expenses": "Kosten",
-      "margin": "Marge",
-      "km": "Gereden km",
-      "kmHint": "Afgeleid uit bekende tellerstanden"
+      "margin": "Marge"
     },
     "chart": {
       "title": "Omzet versus kosten per voertuig",
@@ -272,14 +270,6 @@
       "margin": "Marge",
       "total": "Totaal",
       "ofWhichExtra": "waarvan extra kosten {{amount}}"
-    },
-    "mileage": {
-      "title": "Kilometers per maand",
-      "description": "Verschil tussen opeenvolgende tellerstanden (ophalen/inleveren, schadechecks, onderhoud, huidige stand), verdeeld over de maanden",
-      "km": "Km",
-      "readings": "Meetpunten",
-      "period": "Eerste – laatste stand",
-      "sparse": "weinig data"
     }
   },
   "reportsPage": {
@@ -754,6 +744,37 @@
         "pct": "Bezetting %"
       },
       "csvSubject": "bezetting"
+    },
+    "mileage": {
+      "title": "Kilometerstanden vloot",
+      "description": "Hoeveel kilometer elke auto reed in de gekozen periode, volgens de km-standen. Dit zijn dezelfde getallen als in de km-historie van de auto zelf. Alleen voor beheerders.",
+      "tiles": {
+        "driven": "Auto's gereden",
+        "warnings": "Waarschuwingen",
+        "sparse": "Te weinig standen"
+      },
+      "tileHint": "{{km}} km totaal",
+      "byMonth": "Kilometers per maand",
+      "kmSeries": "Km",
+      "columns": {
+        "licensePlate": "Kenteken",
+        "brandModel": "Merk en model",
+        "km": "Km",
+        "avgPerMonth": "Gemiddeld per maand",
+        "freeKm": "Vrije km",
+        "overFreeKm": "Boven vrije km",
+        "readings": "Standen",
+        "warnings": "Waarschuwingen",
+        "firstReading": "Eerste stand",
+        "lastReading": "Laatste stand",
+        "recordedAt": "Datum en tijd",
+        "mileage": "Stand",
+        "drivenSincePrevious": "Km sinds vorige",
+        "warning": "Waarschuwing",
+        "source": "Bron",
+        "actor": "Door wie"
+      },
+      "csvSubject": "kilometerstanden-vloot"
     }
   }
 }

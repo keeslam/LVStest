@@ -239,9 +239,7 @@
       "revenue": "Ingresos",
       "rentals": "{{count}} alquileres, {{days}} días de alquiler",
       "expenses": "Gastos",
-      "margin": "Margen",
-      "km": "Km recorridos",
-      "kmHint": "Deducidos de lecturas de cuentakilómetros conocidas"
+      "margin": "Margen"
     },
     "chart": {
       "title": "Ingresos frente a gastos por vehículo",
@@ -279,14 +277,6 @@
       "margin": "Margen",
       "total": "Total",
       "ofWhichExtra": "de los cuales costes adicionales {{amount}}"
-    },
-    "mileage": {
-      "title": "Kilómetros por mes",
-      "description": "Diferencia entre lecturas consecutivas del cuentakilómetros (recogida/devolución, revisiones de daños, mantenimiento, lectura actual), repartida entre los meses",
-      "km": "Km",
-      "readings": "Puntos de medición",
-      "period": "Primera – última lectura",
-      "sparse": "pocos datos"
     }
   },
   "reportsPage": {
@@ -768,6 +758,37 @@
         "pct": "Ocupación %"
       },
       "csvSubject": "ocupacion"
+    },
+    "mileage": {
+      "title": "Kilometraje de la flota",
+      "description": "Cuántos kilómetros recorrió cada coche en el periodo elegido, según las lecturas del cuentakilómetros. Son los mismos números que en el historial de km del propio coche. Solo para administradores.",
+      "tiles": {
+        "driven": "Coches que circularon",
+        "warnings": "Avisos",
+        "sparse": "Muy pocas lecturas"
+      },
+      "tileHint": "{{km}} km en total",
+      "byMonth": "Kilómetros por mes",
+      "kmSeries": "Km",
+      "columns": {
+        "licensePlate": "Matrícula",
+        "brandModel": "Marca y modelo",
+        "km": "Km",
+        "avgPerMonth": "Media por mes",
+        "freeKm": "Km libres",
+        "overFreeKm": "Por encima de los km libres",
+        "readings": "Lecturas",
+        "warnings": "Avisos",
+        "firstReading": "Primera lectura",
+        "lastReading": "Última lectura",
+        "recordedAt": "Fecha y hora",
+        "mileage": "Lectura",
+        "drivenSincePrevious": "Km desde la anterior",
+        "warning": "Aviso",
+        "source": "Origen",
+        "actor": "Por"
+      },
+      "csvSubject": "kilometraje-flota"
     }
   }
 }

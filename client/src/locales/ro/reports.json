@@ -239,9 +239,7 @@
       "revenue": "Venituri",
       "rentals": "{{count}} închirieri, {{days}} zile de închiriere",
       "expenses": "Cheltuieli",
-      "margin": "Marjă",
-      "km": "Km parcurși",
-      "kmHint": "Dedus din indexurile cunoscute ale kilometrajului"
+      "margin": "Marjă"
     },
     "chart": {
       "title": "Venituri față de cheltuieli pe vehicul",
@@ -279,14 +277,6 @@
       "margin": "Marjă",
       "total": "Total",
       "ofWhichExtra": "din care costuri suplimentare {{amount}}"
-    },
-    "mileage": {
-      "title": "Kilometri pe lună",
-      "description": "Diferența dintre indexurile consecutive ale kilometrajului (preluare/returnare, verificări de daune, întreținere, indexul curent), repartizată pe luni",
-      "km": "Km",
-      "readings": "Puncte de măsurare",
-      "period": "Primul – ultimul index",
-      "sparse": "puține date"
     }
   },
   "reportsPage": {
@@ -768,6 +758,37 @@
         "pct": "Ocupare %"
       },
       "csvSubject": "ocupare"
+    },
+    "mileage": {
+      "title": "Kilometrajul flotei",
+      "description": "Câți kilometri a parcurs fiecare mașină în perioada aleasă, după citirile kilometrajului. Sunt aceleași numere ca în istoricul de km al mașinii. Doar pentru administratori.",
+      "tiles": {
+        "driven": "Mașini care au circulat",
+        "warnings": "Avertismente",
+        "sparse": "Prea puține citiri"
+      },
+      "tileHint": "{{km}} km în total",
+      "byMonth": "Kilometri pe lună",
+      "kmSeries": "Km",
+      "columns": {
+        "licensePlate": "Număr de înmatriculare",
+        "brandModel": "Marcă și model",
+        "km": "Km",
+        "avgPerMonth": "Medie pe lună",
+        "freeKm": "Km liberi",
+        "overFreeKm": "Peste km liberi",
+        "readings": "Citiri",
+        "warnings": "Avertismente",
+        "firstReading": "Prima citire",
+        "lastReading": "Ultima citire",
+        "recordedAt": "Data și ora",
+        "mileage": "Citire",
+        "drivenSincePrevious": "Km de la precedenta",
+        "warning": "Avertisment",
+        "source": "Sursă",
+        "actor": "De către"
+      },
+      "csvSubject": "kilometraj-flota"
     }
   }
 }

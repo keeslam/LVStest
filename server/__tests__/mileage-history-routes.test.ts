@@ -58,9 +58,8 @@ describe("GET /api/mileage-history/:vehicleId", () => {
 });
 
 describe("GET /api/reports/mileage-per-month", () => {
-  it("is admin-only now", async () => {
-    expect((await staff.get("/api/reports/mileage-per-month")).status).toBe(403);
-    expect((await admin.get("/api/reports/mileage-per-month")).status).toBe(200);
+  it("is gone: fleet-mileage replaces it", async () => {
+    expect((await admin.get("/api/reports/mileage-per-month")).status).toBe(404);
   });
 });
 

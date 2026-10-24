@@ -45,6 +45,7 @@ import MaintenanceCostsPage from "@/pages/reports/maintenance-costs";
 import { WorkshopDowntimeCard } from "./workshop-downtime-card";
 import { OccupancyReportCard } from "./occupancy-report-card";
 import { MaintenanceOutlookCard } from "./maintenance-outlook-card";
+import { FleetMileageReportCard } from "./fleet-mileage-report-card";
 import { FinancialTab } from "@/pages/reports/financial-tab";
 import { FiscalReportTab } from "@/components/fiscal/fiscal-report-tab";
 import { useFiscalPermissions } from "@/components/fiscal/use-fiscal-permissions";
@@ -2355,6 +2356,9 @@ function FullReportsPage() {
 
           {/* Rapporten fase 3: maintenance and APK outlook (report right + vehicles right). */}
           <MaintenanceOutlookCard vehicleId={selectedVehicle} />
+
+          {/* Rapporten fase 3: fleet mileage (admin only; the card checks it itself). */}
+          {isAdmin && <FleetMileageReportCard from={reportFrom} to={reportTo} vehicleId={selectedVehicle} />}
 
           {/* Km-historie of one vehicle (admin only). */}
           {isAdmin && (

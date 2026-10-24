@@ -7119,7 +7119,7 @@ export class DatabaseStorage implements IStorage {
 
   /**
    * FIX-T (BUG-216, technical half) — the three columns the mileage report
-   * actually reads. `GET /api/reports/mileage-per-month` called
+   * actually reads. The old km-per-month report called
    * `getAllInteractiveDamageChecks()`, so it pulled 17 MB of base64 through
    * Postgres and Node (104 ms of its 127 ms of SQL time) to look at an integer.
    */

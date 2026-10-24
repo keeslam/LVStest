@@ -21,7 +21,7 @@ function mayReportOn(user: Express.User | undefined, dataSources: unknown): bool
 }
 import type { Express } from "express";
 import { buildMaintenanceCostReport } from "../utils/maintenance-costs";
-import { buildVehicleFinancials, buildMileagePerMonth, type DateRangeYmd } from "../utils/financial-reports";
+import { buildVehicleFinancials, type DateRangeYmd } from "../utils/financial-reports";
 import { mountReport } from "../services/reports/report-kit";
 import { finesReport } from "../services/reports/fines-report";
 import { extraCostsReport } from "../services/reports/extra-costs-report";
@@ -222,24 +222,4 @@ export function registerReportRoutes(app: Express): void {
     }
   });
 
-  // Kilometres driven per month, derived from every dated odometer reading we have
-  app.get("/api/reports/mileage-per-month", requireAdmin, async (req: Request, res: Response) => {
-    try {
-      const range = parseReportRange(req.query);
-      const vehicleId = parseVehicleIdFilter(req.query);
-      const [vehicles, reservations, damageChecks] = await Promise.all([
-        storage.getAllVehicles(),
-        storage.getAllReservations(),
-        // BUG-216 (technical half): the report reads a mileage integer; it
-        // used to pull 17 MB of base64 diagrams along with it (104 ms of its
-        // 127 ms of SQL time).
-        storage.getDamageCheckMileageReadings(),
-      ]);
-      const selected = vehicleId ? vehicles.filter(v => v.id === vehicleId) : vehicles;
-      res.json(buildMileagePerMonth(selected, reservations, damageChecks as any, range));
-    } catch (error) {
-      console.error("Error building mileage-per-month report:", error);
-      res.status(500).json({ message: "Error building mileage-per-month report" });
-    }
-  });
 }

@@ -232,9 +232,7 @@
       "revenue": "Revenue",
       "rentals": "{{count}} rentals, {{days}} rental days",
       "expenses": "Expenses",
-      "margin": "Margin",
-      "km": "Kilometres driven",
-      "kmHint": "Derived from known odometer readings"
+      "margin": "Margin"
     },
     "chart": {
       "title": "Revenue versus expenses per vehicle",
@@ -272,14 +270,6 @@
       "margin": "Margin",
       "total": "Total",
       "ofWhichExtra": "of which extra costs {{amount}}"
-    },
-    "mileage": {
-      "title": "Kilometres per month",
-      "description": "Difference between consecutive odometer readings (pickup/return, damage checks, service, current reading), spread over the months",
-      "km": "Km",
-      "readings": "Readings",
-      "period": "First – last reading",
-      "sparse": "sparse data"
     }
   },
   "reportsPage": {
@@ -754,6 +744,37 @@
         "pct": "Occupancy %"
       },
       "csvSubject": "occupancy"
+    },
+    "mileage": {
+      "title": "Fleet mileage",
+      "description": "How many kilometres each car drove in the chosen period, based on the mileage readings. These are the same numbers as in the car's own mileage history. Administrators only.",
+      "tiles": {
+        "driven": "Cars that drove",
+        "warnings": "Warnings",
+        "sparse": "Too few readings"
+      },
+      "tileHint": "{{km}} km in total",
+      "byMonth": "Kilometres per month",
+      "kmSeries": "Km",
+      "columns": {
+        "licensePlate": "License plate",
+        "brandModel": "Make and model",
+        "km": "Km",
+        "avgPerMonth": "Average per month",
+        "freeKm": "Free km",
+        "overFreeKm": "Over free km",
+        "readings": "Readings",
+        "warnings": "Warnings",
+        "firstReading": "First reading",
+        "lastReading": "Last reading",
+        "recordedAt": "Date and time",
+        "mileage": "Reading",
+        "drivenSincePrevious": "Km since previous",
+        "warning": "Warning",
+        "source": "Source",
+        "actor": "By"
+      },
+      "csvSubject": "fleet-mileage"
     }
   }
 }

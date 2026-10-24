@@ -239,9 +239,7 @@
       "revenue": "Fatturato",
       "rentals": "{{count}} noleggi, {{days}} giorni di noleggio",
       "expenses": "Costi",
-      "margin": "Margine",
-      "km": "Km percorsi",
-      "kmHint": "Ricavati dai chilometraggi noti"
+      "margin": "Margine"
     },
     "chart": {
       "title": "Fatturato e costi per veicolo",
@@ -279,14 +277,6 @@
       "margin": "Margine",
       "total": "Totale",
       "ofWhichExtra": "di cui costi aggiuntivi {{amount}}"
-    },
-    "mileage": {
-      "title": "Chilometri al mese",
-      "description": "Differenza tra chilometraggi successivi (ritiro/restituzione, controlli dei danni, manutenzione, valore attuale), ripartita sui mesi",
-      "km": "Km",
-      "readings": "Rilevazioni",
-      "period": "Primo – ultimo valore",
-      "sparse": "pochi dati"
     }
   },
   "reportsPage": {
@@ -768,6 +758,37 @@
         "pct": "Occupazione %"
       },
       "csvSubject": "occupazione"
+    },
+    "mileage": {
+      "title": "Chilometraggio della flotta",
+      "description": "Quanti chilometri ha percorso ogni auto nel periodo scelto, in base alle letture del contachilometri. Sono gli stessi numeri dello storico km dell'auto stessa. Solo per gli amministratori.",
+      "tiles": {
+        "driven": "Auto che hanno circolato",
+        "warnings": "Avvisi",
+        "sparse": "Letture insufficienti"
+      },
+      "tileHint": "{{km}} km in totale",
+      "byMonth": "Chilometri al mese",
+      "kmSeries": "Km",
+      "columns": {
+        "licensePlate": "Targa",
+        "brandModel": "Marca e modello",
+        "km": "Km",
+        "avgPerMonth": "Media al mese",
+        "freeKm": "Km liberi",
+        "overFreeKm": "Oltre i km liberi",
+        "readings": "Letture",
+        "warnings": "Avvisi",
+        "firstReading": "Prima lettura",
+        "lastReading": "Ultima lettura",
+        "recordedAt": "Data e ora",
+        "mileage": "Lettura",
+        "drivenSincePrevious": "Km dalla precedente",
+        "warning": "Avviso",
+        "source": "Origine",
+        "actor": "Da"
+      },
+      "csvSubject": "chilometraggio-flotta"
     }
   }
 }

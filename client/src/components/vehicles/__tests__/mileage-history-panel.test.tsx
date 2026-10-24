@@ -79,7 +79,6 @@ beforeEach(() => {
     if (path.startsWith("/api/mileage-history/readings/")) return json({ id: 1, vehicleId: 1, voided: path.endsWith("/void") });
     if (path.startsWith("/api/mileage-history/")) return json(history);
     if (path === "/api/reports/vehicle-financials") return json({ rows: [], totals: { rentals: 0, rentalDays: 0, revenue: 0, expenses: 0, margin: 0 } });
-    if (path === "/api/reports/mileage-per-month") return json({ months: [], rows: [], totalKm: 0 });
     return json([]);
   });
   vi.stubGlobal("fetch", fetchMock);
@@ -280,21 +279,15 @@ describe("mileageHistoryHtml", () => {
   });
 });
 
-describe("Financial tab: km per month is admin only", () => {
+describe("Financieel heeft geen km-kaart meer", () => {
   const range = { from: new Date("2026-03-01T12:00:00Z"), to: new Date("2026-03-31T12:00:00Z") };
 
-  it("a non-admin does not request /api/reports/mileage-per-month and sees no card", async () => {
-    role = UserRole.USER;
+  it("voor admin wordt /api/reports/mileage-per-month niet gevraagd en is de kaart er niet", async () => {
+    role = UserRole.ADMIN;
     render(<QueryClientProvider client={client()}><FinancialTab dateRange={range} selectedVehicle="all" /></QueryClientProvider>);
     await waitFor(() => expect(calledWith("/api/reports/vehicle-financials")).toBe(true));
     await new Promise((r) => setTimeout(r, 50));
     expect(calledWith("/api/reports/mileage-per-month")).toBe(false);
     expect(screen.queryByTestId("card-mileage-per-month")).not.toBeInTheDocument();
-  });
-
-  it("an admin does request it and sees the card", async () => {
-    render(<QueryClientProvider client={client()}><FinancialTab dateRange={range} selectedVehicle="all" /></QueryClientProvider>);
-    await waitFor(() => expect(calledWith("/api/reports/mileage-per-month")).toBe(true));
-    expect(screen.getByTestId("card-mileage-per-month")).toBeInTheDocument();
   });
 });

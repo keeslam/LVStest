@@ -19,6 +19,11 @@ let role = "user";
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: 1, username: "tester", role, permissions, hidePrices: false }, isLoading: false }),
 }));
+const downloadCsv = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/csv", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/csv")>()),
+  downloadCsv,
+}));
 vi.mock("@/lib/office-date", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/office-date")>()),
   officeToday: () => "2026-11-02",
@@ -27,6 +32,8 @@ vi.mock("@/lib/office-date", async (importOriginal) => ({
 import { calendarWeeks, occupancyBucket } from "@/pages/reports/occupancy-heatmap";
 import { OccupancyReportCard } from "@/pages/reports/occupancy-report-card";
 import { MaintenanceOutlookCard } from "@/pages/reports/maintenance-outlook-card";
+import { FleetMileageReportCard } from "@/pages/reports/fleet-mileage-report-card";
+import type { FleetMileageRow, FleetMileageSummary } from "@shared/reports/fleet-mileage-report";
 import type { MaintenanceOutlookRow, MaintenanceOutlookSummary } from "@shared/reports/maintenance-outlook-report";
 
 function json(body: unknown, status = 200) {
@@ -89,8 +96,31 @@ function outlookRow(admin: boolean): MaintenanceOutlookRow {
   };
 }
 
+function mileageSummaryStub(): FleetMileageSummary {
+  return {
+    tiles: {
+      driven: { count: 1, amount: 900 },
+      warnings: { count: 1, amount: 0 },
+      sparse: { count: 2, amount: 0 },
+    },
+    byMonth: [
+      { month: "2026-01", km: 600, vehicles: 1 },
+      { month: "2026-02", km: 300, vehicles: 1 },
+      { month: "2026-03", km: 0, vehicles: 0 },
+    ],
+  };
+}
+
+const mileageVehicleRow: FleetMileageRow = {
+  kind: "vehicle", id: "v-3", vehicleId: 3, licensePlate: "AB12CD", brand: "Ford", model: "Transit",
+  drivenKm: 900, avgPerMonth: 300, freeKm: 1000, overFreeKm: 0, readings: 4, warnings: 1,
+  firstReading: "2026-01-05T10:00:00.000Z", lastReading: "2026-02-20T10:00:00.000Z",
+  kmByMonth: { "2026-01": 600, "2026-02": 300 }, amount: 900,
+};
+
 beforeEach(() => {
   role = "user";
+  downloadCsv.mockReset();
   fetchMock = vi.fn(async (input: unknown) => {
     const path = pathOf(input);
     if (path.startsWith("/api/reports/occupancy/summary")) return json(summaryStub());
@@ -107,6 +137,11 @@ beforeEach(() => {
     if (path.startsWith("/api/reports/maintenance-outlook/rows")) {
       return json({ rows: [outlookRow(role === "admin")], total: 1, page: 1, pageSize: 50 });
     }
+    if (path.startsWith("/api/reports/fleet-mileage/summary")) return json(mileageSummaryStub());
+    if (path.startsWith("/api/reports/fleet-mileage/rows")) {
+      return json({ rows: [mileageVehicleRow], total: 1, page: 1, pageSize: 50 });
+    }
+    if (path.startsWith("/api/reports/fleet-mileage/export")) return json({ rows: [mileageVehicleRow], total: 1, truncated: false });
     return json([]);
   });
   vi.stubGlobal("fetch", fetchMock);
@@ -270,5 +305,47 @@ describe("Onderhoud en APK vooruit - kaart", () => {
     await user.click(await screen.findByTestId("button-outlook-tile-service"));
     expect(await screen.findByText("Km tot beurt")).toBeInTheDocument();
     expect(await screen.findByText("2.000")).toBeInTheDocument();
+  });
+});
+
+function renderMileage() {
+  const client = new QueryClient({
+    defaultOptions: { queries: { queryFn: getQueryFn({ on401: "throw" }), retry: false, gcTime: 0 } },
+  });
+  return render(
+    <QueryClientProvider client={client}>
+      <div data-testid="host"><FleetMileageReportCard from="2026-01-01" to="2026-03-31" vehicleId="all" /></div>
+    </QueryClientProvider>,
+  );
+}
+
+describe("Kilometerstanden vloot - kaart (alleen admin)", () => {
+  it("een medewerker met alle rechten ziet geen kaart en doet geen verzoek", async () => {
+    permissions = ["view_reports", "manage_reports", "view_vehicles", "manage_vehicles", "view_reservations"];
+    role = "user";
+    renderMileage();
+    expect(await screen.findByTestId("host")).toBeInTheDocument();
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(screen.queryByTestId("card-fleet-mileage-report")).not.toBeInTheDocument();
+    expect(fetchedPaths().some((p) => p.startsWith("/api/reports/fleet-mileage"))).toBe(false);
+  });
+
+  it("admin: tegel toont het aantal auto's, klik toont de maandkolommen en de CSV eindigt op de maandlabels", async () => {
+    permissions = ["view_reports"];
+    role = "admin";
+    const user = userEvent.setup();
+    renderMileage();
+    await waitFor(() => expect(screen.getByTestId("fleet-mileage-tile-driven-value").textContent).toBe("1"));
+    expect(fetchedPaths()).toContain("/api/reports/fleet-mileage/summary?from=2026-01-01&to=2026-03-31");
+    expect(screen.getByTestId("fleet-mileage-month-chart")).toBeInTheDocument();
+    await user.click(screen.getByTestId("button-fleet-mileage-tile-driven"));
+    expect(await screen.findByRole("columnheader", { name: "jan. 2026" })).toBeInTheDocument();
+    expect(await screen.findByText("600")).toBeInTheDocument();
+    await user.click(await screen.findByTestId("button-fleet-mileage-csv"));
+    await waitFor(() => expect(downloadCsv).toHaveBeenCalled());
+    const [subject, header, rows] = downloadCsv.mock.calls[0] as [string, string[], unknown[][]];
+    expect(subject).toBe("kilometerstanden-vloot");
+    expect(header.slice(-3)).toEqual(["jan. 2026", "feb. 2026", "mrt. 2026"]);
+    expect(rows[0].slice(-3)).toEqual(["600", "300", "0"]);
   });
 });

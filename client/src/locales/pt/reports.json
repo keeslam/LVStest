@@ -239,9 +239,7 @@
       "revenue": "Receitas",
       "rentals": "{{count}} alugueres, {{days}} dias de aluguer",
       "expenses": "Despesas",
-      "margin": "Margem",
-      "km": "Km percorridos",
-      "kmHint": "Calculado a partir das leituras de conta-quilómetros conhecidas"
+      "margin": "Margem"
     },
     "chart": {
       "title": "Receitas versus despesas por veículo",
@@ -279,14 +277,6 @@
       "margin": "Margem",
       "total": "Total",
       "ofWhichExtra": "dos quais custos extra {{amount}}"
-    },
-    "mileage": {
-      "title": "Quilómetros por mês",
-      "description": "Diferença entre leituras consecutivas do conta-quilómetros (levantamento/devolução, verificações de danos, manutenção, valor atual), repartida pelos meses",
-      "km": "Km",
-      "readings": "Pontos de medição",
-      "period": "Primeira – última leitura",
-      "sparse": "poucos dados"
     }
   },
   "reportsPage": {
@@ -768,6 +758,37 @@
         "pct": "Ocupação %"
       },
       "csvSubject": "ocupacao"
+    },
+    "mileage": {
+      "title": "Quilometragem da frota",
+      "description": "Quantos quilómetros cada carro percorreu no período escolhido, segundo as leituras do conta-quilómetros. São os mesmos números do histórico de km do próprio carro. Apenas para administradores.",
+      "tiles": {
+        "driven": "Carros que circularam",
+        "warnings": "Avisos",
+        "sparse": "Leituras a menos"
+      },
+      "tileHint": "{{km}} km no total",
+      "byMonth": "Quilómetros por mês",
+      "kmSeries": "Km",
+      "columns": {
+        "licensePlate": "Matrícula",
+        "brandModel": "Marca e modelo",
+        "km": "Km",
+        "avgPerMonth": "Média por mês",
+        "freeKm": "Km livres",
+        "overFreeKm": "Acima dos km livres",
+        "readings": "Leituras",
+        "warnings": "Avisos",
+        "firstReading": "Primeira leitura",
+        "lastReading": "Última leitura",
+        "recordedAt": "Data e hora",
+        "mileage": "Leitura",
+        "drivenSincePrevious": "Km desde a anterior",
+        "warning": "Aviso",
+        "source": "Origem",
+        "actor": "Por"
+      },
+      "csvSubject": "quilometragem-frota"
     }
   }
 }

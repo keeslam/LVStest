@@ -246,9 +246,7 @@
       "revenue": "Przychód",
       "rentals": "Wynajmów: {{count}}, dni wynajmu: {{days}}",
       "expenses": "Koszty",
-      "margin": "Marża",
-      "km": "Przejechane km",
-      "kmHint": "Wyliczone ze znanych stanów liczników"
+      "margin": "Marża"
     },
     "chart": {
       "title": "Przychód a koszty według pojazdu",
@@ -286,14 +284,6 @@
       "margin": "Marża",
       "total": "Razem",
       "ofWhichExtra": "w tym dodatkowe koszty {{amount}}"
-    },
-    "mileage": {
-      "title": "Kilometry miesięcznie",
-      "description": "Różnica między kolejnymi stanami licznika (odbiór/zwrot, kontrole szkód, konserwacja, aktualny stan), rozłożona na miesiące",
-      "km": "Km",
-      "readings": "Punkty pomiaru",
-      "period": "Pierwszy – ostatni stan",
-      "sparse": "mało danych"
     }
   },
   "reportsPage": {
@@ -782,6 +772,37 @@
         "pct": "Obłożenie %"
       },
       "csvSubject": "oblozenie"
+    },
+    "mileage": {
+      "title": "Przebieg floty",
+      "description": "Ile kilometrów przejechał każdy samochód w wybranym okresie, według odczytów licznika. To te same liczby co w historii przebiegu samego samochodu. Tylko dla administratorów.",
+      "tiles": {
+        "driven": "Samochody w ruchu",
+        "warnings": "Ostrzeżenia",
+        "sparse": "Za mało odczytów"
+      },
+      "tileHint": "{{km}} km łącznie",
+      "byMonth": "Kilometry na miesiąc",
+      "kmSeries": "Km",
+      "columns": {
+        "licensePlate": "Numer rejestracyjny",
+        "brandModel": "Marka i model",
+        "km": "Km",
+        "avgPerMonth": "Średnio na miesiąc",
+        "freeKm": "Wolne km",
+        "overFreeKm": "Ponad wolne km",
+        "readings": "Odczyty",
+        "warnings": "Ostrzeżenia",
+        "firstReading": "Pierwszy odczyt",
+        "lastReading": "Ostatni odczyt",
+        "recordedAt": "Data i godzina",
+        "mileage": "Odczyt",
+        "drivenSincePrevious": "Km od poprzedniego",
+        "warning": "Ostrzeżenie",
+        "source": "Źródło",
+        "actor": "Przez"
+      },
+      "csvSubject": "przebieg-floty"
     }
   }
 }

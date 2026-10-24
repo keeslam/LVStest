@@ -6,13 +6,10 @@ import type { DateRange } from "react-day-picker";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatLicensePlate, formatExpenseCategory } from "@/lib/format-utils";
 import { downloadCsv, csvNumber } from "@/lib/csv";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { UserRole } from "@shared/schema";
 import { FinesReportCard } from "./fines-report-card";
 import { ExtraCostsReportCard } from "./extra-costs-report-card";
 import { TransportBillingReportCard } from "./transport-billing-report-card";
@@ -37,11 +34,6 @@ interface VehicleFinancialsReport {
   rows: VehicleFinancialRow[];
   totals: { rentals: number; rentalDays: number; revenue: number; extraCosts?: number; expenses: number; margin: number };
 }
-interface MileagePerMonthReport {
-  months: { month: string; km: number; vehicles: number }[];
-  rows: { vehicleId: number; licensePlate: string; brand: string; model: string; km: number; readings: number; firstReading: string | null; lastReading: string | null; sparse: boolean }[];
-  totalKm: number;
-}
 
 interface FinancialTabProps {
   dateRange: DateRange;
@@ -60,13 +52,6 @@ export function FinancialTab({ dateRange, selectedVehicle }: FinancialTabProps) 
   const { data: financials, isLoading: loadingFinancials } = useQuery<VehicleFinancialsReport>({
     queryKey: [`/api/reports/vehicle-financials?from=${from}&to=${to}${vehicleParam}`],
   });
-  // GET /api/reports/mileage-per-month is admin only (km-historie, task 6): a non-admin neither asks nor sees the card.
-  const { user } = useAuth();
-  const isAdmin = user?.role === UserRole.ADMIN;
-  const { data: mileage, isLoading: loadingMileage } = useQuery<MileagePerMonthReport>({
-    queryKey: [`/api/reports/mileage-per-month?from=${from}&to=${to}${vehicleParam}`],
-    enabled: isAdmin,
-  });
 
   const activeRows = useMemo(() => (financials?.rows || []).filter(r => r.rentals > 0 || r.expenses > 0), [financials]);
   const chartRows = useMemo(() => activeRows.slice(0, 15).map(r => ({
@@ -75,8 +60,6 @@ export function FinancialTab({ dateRange, selectedVehicle }: FinancialTabProps) 
     expenses: r.expenses,
     margin: r.margin,
   })), [activeRows]);
-  const mileageChart = useMemo(() => (mileage?.months || []).map(m => ({ name: m.month, km: m.km })), [mileage]);
-  const mileageRows = useMemo(() => (mileage?.rows || []).filter(r => r.km > 0 || !r.sparse).slice(0, 50), [mileage]);
 
   const marginPct = (row: { revenue: number; margin: number }) =>
     row.revenue > 0 ? `${Math.round((row.margin / row.revenue) * 100)}%` : "–";
@@ -106,7 +89,7 @@ export function FinancialTab({ dateRange, selectedVehicle }: FinancialTabProps) 
   return (
     <div className="space-y-6" data-testid="financial-tab">
       {/* Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-500">{t('financialTab.summary.revenue')}</CardTitle></CardHeader>
           <CardContent><div className="text-2xl font-bold" data-testid="text-financial-revenue">{formatCurrency(financials?.totals.revenue || 0)}</div>
@@ -120,11 +103,6 @@ export function FinancialTab({ dateRange, selectedVehicle }: FinancialTabProps) 
           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-500">{t('financialTab.summary.margin')}</CardTitle></CardHeader>
           <CardContent><div className={`text-2xl font-bold ${(financials?.totals.margin || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`} data-testid="text-financial-margin">{formatCurrency(financials?.totals.margin || 0)}</div>
             <p className="text-xs text-gray-500">{financials ? marginPct(financials.totals) : "–"}</p></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-500">{t('financialTab.summary.km')}</CardTitle></CardHeader>
-          <CardContent><div className="text-2xl font-bold" data-testid="text-financial-km">{(mileage?.totalKm || 0).toLocaleString()} km</div>
-            <p className="text-xs text-gray-500">{t('financialTab.summary.kmHint')}</p></CardContent>
         </Card>
       </div>
 
@@ -242,64 +220,6 @@ export function FinancialTab({ dateRange, selectedVehicle }: FinancialTabProps) 
       {/* Transport billing (needs a vehicles or reservations permission; the card checks it itself) */}
       <TransportBillingReportCard from={from} to={to} vehicleId={selectedVehicle} />
 
-      {/* Kilometres per month (admin only) */}
-      {isAdmin && (
-      <Card data-testid="card-mileage-per-month">
-        <CardHeader>
-          <CardTitle>{t('financialTab.mileage.title')}</CardTitle>
-          <CardDescription>{t('financialTab.mileage.description')}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="h-64">
-            {loadingMileage ? (
-              <p className="text-sm text-gray-500">{t('financialTab.loading')}</p>
-            ) : mileageChart.length === 0 ? (
-              <p className="text-sm text-gray-500">{t('financialTab.noData')}</p>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={mileageChart} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis tickFormatter={(value) => `${Number(value).toLocaleString()} km`} />
-                  <Tooltip formatter={(value: number) => [`${Number(value).toLocaleString()} km`, t('financialTab.mileage.km')]} />
-                  <Bar dataKey="km" name={t('financialTab.mileage.km')} fill="#2563eb" />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('financialTab.table.vehicle')}</TableHead>
-                  <TableHead className="text-right">{t('financialTab.mileage.km')}</TableHead>
-                  <TableHead className="text-right">{t('financialTab.mileage.readings')}</TableHead>
-                  <TableHead>{t('financialTab.mileage.period')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {mileageRows.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center text-gray-500">{t('financialTab.noData')}</TableCell></TableRow>
-                ) : mileageRows.map(row => (
-                  <TableRow key={row.vehicleId} data-testid={`row-mileage-${row.vehicleId}`}>
-                    <TableCell>
-                      <div className="font-medium">{formatLicensePlate(row.licensePlate)}</div>
-                      <div className="text-xs text-gray-500">{row.brand} {row.model}</div>
-                    </TableCell>
-                    <TableCell className="text-right">{row.km.toLocaleString()} km</TableCell>
-                    <TableCell className="text-right">
-                      {row.readings}
-                      {row.sparse && <Badge variant="outline" className="ml-2 text-amber-700 border-amber-300">{t('financialTab.mileage.sparse')}</Badge>}
-                    </TableCell>
-                    <TableCell className="text-gray-500">{row.firstReading && row.lastReading ? `${row.firstReading} – ${row.lastReading}` : "–"}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-      )}
     </div>
   );
 }
