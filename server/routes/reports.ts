@@ -140,6 +140,9 @@ export function registerReportRoutes(app: Express): void {
       res.json(results);
     } catch (error) {
       if (error instanceof ReportValidationError) {
+        if (error.code) {
+          return res.status(400).json({ message: error.message, code: error.code, field: error.field });
+        }
         return res.status(400).json({ message: error.message });
       }
       console.error("Error executing report:", error);

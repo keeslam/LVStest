@@ -90,11 +90,11 @@ import {
   snapshotCounts,
   type CascadeSnapshot,
 } from "./services/cascade-snapshot";
-import { getDataSource, getField as getReportField } from "../shared/report-builder-config";
+import { getDataSource, getField as getReportField, RENAMED_REPORT_FIELDS, REMOVED_REPORT_FIELDS } from "../shared/report-builder-config";
 import { buildDefaultDamageCheckCanvasFields } from "../shared/damage-check-default-layout";
 
 export class ReportValidationError extends Error {
-  constructor(message: string) {
+  constructor(message: string, public code?: string, public field?: string) {
     super(message);
     this.name = "ReportValidationError";
   }
@@ -6527,7 +6527,20 @@ export class DatabaseStorage implements IStorage {
 
     // Validates a table/field pair against the shared report-builder config
     // and returns the real (snake_case) database column name.
-    const resolveColumn = (table: string, field: string): string => {
+    const canonField = (table: string, field: string): string => {
+      const key = `${table}.${field}`;
+      if (REMOVED_REPORT_FIELDS.has(key)) {
+        throw new ReportValidationError(
+          `Het veld ${key} bestaat niet meer en kan niet in een rapport worden gebruikt. Verwijder het uit dit rapport.`,
+          "REPORT_FIELD_REMOVED",
+          key,
+        );
+      }
+      return RENAMED_REPORT_FIELDS[key] ?? field;
+    };
+
+    const resolveColumn = (table: string, rawField: string): string => {
+      const field = canonField(table, rawField);
       const def = getReportField(table, field);
       if (!def) {
         throw new ReportValidationError(`Unknown field: ${table}.${field}`);
@@ -6553,7 +6566,7 @@ export class DatabaseStorage implements IStorage {
       const ident = identFor(col.table, col.field);
       const alias = sql.identifier(String(col.field));
       if (col.aggregation) {
-        const def = getReportField(col.table, col.field)!;
+        const def = getReportField(col.table, canonField(col.table, col.field))!;
         const agg = String(col.aggregation).toUpperCase();
         if (agg !== "COUNT" && agg !== "COUNT_DISTINCT" && !def.aggregatable) {
           throw new ReportValidationError(
@@ -6584,7 +6597,7 @@ export class DatabaseStorage implements IStorage {
     // all values passed as bound parameters (never string-concatenated).
     const whereParts: ReturnType<typeof sql>[] = [];
     for (const filter of Array.isArray(filters) ? filters : []) {
-      const def = getReportField(filter.table, filter.field);
+      const def = getReportField(filter.table, canonField(filter.table, filter.field));
       if (!def) {
         throw new ReportValidationError(`Unknown filter field: ${filter.table}.${filter.field}`);
       }

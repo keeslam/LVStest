@@ -130,11 +130,8 @@ export const DATA_SOURCES: DataSource[] = [
       { name: 'startDate', label: 'Start Date', type: 'date', table: 'reservations', operators: dateOperators, aggregatable: false },
       { name: 'endDate', label: 'End Date', type: 'date', table: 'reservations', operators: dateOperators, aggregatable: false },
       { name: 'status', label: 'Status', type: 'text', table: 'reservations', operators: textOperators, aggregatable: false },
-      { name: 'reservationType', label: 'Reservation Type', type: 'text', table: 'reservations', operators: textOperators, aggregatable: false },
-      { name: 'dailyRate', label: 'Daily Rate', type: 'number', table: 'reservations', operators: numberOperators, aggregatable: true },
-      { name: 'totalAmount', label: 'Total Amount', type: 'number', table: 'reservations', operators: numberOperators, aggregatable: true },
-      { name: 'paymentStatus', label: 'Payment Status', type: 'text', table: 'reservations', operators: textOperators, aggregatable: false },
-      { name: 'paidAmount', label: 'Paid Amount', type: 'number', table: 'reservations', operators: numberOperators, aggregatable: true },
+      { name: 'type', label: 'Reservation Type', type: 'text', table: 'reservations', operators: textOperators, aggregatable: false },
+      { name: 'totalPrice', label: 'Total Amount', type: 'number', table: 'reservations', operators: numberOperators, aggregatable: true },
       { name: 'pickupMileage', label: 'Pickup Mileage', type: 'number', table: 'reservations', operators: numberOperators, aggregatable: true },
       { name: 'returnMileage', label: 'Return Mileage', type: 'number', table: 'reservations', operators: numberOperators, aggregatable: true },
       { name: 'deliveryRequired', label: 'Delivery Required', type: 'boolean', table: 'reservations', operators: booleanOperators, aggregatable: false },
@@ -151,7 +148,6 @@ export const DATA_SOURCES: DataSource[] = [
       { name: 'amount', label: 'Amount', type: 'number', table: 'expenses', operators: numberOperators, aggregatable: true },
       { name: 'date', label: 'Date', type: 'date', table: 'expenses', operators: dateOperators, aggregatable: false },
       { name: 'description', label: 'Description', type: 'text', table: 'expenses', operators: textOperators, aggregatable: false },
-      { name: 'mileage', label: 'Mileage at Service', type: 'number', table: 'expenses', operators: numberOperators, aggregatable: true },
     ],
   },
   {
@@ -164,7 +160,7 @@ export const DATA_SOURCES: DataSource[] = [
       { name: 'lastName', label: 'Last Name', type: 'text', table: 'drivers', operators: textOperators, aggregatable: false },
       { name: 'email', label: 'Email', type: 'text', table: 'drivers', operators: textOperators, aggregatable: false },
       { name: 'phone', label: 'Phone', type: 'text', table: 'drivers', operators: textOperators, aggregatable: false },
-      { name: 'isPrimary', label: 'Is Primary Driver', type: 'boolean', table: 'drivers', operators: booleanOperators, aggregatable: false },
+      { name: 'isPrimaryDriver', label: 'Is Primary Driver', type: 'boolean', table: 'drivers', operators: booleanOperators, aggregatable: false },
     ],
   },
 ];
@@ -177,3 +173,18 @@ export function getField(table: string, fieldName: string): DataSourceField | un
   const dataSource = DATA_SOURCES.find(ds => ds.table === table);
   return dataSource?.fields.find(f => f.name === fieldName);
 }
+
+/** Old field names that saved reports may still hold, keyed "<table>.<field>". */
+export const RENAMED_REPORT_FIELDS: Record<string, string> = {
+  'reservations.reservationType': 'type',
+  'reservations.totalAmount': 'totalPrice',
+  'drivers.isPrimary': 'isPrimaryDriver',
+};
+
+/** Fields that never existed in the database and were dropped from the builder. */
+export const REMOVED_REPORT_FIELDS: ReadonlySet<string> = new Set([
+  'reservations.dailyRate',
+  'reservations.paymentStatus',
+  'reservations.paidAmount',
+  'expenses.mileage',
+]);
