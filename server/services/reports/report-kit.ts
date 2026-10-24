@@ -93,9 +93,18 @@ export function officeDaySql(column: SQL | AnyPgColumn): SQL {
   return sql`((CASE WHEN pg_typeof(${column}) = 'timestamp with time zone'::regtype THEN (${column})::timestamptz ELSE ((${column})::timestamp AT TIME ZONE 'UTC') END) AT TIME ZONE ${officeTimeZone()})::date`;
 }
 
-/** A text date (`yyyy-mm-dd…`) as a date; text that does not start with a date gives NULL instead of breaking the query. */
+/**
+ * A text date (`yyyy-mm-dd…`) as a date. Text that does not start with a real calendar date
+ * (no date at all, month 13, 30 February) gives NULL instead of breaking the whole query.
+ * The cast only runs after both checks passed (nested CASE), so it can never throw.
+ */
 export function textDaySql(column: SQL | AnyPgColumn): SQL {
-  return sql`(CASE WHEN (${column}) ~ '^\\d{4}-\\d{2}-\\d{2}' THEN left(${column}, 10)::date END)`;
+  const y = sql`substr(${column}, 1, 4)::int`;
+  const m = sql`substr(${column}, 6, 2)::int`;
+  const d = sql`substr(${column}, 9, 2)::int`;
+  const lastDay = sql`extract(day from (make_date(${y}, ${m}, 1) + interval '1 month - 1 day'))::int`;
+  return sql`(CASE WHEN (${column}) ~ '^(?!0000)\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])'
+    THEN (CASE WHEN ${d} <= ${lastDay} THEN left(${column}, 10)::date END) END)`;
 }
 
 /** The day falls inside the filter's period (both ends included). */

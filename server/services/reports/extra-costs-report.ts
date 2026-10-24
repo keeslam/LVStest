@@ -5,7 +5,6 @@
  * Money is NET, like Financieel: extraKm (extra km cost <> 0), fuel (fuel cost <> 0), withExtraKm (extra km > 0).
  */
 import { sql, type SQL } from "drizzle-orm";
-import { db } from "../../db";
 import { customers, reservations, vehicles } from "../../../shared/schema";
 import {
   EXTRA_COSTS_SORTS,
@@ -15,8 +14,9 @@ import {
   type ExtraCostsSummary,
   type ExtraCostsTile,
 } from "../../../shared/reports/extra-costs-report";
-import { REPORT_BREAKDOWN_LIMIT, fillMonths, type ReportBreakdownRow, type ReportTileTotal } from "../../../shared/report-kit";
-import { inPeriodSql, money, textDaySql, type ReportDefinition, type ReportFilter } from "./report-kit";
+import { fillMonths } from "../../../shared/report-kit";
+import { inPeriodSql, money, textDaySql, type ReportFilter } from "./report-kit";
+import { reportBreakdown, rowsOf, sqlReport } from "./sql-report";
 
 const startDay = textDaySql(reservations.startDate);
 const extraKmCost = sql`coalesce(${reservations.extraKmCost}::numeric, 0)`;
@@ -28,7 +28,7 @@ function periodWhere(filter: ReportFilter): SQL {
     AND ${inPeriodSql(startDay, filter)}${vehicle}`;
 }
 
-function tileWhere(tile: ExtraCostsTile): SQL {
+function ruleWhere(tile: ExtraCostsTile): SQL {
   switch (tile) {
     case "extraKm": return sql`${extraKmCost} <> 0`;
     case "fuel": return sql`${fuelCost} <> 0`;
@@ -36,67 +36,44 @@ function tileWhere(tile: ExtraCostsTile): SQL {
   }
 }
 
+/** A rental belongs to a tile: in the report's set and period, and the tile's own rule. */
+function tileWhere(tile: ExtraCostsTile, filter: ReportFilter): SQL {
+  return sql`${periodWhere(filter)} AND ${ruleWhere(tile)}`;
+}
+
 /** The money a tile adds up. */
 function tileAmount(tile: ExtraCostsTile): SQL {
   return tile === "fuel" ? fuelCost : extraKmCost;
 }
 
-const FROM = sql`FROM ${reservations}
+const FROM = sql`${reservations}
   INNER JOIN ${vehicles} ON ${vehicles.id} = ${reservations.vehicleId}
   LEFT JOIN ${customers} ON ${customers.id} = ${reservations.customerId}`;
 
-async function rowsOf<T>(query: SQL): Promise<T[]> {
-  const result = await db.execute(query);
-  return result.rows as T[];
-}
+/** Rentals with extra km cost or fuel cost: what the breakdowns and the month chart add up. */
+const withCosts = (filter: ReportFilter): SQL => sql`(${tileWhere("extraKm", filter)} OR ${tileWhere("fuel", filter)})`;
 
-async function breakdown(filter: ReportFilter, key: SQL, label: SQL): Promise<ReportBreakdownRow[]> {
-  const rows = await rowsOf<{ key: number | string | null; label: string | null; count: number; amount: number }>(sql`
-    SELECT ${key} AS key, ${label} AS label, count(*)::int AS count, ${money(sql`sum(${extraKmCost} + ${fuelCost})`)} AS amount
-    ${FROM}
-    WHERE ${periodWhere(filter)} AND (${tileWhere("extraKm")} OR ${tileWhere("fuel")})
-    GROUP BY 1, 2
-    ORDER BY amount DESC, count DESC, 2 ASC NULLS LAST
-    LIMIT ${REPORT_BREAKDOWN_LIMIT}`);
-  return rows.map((r) => ({ key: r.key, label: r.label, count: Number(r.count), amount: Number(r.amount) }));
-}
+const breakdown = (filter: ReportFilter, key: SQL, label: SQL) =>
+  reportBreakdown({ from: FROM, where: withCosts(filter), key, label, amount: sql`${extraKmCost} + ${fuelCost}` });
 
-/** count and amount per tile straight from tileWhere, the same condition the lists use. */
-function tileColumns(): SQL {
-  return sql.join(
-    EXTRA_COSTS_TILES.map((t) => sql`count(*) FILTER (WHERE ${tileWhere(t)})::int AS ${sql.raw(`"c_${t}"`)},
-      ${money(sql`sum(${tileAmount(t)}) FILTER (WHERE ${tileWhere(t)})`)} AS ${sql.raw(`"a_${t}"`)}`),
-    sql`, `,
-  );
-}
-
-async function summary(filter: ReportFilter): Promise<ExtraCostsSummary> {
-  const [totals] = await rowsOf<Record<string, number>>(sql`
-    SELECT ${tileColumns()}, coalesce(sum(${reservations.extraKm}) FILTER (WHERE ${tileWhere("withExtraKm")}), 0)::int AS total_km
-    ${FROM} WHERE ${periodWhere(filter)}`);
-  const tiles = Object.fromEntries(
-    EXTRA_COSTS_TILES.map((t) => [t, { count: Number(totals?.[`c_${t}`] ?? 0), amount: Number(totals?.[`a_${t}`] ?? 0) }]),
-  ) as Record<ExtraCostsTile, ReportTileTotal>;
+async function extras(filter: ReportFilter): Promise<Omit<ExtraCostsSummary, "tiles">> {
+  const [km] = await rowsOf<{ total_km: number }>(sql`
+    SELECT coalesce(sum(${reservations.extraKm}), 0)::int AS total_km
+    FROM ${FROM} WHERE ${tileWhere("withExtraKm", filter)}`);
 
   const monthRows = await rowsOf<Record<string, number | string>>(sql`
     SELECT to_char(${startDay}, 'YYYY-MM') AS month,
-      ${money(sql`sum(${tileAmount("extraKm")}) FILTER (WHERE ${tileWhere("extraKm")})`)} AS km,
-      ${money(sql`sum(${tileAmount("fuel")}) FILTER (WHERE ${tileWhere("fuel")})`)} AS fuel
-    ${FROM} WHERE ${periodWhere(filter)} AND (${tileWhere("extraKm")} OR ${tileWhere("fuel")}) GROUP BY 1`);
+      ${money(sql`sum(${tileAmount("extraKm")}) FILTER (WHERE ${tileWhere("extraKm", filter)})`)} AS km,
+      ${money(sql`sum(${tileAmount("fuel")}) FILTER (WHERE ${tileWhere("fuel", filter)})`)} AS fuel
+    FROM ${FROM} WHERE ${withCosts(filter)} GROUP BY 1`);
   const months = monthRows.map((r) => ({ month: String(r.month), extraKmCost: Number(r.km), fuelCost: Number(r.fuel) }));
 
   return {
-    tiles,
-    totalExtraKm: Number(totals?.total_km ?? 0),
+    totalExtraKm: Number(km?.total_km ?? 0),
     byMonth: fillMonths(months, (month) => ({ month, extraKmCost: 0, fuelCost: 0 })),
     byCustomer: await breakdown(filter, sql`${customers.id}`, sql`${customers.name}`),
     byVehicle: await breakdown(filter, sql`${vehicles.id}`, sql`${vehicles.licensePlate}`),
   };
-}
-
-async function count(filter: ReportFilter, tile: ExtraCostsTile): Promise<number> {
-  const [row] = await rowsOf<{ n: number }>(sql`SELECT count(*)::int AS n ${FROM} WHERE ${periodWhere(filter)} AND ${tileWhere(tile)}`);
-  return Number(row?.n ?? 0);
 }
 
 function orderBy(sort: ExtraCostsSort, dir: "asc" | "desc", tile: ExtraCostsTile): SQL {
@@ -114,48 +91,40 @@ function orderBy(sort: ExtraCostsSort, dir: "asc" | "desc", tile: ExtraCostsTile
 
 const num = (v: unknown): number | null => (v === null || v === undefined ? null : Number(v));
 
-async function list(
-  filter: ReportFilter,
-  tile: ExtraCostsTile,
-  order: { sort: ExtraCostsSort; dir: "asc" | "desc" },
-  limit: number,
-  offset: number,
-): Promise<ExtraCostsRow[]> {
-  const rows = await rowsOf<Record<string, any>>(sql`
-    SELECT ${reservations.id} AS "reservationId", ${reservations.startDate} AS "startDate",
-      coalesce(${reservations.actualReturnDate}, ${reservations.endDate}) AS "returnDate",
-      ${vehicles.id} AS "vehicleId", ${vehicles.licensePlate} AS "licensePlate", ${vehicles.brand} AS brand, ${vehicles.model} AS model,
-      ${reservations.customerId} AS "customerId", ${customers.name} AS "customerName",
-      ${reservations.extraKm} AS "extraKm", ${reservations.extraKmCost}::float8 AS "extraKmCost", ${reservations.fuelCost}::float8 AS "fuelCost",
-      round(${tileAmount(tile)}, 2)::float8 AS amount
-    ${FROM}
-    WHERE ${periodWhere(filter)} AND ${tileWhere(tile)}
-    ORDER BY ${orderBy(order.sort, order.dir, tile)}
-    LIMIT ${limit} OFFSET ${offset}`);
-  return rows.map((r) => ({
-    reservationId: Number(r.reservationId),
-    startDate: r.startDate,
-    returnDate: r.returnDate ?? null,
-    vehicleId: Number(r.vehicleId),
-    licensePlate: r.licensePlate,
-    brand: r.brand,
-    model: r.model,
-    customerId: r.customerId === null ? null : Number(r.customerId),
-    customerName: r.customerName ?? null,
-    extraKm: num(r.extraKm),
-    extraKmCost: num(r.extraKmCost),
-    fuelCost: num(r.fuelCost),
-    amount: Number(r.amount),
-  }));
-}
+const select = (tile: ExtraCostsTile): SQL => sql`${reservations.id} AS "reservationId", ${reservations.startDate} AS "startDate",
+  coalesce(${reservations.actualReturnDate}, ${reservations.endDate}) AS "returnDate",
+  ${vehicles.id} AS "vehicleId", ${vehicles.licensePlate} AS "licensePlate", ${vehicles.brand} AS brand, ${vehicles.model} AS model,
+  ${reservations.customerId} AS "customerId", ${customers.name} AS "customerName",
+  ${reservations.extraKm} AS "extraKm", ${reservations.extraKmCost}::float8 AS "extraKmCost", ${reservations.fuelCost}::float8 AS "fuelCost",
+  round(${tileAmount(tile)}, 2)::float8 AS amount`;
 
-export const extraCostsReport: ReportDefinition<ExtraCostsTile, ExtraCostsSort, ExtraCostsRow, ExtraCostsSummary> = {
+const mapRow = (r: Record<string, any>): ExtraCostsRow => ({
+  reservationId: Number(r.reservationId),
+  startDate: r.startDate,
+  returnDate: r.returnDate ?? null,
+  vehicleId: Number(r.vehicleId),
+  licensePlate: r.licensePlate,
+  brand: r.brand,
+  model: r.model,
+  customerId: r.customerId === null ? null : Number(r.customerId),
+  customerName: r.customerName ?? null,
+  extraKm: num(r.extraKm),
+  extraKmCost: num(r.extraKmCost),
+  fuelCost: num(r.fuelCost),
+  amount: Number(r.amount),
+});
+
+export const extraCostsReport = sqlReport<ExtraCostsTile, ExtraCostsSort, ExtraCostsRow, Omit<ExtraCostsSummary, "tiles">>({
   key: "extra-costs",
   tiles: EXTRA_COSTS_TILES,
   sorts: EXTRA_COSTS_SORTS,
   defaultSort: "startDate",
   defaultDir: "desc",
-  summary,
-  count,
-  list,
-};
+  from: FROM,
+  tileWhere,
+  tileAmount,
+  select,
+  orderBy,
+  mapRow,
+  extras,
+});

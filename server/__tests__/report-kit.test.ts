@@ -76,6 +76,9 @@ describe("SQL-hulpjes", () => {
     const result = await db.execute(sql`SELECT
       ${textDaySql(sql`'2026-03-05T10:00'::text`)}::text AS text_day,
       ${textDaySql(sql`'geen datum'::text`)}::text AS text_bad,
+      ${textDaySql(sql`'2026-02-30'::text`)}::text AS text_unreal,
+      ${textDaySql(sql`'2026-13-01'::text`)}::text AS text_month13,
+      ${textDaySql(sql`'2024-02-29T08:00'::text`)}::text AS text_leap,
       ${officeDaySql(sql`'2026-03-31T23:30:00Z'::timestamptz`)}::text AS office_day,
       ${inPeriodSql(textDaySql(sql`'2026-03-31'::text`), filter)} AS in_period,
       ${inPeriodSql(textDaySql(sql`'2026-04-01'::text`), filter)} AS out_period,
@@ -84,12 +87,23 @@ describe("SQL-hulpjes", () => {
     expect(result.rows[0]).toEqual({
       text_day: "2026-03-05",
       text_bad: null,
+      text_unreal: null,
+      text_month13: null,
+      text_leap: "2024-02-29",
       office_day: "2026-04-01", // 23:30 UTC is 01:30 in Amsterdam (summer time)
       in_period: true,
       out_period: false,
       amount: 3.11,
       nothing: 0,
     });
+  });
+
+  it("textDaySql geeft NULL voor een onechte datum in een kolom (geen 500 voor het hele rapport)", async () => {
+    const { db } = await import("../db");
+    const { sql } = await import("drizzle-orm");
+    const result = await db.execute(sql`SELECT v, ${textDaySql(sql`v`)}::text AS day
+      FROM (VALUES (1, '2026-02-30'), (2, '2026-02-28T10:00'), (3, '2026-04-31'), (4, '0000-01-01'), (5, 'kapot')) t(n, v) ORDER BY n`);
+    expect(result.rows.map((r: any) => r.day)).toEqual([null, "2026-02-28", null, null, null]);
   });
 
   it("officeDaySql leest een naieve timestamp als UTC en een timestamptz als moment", async () => {
@@ -173,6 +187,37 @@ describe("mountReport", () => {
     const res = await request(appWith(def)).get("/api/reports/fake/summary");
     expect(res.status).toBe(500);
     expect(res.body.code).toBe("FAKE_THING_REPORT_FAILED");
+  });
+
+  it("sqlReport bouwt tegeltotalen, telling en lijst uit dezelfde tileWhere en tileAmount", async () => {
+    const { sql } = await import("drizzle-orm");
+    const { sqlReport } = await import("../services/reports/sql-report");
+    type K = "a" | "b" | "all";
+    const def = sqlReport<K, "id", { id: number; amount: number }, { extra: number }>({
+      key: "kit-sql",
+      tiles: ["a", "b", "all"],
+      sorts: ["id"],
+      defaultSort: "id",
+      defaultDir: "asc",
+      from: sql`(VALUES (1, 10.25::numeric, 'a', '2026-03-01'), (2, 5::numeric, 'a', '2026-05-01'), (3, 2::numeric, 'b', '2026-03-02')) v(id, amt, kind, day)`,
+      // "all" ignores the period, like the transport openAllTime tile
+      tileWhere: (tile, filter) => tile === "all"
+        ? sql`true`
+        : sql`kind = ${tile} AND ${inPeriodSql(textDaySql(sql`day`), filter)}`,
+      tileAmount: () => sql`amt`,
+      select: () => sql`id, amt::float8 AS amount`,
+      orderBy: (_s, dir) => sql`id ${sql.raw(dir === "asc" ? "ASC" : "DESC")}`,
+      mapRow: (r) => ({ id: Number(r.id), amount: Number(r.amount) }),
+      extras: async () => ({ extra: 7 }),
+    });
+    const filter = { from: "2026-03-01", to: "2026-03-31", vehicleId: null };
+    expect(await def.summary(filter)).toEqual({
+      tiles: { a: { count: 1, amount: 10.25 }, b: { count: 1, amount: 2 }, all: { count: 3, amount: 17.25 } },
+      extra: 7,
+    });
+    expect(await def.count(filter, "all")).toBe(3);
+    expect(await def.list(filter, "a", { sort: "id", dir: "asc" }, 10, 0)).toEqual([{ id: 1, amount: 10.25 }]);
+    expect(await def.list(filter, "all", { sort: "id", dir: "desc" }, 2, 1)).toEqual([{ id: 2, amount: 5 }, { id: 1, amount: 10.25 }]);
   });
 
   it("de guards draaien voor elke route", async () => {
