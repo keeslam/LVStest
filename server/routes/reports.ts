@@ -28,6 +28,7 @@ import { extraCostsReport } from "../services/reports/extra-costs-report";
 import { transportBillingReport } from "../services/reports/transport-billing-report";
 import { occupancyReport } from "../services/reports/occupancy-report";
 import { maintenanceOutlookReport } from "../services/reports/maintenance-outlook-report";
+import { fleetMileageReport } from "../services/reports/fleet-mileage-report";
 
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -63,6 +64,8 @@ export function registerReportRoutes(app: Express): void {
   // Km readings are admin only: the report's redact blanks them for everyone else on /rows and /export.
   mountReport(app, "/api/reports/maintenance-outlook",
     [reportRight, hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES)], maintenanceOutlookReport);
+  // Km data is admin only, enforced on the server: all three routes need requireAdmin.
+  mountReport(app, "/api/reports/fleet-mileage", [requireAdmin], fleetMileageReport);
 
 
   // ============================================

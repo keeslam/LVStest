@@ -216,7 +216,7 @@ export async function unvoidReadingsOfRestoredReservation(exec: DbOrTx, reservat
   return n;
 }
 
-function toRow(r: typeof vehicleMileageReadings.$inferSelect): MileageRow {
+export function toRow(r: typeof vehicleMileageReadings.$inferSelect): MileageRow {
   return {
     id: r.id,
     mileage: r.mileage,
@@ -225,6 +225,18 @@ function toRow(r: typeof vehicleMileageReadings.$inferSelect): MileageRow {
     actorName: r.actorName,
     voided: r.voidedAt != null,
   };
+}
+
+/** Free km per day as a number, or null when empty or not numeric. */
+export function parseFreeKmPerDay(raw: unknown): number | null {
+  return raw == null || raw === "" || !Number.isFinite(Number(raw)) ? null : Number(raw);
+}
+
+/** The instants [start, endExclusive) of the office days from..to (yyyy-mm-dd, both included). */
+export function officePeriodInstants(from: string, to: string): { start: Date; endExclusive: Date } {
+  const zone = officeTimeZone();
+  const nextDay = new Date(Date.parse(`${to}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+  return { start: zonedDateTimeToInstant(from, "00:00", zone), endExclusive: zonedDateTimeToInstant(nextDay, "00:00", zone) };
 }
 
 export interface MileageHistory {
@@ -240,13 +252,10 @@ export async function getMileageHistory(vehicleId: number, from: string, to: str
     model: vehicles.model, freeKmPerDay: vehicles.freeKmPerDay,
   }).from(vehicles).where(eq(vehicles.id, vehicleId));
   if (!v) return null;
-  const freeRaw = v.freeKmPerDay as unknown;
-  const freeKmPerDay = freeRaw == null || freeRaw === "" || !Number.isFinite(Number(freeRaw)) ? null : Number(freeRaw);
+  const freeKmPerDay = parseFreeKmPerDay(v.freeKmPerDay);
 
   const zone = officeTimeZone();
-  const start = zonedDateTimeToInstant(from, "00:00", zone);
-  const nextDay = new Date(Date.parse(`${to}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
-  const endExclusive = zonedDateTimeToInstant(nextDay, "00:00", zone);
+  const { start, endExclusive } = officePeriodInstants(from, to);
 
   const listed = await db.select().from(vehicleMileageReadings).where(and(
     eq(vehicleMileageReadings.vehicleId, vehicleId),

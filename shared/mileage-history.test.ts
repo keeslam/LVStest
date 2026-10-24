@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { analyseMileage, type MileageRow } from "./mileage-history";
+import { analyseMileage, drivenKmByMonth, type AnalysedRow, type MileageRow } from "./mileage-history";
 
 function row(id: number, mileage: number, date: string): MileageRow {
   return { id, mileage, recordedAt: `${date}T10:00:00.000Z`, source: "manual", actorName: null, voided: false };
@@ -87,5 +87,34 @@ describe("analyseMileage", () => {
     const out = analyseMileage([row(1, 10000, "2026-01-01"), row(2, 11000, "2026-01-10")], { ...P, freeKmPerDay: 10 });
     expect(out.summary.freeKm).toBe(310);
     expect(out.summary.overFreeKm).toBe(690);
+  });
+});
+
+describe("countedKm and drivenKmByMonth", () => {
+  const at = (id: number, mileage: number, iso: string): MileageRow => ({ id, mileage, recordedAt: iso, source: "manual", actorName: null, voided: false });
+  it("countedKm telt op tot drivenKm en maanden verdelen naar rato", () => {
+    const B = at(1, 10000, "2025-12-22T11:00:00.000Z");
+    const R = [
+      at(2, 10400, "2026-01-11T11:00:00.000Z"),
+      at(3, 11000, "2026-02-10T11:00:00.000Z"),
+      at(4, 10900, "2026-02-12T11:00:00.000Z"),
+      at(5, 11600, "2026-03-01T11:00:00.000Z"),
+      at(6, 20000, "2026-03-02T11:00:00.000Z"),
+    ];
+    const { rows, summary } = analyseMileage(R, { from: "2026-01-01", to: "2026-03-31", freeKmPerDay: 100, baseline: B, today: "2026-10-25" });
+    expect(summary.drivenKm).toBe(1400);
+    expect(rows.map((r) => r.countedKm)).toEqual([200, 600, 0, 600, 0]);
+    expect(rows.reduce((s, r) => s + r.countedKm, 0)).toBe(summary.drivenKm);
+    expect(rows[0].countedSince).toBe("2025-12-31");
+    expect(rows[2].countedSince).toBeNull();
+    expect(drivenKmByMonth(rows)).toEqual([{ month: "2026-01", km: 600 }, { month: "2026-02", km: 768 }, { month: "2026-03", km: 32 }]);
+  });
+  it("drivenKmByMonth splitst 300 km over 31 jan naar 1 maart als 290 + 10", () => {
+    const row: AnalysedRow = { ...at(1, 10300, "2026-03-01T11:00:00.000Z"), drivenSincePrevious: 300, warning: null, countedKm: 300, countedSince: "2026-01-31" };
+    expect(drivenKmByMonth([row])).toEqual([{ month: "2026-02", km: 290 }, { month: "2026-03", km: 10 }]);
+  });
+  it("zelfde dag: alles in die maand", () => {
+    const row: AnalysedRow = { ...at(1, 10300, "2026-03-01T11:00:00.000Z"), drivenSincePrevious: 300, warning: null, countedKm: 300, countedSince: "2026-03-01" };
+    expect(drivenKmByMonth([row])).toEqual([{ month: "2026-03", km: 300 }]);
   });
 });
