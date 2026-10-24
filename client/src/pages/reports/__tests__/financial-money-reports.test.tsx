@@ -84,7 +84,7 @@ describe("Financieel - bekeuringenrapport", () => {
     renderTab();
     const tile = await screen.findByTestId("button-fines-tile-legacy");
     await waitFor(() => expect(within(tile).getByTestId("fines-tile-legacy-value")).toHaveTextContent("2"));
-    expect((tile.textContent ?? "").replace(/s/g, " ")).toContain(formatCurrency(60).replace(/s/g, " "));
+    expect((tile.textContent ?? "").replace(/\s/g, " ")).toContain(formatCurrency(60).replace(/\s/g, " "));
     await user.click(tile);
     await waitFor(() => expect(fetchedPaths()).toContain(
       "/api/reports/fines/rows?from=2026-01-01&to=2026-12-31&tile=legacy&sort=offenceAt&dir=desc&page=1&pageSize=50",

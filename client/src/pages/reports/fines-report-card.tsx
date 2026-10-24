@@ -19,6 +19,7 @@ import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatCurrency, formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
+import { csvDate, csvDateTime, csvNumber } from "@/lib/csv";
 
 const ENDPOINT = "/api/reports/fines";
 
@@ -46,8 +47,8 @@ export function FinesReportCard({ from, to, vehicleId }: { from: string; to: str
     const status = (s: string) => t(`moneyReports.fines.statuses.${s}`, { defaultValue: s });
     const day = (v: string | null) => (v ? formatDateNl(v, "short") : "");
     return [
-      { id: "offenceAt", label: t("moneyReports.fines.columns.offenceAt"), sortKey: "offenceAt", cell: (r) => day(r.offenceAt), csv: (r) => day(r.offenceAt) },
-      { id: "receivedAt", label: t("moneyReports.fines.columns.receivedAt"), cell: (r) => day(r.receivedAt), csv: (r) => day(r.receivedAt) },
+      { id: "offenceAt", label: t("moneyReports.fines.columns.offenceAt"), sortKey: "offenceAt", cell: (r) => day(r.offenceAt), csv: (r) => csvDateTime(r.offenceAt) },
+      { id: "receivedAt", label: t("moneyReports.fines.columns.receivedAt"), cell: (r) => day(r.receivedAt), csv: (r) => csvDate(r.receivedAt) },
       { id: "licensePlate", label: t("moneyReports.fines.columns.licensePlate"), sortKey: "licensePlate", cell: (r) => formatLicensePlate(r.licensePlate), csv: (r) => formatLicensePlate(r.licensePlate) },
       { id: "description", label: t("moneyReports.fines.columns.description"), cell: (r) => r.description, csv: (r) => r.description },
       { id: "reference", label: t("moneyReports.fines.columns.reference"), cell: (r) => r.reference ?? "", csv: (r) => r.reference ?? "" },
@@ -61,7 +62,7 @@ export function FinesReportCard({ from, to, vehicleId }: { from: string; to: str
         ),
         csv: (r) => status(r.status),
       },
-      { id: "amount", label: t("moneyReports.fines.columns.amount"), sortKey: "amount", align: "right", cell: (r) => formatCurrency(r.amount), csv: (r) => r.amount.toFixed(2).replace(".", ","), print: (r) => formatCurrency(r.amount) },
+      { id: "amount", label: t("moneyReports.fines.columns.amount"), sortKey: "amount", align: "right", cell: (r) => formatCurrency(r.amount), csv: (r) => csvNumber(r.amount), print: (r) => formatCurrency(r.amount) },
       { id: "customer", label: t("moneyReports.fines.columns.customer"), sortKey: "customer", cell: (r) => r.customerName ?? "", csv: (r) => r.customerName ?? "" },
       { id: "driver", label: t("moneyReports.fines.columns.driver"), cell: (r) => r.driverName ?? "", csv: (r) => r.driverName ?? "" },
     ];

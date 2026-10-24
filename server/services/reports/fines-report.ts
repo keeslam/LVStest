@@ -39,10 +39,6 @@ function tileWhere(tile: FineReportTile): SQL {
   }
 }
 
-type Group = "new" | "linked" | "cancelled" | "legacy";
-const groupOf = (status: string): Group =>
-  status === "new" || status === "linked" || status === "cancelled" ? status : "legacy";
-
 const FROM = sql`FROM ${fines}
   LEFT JOIN ${customers} ON ${customers.id} = ${fines.customerId}
   LEFT JOIN ${drivers} ON ${drivers.id} = ${fines.driverId}`;
@@ -63,32 +59,29 @@ async function breakdown(filter: ReportFilter, key: SQL, label: SQL): Promise<Re
   return rows.map((r) => ({ key: r.key, label: r.label, count: Number(r.count), amount: Number(r.amount) }));
 }
 
-const round2 = (n: number) => Math.round(n * 100) / 100;
+/** count and amount per tile (and per month) straight from tileWhere, the same condition the lists use. */
+function tileColumns(): SQL {
+  return sql.join(
+    FINE_REPORT_TILES.map((t) => sql`count(*) FILTER (WHERE ${tileWhere(t)})::int AS ${sql.raw(`c_${t}`)},
+      ${money(sql`sum(${fines.totalAmount}) FILTER (WHERE ${tileWhere(t)})`)} AS ${sql.raw(`a_${t}`)}`),
+    sql`, `,
+  );
+}
 
 async function summary(filter: ReportFilter): Promise<FineReportSummary> {
-  const byStatus = await rowsOf<{ status: string; month: string; count: number; amount: number }>(sql`
-    SELECT ${fines.status} AS status, to_char(${offenceDay}, 'YYYY-MM') AS month,
-      count(*)::int AS count, ${money(sql`sum(${fines.totalAmount})`)} AS amount
-    FROM ${fines}
-    WHERE ${periodWhere(filter)}
-    GROUP BY 1, 2`);
+  const [totals] = await rowsOf<Record<string, number>>(sql`
+    SELECT ${tileColumns()} FROM ${fines} WHERE ${periodWhere(filter)}`);
+  const tiles = Object.fromEntries(
+    FINE_REPORT_TILES.map((t) => [t, { count: Number(totals?.[`c_${t}`] ?? 0), amount: Number(totals?.[`a_${t}`] ?? 0) }]),
+  ) as Record<FineReportTile, ReportTileTotal>;
 
-  const tiles = Object.fromEntries(FINE_REPORT_TILES.map((t) => [t, { count: 0, amount: 0 }])) as Record<FineReportTile, ReportTileTotal>;
-  const add = (tile: FineReportTile, count: number, amount: number) => {
-    tiles[tile].count += count;
-    tiles[tile].amount = round2(tiles[tile].amount + amount);
-  };
-  const months = new Map<string, { month: string; new: number; linked: number; cancelled: number; legacy: number }>();
-  for (const r of byStatus) {
-    const group = groupOf(r.status);
-    const count = Number(r.count);
-    const amount = Number(r.amount);
-    add(group, count, amount);
-    if (group !== "cancelled") add("total", count, amount);
-    const m = months.get(r.month) ?? { month: r.month, new: 0, linked: 0, cancelled: 0, legacy: 0 };
-    m[group] = round2(m[group] + amount);
-    months.set(r.month, m);
-  }
+  const monthRows = await rowsOf<Record<string, number | string>>(sql`
+    SELECT to_char(${offenceDay}, 'YYYY-MM') AS month, ${tileColumns()}
+    FROM ${fines} WHERE ${periodWhere(filter)} GROUP BY 1`);
+  const months = monthRows.map((r) => ({
+    month: String(r.month),
+    new: Number(r.a_new), linked: Number(r.a_linked), cancelled: Number(r.a_cancelled), legacy: Number(r.a_legacy),
+  }));
 
   const [avg] = await rowsOf<{ avg: number | null }>(sql`
     SELECT round(avg(greatest(0, ${linkedDay} - ${textDaySql(fines.receivedAt)}))::numeric, 1)::float8 AS avg
@@ -98,7 +91,7 @@ async function summary(filter: ReportFilter): Promise<FineReportSummary> {
   return {
     tiles,
     avgDaysToLink: avg?.avg === null || avg?.avg === undefined ? null : Number(avg.avg),
-    byMonth: fillMonths([...months.values()], (month) => ({ month, new: 0, linked: 0, cancelled: 0, legacy: 0 })),
+    byMonth: fillMonths(months, (month) => ({ month, new: 0, linked: 0, cancelled: 0, legacy: 0 })),
     byCustomer: await breakdown(filter, sql`${customers.id}`, sql`${customers.name}`),
     byVehicle: await breakdown(filter, sql`${fines.licensePlate}`, sql`${fines.licensePlate}`),
     byDriver: await breakdown(filter, sql`${drivers.id}`, sql`${drivers.displayName}`),
