@@ -37,6 +37,7 @@ describe("extra km and fuel report", () => {
     await reservation("2026-02-20", { extraKmCost: "99.00" }, "standard", "cancelled");
     await reservation("2026-02-21", { extraKmCost: "77.00", deletedAt: new Date() });
     await reservation("2026-02-22", { extraKmCost: "11.00" }, "replacement");
+    await reservation("2026-02-25", { extraKmCost: "-5.00", fuelCost: "10.00" });
     await reservation("2025-12-20", { extraKmCost: "50.00" });
   });
 
@@ -47,17 +48,20 @@ describe("extra km and fuel report", () => {
 
   it("tegels, totaal meer-km en maandverdeling", async () => {
     const s = (await staff.get("/api/reports/extra-costs/summary").query(Q)).body;
-    expect(s.tiles).toEqual({ extraKm: { count: 1, amount: 30 }, fuel: { count: 2, amount: 65.5 }, withExtraKm: { count: 1, amount: 30 } });
+    expect(s.tiles).toEqual({ extraKm: { count: 1, amount: 30 }, fuel: { count: 3, amount: 75.5 }, withExtraKm: { count: 1, amount: 30 } });
     expect(s.totalExtraKm).toBe(120);
-    expect(s.byMonth).toEqual([{ month: "2026-02", extraKmCost: 30, fuelCost: 65.5 }]);
-    expect(s.byCustomer).toEqual([{ key: C, label: customerName, count: 2, amount: 95.5 }]);
+    expect(s.byMonth).toEqual([{ month: "2026-02", extraKmCost: 30, fuelCost: 75.5 }]);
+    // the chart adds up the same rows as the tiles (a negative correction stays out of the extra km tile)
+    expect(s.byMonth.reduce((n: number, m: { extraKmCost: number }) => n + m.extraKmCost, 0)).toBe(s.tiles.extraKm.amount);
+    expect(s.byMonth.reduce((n: number, m: { fuelCost: number }) => n + m.fuelCost, 0)).toBe(s.tiles.fuel.amount);
+    expect(s.byCustomer).toEqual([{ key: C, label: customerName, count: 3, amount: 100.5 }]);
     expect(s.byVehicle).toHaveLength(1);
-    expect(s.byVehicle[0].amount).toBe(95.5);
+    expect(s.byVehicle[0].amount).toBe(100.5);
   });
 
   it("klopt met waarvan extra kosten op Financieel", async () => {
     const fin = (await staff.get("/api/reports/vehicle-financials").query({ from: "2026-01-01", to: "2026-12-31", vehicleId: V })).body;
-    expect(fin.totals.extraCosts).toBe(95.5);
+    expect(fin.totals.extraCosts).toBe(100.5);
   });
 
   it("elke tegel opent precies zijn rijen", async () => {

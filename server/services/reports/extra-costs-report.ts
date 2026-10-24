@@ -80,8 +80,9 @@ async function summary(filter: ReportFilter): Promise<ExtraCostsSummary> {
 
   const monthRows = await rowsOf<Record<string, number | string>>(sql`
     SELECT to_char(${startDay}, 'YYYY-MM') AS month,
-      ${money(sql`sum(${extraKmCost})`)} AS km, ${money(sql`sum(${fuelCost})`)} AS fuel
-    ${FROM} WHERE ${periodWhere(filter)} AND (${extraKmCost} > 0 OR ${fuelCost} > 0) GROUP BY 1`);
+      ${money(sql`sum(${tileAmount("extraKm")}) FILTER (WHERE ${tileWhere("extraKm")})`)} AS km,
+      ${money(sql`sum(${tileAmount("fuel")}) FILTER (WHERE ${tileWhere("fuel")})`)} AS fuel
+    ${FROM} WHERE ${periodWhere(filter)} AND (${tileWhere("extraKm")} OR ${tileWhere("fuel")}) GROUP BY 1`);
   const months = monthRows.map((r) => ({ month: String(r.month), extraKmCost: Number(r.km), fuelCost: Number(r.fuel) }));
 
   return {

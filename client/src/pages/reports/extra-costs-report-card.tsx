@@ -54,10 +54,10 @@ export function ExtraCostsReportCard({ from, to, vehicleId }: { from: string; to
       { id: "licensePlate", label: c("licensePlate"), sortKey: "licensePlate", cell: (r) => formatLicensePlate(r.licensePlate), csv: (r) => formatLicensePlate(r.licensePlate) },
       { id: "customer", label: c("customer"), sortKey: "customer", cell: (r) => r.customerName ?? "", csv: (r) => r.customerName ?? "" },
       { id: "extraKm", label: c("extraKm"), sortKey: "extraKm", align: "right", cell: (r) => km(r.extraKm), csv: (r) => csvNumber(r.extraKm) },
-      { id: "extraKmCost", label: c("extraKmCost"), sortKey: "amount", align: "right", cell: (r) => euro(r.extraKmCost), csv: (r) => csvNumber(r.extraKmCost), print: (r) => euro(r.extraKmCost) },
+      { id: "extraKmCost", label: c("extraKmCost"), sortKey: shownTile === "fuel" ? undefined : "amount", align: "right", cell: (r) => euro(r.extraKmCost), csv: (r) => csvNumber(r.extraKmCost), print: (r) => euro(r.extraKmCost) },
       { id: "fuelCost", label: c("fuelCost"), sortKey: "fuelCost", align: "right", cell: (r) => euro(r.fuelCost), csv: (r) => csvNumber(r.fuelCost), print: (r) => euro(r.fuelCost) },
     ];
-  }, [t]);
+  }, [t, shownTile]);
 
   if (!allowed) return null;
 
