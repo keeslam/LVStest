@@ -1574,7 +1574,7 @@ function DiagramTemplateManager() {
   const [diagramMake, setDiagramMake] = useState("all");
   const [diagramYear, setDiagramYear] = useState("");
   const makes = diagramMakes(templates);
-  const yearNumber = /^d{4}$/.test(diagramYear.trim()) ? Number(diagramYear.trim()) : null;
+  const yearNumber = /^\d{4}$/.test(diagramYear.trim()) ? Number(diagramYear.trim()) : null;
   const shownTemplates = filterDiagramTemplates(templates, { q: diagramSearch, make: diagramMake === "all" ? "" : diagramMake, year: yearNumber });
   const diagramFilterActive = diagramSearch.trim() !== "" || diagramMake !== "all" || diagramYear.trim() !== "";
 
