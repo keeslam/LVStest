@@ -31,6 +31,7 @@ import { waitlistReport } from "../services/reports/waitlist-report";
 import { invoiceInboxRunsReport } from "../services/reports/invoice-inbox-runs-report";
 import { invoiceInboxItemsReport } from "../services/reports/invoice-inbox-items-report";
 import { deliveryReport } from "../services/reports/delivery-report";
+import { damageChecksReport } from "../services/reports/damage-checks-report";
 import { occupancyReport } from "../services/reports/occupancy-report";
 import { maintenanceOutlookReport } from "../services/reports/maintenance-outlook-report";
 import { fleetMileageReport } from "../services/reports/fleet-mileage-report";
@@ -86,6 +87,8 @@ export function registerReportRoutes(app: Express): void {
   // Deliveries and collections need the report right and the source right of GET /api/transports.
   const deliveryGuards = [reportRight, hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES, UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS)];
   mountReport(app, "/api/reports/deliveries", deliveryGuards, deliveryReport);
+  // Damage checks need the report right and the source right of GET /api/interactive-damage-checks.
+  mountReport(app, "/api/reports/damage-checks", [reportRight, hasPermission(UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS)], damageChecksReport);
 
 
   // ============================================

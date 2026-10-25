@@ -133,6 +133,9 @@ export function inPeriodSql(day: SQL, filter: ReportFilter): SQL {
   return sql`${day} >= ${filter.from}::date AND ${day} <= ${filter.to}::date`;
 }
 
+/** A JSON array with at least one element; a regex instead of a cast, so text that is not JSON cannot throw. */
+export const NON_EMPTY_JSON_ARRAY = "^\\s*\\[\\s*[^]\\s]";
+
 /** A sum of money, 0 when there are no rows, rounded to cents. */
 export function money(sumSql: SQL): SQL<number> {
   return sql<number>`round(coalesce(${sumSql}, 0)::numeric, 2)::float8`;

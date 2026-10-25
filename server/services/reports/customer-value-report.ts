@@ -31,13 +31,10 @@ import {
 } from "../../../shared/reports/customer-value-report";
 import { REPORT_BREAKDOWN_LIMIT, type ReportBreakdownRow, type ReportTileTotal } from "../../../shared/report-kit";
 import { isoToday } from "../lifecycle";
-import { inPeriodSql, money, officeDaySql, textDaySql, type ReportDefinition, type ReportFilter } from "./report-kit";
+import { inPeriodSql, money, NON_EMPTY_JSON_ARRAY, officeDaySql, textDaySql, type ReportDefinition, type ReportFilter } from "./report-kit";
 import { rowsOf } from "./sql-report";
 
 const r = reservations;
-
-/** A JSON array with at least one element; a regex instead of a cast, so text that is not JSON cannot throw. */
-const NON_EMPTY_ARRAY = "^\\s*\\[\\s*[^]\\s]";
 
 const num = (column: SQL | AnyPgColumn): SQL => sql`coalesce((${column})::numeric, 0)`;
 
@@ -82,7 +79,7 @@ export function customerValueSql(filter: ReportFilter, today: string): SQL {
       SELECT ${r.customerId} AS customer_id, count(*)::int AS damage_checks
       FROM ${interactiveDamageChecks}
         INNER JOIN ${r} ON ${r.id} = ${interactiveDamageChecks.reservationId} AND ${r.deletedAt} IS NULL
-      WHERE ${interactiveDamageChecks.checkType} = 'return' AND ${interactiveDamageChecks.damageMarkers} ~ ${NON_EMPTY_ARRAY}
+      WHERE ${interactiveDamageChecks.checkType} = 'return' AND ${interactiveDamageChecks.damageMarkers} ~ ${NON_EMPTY_JSON_ARRAY}
         AND ${inPeriodSql(checkDay, filter)}${vehicleOf(interactiveDamageChecks.vehicleId)}
       GROUP BY 1
     ),
