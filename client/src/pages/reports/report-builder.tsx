@@ -25,10 +25,10 @@ import { ReportBuilderChart } from "@/pages/reports/report-builder-chart";
 import { formatDateTime } from "@/lib/format-utils";
 import {
   sourceLabel, fieldLabel, linkedFieldLabel, resultKey, operatorLabel, aggregationLabel, outputHeader, csvCell, displayCell, buildReportTableHtml, reportFileSubject,
-  withCalcInfo, columnLabel, calcErrorText,
+  withCalcInfo, columnLabel, calcErrorText, csvHeader, calcDisplayNumber,
 } from "@/pages/reports/report-builder-output";
-import { CalculatedFieldDialog, calcRefsOf, isNumericCalc } from "@/pages/reports/calculated-field-dialog";
-import { MAX_CALCULATED_FIELDS, type CalculatedField } from "@shared/report-formula";
+import { CalculatedFieldDialog, calcRefsOf, isNumericCalc, numericUsersOf, parseDutchNumber, dutchNumberText } from "@/pages/reports/calculated-field-dialog";
+import { MAX_CALCULATED_FIELDS, referencedFields, type CalculatedField } from "@shared/report-formula";
 import {
   DATA_SOURCES,
   canUseReportSource,
@@ -115,6 +115,35 @@ function aggregationsFor(col: ReportColumn, calcs: CalculatedField[]): Aggregati
 
 /** Filter operators of a calculated field: those of a number or of a text. */
 const calcOperators = (calc: CalculatedField | undefined): FilterOperator[] => (isNumericCalc(calc) ? numberOperators : textOperators);
+
+/** The value of a filter as typed: a percent filter holds the ratio, shown again as "25 %". */
+function filterValueText(filter: ReportFilter, calcs: CalculatedField[]): string {
+  const calc = filter.calc ? calcs.find(c => c.id === filter.calc) : undefined;
+  if (calc?.type === 'percent' && typeof filter.value === 'number') {
+    return `${dutchNumberText(Math.round(calcDisplayNumber('percent', filter.value) * 1e6) / 1e6)} %`;
+  }
+  return filter.value === null || filter.value === undefined ? '' : String(filter.value);
+}
+
+/**
+ * Calculated fields that point at a field no longer offered (another main source, an unticked
+ * source, a link that is gone), or at such a calculated field. They cannot run until changed.
+ */
+function brokenCalcIds(calcs: CalculatedField[], available: PickableField[]): Set<string> {
+  const keys = new Set(available.map(p => pickKey(p.via, p.field.table, p.field.name)));
+  const broken = new Set<string>();
+  for (const calc of calcs) {
+    if (referencedFields([calc]).some(r => !keys.has(pickKey(r.via, r.table, r.field)))) broken.add(calc.id);
+  }
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const calc of calcs) {
+      if (!broken.has(calc.id) && calcRefsOf(calc).some(id => broken.has(id))) { broken.add(calc.id); grew = true; }
+    }
+  }
+  return broken;
+}
 
 const GROUP_NONE = "__none";
 const NO_TAB = "__no_tab";
@@ -204,6 +233,19 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
 
   const groupFields = pickableFieldsOf(user, selectedDataSources);
   const linkedGroups = linkedGroupsOf(user, selectedDataSources[0]);
+  // Calculated fields that point at a field no longer offered: flagged, and not offered until changed.
+  const brokenCalcs = brokenCalcIds(calculatedFields, groupFields);
+  const offeredCalcs = calculatedFields.filter(c => !brokenCalcs.has(c.id));
+  const brokenCalcStop = (): boolean => {
+    const first = calculatedFields.find(c => brokenCalcs.has(c.id));
+    if (!first) return false;
+    toast({
+      title: t('reportBuilderPage.calc.brokenTitle'),
+      description: t('reportBuilderPage.calc.errors.UNKNOWN_FIELD', { name: first.name }),
+      variant: "destructive",
+    });
+    return true;
+  };
 
   // One group field. Picking it adds its column when missing and drops a calculation on it.
   const changeGroup = (value: string) => {
@@ -269,6 +311,16 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
     const editing = calcDialog?.editing;
     if (editing) {
       const calc: CalculatedField = { ...data, id: editing.id };
+      // A field others calculate with must stay a number: making it text would break them.
+      const users = isNumericCalc(editing) && !isNumericCalc(calc) ? numericUsersOf(editing.id, calculatedFields) : [];
+      if (users.length > 0) {
+        toast({
+          title: calcText('inUseChangeTitle'),
+          description: calcText('inUse', { name: editing.name, others: users.map(u => u.name).join(', ') }),
+          variant: "destructive",
+        });
+        return;
+      }
       setCalculatedFields(prev => prev.map(c => (c.id === calc.id ? calc : c)));
       // A changed kind can make a calculation or filter on it unfit: those are dropped.
       const numeric = isNumericCalc(calc);
@@ -452,6 +504,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
       });
       return;
     }
+    if (brokenCalcStop()) return;
 
     const config: ReportConfiguration = withCalcs({
       name: reportName || t('reportBuilderPage.untitledReport'),
@@ -474,6 +527,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
       });
       return;
     }
+    if (brokenCalcStop()) return;
 
     const config: ReportConfiguration = withCalcs({
       name: reportName,
@@ -597,13 +651,21 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
                   <div className="ml-6 space-y-1">
                     {calculatedFields.map(calc => (
                       <div key={calc.id} className="flex items-center gap-1">
-                        <button
-                          onClick={() => addColumnMutation.mutate({ table: '', field: '', calc: calc.id, label: calc.name })}
-                          className="text-sm text-muted-foreground hover:text-foreground flex-1 text-left py-1"
-                          data-testid={`button-add-calc-${calc.id}`}
-                        >
-                          + {calc.name}
-                        </button>
+                        <div className="flex-1">
+                          <button
+                            onClick={() => addColumnMutation.mutate({ table: '', field: '', calc: calc.id, label: calc.name })}
+                            disabled={brokenCalcs.has(calc.id)}
+                            className={brokenCalcs.has(calc.id)
+                              ? "text-sm text-destructive block w-full text-left py-1 cursor-not-allowed"
+                              : "text-sm text-muted-foreground hover:text-foreground block w-full text-left py-1"}
+                            data-testid={`button-add-calc-${calc.id}`}
+                          >
+                            + {calc.name}
+                          </button>
+                          {brokenCalcs.has(calc.id) && (
+                            <p className="text-xs text-destructive" data-testid={`calc-broken-${calc.id}`}>{calcText('brokenField')}</p>
+                          )}
+                        </div>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -741,7 +803,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
                             {linkedFieldLabel(t, via, field.table, field.name, field.label)}
                           </SelectItem>
                         ))}
-                        {calculatedFields.map(calc => (
+                        {offeredCalcs.map(calc => (
                           <SelectItem key={calc.id} value={`${CALC_PREFIX}${calc.id}`}>{calc.name}</SelectItem>
                         ))}
                       </SelectContent>
@@ -765,6 +827,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
                   filters={filters}
                   dataSources={selectedDataSources}
                   calcs={calculatedFields}
+                  offeredCalcs={offeredCalcs}
                   onAddFilter={(filter) => addFilterMutation.mutate(filter)}
                   onRemoveFilter={removeFilter}
                 />
@@ -892,12 +955,15 @@ function FilterBuilder({
   filters,
   dataSources,
   calcs,
+  offeredCalcs,
   onAddFilter,
   onRemoveFilter
 }: {
   filters: ReportFilter[];
   dataSources: string[];
   calcs: CalculatedField[];
+  /** The calculated fields that can be picked now (not those pointing at a field that is gone). */
+  offeredCalcs: CalculatedField[];
   onAddFilter: (filter: ReportFilter) => void;
   onRemoveFilter: (index: number) => void;
 }) {
@@ -917,7 +983,9 @@ function FilterBuilder({
 
   const handleAddFilter = () => {
     if ((selectedCalc || (newFilter.field && newFilter.table)) && newFilter.operator) {
-      onAddFilter(newFilter as ReportFilter);
+      // A percent is typed as a percentage (25) and goes to the server as the ratio (0.25).
+      const percent = selectedCalc?.type === 'percent' ? parseDutchNumber(String(newFilter.value ?? '')) : null;
+      onAddFilter((percent !== null ? { ...newFilter, value: percent / 100 } : newFilter) as ReportFilter);
       setNewFilter({});
       setShowAddFilter(false);
     }
@@ -965,7 +1033,7 @@ function FilterBuilder({
                       {linkedFieldLabel(t, via, field.table, field.name, field.label)}
                     </SelectItem>
                   ))}
-                  {calcs.map(calc => (
+                  {offeredCalcs.map(calc => (
                     <SelectItem key={calc.id} value={`${CALC_PREFIX}${calc.id}`}>{calc.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -1022,7 +1090,7 @@ function FilterBuilder({
               <span className="text-sm">
                 {filter.calc
                   ? calcs.find(c => c.id === filter.calc)?.name ?? filter.calc
-                  : linkedFieldLabel(t, filter.via, filter.table, filter.field, getField(filter.table, filter.field)?.label)} {operatorLabel(t, filter.operator)} {filter.value}
+                  : linkedFieldLabel(t, filter.via, filter.table, filter.field, getField(filter.table, filter.field)?.label)} {operatorLabel(t, filter.operator)} {filterValueText(filter, calcs)}
               </span>
               <Button
                 variant="ghost"
@@ -1187,7 +1255,7 @@ function ReportResultsDialog({
   const exportCsv = () => {
     downloadCsv(
       reportFileSubject(reportName || t('reportBuilderPage.untitledReport')),
-      header,
+      csvHeader(t, columns, header),
       results.map((row) => columns.map((col) => csvCell(t, col, row[resultKey(col)]))),
     );
   };

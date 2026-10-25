@@ -75,10 +75,21 @@ export function columnLabel(t: TFunction, column: OutputColumn): string {
   return linkedFieldLabel(t, column.via, column.table, column.field, column.label);
 }
 
-/** A number of a calculated field as its kind shows it: "€ 121,00", "12,50 %", "1.234,5". */
+/**
+ * The number a person reads for a value of a calculated field: a percent is a ratio, shown × 100
+ * like a spreadsheet does (0.25 is 25 %); every other kind is shown as it is. One place, so
+ * cells, CSV, chart, preview and totals agree.
+ */
+export function calcDisplayNumber(type: CalculatedField["type"] | undefined, n: number): number {
+  return type === "percent" ? n * 100 : n;
+}
+
+/** A number of a calculated field as its kind shows it: "€ 121,00", "12,50 %" (for 0.125), "1.234,5". */
 export function calcValueText(type: CalculatedField["type"] | undefined, n: number): string {
   if (type === "money") return formatCurrency(n);
-  if (type === "percent") return `${n.toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`;
+  if (type === "percent") {
+    return `${calcDisplayNumber(type, n).toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`;
+  }
   return n.toLocaleString("nl-NL", { maximumFractionDigits: 2 });
 }
 
@@ -103,7 +114,8 @@ function calcCsvCell(column: OutputColumn, value: unknown): string {
   const n = Number(value);
   if (isCount(column.aggregation)) return Number.isFinite(n) ? csvNumber(n, 0) : String(value);
   if (column.calcType === "text" || !Number.isFinite(n)) return String(value);
-  return csvNumber(n, 2);
+  // A percent goes as the percentage number (25,00), its header says "(%)", like "Korting (%)".
+  return csvNumber(calcDisplayNumber(column.calcType, n), 2);
 }
 
 function calcDisplayCell(column: OutputColumn, value: unknown): string {
@@ -164,6 +176,16 @@ export function displayCell(t: TFunction, column: OutputColumn, value: unknown):
 
 export function outputHeader(t: TFunction, columns: OutputColumn[]): string[] {
   return columns.map((c) => columnLabel(t, c));
+}
+
+/** The CSV header: a percent column (not counted) says "(%)", as its cells carry no % sign. */
+export function csvHeader(t: TFunction, columns: OutputColumn[], labels: string[] = outputHeader(t, columns)): string[] {
+  return columns.map((c, i) => (isPercentColumn(c) ? `${labels[i]} (%)` : labels[i]));
+}
+
+/** A calculated percent column whose values are percentages (not a count of them). */
+export function isPercentColumn(column: OutputColumn): boolean {
+  return !!column.calc && column.calcType === "percent" && !isCount(column.aggregation);
 }
 
 /** "Toyota-lijst" -> "toyota-lijst"; accents and symbols folded so the file name is safe. */

@@ -424,7 +424,12 @@
         "TOO_DEEP": "Pole obliczane {{name}} jest zbyt skomplikowane. Skróć obliczenie.",
         "TOO_MANY": "Raport może mieć najwyżej 20 pól obliczanych.",
         "BAD_RULE": "Pole obliczane {{name}} jest niepoprawne. Otwórz je i sprawdź obliczenie lub regułę."
-      }
+      },
+      "removeToken": "Usuń {{token}}",
+      "percentHint": "Na przykład Marża ÷ Obrót daje 25 %.",
+      "brokenField": "Odwołuje się do pola, które już nie istnieje.",
+      "brokenTitle": "Pole obliczane już nie pasuje",
+      "inUseChangeTitle": "Nie można zmienić"
     }
   },
   "financialTab": {

@@ -408,7 +408,12 @@
         "TOO_DEEP": "Het berekende veld {{name}} is te ingewikkeld. Maak de som korter.",
         "TOO_MANY": "Een rapport kan hoogstens 20 berekende velden hebben.",
         "BAD_RULE": "Het berekende veld {{name}} klopt niet. Open het en kijk de som of regel na."
-      }
+      },
+      "removeToken": "Verwijder {{token}}",
+      "percentHint": "Bijvoorbeeld Marge ÷ Omzet geeft 25 %.",
+      "brokenField": "Verwijst naar een veld dat niet meer bestaat.",
+      "brokenTitle": "Berekend veld klopt niet meer",
+      "inUseChangeTitle": "Kan niet veranderen"
     }
   },
   "financialTab": {

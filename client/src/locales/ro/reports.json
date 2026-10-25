@@ -416,7 +416,12 @@
         "TOO_DEEP": "Câmpul calculat {{name}} este prea complicat. Scurtează calculul.",
         "TOO_MANY": "Un raport poate avea cel mult 20 de câmpuri calculate.",
         "BAD_RULE": "Câmpul calculat {{name}} nu este corect. Deschide-l și verifică calculul sau regula."
-      }
+      },
+      "removeToken": "Elimină {{token}}",
+      "percentHint": "De exemplu Marjă ÷ Venituri dă 25 %.",
+      "brokenField": "Trimite la un câmp care nu mai există.",
+      "brokenTitle": "Câmpul calculat nu mai este corect",
+      "inUseChangeTitle": "Nu se poate modifica"
     }
   },
   "financialTab": {

@@ -20,7 +20,8 @@ const toast = vi.fn();
 vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast }), toast: (...a: any[]) => toast(...a) }));
 
 import ReportBuilder from "@/pages/reports/report-builder";
-import { csvCell, displayCell, withCalcInfo } from "@/pages/reports/report-builder-output";
+import { calcDisplayNumber, csvCell, csvHeader, displayCell, withCalcInfo } from "@/pages/reports/report-builder-output";
+import { builderChartData } from "@/pages/reports/report-builder-chart";
 import { parseDutchNumber } from "@/pages/reports/calculated-field-dialog";
 
 let executeBody: any = null;
@@ -344,6 +345,126 @@ describe("calculated fields in the report", () => {
   });
 });
 
+describe("fix round 1", () => {
+  it("removes one chip by its own button, names the bar and alerts the error", async () => {
+    installFetch();
+    const user = userEvent.setup();
+    renderBuilder();
+    await pickExpenses(user);
+    await user.click(screen.getByTestId("button-add-calculated-field"));
+    await screen.findByTestId("dialog-calculated-field");
+    await user.click(screen.getByTestId("button-formula-field-expenses.amount"));
+    await user.click(screen.getByTestId("button-formula-times"));
+    await typeNumber(user, "1,21");
+    const bar = screen.getByRole("group", { name: "Formule" });
+    await user.click(within(bar).getByRole("button", { name: "Verwijder ×" }));
+    expect(bar).toHaveTextContent("Bedrag 1,21");
+    expect(screen.getByRole("alert")).toHaveTextContent("Er mist een rekenteken");
+  });
+
+  it("shows the number it read next to the input", async () => {
+    installFetch();
+    const user = userEvent.setup();
+    renderBuilder();
+    await pickExpenses(user);
+    await user.click(screen.getByTestId("button-add-calculated-field"));
+    await screen.findByTestId("dialog-calculated-field");
+    await user.type(screen.getByTestId("input-formula-number"), "1.210");
+    expect(screen.getByTestId("formula-number-parsed")).toHaveTextContent("= 1210");
+  });
+
+  it("explains a percent and sends a percent filter as a ratio", async () => {
+    installFetch();
+    const user = userEvent.setup();
+    renderBuilder();
+    await pickExpenses(user);
+    await user.click(screen.getByTestId("button-add-calculated-field"));
+    const dialog = await screen.findByTestId("dialog-calculated-field");
+    await user.type(within(dialog).getByTestId("input-calc-name"), "Marge");
+    await user.click(within(dialog).getByTestId("button-formula-field-expenses.amount"));
+    await user.click(within(dialog).getByTestId("button-formula-divide"));
+    await user.click(within(dialog).getByTestId("button-formula-field-expenses.amount"));
+    await user.click(within(dialog).getByTestId("select-calc-type"));
+    await user.click(await screen.findByRole("option", { name: "Procent" }));
+    expect(within(dialog).getByTestId("calc-percent-hint")).toHaveTextContent("Bijvoorbeeld Marge ÷ Omzet geeft 25 %.");
+    await user.click(within(dialog).getByTestId("button-save-calculated-field"));
+    await waitFor(() => expect(screen.queryByTestId("dialog-calculated-field")).toBeNull());
+    const id = screen.getAllByTestId(/^button-add-calc-/)[0].getAttribute("data-testid")!.replace("button-add-calc-", "");
+    await user.click(screen.getByTestId(`button-add-calc-${id}`));
+    await user.click(screen.getByTestId("button-add-filter"));
+    await user.click(screen.getByTestId("select-filter-field"));
+    await user.click(await screen.findByRole("option", { name: "Marge" }));
+    await user.click(screen.getByTestId("select-filter-operator"));
+    await user.click(await screen.findByRole("option", { name: "is groter dan" }));
+    await user.type(screen.getByTestId("input-filter-value"), "25");
+    await user.click(screen.getByTestId("button-confirm-filter"));
+    await user.click(screen.getByTestId("button-run-report"));
+    await waitFor(() => expect(executeBody).not.toBeNull());
+    expect(executeBody.filters[0]).toMatchObject({ calc: id, operator: "greater_than", value: 0.25 });
+  });
+
+  it("refuses to make a number field text while another field calculates with it", async () => {
+    installFetch();
+    const user = userEvent.setup();
+    renderBuilder();
+    await pickExpenses(user);
+    const first = await makeInclVat(user);
+    await user.click(screen.getByTestId("button-add-calculated-field"));
+    let dialog = await screen.findByTestId("dialog-calculated-field");
+    await user.type(within(dialog).getByTestId("input-calc-name"), "Dubbel");
+    await user.click(within(dialog).getByTestId(`button-formula-calc-${first}`));
+    await user.click(within(dialog).getByTestId("button-formula-times"));
+    await typeNumber(user, "2");
+    await user.click(within(dialog).getByTestId("button-save-calculated-field"));
+    await waitFor(() => expect(screen.queryByTestId("dialog-calculated-field")).toBeNull());
+
+    await user.click(screen.getByTestId(`button-edit-calc-${first}`));
+    dialog = await screen.findByTestId("dialog-calculated-field");
+    await user.click(within(dialog).getByTestId("button-calc-kind-ifThen"));
+    await user.click(within(dialog).getByTestId("select-calc-when-field"));
+    await user.click(await screen.findByRole("option", { name: "Bedrag" }));
+    await user.click(within(dialog).getByTestId("select-calc-when-test"));
+    await user.click(await screen.findByRole("option", { name: "is leeg" }));
+    await user.type(within(dialog).getByTestId("input-calc-then-text"), "Geen");
+    await user.click(within(dialog).getByTestId("button-save-calculated-field"));
+    expect(toast).toHaveBeenCalledWith(expect.objectContaining({
+      description: expect.stringContaining("wordt gebruikt in Dubbel"),
+      variant: "destructive",
+    }));
+    expect(screen.getByTestId("dialog-calculated-field")).toBeInTheDocument();
+  });
+
+  it("flags a field that points at a field that is gone and does not offer it as a column", async () => {
+    installFetch();
+    const user = userEvent.setup();
+    renderBuilder();
+    await pickExpenses(user);
+    const id = await makeInclVat(user);
+    await user.click(screen.getByTestId("checkbox-datasource-expenses"));
+    await user.click(screen.getByTestId("checkbox-datasource-vehicles"));
+    expect(screen.getByTestId(`calc-broken-${id}`)).toHaveTextContent("Verwijst naar een veld dat niet meer bestaat.");
+    expect(screen.getByTestId(`button-add-calc-${id}`)).toBeDisabled();
+    await user.click(screen.getByTestId("select-report-group-by"));
+    expect(screen.queryByRole("option", { name: "Incl. btw" })).toBeNull();
+  });
+
+  it("prints a calculated column with its name and money value", async () => {
+    const user = userEvent.setup();
+    installFetch();
+    renderBuilder();
+    await pickExpenses(user);
+    const id = await makeInclVat(user, "Bedrag");
+    installFetch([{ [`calc.${id}`]: "121.00" }]);
+    await user.click(screen.getByTestId(`button-add-calc-${id}`));
+    await user.click(screen.getByTestId("button-run-report"));
+    await screen.findByTestId("dialog-report-results");
+    await user.click(screen.getByTestId("button-print-report"));
+    const html = (await screen.findByTestId("iframe-report-preview")).getAttribute("srcdoc") ?? "";
+    expect(html).toContain("<th>Incl. btw</th>");
+    expect(html).toMatch(/<td>€\s121,00<\/td>/);
+  });
+});
+
 describe("output of calculated columns", () => {
   const calcs = [
     { id: "a", name: "Incl. btw", kind: "formula" as const, type: "money" as const },
@@ -361,7 +482,8 @@ describe("output of calculated columns", () => {
 
   it("shows money, percent, number and text", () => {
     expect(displayCell(t, col("a"), "121.00").replace(/\s/g, " ")).toBe("€ 121,00");
-    expect(displayCell(t, col("p"), "12.5")).toBe("12,50 %");
+    expect(displayCell(t, col("p"), "0.125")).toBe("12,50 %");
+    expect(displayCell(t, col("p", "COUNT"), "4")).toBe("4");
     expect(displayCell(t, col("n"), "1234.5")).toBe("1.234,5");
     expect(displayCell(t, col("s"), "Hoog")).toBe("Hoog");
     expect(displayCell(t, col("s", "COUNT"), "3")).toBe("3");
@@ -372,6 +494,17 @@ describe("output of calculated columns", () => {
     expect(csvCell(t, col("a"), "121.00")).toBe("121,00");
     expect(csvCell(t, col("s"), "Hoog")).toBe("Hoog");
     expect(csvCell(t, col("s", "COUNT"), "3")).toBe("3");
+  });
+
+  it("shows a percent as the ratio × 100, also in the CSV (header with (%)) and the chart", () => {
+    expect(calcDisplayNumber("percent", 0.25)).toBe(25);
+    expect(calcDisplayNumber("money", 0.25)).toBe(0.25);
+    expect(csvCell(t, col("p"), "0.25")).toBe("25,00");
+    expect(csvHeader(t, [col("p"), col("a")])).toEqual(["Marge (%)", "Incl. btw"]);
+    const chart = builderChartData(t, [{ category: "Olie", "calc.p": "0.25" }],
+      [{ table: "expenses", field: "category", label: "" }, col("p", "AVG") as any],
+      [{ table: "expenses", field: "category" }])!;
+    expect(chart.points[0][chart.series[0].key]).toBe(25);
   });
 
   it("reads numbers with a comma decimal", () => {

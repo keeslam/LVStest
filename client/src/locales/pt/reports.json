@@ -416,7 +416,12 @@
         "TOO_DEEP": "O campo calculado {{name}} é demasiado complexo. Encurte o cálculo.",
         "TOO_MANY": "Um relatório pode ter no máximo 20 campos calculados.",
         "BAD_RULE": "O campo calculado {{name}} não está correto. Abra-o e verifique o cálculo ou a regra."
-      }
+      },
+      "removeToken": "Remover {{token}}",
+      "percentHint": "Por exemplo Margem ÷ Faturação dá 25 %.",
+      "brokenField": "Refere-se a um campo que já não existe.",
+      "brokenTitle": "O campo calculado já não serve",
+      "inUseChangeTitle": "Não é possível alterar"
     }
   },
   "financialTab": {

@@ -408,7 +408,12 @@
         "TOO_DEEP": "The calculated field {{name}} is too complex. Make the sum shorter.",
         "TOO_MANY": "A report can have at most 20 calculated fields.",
         "BAD_RULE": "The calculated field {{name}} is not right. Open it and check the sum or rule."
-      }
+      },
+      "removeToken": "Remove {{token}}",
+      "percentHint": "For example Margin ÷ Revenue gives 25 %.",
+      "brokenField": "Refers to a field that no longer exists.",
+      "brokenTitle": "Calculated field no longer fits",
+      "inUseChangeTitle": "Cannot change"
     }
   },
   "financialTab": {

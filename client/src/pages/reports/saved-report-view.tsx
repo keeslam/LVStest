@@ -26,7 +26,7 @@ import { downloadCsv } from "@/lib/csv";
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { ReportBuilderChart } from "./report-builder-chart";
 import {
-  aggregationLabel, calcErrorText, columnLabel, csvCell, displayCell, reportFileSubject, resultKey, withCalcInfo, type OutputColumn,
+  aggregationLabel, calcErrorText, columnLabel, csvCell, csvHeader, displayCell, reportFileSubject, resultKey, withCalcInfo, type OutputColumn,
 } from "./report-builder-output";
 import { isAllDataRange, useReportFilters } from "./report-filters";
 import { tablePrintSection } from "./legacy/table-print";
@@ -168,7 +168,7 @@ export function SavedReportView({ report }: { report: SavedReport }) {
 
   const exportCsv = () => {
     const shown = view?.all ?? rows;
-    downloadCsv(reportFileSubject(report.name), tableColumns.map((c) => c.label), shown.map((r) => columns.map((col) => csvCell(tt, col, r[resultKey(col)]))));
+    downloadCsv(reportFileSubject(report.name), csvHeader(tt, columns, tableColumns.map((c) => c.label)), shown.map((r) => columns.map((col) => csvCell(tt, col, r[resultKey(col)]))));
   };
 
   const notes: string[] = [];

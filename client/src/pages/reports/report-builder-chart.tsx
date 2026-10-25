@@ -8,7 +8,7 @@ import type { TFunction } from "i18next";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { ReportColumn, ReportGrouping } from "@shared/report-builder-config";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { aggregationLabel, columnLabel, displayCell, resultKey } from "@/pages/reports/report-builder-output";
+import { aggregationLabel, calcDisplayNumber, columnLabel, displayCell, isPercentColumn, resultKey } from "@/pages/reports/report-builder-output";
 
 export type BuilderChartType = "bar" | "line" | "pie";
 
@@ -38,14 +38,19 @@ export function builderChartData(
   const calcColumns = columns.filter((c) => !!c.aggregation);
   // A linked column is "vehicle.x" in the rows, a calculated one "calc.x"; the chart key has no dot (a dot reads as a path).
   const series = calcColumns
-    .map((c) => ({ key: resultKey(c).replace(".", "__"), label: `${columnLabel(t, c)} (${aggregationLabel(t, c.aggregation!)})` }));
+    .map((c) => ({
+      key: resultKey(c).replace(".", "__"),
+      label: `${columnLabel(t, c)} (${aggregationLabel(t, c.aggregation!)})${isPercentColumn(c) ? " (%)" : ""}`,
+    }));
   const points = rows.slice(0, BUILDER_CHART_MAX_GROUPS).map((row) => {
     const point: { __cat: string } & Record<string, number | string> = {
       [CATEGORY]: groupColumns.map((c) => displayCell(t, c, row[resultKey(c)])).join(" · "),
     };
     for (const [i, s] of series.entries()) {
-      const n = Number(row[resultKey(calcColumns[i])]);
-      point[s.key] = Number.isFinite(n) ? n : 0;
+      const col = calcColumns[i];
+      const n = Number(row[resultKey(col)]);
+      // A percent is drawn as the percentage (0.25 -> 25), like its cell shows it.
+      point[s.key] = Number.isFinite(n) ? (isPercentColumn(col) ? calcDisplayNumber("percent", n) : n) : 0;
     }
     return point;
   });

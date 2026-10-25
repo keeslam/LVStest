@@ -76,6 +76,23 @@ export function calcRefsOf(calc: CalculatedField): string[] {
   return out;
 }
 
+/**
+ * The other calculated fields that need this one to be a number: a sum with it, a greater/less
+ * than (or a number compare) on it, or a number field whose if-then gives it as a result.
+ */
+export function numericUsersOf(id: string, calcs: CalculatedField[]): CalculatedField[] {
+  const refs = (n: FormulaNode | undefined) => !!n && calcRefsOf({ id: "", name: "", kind: "formula", type: "number", formula: n }).includes(id);
+  return calcs.filter((c) => {
+    if (c.id === id) return false;
+    if (c.kind === "formula") return refs(c.formula);
+    const rule = c.rule;
+    if (!rule) return false;
+    const numericTest = rule.when.test === "gt" || rule.when.test === "lt" || typeof rule.when.value === "number";
+    if (numericTest && refs(rule.when.ref)) return true;
+    return c.type !== "text" && [rule.then, rule.otherwise].some((r) => r && "ref" in r && refs(r.ref));
+  });
+}
+
 const fieldKey = (via: string | undefined, table: string, name: string) => (via ? `${via}:${table}.${name}` : `${table}.${name}`);
 const calcKey = (id: string) => `calc:${id}`;
 
@@ -86,11 +103,19 @@ function keyOfNode(node: FormulaNode | undefined): string {
   return "";
 }
 
+type RefNode = Extract<FormulaNode, { kind: "field" | "calc" }>;
+
 interface RefOption {
   key: string;
   label: string;
   numeric: boolean;
-  node: FormulaNode;
+  node: RefNode;
+}
+
+/** The formula token of a field or calculated field. */
+function tokenOf(node: RefNode): FormulaToken {
+  if (node.kind === "calc") return { t: "calc", id: node.id };
+  return { t: "field", table: node.table, field: node.field, ...(node.via ? { via: node.via } : {}) };
 }
 
 function tokenText(t: TFunction, tk: FormulaToken, options: Map<string, RefOption>): string {
@@ -136,9 +161,9 @@ export function CalculatedFieldDialog({
         key: fieldKey(via, field.table, field.name),
         label: linkedFieldLabel(t, via, field.table, field.name, field.label),
         numeric: field.type === "number",
-        node: { kind: "field", table: field.table, field: field.name, ...(via ? { via } : {}) } as FormulaNode,
+        node: { kind: "field", table: field.table, field: field.name, ...(via ? { via } : {}) } as RefNode,
       })),
-      ...earlier.map((calc) => ({ key: calcKey(calc.id), label: calc.name, numeric: isNumericCalc(calc), node: { kind: "calc", id: calc.id } as FormulaNode })),
+      ...earlier.map((calc) => ({ key: calcKey(calc.id), label: calc.name, numeric: isNumericCalc(calc), node: { kind: "calc", id: calc.id } as RefNode })),
     ];
     return new Map(list.map((o) => [o.key, o]));
   }, [fields, earlier, t]);
@@ -171,6 +196,8 @@ export function CalculatedFieldDialog({
   const numericKind = kind === "formula" || resultsNumeric;
   const effectiveType: CalcType = numericKind ? (type === "text" ? "number" : type) : "text";
 
+  // What the number input reads, shown beside it: "1.210" is 1210, not 1,21.
+  const parsedDraft = parseDutchNumber(numberDraft);
   const push = (tk: FormulaToken) => { setTokens((prev) => [...prev, tk]); setProblem(null); };
   const addNumber = () => {
     const n = parseDutchNumber(numberDraft);
@@ -291,19 +318,36 @@ export function CalculatedFieldDialog({
           {kind === "formula" ? (
             <div className="space-y-3">
               <div>
-                <Label>{c("formula")}</Label>
-                <div className="mt-1 flex min-h-[44px] flex-wrap items-center gap-1 rounded-md border p-2" data-testid="formula-bar">
-                  {tokens.map((tk, i) => (
-                    <span key={i}>
-                      {i > 0 && " "}
-                      <span className={tk.t === "field" || tk.t === "calc" ? "rounded bg-primary/10 px-2 py-0.5 text-sm" : "px-1 text-sm font-medium"}>
-                        {tokenText(t, tk, options)}
+                <Label id="calc-formula-label">{c("formula")}</Label>
+                <div
+                  role="group"
+                  aria-labelledby="calc-formula-label"
+                  className="mt-1 flex min-h-[44px] flex-wrap items-center gap-1 rounded-md border p-2"
+                  data-testid="formula-bar"
+                >
+                  {tokens.map((tk, i) => {
+                    const text = tokenText(t, tk, options);
+                    return (
+                      <span key={i}>
+                        {i > 0 && " "}
+                        <button
+                          type="button"
+                          onClick={() => setTokens((prev) => prev.filter((_, at) => at !== i))}
+                          aria-label={c("removeToken", { token: text })}
+                          title={c("removeToken", { token: text })}
+                          className={tk.t === "field" || tk.t === "calc"
+                            ? "rounded bg-primary/10 px-2 py-0.5 text-sm hover:bg-destructive/10 hover:line-through"
+                            : "rounded px-1 text-sm font-medium hover:bg-destructive/10 hover:line-through"}
+                          data-testid={`formula-token-${i}`}
+                        >
+                          {text}
+                        </button>
                       </span>
-                    </span>
-                  ))}
+                    );
+                  })}
                 </div>
                 {!parsed.ok && (
-                  <p className="mt-1 text-sm text-destructive" data-testid="formula-error">{c(`parseErrors.${parsed.error}`)}</p>
+                  <p role="alert" className="mt-1 text-sm text-destructive" data-testid="formula-error">{c(`parseErrors.${parsed.error}`)}</p>
                 )}
               </div>
               <div className="flex flex-wrap gap-2">
@@ -339,6 +383,9 @@ export function CalculatedFieldDialog({
                     data-testid="input-formula-number"
                   />
                 </div>
+                {parsedDraft !== null && (
+                  <span className="pb-2 text-sm text-muted-foreground" data-testid="formula-number-parsed">= {dutchNumberText(parsedDraft)}</span>
+                )}
                 <Button type="button" variant="outline" onClick={addNumber} data-testid="button-formula-add-number">
                   {c("addNumber")}
                 </Button>
@@ -353,9 +400,7 @@ export function CalculatedFieldDialog({
                       type="button"
                       variant="secondary"
                       size="sm"
-                      onClick={() => push(o.node.kind === "calc" ? { t: "calc", id: o.node.id } : o.node.kind === "field"
-                        ? { t: "field", table: o.node.table, field: o.node.field, ...(o.node.via ? { via: o.node.via } : {}) }
-                        : { t: "(" })}
+                      onClick={() => push(tokenOf(o.node))}
                       data-testid={o.node.kind === "calc" ? `button-formula-calc-${o.node.id}` : `button-formula-field-${o.key}`}
                     >
                       {o.label}
@@ -433,6 +478,9 @@ export function CalculatedFieldDialog({
                 ))}
               </SelectContent>
             </Select>
+            {effectiveType === "percent" && (
+              <p className="mt-1 text-sm text-muted-foreground" data-testid="calc-percent-hint">{c("percentHint")}</p>
+            )}
           </div>
           {problem && <p className="text-sm text-destructive" data-testid="calc-problem">{problem}</p>}
         </div>
