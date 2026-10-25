@@ -44,6 +44,7 @@ import ReportBuilderPage from "@/pages/reports/report-builder";
 import MaintenanceCostsPage from "@/pages/reports/maintenance-costs";
 import { WorkshopDowntimeCard } from "./workshop-downtime-card";
 import { OccupancyReportCard } from "./occupancy-report-card";
+import { CustomerValueReportCard } from "./customer-value-report-card";
 import { MaintenanceOutlookCard } from "./maintenance-outlook-card";
 import { FleetMileageReportCard } from "./fleet-mileage-report-card";
 import { FinancialTab } from "@/pages/reports/financial-tab";
@@ -2399,6 +2400,7 @@ function FullReportsPage() {
 
         {/* Customers Tab */}
         <TabsContent value="customers" className="space-y-6">
+          <CustomerValueReportCard from={reportFrom} to={reportTo} vehicleId={selectedVehicle} />
           {!canViewCustomers ? (
             <NoDataAccess permission={UserPermission.VIEW_CUSTOMERS} />
           ) : (

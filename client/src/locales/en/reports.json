@@ -657,7 +657,42 @@
     "name": "Name",
     "count": "Count",
     "amount": "Amount",
-    "periodTooLong": "Choose a period of at most one year ({{days}} days)."
+    "periodTooLong": "Choose a period of at most one year ({{days}} days).",
+    "noCustomer": "No customer"
+  },
+  "customerReports": {
+    "value": {
+      "title": "Customer value",
+      "description": "What each customer brings in and costs in the chosen period: revenue, costs, late returns, cancellations and portal requests.",
+      "costsNote": "Costs caused by the customer are fines, extra kilometres and fuel. Extra kilometres and fuel are also part of the revenue. Damage has no amount: it only counts as a number.",
+      "customersHint_one": "{{count}} customer",
+      "customersHint_other": "{{count}} customers",
+      "tiles": {
+        "revenue": "Revenue",
+        "costs": "Costs caused by the customer",
+        "late": "Returned late",
+        "cancelled": "Cancelled",
+        "requests": "Portal requests"
+      },
+      "topRevenue": "Top 10 best customers (revenue)",
+      "topCosts": "Top 10 most expensive customers (costs)",
+      "columns": {
+        "customer": "Customer",
+        "rentals": "Reservations",
+        "rentalDays": "Rental days",
+        "revenue": "Revenue",
+        "extraKmCost": "Extra km",
+        "fuelCost": "Fuel",
+        "finesCount": "Fines (number)",
+        "finesAmount": "Fines (amount)",
+        "damageChecks": "Damage checks with damage",
+        "costs": "Costs",
+        "lateReturns": "Late",
+        "cancellations": "Cancellations",
+        "portalRequests": "Portal requests"
+      },
+      "csvSubject": "customer-value"
+    }
   },
   "fleetReports": {
     "outlook": {

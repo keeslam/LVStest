@@ -669,7 +669,43 @@
     "name": "Nume",
     "count": "Număr",
     "amount": "Sumă",
-    "periodTooLong": "Alegeți o perioadă de cel mult un an ({{days}} de zile)."
+    "periodTooLong": "Alegeți o perioadă de cel mult un an ({{days}} de zile).",
+    "noCustomer": "Fără client"
+  },
+  "customerReports": {
+    "value": {
+      "title": "Valoarea clientului",
+      "description": "Ce aduce și ce costă fiecare client în perioada aleasă: venituri, costuri, returnări târzii, anulări și cereri din portal.",
+      "costsNote": "Costurile clientului sunt amenzi, kilometri în plus și combustibil. Kilometrii în plus și combustibilul sunt incluși și în venituri. Daunele nu au o sumă: se numără doar.",
+      "customersHint_one": "{{count}} client",
+      "customersHint_few": "{{count}} clienți",
+      "customersHint_other": "{{count}} de clienți",
+      "tiles": {
+        "revenue": "Venituri",
+        "costs": "Costurile clientului",
+        "late": "Returnat târziu",
+        "cancelled": "Anulat",
+        "requests": "Cereri din portal"
+      },
+      "topRevenue": "Top 10 cei mai buni clienți (venituri)",
+      "topCosts": "Top 10 cei mai costisitori clienți (costuri)",
+      "columns": {
+        "customer": "Client",
+        "rentals": "Rezervări",
+        "rentalDays": "Zile de închiriere",
+        "revenue": "Venituri",
+        "extraKmCost": "Km în plus",
+        "fuelCost": "Combustibil",
+        "finesCount": "Amenzi (număr)",
+        "finesAmount": "Amenzi (sumă)",
+        "damageChecks": "Verificări cu daune",
+        "costs": "Costuri",
+        "lateReturns": "Târziu",
+        "cancellations": "Anulări",
+        "portalRequests": "Cereri din portal"
+      },
+      "csvSubject": "valoare-client"
+    }
   },
   "fleetReports": {
     "outlook": {

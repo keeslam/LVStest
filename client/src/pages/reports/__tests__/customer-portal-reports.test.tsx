@@ -1,0 +1,120 @@
+/**
+ * Rapporten fase 4 - Klanten and Portaal report cards. Customer value is a money report:
+ * only the report permission, no customer permission needed.
+ *
+ * Runs in the jsdom project.
+ */
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { getQueryFn } from "@/lib/queryClient";
+import { formatCurrency } from "@/lib/format-utils";
+
+let permissions: string[] = [];
+vi.mock("@/hooks/use-auth", () => ({
+  useAuth: () => ({ user: { id: 1, username: "tester", role: "user", permissions, hidePrices: false }, isLoading: false }),
+}));
+
+const downloadCsv = vi.fn(() => "x.csv");
+vi.mock("@/lib/csv", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/csv")>()),
+  downloadCsv: (...a: any[]) => (downloadCsv as any)(...a),
+}));
+
+import { CustomerValueReportCard } from "@/pages/reports/customer-value-report-card";
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+}
+
+let fetchMock: ReturnType<typeof vi.fn>;
+function pathOf(input: unknown): string {
+  const url = typeof input === "string" ? input : (input as Request)?.url ?? "";
+  return url.replace(/^https?:\/\/[^/]+/, "");
+}
+const fetchedPaths = () => fetchMock.mock.calls.map(([input]) => pathOf(input));
+
+const VALUE_ROW = (customerId: number | null, customerName: string | null, costs: number) => ({
+  customerId, customerName, rentals: 2, rentalDays: 10, revenue: 1000, extraKmCost: 30, fuelCost: 20,
+  finesCount: 1, finesAmount: costs - 50, damageChecks: 0, lateReturns: 1, cancellations: 0, portalRequests: 3, costs, amount: costs,
+});
+
+beforeEach(() => {
+  fetchMock = vi.fn(async (input: unknown) => {
+    const path = pathOf(input);
+    if (path.startsWith("/api/reports/customer-value/summary")) {
+      return json({
+        tiles: {
+          revenue: { count: 2, amount: 1750 }, costs: { count: 2, amount: 300 }, late: { count: 1, amount: 1 },
+          cancelled: { count: 0, amount: 0 }, requests: { count: 1, amount: 3 },
+        },
+        topRevenue: [{ key: 1, label: "Jansen", count: 2, amount: 1000 }],
+        topCosts: [{ key: null, label: null, count: 1, amount: 250 }],
+      });
+    }
+    if (path.startsWith("/api/reports/customer-value/rows")) {
+      return json({ rows: [VALUE_ROW(null, null, 250), VALUE_ROW(1, "Jansen", 50)], total: 2, page: 1, pageSize: 50 });
+    }
+    return json([]);
+  });
+  vi.stubGlobal("fetch", fetchMock);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+function renderNode(node: React.ReactNode) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { queryFn: getQueryFn({ on401: "throw" }), retry: false, gcTime: 0 } },
+  });
+  return render(<QueryClientProvider client={client}>{node}</QueryClientProvider>);
+}
+
+describe("Klanten - klantwaarde", () => {
+  it("klantwaarde met alleen rapportrecht", async () => {
+    permissions = ["view_reports"];
+    renderNode(<CustomerValueReportCard from="2026-01-01" to="2026-12-31" />);
+    expect((await screen.findByTestId("customer-value-tile-revenue-value")).textContent).toBe(formatCurrency(1750));
+    expect(fetchedPaths()).toContain("/api/reports/customer-value/summary?from=2026-01-01&to=2026-12-31");
+    expect(screen.getByTestId("customer-value-tile-late-value").textContent).toBe("1");
+    expect(screen.getByTestId("customer-value-top-revenue")).toBeInTheDocument();
+    expect(screen.getByTestId("customer-value-top-costs")).toBeInTheDocument();
+  });
+
+  it("zonder rapportrecht geen kaart en geen verzoek", async () => {
+    permissions = ["view_customers"];
+    renderNode(<CustomerValueReportCard from="2026-01-01" to="2026-12-31" />);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(screen.queryByTestId("card-customer-value-report")).not.toBeInTheDocument();
+    expect(fetchedPaths().some((p) => p.startsWith("/api/reports/customer-value"))).toBe(false);
+  });
+
+  it("een voertuigfilter gaat mee, 'all' niet", async () => {
+    permissions = ["manage_reports"];
+    renderNode(<CustomerValueReportCard from="2026-01-01" to="2026-12-31" vehicleId="7" />);
+    await screen.findByTestId("customer-value-tile-revenue-value");
+    expect(fetchedPaths()).toContain("/api/reports/customer-value/summary?from=2026-01-01&to=2026-12-31&vehicleId=7");
+  });
+
+  it("een summary zonder tegels breekt de kaart niet", async () => {
+    permissions = ["view_reports"];
+    fetchMock.mockImplementation(async () => json({}));
+    renderNode(<CustomerValueReportCard from="2026-01-01" to="2026-12-31" />);
+    expect((await screen.findByTestId("customer-value-tile-revenue-value")).textContent).toBe(formatCurrency(0));
+  });
+
+  it("tegel Kosten opent de lijst, rij zonder klant heet 'Zonder klant'", async () => {
+    permissions = ["view_reports"];
+    const user = userEvent.setup();
+    renderNode(<CustomerValueReportCard from="2026-01-01" to="2026-12-31" />);
+    await user.click(await screen.findByTestId("button-customer-value-tile-costs"));
+    await waitFor(() => expect(fetchedPaths()).toContain(
+      "/api/reports/customer-value/rows?from=2026-01-01&to=2026-12-31&tile=costs&sort=amount&dir=desc&page=1&pageSize=50",
+    ));
+    const dialog = await screen.findByTestId("dialog-customer-value-report");
+    expect(await within(dialog).findByText("Zonder klant")).toBeInTheDocument();
+    expect(within(dialog).getByText("Jansen")).toBeInTheDocument();
+  });
+});

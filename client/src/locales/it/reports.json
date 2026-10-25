@@ -669,7 +669,43 @@
     "name": "Nome",
     "count": "Numero",
     "amount": "Importo",
-    "periodTooLong": "Scegli un periodo di al massimo un anno ({{days}} giorni)."
+    "periodTooLong": "Scegli un periodo di al massimo un anno ({{days}} giorni).",
+    "noCustomer": "Senza cliente"
+  },
+  "customerReports": {
+    "value": {
+      "title": "Valore del cliente",
+      "description": "Quanto rende e quanto costa ogni cliente nel periodo scelto: ricavi, costi, restituzioni in ritardo, cancellazioni e richieste del portale.",
+      "costsNote": "I costi del cliente sono multe, chilometri extra e carburante. I chilometri extra e il carburante sono anche nei ricavi. I danni non hanno un importo: contano solo come numero.",
+      "customersHint_one": "{{count}} cliente",
+      "customersHint_many": "{{count}} clienti",
+      "customersHint_other": "{{count}} clienti",
+      "tiles": {
+        "revenue": "Ricavi",
+        "costs": "Costi del cliente",
+        "late": "Restituito in ritardo",
+        "cancelled": "Annullato",
+        "requests": "Richieste del portale"
+      },
+      "topRevenue": "Top 10 migliori clienti (ricavi)",
+      "topCosts": "Top 10 clienti più costosi (costi)",
+      "columns": {
+        "customer": "Cliente",
+        "rentals": "Prenotazioni",
+        "rentalDays": "Giorni di noleggio",
+        "revenue": "Ricavi",
+        "extraKmCost": "Km extra",
+        "fuelCost": "Carburante",
+        "finesCount": "Multe (numero)",
+        "finesAmount": "Multe (importo)",
+        "damageChecks": "Controlli con danni",
+        "costs": "Costi",
+        "lateReturns": "In ritardo",
+        "cancellations": "Cancellazioni",
+        "portalRequests": "Richieste del portale"
+      },
+      "csvSubject": "valore-cliente"
+    }
   },
   "fleetReports": {
     "outlook": {

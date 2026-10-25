@@ -129,6 +129,16 @@ describe("/reports — the vehicles/customers/transports tabs follow their own f
     expect(calledWith("/api/customers")).toBe(false);
   });
 
+  it("klantwaarde staat op Klanten ook zonder view_customers", async () => {
+    role = UserRole.USER;
+    permissions = [UserPermission.VIEW_REPORTS];
+    const user = userEvent.setup();
+    withClient(<ReportsPage />);
+    await user.click(screen.getByRole("tab", { name: /Klanten/i }));
+    expect(await screen.findByTestId("card-customer-value-report")).toBeInTheDocument();
+    expect(await screen.findByTestId("no-data-access")).toHaveTextContent("Klanten bekijken");
+  });
+
   it("shows no NoDataAccess in the transports tab and fires /api/transports with either family", async () => {
     role = UserRole.USER;
     permissions = [UserPermission.VIEW_REPORTS, UserPermission.VIEW_VEHICLES];

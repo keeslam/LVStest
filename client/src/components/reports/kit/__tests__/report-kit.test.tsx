@@ -18,6 +18,7 @@ import { ReportTiles } from "@/components/reports/kit/report-tiles";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
 import { ReportBreakdownTable } from "@/components/reports/kit/report-breakdown-table";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
+import { ReportTopChart, topChartData } from "@/components/reports/kit/report-top-chart";
 import { reportTableHtml } from "@/lib/report-table-print";
 
 function json(body: unknown, status = 200) {
@@ -314,5 +315,18 @@ describe("report kit", () => {
     // The series keys are checked against the month row (tsc): an unknown key does not compile.
     // @ts-expect-error "zz" is not a field of the month row
     render(<ReportMonthChart data={[] as Array<{ month: string; a: number }>} series={[{ key: "zz", label: "Z", color: "#000" }]} testId="d" />);
+  });
+
+  it("topChartData: null-label en volgorde", () => {
+    expect(topChartData([{ key: 1, label: "A", count: 2, amount: 750 }, { key: null, label: null, count: 0, amount: 15 }], "Zonder klant"))
+      .toEqual([{ name: "A", amount: 750, count: 2 }, { name: "Zonder klant", amount: 15, count: 0 }]);
+  });
+
+  it("ReportTopChart leeg en gevuld", () => {
+    render(<ReportTopChart rows={[]} nullLabel="Zonder klant" color="#000" testId="x" />);
+    expect(screen.getByTestId("x-empty")).toBeInTheDocument();
+    render(<ReportTopChart rows={[{ key: 1, label: "A", count: 2, amount: 750 }]} nullLabel="Zonder klant" money color="#000" testId="y" />);
+    expect(screen.getByTestId("y")).toBeInTheDocument();
+    expect(screen.queryByTestId("y-empty")).not.toBeInTheDocument();
   });
 });

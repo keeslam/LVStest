@@ -681,7 +681,44 @@
     "name": "Nazwa",
     "count": "Liczba",
     "amount": "Kwota",
-    "periodTooLong": "Wybierz okres najwyżej jednego roku ({{days}} dni)."
+    "periodTooLong": "Wybierz okres najwyżej jednego roku ({{days}} dni).",
+    "noCustomer": "Bez klienta"
+  },
+  "customerReports": {
+    "value": {
+      "title": "Wartość klienta",
+      "description": "Ile każdy klient przynosi i kosztuje w wybranym okresie: przychód, koszty, spóźnione zwroty, anulowania i zgłoszenia z portalu.",
+      "costsNote": "Koszty klienta to mandaty, dodatkowe kilometry i paliwo. Dodatkowe kilometry i paliwo są też w przychodzie. Szkody nie mają kwoty: liczą się tylko jako liczba.",
+      "customersHint_one": "{{count}} klient",
+      "customersHint_few": "{{count}} klientów",
+      "customersHint_many": "{{count}} klientów",
+      "customersHint_other": "{{count}} klienta",
+      "tiles": {
+        "revenue": "Przychód",
+        "costs": "Koszty klienta",
+        "late": "Zwrot z opóźnieniem",
+        "cancelled": "Anulowane",
+        "requests": "Zgłoszenia z portalu"
+      },
+      "topRevenue": "Top 10 najlepszych klientów (przychód)",
+      "topCosts": "Top 10 najdroższych klientów (koszty)",
+      "columns": {
+        "customer": "Klient",
+        "rentals": "Rezerwacje",
+        "rentalDays": "Dni wynajmu",
+        "revenue": "Przychód",
+        "extraKmCost": "Dodatkowe km",
+        "fuelCost": "Paliwo",
+        "finesCount": "Mandaty (liczba)",
+        "finesAmount": "Mandaty (kwota)",
+        "damageChecks": "Kontrole ze szkodą",
+        "costs": "Koszty",
+        "lateReturns": "Spóźnione",
+        "cancellations": "Anulowania",
+        "portalRequests": "Zgłoszenia z portalu"
+      },
+      "csvSubject": "wartosc-klienta"
+    }
   },
   "fleetReports": {
     "outlook": {

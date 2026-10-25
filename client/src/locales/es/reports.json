@@ -669,7 +669,43 @@
     "name": "Nombre",
     "count": "Cantidad",
     "amount": "Importe",
-    "periodTooLong": "Elige un periodo de un año como máximo ({{days}} días)."
+    "periodTooLong": "Elige un periodo de un año como máximo ({{days}} días).",
+    "noCustomer": "Sin cliente"
+  },
+  "customerReports": {
+    "value": {
+      "title": "Valor del cliente",
+      "description": "Lo que aporta y cuesta cada cliente en el periodo elegido: ingresos, costes, devoluciones tardías, cancelaciones y solicitudes del portal.",
+      "costsNote": "Los costes del cliente son multas, kilómetros extra y combustible. Los kilómetros extra y el combustible también están en los ingresos. Los daños no tienen importe: solo cuentan como número.",
+      "customersHint_one": "{{count}} cliente",
+      "customersHint_many": "{{count}} clientes",
+      "customersHint_other": "{{count}} clientes",
+      "tiles": {
+        "revenue": "Ingresos",
+        "costs": "Costes del cliente",
+        "late": "Devuelto tarde",
+        "cancelled": "Cancelado",
+        "requests": "Solicitudes del portal"
+      },
+      "topRevenue": "Top 10 mejores clientes (ingresos)",
+      "topCosts": "Top 10 clientes más caros (costes)",
+      "columns": {
+        "customer": "Cliente",
+        "rentals": "Reservas",
+        "rentalDays": "Días de alquiler",
+        "revenue": "Ingresos",
+        "extraKmCost": "Km extra",
+        "fuelCost": "Combustible",
+        "finesCount": "Multas (número)",
+        "finesAmount": "Multas (importe)",
+        "damageChecks": "Revisiones con daños",
+        "costs": "Costes",
+        "lateReturns": "Tarde",
+        "cancellations": "Cancelaciones",
+        "portalRequests": "Solicitudes del portal"
+      },
+      "csvSubject": "valor-cliente"
+    }
   },
   "fleetReports": {
     "outlook": {

@@ -657,7 +657,42 @@
     "name": "Naam",
     "count": "Aantal",
     "amount": "Bedrag",
-    "periodTooLong": "Kies een periode van maximaal een jaar ({{days}} dagen)."
+    "periodTooLong": "Kies een periode van maximaal een jaar ({{days}} dagen).",
+    "noCustomer": "Zonder klant"
+  },
+  "customerReports": {
+    "value": {
+      "title": "Klantwaarde",
+      "description": "Wat elke klant oplevert en kost in de gekozen periode: omzet, kosten, te laat ingeleverd, annuleringen en aanvragen in het portaal.",
+      "costsNote": "Kosten door de klant zijn bekeuringen, extra kilometers en brandstof. Extra kilometers en brandstof zitten ook in de omzet. Schades hebben geen bedrag: ze tellen alleen als aantal.",
+      "customersHint_one": "{{count}} klant",
+      "customersHint_other": "{{count}} klanten",
+      "tiles": {
+        "revenue": "Omzet",
+        "costs": "Kosten door de klant",
+        "late": "Te laat ingeleverd",
+        "cancelled": "Geannuleerd",
+        "requests": "Portaalaanvragen"
+      },
+      "topRevenue": "Top 10 beste klanten (omzet)",
+      "topCosts": "Top 10 duurste klanten (kosten)",
+      "columns": {
+        "customer": "Klant",
+        "rentals": "Reserveringen",
+        "rentalDays": "Huurdagen",
+        "revenue": "Omzet",
+        "extraKmCost": "Meer-km",
+        "fuelCost": "Brandstof",
+        "finesCount": "Bekeuringen (aantal)",
+        "finesAmount": "Bekeuringen (bedrag)",
+        "damageChecks": "Schadechecks met schade",
+        "costs": "Kosten",
+        "lateReturns": "Te laat",
+        "cancellations": "Annuleringen",
+        "portalRequests": "Portaalaanvragen"
+      },
+      "csvSubject": "klantwaarde"
+    }
   },
   "fleetReports": {
     "outlook": {
