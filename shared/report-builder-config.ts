@@ -19,6 +19,8 @@ export interface DataSourceField {
   table: string;
   operators: FilterOperator[];
   aggregatable: boolean;
+  /** Km data: admin only in every use (column, filter, group, calculation, also through a link). */
+  adminOnly?: boolean;
 }
 
 /** The ids of the builder's data sources. */
@@ -135,16 +137,18 @@ const dateOperators: FilterOperator[] = [
 const booleanOperators: FilterOperator[] = ['equals', 'is_null', 'is_not_null'];
 
 /** One field with the operators and aggregatability that belong to its type. */
-function sourceField(table: string, name: string, label: string, type: FieldType): DataSourceField {
+function sourceField(table: string, name: string, label: string, type: FieldType, adminOnly?: 'adminOnly'): DataSourceField {
   const operators = type === 'number' ? numberOperators
     : type === 'date' ? dateOperators
     : type === 'boolean' ? booleanOperators
     : textOperators;
-  return { name, label, type, table, operators, aggregatable: type === 'number' };
+  const field: DataSourceField = { name, label, type, table, operators, aggregatable: type === 'number' };
+  if (adminOnly) field.adminOnly = true;
+  return field;
 }
 
-function sourceFields(table: string, list: [string, string, FieldType][]): DataSourceField[] {
-  return list.map(([name, label, type]) => sourceField(table, name, label, type));
+function sourceFields(table: string, list: [string, string, FieldType, 'adminOnly'?][]): DataSourceField[] {
+  return list.map(([name, label, type, adminOnly]) => sourceField(table, name, label, type, adminOnly));
 }
 
 const CUSTOMER_ACCESS: ReportSourceAccess = {
@@ -171,7 +175,7 @@ export const DATA_SOURCES: DataSource[] = [
       { name: 'fuel', label: 'Fuel Type', type: 'text', table: 'vehicles', operators: textOperators, aggregatable: false },
       { name: 'monthlyPrice', label: 'Monthly Price', type: 'number', table: 'vehicles', operators: numberOperators, aggregatable: true },
       { name: 'dailyPrice', label: 'Daily Price', type: 'number', table: 'vehicles', operators: numberOperators, aggregatable: true },
-      { name: 'currentMileage', label: 'Current Mileage', type: 'number', table: 'vehicles', operators: numberOperators, aggregatable: true },
+      { name: 'currentMileage', label: 'Current Mileage', type: 'number', table: 'vehicles', operators: numberOperators, aggregatable: true, adminOnly: true },
       { name: 'apkDate', label: 'APK Date', type: 'date', table: 'vehicles', operators: dateOperators, aggregatable: false },
       { name: 'warrantyEndDate', label: 'Warranty End Date', type: 'date', table: 'vehicles', operators: dateOperators, aggregatable: false },
       { name: 'maintenanceStatus', label: 'Maintenance Status', type: 'text', table: 'vehicles', operators: textOperators, aggregatable: false },
@@ -208,8 +212,8 @@ export const DATA_SOURCES: DataSource[] = [
       { name: 'status', label: 'Status', type: 'text', table: 'reservations', operators: textOperators, aggregatable: false },
       { name: 'type', label: 'Reservation Type', type: 'text', table: 'reservations', operators: textOperators, aggregatable: false },
       { name: 'totalPrice', label: 'Total Amount', type: 'number', table: 'reservations', operators: numberOperators, aggregatable: true },
-      { name: 'pickupMileage', label: 'Pickup Mileage', type: 'number', table: 'reservations', operators: numberOperators, aggregatable: true },
-      { name: 'returnMileage', label: 'Return Mileage', type: 'number', table: 'reservations', operators: numberOperators, aggregatable: true },
+      { name: 'pickupMileage', label: 'Pickup Mileage', type: 'number', table: 'reservations', operators: numberOperators, aggregatable: true, adminOnly: true },
+      { name: 'returnMileage', label: 'Return Mileage', type: 'number', table: 'reservations', operators: numberOperators, aggregatable: true, adminOnly: true },
       { name: 'deliveryRequired', label: 'Delivery Required', type: 'boolean', table: 'reservations', operators: booleanOperators, aggregatable: false },
       { name: 'deliveryFee', label: 'Delivery Fee', type: 'number', table: 'reservations', operators: numberOperators, aggregatable: true },
     ],
@@ -341,7 +345,7 @@ export const DATA_SOURCES: DataSource[] = [
       ['reservationId', 'Reservation ID', 'number'],
       ['checkType', 'Check Type', 'text'],
       ['checkDate', 'Check Date', 'date'],
-      ['mileage', 'Mileage', 'number'],
+      ['mileage', 'Mileage', 'number', 'adminOnly'],
       ['fuelLevel', 'Fuel Level', 'text'],
       ['completedBy', 'Completed By', 'text'],
     ]),
@@ -356,7 +360,7 @@ export const DATA_SOURCES: DataSource[] = [
     fields: sourceFields('vehicle_mileage_readings', [
       ['id', 'ID', 'number'],
       ['vehicleId', 'Vehicle ID', 'number'],
-      ['mileage', 'Mileage', 'number'],
+      ['mileage', 'Mileage', 'number', 'adminOnly'],
       ['recordedAt', 'Recorded At', 'date'],
       ['source', 'Source', 'text'],
       ['actorName', 'Recorded By', 'text'],
@@ -387,27 +391,65 @@ export function getDataSource(id: string): DataSource | undefined {
   return DATA_SOURCES.find(ds => ds.id === id);
 }
 
-/** Km fields: admin only, also when a report reaches them through a link. Keyed "<table>.<field>". */
-export const REPORT_KM_FIELDS: ReadonlySet<string> = new Set([
-  'vehicles.currentMileage',
-  'reservations.pickupMileage',
-  'reservations.returnMileage',
-]);
+/**
+ * Whether this user may use this field of this source: the source right, and for a km field
+ * (adminOnly) the admin role. The builder hides what this refuses; the server refuses it too.
+ */
+export function canUseReportField(user: ReportSourceUser | null | undefined, source: DataSource, field: DataSourceField | string): boolean {
+  if (!canUseReportSource(user, source)) return false;
+  const def = typeof field === 'string' ? source.fields.find((f) => f.name === field) : field;
+  return !def?.adminOnly || user?.role === UserRole.ADMIN;
+}
 
-type LinkedEntry = { table: string; field: string; via: string };
+type ReportEntry = { table: string; field: string; via: unknown };
 
-/** The column, filter, grouping and sort entries of a report that read a field through a link. */
-function linkedEntriesOf(config: Partial<ReportConfiguration> | null | undefined): LinkedEntry[] {
-  const out: LinkedEntry[] = [];
+/** Every column, filter, grouping and sort entry of a report. */
+function reportEntriesOf(config: Partial<ReportConfiguration> | null | undefined): ReportEntry[] {
+  const out: ReportEntry[] = [];
   for (const list of [config?.columns, config?.filters, config?.groupBy, config?.orderBy]) {
     if (!Array.isArray(list)) continue;
     for (const entry of list as any[]) {
-      if (entry && typeof entry === 'object' && typeof entry.via === 'string' && entry.via !== '') {
+      if (entry && typeof entry === 'object') {
         out.push({ table: String(entry.table), field: String(entry.field), via: entry.via });
       }
     }
   }
   return out;
+}
+
+/** Whether an entry reads through a link. Any via that is set counts, also one that is not a string. */
+function hasVia(entry: ReportEntry): boolean {
+  return entry.via !== undefined && entry.via !== null && entry.via !== '';
+}
+
+/** The entries of a report that read a field through a link (valid or not). */
+function linkedEntriesOf(config: Partial<ReportConfiguration> | null | undefined): ReportEntry[] {
+  return reportEntriesOf(config).filter(hasVia);
+}
+
+/**
+ * The first entry whose link is not a link of the main source to that entry's table
+ * (an unknown name, a non-string, or a field of another table). Null when all links are fine.
+ */
+export function invalidReportLink(config: Partial<ReportConfiguration> | null | undefined): { via: string; table: string } | null {
+  const main = Array.isArray(config?.dataSources) ? config!.dataSources[0] : undefined;
+  for (const entry of linkedEntriesOf(config)) {
+    const link = getReportLink(main, entry.via);
+    if (!link || getDataSource(link.target)?.table !== entry.table) {
+      return { via: typeof entry.via === 'string' ? entry.via : JSON.stringify(entry.via) ?? '', table: entry.table };
+    }
+  }
+  return null;
+}
+
+/** The first admin-only (km) field the report uses anywhere, directly or through a link; null if none. */
+export function adminOnlyFieldOf(config: Partial<ReportConfiguration> | null | undefined): string | null {
+  for (const entry of reportEntriesOf(config)) {
+    const key = `${entry.table}.${entry.field}`;
+    const name = RENAMED_REPORT_FIELDS[key] ?? entry.field;
+    if (getField(entry.table, name)?.adminOnly) return `${entry.table}.${name}`;
+  }
+  return null;
 }
 
 /** The link with this name of the report's main (first) source; undefined when it has none. */
@@ -428,14 +470,6 @@ export function linkedSourcesOf(config: Partial<ReportConfiguration> | null | un
     if (link && !out.includes(link.target)) out.push(link.target);
   }
   return out;
-}
-
-/** Whether the report reads a km field through a link (admin only, like the km history). */
-export function usesLinkedKmField(config: Partial<ReportConfiguration> | null | undefined): boolean {
-  return linkedEntriesOf(config).some((e) => {
-    const key = `${e.table}.${e.field}`;
-    return REPORT_KM_FIELDS.has(`${e.table}.${RENAMED_REPORT_FIELDS[key] ?? e.field}`);
-  });
 }
 
 /** A date field of the source, as a report period can apply to it. */

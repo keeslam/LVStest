@@ -6658,8 +6658,16 @@ export class DatabaseStorage implements IStorage {
     // double; no linked row gives null). The target's fixed conditions do not apply to the join:
     // a fine on a reservation in the recycle bin or on a vehicle out of the fleet still shows that
     // row's fields, because it is history. The link name is the join alias (whitelisted names only).
-    const viaOf = (entry: any): string | undefined =>
-      entry?.via === undefined || entry?.via === null || entry?.via === "" ? undefined : String(entry.via);
+    // A via that is set but not a string (a list, an object, a number) is refused, never cast:
+    // the route checks the rights of string links only.
+    const viaOf = (entry: any): string | undefined => {
+      const via = entry?.via;
+      if (via === undefined || via === null || via === "") return undefined;
+      if (typeof via !== "string") {
+        throw new ReportValidationError("Een koppeling moet een naam zijn.", "REPORT_LINK_INVALID", `${String(entry?.table)}.${String(entry?.field)}`);
+      }
+      return via;
+    };
     const usedLinks = new Map<string, { target: Record<string, any>; fk: string }>();
     const linkTable = (via: string, table: string): Record<string, any> => {
       const link = getReportLink(mainSource.id, via);

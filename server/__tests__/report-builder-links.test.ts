@@ -7,7 +7,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { eq, inArray } from "drizzle-orm";
 import { db } from "../db";
 import { fines, savedReports, vehicles } from "../../shared/schema";
-import { DATA_SOURCES, linkedSourcesOf } from "../../shared/report-builder-config";
+import { DATA_SOURCES, linkedSourcesOf, canUseReportField } from "../../shared/report-builder-config";
 import * as schema from "../../shared/schema";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureVehicle, createFixtureCustomer, createFixtureReservation, cleanupFixtures } from "./helpers/fixtures";
@@ -200,5 +200,137 @@ describe("report builder links", () => {
     expect((await admin.post("/api/reports/execute").send(cfg)).status).toBe(200);
     const brand = await user.post("/api/reports/execute").send(finesOf({ columns: [{ table: "vehicles", field: "brand", via: "vehicle" }] }));
     expect(brand.status).toBe(200);
+  });
+
+  it("a via that is not a string never slips past the rights", async () => {
+    const noCustomer = await agentFor(["view_reports", "manage_reports", "view_fines"]);
+    for (const via of [["customer"], { name: "customer" }, 1, true]) {
+      const res = await noCustomer.post("/api/reports/execute").send(finesOf({
+        columns: [{ table: "fines", field: "id" }, { table: "customers", field: "name", via }],
+      }));
+      expect([400, 403], JSON.stringify(via)).toContain(res.status);
+      const filtered = await noCustomer.post("/api/reports/execute").send(finesOf({
+        columns: [{ table: "fines", field: "id" }],
+        filters: [{ table: "customers", field: "name", via, operator: "equals", value: KName }],
+      }));
+      expect([400, 403], JSON.stringify(via)).toContain(filtered.status);
+    }
+    const asAdmin = await admin.post("/api/reports/execute").send(finesOf({
+      columns: [{ table: "customers", field: "name", via: ["customer"] }],
+    }));
+    expect(asAdmin.status).toBe(400);
+    expect(asAdmin.body.code).toBe("REPORT_LINK_INVALID");
+    const vehicleUser = await agentFor(["view_reports", "view_fines", "view_vehicles"]);
+    const km = await vehicleUser.post("/api/reports/execute").send(finesOf({
+      columns: [{ table: "vehicles", field: "currentMileage", via: ["vehicle"] }],
+    }));
+    expect([400, 403]).toContain(km.status);
+    const saved = await admin.post("/api/reports/saved").send({ ...finesOf({ columns: [{ table: "customers", field: "name", via: ["customer"] }] }), name: "x" });
+    expect(saved.status).toBe(400);
+  });
+
+  it("several links in one report: plain and linked fields with the same name stay apart", async () => {
+    const res = await admin.post("/api/reports/execute").send(finesOf({
+      columns: [
+        { table: "fines", field: "id" },
+        { table: "fines", field: "status" },
+        { table: "vehicles", field: "id", via: "vehicle" },
+        { table: "reservations", field: "status", via: "reservation" },
+        { table: "customers", field: "name", via: "customer" },
+        { table: "drivers", field: "firstName", via: "driver" },
+      ],
+    }));
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(3);
+    const first = res.body.find((r: any) => r.id === fineIds[0]);
+    expect(first.status).toBe("linked");
+    expect(first["reservation.status"]).toBe("booked");
+    expect(first["vehicle.id"]).toBe(V1);
+    expect(first["customer.name"]).toBe(KName);
+    expect(first["driver.firstName"]).toBeNull();
+    const grouped = await admin.post("/api/reports/execute").send(finesOf({
+      columns: [
+        { table: "fines", field: "status" },
+        { table: "reservations", field: "status", via: "reservation" },
+        { table: "fines", field: "id", aggregation: "COUNT" },
+      ],
+      groupBy: [{ table: "fines", field: "status" }, { table: "reservations", field: "status", via: "reservation" }],
+    }));
+    expect(grouped.status).toBe(200);
+    expect(grouped.body.map((r: any) => [r.status, r["reservation.status"], Number(r.id)]))
+      .toEqual([["linked", "booked", 1], ["linked", null, 1], ["new", null, 1]]);
+  });
+
+  it("saving a report with an unknown link is 400 REPORT_LINK_INVALID", async () => {
+    const bad = { ...finesOf({ columns: [{ table: "vehicles", field: "brand", via: "garage" }] }), name: `Bad link ${Date.now()}` };
+    const post = await admin.post("/api/reports/saved").send(bad);
+    expect(post.status).toBe(400);
+    expect(post.body.code).toBe("REPORT_LINK_INVALID");
+    const wrongTable = await admin.post("/api/reports/saved").send({ ...bad, columns: [{ table: "customers", field: "name", via: "vehicle" }] });
+    expect(wrongTable.status).toBe(400);
+    expect(wrongTable.body.code).toBe("REPORT_LINK_INVALID");
+    const good = await admin.post("/api/reports/saved").send({ ...bad, columns: [{ table: "vehicles", field: "brand", via: "vehicle" }] });
+    expect(good.status).toBe(200);
+    savedIds.push(good.body.id);
+    const put = await admin.put(`/api/reports/saved/${good.body.id}`).send(bad);
+    expect(put.status).toBe(400);
+    expect(put.body.code).toBe("REPORT_LINK_INVALID");
+  });
+});
+
+describe("km fields in the builder are admin only", () => {
+  let admin: TestAgent;
+  let staff: TestAgent;
+  const savedIds: number[] = [];
+  const vehicleRights = ["view_reports", "manage_reports", "view_vehicles", "manage_vehicles", "view_reservations", "view_damage_checks"];
+
+  beforeAll(async () => {
+    admin = await agentFor("admin");
+    staff = await agentFor(vehicleRights);
+  });
+  afterAll(async () => {
+    if (savedIds.length) await db.delete(savedReports).where(inArray(savedReports.id, savedIds));
+    await cleanupFixtureUsers();
+  });
+
+  it("marks every km field and canUseReportField follows it", () => {
+    const km = DATA_SOURCES.flatMap((s) => s.fields.filter((f) => f.adminOnly).map((f) => `${f.table}.${f.name}`)).sort();
+    expect(km).toEqual([
+      "interactive_damage_checks.mileage",
+      "reservations.pickupMileage",
+      "reservations.returnMileage",
+      "vehicle_mileage_readings.mileage",
+      "vehicles.currentMileage",
+    ]);
+    const vehiclesSource = DATA_SOURCES.find((s) => s.id === "vehicles")!;
+    expect(canUseReportField({ role: "user", permissions: vehicleRights }, vehiclesSource, "currentMileage")).toBe(false);
+    expect(canUseReportField({ role: "user", permissions: vehicleRights }, vehiclesSource, "brand")).toBe(true);
+    expect(canUseReportField({ role: "admin", permissions: [] }, vehiclesSource, "currentMileage")).toBe(true);
+  });
+
+  it.each([
+    ["column", { dataSources: ["vehicles"], columns: [{ table: "vehicles", field: "currentMileage" }], filters: [], groupBy: [] }],
+    ["filter", { dataSources: ["vehicles"], columns: [{ table: "vehicles", field: "id" }], filters: [{ table: "vehicles", field: "currentMileage", operator: "greater_than", value: 0 }], groupBy: [] }],
+    ["group", { dataSources: ["reservations"], columns: [{ table: "reservations", field: "pickupMileage" }, { table: "reservations", field: "id", aggregation: "COUNT" }], filters: [], groupBy: [{ table: "reservations", field: "pickupMileage" }] }],
+    ["aggregation", { dataSources: ["reservations"], columns: [{ table: "reservations", field: "returnMileage", aggregation: "SUM" }], filters: [], groupBy: [] }],
+    ["damage check", { dataSources: ["damage_checks"], columns: [{ table: "interactive_damage_checks", field: "mileage" }], filters: [], groupBy: [] }],
+  ])("direct km use (%s) is 403 for staff and 200 for an admin", async (_label, cfg) => {
+    const res = await staff.post("/api/reports/execute").send(cfg);
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe("REPORT_SOURCE_RIGHT_REQUIRED");
+    expect((await admin.post("/api/reports/execute").send(cfg)).status).toBe(200);
+  });
+
+  it("a saved report with a km field is hidden from staff and cannot be saved or changed by them", async () => {
+    const cfg = { name: `Km direct ${Date.now()}`, dataSources: ["vehicles"], columns: [{ table: "vehicles", field: "licensePlate" }, { table: "vehicles", field: "currentMileage" }], filters: [], groupBy: [] };
+    const saved = await admin.post("/api/reports/saved").send(cfg);
+    expect(saved.status).toBe(200);
+    savedIds.push(saved.body.id);
+    expect((await staff.get("/api/reports/saved")).body.map((r: any) => r.id)).not.toContain(saved.body.id);
+    expect((await admin.get("/api/reports/saved")).body.map((r: any) => r.id)).toContain(saved.body.id);
+    expect((await staff.post("/api/reports/saved").send(cfg)).status).toBe(403);
+    const plain = { ...cfg, columns: [{ table: "vehicles", field: "licensePlate" }] };
+    expect((await staff.put(`/api/reports/saved/${saved.body.id}`).send(plain)).status).toBe(403);
+    expect((await staff.post("/api/reports/execute").send(plain)).status).toBe(200);
   });
 });

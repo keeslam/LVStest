@@ -3,7 +3,7 @@ import { storage } from "../storage";
 import { ReportValidationError } from "../database-storage";
 import { UserPermission, UserRole } from "../../shared/schema";
 import { hasPermission, requireAdmin } from "../middleware/permissions.js";
-import { getDataSource, canUseReportSource, isReportPeriodField, linkedSourcesOf, usesLinkedKmField, SAVED_REPORT_TABS, type DataSource } from "../../shared/report-builder-config";
+import { getDataSource, canUseReportSource, isReportPeriodField, linkedSourcesOf, adminOnlyFieldOf, invalidReportLink, SAVED_REPORT_TABS, type DataSource } from "../../shared/report-builder-config";
 
 /**
  * Every data source has its own right (see canUseReportSource in shared/report-builder-config.ts).
@@ -52,19 +52,27 @@ function sourceDeniedBody(source: DataSource) {
 }
 /**
  * Reports redesign part 3: a field read through a link needs the right of the linked source,
- * and a km field stays admin only, also through a link. Returns the 403 body, or null.
+ * and every km field (adminOnly in the config) is for admins only, in any use and also through
+ * a link (Kees, 2026-10-25). Returns the 403 body, or null.
  */
-function deniedReportLink(user: Express.User | undefined, config: any): { message: string; code: "REPORT_SOURCE_RIGHT_REQUIRED"; source: string } | null {
+function deniedReportLink(user: Express.User | undefined, config: any): { message: string; code: "REPORT_SOURCE_RIGHT_REQUIRED"; source: string; field?: string } | null {
   for (const id of linkedSourcesOf(config)) {
     const source = getDataSource(id);
     if (source && !canUseReportSource(user, source)) {
       return { message: "A field of a linked source needs the right of that part of the app", code: "REPORT_SOURCE_RIGHT_REQUIRED", source: source.id };
     }
   }
-  if (usesLinkedKmField(config) && user?.role !== UserRole.ADMIN) {
-    return { message: "Km fields are for admins only", code: "REPORT_SOURCE_RIGHT_REQUIRED", source: "mileage_readings" };
+  const kmField = adminOnlyFieldOf(config);
+  if (kmField && user?.role !== UserRole.ADMIN) {
+    return { message: "Km fields are for admins only", code: "REPORT_SOURCE_RIGHT_REQUIRED", source: "mileage_readings", field: kmField };
   }
   return null;
+}
+/** A saved report may only name links of its main source, to fields of the link's target. */
+function invalidLinkBody(config: any): { message: string; code: "REPORT_LINK_INVALID"; field: string } | null {
+  const bad = invalidReportLink(config);
+  if (!bad) return null;
+  return { message: `De koppeling ${bad.via} kan geen velden van ${bad.table} ophalen.`, code: "REPORT_LINK_INVALID", field: `${bad.via}.${bad.table}` };
 }
 /** The 403 body for a report configuration: its own sources first, then its links. */
 function deniedReportBody(user: Express.User | undefined, config: any, dataSources: unknown = config?.dataSources) {
@@ -194,6 +202,8 @@ export function registerReportRoutes(app: Express): void {
       if (noSource) return res.status(400).json(noSource);
       const invalid = invalidTabSettings(config);
       if (invalid) return res.status(400).json(invalid);
+      const badLink = invalidLinkBody(config);
+      if (badLink) return res.status(400).json(badLink);
 
       const dataSources: string[] = Array.isArray(config.dataSources) ? config.dataSources : [];
       const columns: Array<{ source?: string; field?: string }> = Array.isArray(config.columns) ? config.columns : [];
@@ -243,6 +253,8 @@ export function registerReportRoutes(app: Express): void {
       if (noSource) return res.status(400).json(noSource);
       const invalid = invalidTabSettings(config);
       if (invalid) return res.status(400).json(invalid);
+      const badLink = invalidLinkBody(config);
+      if (badLink) return res.status(400).json(badLink);
 
       const dataSources: string[] = Array.isArray(config.dataSources) ? config.dataSources : [];
       const columns: Array<{ source?: string; field?: string }> = Array.isArray(config.columns) ? config.columns : [];
