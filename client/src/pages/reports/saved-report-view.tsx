@@ -26,7 +26,7 @@ import { downloadCsv } from "@/lib/csv";
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { ReportBuilderChart } from "./report-builder-chart";
 import {
-  aggregationLabel, calcErrorText, columnLabel, csvCell, csvHeader, displayCell, reportFileSubject, resultKey, withCalcInfo, type OutputColumn,
+  aggregationLabel, calcErrorText, columnLabel, csvCell, csvHeader, displayCell, reportFileSubject, resultKey, totalsRow, withCalcInfo, type OutputColumn,
 } from "./report-builder-output";
 import { isAllDataRange, useReportFilters } from "./report-filters";
 import { tablePrintSection } from "./legacy/table-print";
@@ -166,9 +166,18 @@ export function SavedReportView({ report }: { report: SavedReport }) {
     };
   }), [columns, tt]);
 
+  // The totals row: over every row of the table (search included), or over the page / ticked rows on paper.
+  const totalLabel = t("reportBuilderPage.totals.total");
+  const rowTotals = (list: Row[], label: string, csv = false) => totalsRow(tt, list, columns, config.totals, label, csv);
+  const byColumnId = (cells: string[] | null): Record<string, string> | undefined =>
+    cells ? Object.fromEntries(tableColumns.map((c, i) => [c.id, cells[i] ?? ""])) : undefined;
+  const allRows = view?.all ?? rows;
+  const screenTotals = byColumnId(rowTotals(allRows, totalLabel));
+
   const exportCsv = () => {
-    const shown = view?.all ?? rows;
-    downloadCsv(reportFileSubject(report.name), csvHeader(tt, columns, tableColumns.map((c) => c.label)), shown.map((r) => columns.map((col) => csvCell(tt, col, r[resultKey(col)]))));
+    const body = allRows.map((r) => columns.map((col) => csvCell(tt, col, r[resultKey(col)])));
+    const last = rowTotals(allRows, totalLabel, true);
+    downloadCsv(reportFileSubject(report.name), csvHeader(tt, columns, tableColumns.map((c) => c.label)), last ? [...body, last] : body);
   };
 
   const notes: string[] = [];
@@ -179,7 +188,11 @@ export function SavedReportView({ report }: { report: SavedReport }) {
   const sections: PrintSection[] = [
     ...notes.map((text): PrintSection => ({ kind: "note", text })),
     ...(groupBy.length > 0 ? [{ kind: "chart" as const, getSvg: () => chartSvgFromRef(chartRef) }] : []),
-    tablePrintSection({ id: `saved-report-${report.id}`, columns: tableColumns, rows, view }),
+    tablePrintSection({
+      id: `saved-report-${report.id}`, columns: tableColumns, rows, view,
+      totals: screenTotals,
+      pageTotals: view ? byColumnId(rowTotals(view.page, t("reportBuilderPage.totals.totalPage"))) : undefined,
+    }),
   ];
   useReportPrint(data ? sections : null);
 
@@ -227,6 +240,7 @@ export function SavedReportView({ report }: { report: SavedReport }) {
             rows={rows}
             columns={tableColumns}
             rowKey={(r) => r.__row}
+            totals={screenTotals}
             testId="saved-report-table"
             resetKey={`${usePeriod ? `${from}|${to}` : ""}|${vehicleId}`}
             onView={setView}

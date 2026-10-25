@@ -414,6 +414,12 @@
       "brokenField": "Refers to a field that no longer exists.",
       "brokenTitle": "Calculated field no longer fits",
       "inUseChangeTitle": "Cannot change"
+    },
+    "totals": {
+      "label": "Totals row",
+      "none": "None",
+      "total": "Total",
+      "totalPage": "Total (this page)"
     }
   },
   "financialTab": {

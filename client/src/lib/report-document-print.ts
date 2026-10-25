@@ -25,6 +25,9 @@ export type PrintSection =
       /** The rows ticked in the table. */
       selectedRows?: string[][];
       totals?: string[];
+      /** Totals over the rows of the page on screen / the ticked rows, for those print choices (else `totals`). */
+      pageTotals?: string[];
+      selectedTotals?: string[];
     }
   | { kind: "note"; text: string };
 

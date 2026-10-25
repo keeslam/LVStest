@@ -430,6 +430,12 @@
       "brokenField": "Odwołuje się do pola, które już nie istnieje.",
       "brokenTitle": "Pole obliczane już nie pasuje",
       "inUseChangeTitle": "Nie można zmienić"
+    },
+    "totals": {
+      "label": "Wiersz sum",
+      "none": "Brak",
+      "total": "Razem",
+      "totalPage": "Razem (ta strona)"
     }
   },
   "financialTab": {

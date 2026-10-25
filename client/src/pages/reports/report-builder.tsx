@@ -25,7 +25,7 @@ import { ReportBuilderChart } from "@/pages/reports/report-builder-chart";
 import { formatDateTime } from "@/lib/format-utils";
 import {
   sourceLabel, fieldLabel, linkedFieldLabel, resultKey, operatorLabel, aggregationLabel, outputHeader, csvCell, displayCell, buildReportTableHtml, reportFileSubject,
-  withCalcInfo, columnLabel, calcErrorText, csvHeader, calcDisplayNumber,
+  withCalcInfo, columnLabel, calcErrorText, csvHeader, calcDisplayNumber, cleanTotals, totalChoicesFor, totalsRow, type TotalKind,
 } from "@/pages/reports/report-builder-output";
 import { CalculatedFieldDialog, calcRefsOf, isNumericCalc, numericUsersOf, parseDutchNumber, dutchNumberText } from "@/pages/reports/calculated-field-dialog";
 import { MAX_CALCULATED_FIELDS, referencedFields, type CalculatedField } from "@shared/report-formula";
@@ -172,6 +172,9 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
   const [calcDialog, setCalcDialog] = useState<{ editing?: CalculatedField } | null>(null);
   // The calculated fields of the report that was last run, for its output.
   const [resultCalcs, setResultCalcs] = useState<CalculatedField[]>([]);
+  // Totaalregel per column (by result key), and those of the report that was last run.
+  const [totals, setTotals] = useState<Record<string, TotalKind>>({});
+  const [resultTotals, setResultTotals] = useState<Record<string, TotalKind> | undefined>(undefined);
   const [reportResults, setReportResults] = useState<any[]>([]);
   // The columns and name of the report that was last run. A saved report is run without opening
   // it in the builder, so the result must not borrow the builder's own (possibly empty) columns.
@@ -358,8 +361,12 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
   };
 
   /** Only calculated fields go along, and only when there are any: an old report stays as it was. */
-  const withCalcs = (config: ReportConfiguration): ReportConfiguration =>
-    calculatedFields.length > 0 ? { ...config, calculatedFields } : config;
+  const withCalcs = (config: ReportConfiguration): ReportConfiguration => {
+    const withFields = calculatedFields.length > 0 ? { ...config, calculatedFields } : config;
+    // Totals only for columns that are still there and still allow the choice.
+    const kept = cleanTotals(withCalcInfo(config.columns, calculatedFields), totals);
+    return kept ? { ...withFields, totals: kept } : withFields;
+  };
 
   const runReportMutation = useMutation({
     mutationFn: async (config: ReportConfiguration) => {
@@ -372,6 +379,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
       setResultName(config.name);
       setResultGroupBy(config.groupBy ?? []);
       setResultCalcs(config.calculatedFields ?? []);
+      setResultTotals(config.totals);
       setShowResultsDialog(true);
       toast({
         title: t('reportBuilderPage.toasts.reportExecutedTitle'),
@@ -459,6 +467,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
     setFilters(report.configuration.filters ?? []);
     setGroupBy(report.configuration.groupBy ?? []);
     setCalculatedFields(report.configuration.calculatedFields ?? []);
+    setTotals(report.configuration.totals ?? {});
     setReportName(report.name);
     setReportDescription(report.description ?? report.configuration.description ?? '');
     setSaveTab(report.configuration.tab ?? NO_TAB);
@@ -771,6 +780,23 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
                               </SelectContent>
                             </Select>
                           )}
+                          <Select
+                            value={totals[resultKey(col)] && totalChoicesFor(col).includes(totals[resultKey(col)]) ? totals[resultKey(col)] : 'none'}
+                            onValueChange={(value) => setTotals(prev => {
+                              const { [resultKey(col)]: _old, ...rest } = prev;
+                              return value === 'none' ? rest : { ...rest, [resultKey(col)]: value as TotalKind };
+                            })}
+                          >
+                            <SelectTrigger className="h-8 w-[170px]" aria-label={t('reportBuilderPage.totals.label')} data-testid={`select-column-total-${idx}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">{t('reportBuilderPage.totals.none')}</SelectItem>
+                              {totalChoicesFor(col).map(kind => (
+                                <SelectItem key={kind} value={kind}>{aggregationLabel(t, kind)}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -946,6 +972,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
         columns={withCalcInfo(resultColumns, resultCalcs)}
         reportName={resultName}
         groupBy={resultGroupBy}
+        totals={resultTotals}
       />
     </div>
   );
@@ -1237,6 +1264,7 @@ function ReportResultsDialog({
   columns,
   reportName,
   groupBy,
+  totals,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -1244,8 +1272,11 @@ function ReportResultsDialog({
   columns: ReportColumn[];
   reportName: string;
   groupBy: ReportGrouping[];
+  totals?: Record<string, TotalKind>;
 }) {
   const { t } = useTranslation("reports");
+  // Over every result row; empty cells are skipped.
+  const totalCells = totalsRow(t, results, columns, totals, t('reportBuilderPage.totals.total'));
   const header = outputHeader(t, columns);
   const canOutput = results.length > 0 && columns.length > 0;
   // The print preview, same dialog as the overview reports and the PDFs.
@@ -1256,7 +1287,11 @@ function ReportResultsDialog({
     downloadCsv(
       reportFileSubject(reportName || t('reportBuilderPage.untitledReport')),
       csvHeader(t, columns, header),
-      results.map((row) => columns.map((col) => csvCell(t, col, row[resultKey(col)]))),
+      (() => {
+        const body = results.map((row) => columns.map((col) => csvCell(t, col, row[resultKey(col)])));
+        const last = totalsRow(t, results, columns, totals, t('reportBuilderPage.totals.total'), true);
+        return last ? [...body, last] : body;
+      })(),
     );
   };
 
@@ -1269,6 +1304,7 @@ function ReportResultsDialog({
         subtitle: t('reportBuilderPage.printSubtitle', { date: formatDateTime(Date.now()), count: results.length }),
         header,
         rows: results.map((row) => columns.map((col) => displayCell(t, col, row[resultKey(col)]))),
+        totals: totalCells,
       }),
     });
   };
@@ -1313,6 +1349,11 @@ function ReportResultsDialog({
                     ))}
                   </TableRow>
                 ))
+              )}
+              {totalCells && results.length > 0 && (
+                <TableRow className="font-medium" data-testid="row-report-totals">
+                  {totalCells.map((cell, colIdx) => <TableCell key={colIdx}>{cell}</TableCell>)}
+                </TableRow>
               )}
             </TableBody>
           </Table>

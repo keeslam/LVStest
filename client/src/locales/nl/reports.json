@@ -414,6 +414,12 @@
       "brokenField": "Verwijst naar een veld dat niet meer bestaat.",
       "brokenTitle": "Berekend veld klopt niet meer",
       "inUseChangeTitle": "Kan niet veranderen"
+    },
+    "totals": {
+      "label": "Totaalregel",
+      "none": "Geen",
+      "total": "Totaal",
+      "totalPage": "Totaal (deze pagina)"
     }
   },
   "financialTab": {

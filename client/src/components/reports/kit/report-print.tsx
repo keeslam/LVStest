@@ -85,7 +85,7 @@ const dutchDate = (iso: string) => {
 type TableData = { rows: string[][]; truncated: boolean };
 type Prepared =
   | { kind: "plain"; part: "tiles" | "note" | "chart"; resolved: ResolvedPrintSection }
-  | { kind: "table"; title?: string; header: string[]; all: TableData; page?: string[][]; selected?: string[][]; totals?: string[] };
+  | { kind: "table"; title?: string; header: string[]; all: TableData; page?: string[][]; selected?: string[][]; totals?: string[]; pageTotals?: string[]; selectedTotals?: string[] };
 type RowsChoice = "all" | "page" | "selected";
 
 function PrintBody({ title }: { title: string }) {
@@ -123,7 +123,7 @@ function PrintBody({ title }: { title: string }) {
           }
           case "table": {
             const all = await s.allRows();
-            return { kind: "table", title: s.title, header: s.header, all, page: s.pageRows, selected: s.selectedRows, totals: s.totals };
+            return { kind: "table", title: s.title, header: s.header, all, page: s.pageRows, selected: s.selectedRows, totals: s.totals, pageTotals: s.pageTotals, selectedTotals: s.selectedTotals };
           }
         }
       }),
@@ -163,13 +163,14 @@ function PrintBody({ title }: { title: string }) {
         if (p.part === "note" || (p.part === "tiles" ? showTiles : showChart)) resolved.push(p.resolved);
       } else if (showTable) {
         const pick = rowsChoice === "page" && p.page ? p.page : rowsChoice === "selected" && p.selected?.length ? p.selected : null;
+        const totals = pick && pick === p.page ? (p.pageTotals ?? p.totals) : pick && pick === p.selected ? (p.selectedTotals ?? p.totals) : p.totals;
         resolved.push({
           kind: "table",
           title: p.title,
           header: p.header,
           rows: pick ?? p.all.rows,
           truncated: pick ? false : p.all.truncated,
-          totals: p.totals,
+          totals,
         });
       }
     }

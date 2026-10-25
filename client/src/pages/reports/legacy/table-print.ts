@@ -19,8 +19,12 @@ export function tablePrintSection<R>(opts: {
   view: ReportTableView<R> | null;
   selected?: R[];
   totals?: Record<string, string>;
+  /** Totals over the page on screen / the ticked rows, printed when those rows are chosen. */
+  pageTotals?: Record<string, string>;
+  selectedTotals?: Record<string, string>;
 }): PrintSection {
-  const { id, title, columns, rows, view, selected, totals } = opts;
+  const { id, title, columns, rows, view, selected, totals, pageTotals, selectedTotals } = opts;
+  const cells = (t?: Record<string, string>) => (t ? columns.map((c) => t[c.id] ?? "") : undefined);
   return {
     kind: "table",
     id,
@@ -29,6 +33,8 @@ export function tablePrintSection<R>(opts: {
     allRows: () => ({ rows: tableText(columns, view?.all ?? rows), truncated: false }),
     pageRows: view ? tableText(columns, view.page) : undefined,
     selectedRows: selected ? tableText(columns, selected) : undefined,
-    totals: totals ? columns.map((c) => totals[c.id] ?? "") : undefined,
+    totals: cells(totals),
+    pageTotals: cells(pageTotals),
+    selectedTotals: cells(selectedTotals),
   };
 }

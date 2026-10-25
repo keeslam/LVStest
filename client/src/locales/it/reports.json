@@ -422,6 +422,12 @@
       "brokenField": "Rimanda a un campo che non esiste più.",
       "brokenTitle": "Il campo calcolato non va più bene",
       "inUseChangeTitle": "Impossibile modificare"
+    },
+    "totals": {
+      "label": "Riga dei totali",
+      "none": "Nessuno",
+      "total": "Totale",
+      "totalPage": "Totale (questa pagina)"
     }
   },
   "financialTab": {

@@ -422,6 +422,12 @@
       "brokenField": "Trimite la un câmp care nu mai există.",
       "brokenTitle": "Câmpul calculat nu mai este corect",
       "inUseChangeTitle": "Nu se poate modifica"
+    },
+    "totals": {
+      "label": "Rând de totaluri",
+      "none": "Niciunul",
+      "total": "Total",
+      "totalPage": "Total (această pagină)"
     }
   },
   "financialTab": {

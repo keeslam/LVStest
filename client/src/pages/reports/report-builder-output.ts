@@ -188,6 +188,83 @@ export function isPercentColumn(column: OutputColumn): boolean {
   return !!column.calc && column.calcType === "percent" && !isCount(column.aggregation);
 }
 
+export type TotalKind = "SUM" | "AVG" | "COUNT";
+
+/**
+ * What a totals row may do under a column: a percent only averages (a ratio does not add up), a text,
+ * date or yes/no column only counts, a number column sums, averages or counts. A column that is
+ * itself a calculation (Som, Gemiddelde, ...) gets Som (sum of the shown sums) and Aantal, never an
+ * average of averages; a percent there still gets only Gemiddelde, over the shown rows.
+ */
+export function totalChoicesFor(column: OutputColumn): TotalKind[] {
+  if (column.calc) {
+    if (column.calcType === "percent" && !isCount(column.aggregation)) return ["AVG"];
+    if (column.calcType === "text" && !column.aggregation) return ["COUNT"];
+    return column.aggregation ? ["SUM", "COUNT"] : ["SUM", "AVG", "COUNT"];
+  }
+  if (column.aggregation) return ["SUM", "COUNT"];
+  return getField(column.table, column.field)?.type === "number" ? ["SUM", "AVG", "COUNT"] : ["COUNT"];
+}
+
+/** The totals choices that still fit the columns, keyed by result key; null when none is left. */
+export function cleanTotals(columns: OutputColumn[], totals: Record<string, TotalKind> | undefined): Record<string, TotalKind> | null {
+  const out: Record<string, TotalKind> = {};
+  for (const c of columns) {
+    const key = resultKey(c);
+    const kind = totals?.[key];
+    if (kind && totalChoicesFor(c).includes(kind)) out[key] = kind;
+  }
+  return Object.keys(out).length > 0 ? out : null;
+}
+
+/**
+ * The total of each chosen column over the rows, keyed by result key. Empty cells are skipped
+ * (null, "" or not a number); a Som or Gemiddelde with nothing to add gives no total, an Aantal 0.
+ * A choice that does not fit its column (e.g. Som of a percent) is ignored.
+ */
+export function computeTotals(rows: Record<string, unknown>[], columns: OutputColumn[], totals: Record<string, TotalKind> | undefined): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const c of columns) {
+    const key = resultKey(c);
+    const kind = totals?.[key];
+    if (!kind || !totalChoicesFor(c).includes(kind)) continue;
+    let count = 0;
+    let sum = 0;
+    for (const r of rows) {
+      const v = r[key];
+      if (v === null || v === undefined || v === "") continue;
+      if (kind === "COUNT") { count++; continue; }
+      const n = typeof v === "number" ? v : Number(v);
+      if (!Number.isFinite(n)) continue;
+      count++;
+      sum += n;
+    }
+    if (kind === "COUNT") out[key] = count;
+    else if (count > 0) out[key] = kind === "SUM" ? sum : sum / count;
+  }
+  return out;
+}
+
+/** One total as the screen and the print (or, with csv, the file) write it. */
+export function totalText(t: TFunction, column: OutputColumn, kind: TotalKind, n: number, csv = false): string {
+  if (kind === "COUNT" || isCount(column.aggregation)) return csv ? csvNumber(n, 0) : n.toLocaleString("nl-NL");
+  if (column.calc) return csv ? csvNumber(calcDisplayNumber(column.calcType, n), 2) : calcValueText(column.calcType, n);
+  const shown = { ...column, aggregation: kind === "AVG" ? "AVG" : column.aggregation ?? "SUM" };
+  return csv ? csvCell(t, shown, n) : displayCell(t, shown, n);
+}
+
+/** The totals row as cells, one per column ("" where none); the label sits in the first column. */
+export function totalsRow(t: TFunction, rows: Record<string, unknown>[], columns: OutputColumn[], totals: Record<string, TotalKind> | undefined, label: string, csv = false): string[] | null {
+  const values = computeTotals(rows, columns, totals);
+  const cells = columns.map((c) => {
+    const key = resultKey(c);
+    return key in values && totals?.[key] ? totalText(t, c, totals[key], values[key], csv) : "";
+  });
+  if (cells.every((c) => c === "")) return null;
+  if (cells.length > 0) cells[0] = cells[0] === "" ? label : `${label}: ${cells[0]}`;
+  return cells;
+}
+
 /** "Toyota-lijst" -> "toyota-lijst"; accents and symbols folded so the file name is safe. */
 export function reportFileSubject(name: string): string {
   const slug = name
@@ -203,7 +280,7 @@ export function reportFileSubject(name: string): string {
  * dialog (HtmlPreviewDialog), which renders it in a sandboxed frame without
  * scripts; every value is escaped.
  */
-export function buildReportTableHtml(options: { title: string; subtitle: string; header: string[]; rows: string[][] }): string {
+export function buildReportTableHtml(options: { title: string; subtitle: string; header: string[]; rows: string[][]; totals?: string[] | null }): string {
   return `<!doctype html><html><head>
       <meta charset="utf-8">
       <title>${escapeHtml(options.title)}</title>
@@ -219,7 +296,7 @@ export function buildReportTableHtml(options: { title: string; subtitle: string;
       <div class="meta">${escapeHtml(options.subtitle)}</div>
       <table>
         <thead><tr>${options.header.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr></thead>
-        <tbody>${options.rows.map((r) => `<tr>${r.map((c) => `<td>${escapeHtml(c)}</td>`).join("")}</tr>`).join("")}</tbody>
+        <tbody>${options.rows.map((r) => `<tr>${r.map((c) => `<td>${escapeHtml(c)}</td>`).join("")}</tr>`).join("")}</tbody>${options.totals ? `<tfoot><tr>${options.totals.map((c) => `<td>${escapeHtml(c)}</td>`).join("")}</tr></tfoot>` : ""}
       </table></body></html>`;
 }
 
