@@ -80,8 +80,23 @@ export default function ReportBuilder() {
     },
   });
 
+  // Removing the last plain column of the grouped field also clears that group.
   const removeColumn = (index: number) => {
-    setColumns(prev => prev.filter((_, i) => i !== index));
+    const removed = columns[index];
+    const rest = columns.filter((_, i) => i !== index);
+    setColumns(rest);
+    if (removed && !removed.aggregation && !rest.some(c => !c.aggregation && c.table === removed.table && c.field === removed.field)) {
+      setGroupBy(prev => prev.filter(g => !(g.table === removed.table && g.field === removed.field)));
+    }
+  };
+
+  // Unticking a source takes its columns and its group along.
+  const untickSource = (id: string) => {
+    const table = DATA_SOURCES.find(ds => ds.id === id)?.table;
+    setSelectedDataSources(prev => prev.filter(x => x !== id));
+    if (!table) return;
+    setColumns(prev => prev.filter(c => c.table !== table));
+    setGroupBy(prev => prev.filter(g => g.table !== table));
   };
 
   const setColumnAggregation = (index: number, aggregation: AggregationFunction | undefined) => {
@@ -299,7 +314,7 @@ export default function ReportBuilder() {
                           if (e.target.checked) {
                             setSelectedDataSources(prev => [...prev, source.id]);
                           } else {
-                            setSelectedDataSources(prev => prev.filter(id => id !== source.id));
+                            untickSource(source.id);
                           }
                         }}
                         className="h-4 w-4"

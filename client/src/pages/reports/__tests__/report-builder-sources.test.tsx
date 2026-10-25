@@ -157,3 +157,37 @@ describe("month values", () => {
     expect((downloadCsv.mock.calls[0] as any[])[2]).toEqual([["02-2019", "80,00"]]);
   });
 });
+
+describe("the group follows its source and column", () => {
+  it("drops the group and the columns of a source that is unticked", async () => {
+    installFetch();
+    const user = userEvent.setup();
+    renderBuilder();
+    await user.click(screen.getByTestId("checkbox-datasource-vehicles"));
+    await user.click(screen.getByTestId("checkbox-datasource-fines"));
+    await user.click(screen.getByTestId("select-report-group-by"));
+    await user.click(await screen.findByRole("option", { name: "Status" }));
+    await user.click(screen.getByTestId("checkbox-datasource-fines"));
+    await user.click(screen.getByTestId("checkbox-datasource-vehicles"));
+    await user.click(screen.getByTestId("button-add-field-brand"));
+    await user.click(screen.getByTestId("button-run-report"));
+    await waitFor(() => expect(executeBody).not.toBeNull());
+    expect(executeBody.groupBy).toEqual([]);
+    expect(executeBody.columns).toMatchObject([{ table: "vehicles", field: "brand" }]);
+  });
+
+  it("clears the group when its own column is removed", async () => {
+    installFetch();
+    const user = userEvent.setup();
+    renderBuilder();
+    await user.click(screen.getByTestId("checkbox-datasource-fines"));
+    await user.click(screen.getByTestId("select-report-group-by"));
+    await user.click(await screen.findByRole("option", { name: "Status" }));
+    await user.click(screen.getByTestId("button-add-field-brand"));
+    await user.click(screen.getByTestId("button-remove-column-0"));
+    expect(screen.getByTestId("select-report-group-by")).toHaveTextContent("Niet groeperen");
+    await user.click(screen.getByTestId("button-run-report"));
+    await waitFor(() => expect(executeBody).not.toBeNull());
+    expect(executeBody.groupBy).toEqual([]);
+  });
+});
