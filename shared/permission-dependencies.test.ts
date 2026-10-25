@@ -3,7 +3,10 @@
  * table is the one list the users dialog shows ("Heeft nodig: ...") and the
  * button "Benodigde rechten ook aanzetten" works from. These tests tie it to the
  * two places the app already knows about missing data: every screen in
- * PAGE_ACCESS and every NoDataAccess site in the client source.
+ * PAGE_ACCESS and every NoDataAccess site in the client source. The reports
+ * screen has no NoDataAccess lines any more: it hides a report whose data the
+ * user may not read (report-registry.tsx, visible()), so its sites are the read
+ * rights that registry gates on.
  */
 import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -107,6 +110,37 @@ interface Site {
   rights: string[];
 }
 
+const REPORT_REGISTRY = "client/src/pages/reports/report-registry.tsx";
+/**
+ * Rights helpers of the registry that are not a read dependency of the data: "reports" is the right
+ * that opens the screen itself, "portal" is a feature right of its own (portal reports are hidden
+ * without it, like the fines screen is for fines).
+ */
+const REGISTRY_NOT_A_READ_DEPENDENCY = ["reports", "portal"];
+
+/**
+ * The read rights the reports screen gates a report on: every `const x = (ctx) => any(ctx, UserPermission.A, ...)`
+ * helper in report-registry.tsx except the two above. The first right of a helper is its read right; the others are
+ * the manage twins that satisfy it. A helper without any UserPermission (transports) only combines other helpers.
+ */
+function findRegistrySites(): Site[] {
+  const root = join(__dirname, "..");
+  const text = readFileSync(join(root, ...REPORT_REGISTRY.split("/")), "utf8");
+  const helpers = [...text.matchAll(/^const (\w+) = \(ctx: ReportAccess\) =>(.*)$/gm)];
+  const sites: Site[] = [];
+  for (const [, name, body] of helpers) {
+    const rights = [...body.matchAll(/UserPermission\.([A-Z_]+)/g)].map((m) => UserPermission[m[1] as keyof typeof UserPermission] as string);
+    if (REGISTRY_NOT_A_READ_DEPENDENCY.includes(name)) continue;
+    if (rights.length === 0) {
+      // transports = vehicles || reservations: it must only name other helpers.
+      expect(body, `${REPORT_REGISTRY}: helper ${name} names no UserPermission and no other helper`).toMatch(/\b(vehicles|reservations|customers|expenses)\(ctx\)/);
+      continue;
+    }
+    sites.push({ file: REPORT_REGISTRY, rights: [rights[0]] });
+  }
+  return sites;
+}
+
 /** Every <NoDataAccess permission={...}> in the client source, with all rights named in the prop (also an array or a conditional). */
 function findSites(): Site[] {
   const root = join(__dirname, "..");
@@ -149,7 +183,7 @@ type Table = typeof PERMISSION_DEPENDENCIES;
 
 /** Every (screen, missing right) pair whose opening rights do not list that right in the given table. */
 function screenGaps(table: Table): string[] {
-  const sites = findSites();
+  const sites = [...findSites(), ...findRegistrySites()];
   const gaps: string[] = [];
   for (const entry of SCREEN_SOURCES) {
     const openedBy = entry.rights ?? PAGE_ACCESS.find((page) => page.path === entry.screen)!.anyOf;
@@ -157,7 +191,7 @@ function screenGaps(table: Table): string[] {
     for (const site of sites) {
       if (entry.files.some((prefix) => site.file.startsWith(prefix))) site.rights.forEach((right) => named.add(right));
     }
-    if (named.size === 0) gaps.push(`${entry.screen}: no NoDataAccess site found in its files`);
+    if (named.size === 0) gaps.push(`${entry.screen}: no NoDataAccess site or registry gate found in its files`);
     for (const needed of named) {
       // The screen's own rights satisfy themselves (a reservations right on the delivery screen);
       // everything else has to be written down in the table.
@@ -184,9 +218,14 @@ describe("PERMISSION_DEPENDENCIES - tied to the screens", () => {
     }
   });
 
-  it("finds the NoDataAccess sites (about thirty), each in a file that belongs to a screen", () => {
-    const sites = findSites();
-    expect(sites.length).toBeGreaterThanOrEqual(28);
+  it("finds the NoDataAccess sites and the reports registry gates (about thirty), each in a file that belongs to a screen", () => {
+    const registry = findRegistrySites();
+    // The reports screen gates on vehicles, reservations, customers and expenses, nothing silently dropped.
+    expect(registry.flatMap((site) => site.rights).sort()).toEqual(
+      [UserPermission.VIEW_VEHICLES, UserPermission.VIEW_RESERVATIONS, UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_EXPENSES].sort(),
+    );
+    const sites = [...findSites(), ...registry];
+    expect(sites.length).toBeGreaterThanOrEqual(30);
     const unmapped = sites.filter((site) => !SCREEN_SOURCES.some((entry) => entry.files.some((prefix) => site.file.startsWith(prefix))));
     expect(unmapped.map((site) => site.file), "NoDataAccess sites in files no screen claims").toEqual([]);
   });
