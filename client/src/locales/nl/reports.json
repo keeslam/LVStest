@@ -682,7 +682,9 @@
         "portalOpen": "Open portaalaanvragen"
       },
       "empty": "Geen cijfers om te tonen.",
-      "periodTooLong": "Kies een kortere periode."
+      "periodTooLong": "Kies een kortere periode.",
+      "hintPeriod": "In deze periode",
+      "hintOpen": "Alles wat nog openstaat"
     }
   },
   "moneyReports": {

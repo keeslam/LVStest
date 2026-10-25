@@ -15,7 +15,7 @@ import type { InboxItemReportSummary } from "@shared/reports/invoice-inbox-repor
 import type { DeliveryReportSummary } from "@shared/reports/delivery-report";
 import type { PortalRequestReportSummary } from "@shared/reports/portal-requests-report";
 import { officeToday } from "@/lib/office-date";
-import { useReportFilters, useReportPeriod, useReportRange } from "./report-filters";
+import { ALL_DATA_RANGE, useReportFilters, useReportRange } from "./report-filters";
 
 export interface Metric<T> {
   /** null while loading, on an error and while the query is off. */
@@ -56,13 +56,12 @@ export function useOccupancyMetric(enabled: boolean): Metric<number> & { tooLong
   return { ...metric(data?.avgPct, enabled && !tooLong && isLoading), tooLong };
 }
 
-/** New fines (not yet linked). */
+/** To-do counts ignore the filter bar: the whole range, no vehicle, so an old open item is never hidden. */
+const ALL_PARAMS: Record<string, string> = { from: ALL_DATA_RANGE.from, to: ALL_DATA_RANGE.to };
+
+/** New fines (not yet linked), over all periods. */
 export function useFinesOpenMetric(enabled: boolean): Metric<number> {
-  const { from, to, vehicleId } = useReportPeriod({});
-  const params = useMemo<Record<string, string>>(
-    () => ({ from, to, ...(vehicleId && vehicleId !== "all" ? { vehicleId } : {}) }),
-    [from, to, vehicleId],
-  );
+  const params = ALL_PARAMS;
   const { data, isLoading } = useQuery<FineReportSummary>({ queryKey: ["/api/reports/fines/summary", params], enabled });
   return metric(data?.tiles?.new?.count, enabled && isLoading);
 }
@@ -92,10 +91,9 @@ export function useMaintenanceOverdueMetric(enabled: boolean): Metric<number> {
   return metric(data?.tiles?.overdue?.count, enabled && isLoading);
 }
 
-/** Invoices from the mailbox that wait for a person. No vehicle in the params, like the card. */
+/** Invoices from the mailbox that wait for a person, over all periods. */
 export function useInvoicesWaitingMetric(enabled: boolean): Metric<number> {
-  const { from, to } = useReportRange({});
-  const params = useMemo<Record<string, string>>(() => ({ ...(from ? { from } : {}), ...(to ? { to } : {}) }), [from, to]);
+  const params = ALL_PARAMS;
   const { data, isLoading } = useQuery<InboxItemReportSummary>({ queryKey: ["/api/reports/invoice-inbox-items/summary", params], enabled });
   return metric(data?.tiles?.waiting?.count, enabled && isLoading);
 }
@@ -111,10 +109,9 @@ export function useDeliveriesLateMetric(enabled: boolean): Metric<number> {
   return metric(data?.tiles?.late?.count, enabled && isLoading);
 }
 
-/** Open portal requests (tile "open": new or in progress, created in the period). No vehicle, like the card. */
+/** Open portal requests (tile "open": new or in progress), over all periods. */
 export function usePortalOpenMetric(enabled: boolean): Metric<number> {
-  const { from, to } = useReportRange({});
-  const params = useMemo<Record<string, string>>(() => ({ ...(from ? { from } : {}), ...(to ? { to } : {}) }), [from, to]);
+  const params = ALL_PARAMS;
   const { data, isLoading } = useQuery<PortalRequestReportSummary>({ queryKey: ["/api/reports/portal-requests/summary", params], enabled });
   return metric(data?.tiles?.open?.count, enabled && isLoading);
 }

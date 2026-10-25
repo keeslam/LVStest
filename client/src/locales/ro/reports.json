@@ -694,7 +694,9 @@
         "portalOpen": "Cereri portal deschise"
       },
       "empty": "Nu există cifre de afișat.",
-      "periodTooLong": "Alegeți o perioadă mai scurtă."
+      "periodTooLong": "Alegeți o perioadă mai scurtă.",
+      "hintPeriod": "În această perioadă",
+      "hintOpen": "Tot ce este încă deschis"
     }
   },
   "moneyReports": {

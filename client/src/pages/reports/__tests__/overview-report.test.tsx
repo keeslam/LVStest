@@ -45,11 +45,13 @@ function respond(url: string): Response {
   if (url.startsWith("/api/user-settings/")) return json(null);
   if (url.startsWith("/api/reports/vehicle-financials")) return json({ rows: [], totals: { rentals: 0, rentalDays: 0, revenue: 5000, expenses: 1500, margin: 3500 } });
   if (url.startsWith("/api/reports/occupancy/summary")) return json({ tiles: {}, days: [], avgPct: 62.5 });
-  if (url.startsWith("/api/reports/fines/summary")) return json({ tiles: { new: tile(newFines) }, byMonth: [], byCustomer: [], byVehicle: [], byDriver: [], avgDaysToLink: null });
+  // An open fine from last month: only the all-data query (no period) sees it.
+  const allData = url.includes("from=2000-01-01&to=2050-12-31");
+  if (url.startsWith("/api/reports/fines/summary")) return json({ tiles: { new: tile(allData ? newFines : 0) }, byMonth: [], byCustomer: [], byVehicle: [], byDriver: [], avgDaysToLink: null });
   if (url.startsWith("/api/reports/maintenance-outlook/summary")) return json({ tiles: { overdue: tile(2) }, items: [] });
-  if (url.startsWith("/api/reports/invoice-inbox-items/summary")) return json({ tiles: { waiting: tile(4) } });
-  if (url.startsWith("/api/reports/deliveries/summary")) return json({ tiles: { late: tile(5) } });
-  if (url.startsWith("/api/reports/portal-requests/summary")) return json({ tiles: { open: tile(6) } });
+  if (url.startsWith("/api/reports/invoice-inbox-items/summary")) return json({ tiles: { waiting: tile(allData ? 4 : 0) } });
+  if (url.startsWith("/api/reports/deliveries/summary")) return json({ tiles: { late: tile(allData ? 99 : 5) } });
+  if (url.startsWith("/api/reports/portal-requests/summary")) return json({ tiles: { open: tile(allData ? 6 : 0) } });
   if (url.startsWith("/api/vehicles")) return json([
     { id: 1, licensePlate: "AA11BB", brand: "A", model: "B", apkDate: "2020-01-01" },
     { id: 2, licensePlate: "CC22DD", brand: "A", model: "B", apkDate: "2099-01-01" },
@@ -113,6 +115,31 @@ describe("Overzicht tab", () => {
     expect(requested.some((u) => u.startsWith("/api/reports/invoice-inbox-items"))).toBe(false);
     expect(requested.some((u) => u.startsWith("/api/reports/portal-requests"))).toBe(false);
     expect(requested.some((u) => u.startsWith("/api/reports/deliveries"))).toBe(false);
+    expect(requested.some((u) => u.startsWith("/api/vehicles"))).toBe(false);
+    expect(requested.some((u) => u.startsWith("/api/reports/occupancy"))).toBe(false);
+  });
+});
+
+describe("to-do counts show everything still open", () => {
+  it("counts an open fine from last month on the tile and the badge while the period is Deze maand", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId("overview-tile-finesOpen-value")).toHaveTextContent("3"));
+    expect(screen.getByTestId("overview-tile-finesOpen")).toHaveTextContent("Alles wat nog openstaat");
+    expect(screen.getByTestId("overview-tile-invoicesWaiting-value")).toHaveTextContent("4");
+    expect(screen.getByTestId("overview-tile-portalOpen-value")).toHaveTextContent("6");
+    // no vehicle filter on the to-do queries
+    expect(requested.filter((u) => u.startsWith("/api/reports/fines/summary")).every((u) => !u.includes("vehicleId"))).toBe(true);
+    await user.click(screen.getByTestId("tab-report-financial"));
+    expect(await within(await screen.findByTestId("report-nav")).findByTestId("report-nav-badge-fines")).toHaveTextContent("3");
+  });
+
+  it("deliveriesLate, margin and occupancy still follow the period", async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId("overview-tile-deliveriesLate-value")).toHaveTextContent("5"));
+    for (const id of ["deliveriesLate", "margin", "occupancy"]) {
+      expect(screen.getByTestId(`overview-tile-${id}`)).toHaveTextContent("In deze periode");
+    }
   });
 });
 
@@ -132,7 +159,8 @@ describe("counts in the report list", () => {
     await user.click(await screen.findByTestId("tab-report-financial"));
     const nav = await screen.findByTestId("report-nav");
     await waitFor(() => expect(requested.some((u) => u.startsWith("/api/reports/fines/summary"))).toBe(true));
-    await new Promise((r) => setTimeout(r, 50));
+    await waitFor(() => expect(screen.getByTestId("report-pane-title")).toBeInTheDocument());
+    await waitFor(() => expect(requested.filter((u) => u.includes("from=2000-01-01")).length).toBeGreaterThan(0));
     expect(within(nav).queryByTestId("report-nav-badge-fines")).toBeNull();
   });
 });

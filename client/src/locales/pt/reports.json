@@ -694,7 +694,9 @@
         "portalOpen": "Pedidos do portal em aberto"
       },
       "empty": "Não há números para mostrar.",
-      "periodTooLong": "Escolha um período mais curto."
+      "periodTooLong": "Escolha um período mais curto.",
+      "hintPeriod": "Neste período",
+      "hintOpen": "Tudo o que continua em aberto"
     }
   },
   "moneyReports": {

@@ -694,7 +694,9 @@
         "portalOpen": "Richieste del portale aperte"
       },
       "empty": "Nessun dato da mostrare.",
-      "periodTooLong": "Scegli un periodo più breve."
+      "periodTooLong": "Scegli un periodo più breve.",
+      "hintPeriod": "In questo periodo",
+      "hintOpen": "Tutto ciò che è ancora aperto"
     }
   },
   "moneyReports": {

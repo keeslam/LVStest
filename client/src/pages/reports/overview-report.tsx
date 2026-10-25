@@ -39,7 +39,8 @@ interface OverviewReportProps {
 }
 
 const DASH = "–";
-const n = (v: number | null) => (v === null ? DASH : v.toLocaleString("nl-NL"));
+const LOADING = "…";
+const n = (m: { value: number | null; loading: boolean }) => (m.loading ? LOADING : m.value === null ? DASH : m.value.toLocaleString("nl-NL"));
 
 const TONE_CLASS: Record<ReportTileTone, string> = {
   default: "text-foreground",
@@ -61,21 +62,26 @@ export function OverviewReport({ shown, tabOf, onOpen }: OverviewReportProps) {
   const deliveries = useDeliveriesLateMetric(on("deliveriesLate"));
   const portal = usePortalOpenMetric(on("portalOpen"));
 
+  const inPeriod = t("reportsPage.overview.hintPeriod");
+  const stillOpen = t("reportsPage.overview.hintOpen");
   const alert = (v: number | null): ReportTileTone => (v ? "red" : "default");
   const all: Array<{ id: OverviewTileId; value: string; tone: ReportTileTone; hint?: string }> = [
-    { id: "margin", value: margin.value === null ? DASH : formatCurrency(margin.value), tone: margin.value !== null && margin.value < 0 ? "red" : "default" },
+    {
+      id: "margin", value: margin.loading ? LOADING : margin.value === null ? DASH : formatCurrency(margin.value),
+      tone: margin.value !== null && margin.value < 0 ? "red" : "default", hint: inPeriod,
+    },
     {
       id: "occupancy",
-      value: occupancy.value === null ? DASH : `${occupancy.value.toLocaleString("nl-NL")}%`,
+      value: occupancy.loading ? LOADING : occupancy.value === null ? DASH : `${occupancy.value.toLocaleString("nl-NL")}%`,
       tone: "default",
-      ...(occupancy.tooLong ? { hint: t("reportsPage.overview.periodTooLong") } : {}),
+      hint: occupancy.tooLong ? t("reportsPage.overview.periodTooLong") : inPeriod,
     },
-    { id: "finesOpen", value: n(fines.value), tone: alert(fines.value) },
-    { id: "apkOverdue", value: n(apk.value), tone: alert(apk.value) },
-    { id: "maintenanceOverdue", value: n(maintenance.value), tone: alert(maintenance.value) },
-    { id: "invoicesWaiting", value: n(invoices.value), tone: alert(invoices.value) },
-    { id: "deliveriesLate", value: n(deliveries.value), tone: alert(deliveries.value) },
-    { id: "portalOpen", value: n(portal.value), tone: alert(portal.value) },
+    { id: "finesOpen", value: n(fines), tone: alert(fines.value), hint: stillOpen },
+    { id: "apkOverdue", value: n(apk), tone: alert(apk.value) },
+    { id: "maintenanceOverdue", value: n(maintenance), tone: alert(maintenance.value) },
+    { id: "invoicesWaiting", value: n(invoices), tone: alert(invoices.value), hint: stillOpen },
+    { id: "deliveriesLate", value: n(deliveries), tone: alert(deliveries.value), hint: inPeriod },
+    { id: "portalOpen", value: n(portal), tone: alert(portal.value), hint: stillOpen },
   ];
   const tiles = all.filter((tile) => on(tile.id));
 

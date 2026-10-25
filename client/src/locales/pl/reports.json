@@ -706,7 +706,9 @@
         "portalOpen": "Otwarte zgłoszenia z portalu"
       },
       "empty": "Brak liczb do pokazania.",
-      "periodTooLong": "Wybierz krótszy okres."
+      "periodTooLong": "Wybierz krótszy okres.",
+      "hintPeriod": "W tym okresie",
+      "hintOpen": "Wszystko, co jest jeszcze otwarte"
     }
   },
   "moneyReports": {

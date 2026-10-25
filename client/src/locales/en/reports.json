@@ -682,7 +682,9 @@
         "portalOpen": "Open portal requests"
       },
       "empty": "No figures to show.",
-      "periodTooLong": "Choose a shorter period."
+      "periodTooLong": "Choose a shorter period.",
+      "hintPeriod": "In this period",
+      "hintOpen": "Everything still open"
     }
   },
   "moneyReports": {
