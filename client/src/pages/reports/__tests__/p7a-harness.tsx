@@ -3,7 +3,8 @@
  * that answers the list endpoints from a fixture, and a render helper. Not a
  * test file itself (no .test suffix).
  */
-import { render } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import type userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { vi } from "vitest";
 import { getQueryFn } from "@/lib/queryClient";
@@ -32,6 +33,8 @@ function json(body: unknown, status = 200) {
 }
 
 export function installFetch(fixture: Fixture) {
+  // The reports shell keeps the tab and report in the URL; every test starts without them.
+  resetReportsUrl();
   const calls: string[] = [];
   const fetchMock = vi.fn(async (input: any) => {
     const url = typeof input === "string" ? input : (input as Request)?.url ?? "";
@@ -82,4 +85,25 @@ export function capturePrints() {
   const observer = new MutationObserver(collect);
   observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["srcdoc"] });
   return { printed, restore: () => observer.disconnect() };
+}
+
+/** /reports without a tab or report in the URL. */
+export function resetReportsUrl() {
+  window.history.replaceState(null, "", "/reports");
+}
+
+type User = ReturnType<typeof userEvent.setup>;
+
+/** Sets the period of the filter bar to a custom range ("yyyy-MM-dd"). */
+export async function chooseRange(user: User, from: string, to: string) {
+  await user.click(await screen.findByTestId("select-report-preset"));
+  await user.click(await screen.findByRole("option", { name: "Zelf kiezen" }));
+  fireEvent.change(await screen.findByTestId("input-report-from"), { target: { value: from } });
+  fireEvent.change(screen.getByTestId("input-report-to"), { target: { value: to } });
+}
+
+/** Opens one report: its tab, then its item in the list. */
+export async function openReport(user: User, tab: string, id: string) {
+  await user.click(await screen.findByTestId(`tab-report-${tab}`));
+  await user.click(await screen.findByTestId(`report-nav-item-${id}`));
 }

@@ -38,6 +38,8 @@ function calledWithPrefix(prefix: string): boolean {
 }
 
 beforeEach(() => {
+  // The reports shell keeps the tab and report in the URL; start without them.
+  window.history.replaceState(null, "", "/reports");
   fetchMock = vi.fn(async (input: unknown) => {
     const path = pathOf(input);
     if (path === "/api/vehicles" || path.startsWith("/api/vehicles?")) return json([VEHICLE]);
@@ -71,9 +73,10 @@ describe("/reports > Voertuigen - km-historie card", () => {
     withClient(<ReportsPage />);
 
     await user.click(screen.getByRole("tab", { name: /Voertuigen/i }));
-    // The tab itself is open (the downtime card renders), so the absence below is real.
-    expect(await screen.findByTestId("report-workshop-downtime")).toBeInTheDocument();
+    // The tab itself is open (its list shows the downtime report), so the absence below is real.
+    expect(await screen.findByTestId("report-nav-item-workshop-downtime")).toBeInTheDocument();
     await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(screen.queryByTestId("report-nav-item-mileage-history")).not.toBeInTheDocument();
     expect(screen.queryByTestId("card-report-mileage-history")).not.toBeInTheDocument();
     expect(calledWithPrefix("/api/mileage-history")).toBe(false);
   });
@@ -85,6 +88,7 @@ describe("/reports > Voertuigen - km-historie card", () => {
     withClient(<ReportsPage />);
 
     await user.click(screen.getByRole("tab", { name: /Voertuigen/i }));
+    await user.click(await screen.findByTestId("report-nav-item-mileage-history"));
     const card = await screen.findByTestId("card-report-mileage-history");
     expect(calledWithPrefix("/api/mileage-history")).toBe(false);
 

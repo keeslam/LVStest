@@ -159,7 +159,8 @@ describe("/reports - the fiscal tab needs view_fiscal", () => {
     permissions = [UserPermission.VIEW_REPORTS, right];
     withClient(<ReportsPage />);
 
-    expect(await screen.findByTestId("tab-report-transports")).toBeInTheDocument();
+    // The page is there (Financieel needs the report right only; Transporten would need a transports right).
+    expect(await screen.findByTestId("tab-report-financial")).toBeInTheDocument();
     expect(screen.queryByTestId("tab-report-fiscal")).toBeNull();
   });
 

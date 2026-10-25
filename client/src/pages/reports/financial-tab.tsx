@@ -39,11 +39,13 @@ interface FinancialTabProps {
   dateRange: DateRange;
   /** "all" or a vehicle id as string (same contract as the other report tabs) */
   selectedVehicle: string;
+  /** Render the fines, extra-costs and transport-billing cards below (the reports shell shows them as reports of their own). */
+  kitCards?: boolean;
 }
 
 const ymd = (d: Date | undefined, fallback: string) => (d ? format(d, "yyyy-MM-dd") : fallback);
 
-export function FinancialTab({ dateRange, selectedVehicle }: FinancialTabProps) {
+export function FinancialTab({ dateRange, selectedVehicle, kitCards = true }: FinancialTabProps) {
   const { t } = useTranslation("reports");
   const from = ymd(dateRange.from, "2000-01-01");
   const to = ymd(dateRange.to, "2050-12-31");
@@ -211,6 +213,7 @@ export function FinancialTab({ dateRange, selectedVehicle }: FinancialTabProps) 
         </CardContent>
       </Card>
 
+      {kitCards && (<>
       {/* Fines (needs the fines permission; the card checks it itself) */}
       <FinesReportCard from={from} to={to} vehicleId={selectedVehicle} />
 
@@ -219,6 +222,7 @@ export function FinancialTab({ dateRange, selectedVehicle }: FinancialTabProps) 
 
       {/* Transport billing (needs a vehicles or reservations permission; the card checks it itself) */}
       <TransportBillingReportCard from={from} to={to} vehicleId={selectedVehicle} />
+      </>)}
 
     </div>
   );

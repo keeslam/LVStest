@@ -431,6 +431,7 @@
       "other": "Otros"
     },
     "tabs": {
+      "overview": "Resumen",
       "operations": "Operaciones",
       "expenses": "Gastos",
       "vehicles": "Vehículos",
@@ -645,6 +646,25 @@
       "costs": "Costes",
       "perModel": "Por marca y modelo",
       "vehicles": "Coches"
+    },
+    "shell": {
+      "presetLabel": "Periodo",
+      "presets": {
+        "thisMonth": "Este mes",
+        "lastMonth": "Mes anterior",
+        "thisQuarter": "Este trimestre",
+        "thisYear": "Este año",
+        "custom": "Elegir"
+      },
+      "from": "Desde",
+      "to": "Hasta",
+      "periodLabel": "{{from}} a {{to}}",
+      "reportBuilder": "Generador de informes",
+      "maintenanceAnalysis": "Análisis de mantenimiento",
+      "print": "Imprimir",
+      "loadingReport": "Cargando informe...",
+      "reportList": "Informes",
+      "chooseReport": "Elige un informe"
     }
   },
   "moneyReports": {

@@ -7,10 +7,10 @@
  * - the impact label stands apart from the amount ("EUR 28,19 Laag").
  */
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { UserRole } from "@shared/schema";
-import { installFetch, renderWithClient, vehicle, daysFromNow } from "./p7a-harness";
+import { installFetch, renderWithClient, vehicle, daysFromNow, chooseRange, openReport } from "./p7a-harness";
 
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: 1, username: "tester", role: UserRole.ADMIN, permissions: [], hidePrices: false }, isLoading: false }),
@@ -46,7 +46,10 @@ const fixture = {
 async function openCustomersTab() {
   const user = userEvent.setup();
   renderWithClient(<ReportsPage />);
-  await user.click(await screen.findByRole("tab", { name: /Klanten/i }));
+  // Task 2: the default period is this month now; take the last 30 days like the old default,
+  // and open the old customers report (the tab opens on Klantwaarde).
+  await chooseRange(user, daysFromNow(-30), daysFromNow(0));
+  await openReport(user, "customers", "legacy-customers");
   return user;
 }
 
@@ -74,13 +77,15 @@ describe("Klanten tab (A-14-5)", () => {
 
   it("does not list a reservation that starts in the future as recent", async () => {
     installFetch(fixture);
-    await openCustomersTab();
+    const user = await openCustomersTab();
     // the period filter must cover the future, otherwise the row is gone for another reason
-    const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: /Alle gegevens/ }));
-    const list = await screen.findByTestId("customer-recent-reservations");
-    const rows = within(list).getAllByRole("row").slice(1); // minus header
-    expect(rows).toHaveLength(2);
+    await chooseRange(user, daysFromNow(-30), daysFromNow(30));
+    // the reservations of the new period arrive after the change
+    await waitFor(() => {
+      const rows = within(screen.getByTestId("customer-recent-reservations")).getAllByRole("row").slice(1); // minus header
+      expect(rows).toHaveLength(2);
+    });
+    const list = screen.getByTestId("customer-recent-reservations");
     expect(list).not.toHaveTextContent("Geboekt");
   });
 

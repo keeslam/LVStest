@@ -440,6 +440,7 @@
       "other": "Inne"
     },
     "tabs": {
+      "overview": "Przegląd",
       "operations": "Operacje",
       "expenses": "Koszty",
       "vehicles": "Pojazdy",
@@ -657,6 +658,25 @@
       "costs": "Koszty",
       "perModel": "Według marki i modelu",
       "vehicles": "Auta"
+    },
+    "shell": {
+      "presetLabel": "Okres",
+      "presets": {
+        "thisMonth": "Ten miesiąc",
+        "lastMonth": "Poprzedni miesiąc",
+        "thisQuarter": "Ten kwartał",
+        "thisYear": "Ten rok",
+        "custom": "Wybierz"
+      },
+      "from": "Od",
+      "to": "Do",
+      "periodLabel": "{{from}} – {{to}}",
+      "reportBuilder": "Kreator raportów",
+      "maintenanceAnalysis": "Analiza konserwacji",
+      "print": "Drukuj",
+      "loadingReport": "Ładowanie raportu...",
+      "reportList": "Raporty",
+      "chooseReport": "Wybierz raport"
     }
   },
   "moneyReports": {

@@ -422,6 +422,7 @@
       "other": "Overig"
     },
     "tabs": {
+      "overview": "Overzicht",
       "operations": "Operaties",
       "expenses": "Kosten",
       "vehicles": "Voertuigen",
@@ -633,6 +634,25 @@
       "costs": "Kosten",
       "perModel": "Per merk en model",
       "vehicles": "Auto's"
+    },
+    "shell": {
+      "presetLabel": "Periode",
+      "presets": {
+        "thisMonth": "Deze maand",
+        "lastMonth": "Vorige maand",
+        "thisQuarter": "Dit kwartaal",
+        "thisYear": "Dit jaar",
+        "custom": "Zelf kiezen"
+      },
+      "from": "Van",
+      "to": "Tot",
+      "periodLabel": "{{from}} t/m {{to}}",
+      "reportBuilder": "Rapportbouwer",
+      "maintenanceAnalysis": "Onderhoudsanalyse",
+      "print": "Afdrukken",
+      "loadingReport": "Rapport laden...",
+      "reportList": "Rapporten",
+      "chooseReport": "Kies een rapport"
     }
   },
   "moneyReports": {

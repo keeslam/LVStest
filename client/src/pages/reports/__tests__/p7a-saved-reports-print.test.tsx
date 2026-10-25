@@ -1,8 +1,9 @@
 /**
  * Audit A-14-7, A-14-9 (package P7a).
  * - deleting a saved report asks first (ConfirmDialog naming the report) and the
- *   delete control has an accessible name and a tooltip; cancel does nothing;
- * - the five print buttons of /reports say what they print.
+ *   delete control has an accessible name and a tooltip; cancel does nothing.
+ * (The five header print buttons of /reports are gone in the reports redesign, Task 2:
+ * every report gets its own Afdrukken.)
  */
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -10,7 +11,6 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { UserRole } from "@shared/schema";
 import { getQueryFn } from "@/lib/queryClient";
-import { installFetch as installReportsFetch, renderWithClient, vehicle } from "./p7a-harness";
 
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: 1, username: "tester", role: UserRole.ADMIN, permissions: [], hidePrices: false }, isLoading: false }),
@@ -26,7 +26,6 @@ vi.mock("recharts", async () => {
 });
 
 import ReportBuilder from "@/pages/reports/report-builder";
-import ReportsPage from "@/pages/reports/index";
 
 const saved = [{
   id: 7, name: "Toyota-lijst", description: "", createdBy: "x", createdAt: "2026-10-01",
@@ -90,25 +89,5 @@ describe("deleting a saved report (A-14-7)", () => {
     await user.click(await screen.findByTestId("button-delete-report-7"));
     await user.click(await screen.findByTestId("confirm-delete-saved-report"));
     await waitFor(() => expect(deleted).toEqual(["/api/reports/saved/7"]));
-  });
-});
-
-describe("print buttons of /reports (A-14-9)", () => {
-  it("say what they print: a visible 'Afdrukken: ...', the report's full name as aria-label and tooltip", async () => {
-    installReportsFetch({ vehicles: [vehicle(1, "AB123C")] });
-    renderWithClient(<ReportsPage />);
-    const expected: Array<[string, string, string]> = [
-      ["print-report-apk", "Afdrukken: APK", "Afdrukken: APK-vervalrapport"],
-      ["print-report-warranty", "Afdrukken: Garantie", "Afdrukken: Garantievervalrapport"],
-      ["print-report-expenses", "Afdrukken: Kosten", "Afdrukken: Kostenrapport"],
-      ["print-report-utilization", "Afdrukken: Benutting", "Afdrukken: Voertuigbenuttingsrapport"],
-      ["print-report-customer-impact", "Afdrukken: Klanten", "Afdrukken: Klantimpactanalyserapport"],
-    ];
-    for (const [testId, visible, full] of expected) {
-      const button = await screen.findByTestId(testId);
-      expect(button).toHaveTextContent(visible);
-      expect(button).toHaveAccessibleName(full);
-      expect(button).toHaveAttribute("title", full);
-    }
   });
 });

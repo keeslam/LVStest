@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { UserRole } from "@shared/schema";
-import { installFetch, renderWithClient, capturePrints, vehicle, daysFromNow } from "./p7a-harness";
+import { installFetch, renderWithClient, capturePrints, vehicle, daysFromNow, chooseRange, openReport } from "./p7a-harness";
 
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: 1, username: "tester", role: UserRole.ADMIN, permissions: [], hidePrices: false }, isLoading: false }),
@@ -63,7 +63,9 @@ describe("/reports print documents (A-14-8)", () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderWithClient(<ReportsPage />);
-    await user.click(await screen.findByTestId("print-report-apk"));
+    // Task 2: the header print buttons are gone; the APK print sits on the vehicles report.
+    await openReport(user, "vehicles", "legacy-vehicles");
+    await user.click(await screen.findByTestId("legacy-print-apk"));
     await vi.advanceTimersByTimeAsync(1000);
     vi.useRealTimers();
     await waitFor(() => expect(printed.length).toBe(1));
@@ -80,8 +82,10 @@ describe("/reports print header for 'Alle gegevens' (final wave A, item 9)", () 
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderWithClient(<ReportsPage />);
-    await user.click(await screen.findByRole("button", { name: /Alle gegevens/ }));
-    await user.click(await screen.findByTestId("print-report-apk"));
+    // Task 2: no "Alle gegevens" button any more; the same 2000 - 2050 range is chosen by hand.
+    await chooseRange(user, "2000-01-01", "2050-12-31");
+    await openReport(user, "vehicles", "legacy-vehicles");
+    await user.click(await screen.findByTestId("legacy-print-apk"));
     await vi.advanceTimersByTimeAsync(1000);
     vi.useRealTimers();
     await waitFor(() => expect(printed.length).toBe(1));
@@ -101,7 +105,10 @@ describe("/reports customer impact print (A-14-8)", () => {
     const { printed, restore } = capturePrints();
     const user = userEvent.setup();
     renderWithClient(<ReportsPage />);
-    await user.click(await screen.findByTestId("print-report-customer-impact"));
+    // Task 2: the default period is this month now; take the last 30 days like the old default.
+    await chooseRange(user, daysFromNow(-30), daysFromNow(0));
+    await openReport(user, "customers", "legacy-customers");
+    await user.click(await screen.findByTestId("legacy-print-customer-impact"));
     await waitFor(() => expect(printed.length).toBe(1), { timeout: 4000 });
     expect(printed[0]).toContain("Klant Met Boeking");
     expect(printed[0]).not.toContain("Klant Zonder Boeking");

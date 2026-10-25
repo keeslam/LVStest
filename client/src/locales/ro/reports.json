@@ -431,6 +431,7 @@
       "other": "Altele"
     },
     "tabs": {
+      "overview": "Prezentare generală",
       "operations": "Operațiuni",
       "expenses": "Cheltuieli",
       "vehicles": "Vehicule",
@@ -645,6 +646,25 @@
       "costs": "Costuri",
       "perModel": "Pe marcă și model",
       "vehicles": "Mașini"
+    },
+    "shell": {
+      "presetLabel": "Perioadă",
+      "presets": {
+        "thisMonth": "Luna aceasta",
+        "lastMonth": "Luna trecută",
+        "thisQuarter": "Trimestrul acesta",
+        "thisYear": "Anul acesta",
+        "custom": "Alege"
+      },
+      "from": "De la",
+      "to": "Până la",
+      "periodLabel": "{{from}} – {{to}}",
+      "reportBuilder": "Generator de rapoarte",
+      "maintenanceAnalysis": "Analiza întreținerii",
+      "print": "Tipărește",
+      "loadingReport": "Se încarcă raportul...",
+      "reportList": "Rapoarte",
+      "chooseReport": "Alege un raport"
     }
   },
   "moneyReports": {

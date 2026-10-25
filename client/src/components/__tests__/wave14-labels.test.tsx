@@ -110,7 +110,7 @@ describe("WAVE 14 item 4 — de kostencategorieën zijn Nederlands", () => {
   });
 
   it("no screen prints the raw category any more", async () => {
-    const reports = await source("client/src/pages/reports/index.tsx");
+    const reports = await source("client/src/pages/reports/legacy-sections.tsx");
     // The two shapes PHASE 57 saw: `capitalize` over the stored word.
     expect(reports).not.toContain('<TableCell className="capitalize">{expense.category}</TableCell>');
     expect(reports).not.toContain('text-transform: capitalize;">${esc(category)}');
@@ -209,7 +209,7 @@ describe("WAVE 14 item 7 — geen scherm bouwt zijn eigen label meer", () => {
   it("the three cost screens share one source for the category label", async () => {
     for (const file of [
       "client/src/pages/expenses/index.tsx",
-      "client/src/pages/reports/index.tsx",
+      "client/src/pages/reports/legacy-sections.tsx",
       "client/src/components/expenses/expense-form.tsx",
       // The scanner's line table moved here (invoice inbox, 2026-09-18); the
       // scanner itself no longer renders a category label.
