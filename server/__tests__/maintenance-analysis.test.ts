@@ -4,9 +4,9 @@
  * costs with suppliers (spelled three ways for one garage).
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { inArray } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import { db } from "../db";
-import { UserPermission, expenses, vehicleMileageReadings } from "../../shared/schema";
+import { UserPermission, expenses, vehicleMileageReadings, vehicles, deletedRecords } from "../../shared/schema";
 import { kmBandOf, modelWithoutBrand, supplierKey, KM_BANDS } from "../../shared/maintenance-analysis";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureVehicle, cleanupFixtures } from "./helpers/fixtures";
@@ -244,5 +244,131 @@ describe("maintenance analysis endpoints", () => {
     expect((await admin.get(`${BASE}/overview`).query({ ...P, category: "fuel" })).status).toBe(400);
     expect((await admin.get(`${BASE}/overview`).query({ ...P, kmBand: "x" })).status).toBe(400);
     expect((await admin.get(`${BASE}/overview`).query({ ...P, compareFrom: "2026-01-01" })).status).toBe(400);
+  });
+
+  it("a repeated query value or yearFrom after yearTo is a 400", async () => {
+    expect((await admin.get(`${BASE}/overview?from=${P.from}&to=${P.to}&brand=${FIAT}&brand=${FORD}`)).status).toBe(400);
+    expect((await admin.get(`${BASE}/rows?from=${P.from}&to=${P.to}&drill=brand&key=${FIAT}&key=${FORD}`)).status).toBe(400);
+    expect((await admin.get(`${BASE}/overview`).query({ ...P, yearFrom: "2020", yearTo: "2010" })).status).toBe(400);
+    expect((await admin.get(`${BASE}/overview`).query({ ...P, yearFrom: "2010", yearTo: "2020" })).status).toBe(200);
+  });
+
+  it("a km-band filter from a non-admin is a 403 on every part", async () => {
+    for (const part of ["overview", "brands", "vehicles", "suppliers", "trends", "signals", "rows"]) {
+      expect((await staff.get(`${BASE}/${part}`).query({ ...P, kmBand: "0–50.000" })).status, part).toBe(403);
+    }
+  });
+
+  it("drill category, brand and vehicle open exactly the counted lines", async () => {
+    const q = { ...P, brand: FIAT };
+    const overview = (await admin.get(`${BASE}/overview`).query(q)).body;
+    for (const c of overview.byCategory) {
+      const rows = (await admin.get(`${BASE}/rows`).query({ ...q, drill: "category", key: c.key })).body;
+      expect([rows.total, rows.amount], c.key).toEqual([c.count, c.amount]);
+    }
+    const brands = (await staff.get(`${BASE}/brands`).query(q)).body;
+    for (const b of brands.brands) {
+      const rows = (await staff.get(`${BASE}/rows`).query({ ...q, drill: "brand", key: b.brand })).body;
+      expect([rows.total, rows.amount]).toEqual([b.count, b.total]);
+    }
+    for (const m of brands.models) {
+      const rows = (await staff.get(`${BASE}/rows`).query({ ...q, drill: "model", key: m.key })).body;
+      expect([rows.total, rows.amount]).toEqual([m.count, m.total]);
+    }
+    const vehicles = (await staff.get(`${BASE}/vehicles`).query(q)).body.vehicles;
+    expect(vehicles.length).toBe(5);
+    for (const v of vehicles) {
+      const rows = (await staff.get(`${BASE}/rows`).query({ ...q, drill: "vehicle", key: String(v.vehicleId) })).body;
+      expect([rows.total, rows.amount]).toEqual([v.count, v.total]);
+    }
+  });
+
+  it("a km-band cell (band + brand + model) opens exactly its lines", async () => {
+    const lines = (await admin.get(`${BASE}/brands`).query({ ...P, brand: FIAT })).body.kmBands;
+    expect(lines.length).toBeGreaterThan(0);
+    for (const line of lines) {
+      const query: Record<string, string> = { ...P, brand: line.brand, drill: "kmBand", key: line.band };
+      if (line.model !== null) query.model = line.model;
+      const rows = (await admin.get(`${BASE}/rows`).query(query)).body;
+      expect([rows.total, rows.amount], `${line.model} ${line.band}`).toEqual([line.count, line.amount]);
+    }
+  });
+});
+
+describe("maintenance analysis: removed vehicles and months owned", () => {
+  const OWN = "FIXTMAOWN";
+  let admin: TestAgent;
+  let staff: TestAgent;
+  const orphanExpenseIds: number[] = [];
+  const deletedRecordIds: number[] = [];
+  let snapId: number;
+  let bareId: number;
+  let mid: number, sold: number, short: number;
+  const months = (days: number) => days / (365.25 / 12);
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+
+  beforeAll(async () => {
+    admin = await agentFor("admin");
+    staff = await agentFor([UserPermission.VIEW_REPORTS]);
+    // Two vehicles removed from the vehicles table while their costs stayed: one with a recycle-bin snapshot, one without.
+    const snap = await createFixtureVehicle({ brand: "FIXTMAGONE", model: "FIXTMAGONE KANGOO", dateIn: "2025-01-01" });
+    const bare = await createFixtureVehicle({ brand: "FIXTMAGONE", model: "KANGOO", dateIn: "2025-01-01" });
+    snapId = snap.id;
+    bareId = bare.id;
+    const inserted = await db.insert(expenses).values([
+      { vehicleId: snapId, category: "maintenance", amount: "321.00", date: "2026-04-04", description: "FIXT-ma-orphan" },
+      { vehicleId: bareId, category: "brakes", amount: "123.00", date: "2026-04-05", description: "FIXT-ma-orphan" },
+    ]).returning();
+    orphanExpenseIds.push(...inserted.map((e) => e.id));
+    await db.delete(vehicles).where(inArray(vehicles.id, [snapId, bareId]));
+    const [rec] = await db.insert(deletedRecords).values({
+      entityType: "vehicle", entityId: snapId, label: "FIXT gone", payload: { vehicle: snap },
+    }).returning();
+    deletedRecordIds.push(rec.id);
+
+    mid = (await createFixtureVehicle({ brand: OWN, model: "X", dateIn: "2026-08-01" })).id;
+    sold = (await createFixtureVehicle({ brand: OWN, model: "X", dateIn: "2025-01-01", outOfFleetDate: "2026-03-31", outOfFleetReason: "sold" })).id;
+    short = (await createFixtureVehicle({ brand: OWN, model: "X", dateIn: "2026-09-29" })).id;
+    await db.insert(expenses).values([
+      { vehicleId: mid, category: "maintenance", amount: "200.00", date: "2026-08-15", description: "FIXT-ma" },
+      { vehicleId: sold, category: "maintenance", amount: "135.00", date: "2026-05-15", description: "FIXT-ma" },
+      { vehicleId: short, category: "maintenance", amount: "50.00", date: "2026-09-29", description: "FIXT-ma" },
+    ]);
+  });
+
+  afterAll(async () => {
+    await db.delete(expenses).where(inArray(expenses.id, orphanExpenseIds));
+    await db.delete(deletedRecords).where(inArray(deletedRecords.id, deletedRecordIds));
+    await cleanupFixtures();
+    await cleanupFixtureUsers();
+  });
+
+  it("costs of a removed vehicle still count, under its recycle-bin plate and brand when there is one", async () => {
+    const overview = (await admin.get(`${BASE}/overview`).query({ ...P, vehicleId: String(snapId) })).body;
+    expect(overview.tiles).toMatchObject({ total: 321, count: 1 });
+    const rows = (await admin.get(`${BASE}/rows`).query({ ...P, vehicleId: String(bareId) })).body;
+    expect(rows.total).toBe(1);
+    expect(rows.rows[0]).toMatchObject({ amount: 123, category: "brakes" });
+    const gone = (await staff.get(`${BASE}/brands`).query({ ...P, brand: "FIXTMAGONE" })).body;
+    expect(gone.models).toEqual([expect.objectContaining({ model: "KANGOO", count: 1, total: 321 })]);
+  });
+
+  it("the overview total equals every maintenance cost of the period in the expenses table", async () => {
+    const [{ total, count }] = (await db.execute(sql`
+      SELECT round(coalesce(sum(amount::numeric), 0), 2)::float8 AS total, count(*)::int AS count FROM expenses
+      WHERE lower(btrim(category)) IN ('maintenance', 'tires', 'brakes') AND left(date, 10) >= ${P.from} AND left(date, 10) <= ${P.to}`)).rows as any[];
+    const overview = (await admin.get(`${BASE}/overview`).query(P)).body;
+    expect(overview.tiles.count).toBe(count);
+    expect(overview.tiles.total).toBeCloseTo(total, 2);
+  });
+
+  it("per month: added mid-period, sold with a later cost, and a 2-day owner floored at 1 month", async () => {
+    const lines = (await staff.get(`${BASE}/vehicles`).query({ ...P, brand: OWN })).body.vehicles;
+    const of = (id: number) => lines.find((l: any) => l.vehicleId === id).perMonth;
+    expect(of(mid)).toBe(r2(200 / months(61))); // 1 Aug .. 30 Sep
+    expect(of(sold)).toBe(r2(135 / months(135))); // 1 Jan .. 15 May: the cost after the sale extends the months owned
+    expect(of(short)).toBe(50); // 29 .. 30 Sep is 2 days: counted as 1 month
+    const tiles = (await staff.get(`${BASE}/overview`).query({ ...P, brand: OWN })).body.tiles;
+    expect(tiles.perVehicleMonth).toBe(r2(385 / (months(61) + months(135) + 1)));
   });
 });

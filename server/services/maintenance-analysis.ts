@@ -17,10 +17,9 @@
  *   and model under the same filters, but never narrowed to one vehicle, supplier or km band;
  * - km fields only for admins; a km-band filter or drill from anyone else is a 403.
  */
-import { and, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { db } from "../db";
-import { storage } from "../storage";
-import { expenses, reservations, type Vehicle } from "../../shared/schema";
+import { deletedRecords, expenses, reservations, vehicles, type Vehicle } from "../../shared/schema";
 import { MAINTENANCE_EXPENSE_CATEGORIES, type ExpenseCategory } from "../../shared/expense-categories";
 import { formatLicensePlate } from "../../shared/license-plate";
 import { kmPerDayFromReadings, type DatedReading } from "../../shared/service-forecast";
@@ -85,6 +84,10 @@ function yearParam(value: unknown): number | null | "bad" {
 
 /** The shared filter of every part. Km band from a non-admin is a 403 (server-enforced, not only hidden). */
 export function parseMaintenanceQuery(query: Record<string, unknown>, today: string, isAdmin: boolean): { ok: true; q: MaintenanceQuery } | Refusal {
+  // brand=a&brand=b (an array) or brand[x]=a (an object) is never silently half-read.
+  for (const [name, value] of Object.entries(query)) {
+    if (value !== undefined && typeof value !== "string") return badFilter(`Repeated or malformed query value: ${name}`);
+  }
   const parsed = parseReportFilter(query, today);
   if (!parsed.ok) {
     return { ok: false, status: 400, body: { message: parsed.code === "INVALID_DATE" ? "Invalid date range" : "Invalid vehicle", code: parsed.code } };
@@ -112,6 +115,7 @@ export function parseMaintenanceQuery(query: Record<string, unknown>, today: str
   const yearFrom = yearParam(query.yearFrom);
   const yearTo = yearParam(query.yearTo);
   if (yearFrom === "bad" || yearTo === "bad") return badFilter("Invalid year");
+  if (yearFrom !== null && yearTo !== null && yearFrom > yearTo) return badFilter("Year from is after year to");
   let supplier: string | null | undefined;
   if (given(query.supplier)) {
     supplier = query.supplier === REPORT_DRILL_NULL_KEY ? null : supplierKey(query.supplier);
@@ -173,6 +177,20 @@ export interface MaintenanceData {
   vehicles: Map<number, VehicleCtx>;
   costs: CostCtx[];
   supplierNames: Map<string, string>;
+  /** kmByBandInPeriod per vehicle and period, computed once per request. */
+  kmCache: Map<string, Map<KmBand, number>>;
+}
+
+/** The vehicle fields the analysis reads: a vehicles row, or the `vehicle` of a recycle-bin snapshot (JSON). */
+interface VehicleSnapshot {
+  id: number;
+  licensePlate?: string | null;
+  brand?: string | null;
+  model?: string | null;
+  productionDate?: string | null;
+  dateIn?: string | null;
+  outOfFleetDate?: string | null;
+  createdAt?: string | Date | null;
 }
 
 /** Valid readings in day order: a decrease or a jump is skipped, the same rule as kmPerDayFromReadings. */
@@ -243,15 +261,18 @@ export async function loadMaintenanceData(isAdmin: boolean, now: Date = new Date
   const today = dateInZone(now, zone);
   const todayDay = dayOf(today);
   const [vehicleRows, expenseRows, readingMap] = await Promise.all([
-    storage.getAllVehicles(),
+    // Every row of the vehicles table, out-of-fleet (sold) vehicles included.
+    db.select().from(vehicles),
+    // Only the maintenance categories, on the same key as isMaintenanceExpenseCategory.
     db.select({
       id: expenses.id, vehicleId: expenses.vehicleId, category: expenses.category, amount: expenses.amount,
       date: expenses.date, description: expenses.description, supplier: expenses.supplier,
-    }).from(expenses),
+    }).from(expenses).where(inArray(sql`lower(btrim(${expenses.category}))`, [...MAINTENANCE_EXPENSE_CATEGORIES])),
     isAdmin ? mileageHistoryReadingsByVehicle() : Promise.resolve(new Map<number, DatedReading[]>()),
   ]);
 
   const firstCost = new Map<number, number>();
+  const lastCost = new Map<number, number>();
   const rawCosts: Array<Omit<CostCtx, "km" | "band"> & { supplierRaw: string | null }> = [];
   for (const e of expenseRows) {
     const category = (e.category ?? "").trim().toLowerCase() as ExpenseCategory;
@@ -261,6 +282,7 @@ export async function loadMaintenanceData(isAdmin: boolean, now: Date = new Date
     const amount = Number.parseFloat(String(e.amount));
     const day = dayOf(date);
     firstCost.set(e.vehicleId, Math.min(firstCost.get(e.vehicleId) ?? day, day));
+    lastCost.set(e.vehicleId, Math.max(lastCost.get(e.vehicleId) ?? day, day));
     rawCosts.push({
       id: e.id, vehicleId: e.vehicleId, date, day, category,
       amount: Number.isFinite(amount) ? amount : 0,
@@ -270,28 +292,57 @@ export async function loadMaintenanceData(isAdmin: boolean, now: Date = new Date
     });
   }
 
-  const vehicles = new Map<number, VehicleCtx>();
-  for (const v of vehicleRows as Vehicle[]) {
-    const created = v.createdAt ? dateInZone(new Date(v.createdAt), zone) : today;
-    let ownedFrom = dayOf(v.dateIn && isRealDate(v.dateIn.slice(0, 10)) ? v.dateIn.slice(0, 10) : created);
+  const vehicleMap = new Map<number, VehicleCtx>();
+  /**
+   * Ownership: from dateIn (else the creation day), earlier when a cost is earlier; until the
+   * out-of-fleet day, the removal day or today, later when a cost comes after it (a bill after the sale).
+   */
+  const addVehicle = (v: VehicleSnapshot, removedDay: number | null) => {
+    const createdAt = v.createdAt ? new Date(v.createdAt) : null;
+    const created = createdAt && !Number.isNaN(createdAt.getTime()) ? dateInZone(createdAt, zone) : null;
+    const dateIn = typeof v.dateIn === "string" && isRealDate(v.dateIn.slice(0, 10)) ? v.dateIn.slice(0, 10) : null;
     const first = firstCost.get(v.id);
+    const last = lastCost.get(v.id);
+    let ownedFrom = dateIn ? dayOf(dateIn) : created ? dayOf(created) : first ?? todayDay;
     if (first !== undefined && first < ownedFrom) ownedFrom = first;
-    const out = v.outOfFleetDate && isRealDate(v.outOfFleetDate.slice(0, 10)) ? dayOf(v.outOfFleetDate) : null;
+    const out = typeof v.outOfFleetDate === "string" && isRealDate(v.outOfFleetDate.slice(0, 10)) ? dayOf(v.outOfFleetDate) : null;
+    const end = Math.min(out ?? todayDay, removedDay ?? todayDay, todayDay);
+    const ownedTo = last !== undefined && last > end ? last : end;
     const brand = (v.brand ?? "").trim().replace(/\s+/g, " ").toUpperCase();
+    const model = modelWithoutBrand(brand, (v.model ?? "").toUpperCase());
     const raw = readingMap.get(v.id) ?? [];
-    vehicles.set(v.id, {
+    vehicleMap.set(v.id, {
       id: v.id,
-      plate: formatLicensePlate(v.licensePlate),
+      plate: v.licensePlate ? formatLicensePlate(v.licensePlate) : `#${v.id}`,
       brand,
-      model: modelWithoutBrand(brand, (v.model ?? "").toUpperCase()),
-      modelKey: modelWithoutBrand(brand, (v.model ?? "").toUpperCase()).toUpperCase(),
+      model,
+      modelKey: model.toUpperCase(),
       year: yearOf(v.productionDate),
       ownedFrom,
-      ownedTo: out !== null && out < todayDay ? out : todayDay,
-      inFleet: out === null || out > todayDay,
+      ownedTo,
+      inFleet: removedDay === null && (out === null || out > todayDay),
       readings: cleanReadings(raw),
       raw,
     });
+  };
+  for (const v of vehicleRows as Vehicle[]) addVehicle(v, null);
+
+  // Costs whose vehicle is no longer in the vehicles table keep counting: under the recycle-bin
+  // snapshot of the vehicle when there is one, otherwise as "#id" without brand or model.
+  const missing = [...new Set(rawCosts.map((c) => c.vehicleId))].filter((id) => !vehicleMap.has(id));
+  if (missing.length > 0) {
+    const snapshots = await db.select({ entityId: deletedRecords.entityId, payload: deletedRecords.payload, deletedAt: deletedRecords.deletedAt })
+      .from(deletedRecords)
+      .where(and(eq(deletedRecords.entityType, "vehicle"), inArray(deletedRecords.entityId, missing)))
+      .orderBy(desc(deletedRecords.deletedAt));
+    for (const s of snapshots) {
+      if (vehicleMap.has(s.entityId)) continue; // the newest snapshot wins
+      const snap = (s.payload as { vehicle?: VehicleSnapshot } | null)?.vehicle;
+      addVehicle({ ...(snap ?? {}), id: s.entityId }, dayOf(dateInZone(new Date(s.deletedAt), zone)));
+    }
+    for (const id of missing) {
+      if (!vehicleMap.has(id)) addVehicle({ id }, lastCost.get(id) ?? todayDay);
+    }
   }
 
   // The most used spelling of each supplier group is its name (ties: alphabetical).
@@ -311,13 +362,13 @@ export async function loadMaintenanceData(isAdmin: boolean, now: Date = new Date
 
   const costs: CostCtx[] = [];
   for (const { supplierRaw: _unused, ...c } of rawCosts) {
-    const vehicle = vehicles.get(c.vehicleId);
-    if (!vehicle) continue; // a cost of a vehicle that no longer exists has no brand to sit under
+    const vehicle = vehicleMap.get(c.vehicleId);
+    if (!vehicle) continue; // never: every vehicle id of a cost was added above
     const km = isAdmin ? kmAtDay(vehicle.readings, c.day) : null;
     costs.push({ ...c, km, band: km === null ? null : kmBandOf(km) });
   }
   costs.sort((a, b) => b.day - a.day || b.id - a.id);
-  return { today, isAdmin, vehicles, costs, supplierNames };
+  return { today, isAdmin, vehicles: vehicleMap, costs, supplierNames, kmCache: new Map() };
 }
 
 // ---------------------------------------------------------------------------
@@ -345,15 +396,29 @@ function costMatches(c: CostCtx, q: MaintenanceQuery, period: Period, ignore: Ig
   return true;
 }
 
-/** Months owned inside the period (period end clamped to today); 0 when not owned at all. */
+/**
+ * Months owned inside the period (period end clamped to today), at least 1 for a vehicle owned
+ * at all in it (a 2-day owner with one bill is not EUR 750 a month); 0 when not owned at all.
+ */
 function ownedMonths(v: VehicleCtx, period: Period, today: string): number {
   const from = Math.max(v.ownedFrom, dayOf(period.from));
   const to = Math.min(v.ownedTo, dayOf(period.to < today ? period.to : today));
-  return to >= from ? (to - from + 1) / DAYS_PER_MONTH : 0;
+  return to >= from ? Math.max(1, (to - from + 1) / DAYS_PER_MONTH) : 0;
 }
 
-function kmInPeriod(v: VehicleCtx, period: Period, band: KmBand | null): number {
-  const byBand = kmByBandInPeriod(v.readings, dayOf(period.from), dayOf(period.to));
+/** kmByBandInPeriod of one vehicle, memoised per request. */
+function kmBands(data: MaintenanceData, v: VehicleCtx, period: Period): Map<KmBand, number> {
+  const key = `${v.id}:${period.from}:${period.to}`;
+  let hit = data.kmCache.get(key);
+  if (!hit) {
+    hit = kmByBandInPeriod(v.readings, dayOf(period.from), dayOf(period.to));
+    data.kmCache.set(key, hit);
+  }
+  return hit;
+}
+
+function kmInPeriod(data: MaintenanceData, v: VehicleCtx, period: Period, band: KmBand | null): number {
+  const byBand = kmBands(data, v, period);
   if (band !== null) return byBand.get(band) ?? 0;
   let total = 0;
   for (const km of byBand.values()) total += km;
@@ -397,7 +462,7 @@ function groupLine(scope: Scope, vehicles: VehicleCtx[], costs: CostCtx[]): Main
     rated: costs.length >= MIN_EXPENSES_FOR_RATING && withCosts >= MIN_VEHICLES_FOR_RATING,
   };
   if (scope.data.isAdmin) {
-    const km = vehicles.reduce((n, v) => n + kmInPeriod(v, scope.period, scope.q.kmBand), 0);
+    const km = vehicles.reduce((n, v) => n + kmInPeriod(scope.data, v, scope.period, scope.q.kmBand), 0);
     line.perKm = ratio(total, km, round4);
   }
   return line;
@@ -467,10 +532,8 @@ export function brandsPart(data: MaintenanceData, q: MaintenanceQuery): Maintena
     .sort((a, b) => b.total - a.total || a.key.localeCompare(b.key));
   const result: MaintenanceBrands = { from: q.from, to: q.to, brands, models };
   if (data.isAdmin) {
-    const kmBands: MaintenanceKmBandLine[] = [];
-    const fromDay = dayOf(q.from);
-    const toDay = dayOf(q.to);
-    const kmOf = new Map(scope.vehicles.map((v) => [v.id, kmByBandInPeriod(v.readings, fromDay, toDay)] as const));
+    const bandRows: MaintenanceKmBandLine[] = [];
+    const kmOf = new Map(scope.vehicles.map((v) => [v.id, kmBands(data, v, q)] as const));
     const bandLines = (brand: string, model: string | null, vs: VehicleCtx[]) => {
       const costs = costsOf(vs);
       for (const band of KM_BAND_KEYS) {
@@ -485,12 +548,12 @@ export function brandsPart(data: MaintenanceData, q: MaintenanceQuery): Maintena
           km += k;
         }
         if (km <= 0 && inBand.length === 0) continue;
-        kmBands.push({ brand, model, band, amount: round2(amount), km: Math.round(km), perKm: ratio(amount, km, round4), vehicles: ids.size, count: inBand.length });
+        bandRows.push({ brand, model, band, amount: round2(amount), km: Math.round(km), perKm: ratio(amount, km, round4), vehicles: ids.size, count: inBand.length });
       }
     };
     for (const [brand, vs] of vehiclesByBrand) bandLines(brand, null, vs);
     for (const vs of vehiclesByModel.values()) bandLines(vs[0].brand, vs[0].model, vs);
-    result.kmBands = kmBands;
+    result.kmBands = bandRows;
   }
   return result;
 }
@@ -516,7 +579,7 @@ export function vehiclesPart(data: MaintenanceData, q: MaintenanceQuery): { from
     if (data.isAdmin) {
       const km = kmAtDay(v.readings, toDay);
       line.kmBand = km === null ? null : kmBandOf(km);
-      line.perKm = ratio(total, kmInPeriod(v, q, q.kmBand), round4);
+      line.perKm = ratio(total, kmInPeriod(scope.data, v, q, q.kmBand), round4);
     }
     return line;
   });
@@ -563,8 +626,10 @@ export async function suppliersPart(data: MaintenanceData, q: MaintenanceQuery):
   const vehicleScope = scopeOf(data, q, q, { supplier: true, kmBand: true });
   const ids = vehicleScope.vehicles.map((v) => v.id);
   const [visits, linked] = ids.length === 0 ? [[], []] : await Promise.all([
-    db.select().from(reservations).where(and(eq(reservations.type, "maintenance_block"), isNull(reservations.deletedAt))),
-    db.select({ maintenanceBlockId: expenses.maintenanceBlockId, amount: expenses.amount }).from(expenses).where(isNotNull(expenses.maintenanceBlockId)),
+    db.select().from(reservations).where(and(
+      eq(reservations.type, "maintenance_block"), isNull(reservations.deletedAt), inArray(reservations.vehicleId, ids))),
+    db.select({ maintenanceBlockId: expenses.maintenanceBlockId, amount: expenses.amount }).from(expenses)
+      .where(and(isNotNull(expenses.maintenanceBlockId), inArray(expenses.vehicleId, ids))),
   ]);
   const idSet = new Set(ids);
   const downtime = downtimeRows(
@@ -608,8 +673,6 @@ function nextMonth(key: string, n: number): string {
 /** Cost per km of a brand + model in a band, over the comparison group (never narrowed to one vehicle, supplier or band). */
 function groupRates(data: MaintenanceData, q: MaintenanceQuery): Map<string, number | null> {
   const peers = scopeOf(data, q, q, { vehicle: true, supplier: true, kmBand: true });
-  const fromDay = dayOf(q.from);
-  const toDay = dayOf(q.to);
   const amount = new Map<string, number>();
   const km = new Map<string, number>();
   const keyOf = (v: VehicleCtx, band: string) => `${modelGroupKey(v.brand, v.modelKey)}#${band}`;
@@ -619,7 +682,7 @@ function groupRates(data: MaintenanceData, q: MaintenanceQuery): Map<string, num
     amount.set(k, (amount.get(k) ?? 0) + c.amount);
   }
   for (const v of peers.vehicles) {
-    for (const [band, n] of kmByBandInPeriod(v.readings, fromDay, toDay)) {
+    for (const [band, n] of kmBands(data, v, q)) {
       const k = keyOf(v, band);
       km.set(k, (km.get(k) ?? 0) + n);
     }
@@ -684,9 +747,8 @@ export function signalsPart(data: MaintenanceData, q: MaintenanceQuery): Mainten
   const peers = scopeOf(data, q, q, { vehicle: true, supplier: true, kmBand: true });
   const peerCosts = groupBy(peers.costs, (c) => c.vehicleId);
   const peersByModel = groupBy(peers.vehicles, (v) => modelGroupKey(v.brand, v.modelKey));
-  const fromDay = dayOf(q.from);
   const toDay = dayOf(q.to);
-  const kmOf = new Map(peers.vehicles.map((v) => [v.id, kmByBandInPeriod(v.readings, fromDay, toDay)] as const));
+  const kmOf = new Map(peers.vehicles.map((v) => [v.id, kmBands(data, v, q)] as const));
   for (const v of scope.vehicles) {
     const group = (peersByModel.get(modelGroupKey(v.brand, v.modelKey)) ?? []).filter((o) => o.id !== v.id);
     const own = peerCosts.get(v.id) ?? [];
