@@ -3,9 +3,9 @@
  * report's periodField) and one vehicle, and a saved report can be updated.
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, like } from "drizzle-orm";
 import { db } from "../db";
-import { vehicles, fines, savedReports } from "../../shared/schema";
+import { vehicles, fines, savedReports, auditLogs } from "../../shared/schema";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureVehicle, cleanupFixtures } from "./helpers/fixtures";
 
@@ -93,6 +93,75 @@ describe("report builder scope and update", () => {
   it("een slechte periode geeft 400", async () => {
     const res = await admin.post("/api/reports/execute").send({ ...base({ periodField: "offenceAt" }), scope: { from: "x", to: "2026-10-31" } });
     expect(res.status).toBe(400);
+  });
+
+  it("31 okt 23:30 kantoortijd telt mee, 1 nov niet", async () => {
+    const plate = (await db.select().from(vehicles).where(eq(vehicles.id, V1)))[0].licensePlate;
+    const rows = await db.insert(fines).values([
+      { licensePlate: plate, vehicleId: V1, offenceAt: new Date("2026-10-31T22:30:00Z"), description: "fixt", amount: "1", adminFee: "0", totalAmount: "1", status: "new" },
+      { licensePlate: plate, vehicleId: V1, offenceAt: new Date("2026-10-31T23:30:00Z"), description: "fixt", amount: "1", adminFee: "0", totalAmount: "1", status: "new" },
+    ] as any).returning({ id: fines.id });
+    fineIds.push(...rows.map((f) => f.id));
+    const res = await admin.post("/api/reports/execute").send({
+      ...base({ periodField: "offenceAt", filters: [{ table: "fines", field: "vehicleId", operator: "equals", value: V1 }] }),
+      scope: october,
+    });
+    expect(res.status).toBe(200);
+    expect(ids(res)).toContain(rows[0].id); // 23:30 office time on 31 Oct
+    expect(ids(res)).not.toContain(rows[1].id); // 00:30 on 1 Nov
+  });
+
+  it("periodeveld met tekstdatum (apkDate)", async () => {
+    await db.update(vehicles).set({ apkDate: "2026-10-15" } as any).where(eq(vehicles.id, V1));
+    await db.update(vehicles).set({ apkDate: "2026-11-15" } as any).where(eq(vehicles.id, V2));
+    const res = await admin.post("/api/reports/execute").send({
+      name: "t", dataSources: ["vehicles"], periodField: "apkDate",
+      columns: [{ table: "vehicles", field: "id" }],
+      filters: [{ table: "vehicles", field: "id", operator: "between", value: Math.min(V1, V2), value2: Math.max(V1, V2) }],
+      scope: october,
+    });
+    expect(res.status).toBe(200);
+    expect(ids(res)).toEqual([V1]);
+  });
+
+  it("een onmogelijke datum of een vehicleId met komma geeft 400, geen 500", async () => {
+    for (const scope of [
+      { from: "2026-02-31", to: "2026-03-01" },
+      { from: "2026-10-01", to: "2026-13-01" },
+      { ...october, vehicleId: 1.5 },
+      { ...october, vehicleId: "7" },
+    ]) {
+      const res = await admin.post("/api/reports/execute").send({ ...base({ periodField: "offenceAt" }), scope });
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({ code: "REPORT_SCOPE_INVALID" });
+    }
+  });
+
+  it("opslaan en bijwerken zonder bron geeft 400", async () => {
+    const created = await admin.post("/api/reports/saved").send(base());
+    savedIds.push(created.body.id);
+    for (const dataSources of [undefined, [], [""]]) {
+      const post = await admin.post("/api/reports/saved").send(base({ dataSources }));
+      expect(post.status).toBe(400);
+      const put = await admin.put(`/api/reports/saved/${created.body.id}`).send(base({ dataSources }));
+      expect(put.status).toBe(400);
+    }
+  });
+
+  it("PUT door medewerker met MANAGE_REPORTS en bronrecht werkt en wordt gelogd", async () => {
+    const worker = await agentFor(["view_reports", "manage_reports", "view_fines"]);
+    const created = await worker.post("/api/reports/saved").send(base({ name: "eigen" }));
+    expect(created.status).toBe(200);
+    savedIds.push(created.body.id);
+    const res = await worker.put(`/api/reports/saved/${created.body.id}`).send(base({ name: "eigen2", tab: "office" }));
+    expect(res.status).toBe(200);
+    expect(res.body.configuration.tab).toBe("office");
+    await new Promise((r) => setTimeout(r, 400));
+    const rows = await db.select().from(auditLogs).where(and(
+      eq(auditLogs.resourceType, "report"),
+      like(auditLogs.action, "report.update%"),
+    ));
+    expect(rows.some((r) => JSON.stringify(r).includes(`saved`) && JSON.stringify(r).includes(String(created.body.id)))).toBe(true);
   });
 
   it("klanten + vehicleId: voertuig wordt genegeerd", async () => {

@@ -36,6 +36,14 @@ function invalidTabSettings(config: any): { message: string; code: string; field
   }
   return null;
 }
+/** A saved report needs a known first data source; nothing defaults to vehicles. */
+function missingSource(config: any): { message: string; code: string } | null {
+  const first = Array.isArray(config?.dataSources) ? config.dataSources[0] : undefined;
+  if (typeof first !== "string" || !getDataSource(first)) {
+    return { message: "Kies een bron voor het rapport.", code: "REPORT_SOURCE_REQUIRED" };
+  }
+  return null;
+}
 function sourceDeniedBody(source: DataSource) {
   if (source.table === "customers" || source.table === "drivers") {
     return { message: "A report on customers or drivers needs the customer right", code: "CUSTOMER_RIGHT_REQUIRED" as const, source: source.id };
@@ -160,6 +168,8 @@ export function registerReportRoutes(app: Express): void {
 
       const denied = deniedReportSource(user, config.dataSources);
       if (denied) return res.status(403).json(sourceDeniedBody(denied));
+      const noSource = missingSource(config);
+      if (noSource) return res.status(400).json(noSource);
       const invalid = invalidTabSettings(config);
       if (invalid) return res.status(400).json(invalid);
 
@@ -171,7 +181,7 @@ export function registerReportRoutes(app: Express): void {
       const report = await storage.createSavedReport({
         name: config.name,
         description: config.description || null,
-        dataSource: dataSources[0] || "vehicles",
+        dataSource: dataSources[0],
         fields: columns.map((c) => (c.source ? `${c.source}.${c.field}` : String(c.field ?? ""))).filter(Boolean),
         filters: {},
         configuration: config,
@@ -207,6 +217,8 @@ export function registerReportRoutes(app: Express): void {
       if (!config?.name) {
         return res.status(400).json({ message: "Report name is required" });
       }
+      const noSource = missingSource(config);
+      if (noSource) return res.status(400).json(noSource);
       const invalid = invalidTabSettings(config);
       if (invalid) return res.status(400).json(invalid);
 
@@ -215,7 +227,7 @@ export function registerReportRoutes(app: Express): void {
       const report = await storage.updateSavedReport(id, {
         name: config.name,
         description: config.description || null,
-        dataSource: dataSources[0] || "vehicles",
+        dataSource: dataSources[0],
         fields: columns.map((c) => (c.source ? `${c.source}.${c.field}` : String(c.field ?? ""))).filter(Boolean),
         configuration: config,
         updatedBy: user ? user.username : null,

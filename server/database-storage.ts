@@ -92,7 +92,7 @@ import {
   type CascadeSnapshot,
 } from "./services/cascade-snapshot";
 import { getDataSource, getField as getReportField, RENAMED_REPORT_FIELDS, REMOVED_REPORT_FIELDS, isReportPeriodField, type ReportScope } from "../shared/report-builder-config";
-import { officeDaySql, textDaySql } from "./services/reports/report-kit";
+import { officeDaySql, textDaySql, isRealDate } from "./services/reports/report-kit";
 import { buildDefaultDamageCheckCanvasFields } from "../shared/damage-check-default-layout";
 
 export class ReportValidationError extends Error {
@@ -6877,7 +6877,7 @@ export class DatabaseStorage implements IStorage {
     // a vehicle column ignores the vehicle.
     if (scope !== undefined && scope !== null) {
       const YMD = /^\d{4}-\d{2}-\d{2}$/;
-      const validDay = (v: unknown) => typeof v === "string" && YMD.test(v) && !Number.isNaN(Date.parse(v));
+      const validDay = (v: unknown) => typeof v === "string" && isRealDate(v);
       if (typeof scope !== "object" || !validDay(scope.from) || !validDay(scope.to)
         || (scope.vehicleId !== undefined && scope.vehicleId !== null && !Number.isInteger(scope.vehicleId))) {
         throw new ReportValidationError("De periode klopt niet; kies een begin- en einddatum.", "REPORT_SCOPE_INVALID");
