@@ -29,6 +29,7 @@ import {
   vehicleTransports, type VehicleTransport, type InsertVehicleTransport,
   vehicleWaitlist,
   deletedRecords, type DeletedRecord, fines,
+  vehicleMileageReadings,
   reservationDriverAssignments, type ReservationDriverAssignment,
   auditLogs, type AuditLog
 } from "../shared/schema";
@@ -99,6 +100,64 @@ export class ReportValidationError extends Error {
     this.name = "ReportValidationError";
   }
 }
+
+/**
+ * Report builder whitelist, keyed on the config table name. `from` is what
+ * goes after FROM (columns are always written "<config table>"."<column>",
+ * so a virtual table needs an alias); `baseWhere` adds the source's fixed
+ * conditions. One source per report: a fixed condition may use a subquery,
+ * but never shows a column from another table.
+ */
+interface ReportSourceTable {
+  table: Record<string, any>;
+  from: SQL;
+  baseWhere?: (filters: unknown[]) => SQL[];
+}
+
+const REPORT_SOURCE_TABLES: Record<string, ReportSourceTable> = {
+  vehicles: { table: vehicles, from: sql`vehicles` },
+  customers: { table: customers, from: sql`customers` },
+  // Reservations support soft-delete — never report on deleted rows.
+  reservations: {
+    table: reservations,
+    from: sql`reservations`,
+    baseWhere: () => [sql`reservations.deleted_at IS NULL`],
+  },
+  expenses: { table: expenses, from: sql`expenses` },
+  drivers: { table: drivers, from: sql`drivers` },
+  // Fines and transports have no recycle bin: every row, also cancelled ones.
+  fines: { table: fines, from: sql`fines` },
+  vehicle_transports: { table: vehicleTransports, from: sql`vehicle_transports` },
+  // A workshop visit is a maintenance block that is not in the recycle bin
+  // (same rule as /api/reports/workshop-downtime).
+  workshop_visits: {
+    table: reservations,
+    from: sql`reservations AS workshop_visits`,
+    baseWhere: () => [
+      sql`workshop_visits.type = 'maintenance_block'`,
+      sql`workshop_visits.deleted_at IS NULL`,
+    ],
+  },
+  // A damage check on a reservation in the recycle bin does not count; a
+  // check without a reservation does.
+  interactive_damage_checks: {
+    table: interactiveDamageChecks,
+    from: sql`interactive_damage_checks`,
+    baseWhere: () => [
+      sql`NOT EXISTS (SELECT 1 FROM reservations r WHERE r.id = interactive_damage_checks.reservation_id AND r.deleted_at IS NOT NULL)`,
+    ],
+  },
+  // Voided readings do not count (like the km history), unless the report
+  // filters on voidedAt itself; then that filter decides.
+  vehicle_mileage_readings: {
+    table: vehicleMileageReadings,
+    from: sql`vehicle_mileage_readings`,
+    baseWhere: (filters) =>
+      filters.some((f: any) => f?.table === "vehicle_mileage_readings" && f?.field === "voidedAt")
+        ? []
+        : [sql`vehicle_mileage_readings.voided_at IS NULL`],
+  },
+};
 
 /**
  * FIX-G — a restore that must be rolled back with a named reason. Thrown inside
@@ -6556,22 +6615,14 @@ export class DatabaseStorage implements IStorage {
       throw new ReportValidationError("No data source specified");
     }
 
-    // Whitelist of queryable tables mapped to their Drizzle table objects.
-    const reportTables: Record<string, any> = {
-      vehicles,
-      customers,
-      reservations,
-      expenses,
-      drivers,
-    };
-
     const mainSource = getDataSource(String(dataSources[0]));
     if (!mainSource) {
       throw new ReportValidationError(`Unknown data source: ${dataSources[0]}`);
     }
     const mainTable = mainSource.table;
-    const tableObj = reportTables[mainTable];
-    if (!tableObj) {
+    const reportSource = REPORT_SOURCE_TABLES[mainTable];
+    const tableObj = reportSource?.table;
+    if (!reportSource || !tableObj) {
       throw new ReportValidationError(`Data source not queryable: ${mainTable}`);
     }
 
@@ -6730,16 +6781,14 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
-    // Reservations support soft-delete — never report on deleted rows.
-    if (mainTable === "reservations") {
-      whereParts.push(sql`${sql.identifier(mainTable)}.${sql.identifier("deleted_at")} IS NULL`);
-    }
+    // The source's fixed conditions (recycle bin, maintenance blocks only, voided).
+    whereParts.push(...(reportSource.baseWhere?.(Array.isArray(filters) ? filters : []) ?? []));
 
     const groupParts = (Array.isArray(groupBy) ? groupBy : []).map((g: any) =>
       identFor(g.table, g.field)
     );
 
-    let query = sql`SELECT ${sql.join(selectParts, sql`, `)} FROM ${sql.identifier(mainTable)}`;
+    let query = sql`SELECT ${sql.join(selectParts, sql`, `)} FROM ${reportSource.from}`;
     if (whereParts.length > 0) {
       query = sql`${query} WHERE ${sql.join(whereParts, sql` AND `)}`;
     }

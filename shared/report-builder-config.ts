@@ -1,3 +1,5 @@
+import { UserPermission, UserRole } from './schema';
+
 export type FieldType = 'text' | 'number' | 'date' | 'boolean';
 
 export type FilterOperator = 
@@ -19,11 +21,16 @@ export interface DataSourceField {
   aggregatable: boolean;
 }
 
+/** Who may use a source: admins only, or anyone holding one of these permissions. */
+export type ReportSourceAccess = { adminOnly: true } | { anyOf: readonly string[] };
+
 export interface DataSource {
   id: string;
   name: string;
   table: string;
   fields: DataSourceField[];
+  /** No access rule means the report right alone is enough. */
+  access?: ReportSourceAccess;
   joinable?: {
     sourceTable: string;
     sourceField: string;
@@ -50,6 +57,8 @@ export interface ReportFilter {
 export interface ReportGrouping {
   field: string;
   table: string;
+  /** Date fields only: group per office-time month instead of per value. */
+  period?: "month";
 }
 
 export interface ReportConfiguration {
@@ -84,6 +93,23 @@ const dateOperators: FilterOperator[] = [
 
 const booleanOperators: FilterOperator[] = ['equals', 'is_null', 'is_not_null'];
 
+/** One field with the operators and aggregatability that belong to its type. */
+function sourceField(table: string, name: string, label: string, type: FieldType): DataSourceField {
+  const operators = type === 'number' ? numberOperators
+    : type === 'date' ? dateOperators
+    : type === 'boolean' ? booleanOperators
+    : textOperators;
+  return { name, label, type, table, operators, aggregatable: type === 'number' };
+}
+
+function sourceFields(table: string, list: [string, string, FieldType][]): DataSourceField[] {
+  return list.map(([name, label, type]) => sourceField(table, name, label, type));
+}
+
+const CUSTOMER_ACCESS: ReportSourceAccess = {
+  anyOf: [UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS],
+};
+
 export const DATA_SOURCES: DataSource[] = [
   {
     id: 'vehicles',
@@ -109,6 +135,7 @@ export const DATA_SOURCES: DataSource[] = [
     id: 'customers',
     name: 'Customers',
     table: 'customers',
+    access: CUSTOMER_ACCESS,
     fields: [
       { name: 'id', label: 'ID', type: 'number', table: 'customers', operators: numberOperators, aggregatable: true },
       { name: 'name', label: 'Name', type: 'text', table: 'customers', operators: textOperators, aggregatable: false },
@@ -154,6 +181,7 @@ export const DATA_SOURCES: DataSource[] = [
     id: 'drivers',
     name: 'Drivers',
     table: 'drivers',
+    access: CUSTOMER_ACCESS,
     fields: [
       { name: 'id', label: 'ID', type: 'number', table: 'drivers', operators: numberOperators, aggregatable: true },
       { name: 'firstName', label: 'First Name', type: 'text', table: 'drivers', operators: textOperators, aggregatable: false },
@@ -163,7 +191,133 @@ export const DATA_SOURCES: DataSource[] = [
       { name: 'isPrimaryDriver', label: 'Is Primary Driver', type: 'boolean', table: 'drivers', operators: booleanOperators, aggregatable: false },
     ],
   },
+  {
+    id: 'fines',
+    name: 'Fines',
+    table: 'fines',
+    access: { anyOf: [UserPermission.VIEW_FINES, UserPermission.MANAGE_FINES] },
+    fields: sourceFields('fines', [
+      ['id', 'ID', 'number'],
+      ['licensePlate', 'License Plate', 'text'],
+      ['vehicleId', 'Vehicle ID', 'number'],
+      ['offenceAt', 'Offence Date', 'date'],
+      ['receivedAt', 'Received On', 'date'],
+      ['reference', 'Reference', 'text'],
+      ['description', 'Description', 'text'],
+      ['amount', 'Amount', 'number'],
+      ['adminFee', 'Admin Fee', 'number'],
+      ['totalAmount', 'Total Amount', 'number'],
+      ['status', 'Status', 'text'],
+      ['source', 'Source', 'text'],
+      ['customerId', 'Customer ID', 'number'],
+      ['reservationId', 'Reservation ID', 'number'],
+      ['driverId', 'Driver ID', 'number'],
+      ['linkedAt', 'Linked On', 'date'],
+    ]),
+  },
+  {
+    id: 'transports',
+    name: 'Transports',
+    table: 'vehicle_transports',
+    access: {
+      anyOf: [
+        UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES,
+        UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS,
+      ],
+    },
+    fields: sourceFields('vehicle_transports', [
+      ['id', 'ID', 'number'],
+      ['vehicleId', 'Vehicle ID', 'number'],
+      ['isExternalVehicle', 'External Vehicle', 'boolean'],
+      ['externalLicensePlate', 'External License Plate', 'text'],
+      ['transportType', 'Transport Type', 'text'],
+      ['status', 'Status', 'text'],
+      ['scheduledDate', 'Scheduled Date', 'date'],
+      ['completedDate', 'Completed Date', 'date'],
+      ['driverName', 'Driver Name', 'text'],
+      ['distanceKm', 'Distance (km)', 'number'],
+      ['tollCost', 'Toll Cost', 'number'],
+      ['billable', 'Billable', 'boolean'],
+      ['billableAmount', 'Billable Amount', 'number'],
+      ['invoiced', 'Invoiced', 'boolean'],
+      ['invoicedDate', 'Invoiced Date', 'date'],
+      ['isBreakdownOrMaintenance', 'Breakdown or Maintenance', 'boolean'],
+      ['customerId', 'Customer ID', 'number'],
+      ['reservationId', 'Reservation ID', 'number'],
+    ]),
+  },
+  {
+    // Virtual table: reservations AS workshop_visits, maintenance blocks only.
+    id: 'workshop_visits',
+    name: 'Workshop Visits',
+    table: 'workshop_visits',
+    access: {
+      anyOf: [UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS, UserPermission.MANAGE_MAINTENANCE],
+    },
+    fields: sourceFields('workshop_visits', [
+      ['id', 'ID', 'number'],
+      ['vehicleId', 'Vehicle ID', 'number'],
+      ['startDate', 'Start Date', 'date'],
+      ['endDate', 'End Date', 'date'],
+      ['status', 'Status', 'text'],
+      ['maintenanceStatus', 'Maintenance Status', 'text'],
+      ['maintenanceCategory', 'Maintenance Category', 'text'],
+      ['maintenanceType', 'Maintenance Type', 'text'],
+      ['maintenanceDuration', 'Duration (days)', 'number'],
+      ['noInvoiceExpected', 'No Invoice Expected', 'boolean'],
+      ['affectedRentalId', 'Affected Rental ID', 'number'],
+    ]),
+  },
+  {
+    id: 'damage_checks',
+    name: 'Damage Checks',
+    table: 'interactive_damage_checks',
+    access: { anyOf: [UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS] },
+    fields: sourceFields('interactive_damage_checks', [
+      ['id', 'ID', 'number'],
+      ['vehicleId', 'Vehicle ID', 'number'],
+      ['reservationId', 'Reservation ID', 'number'],
+      ['checkType', 'Check Type', 'text'],
+      ['checkDate', 'Check Date', 'date'],
+      ['mileage', 'Mileage', 'number'],
+      ['fuelLevel', 'Fuel Level', 'text'],
+      ['completedBy', 'Completed By', 'text'],
+    ]),
+  },
+  {
+    id: 'mileage_readings',
+    name: 'Mileage History',
+    table: 'vehicle_mileage_readings',
+    access: { adminOnly: true },
+    fields: sourceFields('vehicle_mileage_readings', [
+      ['id', 'ID', 'number'],
+      ['vehicleId', 'Vehicle ID', 'number'],
+      ['mileage', 'Mileage', 'number'],
+      ['recordedAt', 'Recorded At', 'date'],
+      ['source', 'Source', 'text'],
+      ['actorName', 'Recorded By', 'text'],
+      ['voidedAt', 'Voided At', 'date'],
+    ]),
+  },
 ];
+
+export interface ReportSourceUser {
+  role?: string | null;
+  permissions?: readonly string[] | null;
+}
+
+/**
+ * Whether this user may use this data source. Does NOT check the report
+ * right itself; the route does that.
+ */
+export function canUseReportSource(user: ReportSourceUser | null | undefined, source: DataSource): boolean {
+  const access = source.access;
+  if (!access) return true;
+  if (user?.role === UserRole.ADMIN) return true;
+  if ('adminOnly' in access) return false;
+  const held = user?.permissions ?? [];
+  return access.anyOf.some((p) => held.includes(p));
+}
 
 export function getDataSource(id: string): DataSource | undefined {
   return DATA_SOURCES.find(ds => ds.id === id);

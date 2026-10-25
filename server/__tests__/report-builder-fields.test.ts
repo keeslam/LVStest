@@ -17,6 +17,13 @@ describe("report builder fields", () => {
     await cleanupFixtureUsers();
   });
 
+  it("de bouwer biedt precies deze bronnen", () => {
+    expect(DATA_SOURCES.map((s) => s.id)).toEqual([
+      "vehicles", "customers", "reservations", "expenses", "drivers",
+      "fines", "transports", "workshop_visits", "damage_checks", "mileage_readings",
+    ]);
+  });
+
   it("elk aangeboden veld van elke bron is opvraagbaar", async () => {
     for (const source of DATA_SOURCES) {
       for (const field of source.fields) {
