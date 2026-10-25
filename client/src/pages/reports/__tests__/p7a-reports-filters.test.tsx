@@ -126,7 +126,8 @@ describe("tabs that ignore the category filter say so (fix round 1, M-2)", () =>
     const vehiclesNote = await screen.findByTestId("category-filter-note");
     expect(vehiclesNote).toHaveTextContent(/APK en garantie/);
     // It sits directly above the block it is about.
-    expect(vehiclesNote.nextElementSibling).toHaveTextContent("APK-keuring overzicht");
+    // (The card title is the pane title now; the description of the report follows.)
+    expect(vehiclesNote.nextElementSibling).toHaveTextContent("Voertuigkeuringsstatus en vervaldatums");
     await user.click(screen.getByRole("tab", { name: /Kosten/ }));
     expect(screen.queryByTestId("category-filter-note")).toBeNull();
   });

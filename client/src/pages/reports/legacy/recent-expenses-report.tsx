@@ -7,9 +7,9 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Expense } from "@shared/schema";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Price } from "@/components/ui/price";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
+import { ReportSection } from "@/components/reports/kit/report-section";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { formatCurrency, formatDate, formatExpenseCategory, formatLicensePlate } from "@/lib/format-utils";
 import { useReportBaseData } from "../report-base-data";
@@ -46,12 +46,7 @@ export function RecentExpensesReport() {
   return (
     <div className="space-y-6">
       <ReportBaseStatus base={base} />
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("reportsPage.reports.expensesInPeriod")}</CardTitle>
-          <CardDescription>{t("reportsPage.expensesTab.recentExpensesDesc")}</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <ReportSection testId="card-expenses-in-period-report" title={t("reportsPage.reports.expensesInPeriod")} description={t("reportsPage.expensesTab.recentExpensesDesc")}>
           <ReportTable
             rows={rows}
             columns={columns}
@@ -61,8 +56,7 @@ export function RecentExpensesReport() {
             resetKey={`${from}|${to}|${vehicleId}|${category}`}
             onView={setView}
           />
-        </CardContent>
-      </Card>
+        </ReportSection>
     </div>
   );
 }

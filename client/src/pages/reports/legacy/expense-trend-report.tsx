@@ -5,7 +5,7 @@
  * Rights: report right + MANAGE_EXPENSES (it reads /api/expenses).
  */
 import { useTranslation } from "react-i18next";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReportSection } from "@/components/reports/kit/report-section";
 import { Progress } from "@/components/ui/progress";
 import { Price } from "@/components/ui/price";
 import { useReportPrint } from "@/components/reports/kit/report-print";
@@ -44,15 +44,11 @@ export function ExpenseTrendReport() {
   return (
     <div className="space-y-6">
       <ReportBaseStatus base={base} />
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("reportsPage.operations.expenseTrendsTitle")}</CardTitle>
-          <CardDescription>
-            {t("reportsPage.operations.expenseTrendsDesc")}
-            {selectedCategory !== "all" && ` · ${formatExpenseCategory(selectedCategory)}`}
-          </CardDescription>
-        </CardHeader>
-        <CardContent data-testid="reports-expense-trend">
+      <ReportSection
+        testId="reports-expense-trend"
+        title={t("reportsPage.operations.expenseTrendsTitle")}
+        description={`${t("reportsPage.operations.expenseTrendsDesc")}${selectedCategory !== "all" ? ` · ${formatExpenseCategory(selectedCategory)}` : ""}`}
+      >
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -90,8 +86,7 @@ export function ExpenseTrendReport() {
               <Progress value={share(expenseTrend.twoMonthsAgo.total)} className="h-2" />
             </div>
           </div>
-        </CardContent>
-      </Card>
+      </ReportSection>
     </div>
   );
 }

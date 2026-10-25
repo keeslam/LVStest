@@ -6,9 +6,9 @@
  */
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Price } from "@/components/ui/price";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
+import { ReportSection } from "@/components/reports/kit/report-section";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { formatCurrency, formatLicensePlate } from "@/lib/format-utils";
 import { useReportBaseData, type MaintenanceCostRow } from "../report-base-data";
@@ -35,12 +35,7 @@ export function MaintenanceCostByVehicleReport() {
   return (
     <div className="space-y-6">
       <ReportBaseStatus base={base} />
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("reportsPage.vehiclesTab.maintenanceCostsTitle")}</CardTitle>
-          <CardDescription>{t("reportsPage.vehiclesTab.maintenanceCostsDesc")}</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <ReportSection testId="card-maintenance-cost-by-vehicle-report" title={t("reportsPage.vehiclesTab.maintenanceCostsTitle")} description={t("reportsPage.vehiclesTab.maintenanceCostsDesc")}>
           <ReportTable
             rows={rows}
             columns={columns}
@@ -49,8 +44,7 @@ export function MaintenanceCostByVehicleReport() {
             resetKey={`${from}|${to}|${vehicleId}|${category}`}
             onView={setView}
           />
-        </CardContent>
-      </Card>
+        </ReportSection>
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { Download } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReportSection } from "@/components/reports/kit/report-section";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { chartSvgFromRef } from "@/lib/report-document-print";
@@ -215,18 +216,17 @@ export function VehicleFinancialsReport() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
-          <div className="space-y-1.5">
-            <CardTitle>{t("financialTab.table.title")}</CardTitle>
-            <CardDescription>{t("financialTab.table.description")}</CardDescription>
+      <ReportSection
+        testId="card-vehicle-financials-report"
+        title={t("financialTab.table.title")}
+        description={t("financialTab.table.description")}
+      >
+          <div className="flex justify-end">
+            <Button variant="outline" size="sm" onClick={exportCsv} disabled={activeRows.length === 0} data-testid="button-financial-csv">
+              <Download className="mr-1 h-4 w-4" />
+              {t("financialTab.csv.button")}
+            </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={exportCsv} disabled={activeRows.length === 0} data-testid="button-financial-csv">
-            <Download className="mr-1 h-4 w-4" />
-            {t("financialTab.csv.button")}
-          </Button>
-        </CardHeader>
-        <CardContent>
           <ReportTable
             rows={activeRows}
             columns={columns}
@@ -236,8 +236,7 @@ export function VehicleFinancialsReport() {
             resetKey={`${from}|${to}|${vehicleId}`}
             onView={setView}
           />
-        </CardContent>
-      </Card>
+      </ReportSection>
     </div>
   );
 }

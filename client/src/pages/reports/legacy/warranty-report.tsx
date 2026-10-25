@@ -5,9 +5,8 @@
  */
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle } from "lucide-react";
 import { differenceInDays } from "date-fns";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReportSection } from "@/components/reports/kit/report-section";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
 import { useReportPrint } from "@/components/reports/kit/report-print";
@@ -69,15 +68,12 @@ export function WarrantyReport() {
     <div className="space-y-6">
       <ReportBaseStatus base={base} />
       <CategoryIgnoredNote category={base.selectedCategory} scope={t("reportsPage.filters.categoryScopeApkWarranty")} />
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <div>
-            <CardTitle>{t("reportsPage.vehiclesTab.warrantyOverviewTitle")}</CardTitle>
-            <CardDescription>{t("reportsPage.vehiclesTab.warrantyOverviewDesc")}</CardDescription>
-          </div>
-          <AlertTriangle className={`h-5 w-5 ${expiring > 0 ? "text-amber-500" : "text-green-500"}`} aria-hidden="true" />
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <ReportSection
+        testId="card-warranty-report"
+        title={t("reportsPage.vehiclesTab.warrantyOverviewTitle")}
+        description={t("reportsPage.vehiclesTab.warrantyOverviewDesc")}
+        bodyClassName="space-y-4"
+      >
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {tiles.map((tile) => (
               <div key={tile.label} className={`flex flex-col rounded-md p-4 ${tile.className}`}>
@@ -106,8 +102,7 @@ export function WarrantyReport() {
             resetKey={status}
             onView={setView}
           />
-        </CardContent>
-      </Card>
+      </ReportSection>
     </div>
   );
 }

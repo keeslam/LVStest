@@ -5,8 +5,7 @@
  */
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReportSection } from "@/components/reports/kit/report-section";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
 import { useReportPrint } from "@/components/reports/kit/report-print";
@@ -23,7 +22,6 @@ export function ApkOverviewReport() {
   const list = base.apkStatusList;
 
   const count = (s: ApkRow["apkStatus"]) => list.filter((v) => v.apkStatus === s).length;
-  const expiringOrExpired = count("expiring_soon") + count("expired");
   const tiles = [
     { label: t("reportsPage.vehiclesTab.validApkStat"), value: String(count("valid")), className: "bg-slate-50" },
     { label: t("reportsPage.vehiclesTab.apkExpiring2to3Stat"), value: String(count("expiring_2to3_months")), className: "bg-yellow-50" },
@@ -65,15 +63,12 @@ export function ApkOverviewReport() {
     <div className="space-y-6">
       <ReportBaseStatus base={base} />
       <CategoryIgnoredNote category={base.selectedCategory} scope={t("reportsPage.filters.categoryScopeApkWarranty")} />
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <div>
-            <CardTitle>{t("reportsPage.vehiclesTab.apkOverviewTitle")}</CardTitle>
-            <CardDescription>{t("reportsPage.vehiclesTab.apkOverviewDesc")}</CardDescription>
-          </div>
-          <AlertTriangle className={`h-5 w-5 ${expiringOrExpired > 0 ? "text-amber-500" : "text-green-500"}`} aria-hidden="true" />
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <ReportSection
+        testId="card-apk-overview-report"
+        title={t("reportsPage.vehiclesTab.apkOverviewTitle")}
+        description={t("reportsPage.vehiclesTab.apkOverviewDesc")}
+        bodyClassName="space-y-4"
+      >
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             {tiles.map((tile) => (
               <div key={tile.label} className={`flex flex-col rounded-md p-4 ${tile.className}`}>
@@ -103,8 +98,7 @@ export function ApkOverviewReport() {
             resetKey={status}
             onView={setView}
           />
-        </CardContent>
-      </Card>
+      </ReportSection>
     </div>
   );
 }

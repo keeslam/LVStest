@@ -8,6 +8,7 @@ import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { UserPermission } from "@shared/schema";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReportSection } from "@/components/reports/kit/report-section";
 import { Price } from "@/components/ui/price";
 import { ExpenseChart } from "@/components/reports/expense-chart";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
@@ -85,17 +86,15 @@ export function ExpensesByCategoryReport() {
         )}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("reportsPage.operations.expensesByCategoryTitle")}</CardTitle>
-          <CardDescription>{t("reportsPage.operations.expensesByCategoryDesc")}</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <ReportSection
+        testId="card-expenses-by-category-report"
+        title={t("reportsPage.operations.expensesByCategoryTitle")}
+        description={t("reportsPage.operations.expensesByCategoryDesc")}
+      >
           <div ref={chartRef} className="h-80">
             <ExpenseChart data={base.expenseChartData} />
           </div>
-        </CardContent>
-      </Card>
+      </ReportSection>
 
       <Card>
         <CardHeader>

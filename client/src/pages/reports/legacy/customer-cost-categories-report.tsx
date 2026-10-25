@@ -6,8 +6,8 @@
  */
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
+import { ReportSection } from "@/components/reports/kit/report-section";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { formatCurrency, formatExpenseCategory } from "@/lib/format-utils";
 import { useReportBaseData, type CustomerStatsRow } from "../report-base-data";
@@ -48,12 +48,7 @@ export function CustomerCostCategoriesReport() {
   return (
     <div className="space-y-6">
       <ReportBaseStatus base={base} />
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("reportsPage.customersTab.expenseCategoriesTitle")}</CardTitle>
-          <CardDescription>{t("reportsPage.customersTab.expenseCategoriesDesc")}</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <ReportSection testId="card-customer-cost-categories-report" title={t("reportsPage.customersTab.expenseCategoriesTitle")} description={t("reportsPage.customersTab.expenseCategoriesDesc")}>
           <ReportTable
             rows={rows}
             columns={columns}
@@ -62,8 +57,7 @@ export function CustomerCostCategoriesReport() {
             resetKey={`${from}|${to}|${vehicleId}|${category}`}
             onView={setView}
           />
-        </CardContent>
-      </Card>
+        </ReportSection>
     </div>
   );
 }

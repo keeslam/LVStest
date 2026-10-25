@@ -5,6 +5,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReportSection } from "@/components/reports/kit/report-section";
 import { Progress } from "@/components/ui/progress";
 import { UtilizationChart } from "@/components/reports/utilization-chart";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
@@ -78,12 +79,11 @@ export function VehicleUtilizationReport() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("reportsPage.common.vehicleUtilization")}</CardTitle>
-          <CardDescription>{t("reportsPage.vehiclesTab.utilizationDesc")}</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <ReportSection
+        testId="card-vehicle-utilization-report"
+        title={t("reportsPage.common.vehicleUtilization")}
+        description={t("reportsPage.vehiclesTab.utilizationDesc")}
+      >
           <ReportTable
             rows={rows}
             columns={columns}
@@ -92,8 +92,7 @@ export function VehicleUtilizationReport() {
             resetKey={`${from}|${to}|${vehicleId}`}
             onView={setView}
           />
-        </CardContent>
-      </Card>
+      </ReportSection>
     </div>
   );
 }

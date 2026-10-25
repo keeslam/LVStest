@@ -6,9 +6,9 @@
  */
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Price } from "@/components/ui/price";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
+import { ReportSection } from "@/components/reports/kit/report-section";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { formatCurrency } from "@/lib/format-utils";
 import { useReportBaseData, type CustomerStatsRow } from "../report-base-data";
@@ -59,12 +59,7 @@ export function CustomerImpactReport() {
   return (
     <div className="space-y-6">
       <ReportBaseStatus base={base} />
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("reportsPage.customersTab.impactTitle")}</CardTitle>
-          <CardDescription>{t("reportsPage.customersTab.impactDesc")}</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <ReportSection testId="card-customer-impact-report" title={t("reportsPage.customersTab.impactTitle")} description={t("reportsPage.customersTab.impactDesc")}>
           <ReportTable
             rows={rows}
             columns={columns}
@@ -73,8 +68,7 @@ export function CustomerImpactReport() {
             resetKey={`${from}|${to}|${vehicleId}|${category}`}
             onView={setView}
           />
-        </CardContent>
-      </Card>
+        </ReportSection>
     </div>
   );
 }

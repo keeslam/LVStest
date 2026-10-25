@@ -9,7 +9,8 @@ import { useTranslation } from "react-i18next";
 import { Car, DollarSign, FileText } from "lucide-react";
 import type { VehicleTransport } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { ReportSection } from "@/components/reports/kit/report-section";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Price } from "@/components/ui/price";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -86,6 +87,10 @@ export function TransportsReport() {
   ], [columns, selectedIds, t]);
 
   const selected = rows.filter((tr) => selectedIds.includes(tr.id));
+  // "Alleen aangevinkte" prints in the order of the table on screen (sorted and searched); ticked rows
+  // the search hides come last.
+  const onScreen = view ? [...view.all, ...rows.filter((tr) => !view.all.includes(tr))] : rows;
+  const selectedInScreenOrder = onScreen.filter((tr) => selectedIds.includes(tr.id));
   useReportPrint([
     {
       kind: "tiles",
@@ -95,7 +100,7 @@ export function TransportsReport() {
         { label: t("reportsPage.transportsTab.transportsListed"), value: String(rows.length) },
       ],
     },
-    tablePrintSection({ id: "transports", columns, rows, view, selected }),
+    tablePrintSection({ id: "transports", columns, rows, view, selected: selectedInScreenOrder }),
   ]);
 
   const tile = (label: string, value: ReactNode, icon: ReactNode, tone: string) => (
@@ -121,13 +126,12 @@ export function TransportsReport() {
         {tile(t("reportsPage.transportsTab.transportsListed"), rows.length, <Car className="h-6 w-6 text-purple-600" />, "bg-purple-100")}
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <CardTitle>{t("reportsPage.transportsTab.cardTitle")}</CardTitle>
-              <CardDescription>{t("reportsPage.transportsTab.cardDesc")}</CardDescription>
-            </div>
+      <ReportSection
+        testId="card-transports-report"
+        title={t("reportsPage.transportsTab.cardTitle")}
+        description={t("reportsPage.transportsTab.cardDesc")}
+        bodyClassName="space-y-2"
+      >
             <div className="flex flex-wrap items-center gap-2">
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger className="w-[150px]" data-testid="select-report-transport-type">
@@ -153,9 +157,6 @@ export function TransportsReport() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-2">
           <label className="flex items-center gap-2 text-sm">
             <Checkbox
               checked={rows.length > 0 && selected.length === rows.length}
@@ -173,8 +174,7 @@ export function TransportsReport() {
             resetKey={`${typeFilter}|${statusFilter}`}
             onView={setView}
           />
-        </CardContent>
-      </Card>
+      </ReportSection>
     </div>
   );
 }

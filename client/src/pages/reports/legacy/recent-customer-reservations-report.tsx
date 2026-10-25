@@ -7,8 +7,8 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Reservation } from "@shared/schema";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
+import { ReportSection } from "@/components/reports/kit/report-section";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { formatDate, formatLicensePlate, formatReservationStatus } from "@/lib/format-utils";
 import { useReportBaseData } from "../report-base-data";
@@ -44,12 +44,7 @@ export function RecentCustomerReservationsReport() {
   return (
     <div className="space-y-6">
       <ReportBaseStatus base={base} />
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("reportsPage.reports.customerReservations")}</CardTitle>
-          <CardDescription>{t("reportsPage.reports.customerReservationsDesc")}</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <ReportSection testId="card-customer-reservations-report" title={t("reportsPage.reports.customerReservations")} description={t("reportsPage.reports.customerReservationsDesc")}>
           <ReportTable
             rows={rows}
             columns={columns}
@@ -58,8 +53,7 @@ export function RecentCustomerReservationsReport() {
             resetKey={`${from}|${to}|${vehicleId}`}
             onView={setView}
           />
-        </CardContent>
-      </Card>
+        </ReportSection>
     </div>
   );
 }
