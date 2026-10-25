@@ -19,7 +19,7 @@ import { countSql } from "./helpers/sqlCounter";
 describe("occupancy report", () => {
   const P = { from: "2026-03-01", to: "2026-03-10" };
   let staff: TestAgent;
-  let V1: number, V2: number, V3: number, V4: number, V5: number, V6: number, V7: number;
+  let V1: number, V2: number, V3: number, V4: number, V5: number, V6: number, V7: number, V8: number;
   const today = isoToday();
   const shift = (days: number) => new Date(Date.parse(`${today}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
 
@@ -29,7 +29,7 @@ describe("occupancy report", () => {
     const late = await createFixtureReservation({ vehicleId: V1, startDate: "2026-03-02", endDate: "2026-03-04", status: "returned" });
     await db.update(reservations).set({ actualReturnDate: "2026-03-05" }).where(eq(reservations.id, late.id));
     await createFixtureReservation({ vehicleId: V1, type: "maintenance_block", startDate: "2026-03-05", endDate: "2026-03-06" });
-    await createFixtureReservation({ vehicleId: V1, type: "replacement", startDate: "2026-03-08", endDate: "2026-03-09" });
+    await createFixtureReservation({ vehicleId: V1, type: "replacement", startDate: "2026-03-08", endDate: "2026-03-09", status: "completed" });
     await createFixtureReservation({ vehicleId: V1, startDate: "2026-03-10", endDate: "2026-03-10", status: "cancelled" });
     const gone = await createFixtureReservation({ vehicleId: V1, startDate: "2026-03-01", endDate: "2026-03-01" });
     await db.update(reservations).set({ deletedAt: new Date() }).where(eq(reservations.id, gone.id));
@@ -49,6 +49,10 @@ describe("occupancy report", () => {
     // A no-show: booked in the past, never picked up.
     V6 = (await createFixtureVehicle()).id;
     await createFixtureReservation({ vehicleId: V6, startDate: "2026-03-04", endDate: "2026-03-05", status: "booked" });
+
+    // A replacement no-show: booked in the past, never picked up.
+    V8 = (await createFixtureVehicle()).id;
+    await createFixtureReservation({ vehicleId: V8, type: "replacement", startDate: "2026-03-04", endDate: "2026-03-05", status: "booked" });
 
     // Booked from 3 days ago to 2 days ahead, not picked up yet: only today and later count as booked.
     V7 = (await createFixtureVehicle()).id;
@@ -102,6 +106,12 @@ describe("occupancy report", () => {
     expect(s.tiles.rented).toEqual({ count: 0, amount: 0 });
     expect(s.tiles.available).toEqual({ count: 1, amount: 10 });
     expect(s.days.find((d: OccupancyDay) => d.date === "2026-03-04")).toMatchObject({ rented: 0, available: 1 });
+  });
+
+  it("V8 vervangend no-show: een geboekte vervanging in het verleden die nooit is opgehaald telt niet", async () => {
+    const s = (await staff.get("/api/reports/occupancy/summary").query({ ...P, vehicleId: V8 })).body;
+    expect(s.tiles.replacement).toEqual({ count: 0, amount: 0 });
+    expect(s.tiles.available).toEqual({ count: 1, amount: 10 });
   });
 
   it("V7 geboekt, nog niet opgehaald: verleden niet, vandaag en later wel verhuurd", async () => {

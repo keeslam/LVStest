@@ -12,9 +12,10 @@
  *   coalesce(actual_return_date, end_date, greatest(today, start_date)) (as rentalDays in
  *   buildVehicleFinancials); workshop start_date up to coalesce(end_date, today) (as
  *   visitDaysInPeriod). Not deleted, not cancelled, vehicle filled in. Today = office date.
- * - A rental still 'booked' (never picked up: no actual_pickup_date) counts only from today on:
- *   a past day of a no-show is not rented (final review ruling 2026-10-25). Picked up,
- *   returned and completed rentals count every day; today and the future keep booked.
+ * - A rental or replacement still 'booked' (never picked up: no actual_pickup_date, for a
+ *   replacement also no spare_vehicle_status picked_up/returned) counts only from today on: a
+ *   past day of a no-show is not rented / replacement (final review rulings 2026-10-25). Picked
+ *   up, returned and completed ones count every day; today and the future keep booked.
  *
  * Not built on `sqlReport`: its FROM is a fixed table expression, while here the rows
  * (vehicle-days) only exist for a given period - the FROM itself depends on the filter -
@@ -57,7 +58,8 @@ export function vehicleDaysSql(filter: ReportFilter, today: string): SQL {
     all_spans AS MATERIALIZED (
       SELECT ${r.vehicleId} AS vehicle_id,
         (CASE ${r.type} WHEN 'maintenance_block' THEN 1 WHEN 'standard' THEN 2 ELSE 3 END) AS rank,
-        (CASE WHEN ${r.type} = 'standard' AND ${r.status} = 'booked' AND ${r.actualPickupDate} IS NULL
+        (CASE WHEN ${r.type} IN ('standard', 'replacement') AND ${r.status} = 'booked' AND ${r.actualPickupDate} IS NULL
+            AND (${r.type} = 'standard' OR coalesce(${r.spareVehicleStatus}, '') NOT IN ('picked_up', 'returned'))
           THEN greatest(${start}, ${now}) ELSE ${start} END) AS s,
         ${end} AS e
       FROM ${r}
