@@ -327,7 +327,8 @@
       "customers": "Klanten",
       "transports": "Transporten",
       "financial": "Financieel",
-      "fiscal": "Fiscaal"
+      "fiscal": "Fiscaal",
+      "portal": "Portaal"
     },
     "common": {
       "vehicle": "Voertuig",
@@ -692,6 +693,42 @@
         "portalRequests": "Portaalaanvragen"
       },
       "csvSubject": "klantwaarde"
+    }
+  },
+  "portalReports": {
+    "vehicleFilterIgnored": "Het voertuigfilter geldt hier niet: aanvragen gaan meestal niet over één auto.",
+    "requests": {
+      "title": "Portaalaanvragen",
+      "description": "Wat klanten via het portaal vragen en hoe snel er antwoord komt.",
+      "tiles": {
+        "all": "Alle aanvragen",
+        "open": "Open",
+        "done": "Afgehandeld",
+        "rejected": "Afgewezen",
+        "stale": "Open, ouder dan {{days}} dagen"
+      },
+      "median": "Mediane reactietijd: {{value}}",
+      "medianHours": "{{hours}} uur",
+      "medianDays": "{{days}} dagen",
+      "noReplies": "–",
+      "byMonth": "Aanvragen per maand",
+      "byType": "Per soort en status",
+      "byHandler": "Afgehandeld per medewerker",
+      "unknownHandler": "Onbekend",
+      "columns": {
+        "number": "Nr",
+        "createdAt": "Aangemaakt",
+        "type": "Soort",
+        "status": "Status",
+        "customer": "Klant",
+        "handledBy": "Behandeld door",
+        "repliedAt": "Beantwoord",
+        "replyHours": "Reactietijd (uur)",
+        "openDays": "Open (dagen)",
+        "total": "Totaal",
+        "open": "Open"
+      },
+      "csvSubject": "portaalaanvragen"
     }
   },
   "fleetReports": {

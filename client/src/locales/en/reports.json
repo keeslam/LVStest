@@ -327,7 +327,8 @@
       "customers": "Customers",
       "transports": "Transports",
       "financial": "Financial",
-      "fiscal": "Fiscal"
+      "fiscal": "Fiscal",
+      "portal": "Portal"
     },
     "common": {
       "vehicle": "Vehicle",
@@ -692,6 +693,42 @@
         "portalRequests": "Portal requests"
       },
       "csvSubject": "customer-value"
+    }
+  },
+  "portalReports": {
+    "vehicleFilterIgnored": "The vehicle filter does not apply here: requests are seldom about one car.",
+    "requests": {
+      "title": "Portal requests",
+      "description": "What customers ask for through the portal and how fast they get an answer.",
+      "tiles": {
+        "all": "All requests",
+        "open": "Open",
+        "done": "Completed",
+        "rejected": "Rejected",
+        "stale": "Open, older than {{days}} days"
+      },
+      "median": "Median reply time: {{value}}",
+      "medianHours": "{{hours}} hours",
+      "medianDays": "{{days}} days",
+      "noReplies": "–",
+      "byMonth": "Requests per month",
+      "byType": "By type and status",
+      "byHandler": "Handled per staff member",
+      "unknownHandler": "Unknown",
+      "columns": {
+        "number": "No.",
+        "createdAt": "Created",
+        "type": "Type",
+        "status": "Status",
+        "customer": "Customer",
+        "handledBy": "Handled by",
+        "repliedAt": "Replied",
+        "replyHours": "Reply time (hours)",
+        "openDays": "Open (days)",
+        "total": "Total",
+        "open": "Open"
+      },
+      "csvSubject": "portal-requests"
     }
   },
   "fleetReports": {

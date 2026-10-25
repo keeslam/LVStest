@@ -35,7 +35,7 @@ import { addDays, subMonths, subDays, startOfMonth, endOfMonth, isWithinInterval
 import { formatNl as format } from "@/lib/format-date-nl";
 import { 
   Calendar, Download, FileText, TrendingUp, Car, Settings, User, Calculator,
-  DollarSign, AlertTriangle, Printer, Search, ExternalLink, Database, LineChart, X, Loader2
+  DollarSign, AlertTriangle, Printer, Search, ExternalLink, Database, LineChart, X, Loader2, MessageSquare
 } from "lucide-react";
 import { Link } from "wouter";
 import { DateRange } from "react-day-picker";
@@ -45,6 +45,7 @@ import MaintenanceCostsPage from "@/pages/reports/maintenance-costs";
 import { WorkshopDowntimeCard } from "./workshop-downtime-card";
 import { OccupancyReportCard } from "./occupancy-report-card";
 import { CustomerValueReportCard } from "./customer-value-report-card";
+import { PortalRequestsReportCard } from "./portal-requests-report-card";
 import { MaintenanceOutlookCard } from "./maintenance-outlook-card";
 import { FleetMileageReportCard } from "./fleet-mileage-report-card";
 import { FinancialTab } from "@/pages/reports/financial-tab";
@@ -78,6 +79,9 @@ function FiscalOnlyReportsPage() {
     </div>
   );
 }
+
+// Literal class names so Tailwind keeps them.
+const TAB_COLS = { 6: "grid-cols-6", 7: "grid-cols-7", 8: "grid-cols-8" } as const;
 
 function FullReportsPage() {
   const { t } = useTranslation("reports");
@@ -181,6 +185,7 @@ function FullReportsPage() {
   const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
   const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
   const canViewCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
+  const canViewPortal = useHasPermission(UserPermission.VIEW_PORTAL, UserPermission.MANAGE_PORTAL);
   // GET /api/transports (routes.ts:8089) accepts either family.
   const canViewTransports = useHasPermission(
     UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES,
@@ -1598,7 +1603,7 @@ function FullReportsPage() {
 
       {/* Report Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className={`grid w-full ${canViewFiscal ? "grid-cols-7" : "grid-cols-6"}`}>
+        <TabsList className={`grid w-full ${TAB_COLS[(6 + (canViewFiscal ? 1 : 0) + (canViewPortal ? 1 : 0)) as 6 | 7 | 8]}`}>
           <TabsTrigger value="operations">
             <Settings className="h-4 w-4 mr-2" />
             {t('reportsPage.tabs.operations')}
@@ -1629,7 +1634,20 @@ function FullReportsPage() {
               {t('reportsPage.tabs.fiscal')}
             </TabsTrigger>
           )}
+          {canViewPortal && (
+            <TabsTrigger value="portal" data-testid="tab-report-portal">
+              <MessageSquare className="h-4 w-4 mr-2" />
+              {t('reportsPage.tabs.portal')}
+            </TabsTrigger>
+          )}
         </TabsList>
+
+        {/* Portal tab: portal requests (the vehicle filter does not apply) */}
+        {canViewPortal && (
+          <TabsContent value="portal" className="space-y-6">
+            <PortalRequestsReportCard from={reportFrom} to={reportTo} vehicleId={selectedVehicle} />
+          </TabsContent>
+        )}
 
         {/* Fiscal tab: the fiscal check per customer, car and month (docs/fiscaal, stap 6) */}
         {canViewFiscal && (

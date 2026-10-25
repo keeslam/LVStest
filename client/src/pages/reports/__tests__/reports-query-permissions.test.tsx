@@ -162,3 +162,24 @@ describe("/reports — admin", () => {
     expect(screen.queryByTestId("no-data-access")).not.toBeInTheDocument();
   });
 });
+
+describe("/reports - tabblad Portaal", () => {
+  it("zonder portaalrecht geen tabblad en geen verzoek", async () => {
+    role = UserRole.USER;
+    permissions = [UserPermission.VIEW_REPORTS];
+    withClient(<ReportsPage />);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(screen.queryByTestId("tab-report-portal")).not.toBeInTheDocument();
+    expect(calledWith("/api/reports/portal-requests/summary")).toBe(false);
+    expect(calledWith("/api/reports/waitlist/summary")).toBe(false);
+  });
+
+  it("met portaalrecht staat het tabblad er en opent de kaart", async () => {
+    role = UserRole.USER;
+    permissions = [UserPermission.VIEW_REPORTS, UserPermission.VIEW_PORTAL];
+    const user = userEvent.setup();
+    withClient(<ReportsPage />);
+    await user.click(await screen.findByTestId("tab-report-portal"));
+    expect(await screen.findByTestId("card-portal-requests-report")).toBeInTheDocument();
+  });
+});

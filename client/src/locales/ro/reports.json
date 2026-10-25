@@ -335,7 +335,8 @@
       "customers": "Clienți",
       "transports": "Transporturi",
       "financial": "Financiar",
-      "fiscal": "Fiscal"
+      "fiscal": "Fiscal",
+      "portal": "Portal"
     },
     "common": {
       "vehicle": "Vehicul",
@@ -705,6 +706,42 @@
         "portalRequests": "Cereri din portal"
       },
       "csvSubject": "valoare-client"
+    }
+  },
+  "portalReports": {
+    "vehicleFilterIgnored": "Filtrul de vehicul nu se aplică aici: cererile rareori privesc o singură mașină.",
+    "requests": {
+      "title": "Cereri din portal",
+      "description": "Ce cer clienții prin portal și cât de repede primesc răspuns.",
+      "tiles": {
+        "all": "Toate cererile",
+        "open": "Deschise",
+        "done": "Rezolvate",
+        "rejected": "Respinse",
+        "stale": "Deschise, mai vechi de {{days}} zile"
+      },
+      "median": "Timp mediu de răspuns: {{value}}",
+      "medianHours": "{{hours}} ore",
+      "medianDays": "{{days}} zile",
+      "noReplies": "–",
+      "byMonth": "Cereri pe lună",
+      "byType": "După tip și stare",
+      "byHandler": "Rezolvate pe angajat",
+      "unknownHandler": "Necunoscut",
+      "columns": {
+        "number": "Nr.",
+        "createdAt": "Creată",
+        "type": "Tip",
+        "status": "Stare",
+        "customer": "Client",
+        "handledBy": "Tratată de",
+        "repliedAt": "Răspuns la",
+        "replyHours": "Timp de răspuns (ore)",
+        "openDays": "Deschisă (zile)",
+        "total": "Total",
+        "open": "Deschise"
+      },
+      "csvSubject": "cereri-portal"
     }
   },
   "fleetReports": {

@@ -335,7 +335,8 @@
       "customers": "Clienti",
       "transports": "Trasporti",
       "financial": "Finanziario",
-      "fiscal": "Fiscale"
+      "fiscal": "Fiscale",
+      "portal": "Portale"
     },
     "common": {
       "vehicle": "Veicolo",
@@ -705,6 +706,42 @@
         "portalRequests": "Richieste del portale"
       },
       "csvSubject": "valore-cliente"
+    }
+  },
+  "portalReports": {
+    "vehicleFilterIgnored": "Il filtro veicolo qui non si applica: le richieste raramente riguardano una sola auto.",
+    "requests": {
+      "title": "Richieste del portale",
+      "description": "Cosa chiedono i clienti tramite il portale e quanto velocemente ricevono risposta.",
+      "tiles": {
+        "all": "Tutte le richieste",
+        "open": "Aperte",
+        "done": "Evase",
+        "rejected": "Rifiutate",
+        "stale": "Aperte, da più di {{days}} giorni"
+      },
+      "median": "Tempo di risposta mediano: {{value}}",
+      "medianHours": "{{hours}} ore",
+      "medianDays": "{{days}} giorni",
+      "noReplies": "–",
+      "byMonth": "Richieste al mese",
+      "byType": "Per tipo e stato",
+      "byHandler": "Evase per collaboratore",
+      "unknownHandler": "Sconosciuto",
+      "columns": {
+        "number": "N.",
+        "createdAt": "Creata",
+        "type": "Tipo",
+        "status": "Stato",
+        "customer": "Cliente",
+        "handledBy": "Gestita da",
+        "repliedAt": "Risposta",
+        "replyHours": "Tempo di risposta (ore)",
+        "openDays": "Aperta (giorni)",
+        "total": "Totale",
+        "open": "Aperte"
+      },
+      "csvSubject": "richieste-del-portale"
     }
   },
   "fleetReports": {

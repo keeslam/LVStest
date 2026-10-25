@@ -23,6 +23,7 @@ vi.mock("@/lib/csv", async (importOriginal) => ({
 }));
 
 import { CustomerValueReportCard } from "@/pages/reports/customer-value-report-card";
+import { PortalRequestsReportCard } from "@/pages/reports/portal-requests-report-card";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -116,5 +117,95 @@ describe("Klanten - klantwaarde", () => {
     const dialog = await screen.findByTestId("dialog-customer-value-report");
     expect(await within(dialog).findByText("Zonder klant")).toBeInTheDocument();
     expect(within(dialog).getByText("Jansen")).toBeInTheDocument();
+  });
+});
+
+const PORTAL_TILE = (count: number) => ({ count, amount: 0 });
+const portalSummary = (medianReplyHours: number | null) => ({
+  tiles: { all: PORTAL_TILE(9), open: PORTAL_TILE(4), done: PORTAL_TILE(3), rejected: PORTAL_TILE(2), stale: PORTAL_TILE(1) },
+  byMonth: [{ month: "2019-03", new: 1, inProgress: 2, done: 3, rejected: 2 }],
+  byType: [{ type: "extension", total: 5, open: 2, done: 2, rejected: 1 }],
+  byHandler: [{ key: "piet", label: "piet", count: 4, amount: 4 }],
+  medianReplyHours,
+  repliedCount: medianReplyHours === null ? 0 : 3,
+});
+
+describe("Portaal - portaalaanvragen", () => {
+  const stub = (median: number | null) => fetchMock.mockImplementation(async (input: unknown) => {
+    const path = pathOf(input);
+    if (path.startsWith("/api/reports/portal-requests/summary")) return json(portalSummary(median));
+    if (path.startsWith("/api/reports/portal-requests/rows")) return json({ rows: [], total: 0, page: 1, pageSize: 50 });
+    return json([]);
+  });
+
+  it("negeert het voertuigfilter en zegt dat", async () => {
+    permissions = ["view_reports", "view_portal"];
+    stub(6);
+    renderNode(<PortalRequestsReportCard from="2019-01-01" to="2019-12-31" vehicleId="12" />);
+    expect(await screen.findByTestId("portal-vehicle-filter-ignored")).toBeInTheDocument();
+    expect(fetchedPaths()).toContain("/api/reports/portal-requests/summary?from=2019-01-01&to=2019-12-31");
+    expect((await screen.findByTestId("portal-requests-tile-all-value")).textContent).toBe("9");
+  });
+
+  it("zonder voertuigkeuze geen opmerking", async () => {
+    permissions = ["view_reports", "view_portal"];
+    stub(6);
+    renderNode(<PortalRequestsReportCard from="2019-01-01" to="2019-12-31" vehicleId="all" />);
+    await screen.findByTestId("portal-requests-tile-all-value");
+    expect(screen.queryByTestId("portal-vehicle-filter-ignored")).not.toBeInTheDocument();
+  });
+
+  it("mediane reactietijd in uren, dagen of streepje", async () => {
+    permissions = ["view_reports", "view_portal"];
+    stub(6);
+    const first = renderNode(<PortalRequestsReportCard from="2019-01-01" to="2019-12-31" />);
+    expect((await screen.findByTestId("portal-requests-median")).textContent).toContain("6 uur");
+    first.unmount();
+    stub(72);
+    const second = renderNode(<PortalRequestsReportCard from="2019-01-01" to="2019-12-31" />);
+    expect((await screen.findByTestId("portal-requests-median")).textContent).toContain("3 dagen");
+    second.unmount();
+    stub(null);
+    renderNode(<PortalRequestsReportCard from="2019-01-01" to="2019-12-31" />);
+    expect((await screen.findByTestId("portal-requests-median")).textContent).toContain("\u2013");
+  });
+
+  it("tabel soort x status toont het label uit het portaal", async () => {
+    permissions = ["view_reports", "view_portal"];
+    stub(6);
+    renderNode(<PortalRequestsReportCard from="2019-01-01" to="2019-12-31" />);
+    const table = await screen.findByTestId("portal-requests-by-type");
+    expect(within(table).getByText("Verlenging")).toBeInTheDocument();
+  });
+
+  it("een summary zonder tegels breekt de kaart niet", async () => {
+    permissions = ["view_reports", "view_portal"];
+    fetchMock.mockImplementation(async () => json({}));
+    renderNode(<PortalRequestsReportCard from="2019-01-01" to="2019-12-31" />);
+    expect((await screen.findByTestId("portal-requests-tile-all-value")).textContent).toBe("0");
+  });
+
+  it("zonder portaalrecht of zonder rapportrecht geen kaart en geen verzoek", async () => {
+    for (const perms of [["view_reports"], ["view_portal"]]) {
+      permissions = perms;
+      stub(6);
+      fetchMock.mockClear();
+      const view = renderNode(<PortalRequestsReportCard from="2019-01-01" to="2019-12-31" />);
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      expect(screen.queryByTestId("card-portal-requests-report")).not.toBeInTheDocument();
+      expect(fetchedPaths().some((p) => p.startsWith("/api/reports/portal-requests"))).toBe(false);
+      view.unmount();
+    }
+  });
+
+  it("tegel Open, ouder dan 2 dagen opent de lijst oudste eerst", async () => {
+    permissions = ["view_reports", "view_portal"];
+    stub(6);
+    const user = userEvent.setup();
+    renderNode(<PortalRequestsReportCard from="2019-01-01" to="2019-12-31" />);
+    await user.click(await screen.findByTestId("button-portal-requests-tile-stale"));
+    await waitFor(() => expect(fetchedPaths()).toContain(
+      "/api/reports/portal-requests/rows?from=2019-01-01&to=2019-12-31&tile=stale&sort=createdAt&dir=asc&page=1&pageSize=50",
+    ));
   });
 });

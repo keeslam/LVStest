@@ -343,7 +343,8 @@
       "customers": "Klienci",
       "transports": "Transporty",
       "financial": "Finanse",
-      "fiscal": "Podatki"
+      "fiscal": "Podatki",
+      "portal": "Portal"
     },
     "common": {
       "vehicle": "Pojazd",
@@ -718,6 +719,42 @@
         "portalRequests": "Zgłoszenia z portalu"
       },
       "csvSubject": "wartosc-klienta"
+    }
+  },
+  "portalReports": {
+    "vehicleFilterIgnored": "Filtr pojazdu nie działa tutaj: zgłoszenia rzadko dotyczą jednego samochodu.",
+    "requests": {
+      "title": "Zgłoszenia z portalu",
+      "description": "O co klienci proszą przez portal i jak szybko dostają odpowiedź.",
+      "tiles": {
+        "all": "Wszystkie zgłoszenia",
+        "open": "Otwarte",
+        "done": "Zakończone",
+        "rejected": "Odrzucone",
+        "stale": "Otwarte, starsze niż {{days}} dni"
+      },
+      "median": "Mediana czasu odpowiedzi: {{value}}",
+      "medianHours": "{{hours}} godz.",
+      "medianDays": "{{days}} dni",
+      "noReplies": "–",
+      "byMonth": "Zgłoszenia według miesięcy",
+      "byType": "Według rodzaju i statusu",
+      "byHandler": "Załatwione według pracownika",
+      "unknownHandler": "Nieznany",
+      "columns": {
+        "number": "Nr",
+        "createdAt": "Utworzone",
+        "type": "Rodzaj",
+        "status": "Status",
+        "customer": "Klient",
+        "handledBy": "Obsłużone przez",
+        "repliedAt": "Odpowiedź",
+        "replyHours": "Czas odpowiedzi (godz.)",
+        "openDays": "Otwarte (dni)",
+        "total": "Razem",
+        "open": "Otwarte"
+      },
+      "csvSubject": "zgloszenia-z-portalu"
     }
   },
   "fleetReports": {
