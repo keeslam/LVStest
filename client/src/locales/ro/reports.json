@@ -681,7 +681,8 @@
         "periodVehicleIgnored": "Perioada și vehiculul nu se aplică acestui raport.",
         "lastThreeMonths": "Mereu ultimele 3 luni.",
         "periodNotForReport": "Perioada nu se aplică acestui raport.",
-        "vehicleNotForReport": "Vehiculul nu se aplică acestui raport."
+        "vehicleNotForReport": "Vehiculul nu se aplică acestui raport.",
+        "compareNotForReport": "Compararea nu se aplică acestui raport."
       },
       "compare": {
         "label": "Compară cu",

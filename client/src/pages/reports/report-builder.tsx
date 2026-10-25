@@ -270,7 +270,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
 
   const canEditReport = (report: SavedReport) => canManageReports && report.configuration.dataSources.every((id) => {
     const source = getDataSource(id);
-    return !source || canUseReportSource(user, source);
+    return !!source && canUseReportSource(user, source);
   });
 
   const editSavedReport = (report: SavedReport) => {

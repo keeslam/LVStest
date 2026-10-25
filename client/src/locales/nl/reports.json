@@ -669,7 +669,8 @@
         "periodVehicleIgnored": "Periode en voertuig gelden niet voor dit rapport.",
         "lastThreeMonths": "Altijd de laatste 3 maanden.",
         "periodNotForReport": "Periode geldt niet voor dit rapport.",
-        "vehicleNotForReport": "Voertuig geldt niet voor dit rapport."
+        "vehicleNotForReport": "Voertuig geldt niet voor dit rapport.",
+        "compareNotForReport": "Vergelijken geldt niet voor dit rapport."
       },
       "compare": {
         "label": "Vergelijk met",

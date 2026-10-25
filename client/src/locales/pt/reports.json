@@ -681,7 +681,8 @@
         "periodVehicleIgnored": "O período e o veículo não se aplicam a este relatório.",
         "lastThreeMonths": "Sempre os últimos 3 meses.",
         "periodNotForReport": "O período não se aplica a este relatório.",
-        "vehicleNotForReport": "O veículo não se aplica a este relatório."
+        "vehicleNotForReport": "O veículo não se aplica a este relatório.",
+        "compareNotForReport": "A comparação não se aplica a este relatório."
       },
       "compare": {
         "label": "Comparar com",

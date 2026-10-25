@@ -69,8 +69,9 @@ export type SavedReportTab = typeof SAVED_REPORT_TABS[number];
 
 /** The period (office days, both ends included) and optional vehicle a tab runs a report within. */
 export interface ReportScope {
-  from: string;
-  to: string;
+  /** Both or neither: without them the period does not filter. */
+  from?: string;
+  to?: string;
   vehicleId?: number;
 }
 

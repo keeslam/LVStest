@@ -217,4 +217,22 @@ describe("fix round: start from a saved report, leave edit mode", () => {
     expect(calls[0].body.tab).toBeUndefined();
     expect(calls[0].body.periodField).toBeUndefined();
   });
+
+  it("has no Bewerken on a report whose source is unknown", async () => {
+    saved.push({
+      id: 8, name: "Oude bron", description: "", createdBy: "x", createdAt: "2026-10-01",
+      configuration: { name: "Oude bron", dataSources: ["gone-source"], filters: [], groupBy: [], columns: [{ field: "id", table: "gone-source", label: "Id" }] },
+    } as any);
+    try {
+      installFetch();
+      const user = userEvent.setup();
+      renderBuilder();
+      await user.click(screen.getByTestId("button-saved-tab"));
+      await screen.findByTestId("button-run-saved-8");
+      expect(screen.getByTestId("button-edit-saved-7")).toBeInTheDocument();
+      expect(screen.queryByTestId("button-edit-saved-8")).toBeNull();
+    } finally {
+      saved.pop();
+    }
+  });
 });

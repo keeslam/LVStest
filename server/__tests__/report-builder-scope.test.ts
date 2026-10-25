@@ -124,6 +124,18 @@ describe("report builder scope and update", () => {
     expect(ids(res)).toEqual([V1]);
   });
 
+  it("scope zonder from en to: geen periodefilter, vehicleId werkt nog", async () => {
+    const all = await admin.post("/api/reports/execute").send({ ...base({ periodField: "offenceAt" }), scope: {} });
+    expect(all.status).toBe(200);
+    expect(ids(all)).toEqual([...fineIds].sort((a, b) => a - b));
+    const one = await admin.post("/api/reports/execute").send({ ...base({ periodField: "offenceAt" }), scope: { vehicleId: V2 } });
+    expect(one.status).toBe(200);
+    expect(ids(one)).toEqual([fineIds[2], fineIds[4]].sort((a, b) => a - b));
+    const half = await admin.post("/api/reports/execute").send({ ...base({ periodField: "offenceAt" }), scope: { from: "2026-10-01" } });
+    expect(half.status).toBe(400);
+    expect(half.body).toMatchObject({ code: "REPORT_SCOPE_INVALID" });
+  });
+
   it("een onmogelijke datum of een vehicleId met komma geeft 400, geen 500", async () => {
     for (const scope of [
       { from: "2026-02-31", to: "2026-03-01" },

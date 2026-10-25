@@ -87,6 +87,11 @@ function installFetch() {
       saved = saved.filter((r) => r.id !== id);
       return new Response(null, { status: 204 });
     }
+    if (method === "PUT" && bare.startsWith("/api/reports/saved/")) {
+      const id = Number(bare.split("/").pop());
+      saved = saved.map((r) => (r.id === id ? { ...r, name: body.name, configuration: body } : r));
+      return json(saved.find((r) => r.id === id));
+    }
     if (method === "POST" && bare === "/api/reports/execute") {
       if (body?.dataSources?.[0] === "fines") return json([{ offenceAt: "2026-10", amount: "215.5" }]);
       return json([{ name: "Jansen" }]);
@@ -169,7 +174,17 @@ describe("saved builder reports on their tab", () => {
     expect(screen.getByTestId("saved-report-vehicle-note")).toHaveTextContent("Voertuig geldt niet voor dit rapport.");
     // No vehicle column on the source: the vehicle is not sent.
     await waitFor(() => expect(executeCalls().length).toBeGreaterThan(0));
+    expect(executeCalls().at(-1)!.body.scope).toEqual({});
+  });
+
+  it("Alle gegevens sends no period, so rows with an empty date are kept", async () => {
+    const user = userEvent.setup();
+    renderPage("/reports?tab=financial&report=saved-7");
+    await waitFor(() => expect(executeCalls().length).toBeGreaterThan(0));
     expect(executeCalls().at(-1)!.body.scope).toEqual({ from: "2026-10-01", to: "2026-10-31" });
+    await user.click(await screen.findByTestId("select-report-preset"));
+    await user.click(await screen.findByRole("option", { name: "Alle gegevens" }));
+    await waitFor(() => expect(executeCalls().at(-1)!.body.scope).toEqual({}));
   });
 
   it("someone without the fines right does not get it; the URL falls back", async () => {
@@ -205,6 +220,21 @@ describe("saved builder reports on their tab", () => {
     renderPage("/reports?tab=financial&report=saved-7");
     expect(await screen.findByTestId("report-pane-saved-7")).toBeInTheDocument();
     expect(screen.queryByTestId("button-edit-saved-report")).toBeNull();
+  });
+
+  it("after moving a report to another tab, closing the builder selects it there", async () => {
+    const user = userEvent.setup();
+    renderPage("/reports?tab=financial&report=saved-7");
+    await user.click(await screen.findByTestId("button-edit-saved-report"));
+    await user.click(await screen.findByTestId("button-save-report"));
+    await user.click(screen.getByTestId("select-saved-report-tab"));
+    await user.click(await screen.findByRole("option", { name: "Kantoor" }));
+    await user.click(screen.getByTestId("button-confirm-save"));
+    await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
+    await user.click(screen.getByTestId("button-close-report-builder"));
+    await waitFor(() => expect(window.location.search).toContain("tab=office"));
+    expect(window.location.search).toContain("report=saved-7");
+    await waitFor(() => expect(screen.getByTestId("report-pane-title")).toHaveTextContent("Bekeuringen per maand"));
   });
 
   it("a deleted report leaves the list", async () => {

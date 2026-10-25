@@ -6878,7 +6878,9 @@ export class DatabaseStorage implements IStorage {
     if (scope !== undefined && scope !== null) {
       const YMD = /^\d{4}-\d{2}-\d{2}$/;
       const validDay = (v: unknown) => typeof v === "string" && isRealDate(v);
-      if (typeof scope !== "object" || !validDay(scope.from) || !validDay(scope.to)
+      // No from and to at all: no period (a report without a period field, or all data).
+      const noPeriod = typeof scope === "object" && scope.from === undefined && scope.to === undefined;
+      if (typeof scope !== "object" || (!noPeriod && (!validDay(scope.from) || !validDay(scope.to)))
         || (scope.vehicleId !== undefined && scope.vehicleId !== null && !Number.isInteger(scope.vehicleId))) {
         throw new ReportValidationError("De periode klopt niet; kies een begin- en einddatum.", "REPORT_SCOPE_INVALID");
       }
@@ -6891,8 +6893,10 @@ export class DatabaseStorage implements IStorage {
             `${mainTable}.${String(periodField)}`,
           );
         }
-        const day = dayExpr(mainTable, String(periodField));
-        whereParts.push(sql`${day} >= ${scope.from}::date AND ${day} <= ${scope.to}::date`);
+        if (!noPeriod) {
+          const day = dayExpr(mainTable, String(periodField));
+          whereParts.push(sql`${day} >= ${scope.from}::date AND ${day} <= ${scope.to}::date`);
+        }
       }
       if (scope.vehicleId !== undefined && scope.vehicleId !== null && mainSource.vehicleField) {
         whereParts.push(sql`${identFor(mainTable, mainSource.vehicleField)} = ${scope.vehicleId}`);

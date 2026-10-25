@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Building2, Calculator, Car, DollarSign, FileText, LayoutDashboard, Loader2, MessageSquare, TrendingUp, User, X,
@@ -13,9 +13,9 @@ import { ReportFiltersProvider } from "./report-filters";
 import { ReportFilterBar } from "./report-filter-bar";
 import { ReportNav } from "./report-nav";
 import { ReportPane } from "./report-pane";
-import { invalidateByPrefix } from "@/lib/queryClient";
+import { invalidateByPrefix, queryClient } from "@/lib/queryClient";
 import { ReportListContext, useReportList, visibleReports, visibleTabs, type ReportTabId } from "./report-registry";
-import { ReportBuilderOpenerContext } from "./saved-report-view";
+import { ReportBuilderOpenerContext, SAVED_REPORT_PREFIX, type SavedReport } from "./saved-report-view";
 import { useReportAccess } from "./use-report-access";
 import { ReportSelectionContext, useReportSelection } from "./use-report-selection";
 
@@ -60,11 +60,29 @@ function ReportsShellInner() {
     setBuilderEditId(editReportId);
     setReportBuilderOpen(true);
   }, []);
+  // A saved report that was edited in the builder: after closing it, it is selected on the tab it sits on now.
+  const [reselect, setReselect] = useState<{ tab: ReportTabId; id: string } | null>(null);
   const setBuilderOpen = (open: boolean) => {
     setReportBuilderOpen(open);
     // Saved, changed or deleted in the builder: the tabs show the saved reports as they are now.
-    if (!open) invalidateByPrefix("/api/reports/saved");
+    if (!open) {
+      const editedId = builderEditId;
+      void Promise.resolve(invalidateByPrefix("/api/reports/saved")).then(() => {
+        if (editedId === undefined) return;
+        const fresh = queryClient.getQueryData<SavedReport[]>(["/api/reports/saved"]);
+        const tab = fresh?.find((r) => r.id === editedId)?.configuration?.tab;
+        if (tab) setReselect({ tab: tab as ReportTabId, id: `${SAVED_REPORT_PREFIX}${editedId}` });
+      });
+    }
   };
+  // Waits until the list the shell shows has the report on its new tab, then selects it.
+  useEffect(() => {
+    if (!reselect) return;
+    if (reports.some((r) => r.id === reselect.id && r.tab === reselect.tab && r.visible(access))) {
+      select(reselect.tab, reselect.id);
+      setReselect(null);
+    }
+  }, [reselect, reports, access, select]);
   const [maintenanceCostsOpen, setMaintenanceCostsOpen] = useState(false);
 
   // Overzicht is one item: no list, the tiles get the whole width.

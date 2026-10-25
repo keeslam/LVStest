@@ -263,6 +263,15 @@ function savedComponent(id: number): ComponentType {
   return Component;
 }
 
+/** The right a tab itself needs, on top of the report right (Portaal; Kantoor is built on four areas). */
+function tabGate(tab: string | undefined, c: ReportAccess): boolean {
+  if (tab === "portal") return portal(c);
+  if (tab === "office") {
+    return expenses(c) || any(c, UserPermission.MANAGE_SETTINGS, UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS) || transports(c);
+  }
+  return true;
+}
+
 /**
  * The saved reports that sit on a tab, as reports of that tab. Visible with the report right
  * and the right for every source (the same rule as the server); a report without a tab stays
@@ -273,19 +282,20 @@ export function savedReportDefs(saved: SavedReport[], user: ReportSourceUser | n
     .filter((r) => (SAVED_REPORT_TABS as readonly string[]).includes(r.configuration?.tab ?? ""))
     .map((r) => {
       const config = r.configuration;
+      const sources = Array.isArray(config.dataSources) ? config.dataSources : [];
       return {
         id: `${SAVED_REPORT_PREFIX}${r.id}`,
         tab: config.tab as ReportTabId,
         titleKey: "",
         title: r.name,
         saved: true,
-        visible: (c: ReportAccess) => reports(c) && config.dataSources.length > 0 && config.dataSources.every((id) => {
+        visible: (c: ReportAccess) => reports(c) && tabGate(config.tab, c) && sources.length > 0 && sources.every((id) => {
           const source = getDataSource(id);
           return !!source && canUseReportSource(user, source);
         }),
         Component: savedComponent(r.id),
         ignoresPeriod: !config.periodField,
-        ignoresVehicle: !getDataSource(config.dataSources[0] ?? "")?.vehicleField,
+        ignoresVehicle: !getDataSource(sources[0] ?? "")?.vehicleField,
       };
     });
 }

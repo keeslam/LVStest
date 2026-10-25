@@ -26,7 +26,7 @@ import { downloadCsv } from "@/lib/csv";
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { ReportBuilderChart } from "./report-builder-chart";
 import { aggregationLabel, csvCell, displayCell, fieldLabel, reportFileSubject } from "./report-builder-output";
-import { useReportFilters } from "./report-filters";
+import { isAllDataRange, useReportFilters } from "./report-filters";
 import { tablePrintSection } from "./legacy/table-print";
 
 export interface SavedReport {
@@ -70,7 +70,7 @@ function numericSort(column: ReportColumn): boolean {
 export function SavedReportView({ report }: { report: SavedReport }) {
   const { t } = useTranslation("reports");
   const tt = t as unknown as TFunction;
-  const { from, to, vehicleId } = useReportFilters();
+  const { from, to, vehicleId, compare } = useReportFilters();
   const { user } = useAuth();
   const openBuilder = useContext(ReportBuilderOpenerContext);
   const canManage = useHasPermission(UserPermission.MANAGE_REPORTS);
@@ -81,11 +81,13 @@ export function SavedReportView({ report }: { report: SavedReport }) {
   const mainSource = getDataSource(config.dataSources[0] ?? "");
   const hasPeriod = !!config.periodField;
   const hasVehicle = !!mainSource?.vehicleField;
+  // The period only goes along when the report has a period field and the range is not "Alle gegevens":
+  // otherwise rows with an empty date field would be dropped for nothing.
+  const usePeriod = hasPeriod && !isAllDataRange(from, to);
   const scope = useMemo<ReportScope>(() => ({
-    from,
-    to,
+    ...(usePeriod ? { from, to } : {}),
     ...(hasVehicle && vehicleId !== "all" && /^\d+$/.test(vehicleId) ? { vehicleId: Number(vehicleId) } : {}),
-  }), [from, to, vehicleId, hasVehicle]);
+  }), [from, to, vehicleId, hasVehicle, usePeriod]);
 
   const canEdit = canManage && config.dataSources.every((id) => {
     const source = getDataSource(id);
@@ -136,6 +138,7 @@ export function SavedReportView({ report }: { report: SavedReport }) {
   const notes: string[] = [];
   if (!hasPeriod) notes.push(t("reportsPage.shell.notes.periodNotForReport"));
   if (!hasVehicle) notes.push(t("reportsPage.shell.notes.vehicleNotForReport"));
+  if (compare !== "none") notes.push(t("reportsPage.shell.notes.compareNotForReport"));
 
   const sections: PrintSection[] = [
     ...notes.map((text): PrintSection => ({ kind: "note", text })),
@@ -154,6 +157,9 @@ export function SavedReportView({ report }: { report: SavedReport }) {
       )}
       {!hasVehicle && (
         <p className="text-sm text-muted-foreground" data-testid="saved-report-vehicle-note">{t("reportsPage.shell.notes.vehicleNotForReport")}</p>
+      )}
+      {compare !== "none" && (
+        <p className="text-sm text-muted-foreground" data-testid="saved-report-compare-note">{t("reportsPage.shell.notes.compareNotForReport")}</p>
       )}
       <div className="flex flex-wrap justify-end gap-2">
         {canEdit && openBuilder && (
@@ -185,7 +191,7 @@ export function SavedReportView({ report }: { report: SavedReport }) {
             columns={tableColumns}
             rowKey={(r) => r.__row}
             testId="saved-report-table"
-            resetKey={`${from}|${to}|${vehicleId}`}
+            resetKey={`${usePeriod ? `${from}|${to}` : ""}|${vehicleId}`}
             onView={setView}
           />
         </>

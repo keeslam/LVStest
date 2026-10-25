@@ -693,7 +693,8 @@
         "periodVehicleIgnored": "Okres i pojazd nie dotyczą tego raportu.",
         "lastThreeMonths": "Zawsze ostatnie 3 miesiące.",
         "periodNotForReport": "Okres nie dotyczy tego raportu.",
-        "vehicleNotForReport": "Pojazd nie dotyczy tego raportu."
+        "vehicleNotForReport": "Pojazd nie dotyczy tego raportu.",
+        "compareNotForReport": "Porównanie nie dotyczy tego raportu."
       },
       "compare": {
         "label": "Porównaj z",
