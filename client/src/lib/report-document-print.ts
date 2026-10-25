@@ -54,6 +54,11 @@ export interface ReportDocumentInput {
   labels?: Partial<ReportDocumentLabels>;
 }
 
+/** Text for a CSS string (the page margin box); nothing in it can end the string or the style element. */
+function cssString(text: string): string {
+  return text.replace(/[\\"<>&\r\n]/g, (c) => `\\${c.charCodeAt(0).toString(16)} `);
+}
+
 function sectionHtml(section: ResolvedPrintSection, labels: ReportDocumentLabels): string {
   switch (section.kind) {
     case "tiles":
@@ -83,7 +88,7 @@ export function reportDocumentHtml(input: ReportDocumentInput): string {
   return `<!DOCTYPE html>
 <html lang="nl"><head><meta charset="utf-8" /><title>${esc(input.title)}</title>
 <style>
-  @page { size: A4 ${size}; margin: 12mm; @bottom-right { content: counter(page); font-size: 10px; color: #6b7280; } }
+  @page { size: A4 ${size}; margin: 12mm 12mm 16mm; @bottom-left { content: "${cssString(`${labels.printedOn} ${input.printedAt}`)}"; font-size: 10px; color: #6b7280; } @bottom-right { content: counter(page); font-size: 10px; color: #6b7280; } }
   body { font-family: Arial, sans-serif; color: #111827; margin: 0; font-size: 12px; }
   .company { color: #6b7280; font-size: 11px; }
   h1 { font-size: 20px; margin: 2px 0 4px; }
@@ -102,12 +107,12 @@ export function reportDocumentHtml(input: ReportDocumentInput): string {
   thead { display: table-header-group; }
   tfoot td { font-weight: bold; border-top: 2px solid #9ca3af; }
   tr { page-break-inside: avoid; }
-  .foot { position: fixed; bottom: 0; left: 0; color: #6b7280; font-size: 10px; }
+  .foot { margin-top: 16px; color: #6b7280; font-size: 10px; }
 </style></head>
 <body>
   <div class="company">${esc(input.company)}</div>
   <h1>${esc(input.title)}</h1>
-  <div class="sub">${esc(input.period)}</div>
+  ${input.period ? `<div class="sub">${esc(input.period)}</div>` : ""}
   ${input.filters.map((line) => `<div class="sub">${esc(line)}</div>`).join("\n  ")}
   ${input.sections.map((section) => sectionHtml(section, labels)).join("\n  ")}
   <div class="foot">${esc(labels.printedOn)} ${esc(input.printedAt)}</div>

@@ -17,14 +17,24 @@ import { releaseIframeFocus } from "@/lib/release-iframe-focus";
 import { reportClientAction } from "@/lib/audit-events";
 import { COMPANY_NAME_KEY, companyNameFromSetting } from "@shared/company-name";
 import { isAllDataRange, useReportFilters } from "@/pages/reports/report-filters";
+import { formatExpenseCategory, formatLicensePlate } from "@/lib/format-utils";
 import { reportDocumentHtml, type PrintSection, type ResolvedPrintSection } from "@/lib/report-document-print";
 
 export type { PrintSection } from "@/lib/report-document-print";
+
+/** Filters of the filter bar that do not apply to the report; the print header leaves them out. */
+export interface PrintIgnored {
+  period?: boolean;
+  vehicle?: boolean;
+  /** Printed under the title instead of the period when the period does not apply. */
+  periodNote?: string;
+}
 
 interface PrintRegistry {
   register(sections: PrintSection[] | null): void;
   getSections(): PrintSection[] | null;
   available: boolean;
+  ignored?: PrintIgnored;
 }
 
 const PrintContext = createContext<PrintRegistry | null>(null);
@@ -33,7 +43,7 @@ const PrintContext = createContext<PrintRegistry | null>(null);
  * Keeps what the report in the pane registered. The sections live in a ref, so a report may pass a
  * new array on every render without causing a render; only "has something to print" is state.
  */
-export function ReportPrintProvider({ children }: { children?: ReactNode }) {
+export function ReportPrintProvider({ children, ignored }: { children?: ReactNode; ignored?: PrintIgnored }) {
   const ref = useRef<PrintSection[] | null>(null);
   const [available, setAvailable] = useState(false);
   const register = useCallback((sections: PrintSection[] | null) => {
@@ -41,7 +51,13 @@ export function ReportPrintProvider({ children }: { children?: ReactNode }) {
     setAvailable(sections !== null && sections.length > 0);
   }, []);
   const getSections = useCallback(() => ref.current, []);
-  const value = useMemo(() => ({ register, getSections, available }), [register, getSections, available]);
+  const ignoredPeriod = ignored?.period;
+  const ignoredVehicle = ignored?.vehicle;
+  const periodNote = ignored?.periodNote;
+  const value = useMemo(
+    () => ({ register, getSections, available, ignored: { period: ignoredPeriod, vehicle: ignoredVehicle, periodNote } }),
+    [register, getSections, available, ignoredPeriod, ignoredVehicle, periodNote],
+  );
   return <PrintContext.Provider value={value}>{children}</PrintContext.Provider>;
 }
 
@@ -75,6 +91,7 @@ type RowsChoice = "all" | "page" | "selected";
 function PrintBody({ title }: { title: string }) {
   const { t } = useTranslation("reports");
   const ctx = useContext(PrintContext);
+  const ignored = ctx?.ignored;
   const filters = useReportFilters();
   const queryClient = useQueryClient();
   const frameRef = useRef<HTMLIFrameElement>(null);
@@ -125,14 +142,14 @@ function PrintBody({ title }: { title: string }) {
 
   const filterLines = useMemo(() => {
     const lines: string[] = [];
-    if (filters.vehicleId !== "all") {
+    if (filters.vehicleId !== "all" && !ignored?.vehicle) {
       const vehicles = queryClient.getQueryData<Array<{ id: number; licensePlate?: string }>>(["/api/vehicles"]);
       const plate = vehicles?.find((v) => String(v.id) === filters.vehicleId)?.licensePlate;
-      lines.push(t("print.vehicleLine", { vehicle: plate ?? filters.vehicleId }));
+      lines.push(t("print.vehicleLine", { vehicle: plate ? formatLicensePlate(plate) : filters.vehicleId }));
     }
-    if (filters.category !== "all") lines.push(t("print.categoryLine", { category: filters.category }));
+    if (filters.category !== "all") lines.push(t("print.categoryLine", { category: formatExpenseCategory(filters.category) }));
     return lines;
-  }, [filters.vehicleId, filters.category, queryClient, t]);
+  }, [filters.vehicleId, filters.category, ignored?.vehicle, queryClient, t]);
 
   const html = useMemo(() => {
     if (!prepared) return null;
@@ -155,16 +172,18 @@ function PrintBody({ title }: { title: string }) {
     return reportDocumentHtml({
       company,
       title,
-      period: isAllDataRange(filters.from, filters.to)
-        ? t("reportsPage.common.allData")
-        : t("reportsPage.shell.periodLabel", { from: dutchDate(filters.from), to: dutchDate(filters.to) }),
+      period: ignored?.period
+        ? (ignored.periodNote ?? "")
+        : isAllDataRange(filters.from, filters.to)
+          ? t("reportsPage.common.allData")
+          : t("reportsPage.shell.periodLabel", { from: dutchDate(filters.from), to: dutchDate(filters.to) }),
       filters: filterLines,
       sections: resolved,
       landscape,
       printedAt,
       labels: { truncated: t("print.truncated"), printedOn: t("print.printedOn") },
     });
-  }, [prepared, showTiles, showChart, showTable, rowsChoice, landscape, company, title, filters.from, filters.to, filterLines, printedAt, t]);
+  }, [prepared, showTiles, showChart, showTable, rowsChoice, landscape, company, title, filters.from, filters.to, filterLines, ignored?.period, ignored?.periodNote, printedAt, t]);
 
   const handlePrint = () => {
     const frame = frameRef.current;
@@ -183,7 +202,8 @@ function PrintBody({ title }: { title: string }) {
 
   return (
     <>
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
+      <div className="min-h-0 flex-1 overflow-y-auto" data-testid="print-dialog-body">
+      <div className="grid grid-cols-1 gap-4 md:h-full md:grid-cols-[220px_minmax(0,1fr)]">
         <div className="space-y-3">
           <p className="text-sm font-medium">{t("print.options")}</p>
           {hasTiles && check("print-option-tiles", t("print.tiles"), showTiles, setShowTiles)}
@@ -204,7 +224,10 @@ function PrintBody({ title }: { title: string }) {
           )}
           {check("print-option-landscape", t("print.landscape"), landscape, setLandscape)}
         </div>
-        <div className="min-h-[50vh] overflow-hidden rounded border bg-white">
+        <div
+          className={`w-full overflow-hidden rounded border bg-white md:aspect-auto md:h-full md:min-h-[50vh] ${landscape ? "aspect-[297/210]" : "aspect-[210/297]"}`}
+          data-testid="print-preview-box"
+        >
           {html ? (
             <iframe
               ref={frameRef}
@@ -225,7 +248,8 @@ function PrintBody({ title }: { title: string }) {
           )}
         </div>
       </div>
-      <DialogFooter className="flex-shrink-0">
+      </div>
+      <DialogFooter className="sticky bottom-0 flex-shrink-0 border-t bg-background pt-3" data-testid="print-dialog-footer">
         <Button onClick={handlePrint} disabled={!html} data-testid="button-print-confirm">
           <Printer className="mr-2 h-4 w-4" aria-hidden="true" />
           {t("reportsPage.shell.print")}

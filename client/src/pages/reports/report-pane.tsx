@@ -13,7 +13,9 @@ export function ReportPane({ def }: ReportPaneProps) {
   const Report = def.Component;
   const title = t(def.titleKey);
   return (
-    <ReportPrintProvider>
+    <ReportPrintProvider
+      ignored={{ period: def.ignoresPeriod, vehicle: def.ignoresVehicle, periodNote: def.noteKey ? t(def.noteKey) : undefined }}
+    >
       <section className="min-w-0 space-y-4" data-testid={`report-pane-${def.id}`}>
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-xl font-semibold" data-testid="report-pane-title">{title}</h2>

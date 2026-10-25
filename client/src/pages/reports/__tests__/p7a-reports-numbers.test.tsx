@@ -66,8 +66,9 @@ describe("/reports print documents (A-14-8)", () => {
     installFetch({ vehicles: fleet, expenses: [] });
     const user = userEvent.setup();
     renderWithClient(<ReportsPage />);
-    // Task 5: the APK overview is a report of its own and prints through Afdrukken of the pane.
-    await openReport(user, "vehicles", "apk-overview");
+    // Task 5: every report prints through Afdrukken of the pane. (The APK overview ignores the period, so
+    // the period line is tested on Kosten in deze periode.)
+    await openReport(user, "expenses", "expenses-in-period");
     const printed = await printPreviewBody(user);
     expect(printed).not.toMatch(/\d{2}\/\d{2}\/\d{4}/);
     expect(printed).toMatch(/\d{1,2}-\d{1,2}-\d{4} t\/m \d{1,2}-\d{1,2}-\d{4}/);
@@ -75,13 +76,13 @@ describe("/reports print documents (A-14-8)", () => {
 });
 
 describe("/reports print header for 'Alle gegevens' (final wave A, item 9)", () => {
-  it("says 'Alle gegevens' on the APK print, not the 2000 - 2050 the preset is made of", async () => {
+  it("says 'Alle gegevens' on the print, not the 2000 - 2050 the preset is made of", async () => {
     installFetch({ vehicles: fleet, expenses: [] });
     const user = userEvent.setup();
     renderWithClient(<ReportsPage />);
     await user.click(await screen.findByTestId("select-report-preset"));
     await user.click(await screen.findByRole("option", { name: "Alle gegevens" }));
-    await openReport(user, "vehicles", "apk-overview");
+    await openReport(user, "expenses", "expenses-in-period");
     const printed = await printPreviewBody(user);
     expect(printed).toContain("Alle gegevens");
     expect(printed).not.toMatch(/2000|2050/);
@@ -96,7 +97,7 @@ describe("/reports print header for 'Alle gegevens' (final wave A, item 9)", () 
     const caption = await screen.findByTestId("reports-basis-caption");
     await waitFor(() => expect(caption).toHaveTextContent("Alle gegevens"));
     expect(caption.textContent).not.toMatch(/2000|2050/);
-    await openReport(user, "vehicles", "apk-overview");
+    await openReport(user, "expenses", "expenses-in-period");
     const printed = await printPreviewBody(user);
     expect(printed).toContain("Alle gegevens");
     expect(printed).not.toMatch(/2000|2050/);
