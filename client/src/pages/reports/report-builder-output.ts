@@ -8,9 +8,10 @@
  */
 import type { TFunction } from "i18next";
 import { getField, type FilterOperator } from "@shared/report-builder-config";
+import type { CalculatedField } from "@shared/report-formula";
 import { csvDate, csvNumber } from "@/lib/csv";
 import { formatDateNl } from "@/lib/format-date-nl";
-import { formatDate, formatLicensePlate } from "@/lib/format-utils";
+import { formatCurrency, formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { escapeHtml } from "@/lib/html-escape";
 import { isTrueValue } from "@/lib/utils";
 
@@ -28,8 +29,12 @@ export function linkedFieldLabel(t: TFunction, via: string | undefined, table: s
   return via ? `${String(t(`reportBuilderPage.links.${via}`, { defaultValue: via }))} · ${base}` : base;
 }
 
-/** The key a column, filter or group has in the result rows: "vehicle.brand" through a link, else the plain field. */
-export function resultKey(entry: { via?: string; field: string }): string {
+/**
+ * The key a column, filter or group has in the result rows: "calc.<id>" for a calculated field,
+ * "vehicle.brand" through a link, else the plain field.
+ */
+export function resultKey(entry: { via?: string; field: string; calc?: string }): string {
+  if (entry.calc) return `calc.${entry.calc}`;
   return entry.via ? `${entry.via}.${entry.field}` : entry.field;
 }
 
@@ -48,8 +53,64 @@ export interface OutputColumn {
   field: string;
   table: string;
   via?: string;
+  /** Id of a calculated field; withCalcInfo sets its name as label and its kind as calcType. */
+  calc?: string;
+  calcType?: CalculatedField["type"];
   label: string;
   aggregation?: string;
+}
+
+/** Columns of calculated fields carry the field's current name and kind, so the output can show them. */
+export function withCalcInfo<C extends OutputColumn>(columns: C[], calcs: CalculatedField[] | undefined): C[] {
+  return columns.map((c) => {
+    if (!c.calc) return c;
+    const def = (calcs ?? []).find((f) => f.id === c.calc);
+    return { ...c, label: def?.name ?? (c.label || c.calc), calcType: def?.type ?? c.calcType ?? "number" };
+  });
+}
+
+/** The heading of one column: the calculated field's name, or the (linked) field label. */
+export function columnLabel(t: TFunction, column: OutputColumn): string {
+  if (column.calc) return column.label || column.calc;
+  return linkedFieldLabel(t, column.via, column.table, column.field, column.label);
+}
+
+/** A number of a calculated field as its kind shows it: "€ 121,00", "12,50 %", "1.234,5". */
+export function calcValueText(type: CalculatedField["type"] | undefined, n: number): string {
+  if (type === "money") return formatCurrency(n);
+  if (type === "percent") return `${n.toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`;
+  return n.toLocaleString("nl-NL", { maximumFractionDigits: 2 });
+}
+
+const CALC_ERRORS = ["UNKNOWN_FIELD", "CYCLE", "TOO_DEEP", "TOO_MANY", "BAD_RULE"];
+
+/**
+ * The server's REPORT_CALC_INVALID ({ error, id }) as a sentence that names the calculated field
+ * by its own name; null for any other error.
+ */
+export function calcErrorText(t: TFunction, error: unknown, calcs: CalculatedField[] | undefined): string | null {
+  const e = error as { code?: unknown; error?: unknown; id?: unknown } | null;
+  if (!e || typeof e !== "object" || e.code !== "REPORT_CALC_INVALID") return null;
+  const id = typeof e.id === "string" ? e.id : "";
+  const name = (calcs ?? []).find((c) => c.id === id)?.name ?? id;
+  const kind = typeof e.error === "string" && CALC_ERRORS.includes(e.error) ? e.error : "BAD_RULE";
+  return String(t(`reportBuilderPage.calc.errors.${kind}`, { name }));
+}
+
+const isCount = (aggregation: string | undefined) => aggregation === "COUNT" || aggregation === "COUNT_DISTINCT";
+
+function calcCsvCell(column: OutputColumn, value: unknown): string {
+  const n = Number(value);
+  if (isCount(column.aggregation)) return Number.isFinite(n) ? csvNumber(n, 0) : String(value);
+  if (column.calcType === "text" || !Number.isFinite(n)) return String(value);
+  return csvNumber(n, 2);
+}
+
+function calcDisplayCell(column: OutputColumn, value: unknown): string {
+  const n = Number(value);
+  if (isCount(column.aggregation)) return Number.isFinite(n) ? n.toLocaleString("nl-NL") : String(value);
+  if (column.calcType === "text" || !Number.isFinite(n)) return String(value);
+  return calcValueText(column.calcType, n);
 }
 
 /** Money-like number fields keep two decimals even when the value happens to be whole. */
@@ -62,6 +123,7 @@ function isNumeric(column: OutputColumn): boolean {
 /** One cell as the CSV file writes it: Dutch decimals, dd-mm-yyyy, Ja/Nee; empty for no value. */
 export function csvCell(t: TFunction, column: OutputColumn, value: unknown): string {
   if (value === null || value === undefined || value === "") return "";
+  if (column.calc) return calcCsvCell(column, value);
   const type = getField(column.table, column.field)?.type;
   if (column.field === "licensePlate") return formatLicensePlate(String(value));
   if (type === "boolean" && !column.aggregation) return String(t(isTrueValue(value as any) || value === 1 ? "common:actions.yes" : "common:actions.no"));
@@ -81,6 +143,7 @@ export function csvCell(t: TFunction, column: OutputColumn, value: unknown): str
 /** One cell as the screen and the print show it. */
 export function displayCell(t: TFunction, column: OutputColumn, value: unknown): string {
   if (value === null || value === undefined || value === "") return "-";
+  if (column.calc) return calcDisplayCell(column, value);
   const type = getField(column.table, column.field)?.type;
   if (column.field === "licensePlate") return formatLicensePlate(String(value));
   if (type === "boolean" && !column.aggregation) return String(t(isTrueValue(value as any) || value === 1 ? "common:actions.yes" : "common:actions.no"));
@@ -100,7 +163,7 @@ export function displayCell(t: TFunction, column: OutputColumn, value: unknown):
 }
 
 export function outputHeader(t: TFunction, columns: OutputColumn[]): string[] {
-  return columns.map((c) => linkedFieldLabel(t, c.via, c.table, c.field, c.label));
+  return columns.map((c) => columnLabel(t, c));
 }
 
 /** "Toyota-lijst" -> "toyota-lijst"; accents and symbols folded so the file name is safe. */

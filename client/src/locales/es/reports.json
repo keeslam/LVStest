@@ -352,7 +352,72 @@
     "saveAsNewButton": "Guardar como nuevo",
     "editingTitle": "Editar: {{name}}",
     "useAsStartButton": "Usar como punto de partida",
-    "stopEditingButton": "Dejar de editar"
+    "stopEditingButton": "Dejar de editar",
+    "calc": {
+      "sectionTitle": "Campos calculados",
+      "addButton": "Añadir campo calculado",
+      "dialogTitleNew": "Añadir campo calculado",
+      "dialogTitleEdit": "Editar campo calculado",
+      "dialogDescription": "Calcula con los campos de este informe o crea una regla si-entonces.",
+      "name": "Nombre",
+      "namePlaceholder": "Por ejemplo IVA incl.",
+      "kindFormula": "Cálculo",
+      "kindIfThen": "Regla si-entonces",
+      "formula": "Fórmula",
+      "type": "Tipo",
+      "types": {
+        "money": "Importe",
+        "number": "Número",
+        "percent": "Porcentaje",
+        "text": "Texto"
+      },
+      "fieldsHeading": "Campos",
+      "numberLabel": "Número",
+      "addNumber": "Añadir número",
+      "numberInvalid": "Escribe un número, por ejemplo 1,21.",
+      "backspace": "Borrar",
+      "parseErrors": {
+        "EMPTY": "Elige un campo o escribe un número para empezar.",
+        "UNBALANCED": "Falta un paréntesis.",
+        "MISSING_OPERAND": "Falta un campo o un número.",
+        "MISSING_OPERATOR": "Falta un signo de cálculo (+ − × ÷)."
+      },
+      "preview": "Vista previa",
+      "previewNone": "Ejecuta el informe para ver una vista previa.",
+      "previewNoValue": "Sin resultado para la primera fila.",
+      "when": "Si",
+      "test": "Prueba",
+      "then": "entonces",
+      "otherwise": "si no",
+      "tests": {
+        "eq": "es igual a",
+        "neq": "no es igual a",
+        "gt": "mayor que",
+        "lt": "menor que",
+        "empty": "está vacío"
+      },
+      "valueLabel": "Valor",
+      "textOption": "Texto",
+      "textPlaceholder": "Escribe un texto",
+      "save": "Guardar",
+      "editAria": "Editar {{name}}",
+      "deleteAria": "Eliminar {{name}}",
+      "inUseTitle": "No se puede eliminar",
+      "inUse": "{{name}} se usa en {{others}}. Cambia primero ese campo.",
+      "nameRequired": "Pon un nombre al campo.",
+      "ruleIncomplete": "Completa toda la regla.",
+      "needNumber": "Compara con un número, por ejemplo 500.",
+      "textTooLong": "Un texto puede tener como máximo {{max}} caracteres.",
+      "maxReachedTitle": "Demasiados campos calculados",
+      "maxReached": "Un informe puede tener como máximo {{max}} campos calculados.",
+      "errors": {
+        "UNKNOWN_FIELD": "El campo calculado {{name}} usa un campo que no encaja en este informe.",
+        "CYCLE": "El campo calculado {{name}} se refiere a sí mismo a través de otro campo.",
+        "TOO_DEEP": "El campo calculado {{name}} es demasiado complejo. Acorta el cálculo.",
+        "TOO_MANY": "Un informe puede tener como máximo 20 campos calculados.",
+        "BAD_RULE": "El campo calculado {{name}} no es correcto. Ábrelo y revisa el cálculo o la regla."
+      }
+    }
   },
   "financialTab": {
     "loading": "Cargando...",

@@ -25,7 +25,9 @@ import { describeApiError } from "@/lib/api-error";
 import { downloadCsv } from "@/lib/csv";
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { ReportBuilderChart } from "./report-builder-chart";
-import { aggregationLabel, csvCell, displayCell, linkedFieldLabel, reportFileSubject, resultKey } from "./report-builder-output";
+import {
+  aggregationLabel, calcErrorText, columnLabel, csvCell, displayCell, reportFileSubject, resultKey, withCalcInfo, type OutputColumn,
+} from "./report-builder-output";
 import { isAllDataRange, useReportFilters } from "./report-filters";
 import { tablePrintSection } from "./legacy/table-print";
 
@@ -93,7 +95,8 @@ function withLinkIds(config: ReportConfiguration): ReportConfiguration {
   return extra.length > 0 ? { ...config, columns: [...config.columns, ...extra] } : config;
 }
 
-function numericSort(column: ReportColumn): boolean {
+function numericSort(column: OutputColumn): boolean {
+  if (column.calc) return !!column.aggregation || column.calcType !== "text";
   return !!column.aggregation || getField(column.table, column.field)?.type === "number";
 }
 
@@ -135,15 +138,16 @@ export function SavedReportView({ report }: { report: SavedReport }) {
   });
 
   const rows = useMemo<Row[]>(() => (Array.isArray(data) ? data : []).map((r, i) => ({ ...r, __row: i })), [data]);
-  const columns = config.columns;
+  // Calculated columns carry their field's name and kind (money, percent, number, text).
+  const columns = useMemo(() => withCalcInfo(config.columns, config.calculatedFields), [config]);
   const groupBy = config.groupBy ?? [];
 
   const tableColumns = useMemo<ReportTableColumn<Row>[]>(() => columns.map((col, i) => {
     const key = resultKey(col);
     const text = (r: Row) => displayCell(tt, col, r[key]);
     return {
-      id: `${i}-${col.via ? `${col.via}:` : ""}${col.table}.${col.field}${col.aggregation ? `.${col.aggregation}` : ""}`,
-      label: linkedFieldLabel(tt, col.via, col.table, col.field, col.label) + (col.aggregation ? ` (${aggregationLabel(tt, col.aggregation)})` : ""),
+      id: `${i}-${col.calc ? `calc.${col.calc}` : `${col.via ? `${col.via}:` : ""}${col.table}.${col.field}`}${col.aggregation ? `.${col.aggregation}` : ""}`,
+      label: columnLabel(tt, col) + (col.aggregation ? ` (${aggregationLabel(tt, col.aggregation)})` : ""),
       cell: (r: Row) => {
         const link = linkOf(col, r);
         return link ? <EntityLink kind={link.kind} id={link.id} label={text(r)} /> : text(r);
@@ -209,7 +213,8 @@ export function SavedReportView({ report }: { report: SavedReport }) {
         <p className="text-sm text-muted-foreground" data-testid="saved-report-loading">{t("reportKit.loading")}</p>
       ) : error ? (
         <p className="text-sm text-destructive" data-testid="saved-report-error">
-          {describeApiError(error, undefined, t("reportBuilderPage.toasts.executeErrorDescription"))}
+          {calcErrorText(tt, error, config.calculatedFields)
+            ?? describeApiError(error, undefined, t("reportBuilderPage.toasts.executeErrorDescription"))}
         </p>
       ) : (
         <>

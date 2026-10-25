@@ -344,7 +344,72 @@
     "saveAsNewButton": "Opslaan als nieuw",
     "editingTitle": "Bewerken: {{name}}",
     "useAsStartButton": "Gebruiken als begin",
-    "stopEditingButton": "Stop met bewerken"
+    "stopEditingButton": "Stop met bewerken",
+    "calc": {
+      "sectionTitle": "Berekende velden",
+      "addButton": "Berekend veld toevoegen",
+      "dialogTitleNew": "Berekend veld toevoegen",
+      "dialogTitleEdit": "Berekend veld bewerken",
+      "dialogDescription": "Reken met de velden van dit rapport, of maak een als-dan regel.",
+      "name": "Naam",
+      "namePlaceholder": "Bijvoorbeeld Incl. btw",
+      "kindFormula": "Rekensom",
+      "kindIfThen": "Als-dan regel",
+      "formula": "Formule",
+      "type": "Soort",
+      "types": {
+        "money": "Bedrag",
+        "number": "Getal",
+        "percent": "Procent",
+        "text": "Tekst"
+      },
+      "fieldsHeading": "Velden",
+      "numberLabel": "Getal",
+      "addNumber": "Getal toevoegen",
+      "numberInvalid": "Typ een getal, bijvoorbeeld 1,21.",
+      "backspace": "Wissen",
+      "parseErrors": {
+        "EMPTY": "Kies een veld of typ een getal om te beginnen.",
+        "UNBALANCED": "Er mist een haakje.",
+        "MISSING_OPERAND": "Er mist een veld of getal.",
+        "MISSING_OPERATOR": "Er mist een rekenteken (+ − × ÷)."
+      },
+      "preview": "Voorbeeld",
+      "previewNone": "Voer het rapport uit voor een voorbeeld.",
+      "previewNoValue": "Geen uitkomst voor de eerste regel.",
+      "when": "Als",
+      "test": "Test",
+      "then": "dan",
+      "otherwise": "anders",
+      "tests": {
+        "eq": "is gelijk aan",
+        "neq": "is niet gelijk aan",
+        "gt": "groter dan",
+        "lt": "kleiner dan",
+        "empty": "is leeg"
+      },
+      "valueLabel": "Waarde",
+      "textOption": "Tekst",
+      "textPlaceholder": "Typ een tekst",
+      "save": "Opslaan",
+      "editAria": "{{name}} bewerken",
+      "deleteAria": "{{name}} verwijderen",
+      "inUseTitle": "Kan niet verwijderen",
+      "inUse": "{{name}} wordt gebruikt in {{others}}. Pas dat veld eerst aan.",
+      "nameRequired": "Geef het veld een naam.",
+      "ruleIncomplete": "Vul de regel helemaal in.",
+      "needNumber": "Vergelijk met een getal, bijvoorbeeld 500.",
+      "textTooLong": "Een tekst mag hoogstens {{max}} tekens hebben.",
+      "maxReachedTitle": "Te veel berekende velden",
+      "maxReached": "Een rapport kan hoogstens {{max}} berekende velden hebben.",
+      "errors": {
+        "UNKNOWN_FIELD": "Het berekende veld {{name}} gebruikt een veld dat niet in dit rapport past.",
+        "CYCLE": "Het berekende veld {{name}} verwijst via een ander veld naar zichzelf.",
+        "TOO_DEEP": "Het berekende veld {{name}} is te ingewikkeld. Maak de som korter.",
+        "TOO_MANY": "Een rapport kan hoogstens 20 berekende velden hebben.",
+        "BAD_RULE": "Het berekende veld {{name}} klopt niet. Open het en kijk de som of regel na."
+      }
+    }
   },
   "financialTab": {
     "loading": "Laden...",

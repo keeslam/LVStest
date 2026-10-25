@@ -360,7 +360,72 @@
     "saveAsNewButton": "Zapisz jako nowy",
     "editingTitle": "Edycja: {{name}}",
     "useAsStartButton": "Użyj jako punktu wyjścia",
-    "stopEditingButton": "Zakończ edycję"
+    "stopEditingButton": "Zakończ edycję",
+    "calc": {
+      "sectionTitle": "Pola obliczane",
+      "addButton": "Dodaj pole obliczane",
+      "dialogTitleNew": "Dodaj pole obliczane",
+      "dialogTitleEdit": "Edytuj pole obliczane",
+      "dialogDescription": "Licz z polami tego raportu albo utwórz regułę jeśli-to.",
+      "name": "Nazwa",
+      "namePlaceholder": "Na przykład z VAT",
+      "kindFormula": "Obliczenie",
+      "kindIfThen": "Reguła jeśli-to",
+      "formula": "Formuła",
+      "type": "Rodzaj",
+      "types": {
+        "money": "Kwota",
+        "number": "Liczba",
+        "percent": "Procent",
+        "text": "Tekst"
+      },
+      "fieldsHeading": "Pola",
+      "numberLabel": "Liczba",
+      "addNumber": "Dodaj liczbę",
+      "numberInvalid": "Wpisz liczbę, na przykład 1,21.",
+      "backspace": "Usuń",
+      "parseErrors": {
+        "EMPTY": "Wybierz pole lub wpisz liczbę, aby zacząć.",
+        "UNBALANCED": "Brakuje nawiasu.",
+        "MISSING_OPERAND": "Brakuje pola lub liczby.",
+        "MISSING_OPERATOR": "Brakuje znaku działania (+ − × ÷)."
+      },
+      "preview": "Podgląd",
+      "previewNone": "Uruchom raport, aby zobaczyć podgląd.",
+      "previewNoValue": "Brak wyniku dla pierwszego wiersza.",
+      "when": "Jeśli",
+      "test": "Test",
+      "then": "to",
+      "otherwise": "w przeciwnym razie",
+      "tests": {
+        "eq": "jest równe",
+        "neq": "nie jest równe",
+        "gt": "większe niż",
+        "lt": "mniejsze niż",
+        "empty": "jest puste"
+      },
+      "valueLabel": "Wartość",
+      "textOption": "Tekst",
+      "textPlaceholder": "Wpisz tekst",
+      "save": "Zapisz",
+      "editAria": "Edytuj {{name}}",
+      "deleteAria": "Usuń {{name}}",
+      "inUseTitle": "Nie można usunąć",
+      "inUse": "{{name}} jest używane w {{others}}. Najpierw zmień tamto pole.",
+      "nameRequired": "Nadaj polu nazwę.",
+      "ruleIncomplete": "Wypełnij całą regułę.",
+      "needNumber": "Porównaj z liczbą, na przykład 500.",
+      "textTooLong": "Tekst może mieć najwyżej {{max}} znaków.",
+      "maxReachedTitle": "Za dużo pól obliczanych",
+      "maxReached": "Raport może mieć najwyżej {{max}} pól obliczanych.",
+      "errors": {
+        "UNKNOWN_FIELD": "Pole obliczane {{name}} używa pola, które nie pasuje do tego raportu.",
+        "CYCLE": "Pole obliczane {{name}} odwołuje się do siebie przez inne pole.",
+        "TOO_DEEP": "Pole obliczane {{name}} jest zbyt skomplikowane. Skróć obliczenie.",
+        "TOO_MANY": "Raport może mieć najwyżej 20 pól obliczanych.",
+        "BAD_RULE": "Pole obliczane {{name}} jest niepoprawne. Otwórz je i sprawdź obliczenie lub regułę."
+      }
+    }
   },
   "financialTab": {
     "loading": "Ładowanie...",

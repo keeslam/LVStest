@@ -352,7 +352,72 @@
     "saveAsNewButton": "Salvează ca nou",
     "editingTitle": "Editare: {{name}}",
     "useAsStartButton": "Folosește ca punct de pornire",
-    "stopEditingButton": "Oprește editarea"
+    "stopEditingButton": "Oprește editarea",
+    "calc": {
+      "sectionTitle": "Câmpuri calculate",
+      "addButton": "Adaugă câmp calculat",
+      "dialogTitleNew": "Adaugă câmp calculat",
+      "dialogTitleEdit": "Editează câmpul calculat",
+      "dialogDescription": "Calculează cu câmpurile acestui raport sau creează o regulă dacă-atunci.",
+      "name": "Nume",
+      "namePlaceholder": "De exemplu TVA incl.",
+      "kindFormula": "Calcul",
+      "kindIfThen": "Regulă dacă-atunci",
+      "formula": "Formulă",
+      "type": "Tip",
+      "types": {
+        "money": "Sumă",
+        "number": "Număr",
+        "percent": "Procent",
+        "text": "Text"
+      },
+      "fieldsHeading": "Câmpuri",
+      "numberLabel": "Număr",
+      "addNumber": "Adaugă număr",
+      "numberInvalid": "Scrie un număr, de exemplu 1,21.",
+      "backspace": "Șterge",
+      "parseErrors": {
+        "EMPTY": "Alege un câmp sau scrie un număr ca să începi.",
+        "UNBALANCED": "Lipsește o paranteză.",
+        "MISSING_OPERAND": "Lipsește un câmp sau un număr.",
+        "MISSING_OPERATOR": "Lipsește un semn de calcul (+ − × ÷)."
+      },
+      "preview": "Previzualizare",
+      "previewNone": "Rulează raportul pentru o previzualizare.",
+      "previewNoValue": "Niciun rezultat pentru primul rând.",
+      "when": "Dacă",
+      "test": "Test",
+      "then": "atunci",
+      "otherwise": "altfel",
+      "tests": {
+        "eq": "este egal cu",
+        "neq": "nu este egal cu",
+        "gt": "mai mare decât",
+        "lt": "mai mic decât",
+        "empty": "este gol"
+      },
+      "valueLabel": "Valoare",
+      "textOption": "Text",
+      "textPlaceholder": "Scrie un text",
+      "save": "Salvează",
+      "editAria": "Editează {{name}}",
+      "deleteAria": "Șterge {{name}}",
+      "inUseTitle": "Nu se poate șterge",
+      "inUse": "{{name}} este folosit în {{others}}. Modifică mai întâi acel câmp.",
+      "nameRequired": "Dă un nume câmpului.",
+      "ruleIncomplete": "Completează toată regula.",
+      "needNumber": "Compară cu un număr, de exemplu 500.",
+      "textTooLong": "Un text poate avea cel mult {{max}} caractere.",
+      "maxReachedTitle": "Prea multe câmpuri calculate",
+      "maxReached": "Un raport poate avea cel mult {{max}} câmpuri calculate.",
+      "errors": {
+        "UNKNOWN_FIELD": "Câmpul calculat {{name}} folosește un câmp care nu se potrivește acestui raport.",
+        "CYCLE": "Câmpul calculat {{name}} trimite la el însuși printr-un alt câmp.",
+        "TOO_DEEP": "Câmpul calculat {{name}} este prea complicat. Scurtează calculul.",
+        "TOO_MANY": "Un raport poate avea cel mult 20 de câmpuri calculate.",
+        "BAD_RULE": "Câmpul calculat {{name}} nu este corect. Deschide-l și verifică calculul sau regula."
+      }
+    }
   },
   "financialTab": {
     "loading": "Se încarcă...",

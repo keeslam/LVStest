@@ -344,7 +344,72 @@
     "saveAsNewButton": "Save as new",
     "editingTitle": "Editing: {{name}}",
     "useAsStartButton": "Use as a start",
-    "stopEditingButton": "Stop editing"
+    "stopEditingButton": "Stop editing",
+    "calc": {
+      "sectionTitle": "Calculated fields",
+      "addButton": "Add calculated field",
+      "dialogTitleNew": "Add calculated field",
+      "dialogTitleEdit": "Edit calculated field",
+      "dialogDescription": "Calculate with the fields of this report, or make an if-then rule.",
+      "name": "Name",
+      "namePlaceholder": "For example Incl. VAT",
+      "kindFormula": "Sum",
+      "kindIfThen": "If-then rule",
+      "formula": "Formula",
+      "type": "Kind",
+      "types": {
+        "money": "Amount",
+        "number": "Number",
+        "percent": "Percent",
+        "text": "Text"
+      },
+      "fieldsHeading": "Fields",
+      "numberLabel": "Number",
+      "addNumber": "Add number",
+      "numberInvalid": "Type a number, for example 1.21.",
+      "backspace": "Erase",
+      "parseErrors": {
+        "EMPTY": "Choose a field or type a number to begin.",
+        "UNBALANCED": "A bracket is missing.",
+        "MISSING_OPERAND": "A field or number is missing.",
+        "MISSING_OPERATOR": "An operator is missing (+ − × ÷)."
+      },
+      "preview": "Preview",
+      "previewNone": "Run the report to see a preview.",
+      "previewNoValue": "No result for the first row.",
+      "when": "If",
+      "test": "Test",
+      "then": "then",
+      "otherwise": "otherwise",
+      "tests": {
+        "eq": "equals",
+        "neq": "does not equal",
+        "gt": "greater than",
+        "lt": "less than",
+        "empty": "is empty"
+      },
+      "valueLabel": "Value",
+      "textOption": "Text",
+      "textPlaceholder": "Type a text",
+      "save": "Save",
+      "editAria": "Edit {{name}}",
+      "deleteAria": "Delete {{name}}",
+      "inUseTitle": "Cannot delete",
+      "inUse": "{{name}} is used in {{others}}. Change that field first.",
+      "nameRequired": "Give the field a name.",
+      "ruleIncomplete": "Fill in the whole rule.",
+      "needNumber": "Compare with a number, for example 500.",
+      "textTooLong": "A text can have at most {{max}} characters.",
+      "maxReachedTitle": "Too many calculated fields",
+      "maxReached": "A report can have at most {{max}} calculated fields.",
+      "errors": {
+        "UNKNOWN_FIELD": "The calculated field {{name}} uses a field that does not fit this report.",
+        "CYCLE": "The calculated field {{name}} refers to itself through another field.",
+        "TOO_DEEP": "The calculated field {{name}} is too complex. Make the sum shorter.",
+        "TOO_MANY": "A report can have at most 20 calculated fields.",
+        "BAD_RULE": "The calculated field {{name}} is not right. Open it and check the sum or rule."
+      }
+    }
   },
   "financialTab": {
     "loading": "Loading...",

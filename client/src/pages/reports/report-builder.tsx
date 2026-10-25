@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Play, Save, Trash2, X, Filter as FilterIcon, Download, Printer, Settings, BarChart3 } from "lucide-react";
+import { Plus, Play, Save, Trash2, X, Pencil, Filter as FilterIcon, Download, Printer, Settings, BarChart3 } from "lucide-react";
 import { apiRequest, queryClient, invalidateByPrefix } from "@/lib/queryClient";
 import { UserPermission } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
@@ -25,7 +25,10 @@ import { ReportBuilderChart } from "@/pages/reports/report-builder-chart";
 import { formatDateTime } from "@/lib/format-utils";
 import {
   sourceLabel, fieldLabel, linkedFieldLabel, resultKey, operatorLabel, aggregationLabel, outputHeader, csvCell, displayCell, buildReportTableHtml, reportFileSubject,
+  withCalcInfo, columnLabel, calcErrorText,
 } from "@/pages/reports/report-builder-output";
+import { CalculatedFieldDialog, calcRefsOf, isNumericCalc } from "@/pages/reports/calculated-field-dialog";
+import { MAX_CALCULATED_FIELDS, type CalculatedField } from "@shared/report-formula";
 import {
   DATA_SOURCES,
   canUseReportSource,
@@ -43,7 +46,9 @@ import {
   type ReportGrouping,
   type AggregationFunction,
   type FilterOperator,
-  getField
+  getField,
+  numberOperators,
+  textOperators,
 } from "@shared/report-builder-config";
 
 interface SavedReport {
@@ -83,8 +88,33 @@ function pickableFieldsOf(user: ReportSourceUser | null | undefined, selected: s
   return [...own, ...linked];
 }
 
-const sameField = (a: { via?: string; table: string; field: string }, b: { via?: string; table: string; field: string }) =>
-  a.table === b.table && a.field === b.field && (a.via ?? "") === (b.via ?? "");
+type Entry = { via?: string; table: string; field: string; calc?: string };
+const sameField = (a: Entry, b: Entry) =>
+  a.table === b.table && a.field === b.field && (a.via ?? "") === (b.via ?? "") && (a.calc ?? "") === (b.calc ?? "");
+
+const CALC_PREFIX = "calc:";
+
+/** The first free id "calc1", "calc2", ... */
+function nextCalcId(calcs: CalculatedField[]): string {
+  let n = 1;
+  while (calcs.some((c) => c.id === `calc${n}`)) n++;
+  return `calc${n}`;
+}
+
+/** Calculations a column may get: a text calculated field can only be counted (Aantal). */
+function aggregationsFor(col: ReportColumn, calcs: CalculatedField[]): AggregationFunction[] {
+  if (col.calc) {
+    return isNumericCalc(calcs.find((c) => c.id === col.calc))
+      ? ['SUM', 'AVG', 'MIN', 'MAX', 'COUNT', 'COUNT_DISTINCT']
+      : ['COUNT'];
+  }
+  return getField(col.table, col.field)?.aggregatable
+    ? ['SUM', 'AVG', 'MIN', 'MAX', 'COUNT', 'COUNT_DISTINCT']
+    : ['COUNT', 'COUNT_DISTINCT'];
+}
+
+/** Filter operators of a calculated field: those of a number or of a text. */
+const calcOperators = (calc: CalculatedField | undefined): FilterOperator[] => (isNumericCalc(calc) ? numberOperators : textOperators);
 
 const GROUP_NONE = "__none";
 const NO_TAB = "__no_tab";
@@ -108,6 +138,11 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
   const [columns, setColumns] = useState<ReportColumn[]>([]);
   const [filters, setFilters] = useState<ReportFilter[]>([]);
   const [groupBy, setGroupBy] = useState<ReportGrouping[]>([]);
+  const [calculatedFields, setCalculatedFields] = useState<CalculatedField[]>([]);
+  // The calculated field dialog: open for a new field (no editing) or for one being changed.
+  const [calcDialog, setCalcDialog] = useState<{ editing?: CalculatedField } | null>(null);
+  // The calculated fields of the report that was last run, for its output.
+  const [resultCalcs, setResultCalcs] = useState<CalculatedField[]>([]);
   const [reportResults, setReportResults] = useState<any[]>([]);
   // The columns and name of the report that was last run. A saved report is run without opening
   // it in the builder, so the result must not borrow the builder's own (possibly empty) columns.
@@ -176,6 +211,22 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
       setGroupBy([]);
       return;
     }
+    if (value.startsWith(CALC_PREFIX)) {
+      const calc = calculatedFields.find(c => c.id === value.slice(CALC_PREFIX.length));
+      if (!calc) return;
+      const target = { table: '', field: '', calc: calc.id };
+      setGroupBy([target]);
+      setColumns(prev => {
+        const at = prev.findIndex(c => sameField(c, target));
+        if (at === -1) return [...prev, { ...target, label: calc.name }];
+        return prev.map((c, i) => {
+          if (i !== at) return c;
+          const { aggregation: _old, ...rest } = c;
+          return rest;
+        });
+      });
+      return;
+    }
     const picked = groupFields.find(f => pickKey(f.via, f.field.table, f.field.name) === value);
     if (!picked) return;
     const { via, field: def } = picked;
@@ -212,6 +263,52 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
     setFilters(prev => prev.filter((_, i) => i !== index));
   };
 
+  const calcText = (key: string, options?: Record<string, unknown>) => String(t(`reportBuilderPage.calc.${key}`, options));
+
+  const saveCalculatedField = (data: Omit<CalculatedField, 'id'>) => {
+    const editing = calcDialog?.editing;
+    if (editing) {
+      const calc: CalculatedField = { ...data, id: editing.id };
+      setCalculatedFields(prev => prev.map(c => (c.id === calc.id ? calc : c)));
+      // A changed kind can make a calculation or filter on it unfit: those are dropped.
+      const numeric = isNumericCalc(calc);
+      setColumns(prev => prev.map(col => {
+        if (col.calc !== calc.id || !col.aggregation || numeric || col.aggregation === 'COUNT') return col;
+        const { aggregation: _old, ...rest } = col;
+        return rest;
+      }));
+      setFilters(prev => prev.filter(f => f.calc !== calc.id || calcOperators(calc).includes(f.operator)));
+    } else {
+      if (calculatedFields.length >= MAX_CALCULATED_FIELDS) {
+        toast({ title: calcText('maxReachedTitle'), description: calcText('maxReached', { max: MAX_CALCULATED_FIELDS }), variant: "destructive" });
+        return;
+      }
+      setCalculatedFields(prev => [...prev, { ...data, id: nextCalcId(prev) }]);
+    }
+    setCalcDialog(null);
+  };
+
+  // A field another calculated field uses cannot go: that one would break.
+  const deleteCalculatedField = (calc: CalculatedField) => {
+    const users = calculatedFields.filter(c => c.id !== calc.id && calcRefsOf(c).includes(calc.id));
+    if (users.length > 0) {
+      toast({
+        title: calcText('inUseTitle'),
+        description: calcText('inUse', { name: calc.name, others: users.map(u => u.name).join(', ') }),
+        variant: "destructive",
+      });
+      return;
+    }
+    setCalculatedFields(prev => prev.filter(c => c.id !== calc.id));
+    setColumns(prev => prev.filter(c => c.calc !== calc.id));
+    setFilters(prev => prev.filter(f => f.calc !== calc.id));
+    setGroupBy(prev => prev.filter(g => g.calc !== calc.id));
+  };
+
+  /** Only calculated fields go along, and only when there are any: an old report stays as it was. */
+  const withCalcs = (config: ReportConfiguration): ReportConfiguration =>
+    calculatedFields.length > 0 ? { ...config, calculatedFields } : config;
+
   const runReportMutation = useMutation({
     mutationFn: async (config: ReportConfiguration) => {
       const res = await apiRequest('POST', '/api/reports/execute', config);
@@ -222,6 +319,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
       setResultColumns(config.columns);
       setResultName(config.name);
       setResultGroupBy(config.groupBy ?? []);
+      setResultCalcs(config.calculatedFields ?? []);
       setShowResultsDialog(true);
       toast({
         title: t('reportBuilderPage.toasts.reportExecutedTitle'),
@@ -237,11 +335,14 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
       const rest = dot > 0 ? named.slice(dot + 1) : "";
       const link = prefix ? getReportLink(config.dataSources[0], prefix) : undefined;
       const table = link ? getDataSource(link.target)?.table ?? prefix : prefix;
+      // A calculated column is named "calc.<id>": say its own name.
+      const calcName = prefix === 'calc' ? config.calculatedFields?.find(c => c.id === rest)?.name ?? rest : null;
       const description = dot > 0
         ? t('reportBuilderPage.toasts.columnNotGrouped', {
-            column: linkedFieldLabel(t, link ? prefix : undefined, table, rest, getField(table, rest)?.label),
+            column: calcName ?? linkedFieldLabel(t, link ? prefix : undefined, table, rest, getField(table, rest)?.label),
           })
-        : describeApiError(error, undefined, t('reportBuilderPage.toasts.executeErrorDescription'));
+        : calcErrorText(t, error, config.calculatedFields)
+          ?? describeApiError(error, undefined, t('reportBuilderPage.toasts.executeErrorDescription'));
       toast({
         title: t('reportBuilderPage.toasts.executeErrorTitle'),
         description,
@@ -274,10 +375,11 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
         description: t('reportBuilderPage.toasts.reportSavedDescription'),
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, variables) => {
       toast({
         title: t('reportBuilderPage.toasts.saveErrorTitle'),
-        description: describeApiError(error, undefined, t('reportBuilderPage.toasts.saveErrorDescription')),
+        description: calcErrorText(t, error, variables.config.calculatedFields)
+          ?? describeApiError(error, undefined, t('reportBuilderPage.toasts.saveErrorDescription')),
         variant: "destructive",
       });
     },
@@ -304,6 +406,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
     setColumns(report.configuration.columns);
     setFilters(report.configuration.filters ?? []);
     setGroupBy(report.configuration.groupBy ?? []);
+    setCalculatedFields(report.configuration.calculatedFields ?? []);
     setReportName(report.name);
     setReportDescription(report.description ?? report.configuration.description ?? '');
     setSaveTab(report.configuration.tab ?? NO_TAB);
@@ -350,14 +453,14 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
       return;
     }
 
-    const config: ReportConfiguration = {
+    const config: ReportConfiguration = withCalcs({
       name: reportName || t('reportBuilderPage.untitledReport'),
       description: reportDescription,
       dataSources: selectedDataSources,
       columns,
       filters,
       groupBy,
-    };
+    });
 
     runReportMutation.mutate(config);
   };
@@ -372,7 +475,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
       return;
     }
 
-    const config: ReportConfiguration = {
+    const config: ReportConfiguration = withCalcs({
       name: reportName,
       description: reportDescription,
       dataSources: selectedDataSources,
@@ -381,7 +484,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
       groupBy,
       ...(saveTab !== NO_TAB ? { tab: saveTab as SavedReportTab } : {}),
       ...(savedPeriodField !== NO_PERIOD_FIELD ? { periodField: savedPeriodField } : {}),
-    };
+    });
 
     saveReportMutation.mutate({ config, updateId: editingReport && !asNew ? editingReport.id : undefined });
   };
@@ -489,6 +592,55 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
                     </div>
                   </div>
                 ))}
+                <div className="space-y-2 border-t pt-4" data-testid="calculated-fields-section">
+                  <span className="font-medium">{calcText('sectionTitle')}</span>
+                  <div className="ml-6 space-y-1">
+                    {calculatedFields.map(calc => (
+                      <div key={calc.id} className="flex items-center gap-1">
+                        <button
+                          onClick={() => addColumnMutation.mutate({ table: '', field: '', calc: calc.id, label: calc.name })}
+                          className="text-sm text-muted-foreground hover:text-foreground flex-1 text-left py-1"
+                          data-testid={`button-add-calc-${calc.id}`}
+                        >
+                          + {calc.name}
+                        </button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={() => setCalcDialog({ editing: calc })}
+                          aria-label={calcText('editAria', { name: calc.name })}
+                          title={calcText('editAria', { name: calc.name })}
+                          data-testid={`button-edit-calc-${calc.id}`}
+                        >
+                          <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={() => deleteCalculatedField(calc)}
+                          aria-label={calcText('deleteAria', { name: calc.name })}
+                          title={calcText('deleteAria', { name: calc.name })}
+                          data-testid={`button-delete-calc-${calc.id}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setCalcDialog({})}
+                    disabled={selectedDataSources.length === 0}
+                    data-testid="button-add-calculated-field"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    {calcText('addButton')}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -535,10 +687,10 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
                         {t('reportBuilderPage.clickFieldsHint')}
                       </p>
                     ) : (
-                      columns.map((col, idx) => (
+                      withCalcInfo(columns, calculatedFields).map((col, idx) => (
                         <div key={idx} className="flex items-center justify-between p-2 bg-secondary rounded">
                           <span className="text-sm">
-                            {linkedFieldLabel(t, col.via, col.table, col.field, col.label)} {col.aggregation && `(${aggregationLabel(t, col.aggregation)})`}
+                            {columnLabel(t, col)} {col.aggregation && `(${aggregationLabel(t, col.aggregation)})`}
                           </span>
                           <div className="flex items-center gap-2">
                           {!isGroupColumn(col) && (
@@ -551,13 +703,9 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">{t('reportBuilderPage.aggregation.none')}</SelectItem>
-                                {(['SUM', 'AVG', 'MIN', 'MAX'] as const)
-                                  .filter(() => getField(col.table, col.field)?.aggregatable)
-                                  .map(agg => (
-                                    <SelectItem key={agg} value={agg}>{aggregationLabel(t, agg)}</SelectItem>
-                                  ))}
-                                <SelectItem value="COUNT">{aggregationLabel(t, 'COUNT')}</SelectItem>
-                                <SelectItem value="COUNT_DISTINCT">{aggregationLabel(t, 'COUNT_DISTINCT')}</SelectItem>
+                                {aggregationsFor(col, calculatedFields).map(agg => (
+                                  <SelectItem key={agg} value={agg}>{aggregationLabel(t, agg)}</SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           )}
@@ -580,7 +728,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
                   <Label>{t('reportBuilderPage.groupBy.label')}</Label>
                   <div className="flex items-center gap-4 mt-2">
                     <Select
-                      value={groupBy[0] ? pickKey(groupBy[0].via, groupBy[0].table, groupBy[0].field) : GROUP_NONE}
+                      value={groupBy[0] ? (groupBy[0].calc ? `${CALC_PREFIX}${groupBy[0].calc}` : pickKey(groupBy[0].via, groupBy[0].table, groupBy[0].field)) : GROUP_NONE}
                       onValueChange={changeGroup}
                     >
                       <SelectTrigger className="w-[260px]" data-testid="select-report-group-by">
@@ -593,9 +741,12 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
                             {linkedFieldLabel(t, via, field.table, field.name, field.label)}
                           </SelectItem>
                         ))}
+                        {calculatedFields.map(calc => (
+                          <SelectItem key={calc.id} value={`${CALC_PREFIX}${calc.id}`}>{calc.name}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
-                    {groupBy[0] && getField(groupBy[0].table, groupBy[0].field)?.type === 'date' && (
+                    {groupBy[0] && !groupBy[0].calc && getField(groupBy[0].table, groupBy[0].field)?.type === 'date' && (
                       <label className="flex items-center gap-2 text-sm">
                         <input
                           type="checkbox"
@@ -613,6 +764,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
                 <FilterBuilder
                   filters={filters}
                   dataSources={selectedDataSources}
+                  calcs={calculatedFields}
                   onAddFilter={(filter) => addFilterMutation.mutate(filter)}
                   onRemoveFilter={removeFilter}
                 />
@@ -711,11 +863,24 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
         </DialogContent>
       </Dialog>
 
+      {calcDialog && (
+        <CalculatedFieldDialog
+          initial={calcDialog.editing}
+          fields={groupFields}
+          earlier={calcDialog.editing
+            ? calculatedFields.slice(0, Math.max(0, calculatedFields.findIndex(c => c.id === calcDialog.editing!.id)))
+            : calculatedFields}
+          sampleRow={reportResults[0] ?? null}
+          onSave={saveCalculatedField}
+          onClose={() => setCalcDialog(null)}
+        />
+      )}
+
       <ReportResultsDialog
         open={showResultsDialog}
         onOpenChange={setShowResultsDialog}
         results={reportResults}
-        columns={resultColumns}
+        columns={withCalcInfo(resultColumns, resultCalcs)}
         reportName={resultName}
         groupBy={resultGroupBy}
       />
@@ -723,14 +888,16 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
   );
 }
 
-function FilterBuilder({ 
-  filters, 
-  dataSources, 
-  onAddFilter, 
-  onRemoveFilter 
-}: { 
-  filters: ReportFilter[]; 
+function FilterBuilder({
+  filters,
+  dataSources,
+  calcs,
+  onAddFilter,
+  onRemoveFilter
+}: {
+  filters: ReportFilter[];
   dataSources: string[];
+  calcs: CalculatedField[];
   onAddFilter: (filter: ReportFilter) => void;
   onRemoveFilter: (index: number) => void;
 }) {
@@ -741,12 +908,15 @@ function FilterBuilder({
   const { user } = useAuth();
   const availableFields = pickableFieldsOf(user, dataSources);
 
-  const selectedField = newFilter.field && newFilter.table 
+  const selectedCalc = newFilter.calc ? calcs.find(c => c.id === newFilter.calc) : undefined;
+  const selectedField = newFilter.field && newFilter.table
     ? getField(newFilter.table, newFilter.field)
     : null;
+  // A calculated field offers the operators of a number or of a text, as the server allows them.
+  const operators = selectedCalc ? calcOperators(selectedCalc) : selectedField?.operators;
 
   const handleAddFilter = () => {
-    if (newFilter.field && newFilter.table && newFilter.operator) {
+    if ((selectedCalc || (newFilter.field && newFilter.table)) && newFilter.operator) {
       onAddFilter(newFilter as ReportFilter);
       setNewFilter({});
       setShowAddFilter(false);
@@ -774,8 +944,12 @@ function FilterBuilder({
             <div>
               <Label>{t('reportBuilderPage.fieldLabel')}</Label>
               <Select
-                value={newFilter.field ? pickKey(newFilter.via, newFilter.table!, newFilter.field) : undefined}
+                value={newFilter.calc ? `${CALC_PREFIX}${newFilter.calc}` : newFilter.field ? pickKey(newFilter.via, newFilter.table!, newFilter.field) : undefined}
                 onValueChange={(value) => {
+                  if (value.startsWith(CALC_PREFIX)) {
+                    setNewFilter({ field: '', table: '', calc: value.slice(CALC_PREFIX.length) });
+                    return;
+                  }
                   const picked = availableFields.find(f => pickKey(f.via, f.field.table, f.field.name) === value);
                   if (picked) {
                     setNewFilter({ field: picked.field.name, table: picked.field.table, ...(picked.via ? { via: picked.via } : {}) });
@@ -791,6 +965,9 @@ function FilterBuilder({
                       {linkedFieldLabel(t, via, field.table, field.name, field.label)}
                     </SelectItem>
                   ))}
+                  {calcs.map(calc => (
+                    <SelectItem key={calc.id} value={`${CALC_PREFIX}${calc.id}`}>{calc.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -799,13 +976,13 @@ function FilterBuilder({
               <Select
                 value={newFilter.operator}
                 onValueChange={(value) => setNewFilter({ ...newFilter, operator: value as FilterOperator })}
-                disabled={!selectedField}
+                disabled={!operators}
               >
                 <SelectTrigger data-testid="select-filter-operator">
                   <SelectValue placeholder={t('reportBuilderPage.selectOperatorPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {selectedField?.operators.map(op => (
+                  {operators?.map(op => (
                     <SelectItem key={op} value={op}>
                       {operatorLabel(t, op)}
                     </SelectItem>
@@ -843,7 +1020,9 @@ function FilterBuilder({
           filters.map((filter, idx) => (
             <div key={idx} className="flex items-center justify-between p-2 bg-secondary rounded">
               <span className="text-sm">
-                {linkedFieldLabel(t, filter.via, filter.table, filter.field, getField(filter.table, filter.field)?.label)} {operatorLabel(t, filter.operator)} {filter.value}
+                {filter.calc
+                  ? calcs.find(c => c.id === filter.calc)?.name ?? filter.calc
+                  : linkedFieldLabel(t, filter.via, filter.table, filter.field, getField(filter.table, filter.field)?.label)} {operatorLabel(t, filter.operator)} {filter.value}
               </span>
               <Button
                 variant="ghost"
