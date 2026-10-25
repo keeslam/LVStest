@@ -24,8 +24,15 @@ vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: 1, username: "tester", hidePrices: false }, isLoading: false }),
 }));
 
+// Onderhoudsanalyse (Task 3): the page is now the analysis window; its Overzicht tab reads
+// /api/reports/maintenance-analysis/overview. The other requests of the window (the choices of the
+// filter bar) answer empty, so only the overview decides what is on screen.
+type Fn = () => Promise<unknown>;
+const onlyOverview = (overview: Fn) => ({ queryKey }: { queryKey: readonly unknown[] }) =>
+  String(queryKey[0]).endsWith("/maintenance-analysis/overview") ? overview() : Promise.resolve(null);
+
 /** A client with no retries and no cache carry-over between tests. */
-function makeClient(queryFn: () => Promise<unknown>) {
+function makeClient(queryFn: (ctx: { queryKey: readonly unknown[] }) => Promise<unknown>) {
   return new QueryClient({
     defaultOptions: {
       queries: { queryFn, retry: false, gcTime: 0, staleTime: 0 },
@@ -33,8 +40,8 @@ function makeClient(queryFn: () => Promise<unknown>) {
   });
 }
 
-function renderPage(queryFn: () => Promise<unknown>) {
-  const client = makeClient(queryFn);
+function renderPage(overview: Fn) {
+  const client = makeClient(onlyOverview(overview));
   return render(
     <QueryClientProvider client={client}>
       <MaintenanceCostsPage />
@@ -43,14 +50,11 @@ function renderPage(queryFn: () => Promise<unknown>) {
 }
 
 const emptyButValidReport = {
-  totalCosts: 0,
-  averageCostPerVehicle: 0,
-  averageCostPerKm: 0,
-  totalVehicles: 0,
-  categoryBreakdown: [],
-  brandComparison: [],
-  vehicleDetails: [],
-  monthlyTrend: [],
+  from: "2026-01-01",
+  to: "2026-12-31",
+  tiles: { total: 0, perVehicleMonth: null, count: 0 },
+  byCategory: [],
+  topVehicles: [],
 };
 
 beforeEach(() => {
@@ -102,7 +106,7 @@ describe("BUG-212 — a failed GET is not an empty state", () => {
     // A real, successful, empty report keeps its own wording: the fix must not
     // turn "no costs" into "something went wrong".
     await waitFor(() =>
-      expect(screen.getByText(/Analyse onderhoudskosten/i)).toBeInTheDocument(),
+      expect(screen.getByTestId("ma-overview-empty")).toHaveTextContent(/Geen onderhoudskosten in deze periode/i),
     );
     expect(screen.queryByTestId("query-error-state")).toBeNull();
   });

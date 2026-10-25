@@ -98,7 +98,6 @@ function deniedReportBody(user: Express.User | undefined, config: any, dataSourc
   return deniedReportLink(user, config);
 }
 import type { Express } from "express";
-import { buildMaintenanceCostReport } from "../utils/maintenance-costs";
 import {
   parseMaintenanceQuery, loadMaintenanceData, overviewPart, brandsPart, vehiclesPart, suppliersPart, trendsPart, signalsPart, rowsPart,
   type MaintenanceData, type MaintenanceQuery,
@@ -178,21 +177,6 @@ export function registerReportRoutes(app: Express): void {
   // ============================================
   // REPORTS & ANALYTICS ROUTES
   // ============================================
-
-  // Maintenance Cost Analysis Report
-  app.get("/api/reports/maintenance-costs", hasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS), async (req: Request, res: Response) => {
-    try {
-      const { timeRange, brand } = req.query;
-      const [expenses, vehicles] = await Promise.all([storage.getAllExpenses(), storage.getAllVehicles()]);
-      res.json(buildMaintenanceCostReport(expenses, vehicles, {
-        timeRange: typeof timeRange === "string" ? timeRange : undefined,
-        brand: typeof brand === "string" ? brand : undefined,
-      }));
-    } catch (error) {
-      console.error("Error fetching maintenance cost analysis:", error);
-      res.status(500).json({ message: "Error fetching maintenance cost analysis" });
-    }
-  });
 
   // Onderhoudsanalyse (Kees, 2026-10-26): one endpoint per tab of the window, all with the same filter.
   // The report right, as for the old analysis; every km field and the km-band filter/drill are admin only.
