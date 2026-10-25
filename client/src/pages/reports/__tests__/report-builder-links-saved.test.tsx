@@ -77,3 +77,25 @@ describe("saved report with linked columns", () => {
     expect(executeBody.columns).toHaveLength(2);
   });
 });
+
+describe("links in a saved report", () => {
+  it("links a linked plate of a plain list to the vehicle", async () => {
+    installFetch([{ "vehicle.licensePlate": "AB12CD", "vehicle.brand": "Toyota", "vehicle.id": 4 }]);
+    renderView(report());
+    const button = await screen.findByRole("button", { name: /AB-12-CD|AB12CD/ });
+    expect(button).toBeInTheDocument();
+  });
+
+  it("shows no link on a linked plate of a grouped report", async () => {
+    installFetch([{ "vehicle.licensePlate": "AB12CD", id: "2" }]);
+    renderView(report({
+      columns: [
+        { table: "vehicles", field: "licensePlate", via: "vehicle", label: "Plate" },
+        { table: "fines", field: "id", label: "ID", aggregation: "COUNT" },
+      ],
+      groupBy: [{ table: "vehicles", field: "licensePlate", via: "vehicle" }],
+    }));
+    const cell = (await screen.findAllByText(/AB-12-CD|AB12CD/))[0];
+    expect(cell.closest("button")).toBeNull();
+  });
+});

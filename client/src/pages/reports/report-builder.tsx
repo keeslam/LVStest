@@ -31,6 +31,7 @@ import {
   canUseReportSource,
   canUseReportField,
   getDataSource,
+  getReportLink,
   type DataSourceField,
   type ReportSourceLink,
   type ReportSourceUser,
@@ -227,12 +228,18 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
         description: t('reportBuilderPage.toasts.reportExecutedDescription', { count: data.length }),
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, config: ReportConfiguration) => {
       // The server names the column that is missing from the grouping ("fines.status").
-      const dot = error?.code === 'REPORT_COLUMN_NOT_GROUPED' && typeof error.field === 'string' ? error.field.indexOf('.') : -1;
+      // A linked column is named "<link>.<field>" ("vehicle.brand"), a plain one "<table>.<field>" ("fines.status").
+      const named = error?.code === 'REPORT_COLUMN_NOT_GROUPED' && typeof error.field === 'string' ? error.field : "";
+      const dot = named.indexOf('.');
+      const prefix = dot > 0 ? named.slice(0, dot) : "";
+      const rest = dot > 0 ? named.slice(dot + 1) : "";
+      const link = prefix ? getReportLink(config.dataSources[0], prefix) : undefined;
+      const table = link ? getDataSource(link.target)?.table ?? prefix : prefix;
       const description = dot > 0
         ? t('reportBuilderPage.toasts.columnNotGrouped', {
-            column: fieldLabel(t, error.field.slice(0, dot), error.field.slice(dot + 1), getField(error.field.slice(0, dot), error.field.slice(dot + 1))?.label),
+            column: linkedFieldLabel(t, link ? prefix : undefined, table, rest, getField(table, rest)?.label),
           })
         : describeApiError(error, undefined, t('reportBuilderPage.toasts.executeErrorDescription'));
       toast({

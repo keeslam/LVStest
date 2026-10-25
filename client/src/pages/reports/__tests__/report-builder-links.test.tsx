@@ -17,16 +17,21 @@ vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: 1, username: "tester", role, permissions, hidePrices: false }, isLoading: false }),
 }));
 
+const toast = vi.fn();
+vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast }), toast: (...a: any[]) => toast(...a) }));
+
 import ReportBuilder from "@/pages/reports/report-builder";
 import { builderChartData } from "@/pages/reports/report-builder-chart";
 
 let executeBody: any = null;
+let executeError: unknown = null;
 function installFetch(rows: any[] = []) {
   vi.stubGlobal("fetch", vi.fn(async (input: any, init?: any) => {
     const url = typeof input === "string" ? input : input.url;
     const path = url.replace(/^https?:\/\/[^/]+/, "");
     if (path === "/api/reports/execute") {
       executeBody = JSON.parse(init.body);
+      if (executeError) return new Response(JSON.stringify(executeError), { status: 400, headers: { "Content-Type": "application/json" } });
       return new Response(JSON.stringify(rows), { status: 200, headers: { "Content-Type": "application/json" } });
     }
     return new Response("[]", { status: 200, headers: { "Content-Type": "application/json" } });
@@ -37,7 +42,7 @@ function renderBuilder() {
   return render(<QueryClientProvider client={client}><ReportBuilder /></QueryClientProvider>);
 }
 
-beforeEach(() => { executeBody = null; role = UserRole.ADMIN; permissions = []; });
+beforeEach(() => { toast.mockClear(); executeError = null; executeBody = null; role = UserRole.ADMIN; permissions = []; });
 afterEach(async () => { vi.unstubAllGlobals(); await i18n.changeLanguage("nl"); });
 
 async function pickFines(user: ReturnType<typeof userEvent.setup>) {
@@ -164,6 +169,45 @@ describe("linked fields in the builder", () => {
     expect(screen.getByTestId("button-add-field-currentMileage")).toBeInTheDocument();
     await pickFines(user);
     expect(screen.getByTestId("button-add-field-vehicle.currentMileage")).toBeInTheDocument();
+  });
+});
+
+describe("refusals and same-named fields", () => {
+  it("names a linked column in the not-in-grouping toast", async () => {
+    installFetch();
+    executeError = { message: "x", code: "REPORT_COLUMN_NOT_GROUPED", field: "vehicle.brand" };
+    const user = userEvent.setup();
+    renderBuilder();
+    await pickFines(user);
+    await user.click(screen.getByTestId("button-add-field-vehicle.brand"));
+    await user.click(screen.getByTestId("button-run-report"));
+    await waitFor(() => expect(toast).toHaveBeenCalledWith(expect.objectContaining({ variant: "destructive" })));
+    const description = String(toast.mock.calls.at(-1)![0].description);
+    expect(description).toContain("Voertuig · Merk");
+    expect(description).toMatch(/groepering/i);
+  });
+
+  it("keeps a plain filter and a linked filter on the same field name separate", async () => {
+    installFetch();
+    const user = userEvent.setup();
+    renderBuilder();
+    await pickFines(user);
+    await user.click(screen.getByTestId("button-add-field-id"));
+    for (const name of ["ID", "Voertuig · ID"]) {
+      await user.click(screen.getByTestId("button-add-filter"));
+      await user.click(screen.getByTestId("select-filter-field"));
+      await user.click(await screen.findByRole("option", { name }));
+      await user.click(screen.getByTestId("select-filter-operator"));
+      await user.click((await screen.findAllByRole("option"))[0]);
+      await user.type(screen.getByTestId("input-filter-value"), "5");
+      await user.click(screen.getByTestId("button-confirm-filter"));
+    }
+    await user.click(screen.getByTestId("button-run-report"));
+    await waitFor(() => expect(executeBody).not.toBeNull());
+    expect(executeBody.filters).toHaveLength(2);
+    expect(executeBody.filters[0]).toMatchObject({ table: "fines", field: "id" });
+    expect(executeBody.filters[0].via).toBeUndefined();
+    expect(executeBody.filters[1]).toMatchObject({ table: "vehicles", field: "id", via: "vehicle" });
   });
 });
 
