@@ -783,6 +783,8 @@
     "print": "Tipărește",
     "empty": "Nu există rânduri pentru această casetă în această perioadă.",
     "noData": "Nu există date de afișat.",
+    "tableEmpty": "Nu există date în această perioadă.",
+    "tableSearch": "Căutare",
     "loading": "Se încarcă…",
     "loadFailed": "Lista nu a putut fi încărcată.",
     "exportFailed": "Preluarea listei a eșuat.",

@@ -783,6 +783,8 @@
     "print": "Stampa",
     "empty": "Nessuna riga per questo riquadro in questo periodo.",
     "noData": "Nessun dato da mostrare.",
+    "tableEmpty": "Nessun dato in questo periodo.",
+    "tableSearch": "Cerca",
     "loading": "Caricamento…",
     "loadFailed": "Impossibile caricare l'elenco.",
     "exportFailed": "Impossibile recuperare l'elenco.",

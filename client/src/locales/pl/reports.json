@@ -795,6 +795,8 @@
     "print": "Drukuj",
     "empty": "Brak wierszy dla tego kafelka w tym okresie.",
     "noData": "Brak danych do wyświetlenia.",
+    "tableEmpty": "Brak danych w tym okresie.",
+    "tableSearch": "Szukaj",
     "loading": "Ładowanie…",
     "loadFailed": "Nie udało się wczytać listy.",
     "exportFailed": "Nie udało się pobrać listy.",

@@ -783,6 +783,8 @@
     "print": "Imprimir",
     "empty": "Não há linhas para este bloco neste período.",
     "noData": "Não há dados para mostrar.",
+    "tableEmpty": "Sem dados neste período.",
+    "tableSearch": "Pesquisar",
     "loading": "A carregar…",
     "loadFailed": "Não foi possível carregar a lista.",
     "exportFailed": "Não foi possível obter a lista.",

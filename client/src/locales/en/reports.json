@@ -771,6 +771,8 @@
     "print": "Print",
     "empty": "No rows for this tile in this period.",
     "noData": "No data to show.",
+    "tableEmpty": "No data in this period.",
+    "tableSearch": "Search",
     "loading": "Loading…",
     "loadFailed": "The list could not be loaded.",
     "exportFailed": "Fetching the list failed.",

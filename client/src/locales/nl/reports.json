@@ -771,6 +771,8 @@
     "print": "Afdrukken",
     "empty": "Geen regels voor deze tegel in deze periode.",
     "noData": "Geen gegevens om te tonen.",
+    "tableEmpty": "Geen gegevens in deze periode.",
+    "tableSearch": "Zoeken",
     "loading": "Laden…",
     "loadFailed": "De lijst kon niet worden geladen.",
     "exportFailed": "Ophalen van de lijst is mislukt.",

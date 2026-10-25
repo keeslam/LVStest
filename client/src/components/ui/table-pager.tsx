@@ -20,17 +20,17 @@ export function usePager<T>(items: T[], initialSize: number = 50) {
   return { rows, page: safePage, pageCount, pageSize, setPage, setPageSize, total: items.length };
 }
 
-export function TablePager({ page, pageCount, pageSize, total, setPage, setPageSize, testId }: {
-  page: number; pageCount: number; pageSize: number; total: number; setPage: (p: number) => void; setPageSize: (n: number) => void; testId: string;
+export function TablePager({ page, pageCount, pageSize, total, setPage, setPageSize, testId, sizes = PAGE_SIZES }: {
+  page: number; pageCount: number; pageSize: number; total: number; setPage: (p: number) => void; setPageSize: (n: number) => void; testId: string; sizes?: readonly number[];
 }) {
   const { t } = useTranslation("common");
-  if (total <= PAGE_SIZES[0]) return null;
+  if (total <= Math.min(...sizes)) return null;
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 text-sm" data-testid={`${testId}-pagination`}>
       <label className="flex items-center gap-2 text-muted-foreground">
         {t("table.perPage")}
         <select className="h-8 rounded-md border bg-background px-2 text-sm" value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} data-testid={`${testId}-page-size`}>
-          {PAGE_SIZES.map((n) => <option key={n} value={n}>{n}</option>)}
+          {sizes.map((n) => <option key={n} value={n}>{n}</option>)}
         </select>
       </label>
       <div className="flex items-center gap-2">

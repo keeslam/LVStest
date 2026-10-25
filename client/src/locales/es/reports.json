@@ -783,6 +783,8 @@
     "print": "Imprimir",
     "empty": "No hay filas para esta casilla en este periodo.",
     "noData": "No hay datos para mostrar.",
+    "tableEmpty": "No hay datos en este período.",
+    "tableSearch": "Buscar",
     "loading": "Cargando…",
     "loadFailed": "No se pudo cargar la lista.",
     "exportFailed": "No se pudo obtener la lista.",
