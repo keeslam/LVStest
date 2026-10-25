@@ -337,7 +337,7 @@
     },
     "chart": {
       "title": "Omzet versus kosten per voertuig",
-      "description": "Top 15 voertuigen op omzet in de gekozen periode",
+      "description": "Top 10 voertuigen op omzet in de gekozen periode",
       "revenue": "Omzet",
       "expenses": "Kosten",
       "margin": "Marge"
@@ -653,7 +653,20 @@
       "loadingReport": "Rapport laden...",
       "reportList": "Rapporten",
       "chooseReport": "Kies een rapport",
-      "noReports": "Je hebt geen rechten om rapporten te zien."
+      "noReports": "Je hebt geen rechten om rapporten te zien.",
+      "notes": {
+        "periodVehicleIgnored": "Periode en voertuig gelden niet voor dit rapport.",
+        "lastThreeMonths": "Altijd de laatste 3 maanden."
+      }
+    },
+    "reports": {
+      "expensesInPeriod": "Kosten in deze periode",
+      "customerReservations": "Klantreserveringen in deze periode",
+      "customerReservationsDesc": "Reserveringen die in deze periode al begonnen zijn, nieuwste eerst.",
+      "avgUtilization": "Gemiddelde benutting",
+      "total": "Totaal",
+      "selectAll": "Alles aanvinken",
+      "selectRow": "Regel aanvinken"
     }
   },
   "moneyReports": {

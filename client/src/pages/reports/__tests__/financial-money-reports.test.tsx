@@ -25,7 +25,13 @@ vi.mock("@/lib/csv", async (importOriginal) => ({
   downloadCsv: (...a: any[]) => (downloadCsv as any)(...a),
 }));
 
-import { FinancialTab } from "@/pages/reports/financial-tab";
+// Task 5: the old FinancialTab is gone. Its table is the report "Kosten en opbrengst per voertuig"
+// and the three money cards are reports of their own; Financieel shows them one by one.
+import { VehicleFinancialsReport } from "@/pages/reports/legacy/vehicle-financials-report";
+import { ReportFiltersProvider } from "@/pages/reports/report-filters";
+import { FinesReportCard } from "@/pages/reports/fines-report-card";
+import { ExtraCostsReportCard } from "@/pages/reports/extra-costs-report-card";
+import { TransportBillingReportCard } from "@/pages/reports/transport-billing-report-card";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -90,15 +96,24 @@ function renderTab() {
   const client = new QueryClient({
     defaultOptions: { queries: { queryFn: getQueryFn({ on401: "throw" }), retry: false, gcTime: 0 } },
   });
-  const range = { from: new Date(2026, 0, 1), to: new Date(2026, 11, 31) };
-  return render(<QueryClientProvider client={client}><FinancialTab dateRange={range} selectedVehicle="all" /></QueryClientProvider>);
+  const range = { from: "2026-01-01", to: "2026-12-31", vehicleId: "all" };
+  return render(
+    <QueryClientProvider client={client}>
+      <ReportFiltersProvider initial={{ from: range.from, to: range.to }}>
+        <VehicleFinancialsReport />
+        <FinesReportCard {...range} />
+        <ExtraCostsReportCard {...range} />
+        <TransportBillingReportCard {...range} />
+      </ReportFiltersProvider>
+    </QueryClientProvider>,
+  );
 }
 
 describe("Financieel - bekeuringenrapport", () => {
   it("zonder rapportrecht geen kaart en geen verzoek", async () => {
     permissions = ["view_fines", "view_reservations", "view_vehicles"];
     renderTab();
-    expect(await screen.findByTestId("financial-tab")).toBeInTheDocument();
+    expect(await screen.findByTestId("vehicle-financials-report")).toBeInTheDocument();
     await new Promise((resolve) => setTimeout(resolve, 30));
     expect(screen.queryByTestId("card-fines-report")).not.toBeInTheDocument();
     expect(fetchedPaths().some((p) => p.startsWith("/api/reports/fines"))).toBe(false);
@@ -124,7 +139,7 @@ describe("Financieel - meer-km en brandstof", () => {
   it("zonder rapportrecht geen kaart en geen verzoek", async () => {
     permissions = ["view_fines", "view_reservations", "view_vehicles"];
     renderTab();
-    expect(await screen.findByTestId("financial-tab")).toBeInTheDocument();
+    expect(await screen.findByTestId("vehicle-financials-report")).toBeInTheDocument();
     await new Promise((resolve) => setTimeout(resolve, 30));
     expect(screen.queryByTestId("card-extra-costs-report")).not.toBeInTheDocument();
     expect(fetchedPaths().some((p) => p.startsWith("/api/reports/extra-costs"))).toBe(false);
@@ -143,7 +158,7 @@ describe("Financieel - transport en facturatie", () => {
   it("zonder rapportrecht geen kaart en geen verzoek", async () => {
     permissions = ["view_fines", "view_reservations", "view_vehicles"];
     renderTab();
-    expect(await screen.findByTestId("financial-tab")).toBeInTheDocument();
+    expect(await screen.findByTestId("vehicle-financials-report")).toBeInTheDocument();
     await new Promise((resolve) => setTimeout(resolve, 30));
     expect(screen.queryByTestId("card-transport-billing-report")).not.toBeInTheDocument();
     expect(fetchedPaths().some((p) => p.startsWith("/api/reports/transport-billing"))).toBe(false);
@@ -208,7 +223,7 @@ describe("Financieel - CSV van de voertuigtabel", () => {
     });
     const user = userEvent.setup();
     renderTab();
-    await screen.findByTestId("row-financial-1");
+    await screen.findByTestId("vehicle-financials-table-row-1");
     await user.click(screen.getByTestId("button-financial-csv"));
     expect(downloadCsv).toHaveBeenCalledTimes(1);
     const [subject, header, rows] = downloadCsv.mock.calls[0] as any[];

@@ -9,7 +9,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { UserRole } from "@shared/schema";
-import { installFetch, renderWithClient, vehicle, daysFromNow } from "./p7a-harness";
+import { installFetch, renderWithClient, vehicle, daysFromNow, openReport } from "./p7a-harness";
 
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: 1, username: "tester", role: UserRole.ADMIN, permissions: [], hidePrices: false }, isLoading: false }),
@@ -58,6 +58,8 @@ describe("category filter (A-14-4)", () => {
     installFetch({ vehicles: fleet, expenses });
     const user = userEvent.setup();
     renderWithClient(<ReportsPage />);
+    // Task 5: Kostentrends is a report of its own on Kosten.
+    await openReport(user, "expenses", "expense-trend");
     const trend = await screen.findByTestId("reports-expense-trend");
     await waitFor(() => expect(within(trend).getAllByText("€ 155,00").length).toBeGreaterThan(0));
     await openCategories(user);
@@ -106,18 +108,21 @@ describe("tabs that ignore the category filter say so (fix round 1, M-2)", () =>
       await user.click(await screen.findByTestId(tab));
       expect(screen.queryByTestId("category-filter-note")).toBeNull();
     }
-    await user.click(screen.getByRole("tab", { name: /Voertuigen/ }));
+    // Task 5: APK and warranty are reports of their own on Voertuigen.
+    await openReport(user, "vehicles", "apk-overview");
     expect(screen.queryByTestId("category-filter-note")).toBeNull();
+    // The category is picked on a report that uses it (Kosten); the reports that do not, say so.
+    await user.click(screen.getByRole("tab", { name: /Kosten/ }));
     await openCategories(user);
     await user.click(screen.getByRole("option", { name: "Onderhoud" }));
     for (const tab of ["tab-report-transports", "tab-report-fiscal"]) {
       await user.click(await screen.findByTestId(tab));
       expect(await screen.findByTestId("category-filter-note"), tab).toHaveTextContent("Onderhoud");
     }
-    await user.click(screen.getByRole("tab", { name: /Voertuigen/ }));
+    await openReport(user, "vehicles", "apk-overview");
     const vehiclesNote = await screen.findByTestId("category-filter-note");
     expect(vehiclesNote).toHaveTextContent(/APK en garantie/);
-    // It sits directly above the block it is about, not above the utilization table that does follow the category.
+    // It sits directly above the block it is about.
     expect(vehiclesNote.nextElementSibling).toHaveTextContent("APK-keuring overzicht");
     await user.click(screen.getByRole("tab", { name: /Kosten/ }));
     expect(screen.queryByTestId("category-filter-note")).toBeNull();

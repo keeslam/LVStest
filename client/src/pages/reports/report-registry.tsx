@@ -22,7 +22,18 @@ import { WaitlistReportCard } from "./waitlist-report-card";
 import { InvoiceInboxReportCard } from "./invoice-inbox-report-card";
 import { DeliveryReportCard } from "./delivery-report-card";
 import { DamageChecksReportCard } from "./damage-checks-report-card";
-import { LegacyReportSection, type LegacySection } from "./legacy-sections";
+import { ExpensesByCategoryReport } from "./legacy/expenses-by-category-report";
+import { ExpenseTrendReport } from "./legacy/expense-trend-report";
+import { RecentExpensesReport } from "./legacy/recent-expenses-report";
+import { VehicleUtilizationReport } from "./legacy/vehicle-utilization-report";
+import { MaintenanceCostByVehicleReport } from "./legacy/maintenance-cost-by-vehicle-report";
+import { ApkOverviewReport } from "./legacy/apk-overview-report";
+import { WarrantyReport } from "./legacy/warranty-report";
+import { CustomerImpactReport } from "./legacy/customer-impact-report";
+import { CustomerCostCategoriesReport } from "./legacy/customer-cost-categories-report";
+import { RecentCustomerReservationsReport } from "./legacy/recent-customer-reservations-report";
+import { TransportsReport } from "./legacy/transports-report";
+import { VehicleFinancialsReport } from "./legacy/vehicle-financials-report";
 
 export type ReportTabId =
   | "overview" | "expenses" | "vehicles" | "customers" | "transports" | "financial" | "fiscal" | "portal" | "office";
@@ -47,6 +58,8 @@ export interface ReportDef {
   badge?: ComponentType;
   /** The report uses the category filter. */
   usesCategory?: boolean;
+  /** A short line under the title, e.g. which filters do not apply. */
+  noteKey?: string;
 }
 
 // ---- Rights, the same rules the cards and the old tabs used ----
@@ -142,24 +155,29 @@ function MileageHistoryReport() {
   );
 }
 
-// TEMPORARY (Task 5 replaces these): the old inline sections, one per old tab.
-const legacy = (section: LegacySection): ComponentType => {
-  const Legacy = () => <LegacyReportSection section={section} />;
-  Legacy.displayName = `Legacy_${section}`;
-  return Legacy;
-};
-
-/** Every fixed report, in list order per tab. */
+/**
+ * Every fixed report, in list order per tab. Each report sees only the rights its numbers
+ * need; the file of a report states its rule.
+ */
 export const REPORTS: ReportDef[] = [
-  // Overzicht (for now the old operations numbers)
-  { id: "legacy-operations", tab: "overview", titleKey: "reportsPage.tabs.operations", usesCategory: true,
-    visible: (c) => reports(c) && vehicles(c) && reservations(c), Component: legacy("operations") },
-  // Kosten
-  { id: "legacy-expenses", tab: "expenses", titleKey: "reportsPage.tabs.expenses", usesCategory: true,
-    visible: (c) => reports(c) && expenses(c), Component: legacy("expenses") },
-  // Voertuigen (today all of these sat behind the vehicles right of the tab)
-  { id: "legacy-vehicles", tab: "vehicles", titleKey: "reportsPage.tabs.vehicles", usesCategory: true,
-    visible: (c) => reports(c) && vehicles(c), Component: legacy("vehicles") },
+  // Overzicht: Task 7 adds the overview report; until then the tab has none and is not shown.
+  // Kosten (all three read /api/expenses)
+  { id: "expenses-by-category", tab: "expenses", titleKey: "reportsPage.operations.expensesByCategoryTitle", usesCategory: true,
+    visible: (c) => reports(c) && expenses(c), Component: ExpensesByCategoryReport },
+  { id: "expense-trend", tab: "expenses", titleKey: "reportsPage.operations.expenseTrendsTitle", usesCategory: true,
+    noteKey: "reportsPage.shell.notes.lastThreeMonths",
+    visible: (c) => reports(c) && expenses(c), Component: ExpenseTrendReport },
+  { id: "expenses-in-period", tab: "expenses", titleKey: "reportsPage.reports.expensesInPeriod", usesCategory: true,
+    visible: (c) => reports(c) && expenses(c), Component: RecentExpensesReport },
+  // Voertuigen
+  { id: "vehicle-utilization", tab: "vehicles", titleKey: "reportsPage.common.vehicleUtilization",
+    visible: (c) => reports(c) && vehicles(c) && reservations(c), Component: VehicleUtilizationReport },
+  { id: "maintenance-cost-by-vehicle", tab: "vehicles", titleKey: "reportsPage.vehiclesTab.maintenanceCostsTitle", usesCategory: true,
+    visible: (c) => reports(c) && vehicles(c) && expenses(c), Component: MaintenanceCostByVehicleReport },
+  { id: "apk-overview", tab: "vehicles", titleKey: "reportsPage.vehiclesTab.apkOverviewTitle",
+    visible: (c) => reports(c) && vehicles(c), Component: ApkOverviewReport },
+  { id: "warranty", tab: "vehicles", titleKey: "reportsPage.vehiclesTab.warrantyOverviewTitle",
+    visible: (c) => reports(c) && vehicles(c), Component: WarrantyReport },
   { id: "occupancy", tab: "vehicles", titleKey: "fleetReports.occupancy.title",
     visible: (c) => reports(c) && vehicles(c) && reservations(c), Component: OccupancyReport },
   { id: "maintenance-outlook", tab: "vehicles", titleKey: "fleetReports.outlook.title",
@@ -170,17 +188,23 @@ export const REPORTS: ReportDef[] = [
     visible: (c) => c.isAdmin, Component: FleetMileageReport },
   { id: "mileage-history", tab: "vehicles", titleKey: "reportsPage.vehiclesTab.mileageHistory.title",
     visible: (c) => c.isAdmin, Component: MileageHistoryReport },
-  // Klanten (customer value is a money report: the report right only)
+  // Klanten. The customer reports are built from the customers' reservations; the cost columns
+  // also need the expenses. Customer value is a money report: the report right only.
+  { id: "customer-impact", tab: "customers", titleKey: "reportsPage.customersTab.impactTitle", usesCategory: true,
+    visible: (c) => reports(c) && customers(c) && reservations(c), Component: CustomerImpactReport },
+  { id: "customer-cost-categories", tab: "customers", titleKey: "reportsPage.customersTab.expenseCategoriesTitle", usesCategory: true,
+    visible: (c) => reports(c) && customers(c) && reservations(c) && expenses(c), Component: CustomerCostCategoriesReport },
+  { id: "customer-reservations", tab: "customers", titleKey: "reportsPage.reports.customerReservations",
+    visible: (c) => reports(c) && customers(c) && reservations(c), Component: RecentCustomerReservationsReport },
   { id: "customer-value", tab: "customers", titleKey: "customerReports.value.title",
     visible: reports, Component: CustomerValueReport },
-  { id: "legacy-customers", tab: "customers", titleKey: "reportsPage.tabs.customers", usesCategory: true,
-    visible: (c) => reports(c) && customers(c), Component: legacy("customers") },
-  // Transporten
-  { id: "legacy-transports", tab: "transports", titleKey: "reportsPage.tabs.transports",
-    visible: (c) => reports(c) && transports(c), Component: legacy("transports") },
+  // Transporten (the period and vehicle of the filter bar do not apply; the pane says so)
+  { id: "transports", tab: "transports", titleKey: "reportsPage.transportsTab.cardTitle",
+    noteKey: "reportsPage.shell.notes.periodVehicleIgnored",
+    visible: (c) => reports(c) && transports(c), Component: TransportsReport },
   // Financieel (money reports: the report right only)
-  { id: "legacy-financial", tab: "financial", titleKey: "reportsPage.tabs.financial",
-    visible: reports, Component: legacy("financial") },
+  { id: "vehicle-financials", tab: "financial", titleKey: "financialTab.table.title",
+    visible: reports, Component: VehicleFinancialsReport },
   { id: "fines", tab: "financial", titleKey: "moneyReports.fines.title", visible: reports, Component: FinesReport },
   { id: "extra-costs", tab: "financial", titleKey: "moneyReports.extraCosts.title", visible: reports, Component: ExtraCostsReport },
   { id: "transport-billing", tab: "financial", titleKey: "moneyReports.transport.title", visible: reports, Component: TransportBillingReport },

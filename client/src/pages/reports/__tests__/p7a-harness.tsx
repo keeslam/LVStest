@@ -64,7 +64,7 @@ export function renderWithClient(node: React.ReactNode) {
 }
 
 /**
- * Makes the print documents of /reports observable: the body HTML of every
+ * Makes the print documents of the report builder observable: the body HTML of every
  * report the print preview dialog (HtmlPreviewDialog) is given, in order.
  * jsdom does not render `srcdoc`, so the document is read from the attribute.
  * Call restore() when done.
@@ -85,6 +85,19 @@ export function capturePrints() {
   const observer = new MutationObserver(collect);
   observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["srcdoc"] });
   return { printed, restore: () => observer.disconnect() };
+}
+
+/**
+ * Task 5: every report prints through the Afdrukken button of the pane. Opens the print
+ * dialog and returns the body of the document in its preview (jsdom does not render
+ * `srcdoc`, so it is read from the attribute).
+ */
+export async function printPreviewBody(user: User): Promise<string> {
+  await user.click(await screen.findByTestId("button-report-print"));
+  const frame = await screen.findByTestId("print-preview-frame", undefined, { timeout: 4000 });
+  const html = frame.getAttribute("srcdoc") ?? "";
+  const body = /<body[^>]*>([\s\S]*)<\/body>/i.exec(html);
+  return body ? body[1] : html;
 }
 
 /** /reports without a tab or report in the URL. */

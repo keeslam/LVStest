@@ -2,12 +2,13 @@
  * Audit A-14-8 (package P7a), the /reports overview: one fleet base for the
  * averages, a caption that states it, "nieuw" instead of "+100%" when the
  * previous month was empty, and Dutch dates on the print documents.
+ * Task 5 (reports redesign): the same rules, through the reports of their own.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { UserRole } from "@shared/schema";
-import { installFetch, renderWithClient, capturePrints, vehicle, daysFromNow, chooseRange, openReport } from "./p7a-harness";
+import { installFetch, renderWithClient, printPreviewBody, vehicle, daysFromNow, chooseRange, openReport } from "./p7a-harness";
 
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: 1, username: "tester", role: UserRole.ADMIN, permissions: [], hidePrices: false }, isLoading: false }),
@@ -38,6 +39,7 @@ describe("/reports overview numbers (A-14-8)", () => {
   });
 
   it("divides the average cost per vehicle over the whole fleet and says so", async () => {
+    // Task 5: the average sits on Kosten > Kosten per categorie, the first report an admin sees.
     renderWithClient(<ReportsPage />);
     const caption = await screen.findByTestId("reports-basis-caption");
     await waitFor(() => expect(caption).toHaveTextContent("4 voertuigen"));
@@ -47,7 +49,10 @@ describe("/reports overview numbers (A-14-8)", () => {
   });
 
   it("shows 'nieuw' instead of +100% when the previous month had no costs", async () => {
+    const user = userEvent.setup();
     renderWithClient(<ReportsPage />);
+    // Task 5: Kostentrends is a report of its own on Kosten.
+    await openReport(user, "expenses", "expense-trend");
     const trend = await screen.findByTestId("reports-expense-trend");
     await waitFor(() => expect(within(trend).getAllByText("€ 40,00").length).toBeGreaterThan(0));
     expect(trend).not.toHaveTextContent("+100%");
@@ -56,42 +61,29 @@ describe("/reports overview numbers (A-14-8)", () => {
 });
 
 describe("/reports print documents (A-14-8)", () => {
-  it("writes the generated moment and the period in the house style, not 09/10/2026", async () => {
+  it("writes the period in the house style, not 09/10/2026", async () => {
     installFetch({ vehicles: fleet, expenses: [] });
-    // capture the document the iframe is given instead of opening a print dialog
-    const { printed, restore } = capturePrints();
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const user = userEvent.setup();
     renderWithClient(<ReportsPage />);
-    // Task 2: the header print buttons are gone; the APK print sits on the vehicles report.
-    await openReport(user, "vehicles", "legacy-vehicles");
-    await user.click(await screen.findByTestId("legacy-print-apk"));
-    await vi.advanceTimersByTimeAsync(1000);
-    vi.useRealTimers();
-    await waitFor(() => expect(printed.length).toBe(1));
-    expect(printed[0]).not.toMatch(/\d{2}\/\d{2}\/\d{4}/);
-    expect(printed[0]).toMatch(/\d{1,2} [a-z]{3}\.? \d{4} \d{2}:\d{2}/);
-    restore();
+    // Task 5: the APK overview is a report of its own and prints through Afdrukken of the pane.
+    await openReport(user, "vehicles", "apk-overview");
+    const printed = await printPreviewBody(user);
+    expect(printed).not.toMatch(/\d{2}\/\d{2}\/\d{4}/);
+    expect(printed).toMatch(/\d{1,2}-\d{1,2}-\d{4} t\/m \d{1,2}-\d{1,2}-\d{4}/);
   });
 });
 
-describe("/reports print header for 'Alle gegevens' (final wave A, item 9)", () => {
-  it("says 'Alle gegevens', not the 2000 - 2050 the preset is made of", async () => {
+describe("/reports basis line for 'Alle gegevens' (final wave A, item 9)", () => {
+  it("says 'Alle gegevens', not the 2000 - 2050 the range is made of", async () => {
     installFetch({ vehicles: fleet, expenses: [] });
-    const { printed, restore } = capturePrints();
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const user = userEvent.setup();
     renderWithClient(<ReportsPage />);
-    // Task 2: no "Alle gegevens" button any more; the same 2000 - 2050 range is chosen by hand.
+    // Task 5: the old print header is gone (every report prints the period of the filter bar);
+    // the basis line above the averages keeps the rule.
     await chooseRange(user, "2000-01-01", "2050-12-31");
-    await openReport(user, "vehicles", "legacy-vehicles");
-    await user.click(await screen.findByTestId("legacy-print-apk"));
-    await vi.advanceTimersByTimeAsync(1000);
-    vi.useRealTimers();
-    await waitFor(() => expect(printed.length).toBe(1));
-    expect(printed[0]).toContain("Datumbereik: Alle gegevens");
-    expect(printed[0]).not.toMatch(/2000|2050/);
-    restore();
+    const caption = await screen.findByTestId("reports-basis-caption");
+    await waitFor(() => expect(caption).toHaveTextContent("Alle gegevens"));
+    expect(caption.textContent).not.toMatch(/2000|2050/);
   });
 });
 
@@ -102,16 +94,15 @@ describe("/reports customer impact print (A-14-8)", () => {
       customers: [{ id: 1, name: "Klant Met Boeking" }, { id: 2, name: "Klant Zonder Boeking" }],
       reservations: [{ id: 1, customerId: 1, vehicleId: 1, startDate: daysFromNow(-3), endDate: daysFromNow(-1), status: "completed" }],
     });
-    const { printed, restore } = capturePrints();
     const user = userEvent.setup();
     renderWithClient(<ReportsPage />);
     // Task 2: the default period is this month now; take the last 30 days like the old default.
     await chooseRange(user, daysFromNow(-30), daysFromNow(0));
-    await openReport(user, "customers", "legacy-customers");
-    await user.click(await screen.findByTestId("legacy-print-customer-impact"));
-    await waitFor(() => expect(printed.length).toBe(1), { timeout: 4000 });
-    expect(printed[0]).toContain("Klant Met Boeking");
-    expect(printed[0]).not.toContain("Klant Zonder Boeking");
-    restore();
+    // Task 5: Klantimpactanalyse is a report of its own and prints through Afdrukken of the pane.
+    await openReport(user, "customers", "customer-impact");
+    await within(await screen.findByTestId("customer-impact-table")).findByText("Klant Met Boeking");
+    const printed = await printPreviewBody(user);
+    expect(printed).toContain("Klant Met Boeking");
+    expect(printed).not.toContain("Klant Zonder Boeking");
   });
 });

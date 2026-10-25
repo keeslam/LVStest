@@ -337,7 +337,7 @@
     },
     "chart": {
       "title": "Revenue versus expenses per vehicle",
-      "description": "Top 15 vehicles by revenue in the selected period",
+      "description": "Top 10 vehicles by revenue in the selected period",
       "revenue": "Revenue",
       "expenses": "Expenses",
       "margin": "Margin"
@@ -653,7 +653,20 @@
       "loadingReport": "Loading report...",
       "reportList": "Reports",
       "chooseReport": "Choose a report",
-      "noReports": "You do not have the rights to see reports."
+      "noReports": "You do not have the rights to see reports.",
+      "notes": {
+        "periodVehicleIgnored": "Period and vehicle do not apply to this report.",
+        "lastThreeMonths": "Always the last 3 months."
+      }
+    },
+    "reports": {
+      "expensesInPeriod": "Costs in this period",
+      "customerReservations": "Customer reservations in this period",
+      "customerReservationsDesc": "Reservations in this period that have already started, newest first.",
+      "avgUtilization": "Average utilization",
+      "total": "Total",
+      "selectAll": "Select all",
+      "selectRow": "Select row"
     }
   },
   "moneyReports": {

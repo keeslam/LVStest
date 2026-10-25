@@ -345,7 +345,7 @@
     },
     "chart": {
       "title": "Receitas versus despesas por veículo",
-      "description": "Top 15 de veículos por receitas no período escolhido",
+      "description": "Top 10 de veículos por receitas no período escolhido",
       "revenue": "Receitas",
       "expenses": "Despesas",
       "margin": "Margem"
@@ -665,7 +665,20 @@
       "loadingReport": "A carregar relatório...",
       "reportList": "Relatórios",
       "chooseReport": "Escolha um relatório",
-      "noReports": "Não tem permissões para ver relatórios."
+      "noReports": "Não tem permissões para ver relatórios.",
+      "notes": {
+        "periodVehicleIgnored": "O período e o veículo não se aplicam a este relatório.",
+        "lastThreeMonths": "Sempre os últimos 3 meses."
+      }
+    },
+    "reports": {
+      "expensesInPeriod": "Custos neste período",
+      "customerReservations": "Reservas de clientes neste período",
+      "customerReservationsDesc": "Reservas deste período que já começaram, as mais recentes primeiro.",
+      "avgUtilization": "Utilização média",
+      "total": "Total",
+      "selectAll": "Marcar tudo",
+      "selectRow": "Marcar linha"
     }
   },
   "moneyReports": {

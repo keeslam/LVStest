@@ -72,7 +72,8 @@ describe("reports shell - admin", () => {
     expect(bar.className).toContain("sticky");
     expect(bar.className).toContain("top-0");
     const tabs = screen.getAllByRole("tab").map((tab) => tab.textContent?.trim());
-    expect(tabs).toEqual(["Overzicht", "Kosten", "Voertuigen", "Klanten", "Transporten", "Financieel", "Fiscaal", "Portaal", "Kantoor"]);
+    // Task 5: Overzicht has no report until Task 7, so the tab is not shown yet.
+    expect(tabs).toEqual(["Kosten", "Voertuigen", "Klanten", "Transporten", "Financieel", "Fiscaal", "Portaal", "Kantoor"]);
 
     await user.click(screen.getByTestId("tab-report-vehicles"));
     const nav = await screen.findByTestId("report-nav");

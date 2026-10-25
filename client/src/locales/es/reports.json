@@ -345,7 +345,7 @@
     },
     "chart": {
       "title": "Ingresos frente a gastos por vehículo",
-      "description": "Los 15 vehículos con más ingresos en el periodo elegido",
+      "description": "Los 10 vehículos con más ingresos en el periodo elegido",
       "revenue": "Ingresos",
       "expenses": "Gastos",
       "margin": "Margen"
@@ -665,7 +665,20 @@
       "loadingReport": "Cargando informe...",
       "reportList": "Informes",
       "chooseReport": "Elige un informe",
-      "noReports": "No tienes permisos para ver informes."
+      "noReports": "No tienes permisos para ver informes.",
+      "notes": {
+        "periodVehicleIgnored": "El periodo y el vehículo no se aplican a este informe.",
+        "lastThreeMonths": "Siempre los últimos 3 meses."
+      }
+    },
+    "reports": {
+      "expensesInPeriod": "Costes en este periodo",
+      "customerReservations": "Reservas de clientes en este periodo",
+      "customerReservationsDesc": "Reservas de este periodo que ya han empezado, las más recientes primero.",
+      "avgUtilization": "Utilización media",
+      "total": "Total",
+      "selectAll": "Marcar todo",
+      "selectRow": "Marcar fila"
     }
   },
   "moneyReports": {

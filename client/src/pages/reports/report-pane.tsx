@@ -18,6 +18,9 @@ export function ReportPane({ def }: ReportPaneProps) {
           <h2 className="text-xl font-semibold" data-testid="report-pane-title">{title}</h2>
           <PrintButtonInner title={title} />
         </div>
+        {def.noteKey && (
+          <p className="-mt-2 text-sm text-muted-foreground" data-testid="report-pane-note">{t(def.noteKey)}</p>
+        )}
         <Report />
       </section>
     </ReportPrintProvider>

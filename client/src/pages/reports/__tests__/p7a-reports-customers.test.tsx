@@ -43,20 +43,20 @@ const fixture = {
   ],
 };
 
-async function openCustomersTab() {
+async function openCustomersTab(report: string) {
   const user = userEvent.setup();
   renderWithClient(<ReportsPage />);
   // Task 2: the default period is this month now; take the last 30 days like the old default,
-  // and open the old customers report (the tab opens on Klantwaarde).
+  // Task 5: every block of the old customers tab is a report of its own.
   await chooseRange(user, daysFromNow(-30), daysFromNow(0));
-  await openReport(user, "customers", "legacy-customers");
+  await openReport(user, "customers", report);
   return user;
 }
 
 describe("Klanten tab (A-14-5)", () => {
   it("has a cost column per category in the data and fills it", async () => {
     installFetch(fixture);
-    await openCustomersTab();
+    await openCustomersTab("customer-cost-categories");
     const table = await screen.findByTestId("customer-category-costs");
     const headers = within(table).getAllByRole("columnheader").map((h) => h.textContent);
     expect(headers).toEqual(expect.arrayContaining(["Brandstof", "Tol"]));
@@ -68,7 +68,7 @@ describe("Klanten tab (A-14-5)", () => {
 
   it("writes reservation statuses in Dutch", async () => {
     installFetch(fixture);
-    await openCustomersTab();
+    await openCustomersTab("customer-reservations");
     const list = await screen.findByTestId("customer-recent-reservations");
     expect(within(list).getByText("Voltooid")).toBeInTheDocument();
     expect(within(list).getByText("Opgehaald")).toBeInTheDocument();
@@ -77,7 +77,7 @@ describe("Klanten tab (A-14-5)", () => {
 
   it("does not list a reservation that starts in the future as recent", async () => {
     installFetch(fixture);
-    const user = await openCustomersTab();
+    const user = await openCustomersTab("customer-reservations");
     // the period filter must cover the future, otherwise the row is gone for another reason
     await chooseRange(user, daysFromNow(-30), daysFromNow(30));
     // the reservations of the new period arrive after the change
@@ -91,7 +91,7 @@ describe("Klanten tab (A-14-5)", () => {
 
   it("puts a space between the cost per day and the impact label", async () => {
     installFetch(fixture);
-    await openCustomersTab();
+    await openCustomersTab("customer-impact");
     const impact = await screen.findByTestId("customer-impact-table");
     const cell = within(impact).getByText("Klant Een").closest("tr")!.lastElementChild!;
     expect(cell.textContent).toMatch(/€\s?\d+,\d{2}\s+(Laag|Gemiddeld|Hoog)/);

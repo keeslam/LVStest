@@ -345,7 +345,7 @@
     },
     "chart": {
       "title": "Venituri față de cheltuieli pe vehicul",
-      "description": "Primele 15 vehicule după venituri în perioada aleasă",
+      "description": "Primele 10 vehicule după venituri în perioada aleasă",
       "revenue": "Venituri",
       "expenses": "Cheltuieli",
       "margin": "Marjă"
@@ -665,7 +665,20 @@
       "loadingReport": "Se încarcă raportul...",
       "reportList": "Rapoarte",
       "chooseReport": "Alege un raport",
-      "noReports": "Nu ai drepturi să vezi rapoarte."
+      "noReports": "Nu ai drepturi să vezi rapoarte.",
+      "notes": {
+        "periodVehicleIgnored": "Perioada și vehiculul nu se aplică acestui raport.",
+        "lastThreeMonths": "Mereu ultimele 3 luni."
+      }
+    },
+    "reports": {
+      "expensesInPeriod": "Costuri în această perioadă",
+      "customerReservations": "Rezervările clienților în această perioadă",
+      "customerReservationsDesc": "Rezervările din această perioadă care au început deja, cele mai noi primele.",
+      "avgUtilization": "Utilizare medie",
+      "total": "Total",
+      "selectAll": "Bifează tot",
+      "selectRow": "Bifează rândul"
     }
   },
   "moneyReports": {

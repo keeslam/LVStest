@@ -27,7 +27,8 @@ vi.mock("@/lib/csv", async (importOriginal) => {
 
 import { VehicleDetails } from "@/components/vehicles/vehicle-details";
 import { MileageHistoryPanel } from "@/components/vehicles/mileage-history-panel";
-import { FinancialTab } from "@/pages/reports/financial-tab";
+import { VehicleFinancialsReport } from "@/pages/reports/legacy/vehicle-financials-report";
+import { ReportFiltersProvider } from "@/pages/reports/report-filters";
 import { mileageHistoryHtml } from "@/lib/mileage-history-print";
 
 function json(body: unknown, status = 200) {
@@ -291,11 +292,12 @@ describe("mileageHistoryHtml", () => {
 });
 
 describe("Financieel heeft geen km-kaart meer", () => {
-  const range = { from: new Date("2026-03-01T12:00:00Z"), to: new Date("2026-03-31T12:00:00Z") };
+  // Task 5: the old Financieel tab is the report "Kosten en opbrengst per voertuig" now.
+  const range = { from: "2026-03-01", to: "2026-03-31" };
 
   it("voor admin wordt /api/reports/mileage-per-month niet gevraagd en is de kaart er niet", async () => {
     role = UserRole.ADMIN;
-    render(<QueryClientProvider client={client()}><FinancialTab dateRange={range} selectedVehicle="all" /></QueryClientProvider>);
+    render(<QueryClientProvider client={client()}><ReportFiltersProvider initial={range}><VehicleFinancialsReport /></ReportFiltersProvider></QueryClientProvider>);
     await waitFor(() => expect(calledWith("/api/reports/vehicle-financials")).toBe(true));
     await new Promise((r) => setTimeout(r, 50));
     expect(calledWith("/api/reports/mileage-per-month")).toBe(false);

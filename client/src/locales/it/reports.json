@@ -345,7 +345,7 @@
     },
     "chart": {
       "title": "Fatturato e costi per veicolo",
-      "description": "I primi 15 veicoli per fatturato nel periodo scelto",
+      "description": "I primi 10 veicoli per fatturato nel periodo scelto",
       "revenue": "Fatturato",
       "expenses": "Costi",
       "margin": "Margine"
@@ -665,7 +665,20 @@
       "loadingReport": "Caricamento report...",
       "reportList": "Report",
       "chooseReport": "Scegli un report",
-      "noReports": "Non hai i permessi per vedere i report."
+      "noReports": "Non hai i permessi per vedere i report.",
+      "notes": {
+        "periodVehicleIgnored": "Periodo e veicolo non valgono per questo report.",
+        "lastThreeMonths": "Sempre gli ultimi 3 mesi."
+      }
+    },
+    "reports": {
+      "expensesInPeriod": "Costi in questo periodo",
+      "customerReservations": "Prenotazioni dei clienti in questo periodo",
+      "customerReservationsDesc": "Prenotazioni di questo periodo già iniziate, le più recenti prima.",
+      "avgUtilization": "Utilizzo medio",
+      "total": "Totale",
+      "selectAll": "Seleziona tutto",
+      "selectRow": "Seleziona riga"
     }
   },
   "moneyReports": {

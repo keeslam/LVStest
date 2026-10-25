@@ -61,15 +61,18 @@ function withClient(node: React.ReactNode) {
 // Reports redesign Task 2: a report the user may not see is not in the list, and a tab
 // without a visible report is not shown. Where the old tab showed NoDataAccess, the tab
 // (or the report in its list) is now absent; the queries still do not fire.
-describe("/reports — the overview (old operations) needs view_vehicles and view_reservations, not view_reports", () => {
-  it("fires no /api/vehicles or /api/reservations and offers no Overzicht with view_reports alone", async () => {
+// Task 5: the old operations numbers are Voertuigbenutting (vehicles + reservations) and the
+// Kosten reports; there is no Overzicht report until Task 7.
+describe("/reports — vehicle utilization needs view_vehicles and view_reservations, not view_reports", () => {
+  it("fires no /api/vehicles or /api/reservations and offers no utilization with view_reports alone", async () => {
     role = UserRole.USER;
     permissions = [UserPermission.VIEW_REPORTS];
     withClient(<ReportsPage />);
 
     expect(await screen.findByTestId("tab-report-financial")).toBeInTheDocument();
     expect(screen.queryByTestId("tab-report-overview")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("report-nav-item-legacy-operations")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("tab-report-vehicles")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("report-nav-item-vehicle-utilization")).not.toBeInTheDocument();
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(calledWith("/api/vehicles")).toBe(false);
     expect(calledWith("/api/reservations")).toBe(false);
@@ -122,7 +125,7 @@ describe("/reports — the vehicles/customers/transports tabs follow their own f
     expect(calledWith("/api/vehicles")).toBe(false);
   });
 
-  it("leaves the old customers report out of the list without view_customers, and fires no /api/customers", async () => {
+  it("leaves the customer reports out of the list without view_customers, and fires no /api/customers", async () => {
     role = UserRole.USER;
     const user = userEvent.setup();
 
@@ -130,7 +133,9 @@ describe("/reports — the vehicles/customers/transports tabs follow their own f
     withClient(<ReportsPage />);
     await user.click(screen.getByRole("tab", { name: /Klanten/i }));
     expect(await screen.findByTestId("report-nav")).toBeInTheDocument();
-    expect(screen.queryByTestId("report-nav-item-legacy-customers")).not.toBeInTheDocument();
+    for (const id of ["customer-impact", "customer-cost-categories", "customer-reservations"]) {
+      expect(screen.queryByTestId(`report-nav-item-${id}`)).not.toBeInTheDocument();
+    }
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(calledWith("/api/customers")).toBe(false);
   });
@@ -142,7 +147,7 @@ describe("/reports — the vehicles/customers/transports tabs follow their own f
     withClient(<ReportsPage />);
     await user.click(screen.getByRole("tab", { name: /Klanten/i }));
     expect(await screen.findByTestId("card-customer-value-report")).toBeInTheDocument();
-    expect(screen.queryByTestId("report-nav-item-legacy-customers")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("report-nav-item-customer-impact")).not.toBeInTheDocument();
   });
 
   it("shows no NoDataAccess in the transports tab and fires /api/transports with either family", async () => {

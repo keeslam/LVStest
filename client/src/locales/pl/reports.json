@@ -353,7 +353,7 @@
     },
     "chart": {
       "title": "Przychód a koszty według pojazdu",
-      "description": "15 pojazdów o najwyższym przychodzie w wybranym okresie",
+      "description": "10 pojazdów o najwyższym przychodzie w wybranym okresie",
       "revenue": "Przychód",
       "expenses": "Koszty",
       "margin": "Marża"
@@ -677,7 +677,20 @@
       "loadingReport": "Ładowanie raportu...",
       "reportList": "Raporty",
       "chooseReport": "Wybierz raport",
-      "noReports": "Nie masz uprawnień do przeglądania raportów."
+      "noReports": "Nie masz uprawnień do przeglądania raportów.",
+      "notes": {
+        "periodVehicleIgnored": "Okres i pojazd nie dotyczą tego raportu.",
+        "lastThreeMonths": "Zawsze ostatnie 3 miesiące."
+      }
+    },
+    "reports": {
+      "expensesInPeriod": "Koszty w tym okresie",
+      "customerReservations": "Rezerwacje klientów w tym okresie",
+      "customerReservationsDesc": "Rezerwacje z tego okresu, które już się zaczęły, od najnowszych.",
+      "avgUtilization": "Średnie wykorzystanie",
+      "total": "Razem",
+      "selectAll": "Zaznacz wszystko",
+      "selectRow": "Zaznacz wiersz"
     }
   },
   "moneyReports": {
