@@ -7,7 +7,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { eq, inArray } from "drizzle-orm";
 import { db } from "../db";
 import {
-  reservations, interactiveDamageChecks, vehicleMileageReadings, vehicleTransports, fines, savedReports,
+  reservations, vehicles, interactiveDamageChecks, vehicleMileageReadings, vehicleTransports, fines, savedReports,
 } from "../../shared/schema";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureVehicle, createFixtureCustomer, createFixtureReservation, cleanupFixtures } from "./helpers/fixtures";
@@ -57,6 +57,14 @@ describe("report builder sources", () => {
       { vehicleId: V, mileage: 10400, recordedAt: new Date("2019-03-03T10:00:00Z"), source: "manual", voidedAt: new Date() },
     ]).returning({ id: vehicleMileageReadings.id });
     mileageIds.push(...readings.map((r) => r.id));
+
+    const plate = (await db.select().from(vehicles).where(eq(vehicles.id, V)))[0].licensePlate;
+    const fineRows = await db.insert(fines).values([
+      { licensePlate: plate, vehicleId: V, offenceAt: new Date("2019-01-31T23:30:00Z"), description: "fixt", amount: "40", adminFee: "10", totalAmount: "50", status: "new" },
+      { licensePlate: plate, vehicleId: V, offenceAt: new Date("2019-02-10T10:00:00Z"), description: "fixt", amount: "25", adminFee: "5", totalAmount: "30", status: "linked" },
+      { licensePlate: plate, vehicleId: V, offenceAt: new Date("2019-03-05T10:00:00Z"), description: "fixt", amount: "25", adminFee: "0", totalAmount: "25", status: "new" },
+    ] as any).returning({ id: fines.id });
+    fineIds.push(...fineRows.map((f) => f.id));
 
     const transports = await db.insert(vehicleTransports).values([
       { vehicleId: V, transportType: "delivery", status: "scheduled", scheduledDate: "2019-03-01" },
@@ -132,6 +140,54 @@ describe("report builder sources", () => {
     if (status === 403 && (perms as string[]).some((p) => p.endsWith("_reports"))) {
       expect(res.body).toMatchObject({ code: "REPORT_SOURCE_RIGHT_REQUIRED", source: id });
     }
+  });
+
+  it("per maand in kantoortijd, gesorteerd", async () => {
+    const res = await admin.post("/api/reports/execute").send({
+      name: "t", dataSources: ["fines"],
+      columns: [{ table: "fines", field: "offenceAt" }, { table: "fines", field: "totalAmount", aggregation: "SUM" }],
+      filters: [{ table: "fines", field: "vehicleId", operator: "equals", value: V }],
+      groupBy: [{ table: "fines", field: "offenceAt", period: "month" }],
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.map((r: any) => [r.offenceAt, Number(r.totalAmount)])).toEqual([["2019-02", 80], ["2019-03", 25]]);
+  });
+
+  it("groeperen op tekst, met Aantal", async () => {
+    const res = await admin.post("/api/reports/execute").send({
+      name: "t", dataSources: ["fines"],
+      columns: [{ table: "fines", field: "status" }, { table: "fines", field: "id", aggregation: "COUNT" }],
+      filters: [{ table: "fines", field: "vehicleId", operator: "equals", value: V }],
+      groupBy: [{ table: "fines", field: "status" }],
+    });
+    expect(res.body.map((r: any) => [r.status, Number(r.id)])).toEqual([["linked", 1], ["new", 2]]);
+  });
+
+  it("een kolom buiten de groep geeft een duidelijke melding", async () => {
+    const res = await admin.post("/api/reports/execute").send({
+      name: "t", dataSources: ["fines"],
+      columns: [{ table: "fines", field: "status" }, { table: "fines", field: "id", aggregation: "COUNT" }], filters: [],
+    });
+    expect(res.status).toBe(400);
+    expect(res.body).toMatchObject({ code: "REPORT_COLUMN_NOT_GROUPED", field: "fines.status" });
+  });
+
+  it("per maand alleen bij een datumveld, alleen 'month'", async () => {
+    const base = { name: "t", dataSources: ["fines"], columns: [{ table: "fines", field: "status" }], filters: [] };
+    const a = await admin.post("/api/reports/execute").send({ ...base, groupBy: [{ table: "fines", field: "status", period: "month" }] });
+    expect(a.body).toMatchObject({ code: "REPORT_PERIOD_NOT_DATE", field: "fines.status" });
+    const b = await admin.post("/api/reports/execute").send({ ...base, columns: [{ table: "fines", field: "offenceAt" }], groupBy: [{ table: "fines", field: "offenceAt", period: "week" }] });
+    expect(b.body).toMatchObject({ code: "REPORT_PERIOD_UNKNOWN", field: "fines.offenceAt" });
+  });
+
+  it("tekstdatum per maand (transporten)", async () => {
+    const res = await admin.post("/api/reports/execute").send({
+      name: "t", dataSources: ["transports"],
+      columns: [{ table: "vehicle_transports", field: "scheduledDate" }, { table: "vehicle_transports", field: "id", aggregation: "COUNT" }],
+      filters: [{ table: "vehicle_transports", field: "vehicleId", operator: "equals", value: V }],
+      groupBy: [{ table: "vehicle_transports", field: "scheduledDate", period: "month" }],
+    });
+    expect(res.body.map((r: any) => [r.scheduledDate, Number(r.id)])).toEqual([["2019-03", 2]]);
   });
 
   it("elke genoemde bron telt, niet alleen de eerste", async () => {

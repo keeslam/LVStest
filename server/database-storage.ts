@@ -92,6 +92,7 @@ import {
   type CascadeSnapshot,
 } from "./services/cascade-snapshot";
 import { getDataSource, getField as getReportField, RENAMED_REPORT_FIELDS, REMOVED_REPORT_FIELDS } from "../shared/report-builder-config";
+import { officeDaySql, textDaySql } from "./services/reports/report-kit";
 import { buildDefaultDamageCheckCanvasFields } from "../shared/damage-check-default-layout";
 
 export class ReportValidationError extends Error {
@@ -6661,9 +6662,63 @@ export class DatabaseStorage implements IStorage {
     const identFor = (table: string, field: string) =>
       sql`${sql.identifier(mainTable)}.${sql.identifier(resolveColumn(table, field))}`;
 
+    // A group expression. Per month: the calendar month in office time for a timestamp
+    // column, the month of a yyyy-mm-dd text for a text date; plain: the column itself.
+    const groupExpr = (table: string, field: string, period?: string) => {
+      const ident = identFor(table, field);
+      if (!period) return ident;
+      const col = tableObj[canonField(table, field)];
+      const isTimestamp = col?.columnType === "PgTimestamp" || col?.columnType === "PgTimestampString";
+      return isTimestamp
+        ? sql`to_char(${officeDaySql(ident)}, 'YYYY-MM')`
+        : sql`to_char(${textDaySql(ident)}, 'YYYY-MM')`;
+    };
+
+    // Grouping: validate the period and the field, canonicalise the field name.
+    const groups: { table: string; field: string; period?: "month" }[] = (Array.isArray(groupBy) ? groupBy : []).map((g: any) => {
+      const field = canonField(g.table, g.field);
+      resolveColumn(g.table, field);
+      const key = `${g.table}.${field}`;
+      let period: "month" | undefined;
+      if (g.period !== undefined && g.period !== null) {
+        if (g.period !== "month") {
+          throw new ReportValidationError(
+            `Groeperen per ${String(g.period)} kan niet; kies per maand.`,
+            "REPORT_PERIOD_UNKNOWN",
+            key,
+          );
+        }
+        if (getReportField(g.table, field)?.type !== "date") {
+          throw new ReportValidationError(
+            `Groeperen per maand kan alleen op een datumveld, en ${key} is geen datum.`,
+            "REPORT_PERIOD_NOT_DATE",
+            key,
+          );
+        }
+        period = "month";
+      }
+      return { table: g.table, field, period };
+    });
+    const findGroup = (table: string, field: string) =>
+      groups.find((g) => g.table === table && g.field === canonField(table, field));
+
+    // With a grouping or a calculated column, every plain column must be in the grouping.
+    if (groups.length > 0 || columns.some((c: any) => c.aggregation)) {
+      for (const col of columns) {
+        if (!col.aggregation && !findGroup(col.table, col.field)) {
+          const key = `${col.table}.${canonField(col.table, col.field)}`;
+          throw new ReportValidationError(
+            `De kolom ${key} staat niet in de groepering. Kies er een berekening bij of groepeer erop.`,
+            "REPORT_COLUMN_NOT_GROUPED",
+            key,
+          );
+        }
+      }
+    }
+
     // SELECT list — every column is aliased to its camelCase config name so the
     // frontend can read row[col.field] regardless of the DB column casing.
-    const selectParts = columns.map((col: any) => {
+    const selectParts: SQL[] = columns.map((col: any) => {
       const ident = identFor(col.table, col.field);
       const alias = sql.identifier(String(col.field));
       if (col.aggregation) {
@@ -6691,7 +6746,8 @@ export class DatabaseStorage implements IStorage {
             throw new ReportValidationError(`Unknown aggregation: ${col.aggregation}`);
         }
       }
-      return sql`${ident} AS ${alias}`;
+      const group = findGroup(col.table, col.field);
+      return sql`${group?.period ? groupExpr(col.table, col.field, group.period) : ident} AS ${alias}`;
     });
 
     // WHERE clause — operators validated per-field against the config,
@@ -6784,20 +6840,37 @@ export class DatabaseStorage implements IStorage {
     // The source's fixed conditions (recycle bin, maintenance blocks only, voided).
     whereParts.push(...(reportSource.baseWhere?.(Array.isArray(filters) ? filters : []) ?? []));
 
-    const groupParts = (Array.isArray(groupBy) ? groupBy : []).map((g: any) =>
-      identFor(g.table, g.field)
-    );
+    // A per-month expression holds a bound time zone; the same expression written twice
+    // would get two parameters and Postgres would not see them as equal. So a month group
+    // is referred to by its position in the select list (a hidden column when the report
+    // does not show it); a plain group is the column itself.
+    const hiddenAliases: string[] = [];
+    const groupRefs: SQL[] = groups.map((g) => {
+      if (!g.period) return identFor(g.table, g.field);
+      const position = columns.findIndex((c: any) => !c.aggregation && c.table === g.table && canonField(c.table, c.field) === g.field);
+      if (position >= 0) return sql.raw(String(position + 1));
+      const alias = `__group_${hiddenAliases.length}`;
+      hiddenAliases.push(alias);
+      selectParts.push(sql`${groupExpr(g.table, g.field, g.period)} AS ${sql.identifier(alias)}`);
+      return sql.raw(String(selectParts.length));
+    });
 
     let query = sql`SELECT ${sql.join(selectParts, sql`, `)} FROM ${reportSource.from}`;
     if (whereParts.length > 0) {
       query = sql`${query} WHERE ${sql.join(whereParts, sql` AND `)}`;
     }
-    if (groupParts.length > 0) {
-      query = sql`${query} GROUP BY ${sql.join(groupParts, sql`, `)}`;
+    if (groupRefs.length > 0) {
+      query = sql`${query} GROUP BY ${sql.join(groupRefs, sql`, `)}`;
+      query = sql`${query} ORDER BY ${sql.join(groupRefs.map((g) => sql`${g} ASC NULLS LAST`), sql`, `)}`;
     }
     query = sql`${query} LIMIT 1000`;
 
     const results = await db.execute(query);
+    if (hiddenAliases.length > 0) {
+      for (const row of results.rows as Record<string, unknown>[]) {
+        for (const alias of hiddenAliases) delete row[alias];
+      }
+    }
     return results.rows;
   }
 
