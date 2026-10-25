@@ -28,6 +28,7 @@ import { extraCostsReport } from "../services/reports/extra-costs-report";
 import { transportBillingReport } from "../services/reports/transport-billing-report";
 import { portalRequestsReport } from "../services/reports/portal-requests-report";
 import { waitlistReport } from "../services/reports/waitlist-report";
+import { invoiceInboxRunsReport } from "../services/reports/invoice-inbox-runs-report";
 import { occupancyReport } from "../services/reports/occupancy-report";
 import { maintenanceOutlookReport } from "../services/reports/maintenance-outlook-report";
 import { fleetMileageReport } from "../services/reports/fleet-mileage-report";
@@ -75,6 +76,9 @@ export function registerReportRoutes(app: Express): void {
   const portalReportGuards = [reportRight, hasPermission(UserPermission.VIEW_PORTAL, UserPermission.MANAGE_PORTAL)];
   mountReport(app, "/api/reports/portal-requests", portalReportGuards, portalRequestsReport);
   mountReport(app, "/api/reports/waitlist", portalReportGuards, waitlistReport);
+  // Rapporten fase 5: invoice inbox pickup rounds need the report right and the source right of GET /api/expenses/inbox/runs.
+  const inboxRunGuards = [reportRight, hasPermission(UserPermission.MANAGE_EXPENSES, UserPermission.MANAGE_SETTINGS)];
+  mountReport(app, "/api/reports/invoice-inbox-runs", inboxRunGuards, invoiceInboxRunsReport);
 
 
   // ============================================
