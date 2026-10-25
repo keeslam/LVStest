@@ -37,8 +37,8 @@ export const ENTITY_RIGHTS: Record<EntityKind, readonly string[]> = {
 };
 
 /**
- * The full record in the app. A driver opens on the Bestuurders tab of its customer, so its
- * address needs the customer id (known once the driver is loaded).
+ * The full record in the app. A driver opens in its own view on the Bestuurders tab of its
+ * customer, so its address needs the customer id (known once the driver is loaded).
  */
 export function entityUrl(kind: EntityKind, id: number, customerId?: number | null): string | null {
   switch (kind) {
@@ -47,7 +47,7 @@ export function entityUrl(kind: EntityKind, id: number, customerId?: number | nu
     case "reservation": return `/reservations?reservation=${id}`;
     // The address a notification about a fine already uses (pages/fines/index.tsx).
     case "fine": return `/fines?bekeuring=${id}`;
-    case "driver": return customerId ? `/customers?customer=${customerId}&tab=drivers` : null;
+    case "driver": return customerId ? `/customers?customer=${customerId}&tab=drivers&driver=${id}` : null;
     // The invoice check dialog of the invoices by e-mail (components/expenses/invoice-inbox-dialog.tsx).
     case "invoice": return `/expenses?invoice=${id}`;
   }
@@ -69,7 +69,8 @@ const isNotFound = (v: unknown): v is typeof NOT_FOUND => typeof v === "object" 
 /** A gone record is an answer here, not a failure: no error toast, the dialog says so. */
 async function fetchRecord<T>(url: string): Promise<Loaded<T>> {
   try {
-    return (await apiRequest("GET", url)).json();
+    // Awaited here, so a body that is not JSON fails inside this try as well.
+    return await (await apiRequest("GET", url)).json();
   } catch (error) {
     if (parseApiError(error).status === 404) return NOT_FOUND;
     throw error;

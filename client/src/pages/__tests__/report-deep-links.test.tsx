@@ -14,9 +14,8 @@ import { memoryLocation } from "wouter/memory-location";
 import { getQueryFn } from "@/lib/queryClient";
 import { GlobalDialogProvider, useGlobalDialog } from "@/contexts/GlobalDialogContext";
 
-vi.mock("@/hooks/use-auth", () => ({
-  useAuth: () => ({ user: { id: 1, username: "tester", role: "admin", permissions: [], hidePrices: false }, isLoading: false }),
-}));
+const auth = vi.hoisted(() => ({ user: { id: 1, username: "tester", role: "admin", permissions: [] as string[], hidePrices: false } }));
+vi.mock("@/hooks/use-auth", () => ({ useAuth: () => ({ user: auth.user, isLoading: false }) }));
 vi.mock("@/components/vehicles/vehicle-view-dialog", () => ({
   VehicleViewDialog: ({ open, vehicleId }: { open: boolean; vehicleId: number | null }) =>
     (open ? <div data-testid="vehicle-view-dialog">{vehicleId}</div> : null),
@@ -28,6 +27,7 @@ vi.mock("@/components/expenses/invoice-review-dialog", () => ({
 import VehiclesIndex from "@/pages/vehicles/index";
 import ReservationCalendarPage from "@/pages/reservations/calendar";
 import { InvoiceInboxButton } from "@/components/expenses/invoice-inbox-dialog";
+import CustomersIndex from "@/pages/customers/index";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 const pathOf = (input: unknown) => (typeof input === "string" ? input : (input as Request)?.url ?? "").replace(/^https?:\/\/[^/]+/, "");
@@ -38,6 +38,7 @@ const FLEET = [7, 8].map((id) => ({
 }));
 
 beforeEach(() => {
+  auth.user = { id: 1, username: "tester", role: "admin", permissions: [], hidePrices: false };
   sessionStorage.setItem("notCollectedDialogShown", "1");
   vi.stubGlobal("fetch", vi.fn(async (input: unknown) => {
     const path = pathOf(input).split("?")[0];
@@ -58,8 +59,11 @@ function client() {
 }
 
 let reservationDialog: { open: boolean; id: number | null } | null = null;
+let customerDialog: unknown = null;
 function ReservationDialogProbe() {
-  reservationDialog = useGlobalDialog().dialogState.reservation;
+  const { dialogState } = useGlobalDialog();
+  reservationDialog = dialogState.reservation;
+  customerDialog = dialogState.customer;
   return null;
 }
 
@@ -93,6 +97,21 @@ describe("deep links from a report quick view", () => {
     renderAt("/reservations?reservation=12", <ReservationCalendarPage />);
     await waitFor(() => expect(reservationDialog).toEqual({ open: true, id: 12 }));
     expect(window.location.search).toBe("");
+  });
+
+  it("/customers?customer=4&tab=drivers&driver=9 opens customer 4 on that driver and cleans the address", async () => {
+    renderAt("/customers?customer=4&tab=drivers&driver=9", <CustomersIndex />);
+    await waitFor(() => expect(customerDialog).toEqual({ open: true, customerId: 4, initialTab: "drivers", initialDriverId: 9 }));
+    expect(window.location.search).toBe("");
+  });
+
+  it("/expenses?invoice=9 without the expenses right asks nothing and opens nothing", async () => {
+    auth.user = { id: 2, username: "anna", role: "user", permissions: ["view_reports"], hidePrices: false };
+    renderAt("/expenses?invoice=9", <InvoiceInboxButton />);
+    await new Promise((r) => setTimeout(r, 50));
+    const paths = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.map(([i]) => pathOf(i));
+    expect(paths).not.toContain("/api/expenses/inbox/items/9");
+    expect(screen.queryByTestId("invoice-review-dialog")).toBeNull();
   });
 
   it("/expenses?invoice=9 opens the invoice check dialog of item 9 and cleans the address", async () => {

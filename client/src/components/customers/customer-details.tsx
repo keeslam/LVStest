@@ -1,6 +1,6 @@
 import { describeApiError } from "@/lib/api-error";
 import { CustomerDeductiblesCard } from "@/components/customers/customer-deductibles-card";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,9 +66,11 @@ interface CustomerDetailsProps {
   onClose?: () => void;
   /** Tab to open first, e.g. "portal" from the portal overview. */
   initialTab?: string;
+  /** A driver of this customer whose view opens once the drivers are in (report deep link). */
+  initialDriverId?: number;
 }
 
-export function CustomerDetails({ customerId, inDialog = false, onClose, initialTab }: CustomerDetailsProps) {
+export function CustomerDetails({ customerId, inDialog = false, onClose, initialTab, initialDriverId }: CustomerDetailsProps) {
   const { user: staffUser } = useAuth();
   const canSeePortal = staffUser?.role === UserRole.ADMIN
     || ((staffUser?.permissions as string[] | undefined) ?? []).some((p) => p === UserPermission.VIEW_PORTAL || p === UserPermission.MANAGE_PORTAL);
@@ -147,6 +149,18 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
     staleTime: 0, // Always consider data stale
     refetchOnMount: 'always', // Always refetch when component mounts
   });
+
+  // Rapporten: a report's driver link opens that driver's view, once, as soon as the drivers are in.
+  const [initialDriverShown, setInitialDriverShown] = useState(false);
+  useEffect(() => {
+    if (initialDriverId === undefined || initialDriverShown || !drivers) return;
+    setInitialDriverShown(true);
+    const driver = drivers.find((d) => d.id === initialDriverId);
+    if (driver) {
+      setSelectedDriver(driver);
+      setViewDriverDialogOpen(true);
+    }
+  }, [initialDriverId, initialDriverShown, drivers]);
 
   // Fetch blacklisted vehicles for this customer
   const { 

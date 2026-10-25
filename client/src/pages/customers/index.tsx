@@ -27,6 +27,7 @@ import { X, Filter, ArrowUpDown, Archive } from "lucide-react";
 import { subDays } from "date-fns";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { customerMatchesSearch } from "@/lib/customer-search";
+import { takeIdFromAddress, takeParamFromAddress } from "@/lib/address-param";
 
 type EnrichedCustomer = Customer & {
   reservationCount: number;
@@ -50,13 +51,16 @@ export default function CustomersIndex() {
   const [deleteCustomerTarget, setDeleteCustomerTarget] = useState<Customer | null>(null);
   const [recycleBinOpen, setRecycleBinOpen] = useState(false);
   const queryClient = useQueryClient();
-  // B-63: a bell notification links here as /customers?customer=12&tab=drivers.
+  // B-63: a bell notification links here as /customers?customer=12&tab=drivers; a report's driver
+  // as /customers?customer=12&tab=drivers&driver=9 (opens that driver). The parameters come off the
+  // address after opening, so closing the dialog, going back or reloading does not reopen it.
   const search = useSearch();
   const { openCustomerDialog } = useGlobalDialog();
   useEffect(() => {
-    const params = new URLSearchParams(search);
-    const id = Number(params.get("customer"));
-    if (Number.isInteger(id) && id > 0) openCustomerDialog(id, params.get("tab") ?? undefined);
+    const id = takeIdFromAddress("customer");
+    const tab = takeParamFromAddress("tab") ?? undefined;
+    const driverId = takeIdFromAddress("driver") ?? undefined;
+    if (id !== null) openCustomerDialog(id, tab, driverId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
   

@@ -10,7 +10,7 @@ interface DialogState {
   apk: { open: boolean; vehicleId: number | null };
   maintenance: { open: boolean; vehicleId: number | null };
   vehicle: { open: boolean; vehicleId: number | null };
-  customer: { open: boolean; customerId: number | null; initialTab?: string };
+  customer: { open: boolean; customerId: number | null; initialTab?: string; initialDriverId?: number };
   fine: { open: boolean; id: number | null };
   newFine: { open: boolean; licensePlate?: string };
   portalRequest: { open: boolean; id: number | null };
@@ -44,7 +44,8 @@ interface GlobalDialogContextType {
   closeMaintenanceDialog: () => void;
   openVehicleDialog: (vehicleId: number) => void;
   closeVehicleDialog: () => void;
-  openCustomerDialog: (customerId: number, initialTab?: string) => void;
+  /** `initialDriverId` opens that driver's view as well (a report's driver link). */
+  openCustomerDialog: (customerId: number, initialTab?: string, initialDriverId?: number) => void;
   closeCustomerDialog: () => void;
   openFineDialog: (id: number) => void;
   closeFineDialog: () => void;
@@ -166,10 +167,10 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     }));
   };
 
-  const openCustomerDialog = (customerId: number, initialTab?: string) => {
+  const openCustomerDialog = (customerId: number, initialTab?: string, initialDriverId?: number) => {
     setDialogState(prev => ({
       ...prev,
-      customer: { open: true, customerId, initialTab }
+      customer: { open: true, customerId, initialTab, ...(initialDriverId !== undefined ? { initialDriverId } : {}) }
     }));
   };
 

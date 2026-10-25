@@ -55,6 +55,8 @@ export function InvoiceInboxButton() {
   const [openItem, setOpenItem] = useState<InboxListItem | null>(null);
   // Rapporten: "Openen in nieuw tabblad" on an invoice opens /expenses?invoice=<id> in the check
   // dialog of that item; the parameter comes off the address.
+  // GET /api/expenses/inbox/items/:id needs manage_expenses; without it nothing is asked (no 403 toast).
+  const canManageExpenses = useHasPermission(UserPermission.MANAGE_EXPENSES);
   const [linkedItemId, setLinkedItemId] = useState<number | null>(null);
   useEffect(() => {
     const id = takeIdFromAddress("invoice");
@@ -63,7 +65,7 @@ export function InvoiceInboxButton() {
   const { data: linkedItem } = useQuery<InboxListItem>({
     queryKey: [`/api/expenses/inbox/items/${linkedItemId}`],
     queryFn: async () => (await apiRequest("GET", `/api/expenses/inbox/items/${linkedItemId}`)).json(),
-    enabled: linkedItemId !== null,
+    enabled: canManageExpenses && linkedItemId !== null,
   });
   useEffect(() => {
     if (!linkedItem) return;

@@ -44,7 +44,7 @@ beforeEach(() => {
     return json([]);
   }));
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => { vi.unstubAllGlobals(); role = UserRole.USER; });
 
 function renderDetails(initialTab?: string) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0, queryFn: getQueryFn({ on401: "throw" }) } } });
@@ -57,6 +57,31 @@ function renderDetails(initialTab?: string) {
     </QueryClientProvider>,
   );
 }
+
+describe("CustomerDetails opened for one driver (report deep link)", () => {
+  it("opens the driver's view on the drivers tab", async () => {
+    role = UserRole.ADMIN;
+    permissions = [];
+    const fetchMock = fetch as unknown as ReturnType<typeof vi.fn>;
+    const base = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      if (/\/api\/customers\/7\/drivers$/.test(url)) {
+        return json([{ id: 9, customerId: 7, displayName: "Piet Bestuurder", firstName: "Piet", lastName: "Bestuurder", status: "active", createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-01T00:00:00.000Z" }]);
+      }
+      return base(input);
+    });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0, queryFn: getQueryFn({ on401: "throw" }) } } });
+    render(
+      <QueryClientProvider client={client}>
+        <GlobalDialogProvider>
+          <CustomerDetails customerId={7} inDialog initialTab="drivers" initialDriverId={9} />
+        </GlobalDialogProvider>
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByText("Chauffeurgegevens")).toBeInTheDocument();
+  });
+});
 
 describe("CustomerDetails for a profile that may not read customers", () => {
   it("asks the server for nothing, shows which right is missing and no red toast (view_fines only)", async () => {

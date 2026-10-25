@@ -109,7 +109,7 @@ const select = (): SQL => sql`${fines.id} AS id, ${fines.offenceAt} AS "offenceA
   ${fines.licensePlate} AS "licensePlate", ${fines.vehicleId} AS "vehicleId", ${fines.description} AS description,
   ${fines.reference} AS reference, ${fines.status} AS status, ${fines.totalAmount}::float8 AS amount,
   ${fines.customerId} AS "customerId", ${customers.name} AS "customerName",
-  ${drivers.displayName} AS "driverName", ${fines.linkedAt} AS "linkedAt"`;
+  ${fines.driverId} AS "driverId", ${drivers.displayName} AS "driverName", ${fines.linkedAt} AS "linkedAt"`;
 
 const mapRow = (r: Record<string, any>): FineReportRow => ({
   id: Number(r.id),
@@ -123,6 +123,7 @@ const mapRow = (r: Record<string, any>): FineReportRow => ({
   amount: Number(r.amount),
   customerId: r.customerId === null ? null : Number(r.customerId),
   customerName: r.customerName ?? null,
+  driverId: r.driverId === null ? null : Number(r.driverId),
   driverName: r.driverName ?? null,
   linkedAt: iso(r.linkedAt),
 });

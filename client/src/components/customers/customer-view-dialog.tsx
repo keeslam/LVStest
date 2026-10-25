@@ -19,6 +19,8 @@ interface CustomerViewDialogProps {
   onOpenChange?: (open: boolean) => void;
   /** Tab to open first (e.g. "portal"). */
   initialTab?: string;
+  /** A driver of this customer whose view opens straight away (report deep link). */
+  initialDriverId?: number;
 }
 
 export function CustomerViewDialog({
@@ -27,6 +29,7 @@ export function CustomerViewDialog({
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   initialTab,
+  initialDriverId,
 }: CustomerViewDialogProps) {
   const { t } = useTranslation("customers");
   const [internalOpen, setInternalOpen] = useState(false);
@@ -92,6 +95,7 @@ export function CustomerViewDialog({
             inDialog={true}
             onClose={handleClose}
             initialTab={initialTab}
+            initialDriverId={initialDriverId}
           />
         </div>
       </DialogContent>

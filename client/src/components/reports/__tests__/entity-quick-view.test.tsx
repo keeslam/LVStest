@@ -149,7 +149,7 @@ describe("EntityLink and the quick view", () => {
     routes["/api/reports/fines/rows"] = () => json({
       rows: [{
         id: 5, offenceAt: "2026-04-02T10:00:00.000Z", receivedAt: null, licensePlate: "AB12CD", vehicleId: 7, description: "Te hard",
-        reference: null, status: "linked", amount: 90, customerId: 4, customerName: "Bakkerij Jansen", driverName: null, linkedAt: null,
+        reference: null, status: "linked", amount: 90, customerId: 4, customerName: "Bakkerij Jansen", driverId: 9, driverName: "Piet Bestuurder", linkedAt: null,
       }],
       total: 1, page: 1, pageSize: 50,
     });
@@ -159,9 +159,20 @@ describe("EntityLink and the quick view", () => {
     expect(await within(dialog).findByTestId("link-entity-vehicle-7")).toHaveTextContent("AB-12-CD");
     expect(within(dialog).getByTestId("link-entity-fine-5")).toHaveTextContent("Te hard");
     expect(within(dialog).getByTestId("link-entity-customer-4")).toHaveTextContent("Bakkerij Jansen");
+    expect(within(dialog).getByTestId("link-entity-driver-9")).toHaveTextContent("Piet Bestuurder");
 
     await userEvent.click(within(dialog).getByTestId("link-entity-fine-5"));
     expect(await screen.findByTestId("dialog-entity-fine")).toBeInTheDocument();
+  });
+
+  it("the driver quick view opens the customer on that driver", async () => {
+    routes["/api/drivers/9"] = () => json({ id: 9, customerId: 4, displayName: "Piet Bestuurder", email: "piet@jansen.nl", phone: null });
+    mount(<EntityLink kind="driver" id={9} label="Piet Bestuurder" />);
+    await userEvent.click(screen.getByRole("button", { name: "Piet Bestuurder" }));
+    const dialog = await screen.findByTestId("dialog-entity-driver");
+    expect(await within(dialog).findByText("piet@jansen.nl")).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByTestId("button-entity-open"));
+    expect(window.open).toHaveBeenCalledWith("/customers?customer=4&tab=drivers&driver=9", "_blank", "noopener");
   });
 
   it("every kind has its own address", () => {
@@ -170,5 +181,7 @@ describe("EntityLink and the quick view", () => {
     expect(entityUrl("reservation", 12)).toBe("/reservations?reservation=12");
     expect(entityUrl("fine", 5)).toBe("/fines?bekeuring=5");
     expect(entityUrl("invoice", 9)).toBe("/expenses?invoice=9");
+    expect(entityUrl("driver", 9, 4)).toBe("/customers?customer=4&tab=drivers&driver=9");
+    expect(entityUrl("driver", 9)).toBeNull();
   });
 });

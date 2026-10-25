@@ -26,6 +26,8 @@ export interface FineReportRow {
   amount: number;
   customerId: number | null;
   customerName: string | null;
+  /** Opens the driver from the report (Rapporten deel 1b); null when no driver is linked. */
+  driverId: number | null;
   driverName: string | null;
   linkedAt: string | null;
 }

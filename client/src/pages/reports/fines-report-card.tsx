@@ -78,7 +78,7 @@ export function FinesReportCard(props: { from?: string; to?: string; vehicleId?:
       },
       { id: "amount", label: t("moneyReports.fines.columns.amount"), sortKey: "amount", align: "right", cell: (r) => formatCurrency(r.amount), csv: (r) => csvNumber(r.amount), print: (r) => formatCurrency(r.amount) },
       { id: "customer", label: t("moneyReports.fines.columns.customer"), sortKey: "customer", cell: (r) => <EntityLink kind="customer" id={r.customerId} label={r.customerName ?? ""} />, csv: (r) => r.customerName ?? "" },
-      { id: "driver", label: t("moneyReports.fines.columns.driver"), cell: (r) => r.driverName ?? "", csv: (r) => r.driverName ?? "" },
+      { id: "driver", label: t("moneyReports.fines.columns.driver"), cell: (r) => <EntityLink kind="driver" id={r.driverId} label={r.driverName ?? ""} />, csv: (r) => r.driverName ?? "" },
     ];
   }, [t]);
 
