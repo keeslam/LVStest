@@ -866,6 +866,49 @@
       },
       "csvSubjectRuns": "runde-de-preluare",
       "csvSubjectItems": "casuta-de-facturi"
+    },
+    "delivery": {
+      "title": "Livrări și preluări",
+      "description": "Livrările și cursele de preluare (inclusiv serviciul de preluare) din perioada aleasă, în ziua planificată. Întârziat înseamnă doar ce nu a fost terminat în ziua planificată. Cursele de schimb și de tractare sunt în raportul de transport.",
+      "kmHint": "{{km}} km",
+      "onTimePct": "La timp",
+      "pctValue": "{{pct}}%",
+      "avgKm": "Medie pe cursă",
+      "avgKmValue": "{{km}} km pe cursă",
+      "none": "–",
+      "byMonth": "Curse pe lună",
+      "byType": "Pe tip",
+      "byDriver": "Pe angajat",
+      "unknownDriver": "Necunoscut",
+      "external": "extern",
+      "punctuality": {
+        "onTime": "La timp",
+        "late": "Întârziat",
+        "open": "Încă deschis",
+        "undated": "Terminat fără dată"
+      },
+      "tiles": {
+        "all": "Toate cursele",
+        "onTime": "La timp",
+        "late": "Întârziat",
+        "open": "Încă deschis",
+        "undated": "Terminat fără dată"
+      },
+      "columns": {
+        "scheduledDate": "Planificat",
+        "completedDate": "Terminat",
+        "type": "Tip",
+        "status": "Stare",
+        "licensePlate": "Număr de înmatriculare",
+        "customer": "Client",
+        "driver": "Șofer",
+        "distanceKm": "Km",
+        "daysLate": "Zile de întârziere",
+        "total": "Total",
+        "trips": "Curse",
+        "km": "Km"
+      },
+      "csvSubject": "livrari-preluari"
     }
   },
   "fleetReports": {

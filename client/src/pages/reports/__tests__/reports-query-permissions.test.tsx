@@ -211,4 +211,16 @@ describe("/reports - tabblad Kantoor", () => {
     await waitFor(() => expect(calledWith("/api/reports/invoice-inbox-runs/summary")).toBe(true));
     expect(calledPrefix("/api/reports/invoice-inbox-items")).toBe(false);
   });
+
+  it("met alleen het transportrecht (view_reservations) staat het tabblad er en opent de bezorgkaart", async () => {
+    role = UserRole.USER;
+    permissions = [UserPermission.VIEW_REPORTS, UserPermission.VIEW_RESERVATIONS];
+    const user = userEvent.setup();
+    withClient(<ReportsPage />);
+    await user.click(await screen.findByTestId("tab-report-office"));
+    expect(await screen.findByTestId("card-delivery-report")).toBeInTheDocument();
+    expect(screen.queryByTestId("card-invoice-inbox-report")).not.toBeInTheDocument();
+    await waitFor(() => expect(calledWith("/api/reports/deliveries/summary")).toBe(true));
+    expect(calledPrefix("/api/reports/invoice-inbox")).toBe(false);
+  });
 });

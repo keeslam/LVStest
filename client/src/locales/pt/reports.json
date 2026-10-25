@@ -866,6 +866,49 @@
       },
       "csvSubjectRuns": "rondas-de-recolha",
       "csvSubjectItems": "caixa-de-faturas"
+    },
+    "delivery": {
+      "title": "Entregas e recolhas",
+      "description": "As entregas e as viagens de recolha (também o serviço de recolha) do período escolhido, no dia previsto. Atrasado é só o que não foi concluído no dia previsto. As viagens de troca e de reboque estão no relatório de transporte.",
+      "kmHint": "{{km}} km",
+      "onTimePct": "A tempo",
+      "pctValue": "{{pct}}%",
+      "avgKm": "Média por viagem",
+      "avgKmValue": "{{km}} km por viagem",
+      "none": "–",
+      "byMonth": "Viagens por mês",
+      "byType": "Por tipo",
+      "byDriver": "Por funcionário",
+      "unknownDriver": "Desconhecido",
+      "external": "externo",
+      "punctuality": {
+        "onTime": "A tempo",
+        "late": "Atrasado",
+        "open": "Ainda aberto",
+        "undated": "Concluído sem data"
+      },
+      "tiles": {
+        "all": "Todas as viagens",
+        "onTime": "A tempo",
+        "late": "Atrasado",
+        "open": "Ainda aberto",
+        "undated": "Concluído sem data"
+      },
+      "columns": {
+        "scheduledDate": "Previsto",
+        "completedDate": "Concluído",
+        "type": "Tipo",
+        "status": "Estado",
+        "licensePlate": "Matrícula",
+        "customer": "Cliente",
+        "driver": "Condutor",
+        "distanceKm": "Km",
+        "daysLate": "Dias de atraso",
+        "total": "Total",
+        "trips": "Viagens",
+        "km": "Km"
+      },
+      "csvSubject": "entregas-recolhas"
     }
   },
   "fleetReports": {

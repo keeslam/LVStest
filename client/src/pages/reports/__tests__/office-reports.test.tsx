@@ -22,6 +22,7 @@ vi.mock("@/lib/csv", async (importOriginal) => ({
 }));
 
 import { InvoiceInboxReportCard } from "@/pages/reports/invoice-inbox-report-card";
+import { DeliveryReportCard } from "@/pages/reports/delivery-report-card";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -49,9 +50,20 @@ const itemsSummary = () => ({
   byReason: [{ reason: "no_plate", count: 2 }, { reason: "iets_nieuws", count: 1 }],
 });
 
+const deliverySummary = () => ({
+  tiles: { all: T(10, 292), onTime: T(4, 100), late: T(4, 100), open: T(1, 50), undated: T(1, 42) },
+  byMonth: [{ month: "2019-03", onTime: 4, late: 4, open: 1, undated: 1 }],
+  byType: [{ type: "repossession", total: 6, onTime: 2, late: 3, open: 1, undated: 0, km: 120 }],
+  byDriver: [{ driver: null, trips: 3, onTime: 1, late: 2, km: 30 }, { driver: "Piet", trips: 7, onTime: 3, late: 2, km: 262 }],
+  onTimePct: 50,
+  avgKmPerTrip: 29.2,
+  tripsWithDistance: 10,
+});
+
 beforeEach(() => {
   fetchMock = vi.fn(async (input: unknown) => {
     const path = pathOf(input);
+    if (path.startsWith("/api/reports/deliveries/summary")) return json(deliverySummary());
     if (path.startsWith("/api/reports/invoice-inbox-runs/summary")) return json(runsSummary());
     if (path.startsWith("/api/reports/invoice-inbox-items/summary")) return json(itemsSummary());
     if (path.includes("/rows")) return json({ rows: [], total: 0, page: 1, pageSize: 50 });
@@ -165,5 +177,66 @@ describe("Kantoor - factuurpostvak", () => {
     renderNode(<InvoiceInboxReportCard from="2019-01-01" to="2019-12-31" />);
     expect((await screen.findByTestId("invoice-inbox-runs-tile-mails-value")).textContent).toBe("0");
     expect((await screen.findByTestId("invoice-inbox-items-tile-all-value")).textContent).toBe("0");
+  });
+});
+
+describe("Kantoor - bezorgen en ophalen", () => {
+  it("vraagt de samenvatting met voertuigfilter en toont percentage, gemiddelde km, soort en chauffeur", async () => {
+    permissions = ["view_reports", "view_reservations"];
+    renderNode(<DeliveryReportCard from="2019-01-01" to="2019-12-31" vehicleId="12" />);
+    expect((await screen.findByTestId("delivery-on-time-pct")).textContent).toContain("50%");
+    expect(fetchedPaths()).toContain("/api/reports/deliveries/summary?from=2019-01-01&to=2019-12-31&vehicleId=12");
+    expect(screen.getByTestId("delivery-avg-km").textContent).toContain("29,2");
+    expect(screen.getByTestId("delivery-by-type").textContent).toContain("Terughalen");
+    expect(screen.getByTestId("delivery-by-driver").textContent).toContain("Onbekend");
+    expect(screen.getByTestId("delivery-by-driver").textContent).toContain("Piet");
+  });
+
+  it("tegel open opent de lijst oplopend op geplande dag", async () => {
+    permissions = ["view_reports", "view_reservations"];
+    const user = userEvent.setup();
+    renderNode(<DeliveryReportCard from="2019-01-01" to="2019-12-31" vehicleId="12" />);
+    await user.click(await screen.findByTestId("button-delivery-tile-open"));
+    await waitFor(() => expect(fetchedPaths()).toContain(
+      "/api/reports/deliveries/rows?from=2019-01-01&to=2019-12-31&vehicleId=12&tile=open&sort=scheduledDate&dir=asc&page=1&pageSize=50",
+    ));
+  });
+
+  it("zonder voertuigfilter geen vehicleId", async () => {
+    permissions = ["view_reports", "manage_vehicles"];
+    renderNode(<DeliveryReportCard from="2019-01-01" to="2019-12-31" vehicleId="all" />);
+    await screen.findByTestId("delivery-tile-all-value");
+    expect(fetchedPaths()).toContain("/api/reports/deliveries/summary?from=2019-01-01&to=2019-12-31");
+  });
+
+  it("zonder percentage en gemiddelde staat er een streepje", async () => {
+    permissions = ["view_reports", "view_reservations"];
+    fetchMock.mockImplementation(async () => json({ ...deliverySummary(), onTimePct: null, avgKmPerTrip: null }));
+    renderNode(<DeliveryReportCard from="2019-01-01" to="2019-12-31" />);
+    expect((await screen.findByTestId("delivery-on-time-pct")).textContent).toContain("–");
+    expect(screen.getByTestId("delivery-avg-km").textContent).toContain("–");
+  });
+
+  it("zonder transportrecht: geen kaart en geen verzoek", async () => {
+    permissions = ["view_reports", "manage_expenses"];
+    renderNode(<DeliveryReportCard from="2019-01-01" to="2019-12-31" />);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(screen.queryByTestId("card-delivery-report")).not.toBeInTheDocument();
+    expect(fetchedPaths().some((p) => p.startsWith("/api/reports/deliveries"))).toBe(false);
+  });
+
+  it("transportrecht zonder rapportrecht: geen kaart", async () => {
+    permissions = ["view_reservations"];
+    renderNode(<DeliveryReportCard from="2019-01-01" to="2019-12-31" />);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(screen.queryByTestId("card-delivery-report")).not.toBeInTheDocument();
+    expect(fetchedPaths().some((p) => p.startsWith("/api/reports/deliveries"))).toBe(false);
+  });
+
+  it("een summary zonder tegels breekt de kaart niet", async () => {
+    permissions = ["view_reports", "view_reservations"];
+    fetchMock.mockImplementation(async () => json({}));
+    renderNode(<DeliveryReportCard from="2019-01-01" to="2019-12-31" />);
+    expect((await screen.findByTestId("delivery-tile-all-value")).textContent).toBe("0");
   });
 });

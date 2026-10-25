@@ -866,6 +866,49 @@
       },
       "csvSubjectRuns": "rondas-de-recogida",
       "csvSubjectItems": "buzon-de-facturas"
+    },
+    "delivery": {
+      "title": "Entregas y recogidas",
+      "description": "Las entregas y los viajes de recogida (también el servicio de recogida) del periodo elegido, en el día previsto. Tarde es solo lo que no se terminó el día previsto. Los viajes de cambio y de remolque están en el informe de transporte.",
+      "kmHint": "{{km}} km",
+      "onTimePct": "A tiempo",
+      "pctValue": "{{pct}}%",
+      "avgKm": "Media por viaje",
+      "avgKmValue": "{{km}} km por viaje",
+      "none": "–",
+      "byMonth": "Viajes por mes",
+      "byType": "Por tipo",
+      "byDriver": "Por empleado",
+      "unknownDriver": "Desconocido",
+      "external": "externo",
+      "punctuality": {
+        "onTime": "A tiempo",
+        "late": "Tarde",
+        "open": "Aún abierto",
+        "undated": "Terminado sin fecha"
+      },
+      "tiles": {
+        "all": "Todos los viajes",
+        "onTime": "A tiempo",
+        "late": "Tarde",
+        "open": "Aún abierto",
+        "undated": "Terminado sin fecha"
+      },
+      "columns": {
+        "scheduledDate": "Previsto",
+        "completedDate": "Terminado",
+        "type": "Tipo",
+        "status": "Estado",
+        "licensePlate": "Matrícula",
+        "customer": "Cliente",
+        "driver": "Conductor",
+        "distanceKm": "Km",
+        "daysLate": "Días de retraso",
+        "total": "Total",
+        "trips": "Viajes",
+        "km": "Km"
+      },
+      "csvSubject": "entregas-recogidas"
     }
   },
   "fleetReports": {

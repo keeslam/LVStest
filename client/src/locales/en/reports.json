@@ -850,6 +850,49 @@
       },
       "csvSubjectRuns": "pickup-rounds",
       "csvSubjectItems": "invoice-inbox"
+    },
+    "delivery": {
+      "title": "Deliveries and collections",
+      "description": "The deliveries and collection trips (including the collection service) in the chosen period, on the planned day. Late only means not finished on the planned day. Swap and tow trips are in the transport report.",
+      "kmHint": "{{km}} km",
+      "onTimePct": "On time",
+      "pctValue": "{{pct}}%",
+      "avgKm": "Average per trip",
+      "avgKmValue": "{{km}} km per trip",
+      "none": "–",
+      "byMonth": "Trips per month",
+      "byType": "Per type",
+      "byDriver": "Per staff member",
+      "unknownDriver": "Unknown",
+      "external": "external",
+      "punctuality": {
+        "onTime": "On time",
+        "late": "Late",
+        "open": "Still open",
+        "undated": "Done without date"
+      },
+      "tiles": {
+        "all": "All trips",
+        "onTime": "On time",
+        "late": "Late",
+        "open": "Still open",
+        "undated": "Done without date"
+      },
+      "columns": {
+        "scheduledDate": "Planned",
+        "completedDate": "Finished",
+        "type": "Type",
+        "status": "Status",
+        "licensePlate": "License plate",
+        "customer": "Customer",
+        "driver": "Driver",
+        "distanceKm": "Km",
+        "daysLate": "Days late",
+        "total": "Total",
+        "trips": "Trips",
+        "km": "Km"
+      },
+      "csvSubject": "deliveries-collections"
     }
   },
   "fleetReports": {

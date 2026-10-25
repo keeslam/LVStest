@@ -882,6 +882,49 @@
       },
       "csvSubjectRuns": "rundy-pobierania",
       "csvSubjectItems": "skrzynka-faktur"
+    },
+    "delivery": {
+      "title": "Dostawy i odbiory",
+      "description": "Dostawy i przejazdy odbioru (także usługa odbioru) w wybranym okresie, w zaplanowanym dniu. Spóźnione jest tylko to, co nie zostało zakończone w zaplanowanym dniu. Przejazdy zamiany i holowania są w raporcie transportu.",
+      "kmHint": "{{km}} km",
+      "onTimePct": "Na czas",
+      "pctValue": "{{pct}}%",
+      "avgKm": "Średnio na przejazd",
+      "avgKmValue": "{{km}} km na przejazd",
+      "none": "–",
+      "byMonth": "Przejazdy według miesięcy",
+      "byType": "Według rodzaju",
+      "byDriver": "Według pracownika",
+      "unknownDriver": "Nieznany",
+      "external": "zewnętrzny",
+      "punctuality": {
+        "onTime": "Na czas",
+        "late": "Spóźnione",
+        "open": "Jeszcze otwarte",
+        "undated": "Zakończone bez daty"
+      },
+      "tiles": {
+        "all": "Wszystkie przejazdy",
+        "onTime": "Na czas",
+        "late": "Spóźnione",
+        "open": "Jeszcze otwarte",
+        "undated": "Zakończone bez daty"
+      },
+      "columns": {
+        "scheduledDate": "Planowane",
+        "completedDate": "Zakończone",
+        "type": "Rodzaj",
+        "status": "Status",
+        "licensePlate": "Numer rejestracyjny",
+        "customer": "Klient",
+        "driver": "Kierowca",
+        "distanceKm": "Km",
+        "daysLate": "Dni opóźnienia",
+        "total": "Razem",
+        "trips": "Przejazdy",
+        "km": "Km"
+      },
+      "csvSubject": "dostawy-odbiory"
     }
   },
   "fleetReports": {

@@ -866,6 +866,49 @@
       },
       "csvSubjectRuns": "giri-di-raccolta",
       "csvSubjectItems": "casella-fatture"
+    },
+    "delivery": {
+      "title": "Consegne e ritiri",
+      "description": "Le consegne e i viaggi di ritiro (anche il servizio di ritiro) del periodo scelto, nel giorno previsto. In ritardo è solo ciò che non è stato concluso nel giorno previsto. I viaggi di cambio e di traino sono nel rapporto sui trasporti.",
+      "kmHint": "{{km}} km",
+      "onTimePct": "In orario",
+      "pctValue": "{{pct}}%",
+      "avgKm": "Media per viaggio",
+      "avgKmValue": "{{km}} km per viaggio",
+      "none": "–",
+      "byMonth": "Viaggi per mese",
+      "byType": "Per tipo",
+      "byDriver": "Per dipendente",
+      "unknownDriver": "Sconosciuto",
+      "external": "esterno",
+      "punctuality": {
+        "onTime": "In orario",
+        "late": "In ritardo",
+        "open": "Ancora aperto",
+        "undated": "Concluso senza data"
+      },
+      "tiles": {
+        "all": "Tutti i viaggi",
+        "onTime": "In orario",
+        "late": "In ritardo",
+        "open": "Ancora aperto",
+        "undated": "Concluso senza data"
+      },
+      "columns": {
+        "scheduledDate": "Previsto",
+        "completedDate": "Concluso",
+        "type": "Tipo",
+        "status": "Stato",
+        "licensePlate": "Targa",
+        "customer": "Cliente",
+        "driver": "Autista",
+        "distanceKm": "Km",
+        "daysLate": "Giorni di ritardo",
+        "total": "Totale",
+        "trips": "Viaggi",
+        "km": "Km"
+      },
+      "csvSubject": "consegne-ritiri"
     }
   },
   "fleetReports": {

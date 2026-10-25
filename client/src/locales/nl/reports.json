@@ -850,6 +850,49 @@
       },
       "csvSubjectRuns": "ophaalrondes",
       "csvSubjectItems": "factuurpostvak"
+    },
+    "delivery": {
+      "title": "Bezorgen en ophalen",
+      "description": "De leveringen en terughaalritten (ook de ophaalservice) in de gekozen periode, op de geplande dag. Te laat is alleen wat niet op de geplande dag is afgerond. Wissel- en sleepritten staan in het transportrapport.",
+      "kmHint": "{{km}} km",
+      "onTimePct": "Op tijd",
+      "pctValue": "{{pct}}%",
+      "avgKm": "Gemiddeld per rit",
+      "avgKmValue": "{{km}} km per rit",
+      "none": "–",
+      "byMonth": "Ritten per maand",
+      "byType": "Per soort",
+      "byDriver": "Per medewerker",
+      "unknownDriver": "Onbekend",
+      "external": "extern",
+      "punctuality": {
+        "onTime": "Op tijd",
+        "late": "Te laat",
+        "open": "Nog open",
+        "undated": "Afgerond zonder datum"
+      },
+      "tiles": {
+        "all": "Alle ritten",
+        "onTime": "Op tijd",
+        "late": "Te laat",
+        "open": "Nog open",
+        "undated": "Afgerond zonder datum"
+      },
+      "columns": {
+        "scheduledDate": "Gepland",
+        "completedDate": "Afgerond",
+        "type": "Soort",
+        "status": "Status",
+        "licensePlate": "Kenteken",
+        "customer": "Klant",
+        "driver": "Chauffeur",
+        "distanceKm": "Km",
+        "daysLate": "Dagen te laat",
+        "total": "Totaal",
+        "trips": "Ritten",
+        "km": "Km"
+      },
+      "csvSubject": "bezorgen-ophalen"
     }
   },
   "fleetReports": {
