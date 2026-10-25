@@ -3,21 +3,26 @@ import { storage } from "../storage";
 import { ReportValidationError } from "../database-storage";
 import { UserPermission } from "../../shared/schema";
 import { hasPermission, requireAdmin } from "../middleware/permissions.js";
-import { getDataSource } from "../../shared/report-builder-config";
-import { UserRole } from "../../shared/schema";
+import { getDataSource, canUseReportSource, type DataSource } from "../../shared/report-builder-config";
 
 /**
- * Security review 2026-10-18 (Laag 7): names, e-mail addresses and phone numbers of customers and
- * drivers are not report material for someone who may not open the customer screens. The report
- * builder reads one data source per report, so the source decides.
+ * Every data source has its own right (see canUseReportSource in shared/report-builder-config.ts).
+ * Security review 2026-10-18 (Laag 7): customers and drivers keep their own error code.
+ * The route checks EVERY source named in the report, not only the first.
  */
-const PERSONAL_DATA_TABLES = new Set(["customers", "drivers"]);
-function mayReportOn(user: Express.User | undefined, dataSources: unknown): boolean {
-  const first = Array.isArray(dataSources) ? getDataSource(String(dataSources[0])) : undefined;
-  if (!first || !PERSONAL_DATA_TABLES.has(first.table)) return true;
-  if (user?.role === UserRole.ADMIN) return true;
-  const rights = user?.permissions ?? [];
-  return rights.includes(UserPermission.VIEW_CUSTOMERS) || rights.includes(UserPermission.MANAGE_CUSTOMERS);
+function deniedReportSource(user: Express.User | undefined, dataSources: unknown): DataSource | null {
+  if (!Array.isArray(dataSources)) return null;
+  for (const id of dataSources) {
+    const source = getDataSource(String(id));
+    if (source && !canUseReportSource(user, source)) return source;
+  }
+  return null;
+}
+function sourceDeniedBody(source: DataSource) {
+  if (source.table === "customers" || source.table === "drivers") {
+    return { message: "A report on customers or drivers needs the customer right", code: "CUSTOMER_RIGHT_REQUIRED" as const, source: source.id };
+  }
+  return { message: "A report on this source needs the right of that part of the app", code: "REPORT_SOURCE_RIGHT_REQUIRED" as const, source: source.id };
 }
 import type { Express } from "express";
 import { buildMaintenanceCostReport } from "../utils/maintenance-costs";
@@ -118,7 +123,7 @@ export function registerReportRoutes(app: Express): void {
   app.get("/api/reports/saved", hasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS), async (req: Request, res: Response) => {
     try {
       const reports = await storage.getAllSavedReports();
-      res.json(reports);
+      res.json(reports.filter((r: any) => deniedReportSource(req.user, r.configuration?.dataSources ?? [r.dataSource]) === null));
     } catch (error) {
       console.error("Error fetching saved reports:", error);
       res.status(500).json({ message: "Error fetching saved reports" });
@@ -134,6 +139,9 @@ export function registerReportRoutes(app: Express): void {
       if (!config.name) {
         return res.status(400).json({ message: "Report name is required" });
       }
+
+      const denied = deniedReportSource(user, config.dataSources);
+      if (denied) return res.status(403).json(sourceDeniedBody(denied));
 
       const dataSources: string[] = Array.isArray(config.dataSources) ? config.dataSources : [];
       const columns: Array<{ source?: string; field?: string }> = Array.isArray(config.columns) ? config.columns : [];
@@ -179,9 +187,8 @@ export function registerReportRoutes(app: Express): void {
       if (!config.columns || config.columns.length === 0) {
         return res.status(400).json({ message: "No columns specified" });
       }
-      if (!mayReportOn(req.user, config.dataSources)) {
-        return res.status(403).json({ message: "A report on customers or drivers needs the customer right", code: "CUSTOMER_RIGHT_REQUIRED" });
-      }
+      const denied = deniedReportSource(req.user, config.dataSources);
+      if (denied) return res.status(403).json(sourceDeniedBody(denied));
 
       const results = await storage.executeReport(config);
       res.json(results);

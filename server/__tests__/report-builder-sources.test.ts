@@ -7,7 +7,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { eq, inArray } from "drizzle-orm";
 import { db } from "../db";
 import {
-  reservations, interactiveDamageChecks, vehicleMileageReadings, vehicleTransports, fines,
+  reservations, interactiveDamageChecks, vehicleMileageReadings, vehicleTransports, fines, savedReports,
 } from "../../shared/schema";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureVehicle, createFixtureCustomer, createFixtureReservation, cleanupFixtures } from "./helpers/fixtures";
@@ -66,6 +66,7 @@ describe("report builder sources", () => {
   });
 
   afterAll(async () => {
+    if (savedIds.length) await db.delete(savedReports).where(inArray(savedReports.id, savedIds));
     if (damageCheckIds.length) await db.delete(interactiveDamageChecks).where(inArray(interactiveDamageChecks.id, damageCheckIds));
     if (fineIds.length) await db.delete(fines).where(inArray(fines.id, fineIds));
     if (mileageIds.length) await db.delete(vehicleMileageReadings).where(inArray(vehicleMileageReadings.id, mileageIds));
@@ -106,5 +107,50 @@ describe("report builder sources", () => {
     const res = await run("transports", "vehicle_transports", [{ table: "vehicle_transports", field: "id", aggregation: "COUNT" }]);
     expect(res.status).toBe(200);
     expect(Number(res.body[0].id)).toBe(2);
+  });
+
+  const savedIds: number[] = [];
+
+  it.each([
+    ["fines", "fines", "status", ["view_reports"], 403],
+    ["fines", "fines", "status", ["view_fines"], 403],
+    ["fines", "fines", "status", ["view_reports", "view_fines"], 200],
+    ["transports", "vehicle_transports", "status", ["view_reports"], 403],
+    ["transports", "vehicle_transports", "status", ["view_reports", "view_reservations"], 200],
+    ["transports", "vehicle_transports", "status", ["manage_reports", "view_vehicles"], 200],
+    ["workshop_visits", "workshop_visits", "status", ["view_reports"], 403],
+    ["workshop_visits", "workshop_visits", "status", ["view_reports", "manage_maintenance"], 200],
+    ["workshop_visits", "workshop_visits", "status", ["view_reports", "view_reservations"], 200],
+    ["damage_checks", "interactive_damage_checks", "checkType", ["view_reports"], 403],
+    ["damage_checks", "interactive_damage_checks", "checkType", ["view_reports", "view_damage_checks"], 200],
+    ["mileage_readings", "vehicle_mileage_readings", "mileage", ["view_reports", "manage_reports", "view_vehicles", "manage_vehicles"], 403],
+    ["mileage_readings", "vehicle_mileage_readings", "mileage", "admin", 200],
+  ])("rechten: %s met %j -> %s", async (id, table, field, perms, status) => {
+    const agent = await agentFor(perms as any);
+    const res = await agent.post("/api/reports/execute").send({ name: "t", dataSources: [id], columns: [{ table, field }], filters: [] });
+    expect(res.status).toBe(status);
+    if (status === 403 && (perms as string[]).some((p) => p.endsWith("_reports"))) {
+      expect(res.body).toMatchObject({ code: "REPORT_SOURCE_RIGHT_REQUIRED", source: id });
+    }
+  });
+
+  it("elke genoemde bron telt, niet alleen de eerste", async () => {
+    const agent = await agentFor(["view_reports", "view_vehicles"]);
+    const res = await agent.post("/api/reports/execute").send({ name: "t", dataSources: ["vehicles", "mileage_readings"], columns: [{ table: "vehicles", field: "licensePlate" }], filters: [] });
+    expect(res.status).toBe(403);
+    expect(res.body.source).toBe("mileage_readings");
+  });
+
+  it("een km-rapport van de beheerder is onzichtbaar en niet op te slaan voor anderen", async () => {
+    const cfg = { name: `Km fixt ${Date.now()}`, dataSources: ["mileage_readings"], columns: [{ table: "vehicle_mileage_readings", field: "mileage" }], filters: [], groupBy: [] };
+    const saved = await admin.post("/api/reports/saved").send(cfg);
+    expect(saved.status).toBe(200);
+    savedIds.push(saved.body.id);
+    const manager = await agentFor(["view_reports", "manage_reports"]);
+    expect((await manager.get("/api/reports/saved")).body.map((r: any) => r.id)).not.toContain(saved.body.id);
+    expect((await admin.get("/api/reports/saved")).body.map((r: any) => r.id)).toContain(saved.body.id);
+    const refused = await manager.post("/api/reports/saved").send(cfg);
+    expect(refused.status).toBe(403);
+    expect(refused.body.code).toBe("REPORT_SOURCE_RIGHT_REQUIRED");
   });
 });
