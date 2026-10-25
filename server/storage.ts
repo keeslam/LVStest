@@ -374,7 +374,7 @@ export interface IStorage {
   createSavedReport(report: any): Promise<any>;
   updateSavedReport(id: number, report: any): Promise<any | undefined>;
   deleteSavedReport(id: number): Promise<boolean>;
-  executeReport(configuration: any, scope?: ReportScope): Promise<any[]>;
+  executeReport(configuration: any, scope?: ReportScope): Promise<{ rows: any[]; truncated: boolean }>;
   
   // Damage Check Template methods
   getAllDamageCheckTemplates(): Promise<any[]>;

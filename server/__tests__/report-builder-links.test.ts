@@ -10,6 +10,7 @@ import { fines, savedReports, vehicles } from "../../shared/schema";
 import { DATA_SOURCES, linkedSourcesOf, canUseReportField } from "../../shared/report-builder-config";
 import * as schema from "../../shared/schema";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
+import { rowsFromExecute } from "./helpers/report-execute";
 import { createFixtureVehicle, createFixtureCustomer, createFixtureReservation, cleanupFixtures } from "./helpers/fixtures";
 
 describe("report builder links", () => {
@@ -33,7 +34,7 @@ describe("report builder links", () => {
   });
 
   beforeAll(async () => {
-    admin = await agentFor("admin");
+    admin = rowsFromExecute(await agentFor("admin"));
     V1 = (await createFixtureVehicle({ brand: brand1 })).id;
     V2 = (await createFixtureVehicle({ brand: brand2 })).id;
     const customer = await createFixtureCustomer("Koppeling");
@@ -101,8 +102,8 @@ describe("report builder links", () => {
       groupBy: [{ table: "vehicles", field: "brand", via: "vehicle" }],
     }));
     expect(res.status).toBe(200);
-    expect(res.body.map((r: any) => [r["vehicle.brand"], Number(r.id)])).toEqual([[brand1, 2], [brand2, 1]]);
-    expect(res.body.reduce((s: number, r: any) => s + Number(r.id), 0)).toBe(3);
+    expect(res.body.map((r: any) => [r["vehicle.brand"], Number(r["id.COUNT"])])).toEqual([[brand1, 2], [brand2, 1]]);
+    expect(res.body.reduce((s: number, r: any) => s + Number(r["id.COUNT"]), 0)).toBe(3);
   });
 
   it("a linked date field groups per month too", async () => {
@@ -114,7 +115,7 @@ describe("report builder links", () => {
       groupBy: [{ table: "reservations", field: "startDate", via: "reservation", period: "month" }],
     }));
     expect(res.status).toBe(200);
-    expect(res.body.map((r: any) => [r["reservation.startDate"], Number(r.id)])).toEqual([["2026-10", 1], [null, 2]]);
+    expect(res.body.map((r: any) => [r["reservation.startDate"], Number(r["id.COUNT"])])).toEqual([["2026-10", 1], [null, 2]]);
   });
 
   it("filters on a linked field", async () => {
@@ -164,7 +165,7 @@ describe("report builder links", () => {
     expect(saved.status).toBe(200);
     savedIds.push(saved.body.id);
 
-    const user = await agentFor(["view_reports", "manage_reports", "view_fines"]);
+    const user = rowsFromExecute(await agentFor(["view_reports", "manage_reports", "view_fines"]));
     const res = await user.post("/api/reports/execute").send(cfg);
     expect(res.status).toBe(403);
     expect(res.body.code).toBe("REPORT_SOURCE_RIGHT_REQUIRED");
@@ -182,7 +183,7 @@ describe("report builder links", () => {
   });
 
   it("a filter on a linked field needs the target right as well", async () => {
-    const user = await agentFor(["view_reports", "view_fines"]);
+    const user = rowsFromExecute(await agentFor(["view_reports", "view_fines"]));
     const res = await user.post("/api/reports/execute").send(finesOf({
       columns: [{ table: "fines", field: "id" }],
       filters: [{ table: "customers", field: "name", via: "customer", operator: "equals", value: "X" }],
@@ -193,7 +194,7 @@ describe("report builder links", () => {
 
   it("km fields through a link stay admin only", async () => {
     const cfg = finesOf({ columns: [{ table: "fines", field: "id" }, { table: "vehicles", field: "currentMileage", via: "vehicle" }] });
-    const user = await agentFor(["view_reports", "view_fines", "view_vehicles", "manage_vehicles"]);
+    const user = rowsFromExecute(await agentFor(["view_reports", "view_fines", "view_vehicles", "manage_vehicles"]));
     const res = await user.post("/api/reports/execute").send(cfg);
     expect(res.status).toBe(403);
     expect(res.body.code).toBe("REPORT_SOURCE_RIGHT_REQUIRED");
@@ -203,7 +204,7 @@ describe("report builder links", () => {
   });
 
   it("a via that is not a string never slips past the rights", async () => {
-    const noCustomer = await agentFor(["view_reports", "manage_reports", "view_fines"]);
+    const noCustomer = rowsFromExecute(await agentFor(["view_reports", "manage_reports", "view_fines"]));
     for (const via of [["customer"], { name: "customer" }, 1, true]) {
       const res = await noCustomer.post("/api/reports/execute").send(finesOf({
         columns: [{ table: "fines", field: "id" }, { table: "customers", field: "name", via }],
@@ -220,7 +221,7 @@ describe("report builder links", () => {
     }));
     expect(asAdmin.status).toBe(400);
     expect(asAdmin.body.code).toBe("REPORT_LINK_INVALID");
-    const vehicleUser = await agentFor(["view_reports", "view_fines", "view_vehicles"]);
+    const vehicleUser = rowsFromExecute(await agentFor(["view_reports", "view_fines", "view_vehicles"]));
     const km = await vehicleUser.post("/api/reports/execute").send(finesOf({
       columns: [{ table: "vehicles", field: "currentMileage", via: ["vehicle"] }],
     }));
@@ -257,7 +258,7 @@ describe("report builder links", () => {
       groupBy: [{ table: "fines", field: "status" }, { table: "reservations", field: "status", via: "reservation" }],
     }));
     expect(grouped.status).toBe(200);
-    expect(grouped.body.map((r: any) => [r.status, r["reservation.status"], Number(r.id)]))
+    expect(grouped.body.map((r: any) => [r.status, r["reservation.status"], Number(r["id.COUNT"])]))
       .toEqual([["linked", "booked", 1], ["linked", null, 1], ["new", null, 1]]);
   });
 
@@ -285,8 +286,8 @@ describe("km fields in the builder are admin only", () => {
   const vehicleRights = ["view_reports", "manage_reports", "view_vehicles", "manage_vehicles", "view_reservations", "view_damage_checks"];
 
   beforeAll(async () => {
-    admin = await agentFor("admin");
-    staff = await agentFor(vehicleRights);
+    admin = rowsFromExecute(await agentFor("admin"));
+    staff = rowsFromExecute(await agentFor(vehicleRights));
   });
   afterAll(async () => {
     if (savedIds.length) await db.delete(savedReports).where(inArray(savedReports.id, savedIds));

@@ -5,12 +5,13 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { DATA_SOURCES } from "@shared/report-builder-config";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
+import { rowsFromExecute } from "./helpers/report-execute";
 
 describe("report builder fields", () => {
   let admin: TestAgent;
 
   beforeAll(async () => {
-    admin = await agentFor("admin");
+    admin = rowsFromExecute(await agentFor("admin"));
   });
 
   afterAll(async () => {

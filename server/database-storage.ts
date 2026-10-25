@@ -96,6 +96,9 @@ import { validateCalculatedFields, type CalculatedField, type FormulaNode, type 
 import { officeDaySql, textDaySql, isRealDate } from "./services/reports/report-kit";
 import { buildDefaultDamageCheckCanvasFields } from "../shared/damage-check-default-layout";
 
+/** The most rows one builder report returns; one more is asked for, to know whether the list was cut. */
+const REPORT_ROW_LIMIT = 1000;
+
 export class ReportValidationError extends Error {
   /** `reason`: for REPORT_CALC_INVALID the validation error (UNKNOWN_FIELD, CYCLE, BAD_RULE, ...). */
   constructor(message: string, public code?: string, public field?: string, public reason?: string) {
@@ -6613,11 +6616,11 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount ?? 0) > 0;
   }
 
-  async executeReport(configuration: any, scope?: ReportScope): Promise<any[]> {
+  async executeReport(configuration: any, scope?: ReportScope): Promise<{ rows: any[]; truncated: boolean }> {
     const { columns, filters, groupBy, dataSources } = configuration ?? {};
 
     if (!Array.isArray(columns) || columns.length === 0) {
-      return [];
+      return { rows: [], truncated: false };
     }
     // A null or non-object entry is a malformed report, not a server fault.
     const isEntry = (x: unknown) => !!x && typeof x === "object" && !Array.isArray(x);
@@ -6804,7 +6807,9 @@ export class DatabaseStorage implements IStorage {
       n.kind === "field" ? identFor(n.table, n.field, viaOf(n)) : n.kind === "calc" ? calcExpr(n.id) : numExpr(n, id);
     const resultExpr = (r: IfThenResult, asText: boolean, id: string): SQL => {
       if (!("ref" in r)) return sql`(${r.text})::text`;
-      return asText ? sql`(${valueExpr(r.ref, id)})::text` : numExpr(r.ref, id);
+      if (!asText) return numExpr(r.ref, id);
+      // A number shown next to text gets two decimals, never a long tail like 12.5000000000000000.
+      return isNumericNode(r.ref) ? sql`round((${valueExpr(r.ref, id)})::numeric, 2)::text` : sql`(${valueExpr(r.ref, id)})::text`;
     };
     const ifThenExpr = (f: CalculatedField): SQL => {
       const rule = f.rule!;
@@ -6930,9 +6935,10 @@ export class DatabaseStorage implements IStorage {
       if (isCalcEntry(col)) {
         const id = calcIdOf(col);
         const expr = calcExpr(id);
-        const alias = sql.identifier(`calc.${id}`);
-        if (!col.aggregation) return sql`${expr} AS ${alias}`;
+        if (!col.aggregation) return sql`${expr} AS ${sql.identifier(`calc.${id}`)}`;
         const agg = String(col.aggregation).toUpperCase();
+        // An aggregated column is keyed with its aggregation, so a Som and a Gemiddelde of one field stay apart.
+        const alias = sql.identifier(`calc.${id}.${agg}`);
         if (agg !== "COUNT" && agg !== "COUNT_DISTINCT" && !isNumericCalc(id)) {
           throw calcFail(id, `Het berekende veld calc.${id} geeft tekst en kan niet met ${agg}.`);
         }
@@ -6940,7 +6946,8 @@ export class DatabaseStorage implements IStorage {
       }
       const via = viaOf(col);
       const ident = identFor(col.table, col.field, via);
-      const alias = sql.identifier(via === undefined ? String(col.field) : `${via}.${String(col.field)}`);
+      const baseKey = via === undefined ? String(col.field) : `${via}.${String(col.field)}`;
+      const alias = sql.identifier(col.aggregation ? `${baseKey}.${String(col.aggregation).toUpperCase()}` : baseKey);
       if (col.aggregation) {
         const def = getReportField(col.table, canonField(col.table, col.field))!;
         const agg = String(col.aggregation).toUpperCase();
@@ -7124,15 +7131,18 @@ export class DatabaseStorage implements IStorage {
       query = sql`${query} GROUP BY ${sql.join(groupRefs, sql`, `)}`;
       query = sql`${query} ORDER BY ${sql.join(groupRefs.map((g) => sql`${g} ASC NULLS LAST`), sql`, `)}`;
     }
-    query = sql`${query} LIMIT 1000`;
+    // One row more than the limit tells whether the list was cut.
+    query = sql`${query} LIMIT ${REPORT_ROW_LIMIT + 1}`;
 
     const results = await db.execute(query);
+    const truncated = results.rows.length > REPORT_ROW_LIMIT;
+    const rows = (truncated ? results.rows.slice(0, REPORT_ROW_LIMIT) : results.rows) as Record<string, unknown>[];
     if (hiddenAliases.length > 0) {
-      for (const row of results.rows as Record<string, unknown>[]) {
+      for (const row of rows) {
         for (const alias of hiddenAliases) delete row[alias];
       }
     }
-    return results.rows;
+    return { rows, truncated };
   }
 
   // Damage Check Template methods

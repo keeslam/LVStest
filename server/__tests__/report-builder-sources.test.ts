@@ -10,6 +10,7 @@ import {
   reservations, vehicles, interactiveDamageChecks, vehicleMileageReadings, vehicleTransports, fines, savedReports,
 } from "../../shared/schema";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
+import { rowsFromExecute } from "./helpers/report-execute";
 import { createFixtureVehicle, createFixtureCustomer, createFixtureReservation, cleanupFixtures } from "./helpers/fixtures";
 
 describe("report builder sources", () => {
@@ -32,7 +33,7 @@ describe("report builder sources", () => {
     });
 
   beforeAll(async () => {
-    admin = await agentFor("admin");
+    admin = rowsFromExecute(await agentFor("admin"));
     V = (await createFixtureVehicle()).id;
     K = (await createFixtureCustomer("Rapportbron")).id;
 
@@ -103,18 +104,18 @@ describe("report builder sources", () => {
     ];
     const all = await run("mileage_readings", "vehicle_mileage_readings", cols);
     expect(all.status).toBe(200);
-    expect(Number(all.body[0].id)).toBe(2);
-    expect(Number(all.body[0].mileage)).toBe(20500);
+    expect(Number(all.body[0]["id.COUNT"])).toBe(2);
+    expect(Number(all.body[0]["mileage.SUM"])).toBe(20500);
     const voided = await run("mileage_readings", "vehicle_mileage_readings", cols.slice(0, 1),
       [{ table: "vehicle_mileage_readings", field: "voidedAt", operator: "is_not_null", value: null }]);
     expect(voided.status).toBe(200);
-    expect(Number(voided.body[0].id)).toBe(1);
+    expect(Number(voided.body[0]["id.COUNT"])).toBe(1);
   });
 
   it("transporten: alle soorten en statussen", async () => {
     const res = await run("transports", "vehicle_transports", [{ table: "vehicle_transports", field: "id", aggregation: "COUNT" }]);
     expect(res.status).toBe(200);
-    expect(Number(res.body[0].id)).toBe(2);
+    expect(Number(res.body[0]["id.COUNT"])).toBe(2);
   });
 
   const savedIds: number[] = [];
@@ -134,7 +135,7 @@ describe("report builder sources", () => {
     ["mileage_readings", "vehicle_mileage_readings", "mileage", ["view_reports", "manage_reports", "view_vehicles", "manage_vehicles"], 403],
     ["mileage_readings", "vehicle_mileage_readings", "mileage", "admin", 200],
   ])("rechten: %s met %j -> %s", async (id, table, field, perms, status) => {
-    const agent = await agentFor(perms as any);
+    const agent = rowsFromExecute(await agentFor(perms as any));
     const res = await agent.post("/api/reports/execute").send({ name: "t", dataSources: [id], columns: [{ table, field }], filters: [] });
     expect(res.status).toBe(status);
     if (status === 403 && (perms as string[]).some((p) => p.endsWith("_reports"))) {
@@ -150,7 +151,7 @@ describe("report builder sources", () => {
       groupBy: [{ table: "fines", field: "offenceAt", period: "month" }],
     });
     expect(res.status).toBe(200);
-    expect(res.body.map((r: any) => [r.offenceAt, Number(r.totalAmount)])).toEqual([["2019-02", 80], ["2019-03", 25]]);
+    expect(res.body.map((r: any) => [r.offenceAt, Number(r["totalAmount.SUM"])])).toEqual([["2019-02", 80], ["2019-03", 25]]);
   });
 
   it("groeperen op tekst, met Aantal", async () => {
@@ -160,7 +161,7 @@ describe("report builder sources", () => {
       filters: [{ table: "fines", field: "vehicleId", operator: "equals", value: V }],
       groupBy: [{ table: "fines", field: "status" }],
     });
-    expect(res.body.map((r: any) => [r.status, Number(r.id)])).toEqual([["linked", 1], ["new", 2]]);
+    expect(res.body.map((r: any) => [r.status, Number(r["id.COUNT"])])).toEqual([["linked", 1], ["new", 2]]);
   });
 
   it("een kolom buiten de groep geeft een duidelijke melding", async () => {
@@ -210,7 +211,7 @@ describe("report builder sources", () => {
       filters: [{ table: "vehicle_transports", field: "vehicleId", operator: "equals", value: V }],
       groupBy: [{ table: "vehicle_transports", field: "scheduledDate", period: "month" }],
     });
-    expect(res.body.map((r: any) => [r.scheduledDate, Number(r.id)])).toEqual([["2019-03", 2]]);
+    expect(res.body.map((r: any) => [r.scheduledDate, Number(r["id.COUNT"])])).toEqual([["2019-03", 2]]);
   });
 
   const fineFilter = () => [{ table: "fines", field: "vehicleId", operator: "equals", value: V }];
@@ -223,7 +224,7 @@ describe("report builder sources", () => {
       groupBy: [{ table: "fines", field: "offenceAt", period: "month" }],
     });
     expect(res.status).toBe(200);
-    expect(res.body.map((r: any) => Number(r.totalAmount))).toEqual([80, 25]);
+    expect(res.body.map((r: any) => Number(r["totalAmount.SUM"]))).toEqual([80, 25]);
     for (const row of res.body) expect(Object.keys(row).filter((k) => k.startsWith("__group_"))).toEqual([]);
   });
 
@@ -235,8 +236,8 @@ describe("report builder sources", () => {
       groupBy: [{ table: "fines", field: "offenceAt", period: "month" }],
     });
     expect(res.status).toBe(200);
-    expect(res.body.map((r: any) => Number(r.offenceAt))).toEqual([2, 1]);
-    for (const row of res.body) expect(Object.keys(row)).toEqual(["offenceAt"]);
+    expect(res.body.map((r: any) => Number(r["offenceAt.COUNT"]))).toEqual([2, 1]);
+    for (const row of res.body) expect(Object.keys(row)).toEqual(["offenceAt.COUNT"]);
   });
 
   it("twee groepen: maand en tekst, op welke plek de kolommen ook staan", async () => {
@@ -247,7 +248,7 @@ describe("report builder sources", () => {
       groupBy: [{ table: "fines", field: "offenceAt", period: "month" }, { table: "fines", field: "status" }],
     });
     expect(one.status).toBe(200);
-    expect(one.body.map((r: any) => [r.offenceAt, r.status, Number(r.id)])).toEqual([["2019-02", "linked", 1], ["2019-02", "new", 1], ["2019-03", "new", 1]]);
+    expect(one.body.map((r: any) => [r.offenceAt, r.status, Number(r["id.COUNT"])])).toEqual([["2019-02", "linked", 1], ["2019-02", "new", 1], ["2019-03", "new", 1]]);
     const two = await admin.post("/api/reports/execute").send({
       name: "t", dataSources: ["fines"],
       columns: [{ table: "fines", field: "id", aggregation: "COUNT" }, { table: "fines", field: "offenceAt" }, { table: "fines", field: "status" }],
@@ -255,11 +256,11 @@ describe("report builder sources", () => {
       groupBy: [{ table: "fines", field: "status" }, { table: "fines", field: "offenceAt", period: "month" }],
     });
     expect(two.status).toBe(200);
-    expect(two.body.map((r: any) => [r.status, r.offenceAt, Number(r.id)])).toEqual([["linked", "2019-02", 1], ["new", "2019-02", 1], ["new", "2019-03", 1]]);
+    expect(two.body.map((r: any) => [r.status, r.offenceAt, Number(r["id.COUNT"])])).toEqual([["linked", "2019-02", 1], ["new", "2019-02", 1], ["new", "2019-03", 1]]);
   });
 
   it("elke genoemde bron telt, niet alleen de eerste", async () => {
-    const agent = await agentFor(["view_reports", "view_vehicles"]);
+    const agent = rowsFromExecute(await agentFor(["view_reports", "view_vehicles"]));
     const res = await agent.post("/api/reports/execute").send({ name: "t", dataSources: ["vehicles", "mileage_readings"], columns: [{ table: "vehicles", field: "licensePlate" }], filters: [] });
     expect(res.status).toBe(403);
     expect(res.body.source).toBe("mileage_readings");
@@ -270,7 +271,7 @@ describe("report builder sources", () => {
     const saved = await admin.post("/api/reports/saved").send(cfg);
     expect(saved.status).toBe(200);
     savedIds.push(saved.body.id);
-    const manager = await agentFor(["view_reports", "manage_reports"]);
+    const manager = rowsFromExecute(await agentFor(["view_reports", "manage_reports"]));
     expect((await manager.get("/api/reports/saved")).body.map((r: any) => r.id)).not.toContain(saved.body.id);
     expect((await admin.get("/api/reports/saved")).body.map((r: any) => r.id)).toContain(saved.body.id);
     const refused = await manager.post("/api/reports/saved").send(cfg);

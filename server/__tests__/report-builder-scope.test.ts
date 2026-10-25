@@ -7,6 +7,7 @@ import { and, eq, inArray, like } from "drizzle-orm";
 import { db } from "../db";
 import { vehicles, fines, savedReports, auditLogs } from "../../shared/schema";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
+import { rowsFromExecute } from "./helpers/report-execute";
 import { createFixtureVehicle, cleanupFixtures } from "./helpers/fixtures";
 
 describe("report builder scope and update", () => {
@@ -26,7 +27,7 @@ describe("report builder scope and update", () => {
   const ids = (res: any) => res.body.map((r: any) => r.id).sort((a: number, b: number) => a - b);
 
   beforeAll(async () => {
-    admin = await agentFor("admin");
+    admin = rowsFromExecute(await agentFor("admin"));
     V1 = (await createFixtureVehicle()).id;
     V2 = (await createFixtureVehicle()).id;
     const plate = async (id: number) => (await db.select().from(vehicles).where(eq(vehicles.id, id)))[0].licensePlate;
@@ -81,7 +82,7 @@ describe("report builder scope and update", () => {
       scope: october,
     });
     expect(res.status).toBe(200);
-    expect(res.body.map((r: any) => [r.offenceAt, Number(r.id)])).toEqual([["2026-10", 3]]);
+    expect(res.body.map((r: any) => [r.offenceAt, Number(r["id.COUNT"])])).toEqual([["2026-10", 3]]);
   });
 
   it("periodeveld dat geen datum is geeft 400", async () => {
@@ -161,7 +162,7 @@ describe("report builder scope and update", () => {
   });
 
   it("PUT door medewerker met MANAGE_REPORTS en bronrecht werkt en wordt gelogd", async () => {
-    const worker = await agentFor(["view_reports", "manage_reports", "view_fines"]);
+    const worker = rowsFromExecute(await agentFor(["view_reports", "manage_reports", "view_fines"]));
     const created = await worker.post("/api/reports/saved").send(base({ name: "eigen" }));
     expect(created.status).toBe(200);
     savedIds.push(created.body.id);
@@ -210,7 +211,7 @@ describe("report builder scope and update", () => {
   it("PUT zonder bronrecht geeft 403 en laat het rapport ongewijzigd", async () => {
     const created = await admin.post("/api/reports/saved").send(base({ name: "boetes" }));
     savedIds.push(created.body.id);
-    const manager = await agentFor(["view_reports", "manage_reports"]);
+    const manager = rowsFromExecute(await agentFor(["view_reports", "manage_reports"]));
     const res = await manager.put(`/api/reports/saved/${created.body.id}`).send(base({ name: "gewijzigd", tab: "office" }));
     expect(res.status).toBe(403);
     const [row] = await db.select().from(savedReports).where(eq(savedReports.id, created.body.id));
@@ -219,7 +220,7 @@ describe("report builder scope and update", () => {
   });
 
   it("PUT met een nieuwe bron zonder recht geeft 403", async () => {
-    const manager = await agentFor(["view_reports", "manage_reports", "view_vehicles"]);
+    const manager = rowsFromExecute(await agentFor(["view_reports", "manage_reports", "view_vehicles"]));
     const mine = await manager.post("/api/reports/saved").send({
       name: "auto", dataSources: ["vehicles"], columns: [{ table: "vehicles", field: "id" }], filters: [],
     });
@@ -242,7 +243,7 @@ describe("report builder scope and update", () => {
   it("DELETE zonder bronrecht geeft 403 en laat het rapport staan", async () => {
     const created = await admin.post("/api/reports/saved").send(base({ name: "boetes-del" }));
     savedIds.push(created.body.id);
-    const manager = await agentFor(["view_reports", "manage_reports"]);
+    const manager = rowsFromExecute(await agentFor(["view_reports", "manage_reports"]));
     const res = await manager.delete(`/api/reports/saved/${created.body.id}`);
     expect(res.status).toBe(403);
     const rows = await db.select().from(savedReports).where(eq(savedReports.id, created.body.id));

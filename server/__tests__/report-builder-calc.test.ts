@@ -8,6 +8,7 @@ import { inArray } from "drizzle-orm";
 import { db } from "../db";
 import { expenses, savedReports } from "../../shared/schema";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
+import { rowsFromExecute } from "./helpers/report-execute";
 import { createFixtureVehicle, cleanupFixtures } from "./helpers/fixtures";
 
 const AMT = { kind: "field", table: "expenses", field: "amount" };
@@ -36,7 +37,7 @@ describe("report builder calculated fields", () => {
   });
 
   beforeAll(async () => {
-    admin = await agentFor("admin");
+    admin = rowsFromExecute(await agentFor("admin"));
     const V = (await createFixtureVehicle({})).id;
     const rows = await db.insert(expenses).values(
       amounts.map((a) => ({ vehicleId: V, category: "other", amount: String(a), date: "2019-02-01", description: DESC })) as any,
@@ -79,7 +80,7 @@ describe("report builder calculated fields", () => {
     }));
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect(res.body.map((r: any) => r["calc.hoog"]).sort()).toEqual(["Hoog", "Normaal"]);
-    expect(res.body.reduce((s: number, r: any) => s + Number(r.id), 0)).toBe(amounts.length);
+    expect(res.body.reduce((s: number, r: any) => s + Number(r["id.COUNT"]), 0)).toBe(amounts.length);
     // Grouped on a calc that is not shown: a hidden group column, removed from the rows.
     const hidden = await admin.post("/api/reports/execute").send(report({
       columns: [{ table: "expenses", field: "id", aggregation: "COUNT" }],
@@ -87,13 +88,13 @@ describe("report builder calculated fields", () => {
     }));
     expect(hidden.status, JSON.stringify(hidden.body)).toBe(200);
     expect(hidden.body).toHaveLength(2);
-    expect(Object.keys(hidden.body[0])).toEqual(["id"]);
+    expect(Object.keys(hidden.body[0])).toEqual(["id.COUNT"]);
   });
 
   it("a sum over a calc is the sum of the row values; a filter on a calc works per row", async () => {
     const sum = await admin.post("/api/reports/execute").send(report({ columns: [calc("inclVat", { aggregation: "SUM" })] }));
     expect(sum.status, JSON.stringify(sum.body)).toBe(200);
-    expect(Number(sum.body[0]["calc.inclVat"])).toBeCloseTo(amounts.reduce((s, a) => s + a * 1.21, 0), 6);
+    expect(Number(sum.body[0]["calc.inclVat.SUM"])).toBeCloseTo(amounts.reduce((s, a) => s + a * 1.21, 0), 6);
 
     const filtered = await admin.post("/api/reports/execute").send(report({
       columns: [{ table: "expenses", field: "amount" }],
@@ -164,7 +165,7 @@ describe("report builder calculated fields", () => {
   it("a km field through a link in a formula is admin only", async () => {
     const km = { id: "km", name: "Km", kind: "formula", type: "number", formula: { kind: "op", op: "*", left: { kind: "field", table: "vehicles", field: "currentMileage", via: "vehicle" }, right: { kind: "number", value: 2 } } };
     const cfg = report({ columns: [calc("km")], calculatedFields: [km] });
-    const user = await agentFor(["view_reports", "manage_reports", "view_vehicles", "manage_vehicles", "manage_expenses"]);
+    const user = rowsFromExecute(await agentFor(["view_reports", "manage_reports", "view_vehicles", "manage_vehicles", "manage_expenses"]));
     const res = await user.post("/api/reports/execute").send(cfg);
     expect(res.status).toBe(403);
     expect(res.body.code).toBe("REPORT_SOURCE_RIGHT_REQUIRED");
@@ -194,7 +195,7 @@ describe("report builder calculated fields", () => {
     };
     const res = await admin.post("/api/reports/execute").send(report({ columns: [calc("c", { aggregation: "SUM" })], calculatedFields: [rule] }));
     expect(res.status, JSON.stringify(res.body)).toBe(200);
-    expect(Number(res.body[0]["calc.c"])).toBe(amounts.reduce((s, a) => s + a, 0));
+    expect(Number(res.body[0]["calc.c.SUM"])).toBe(amounts.reduce((s, a) => s + a, 0));
   });
 
   it("calcs that refer to each other many times are capped, not expanded endlessly", async () => {
