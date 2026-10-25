@@ -778,6 +778,9 @@
       "csvSubject": "trasporto-fatturazione"
     }
   },
+  "reportTable": {
+    "noMatches": "Nessuna riga trovata per questa ricerca."
+  },
   "reportKit": {
     "csv": "CSV",
     "print": "Stampa",

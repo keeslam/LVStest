@@ -766,6 +766,9 @@
       "csvSubject": "transport-invoicing"
     }
   },
+  "reportTable": {
+    "noMatches": "No rows found for this search."
+  },
   "reportKit": {
     "csv": "CSV",
     "print": "Print",

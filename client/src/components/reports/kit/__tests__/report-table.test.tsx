@@ -4,6 +4,7 @@
  *
  * Runs in the jsdom project.
  */
+import { useState } from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -24,6 +25,7 @@ describe("ReportTable", () => {
     render(<ReportTable {...props} />);
     expect(rowEls()).toHaveLength(10);
     expect(screen.getByTestId("rt-pagination")).toHaveTextContent("1–10 van 23");
+    expect(screen.getByTestId("rt-page-indicator")).toHaveTextContent("1 / 3");
     await user.click(screen.getByTestId("rt-next-page"));
     await user.click(screen.getByTestId("rt-next-page"));
     expect(rowEls()).toHaveLength(3);
@@ -91,6 +93,46 @@ describe("ReportTable", () => {
   it("shows the empty text when there are no rows", () => {
     render(<ReportTable {...props} rows={[]} />);
     expect(screen.getByTestId("rt-empty")).toHaveTextContent("Geen gegevens in deze periode.");
+  });
+
+  it("does not loop when the parent sets state in onView with inline rows", () => {
+    const onView = vi.fn();
+    function Parent() {
+      const [, setSeen] = useState<unknown>(null);
+      return <ReportTable {...props} rows={ROWS.map((r) => r)} columns={[...COLUMNS]} onView={(v) => { onView(); setSeen({ v }); }} />;
+    }
+    render(<Parent />);
+    expect(onView.mock.calls.length).toBeLessThanOrEqual(3);
+    expect(screen.getByTestId("rt-page-indicator")).toHaveTextContent("1 / 3");
+  });
+
+  it("keeps page 2 when rerendered with a new but equal rows array", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<ReportTable {...props} />);
+    await user.click(screen.getByTestId("rt-next-page"));
+    rerender(<ReportTable {...props} rows={ROWS.map((r) => r)} columns={[...COLUMNS]} />);
+    expect(screen.getByTestId("rt-page-indicator")).toHaveTextContent("2 / 3");
+  });
+
+  it("clamps to the last page when rows shrink below the current page", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<ReportTable {...props} />);
+    await user.click(screen.getByTestId("rt-next-page"));
+    await user.click(screen.getByTestId("rt-next-page"));
+    rerender(<ReportTable {...props} rows={ROWS.slice(0, 12)} />);
+    expect(screen.getByTestId("rt-page-indicator")).toHaveTextContent("2 / 2");
+    expect(rowEls()).toHaveLength(2);
+  });
+
+  it("shows a separate text when a search has no matches", async () => {
+    const user = userEvent.setup();
+    render(<ReportTable {...props} />);
+    await user.type(screen.getByTestId("rt-search"), "zzz");
+    expect(screen.getByTestId("rt-no-match")).toHaveTextContent("Geen regels gevonden voor deze zoekterm.");
+  });
+
+  it("appends totals to the CSV and sorts NaN like null", () => {
+    expect(reportTableCsv(COLUMNS, [], { km: "5" })).toEqual([["Kenteken", "Km"], ["", "5"]]);
   });
 
   it("builds CSV rows from the column text", () => {

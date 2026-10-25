@@ -766,6 +766,9 @@
       "csvSubject": "transport-facturatie"
     }
   },
+  "reportTable": {
+    "noMatches": "Geen regels gevonden voor deze zoekterm."
+  },
   "reportKit": {
     "csv": "CSV",
     "print": "Afdrukken",

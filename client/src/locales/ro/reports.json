@@ -778,6 +778,9 @@
       "csvSubject": "transport-facturare"
     }
   },
+  "reportTable": {
+    "noMatches": "Nu s-au găsit rânduri pentru această căutare."
+  },
   "reportKit": {
     "csv": "CSV",
     "print": "Tipărește",

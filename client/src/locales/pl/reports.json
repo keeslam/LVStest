@@ -790,6 +790,9 @@
       "csvSubject": "transport-fakturowanie"
     }
   },
+  "reportTable": {
+    "noMatches": "Nie znaleziono wierszy dla tego wyszukiwania."
+  },
   "reportKit": {
     "csv": "CSV",
     "print": "Drukuj",
