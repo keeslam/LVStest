@@ -70,7 +70,9 @@ describe("/reports — vehicle utilization needs view_vehicles and view_reservat
     withClient(<ReportsPage />);
 
     expect(await screen.findByTestId("tab-report-financial")).toBeInTheDocument();
-    expect(screen.queryByTestId("tab-report-overview")).not.toBeInTheDocument();
+    // Overzicht is there (margin and fines tiles) but has no vehicle tiles.
+    expect(screen.getByTestId("tab-report-overview")).toBeInTheDocument();
+    expect(screen.queryByTestId("overview-tile-occupancy")).not.toBeInTheDocument();
     expect(screen.queryByTestId("tab-report-vehicles")).not.toBeInTheDocument();
     expect(screen.queryByTestId("report-nav-item-vehicle-utilization")).not.toBeInTheDocument();
     await new Promise((resolve) => setTimeout(resolve, 20));
@@ -81,6 +83,7 @@ describe("/reports — vehicle utilization needs view_vehicles and view_reservat
   it("fires both queries and shows no NoDataAccess with view_vehicles and view_reservations", async () => {
     role = UserRole.USER;
     permissions = [UserPermission.VIEW_REPORTS, UserPermission.VIEW_VEHICLES, UserPermission.VIEW_RESERVATIONS];
+    window.history.replaceState(null, "", "/reports?tab=vehicles");
     withClient(<ReportsPage />);
 
     await waitFor(() => expect(calledWith("/api/vehicles")).toBe(true));
@@ -165,6 +168,7 @@ describe("/reports — admin", () => {
   it("gets every query regardless of the permissions array", async () => {
     role = UserRole.ADMIN;
     permissions = [];
+    window.history.replaceState(null, "", "/reports?tab=expenses");
     withClient(<ReportsPage />);
 
     await waitFor(() => expect(calledWith("/api/vehicles")).toBe(true));

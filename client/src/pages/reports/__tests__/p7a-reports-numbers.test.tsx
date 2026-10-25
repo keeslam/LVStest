@@ -8,7 +8,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { UserRole } from "@shared/schema";
-import { installFetch, renderWithClient, printPreviewBody, vehicle, daysFromNow, chooseRange, openReport } from "./p7a-harness";
+import { startOnTab, installFetch, renderWithClient, printPreviewBody, vehicle, daysFromNow, chooseRange, openReport } from "./p7a-harness";
 
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: 1, username: "tester", role: UserRole.ADMIN, permissions: [], hidePrices: false }, isLoading: false }),
@@ -39,7 +39,8 @@ describe("/reports overview numbers (A-14-8)", () => {
   });
 
   it("divides the average cost per vehicle over the whole fleet and says so", async () => {
-    // Task 5: the average sits on Kosten > Kosten per categorie, the first report an admin sees.
+    // Task 5: the average sits on Kosten > Kosten per categorie, the first report of the Kosten tab.
+    startOnTab("expenses");
     renderWithClient(<ReportsPage />);
     const caption = await screen.findByTestId("reports-basis-caption");
     await waitFor(() => expect(caption).toHaveTextContent("4 voertuigen"));
@@ -89,6 +90,7 @@ describe("/reports print header for 'Alle gegevens' (final wave A, item 9)", () 
   it("does the same for a range typed by hand that equals it, and on the basis line", async () => {
     installFetch({ vehicles: fleet, expenses: [] });
     const user = userEvent.setup();
+    startOnTab("expenses");
     renderWithClient(<ReportsPage />);
     await chooseRange(user, "2000-01-01", "2050-12-31");
     const caption = await screen.findByTestId("reports-basis-caption");

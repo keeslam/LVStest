@@ -669,6 +669,20 @@
       "total": "Total",
       "selectAll": "Select all",
       "selectRow": "Select row"
+    },
+    "overview": {
+      "tiles": {
+        "margin": "Margin",
+        "occupancy": "Occupancy (% rented)",
+        "finesOpen": "Open fines",
+        "apkOverdue": "MOT expired",
+        "maintenanceOverdue": "Maintenance overdue",
+        "invoicesWaiting": "Invoices to check",
+        "deliveriesLate": "Delivered late",
+        "portalOpen": "Open portal requests"
+      },
+      "empty": "No figures to show.",
+      "periodTooLong": "Choose a shorter period."
     }
   },
   "moneyReports": {

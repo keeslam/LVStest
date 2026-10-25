@@ -149,6 +149,7 @@ describe("Kosten", () => {
     renderWithClient(<ReportsPage />);
     expect(await screen.findByTestId("tab-report-vehicles")).toBeInTheDocument();
     expect(screen.queryByTestId("tab-report-expenses")).toBeNull();
+    await userEvent.setup().click(screen.getByTestId("tab-report-vehicles"));
     for (const id of ["expenses-by-category", "expense-trend", "expenses-in-period", "maintenance-cost-by-vehicle"]) {
       expect(screen.queryByTestId(`report-nav-item-${id}`)).toBeNull();
     }

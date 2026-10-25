@@ -72,8 +72,7 @@ describe("reports shell - admin", () => {
     expect(bar.className).toContain("sticky");
     expect(bar.className).toContain("top-0");
     const tabs = screen.getAllByRole("tab").map((tab) => tab.textContent?.trim());
-    // Task 5: Overzicht has no report until Task 7, so the tab is not shown yet.
-    expect(tabs).toEqual(["Kosten", "Voertuigen", "Klanten", "Transporten", "Financieel", "Fiscaal", "Portaal", "Kantoor"]);
+    expect(tabs).toEqual(["Overzicht", "Kosten", "Voertuigen", "Klanten", "Transporten", "Financieel", "Fiscaal", "Portaal", "Kantoor"]);
 
     await user.click(screen.getByTestId("tab-report-vehicles"));
     const nav = await screen.findByTestId("report-nav");
@@ -128,8 +127,9 @@ describe("reports shell - admin", () => {
 
   it("shows the category filter only for a report that uses it", async () => {
     const user = userEvent.setup();
+    window.history.replaceState(null, "", "/reports?tab=expenses");
     renderPage();
-    // Overzicht (the old operations numbers) uses the category.
+    // Kosten uses the category.
     expect(await screen.findByTestId("select-report-category")).toBeInTheDocument();
     await user.click(screen.getByTestId("tab-report-portal"));
     await waitFor(() => expect(screen.queryByTestId("select-report-category")).toBeNull());
@@ -158,6 +158,7 @@ describe("reports shell - fix round 1", () => {
       if (path.startsWith("/api/expenses/facets")) return json({ categories: ["maintenance", "fuel"] });
       return json([]);
     }));
+    window.history.replaceState(null, "", "/reports?tab=expenses");
     renderPage();
     await user.click(await screen.findByTestId("select-report-category"));
     await user.click(await screen.findByRole("option", { name: "Onderhoud" }));
@@ -187,7 +188,8 @@ describe("reports shell - rights", () => {
     expect(await screen.findByTestId("tab-report-financial")).toBeInTheDocument();
     expect(screen.queryByTestId("tab-report-portal")).toBeNull();
     expect(screen.queryByTestId("tab-report-office")).toBeNull();
-    expect(screen.queryByTestId("tab-report-overview")).toBeNull();
+    // The money numbers are on Overzicht (margin, fines), so the tab is there.
+    expect(screen.getByTestId("tab-report-overview")).toBeInTheDocument();
     expect(screen.queryByTestId("tab-report-vehicles")).toBeNull();
     expect(screen.queryByTestId("tab-report-expenses")).toBeNull();
   });

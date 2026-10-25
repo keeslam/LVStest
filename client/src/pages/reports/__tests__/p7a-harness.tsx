@@ -105,6 +105,11 @@ export function resetReportsUrl() {
   window.history.replaceState(null, "", "/reports");
 }
 
+/** Opens /reports on one tab (the page lands on Overzicht otherwise). */
+export function startOnTab(tab: string) {
+  window.history.replaceState(null, "", `/reports?tab=${tab}`);
+}
+
 type User = ReturnType<typeof userEvent.setup>;
 
 /** Sets the period of the filter bar to a custom range ("yyyy-MM-dd"). */

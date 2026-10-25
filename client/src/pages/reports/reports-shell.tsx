@@ -1,22 +1,20 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Building2, Calculator, Car, DollarSign, FileText, LayoutDashboard, Loader2, MessageSquare, TrendingUp, User, X,
   type LucideIcon,
 } from "lucide-react";
-import { UserRole } from "@shared/schema";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useAuth } from "@/hooks/use-auth";
-import { useFiscalPermissions } from "@/components/fiscal/use-fiscal-permissions";
 import ReportBuilderPage from "@/pages/reports/report-builder";
 import MaintenanceCostsPage from "@/pages/reports/maintenance-costs";
 import { ReportFiltersProvider } from "./report-filters";
 import { ReportFilterBar } from "./report-filter-bar";
 import { ReportNav } from "./report-nav";
 import { ReportPane } from "./report-pane";
-import { REPORTS, visibleReports, visibleTabs, type ReportAccess, type ReportTabId } from "./report-registry";
+import { REPORTS, visibleReports, visibleTabs, type ReportTabId } from "./report-registry";
+import { useReportAccess } from "./use-report-access";
 import { useReportSelection } from "./use-report-selection";
 
 const TAB_ICONS: Record<ReportTabId, LucideIcon> = {
@@ -42,15 +40,7 @@ export function ReportsShell() {
 
 function ReportsShellInner() {
   const { t } = useTranslation("reports");
-  const { user } = useAuth();
-  const { canView: canViewFiscal } = useFiscalPermissions();
-  const isAdmin = user?.role === UserRole.ADMIN;
-  const permissionKey = ((user?.permissions as string[] | undefined) ?? []).join(",");
-
-  const access = useMemo<ReportAccess>(() => {
-    const granted = permissionKey ? permissionKey.split(",") : [];
-    return { isAdmin, canViewFiscal, has: (perm: string) => isAdmin || granted.includes(perm) };
-  }, [isAdmin, canViewFiscal, permissionKey]);
+  const access = useReportAccess();
 
   const { tab, reportId, ready, select } = useReportSelection(access);
   const tabs = visibleTabs(access);

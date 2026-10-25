@@ -693,6 +693,20 @@
       "total": "Razem",
       "selectAll": "Zaznacz wszystko",
       "selectRow": "Zaznacz wiersz"
+    },
+    "overview": {
+      "tiles": {
+        "margin": "Marża",
+        "occupancy": "Obłożenie (% wynajęte)",
+        "finesOpen": "Otwarte mandaty",
+        "apkOverdue": "Przegląd wygasły",
+        "maintenanceOverdue": "Zaległa konserwacja",
+        "invoicesWaiting": "Faktury do sprawdzenia",
+        "deliveriesLate": "Spóźnione dostawy",
+        "portalOpen": "Otwarte zgłoszenia z portalu"
+      },
+      "empty": "Brak liczb do pokazania.",
+      "periodTooLong": "Wybierz krótszy okres."
     }
   },
   "moneyReports": {

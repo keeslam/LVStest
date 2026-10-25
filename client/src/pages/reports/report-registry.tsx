@@ -8,6 +8,10 @@ import { formatExpenseCategory, formatLicensePlate } from "@/lib/format-utils";
 import { MileageHistoryPanel } from "@/components/vehicles/mileage-history-panel";
 import { FiscalReportTab } from "@/components/fiscal/fiscal-report-tab";
 import { useReportFilters } from "./report-filters";
+import { OverviewReport, OVERVIEW_TILE_REPORT } from "./overview-report";
+import { useReportAccess } from "./use-report-access";
+import { useReportSelection } from "./use-report-selection";
+import { ApkOverviewBadge, DeliveriesBadge, FinesBadge, InvoiceInboxItemsBadge, MaintenanceOutlookBadge, PortalRequestsBadge } from "./report-badges";
 import { FinesReportCard } from "./fines-report-card";
 import { ExtraCostsReportCard } from "./extra-costs-report-card";
 import { TransportBillingReportCard } from "./transport-billing-report-card";
@@ -123,12 +127,30 @@ function MileageHistoryReport() {
   );
 }
 
+/** Overzicht: the key numbers; each tile opens its report. Shown when at least one tile is. */
+function OverviewPane() {
+  const access = useReportAccess();
+  const { select } = useReportSelection(access);
+  const visible = visibleReports(access);
+  const shown = new Set(visible.map((r) => r.id));
+  return (
+    <OverviewReport
+      shown={shown}
+      tabOf={(id) => REPORTS.find((r) => r.id === id)?.tab}
+      onOpen={select}
+    />
+  );
+}
+
 /**
  * Every fixed report, in list order per tab. Each report sees only the rights its numbers
  * need; the file of a report states its rule.
  */
 export const REPORTS: ReportDef[] = [
-  // Overzicht: Task 7 adds the overview report; until then the tab has none and is not shown.
+  // Overzicht (not in the tile list itself)
+  { id: "overview", tab: "overview", titleKey: "reportsPage.tabs.overview",
+    visible: (c) => Object.values(OVERVIEW_TILE_REPORT).some((id) => REPORTS.find((r) => r.id === id)?.visible(c)),
+    Component: OverviewPane },
   // Kosten (all three read /api/expenses)
   { id: "expenses-by-category", tab: "expenses", titleKey: "reportsPage.operations.expensesByCategoryTitle", usesCategory: true,
     visible: (c) => reports(c) && expenses(c), Component: ExpensesByCategoryReport },
@@ -143,13 +165,13 @@ export const REPORTS: ReportDef[] = [
   { id: "maintenance-cost-by-vehicle", tab: "vehicles", titleKey: "reportsPage.vehiclesTab.maintenanceCostsTitle", usesCategory: true,
     visible: (c) => reports(c) && vehicles(c) && expenses(c), Component: MaintenanceCostByVehicleReport },
   { id: "apk-overview", tab: "vehicles", titleKey: "reportsPage.vehiclesTab.apkOverviewTitle",
-    visible: (c) => reports(c) && vehicles(c), Component: ApkOverviewReport },
+    visible: (c) => reports(c) && vehicles(c), Component: ApkOverviewReport, badge: ApkOverviewBadge },
   { id: "warranty", tab: "vehicles", titleKey: "reportsPage.vehiclesTab.warrantyOverviewTitle",
     visible: (c) => reports(c) && vehicles(c), Component: WarrantyReport },
   { id: "occupancy", tab: "vehicles", titleKey: "fleetReports.occupancy.title",
     visible: (c) => reports(c) && vehicles(c) && reservations(c), Component: OccupancyReportCard },
   { id: "maintenance-outlook", tab: "vehicles", titleKey: "fleetReports.outlook.title",
-    visible: (c) => reports(c) && vehicles(c), Component: MaintenanceOutlookCard },
+    visible: (c) => reports(c) && vehicles(c), Component: MaintenanceOutlookCard, badge: MaintenanceOutlookBadge },
   { id: "workshop-downtime", tab: "vehicles", titleKey: "reportsPage.downtime.title",
     visible: (c) => reports(c) && vehicles(c), Component: WorkshopDowntimeCard },
   { id: "fleet-mileage", tab: "vehicles", titleKey: "fleetReports.mileage.title",
@@ -173,23 +195,23 @@ export const REPORTS: ReportDef[] = [
   // Financieel (money reports: the report right only)
   { id: "vehicle-financials", tab: "financial", titleKey: "financialTab.table.title",
     visible: reports, Component: VehicleFinancialsReport },
-  { id: "fines", tab: "financial", titleKey: "moneyReports.fines.title", visible: reports, Component: FinesReportCard },
+  { id: "fines", tab: "financial", titleKey: "moneyReports.fines.title", visible: reports, Component: FinesReportCard, badge: FinesBadge },
   { id: "extra-costs", tab: "financial", titleKey: "moneyReports.extraCosts.title", visible: reports, Component: ExtraCostsReportCard },
   { id: "transport-billing", tab: "financial", titleKey: "moneyReports.transport.title", visible: reports, Component: TransportBillingReportCard },
   // Fiscaal (exactly view_fiscal)
   { id: "fiscal", tab: "fiscal", titleKey: "fiscal:report.title", visible: (c) => c.canViewFiscal, Component: FiscalReport },
   // Portaal
   { id: "portal-requests", tab: "portal", titleKey: "portalReports.requests.title",
-    visible: (c) => reports(c) && portal(c), Component: PortalRequestsReportCard },
+    visible: (c) => reports(c) && portal(c), Component: PortalRequestsReportCard, badge: PortalRequestsBadge },
   { id: "waitlist", tab: "portal", titleKey: "portalReports.waitlist.title",
     visible: (c) => reports(c) && portal(c), Component: WaitlistReportCard },
   // Kantoor. The invoice inbox is two reports: the pickup rounds and the invoices that came in.
   { id: "invoice-inbox-runs", tab: "office", titleKey: "officeReports.inbox.runsTitle",
     visible: (c) => reports(c) && any(c, UserPermission.MANAGE_EXPENSES, UserPermission.MANAGE_SETTINGS), Component: InvoiceInboxRunsReport },
   { id: "invoice-inbox-items", tab: "office", titleKey: "officeReports.inbox.itemsTitle",
-    visible: (c) => reports(c) && any(c, UserPermission.MANAGE_EXPENSES), Component: InvoiceInboxItemsReport },
+    visible: (c) => reports(c) && any(c, UserPermission.MANAGE_EXPENSES), Component: InvoiceInboxItemsReport, badge: InvoiceInboxItemsBadge },
   { id: "deliveries", tab: "office", titleKey: "officeReports.delivery.title",
-    visible: (c) => reports(c) && transports(c), Component: DeliveryReportCard },
+    visible: (c) => reports(c) && transports(c), Component: DeliveryReportCard, badge: DeliveriesBadge },
   { id: "damage-checks", tab: "office", titleKey: "officeReports.damage.title",
     visible: (c) => reports(c) && any(c, UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS), Component: DamageChecksReportCard },
 ];

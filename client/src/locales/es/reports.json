@@ -681,6 +681,20 @@
       "total": "Total",
       "selectAll": "Marcar todo",
       "selectRow": "Marcar fila"
+    },
+    "overview": {
+      "tiles": {
+        "margin": "Margen",
+        "occupancy": "Ocupación (% alquilado)",
+        "finesOpen": "Multas abiertas",
+        "apkOverdue": "ITV caducada",
+        "maintenanceOverdue": "Mantenimiento atrasado",
+        "invoicesWaiting": "Facturas por revisar",
+        "deliveriesLate": "Entregas tardías",
+        "portalOpen": "Solicitudes del portal abiertas"
+      },
+      "empty": "No hay cifras que mostrar.",
+      "periodTooLong": "Elija un período más corto."
     }
   },
   "moneyReports": {

@@ -669,6 +669,20 @@
       "total": "Totaal",
       "selectAll": "Alles aanvinken",
       "selectRow": "Regel aanvinken"
+    },
+    "overview": {
+      "tiles": {
+        "margin": "Marge",
+        "occupancy": "Bezetting (% verhuurd)",
+        "finesOpen": "Open bekeuringen",
+        "apkOverdue": "APK verlopen",
+        "maintenanceOverdue": "Onderhoud te laat",
+        "invoicesWaiting": "Facturen ter controle",
+        "deliveriesLate": "Te laat bezorgd",
+        "portalOpen": "Open portaalaanvragen"
+      },
+      "empty": "Geen cijfers om te tonen.",
+      "periodTooLong": "Kies een kortere periode."
     }
   },
   "moneyReports": {

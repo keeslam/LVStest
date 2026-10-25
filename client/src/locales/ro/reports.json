@@ -681,6 +681,20 @@
       "total": "Total",
       "selectAll": "Bifează tot",
       "selectRow": "Bifează rândul"
+    },
+    "overview": {
+      "tiles": {
+        "margin": "Marjă",
+        "occupancy": "Grad de ocupare (% închiriat)",
+        "finesOpen": "Amenzi deschise",
+        "apkOverdue": "ITP expirat",
+        "maintenanceOverdue": "Mentenanță întârziată",
+        "invoicesWaiting": "Facturi de verificat",
+        "deliveriesLate": "Livrări întârziate",
+        "portalOpen": "Cereri portal deschise"
+      },
+      "empty": "Nu există cifre de afișat.",
+      "periodTooLong": "Alegeți o perioadă mai scurtă."
     }
   },
   "moneyReports": {

@@ -681,6 +681,20 @@
       "total": "Totale",
       "selectAll": "Seleziona tutto",
       "selectRow": "Seleziona riga"
+    },
+    "overview": {
+      "tiles": {
+        "margin": "Margine",
+        "occupancy": "Occupazione (% noleggiato)",
+        "finesOpen": "Multe aperte",
+        "apkOverdue": "Revisione scaduta",
+        "maintenanceOverdue": "Manutenzione in ritardo",
+        "invoicesWaiting": "Fatture da controllare",
+        "deliveriesLate": "Consegne in ritardo",
+        "portalOpen": "Richieste del portale aperte"
+      },
+      "empty": "Nessun dato da mostrare.",
+      "periodTooLong": "Scegli un periodo più breve."
     }
   },
   "moneyReports": {

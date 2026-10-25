@@ -9,7 +9,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { UserRole } from "@shared/schema";
-import { installFetch, renderWithClient, vehicle, daysFromNow, openReport } from "./p7a-harness";
+import { startOnTab, installFetch, renderWithClient, vehicle, daysFromNow, openReport } from "./p7a-harness";
 
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: 1, username: "tester", role: UserRole.ADMIN, permissions: [], hidePrices: false }, isLoading: false }),
@@ -45,6 +45,7 @@ describe("category filter (A-14-4)", () => {
   it("offers only the categories that occur in the data, 'Fuel' and 'fuel' as one", async () => {
     installFetch({ vehicles: fleet, expenses });
     const user = userEvent.setup();
+    startOnTab("expenses");
     renderWithClient(<ReportsPage />);
     // wait for the data, otherwise the list is still empty
     await waitFor(() => expect(screen.getAllByText(/€ 155,00/).length).toBeGreaterThan(0));
@@ -86,6 +87,7 @@ describe("vehicle filter (A-14-11)", () => {
 describe("loading state (A-14-10)", () => {
   it("shows a status line while the data loads and removes it when the numbers are there", async () => {
     installFetch({ vehicles: fleet, expenses, delayExpenses: 300 });
+    startOnTab("expenses");
     renderWithClient(<ReportsPage />);
     const status = await screen.findByTestId("reports-loading");
     expect(status).toHaveAttribute("role", "status");
@@ -101,6 +103,7 @@ describe("tabs that ignore the category filter say so (fix round 1, M-2)", () =>
       extra: { "/api/fiscal/reports/monthly": { year: 2026, notStarted: false, totals: { amount: 0, settled: 0, provisional: 0, chargedMonths: 0, periods: 0, unassessedPeriods: 0 }, byCustomer: [], rows: [], columns: [] } },
     });
     const user = userEvent.setup();
+    startOnTab("expenses");
     renderWithClient(<ReportsPage />);
     await waitFor(() => expect(screen.getAllByText(/€ 155,00/).length).toBeGreaterThan(0));
     // before a category is chosen no tab shows the note
