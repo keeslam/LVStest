@@ -9,6 +9,7 @@ import { differenceInDays } from "date-fns";
 import { ReportSection } from "@/components/reports/kit/report-section";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
+import { EntityLink } from "@/components/reports/entity-link";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { useReportBaseData, type WarrantyRow } from "../report-base-data";
@@ -48,7 +49,7 @@ export function WarrantyReport() {
     const endDate = (v: WarrantyRow) => (v.warrantyEndDate ? formatDate(v.warrantyEndDate) : t("reportsPage.common.notSet"));
     return [
       { id: "vehicle", label: t("reportsPage.common.vehicle"), cell: (v) => `${v.brand} ${v.model}`, text: (v) => `${v.brand} ${v.model}`, sortValue: (v) => `${v.brand} ${v.model}` },
-      { id: "plate", label: t("reportsPage.common.licensePlate"), cell: (v) => formatLicensePlate(v.licensePlate), text: (v) => formatLicensePlate(v.licensePlate), sortValue: (v) => v.licensePlate },
+      { id: "plate", label: t("reportsPage.common.licensePlate"), cell: (v) => <EntityLink kind="vehicle" id={v.id} label={formatLicensePlate(v.licensePlate)} />, text: (v) => formatLicensePlate(v.licensePlate), sortValue: (v) => v.licensePlate },
       { id: "endDate", label: t("reportsPage.vehiclesTab.warrantyEndDate"), cell: endDate, text: endDate, sortValue: (v) => (v.warrantyEndDate ? new Date(v.warrantyEndDate).getTime() : null) },
       {
         id: "status", label: t("common:fields.status"), align: "right",

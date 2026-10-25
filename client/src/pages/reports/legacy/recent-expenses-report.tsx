@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import type { Expense } from "@shared/schema";
 import { Price } from "@/components/ui/price";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
+import { EntityLink } from "@/components/reports/entity-link";
 import { ReportSection } from "@/components/reports/kit/report-section";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { formatCurrency, formatDate, formatExpenseCategory, formatLicensePlate } from "@/lib/format-utils";
@@ -33,7 +34,7 @@ export function RecentExpensesReport() {
     };
     return [
       { id: "date", label: t("common:fields.date"), cell: (e) => formatDate(e.date), text: (e) => formatDate(e.date), sortValue: (e) => new Date(e.date).getTime() },
-      { id: "vehicle", label: t("reportsPage.common.vehicle"), cell: vehicleName, text: vehicleName, sortValue: vehicleName },
+      { id: "vehicle", label: t("reportsPage.common.vehicle"), cell: (e) => <EntityLink kind="vehicle" id={e.vehicleId} label={vehicleName(e)} />, text: vehicleName, sortValue: vehicleName },
       { id: "category", label: t("reportsPage.common.category"), cell: (e) => formatExpenseCategory(e.category), text: (e) => formatExpenseCategory(e.category), sortValue: (e) => formatExpenseCategory(e.category) },
       { id: "description", label: t("common:fields.description"), cell: (e) => e.description, text: (e) => e.description ?? "" },
       { id: "amount", label: t("common:fields.amount"), cell: (e) => <Price value={Number(e.amount)} />, text: (e) => formatCurrency(Number(e.amount)), sortValue: (e) => Number(e.amount), align: "right" },

@@ -1222,5 +1222,38 @@
     "printedOn": "Printed on",
     "vehicleLine": "Vehicle: {{vehicle}}",
     "categoryLine": "Category: {{category}}"
+  },
+  "entity": {
+    "open": "Open in new tab",
+    "notFound": "Not found or deleted.",
+    "loadFailed": "The details could not be loaded.",
+    "titles": {
+      "vehicle": "Vehicle",
+      "customer": "Customer",
+      "reservation": "Reservation",
+      "fine": "Fine",
+      "driver": "Driver",
+      "invoice": "Invoice"
+    },
+    "fields": {
+      "licensePlate": "License plate",
+      "brandModel": "Make and model",
+      "apk": "APK",
+      "mileage": "Mileage",
+      "renter": "Current renter",
+      "noRenter": "Not rented",
+      "email": "Email",
+      "phone": "Phone",
+      "address": "Address",
+      "reservations": "Number of reservations",
+      "customer": "Customer",
+      "vehicle": "Vehicle",
+      "period": "Period",
+      "status": "Status",
+      "amount": "Amount",
+      "date": "Date",
+      "driver": "Driver",
+      "vendor": "Supplier"
+    }
   }
 }

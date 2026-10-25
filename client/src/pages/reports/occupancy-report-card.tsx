@@ -28,6 +28,7 @@ import { compactSections } from "@/components/reports/kit/report-breakdown-table
 import { useReportRange } from "./report-filters";
 import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
+import { EntityLink } from "@/components/reports/entity-link";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
@@ -94,7 +95,7 @@ export function OccupancyReportCard(props: { from?: string; to?: string; vehicle
     const brandModel = (r: OccupancyRow) => [r.brand, r.model].filter(Boolean).join(" ");
     const n = (v: number) => v.toLocaleString("nl-NL");
     return [
-      { id: "licensePlate", label: c("licensePlate"), sortKey: "licensePlate", cell: plate, csv: plate },
+      { id: "licensePlate", label: c("licensePlate"), sortKey: "licensePlate", cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={plate(r)} />, csv: plate },
       { id: "brandModel", label: c("brandModel"), cell: brandModel, csv: brandModel },
       { id: "fleetDays", label: c("fleetDays"), align: "right", cell: (r) => n(r.fleetDays), csv: (r) => csvNumber(r.fleetDays, 0), print: (r) => n(r.fleetDays) },
       { id: "rentedDays", label: c("rentedDays"), align: "right", cell: (r) => n(r.rentedDays), csv: (r) => csvNumber(r.rentedDays, 0), print: (r) => n(r.rentedDays) },

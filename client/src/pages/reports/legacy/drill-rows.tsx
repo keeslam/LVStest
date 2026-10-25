@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import type { Customer, Expense, Reservation, Vehicle } from "@shared/schema";
 import { Price } from "@/components/ui/price";
 import { ReportRowsDialog, csvSlug, rowsPart } from "@/components/reports/kit/report-rows-dialog";
+import { EntityLink } from "@/components/reports/entity-link";
 import type { ReportTableColumn } from "@/components/reports/kit/report-table";
 import { formatCurrency, formatDate, formatExpenseCategory, formatLicensePlate, formatReservationStatus } from "@/lib/format-utils";
 
@@ -46,7 +47,7 @@ export function useExpenseRowColumns(vehicles: Vehicle[]): ReportTableColumn<Exp
   const vehicleName = useVehicleName(vehicles);
   return useMemo<ReportTableColumn<Expense>[]>(() => [
     { id: "date", label: t("common:fields.date"), cell: (e) => formatDate(e.date), text: (e) => formatDate(e.date), sortValue: (e) => new Date(e.date).getTime() },
-    { id: "vehicle", label: t("reportsPage.common.vehicle"), cell: (e) => vehicleName(e.vehicleId), text: (e) => vehicleName(e.vehicleId), sortValue: (e) => vehicleName(e.vehicleId) },
+    { id: "vehicle", label: t("reportsPage.common.vehicle"), cell: (e) => <EntityLink kind="vehicle" id={e.vehicleId} label={vehicleName(e.vehicleId)} />, text: (e) => vehicleName(e.vehicleId), sortValue: (e) => vehicleName(e.vehicleId) },
     { id: "category", label: t("reportsPage.common.category"), cell: (e) => formatExpenseCategory(e.category), text: (e) => formatExpenseCategory(e.category), sortValue: (e) => formatExpenseCategory(e.category) },
     { id: "description", label: t("common:fields.description"), cell: (e) => e.description, text: (e) => e.description ?? "" },
     { id: "amount", label: t("common:fields.amount"), cell: (e) => <Price value={Number(e.amount)} />, text: (e) => formatCurrency(Number(e.amount)), sortValue: (e) => Number(e.amount), align: "right" },
@@ -61,9 +62,9 @@ export function useReservationRowColumns(vehicles: Vehicle[], customers: Custome
     const customerName = (r: Reservation) => (r.customerId != null && byId.get(r.customerId)?.name) || t("reportsPage.common.unknown");
     const endDate = (r: Reservation) => (r.endDate ? formatDate(r.endDate) : t("reportsPage.customersTab.openEnded"));
     return [
-      { id: "customer", label: t("reportsPage.common.customer"), cell: customerName, text: customerName, sortValue: customerName },
-      { id: "vehicle", label: t("reportsPage.common.vehicle"), cell: (r) => vehicleName(r.vehicleId), text: (r) => vehicleName(r.vehicleId), sortValue: (r) => vehicleName(r.vehicleId) },
-      { id: "start", label: t("common:fields.startDate"), cell: (r) => formatDate(r.startDate), text: (r) => formatDate(r.startDate), sortValue: (r) => new Date(r.startDate).getTime() },
+      { id: "customer", label: t("reportsPage.common.customer"), cell: (r) => <EntityLink kind="customer" id={r.customerId} label={customerName(r)} />, text: customerName, sortValue: customerName },
+      { id: "vehicle", label: t("reportsPage.common.vehicle"), cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={vehicleName(r.vehicleId)} />, text: (r) => vehicleName(r.vehicleId), sortValue: (r) => vehicleName(r.vehicleId) },
+      { id: "start", label: t("common:fields.startDate"), cell: (r) => <EntityLink kind="reservation" id={r.id} label={formatDate(r.startDate)} />, text: (r) => formatDate(r.startDate), sortValue: (r) => new Date(r.startDate).getTime() },
       { id: "end", label: t("common:fields.endDate"), cell: endDate, text: endDate, sortValue: (r) => (r.endDate ? new Date(r.endDate).getTime() : null) },
       { id: "status", label: t("common:fields.status"), cell: (r) => formatReservationStatus(r.status), text: (r) => formatReservationStatus(r.status), sortValue: (r) => formatReservationStatus(r.status) },
     ];

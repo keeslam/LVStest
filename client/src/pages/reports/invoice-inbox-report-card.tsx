@@ -23,6 +23,7 @@ import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/re
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportBreakdownTable, breakdownPrintSection, compactSections, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
 import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
+import { EntityLink } from "@/components/reports/entity-link";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatDate, formatDateTime, formatLicensePlate } from "@/lib/format-utils";
 import { csvDateTime, csvNumber } from "@/lib/csv";
@@ -243,11 +244,16 @@ export function InvoiceInboxItemsReport(props: InboxPartProps) {
         cell: (r) => formatDateTime(r.receivedAt), csv: (r) => csvDateTime(r.receivedAt),
       },
       { id: "from", label: label("from"), sortKey: "fromAddress", cell: (r) => r.fromAddress ?? "", csv: (r) => r.fromAddress ?? "" },
-      { id: "subject", label: label("subject"), cell: (r) => r.subject ?? "", csv: (r) => r.subject ?? "" },
-      { id: "attachment", label: label("attachment"), cell: (r) => r.attachmentName ?? "", csv: (r) => r.attachmentName ?? "" },
+      // The invoice opens from its subject, or from the attachment name when the mail had no subject.
+      { id: "subject", label: label("subject"), cell: (r) => <EntityLink kind="invoice" id={r.id} label={r.subject ?? ""} />, csv: (r) => r.subject ?? "" },
+      {
+        id: "attachment", label: label("attachment"),
+        cell: (r) => (r.subject ? r.attachmentName ?? "" : <EntityLink kind="invoice" id={r.id} label={r.attachmentName ?? ""} />),
+        csv: (r) => r.attachmentName ?? "",
+      },
       { id: "outcome", label: label("outcome"), sortKey: "outcome", cell: (r) => outcomeLabel(r.outcome), csv: (r) => outcomeLabel(r.outcome) },
       { id: "reason", label: label("reason"), sortKey: "reviewReason", cell: (r) => reason(r), csv: (r) => reason(r) },
-      { id: "licensePlate", label: label("licensePlate"), cell: (r) => plate(r), csv: (r) => plate(r) },
+      { id: "licensePlate", label: label("licensePlate"), cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={plate(r)} />, csv: (r) => plate(r) },
       { id: "handledBy", label: label("handledBy"), cell: (r) => r.handledBy ?? "", csv: (r) => r.handledBy ?? "" },
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps

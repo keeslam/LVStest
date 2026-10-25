@@ -20,6 +20,7 @@ import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/re
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportBreakdownTable, breakdownPrintSection, compactSections, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
 import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
+import { EntityLink } from "@/components/reports/entity-link";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatCurrency, formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
@@ -62,8 +63,8 @@ export function FinesReportCard(props: { from?: string; to?: string; vehicleId?:
     return [
       { id: "offenceAt", label: t("moneyReports.fines.columns.offenceAt"), sortKey: "offenceAt", cell: (r) => day(r.offenceAt), csv: (r) => csvDateTime(r.offenceAt) },
       { id: "receivedAt", label: t("moneyReports.fines.columns.receivedAt"), cell: (r) => day(r.receivedAt), csv: (r) => csvDate(r.receivedAt) },
-      { id: "licensePlate", label: t("moneyReports.fines.columns.licensePlate"), sortKey: "licensePlate", cell: (r) => formatLicensePlate(r.licensePlate), csv: (r) => formatLicensePlate(r.licensePlate) },
-      { id: "description", label: t("moneyReports.fines.columns.description"), cell: (r) => r.description, csv: (r) => r.description },
+      { id: "licensePlate", label: t("moneyReports.fines.columns.licensePlate"), sortKey: "licensePlate", cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={formatLicensePlate(r.licensePlate)} />, csv: (r) => formatLicensePlate(r.licensePlate) },
+      { id: "description", label: t("moneyReports.fines.columns.description"), cell: (r) => <EntityLink kind="fine" id={r.id} label={r.description} />, csv: (r) => r.description },
       { id: "reference", label: t("moneyReports.fines.columns.reference"), cell: (r) => r.reference ?? "", csv: (r) => r.reference ?? "" },
       {
         id: "status", label: t("moneyReports.fines.columns.status"), sortKey: "status",
@@ -76,7 +77,7 @@ export function FinesReportCard(props: { from?: string; to?: string; vehicleId?:
         csv: (r) => status(r.status),
       },
       { id: "amount", label: t("moneyReports.fines.columns.amount"), sortKey: "amount", align: "right", cell: (r) => formatCurrency(r.amount), csv: (r) => csvNumber(r.amount), print: (r) => formatCurrency(r.amount) },
-      { id: "customer", label: t("moneyReports.fines.columns.customer"), sortKey: "customer", cell: (r) => r.customerName ?? "", csv: (r) => r.customerName ?? "" },
+      { id: "customer", label: t("moneyReports.fines.columns.customer"), sortKey: "customer", cell: (r) => <EntityLink kind="customer" id={r.customerId} label={r.customerName ?? ""} />, csv: (r) => r.customerName ?? "" },
       { id: "driver", label: t("moneyReports.fines.columns.driver"), cell: (r) => r.driverName ?? "", csv: (r) => r.driverName ?? "" },
     ];
   }, [t]);

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReportSection } from "@/components/reports/kit/report-section";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
+import { EntityLink } from "@/components/reports/entity-link";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { formatCurrency, formatExpenseCategory, formatLicensePlate } from "@/lib/format-utils";
@@ -69,7 +70,7 @@ export function VehicleFinancialsReport() {
   const columns = useMemo<ReportTableColumn<VehicleFinancialRow>[]>(() => [
     {
       id: "vehicle", label: t("financialTab.table.vehicle"),
-      cell: (r) => (<><div className="font-medium">{formatLicensePlate(r.licensePlate)}</div><div className="text-xs text-gray-500">{r.brand} {r.model}</div></>),
+      cell: (r) => (<><div className="font-medium"><EntityLink kind="vehicle" id={r.vehicleId} label={formatLicensePlate(r.licensePlate)} /></div><div className="text-xs text-gray-500">{r.brand} {r.model}</div></>),
       text: (r) => `${formatLicensePlate(r.licensePlate)} ${r.brand} ${r.model}`,
       sortValue: (r) => r.licensePlate,
     },

@@ -24,6 +24,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
+import { EntityLink } from "@/components/reports/entity-link";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatCurrency, formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
@@ -77,8 +78,8 @@ export function TransportBillingReportCard(props: { from?: string; to?: string; 
       { id: "date", label: c("date"), sortKey: "date", cell: (r) => day(r.date), csv: (r) => csvDate(r.date) },
       { id: "type", label: c("type"), sortKey: "transportType", cell: (r) => type(r.transportType), csv: (r) => type(r.transportType) },
       { id: "status", label: c("status"), sortKey: "status", cell: (r) => status(r.status), csv: (r) => status(r.status) },
-      { id: "licensePlate", label: c("licensePlate"), cell: plate, csv: plate },
-      { id: "customer", label: c("customer"), cell: (r) => r.customerName ?? "", csv: (r) => r.customerName ?? "" },
+      { id: "licensePlate", label: c("licensePlate"), cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={plate(r)} />, csv: plate },
+      { id: "customer", label: c("customer"), cell: (r) => <EntityLink kind="customer" id={r.customerId} label={r.customerName ?? ""} />, csv: (r) => r.customerName ?? "" },
       {
         id: "billableAmount",
         label: c("billableAmount"),

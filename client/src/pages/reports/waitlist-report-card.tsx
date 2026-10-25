@@ -22,6 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
+import { EntityLink } from "@/components/reports/entity-link";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatDate, formatDateTime } from "@/lib/format-utils";
 import { csvDate, csvDateTime, csvNumber } from "@/lib/csv";
@@ -75,7 +76,7 @@ export function WaitlistReportCard(props: { from?: string; to?: string; vehicleI
       { id: "createdAt", label: label("createdAt"), sortKey: "createdAt", cell: (r) => formatDateTime(r.createdAt), csv: (r) => csvDateTime(r.createdAt) },
       {
         id: "customer", label: label("customer"), sortKey: "customer",
-        cell: (r) => (r.customerName === null ? <span className="italic text-muted-foreground">{name(r)}</span> : name(r)),
+        cell: (r) => (r.customerName === null ? <span className="italic text-muted-foreground">{name(r)}</span> : <EntityLink kind="customer" id={r.customerId} label={name(r)} />),
         csv: (r) => name(r),
         print: (r) => name(r),
       },
@@ -85,7 +86,7 @@ export function WaitlistReportCard(props: { from?: string; to?: string; vehicleI
         csv: (r) => type(r),
         print: (r) => type(r),
       },
-      { id: "licensePlate", label: label("licensePlate"), cell: (r) => r.licensePlate ?? "", csv: (r) => r.licensePlate ?? "" },
+      { id: "licensePlate", label: label("licensePlate"), cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={r.licensePlate ?? ""} />, csv: (r) => r.licensePlate ?? "" },
       {
         id: "preferredStart", label: label("preferredStart"), sortKey: "preferredStartDate",
         cell: (r) => formatDate(r.preferredStartDate), csv: (r) => csvDate(r.preferredStartDate),

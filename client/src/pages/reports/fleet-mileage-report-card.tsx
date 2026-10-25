@@ -27,6 +27,7 @@ import { useReportRange } from "./report-filters";
 import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
+import { EntityLink } from "@/components/reports/entity-link";
 import { useAuth } from "@/hooks/use-auth";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatLicensePlate } from "@/lib/format-utils";
@@ -92,7 +93,7 @@ export function FleetMileageReportCard(props: { from?: string; to?: string; vehi
       csv: (r) => { const v = veh(r); return v ? instantText(value(v)) : ""; },
     });
     return [
-      { id: "licensePlate", label: c("licensePlate"), sortKey: "licensePlate", cell: plate, csv: plate },
+      { id: "licensePlate", label: c("licensePlate"), sortKey: "licensePlate", cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={plate(r)} />, csv: plate },
       { id: "brandModel", label: c("brandModel"), cell: brandModel, csv: brandModel },
       km("km", c("km"), (v) => v.drivenKm, "km"),
       km("avgPerMonth", c("avgPerMonth"), (v) => v.avgPerMonth),
@@ -131,7 +132,7 @@ export function FleetMileageReportCard(props: { from?: string; to?: string; vehi
     const actor = text((w) => w.actorName ?? "");
     return [
       { id: "recordedAt", label: c("recordedAt"), sortKey: "date", cell: dateTime, csv: dateTime },
-      { id: "licensePlate", label: c("licensePlate"), sortKey: "licensePlate", cell: plate, csv: plate },
+      { id: "licensePlate", label: c("licensePlate"), sortKey: "licensePlate", cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={plate(r)} />, csv: plate },
       km("mileage", c("mileage"), (w) => w.mileage),
       km("drivenSincePrevious", c("drivenSincePrevious"), (w) => w.drivenSincePrevious),
       { id: "warning", label: c("warning"), cell: warning, csv: warning },

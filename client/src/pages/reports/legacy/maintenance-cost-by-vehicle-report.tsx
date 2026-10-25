@@ -8,6 +8,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Price } from "@/components/ui/price";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
+import { EntityLink } from "@/components/reports/entity-link";
 import { ReportSection } from "@/components/reports/kit/report-section";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { formatCurrency, formatLicensePlate } from "@/lib/format-utils";
@@ -33,7 +34,7 @@ export function MaintenanceCostByVehicleReport() {
 
   const columns = useMemo<ReportTableColumn<MaintenanceCostRow>[]>(() => [
     { id: "vehicle", label: t("reportsPage.common.vehicle"), cell: (r) => `${r.brand} ${r.model}`, text: (r) => `${r.brand} ${r.model}`, sortValue: (r) => `${r.brand} ${r.model}` },
-    { id: "plate", label: t("reportsPage.common.licensePlate"), cell: (r) => formatLicensePlate(r.licensePlate), text: (r) => formatLicensePlate(r.licensePlate), sortValue: (r) => r.licensePlate },
+    { id: "plate", label: t("reportsPage.common.licensePlate"), cell: (r) => <EntityLink kind="vehicle" id={r.id} label={formatLicensePlate(r.licensePlate)} />, text: (r) => formatLicensePlate(r.licensePlate), sortValue: (r) => r.licensePlate },
     { id: "count", label: t("reportsPage.vehiclesTab.expenseCount"), cell: (r) => t("reportsPage.vehiclesTab.entriesSuffix", { count: r.expenseCount }), text: (r) => String(r.expenseCount), sortValue: (r) => r.expenseCount, align: "right" },
     { id: "cost", label: t("reportsPage.vehiclesTab.totalCost"), cell: (r) => <Price value={Number(r.maintenanceCost)} />, text: (r) => formatCurrency(Number(r.maintenanceCost)), sortValue: (r) => r.maintenanceCost, align: "right" },
   ], [t]);

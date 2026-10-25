@@ -30,6 +30,7 @@ import { compactSections, textTablePrintSection } from "@/components/reports/kit
 import { useReportRange } from "./report-filters";
 import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
+import { EntityLink } from "@/components/reports/entity-link";
 import { useAuth } from "@/hooks/use-auth";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatLicensePlate } from "@/lib/format-utils";
@@ -84,7 +85,7 @@ export function MaintenanceOutlookCard(props: { vehicleId?: string }) {
       return r.basis === "months" && r.tooFewReadings ? `${text} (${t("fleetReports.outlook.tooFewReadings")})` : text;
     };
     const base: Array<ReportColumn<MaintenanceOutlookRow, MaintenanceOutlookSort>> = [
-      { id: "licensePlate", label: c("licensePlate"), sortKey: "licensePlate", cell: plate, csv: plate },
+      { id: "licensePlate", label: c("licensePlate"), sortKey: "licensePlate", cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={plate(r)} />, csv: plate },
       { id: "brandModel", label: c("brandModel"), cell: brandModel, csv: brandModel },
       { id: "kind", label: c("kind"), sortKey: "kind", cell: kind, csv: kind },
       { id: "dueDate", label: c("dueDate"), sortKey: "dueDate", cell: due, csv: (r) => r.dueDate, print: due },

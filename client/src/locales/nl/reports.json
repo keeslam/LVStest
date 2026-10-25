@@ -1222,5 +1222,38 @@
     "printedOn": "Gedrukt op",
     "vehicleLine": "Auto: {{vehicle}}",
     "categoryLine": "Categorie: {{category}}"
+  },
+  "entity": {
+    "open": "Openen in nieuw tabblad",
+    "notFound": "Niet gevonden of verwijderd.",
+    "loadFailed": "De gegevens konden niet worden geladen.",
+    "titles": {
+      "vehicle": "Auto",
+      "customer": "Klant",
+      "reservation": "Reservering",
+      "fine": "Bekeuring",
+      "driver": "Bestuurder",
+      "invoice": "Factuur"
+    },
+    "fields": {
+      "licensePlate": "Kenteken",
+      "brandModel": "Merk en model",
+      "apk": "APK",
+      "mileage": "Km-stand",
+      "renter": "Huidige huurder",
+      "noRenter": "Niet verhuurd",
+      "email": "E-mail",
+      "phone": "Telefoon",
+      "address": "Adres",
+      "reservations": "Aantal reserveringen",
+      "customer": "Klant",
+      "vehicle": "Auto",
+      "period": "Periode",
+      "status": "Status",
+      "amount": "Bedrag",
+      "date": "Datum",
+      "driver": "Bestuurder",
+      "vendor": "Leverancier"
+    }
   }
 }

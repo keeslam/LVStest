@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Inbox, Loader2, RefreshCw } from "lucide-react";
@@ -8,6 +8,7 @@ import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
 import { displayLicensePlate } from "@/lib/utils";
+import { takeIdFromAddress } from "@/lib/address-param";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -52,6 +53,24 @@ export function InvoiceInboxButton() {
   const [open, setOpen] = useState(() => new URLSearchParams(window.location.search).get("inbox") === "1");
   const [tab, setTab] = useState<InboxStatus>("review");
   const [openItem, setOpenItem] = useState<InboxListItem | null>(null);
+  // Rapporten: "Openen in nieuw tabblad" on an invoice opens /expenses?invoice=<id> in the check
+  // dialog of that item; the parameter comes off the address.
+  const [linkedItemId, setLinkedItemId] = useState<number | null>(null);
+  useEffect(() => {
+    const id = takeIdFromAddress("invoice");
+    if (id !== null) setLinkedItemId(id);
+  }, []);
+  const { data: linkedItem } = useQuery<InboxListItem>({
+    queryKey: [`/api/expenses/inbox/items/${linkedItemId}`],
+    queryFn: async () => (await apiRequest("GET", `/api/expenses/inbox/items/${linkedItemId}`)).json(),
+    enabled: linkedItemId !== null,
+  });
+  useEffect(() => {
+    if (!linkedItem) return;
+    // The single item has no plate of its own (the list adds it); the dialog picks the car from the list.
+    setOpenItem({ ...linkedItem, vehiclePlate: linkedItem.vehiclePlate ?? null });
+    setLinkedItemId(null);
+  }, [linkedItem]);
   // A-9-4: the Logboek used to live only in Instellingen > E-mail. The log routes accept
   // manage_expenses or manage_settings (server/routes/expense-inbox.ts: canRunOrSeeStatus).
   const canReadLog = useHasPermission(UserPermission.MANAGE_EXPENSES, UserPermission.MANAGE_SETTINGS);

@@ -1241,5 +1241,38 @@
     "printedOn": "Stampato il",
     "vehicleLine": "Veicolo: {{vehicle}}",
     "categoryLine": "Categoria: {{category}}"
+  },
+  "entity": {
+    "open": "Apri in una nuova scheda",
+    "notFound": "Non trovato o eliminato.",
+    "loadFailed": "Impossibile caricare i dati.",
+    "titles": {
+      "vehicle": "Veicolo",
+      "customer": "Cliente",
+      "reservation": "Prenotazione",
+      "fine": "Multa",
+      "driver": "Conducente",
+      "invoice": "Fattura"
+    },
+    "fields": {
+      "licensePlate": "Targa",
+      "brandModel": "Marca e modello",
+      "apk": "APK",
+      "mileage": "Chilometraggio",
+      "renter": "Noleggiatore attuale",
+      "noRenter": "Non noleggiato",
+      "email": "E-mail",
+      "phone": "Telefono",
+      "address": "Indirizzo",
+      "reservations": "Numero di prenotazioni",
+      "customer": "Cliente",
+      "vehicle": "Veicolo",
+      "period": "Periodo",
+      "status": "Stato",
+      "amount": "Importo",
+      "date": "Data",
+      "driver": "Conducente",
+      "vendor": "Fornitore"
+    }
   }
 }

@@ -57,6 +57,8 @@ import { ReservationForm } from "@/components/reservations/reservation-form";
 import { ReservationListDialog, type ReservationListTab } from "@/components/reservations/reservation-list-dialog";
 import { NotCollectedDialog, NOT_COLLECTED_QUERY_KEY } from "@/components/reservations/not-collected-dialog";
 import { RecycleBinDialog } from "@/components/recycle-bin/recycle-bin-dialog";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
+import { takeIdFromAddress } from "@/lib/address-param";
 import { ReservationAddDialog } from "@/components/reservations/reservation-add-dialog";
 import {
   RevertHandoverDialog,
@@ -249,6 +251,15 @@ export default function ReservationCalendarPage() {
     }
   }, [listDialogOpen, listTab]);
   const [openedFromListView, setOpenedFromListView] = useState(false);
+
+  // Rapporten: "Openen in nieuw tabblad" in a report opens /reservations?reservation=<id> in the
+  // reservation dialog every screen uses (GlobalDialogs); the parameter comes off the address.
+  const { openReservationDialog } = useGlobalDialog();
+  useEffect(() => {
+    const id = takeIdFromAddress("reservation");
+    if (id !== null) openReservationDialog(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Recycle bin of deleted reservations (sub-project C, B-36)
   const [recycleBinOpen, setRecycleBinOpen] = useState(false);

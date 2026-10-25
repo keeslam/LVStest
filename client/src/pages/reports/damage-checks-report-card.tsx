@@ -21,6 +21,7 @@ import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/re
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportBreakdownTable } from "@/components/reports/kit/report-breakdown-table";
 import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
+import { EntityLink } from "@/components/reports/entity-link";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
@@ -77,9 +78,9 @@ export function DamageChecksReportCard(props: { from?: string; to?: string; vehi
     return [
       { id: "checkDate", label: label("checkDate"), sortKey: "checkDate", cell: (r) => day(r.checkDate), csv: (r) => csvDateTime(r.checkDate) },
       { id: "checkType", label: label("checkType"), sortKey: "checkType", cell: (r) => typeLabel(r.checkType), csv: (r) => typeLabel(r.checkType) },
-      { id: "licensePlate", label: label("licensePlate"), sortKey: "licensePlate", cell: plate, csv: plate },
-      { id: "customer", label: label("customer"), sortKey: "customer", cell: (r) => r.customerName ?? "", csv: (r) => r.customerName ?? "" },
-      { id: "reservation", label: label("reservation"), cell: reservation, csv: reservation },
+      { id: "licensePlate", label: label("licensePlate"), sortKey: "licensePlate", cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={plate(r)} />, csv: plate },
+      { id: "customer", label: label("customer"), sortKey: "customer", cell: (r) => <EntityLink kind="customer" id={r.customerId} label={r.customerName ?? ""} />, csv: (r) => r.customerName ?? "" },
+      { id: "reservation", label: label("reservation"), cell: (r) => <EntityLink kind="reservation" id={r.reservationId} label={reservation(r)} />, csv: reservation },
       { id: "completedBy", label: label("completedBy"), cell: (r) => r.completedBy ?? "", csv: (r) => r.completedBy ?? "" },
       { id: "damage", label: label("damage"), cell: (r) => yesNo(r.hasDamage), csv: (r) => yesNo(r.hasDamage) },
     ];

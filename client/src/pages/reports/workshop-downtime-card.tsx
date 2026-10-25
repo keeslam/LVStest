@@ -12,6 +12,7 @@ import type { DateRange } from "react-day-picker";
 import { Download } from "lucide-react";
 import { ReportSection } from "@/components/reports/kit/report-section";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
+import { EntityLink } from "@/components/reports/entity-link";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { compactSections, textTablePrintSection } from "@/components/reports/kit/report-breakdown-table";
 import { useOptionalReportFilters } from "./report-filters";
@@ -39,7 +40,7 @@ export function WorkshopDowntimeCard({ dateRange }: { dateRange?: DateRange }) {
   const columns = useMemo<ReportTableColumn<DowntimeRow>[]>(() => [
     {
       id: "licensePlate", label: t("reportsPage.common.licensePlate"),
-      cell: (r) => <span className="font-medium">{formatLicensePlate(r.licensePlate)}</span>,
+      cell: (r) => <span className="font-medium"><EntityLink kind="vehicle" id={r.vehicleId} label={formatLicensePlate(r.licensePlate)} /></span>,
       text: (r) => formatLicensePlate(r.licensePlate), sortValue: (r) => r.licensePlate,
     },
     {

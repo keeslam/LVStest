@@ -8,6 +8,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Reservation } from "@shared/schema";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
+import { EntityLink } from "@/components/reports/entity-link";
 import { ReportSection } from "@/components/reports/kit/report-section";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { formatDate, formatLicensePlate, formatReservationStatus } from "@/lib/format-utils";
@@ -31,9 +32,9 @@ export function RecentCustomerReservationsReport() {
     };
     const endDate = (r: Reservation) => (r.endDate ? formatDate(r.endDate) : t("reportsPage.customersTab.openEnded"));
     return [
-      { id: "customer", label: t("reportsPage.common.customer"), cell: customerName, text: customerName, sortValue: customerName },
-      { id: "vehicle", label: t("reportsPage.common.vehicle"), cell: vehicleName, text: vehicleName, sortValue: vehicleName },
-      { id: "start", label: t("common:fields.startDate"), cell: (r) => formatDate(r.startDate), text: (r) => formatDate(r.startDate), sortValue: (r) => new Date(r.startDate).getTime() },
+      { id: "customer", label: t("reportsPage.common.customer"), cell: (r) => <EntityLink kind="customer" id={r.customerId} label={customerName(r)} />, text: customerName, sortValue: customerName },
+      { id: "vehicle", label: t("reportsPage.common.vehicle"), cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={vehicleName(r)} />, text: vehicleName, sortValue: vehicleName },
+      { id: "start", label: t("common:fields.startDate"), cell: (r) => <EntityLink kind="reservation" id={r.id} label={formatDate(r.startDate)} />, text: (r) => formatDate(r.startDate), sortValue: (r) => new Date(r.startDate).getTime() },
       { id: "end", label: t("common:fields.endDate"), cell: endDate, text: endDate, sortValue: (r) => (r.endDate ? new Date(r.endDate).getTime() : null) },
       { id: "status", label: t("common:fields.status"), cell: (r) => formatReservationStatus(r.status), text: (r) => formatReservationStatus(r.status), sortValue: (r) => formatReservationStatus(r.status) },
     ];

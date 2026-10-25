@@ -1241,5 +1241,38 @@
     "printedOn": "Impreso el",
     "vehicleLine": "Vehículo: {{vehicle}}",
     "categoryLine": "Categoría: {{category}}"
+  },
+  "entity": {
+    "open": "Abrir en una pestaña nueva",
+    "notFound": "No encontrado o eliminado.",
+    "loadFailed": "No se pudieron cargar los datos.",
+    "titles": {
+      "vehicle": "Vehículo",
+      "customer": "Cliente",
+      "reservation": "Reserva",
+      "fine": "Multa",
+      "driver": "Conductor",
+      "invoice": "Factura"
+    },
+    "fields": {
+      "licensePlate": "Matrícula",
+      "brandModel": "Marca y modelo",
+      "apk": "APK",
+      "mileage": "Kilometraje",
+      "renter": "Arrendatario actual",
+      "noRenter": "No alquilado",
+      "email": "Correo electrónico",
+      "phone": "Teléfono",
+      "address": "Dirección",
+      "reservations": "Número de reservas",
+      "customer": "Cliente",
+      "vehicle": "Vehículo",
+      "period": "Periodo",
+      "status": "Estado",
+      "amount": "Importe",
+      "date": "Fecha",
+      "driver": "Conductor",
+      "vendor": "Proveedor"
+    }
   }
 }

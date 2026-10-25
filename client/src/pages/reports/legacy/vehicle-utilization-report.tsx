@@ -9,6 +9,7 @@ import { ReportSection } from "@/components/reports/kit/report-section";
 import { Progress } from "@/components/ui/progress";
 import { UtilizationChart } from "@/components/reports/utilization-chart";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
+import { EntityLink } from "@/components/reports/entity-link";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { formatLicensePlate } from "@/lib/format-utils";
@@ -41,7 +42,7 @@ export function VehicleUtilizationReport() {
 
   const columns = useMemo<ReportTableColumn<UtilizationRow>[]>(() => [
     { id: "vehicle", label: t("reportsPage.common.vehicle"), cell: (r) => `${r.brand} ${r.model}`, text: (r) => `${r.brand} ${r.model}`, sortValue: (r) => `${r.brand} ${r.model}` },
-    { id: "plate", label: t("reportsPage.common.licensePlate"), cell: (r) => formatLicensePlate(r.licensePlate), text: (r) => formatLicensePlate(r.licensePlate), sortValue: (r) => r.licensePlate },
+    { id: "plate", label: t("reportsPage.common.licensePlate"), cell: (r) => <EntityLink kind="vehicle" id={r.id} label={formatLicensePlate(r.licensePlate)} />, text: (r) => formatLicensePlate(r.licensePlate), sortValue: (r) => r.licensePlate },
     { id: "days", label: t("reportsPage.vehiclesTab.daysReserved"), cell: (r) => `${r.daysReserved} ${t("common:units.days")}`, text: (r) => String(r.daysReserved), sortValue: (r) => r.daysReserved, align: "right" },
     { id: "reservations", label: t("reportsPage.common.reservations"), cell: (r) => r.reservationCount, text: (r) => String(r.reservationCount), sortValue: (r) => r.reservationCount, align: "right" },
     {

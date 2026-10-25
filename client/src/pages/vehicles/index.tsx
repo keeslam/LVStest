@@ -36,6 +36,7 @@ import { getDaysUntil } from "@/lib/date-utils";
 import { Search, SlidersHorizontal, Edit, Trash2, Archive, BookOpen, KeyRound, History } from "lucide-react";
 import { UserPermission } from "@shared/schema";
 import { useHasPermission } from "@/hooks/use-has-permission";
+import { takeIdFromAddress } from "@/lib/address-param";
 
 // Feature-based filter options. Each maps a user-facing label to the boolean
 // column on the vehicle record. A vehicle "has" the feature when isTrueValue()
@@ -138,7 +139,27 @@ export default function VehiclesIndex() {
       setPendingViewVehicle(null);
     }
   };
-  
+
+  // Rapporten: "Openen in nieuw tabblad" in a report opens /vehicles?vehicle=<id>. Once the list is
+  // in, that car opens like a click on it (remarks warning first); a car not in the list opens by id.
+  const [linkedVehicleId, setLinkedVehicleId] = useState<number | null>(null);
+  useEffect(() => {
+    const id = takeIdFromAddress("vehicle");
+    if (id !== null) setLinkedVehicleId(id);
+  }, []);
+  useEffect(() => {
+    if (linkedVehicleId === null || isLoading) return;
+    const vehicle = vehicles?.find((v) => v.id === linkedVehicleId);
+    if (vehicle) {
+      handleViewClick(vehicle);
+    } else {
+      setSelectedVehicleId(linkedVehicleId);
+      setVehicleViewDialogOpen(true);
+    }
+    setLinkedVehicleId(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedVehicleId, isLoading, vehicles]);
+
   // Handle successful operations from dialogs
   const handleDialogSuccess = () => {
     // Refresh the vehicles list after any dialog operation

@@ -1241,5 +1241,38 @@
     "printedOn": "Tipărit la",
     "vehicleLine": "Vehicul: {{vehicle}}",
     "categoryLine": "Categorie: {{category}}"
+  },
+  "entity": {
+    "open": "Deschide într-o filă nouă",
+    "notFound": "Negăsit sau șters.",
+    "loadFailed": "Datele nu au putut fi încărcate.",
+    "titles": {
+      "vehicle": "Vehicul",
+      "customer": "Client",
+      "reservation": "Rezervare",
+      "fine": "Amendă",
+      "driver": "Șofer",
+      "invoice": "Factură"
+    },
+    "fields": {
+      "licensePlate": "Număr de înmatriculare",
+      "brandModel": "Marcă și model",
+      "apk": "APK",
+      "mileage": "Kilometraj",
+      "renter": "Chiriaș actual",
+      "noRenter": "Neînchiriat",
+      "email": "E-mail",
+      "phone": "Telefon",
+      "address": "Adresă",
+      "reservations": "Număr de rezervări",
+      "customer": "Client",
+      "vehicle": "Vehicul",
+      "period": "Perioadă",
+      "status": "Stare",
+      "amount": "Sumă",
+      "date": "Dată",
+      "driver": "Șofer",
+      "vendor": "Furnizor"
+    }
   }
 }

@@ -22,6 +22,7 @@ import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/re
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportBreakdownTable } from "@/components/reports/kit/report-breakdown-table";
 import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
+import { EntityLink } from "@/components/reports/entity-link";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatDateTime } from "@/lib/format-utils";
 import { csvDateTime, csvNumber } from "@/lib/csv";
@@ -87,7 +88,7 @@ export function PortalRequestsReportCard(props: { from?: string; to?: string; ve
       },
       {
         id: "customer", label: label("customer"), sortKey: "customer",
-        cell: (r) => (r.customerName === null ? <span className="italic text-muted-foreground">{name(r)}</span> : name(r)),
+        cell: (r) => (r.customerName === null ? <span className="italic text-muted-foreground">{name(r)}</span> : <EntityLink kind="customer" id={r.customerId} label={name(r)} />),
         csv: (r) => name(r),
         print: (r) => name(r),
       },

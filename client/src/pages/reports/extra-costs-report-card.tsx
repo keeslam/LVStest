@@ -25,6 +25,7 @@ import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/re
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportBreakdownTable } from "@/components/reports/kit/report-breakdown-table";
 import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
+import { EntityLink } from "@/components/reports/entity-link";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatCurrency, formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
@@ -63,11 +64,11 @@ export function ExtraCostsReportCard(props: { from?: string; to?: string; vehicl
     const euro = (v: number | null) => (v === null ? "" : formatCurrency(v));
     const c = (key: string) => t(`moneyReports.extraCosts.columns.${key}`);
     return [
-      { id: "reservation", label: c("reservation"), cell: (r) => `#${r.reservationId}`, csv: (r) => r.reservationId },
+      { id: "reservation", label: c("reservation"), cell: (r) => <EntityLink kind="reservation" id={r.reservationId} label={`#${r.reservationId}`} />, csv: (r) => r.reservationId },
       { id: "startDate", label: c("startDate"), sortKey: "startDate", cell: (r) => day(r.startDate), csv: (r) => csvDate(r.startDate) },
       { id: "returnDate", label: c("returnDate"), cell: (r) => day(r.returnDate), csv: (r) => csvDate(r.returnDate) },
-      { id: "licensePlate", label: c("licensePlate"), sortKey: "licensePlate", cell: (r) => formatLicensePlate(r.licensePlate), csv: (r) => formatLicensePlate(r.licensePlate) },
-      { id: "customer", label: c("customer"), sortKey: "customer", cell: (r) => r.customerName ?? "", csv: (r) => r.customerName ?? "" },
+      { id: "licensePlate", label: c("licensePlate"), sortKey: "licensePlate", cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={formatLicensePlate(r.licensePlate)} />, csv: (r) => formatLicensePlate(r.licensePlate) },
+      { id: "customer", label: c("customer"), sortKey: "customer", cell: (r) => <EntityLink kind="customer" id={r.customerId} label={r.customerName ?? ""} />, csv: (r) => r.customerName ?? "" },
       { id: "extraKm", label: c("extraKm"), sortKey: "extraKm", align: "right", cell: (r) => km(r.extraKm), csv: (r) => csvNumber(r.extraKm) },
       { id: "extraKmCost", label: c("extraKmCost"), sortKey: shownTile === "fuel" ? undefined : "amount", align: "right", cell: (r) => euro(r.extraKmCost), csv: (r) => csvNumber(r.extraKmCost), print: (r) => euro(r.extraKmCost) },
       { id: "fuelCost", label: c("fuelCost"), sortKey: "fuelCost", align: "right", cell: (r) => euro(r.fuelCost), csv: (r) => csvNumber(r.fuelCost), print: (r) => euro(r.fuelCost) },

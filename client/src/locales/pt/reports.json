@@ -1241,5 +1241,38 @@
     "printedOn": "Impresso em",
     "vehicleLine": "Veículo: {{vehicle}}",
     "categoryLine": "Categoria: {{category}}"
+  },
+  "entity": {
+    "open": "Abrir num novo separador",
+    "notFound": "Não encontrado ou eliminado.",
+    "loadFailed": "Não foi possível carregar os dados.",
+    "titles": {
+      "vehicle": "Veículo",
+      "customer": "Cliente",
+      "reservation": "Reserva",
+      "fine": "Multa",
+      "driver": "Condutor",
+      "invoice": "Fatura"
+    },
+    "fields": {
+      "licensePlate": "Matrícula",
+      "brandModel": "Marca e modelo",
+      "apk": "APK",
+      "mileage": "Quilometragem",
+      "renter": "Locatário atual",
+      "noRenter": "Não alugado",
+      "email": "E-mail",
+      "phone": "Telefone",
+      "address": "Morada",
+      "reservations": "Número de reservas",
+      "customer": "Cliente",
+      "vehicle": "Veículo",
+      "period": "Período",
+      "status": "Estado",
+      "amount": "Valor",
+      "date": "Data",
+      "driver": "Condutor",
+      "vendor": "Fornecedor"
+    }
   }
 }

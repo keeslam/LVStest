@@ -11,6 +11,7 @@ import {
   CUSTOMER_VALUE_TILES, type CustomerValueRow, type CustomerValueSort, type CustomerValueSummary, type CustomerValueTile,
 } from "@shared/reports/customer-value-report";
 import { UserPermission } from "@shared/schema";
+import type { ReportBreakdownRow } from "@shared/report-kit";
 import { ReportSection } from "@/components/reports/kit/report-section";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { chartSvgFromRef } from "@/lib/report-document-print";
@@ -19,6 +20,7 @@ import { useReportRange } from "./report-filters";
 import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportTopChart } from "@/components/reports/kit/report-top-chart";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
+import { EntityLink, EntityQuickView, useCanOpenEntity } from "@/components/reports/entity-link";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatCurrency } from "@/lib/format-utils";
 import { csvNumber } from "@/lib/csv";
@@ -39,6 +41,12 @@ export function CustomerValueReportCard(props: { from?: string; to?: string; veh
   const allowed = useHasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS);
   const [openTile, setOpenTile] = useState<CustomerValueTile | null>(null);
   const [shownTile, setShownTile] = useState<CustomerValueTile>("revenue");
+  // A top-10 line is one customer: a click opens that customer's quick view (with the customer right).
+  const canOpenCustomer = useCanOpenEntity("customer");
+  const [quickCustomer, setQuickCustomer] = useState<{ id: number; label: string } | null>(null);
+  const openCustomer = canOpenCustomer
+    ? (row: ReportBreakdownRow) => { if (typeof row.key === "number") setQuickCustomer({ id: row.key, label: row.label ?? "" }); }
+    : undefined;
 
   const params = useMemo<Record<string, string>>(
     () => ({
@@ -68,7 +76,7 @@ export function CustomerValueReportCard(props: { from?: string; to?: string; veh
     return [
       {
         id: "customer", label: t("customerReports.value.columns.customer"), sortKey: "customer",
-        cell: (r) => (r.customerName === null ? <span className="italic text-muted-foreground">{name(r)}</span> : name(r)),
+        cell: (r) => (r.customerName === null ? <span className="italic text-muted-foreground">{name(r)}</span> : <EntityLink kind="customer" id={r.customerId} label={name(r)} />),
         csv: (r) => name(r),
         print: (r) => name(r),
       },
@@ -127,11 +135,11 @@ export function CustomerValueReportCard(props: { from?: string; to?: string; veh
             <div className="grid gap-6 lg:grid-cols-2">
               <div className="space-y-2">
                 <h4 className="text-sm font-medium">{t("customerReports.value.topRevenue")}</h4>
-                <ReportTopChart rows={data.topRevenue ?? []} nullLabel={noCustomer} money valueLabel={t("customerReports.value.columns.revenue")} color="#16a34a" testId="customer-value-top-revenue" chartRef={revenueChartRef} />
+                <ReportTopChart rows={data.topRevenue ?? []} nullLabel={noCustomer} money valueLabel={t("customerReports.value.columns.revenue")} color="#16a34a" testId="customer-value-top-revenue" chartRef={revenueChartRef} onPointClick={openCustomer} />
               </div>
               <div className="space-y-2">
                 <h4 className="text-sm font-medium">{t("customerReports.value.topCosts")}</h4>
-                <ReportTopChart rows={data.topCosts ?? []} nullLabel={noCustomer} money valueLabel={t("customerReports.value.columns.costs")} color="#dc2626" testId="customer-value-top-costs" chartRef={costsChartRef} />
+                <ReportTopChart rows={data.topCosts ?? []} nullLabel={noCustomer} money valueLabel={t("customerReports.value.columns.costs")} color="#dc2626" testId="customer-value-top-costs" chartRef={costsChartRef} onPointClick={openCustomer} />
               </div>
             </div>
           </>
@@ -151,6 +159,9 @@ export function CustomerValueReportCard(props: { from?: string; to?: string; veh
         reportName="customer-value"
         testId="customer-value-report"
       />
+      {quickCustomer && (
+        <EntityQuickView kind="customer" id={quickCustomer.id} label={quickCustomer.label} open onOpenChange={(o) => { if (!o) setQuickCustomer(null); }} />
+      )}
     </ReportSection>
   );
 }

@@ -21,6 +21,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
+import { EntityLink } from "@/components/reports/entity-link";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
@@ -88,8 +89,8 @@ export function DeliveryReportCard(props: { from?: string; to?: string; vehicleI
       { id: "completedDate", label: label("completedDate"), sortKey: "completedDate", cell: (r) => day(r.completedDate), csv: (r) => csvDate(r.completedDate) },
       { id: "type", label: label("type"), sortKey: "transportType", cell: (r) => typeLabel(r.transportType), csv: (r) => typeLabel(r.transportType) },
       { id: "status", label: label("status"), cell: (r) => statusLabel(r.status), csv: (r) => statusLabel(r.status) },
-      { id: "licensePlate", label: label("licensePlate"), cell: (r) => plate(r), csv: (r) => plate(r) },
-      { id: "customer", label: label("customer"), cell: (r) => r.customerName ?? "", csv: (r) => r.customerName ?? "" },
+      { id: "licensePlate", label: label("licensePlate"), cell: (r) => <EntityLink kind="vehicle" id={r.isExternalVehicle ? null : r.vehicleId} label={plate(r)} />, csv: (r) => plate(r) },
+      { id: "customer", label: label("customer"), cell: (r) => <EntityLink kind="customer" id={r.customerId} label={r.customerName ?? ""} />, csv: (r) => r.customerName ?? "" },
       { id: "driver", label: label("driver"), sortKey: "driver", cell: (r) => r.driverName ?? "", csv: (r) => r.driverName ?? "" },
       {
         id: "distanceKm", label: label("distanceKm"), sortKey: "distanceKm", align: "right",

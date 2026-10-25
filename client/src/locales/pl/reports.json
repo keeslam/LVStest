@@ -1260,5 +1260,38 @@
     "printedOn": "Wydrukowano",
     "vehicleLine": "Pojazd: {{vehicle}}",
     "categoryLine": "Kategoria: {{category}}"
+  },
+  "entity": {
+    "open": "Otwórz w nowej karcie",
+    "notFound": "Nie znaleziono lub usunięto.",
+    "loadFailed": "Nie udało się wczytać danych.",
+    "titles": {
+      "vehicle": "Pojazd",
+      "customer": "Klient",
+      "reservation": "Rezerwacja",
+      "fine": "Mandat",
+      "driver": "Kierowca",
+      "invoice": "Faktura"
+    },
+    "fields": {
+      "licensePlate": "Numer rejestracyjny",
+      "brandModel": "Marka i model",
+      "apk": "APK",
+      "mileage": "Przebieg",
+      "renter": "Obecny najemca",
+      "noRenter": "Niewynajęty",
+      "email": "E-mail",
+      "phone": "Telefon",
+      "address": "Adres",
+      "reservations": "Liczba rezerwacji",
+      "customer": "Klient",
+      "vehicle": "Pojazd",
+      "period": "Okres",
+      "status": "Status",
+      "amount": "Kwota",
+      "date": "Data",
+      "driver": "Kierowca",
+      "vendor": "Dostawca"
+    }
   }
 }

@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { ReportSection } from "@/components/reports/kit/report-section";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
+import { EntityLink } from "@/components/reports/entity-link";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { useReportBaseData, type ApkRow } from "../report-base-data";
@@ -43,7 +44,7 @@ export function ApkOverviewReport() {
     const apkDate = (v: ApkRow) => (v.apkDate ? formatDate(v.apkDate) : t("reportsPage.common.notSet"));
     return [
       { id: "vehicle", label: t("reportsPage.common.vehicle"), cell: (v) => `${v.brand} ${v.model}`, text: (v) => `${v.brand} ${v.model}`, sortValue: (v) => `${v.brand} ${v.model}` },
-      { id: "plate", label: t("reportsPage.common.licensePlate"), cell: (v) => formatLicensePlate(v.licensePlate), text: (v) => formatLicensePlate(v.licensePlate), sortValue: (v) => v.licensePlate },
+      { id: "plate", label: t("reportsPage.common.licensePlate"), cell: (v) => <EntityLink kind="vehicle" id={v.id} label={formatLicensePlate(v.licensePlate)} />, text: (v) => formatLicensePlate(v.licensePlate), sortValue: (v) => v.licensePlate },
       { id: "apkDate", label: t("reportsPage.vehiclesTab.apkExpiry"), cell: apkDate, text: apkDate, sortValue: (v) => (v.apkDate ? new Date(v.apkDate).getTime() : null) },
       {
         id: "status", label: t("common:fields.status"), align: "right",

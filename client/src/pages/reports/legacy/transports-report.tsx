@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Price } from "@/components/ui/price";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
+import { EntityLink } from "@/components/reports/entity-link";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { formatCurrency, formatDate, formatLicensePlate, sumMoney } from "@/lib/format-utils";
 import { useReportBaseData } from "../report-base-data";
@@ -61,7 +62,7 @@ export function TransportsReport() {
     const status = (tr: VehicleTransport) => tr.status.replace(/_/g, " ");
     const type = (tr: VehicleTransport) => typeLabels[tr.transportType] || tr.transportType;
     return [
-      { id: "vehicle", label: t("reportsPage.common.vehicle"), cell: (tr) => <span className="font-medium">{vehicleName(tr)}</span>, text: vehicleName, sortValue: vehicleName },
+      { id: "vehicle", label: t("reportsPage.common.vehicle"), cell: (tr) => <span className="font-medium"><EntityLink kind="vehicle" id={tr.vehicleId} label={vehicleName(tr)} /></span>, text: vehicleName, sortValue: vehicleName },
       { id: "type", label: t("common:fields.type"), cell: (tr) => <Badge variant="outline">{type(tr)}</Badge>, text: type, sortValue: type },
       { id: "route", label: t("reportsPage.transportsTab.route"), cell: route, text: route },
       { id: "date", label: t("common:fields.date"), cell: (tr) => formatDate(tr.scheduledDate), text: (tr) => formatDate(tr.scheduledDate), sortValue: (tr) => (tr.scheduledDate ? new Date(tr.scheduledDate).getTime() : null) },
