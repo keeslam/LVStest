@@ -295,7 +295,8 @@ export function useReportBaseData(period?: { from: string; to: string } | null) 
           if (expense.vehicleId === reservation.vehicleId) {
             const expenseDate = new Date(expense.date);
             if (expenseDate >= new Date(reservation.startDate) && expenseDate <= postReservationWindow) {
-              relatedExpenses.push(expense);
+              // The same cost can fall in two reservations of one car: it counts once per customer.
+              if (!relatedExpenses.some((e) => e.id === expense.id)) relatedExpenses.push(expense);
             }
           }
         });

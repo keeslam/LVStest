@@ -129,7 +129,11 @@ describe("Voertuigbenutting en klantimpact", () => {
     await user.click(await screen.findByTestId("tab-report-customers"));
     await user.click(await screen.findByTestId("report-nav-item-customer-impact"));
     const table = await screen.findByTestId("customer-impact-table");
-    await user.click(await within(table).findByTestId("customer-impact-table-row-7"));
+    const row = await within(table).findByTestId("customer-impact-table-row-7");
+    // 40 fuel + 100 maintenance, each once (not 280).
+    expect(row).toHaveTextContent("140,00");
+    expect(row).not.toHaveTextContent("280,00");
+    await user.click(row);
     const dialog = await screen.findByTestId("dialog-legacy-rows");
     const costs = within(dialog).getByTestId("legacy-rows-table-1");
     expect(within(costs).getAllByTestId(/^legacy-rows-table-1-row-/).map((r) => r.getAttribute("data-testid")))
