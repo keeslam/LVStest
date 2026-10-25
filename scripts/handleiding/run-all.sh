@@ -13,6 +13,8 @@ node scripts/handleiding/run.mjs --account=e2e-manager 08- 09-documenten-emailen
 node scripts/handleiding/run.mjs --account=e2e-manager-b 01-close 03-close 04-close 05-close 06-close 07-close 08-close 09-close 18-close
 node scripts/handleiding/run.mjs --account=e2e-admin-b 09-email-gps 10-gebruikersmenu 10-gebruikersbeheer 10-app-instellingen 10-backup 15-grijze 10-geweigerde
 # Nieuwe hoofdstukken. 20 vóór 16: hoofdstuk 16 plant de onderhoudsaanvraag in die 20 nog open nodig heeft.
-node scripts/handleiding/run.mjs --account=e2e-manager 19- 20- 21-
+node scripts/handleiding/run.mjs --account=e2e-manager 19- 20-
+# 21 met een beheerder: de km-rapporten en het tabblad Km-historie zijn alleen voor de beheerder.
+node scripts/handleiding/run.mjs --account=e2e-admin-b 21-
 node scripts/handleiding/run.mjs --account=e2e-manager-b 16-
 echo "RUN KLAAR"; ls docs/gebruikershandleiding/afbeeldingen | wc -l

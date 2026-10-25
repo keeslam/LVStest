@@ -261,13 +261,17 @@ Uitleg met plaatjes: [hoofdstuk 21](21-rapporten.md).
 
 | Wat je wilt | Klikpad |
 |---|---|
-| De cijfers bekijken | **Rapporten** → tabblad **Operaties**, **Kosten**, **Voertuigen**, **Klanten**, **Transporten**, **Financieel** of **Fiscaal** |
-| Een rapport afdrukken | **Rapporten** → rechtsboven **APK**, **Garantie**, **Kosten**, **Benutting** of **Klanten** → in het afdrukvoorbeeld **Afdrukken** |
-| De periode of de auto kiezen | **Rapporten** → **Rapportfilters** |
-| Een eigen rapport maken | **Rapporten** → **Aangepaste rapportbouwer** |
-| Een eigen rapport naar Excel sturen of afdrukken | **Aangepaste rapportbouwer** → uitvoeren → **Exporteren naar CSV** of **Afdrukken** |
-| Een opgeslagen rapport verwijderen | **Aangepaste rapportbouwer** → tabblad **Opgeslagen rapporten** → het knopje **Rapport verwijderen: <naam>** → **Verwijderen** |
-| De onderhoudskosten bekijken | **Rapporten** → **Analyse onderhoudskosten** (telt alleen **Onderhoud**, **Banden** en **Remmen**; kosten per km alleen bij **Alle tijd**) |
+| De belangrijkste getallen zien | **Rapporten** → **Overzicht** → klik op een getal voor het rapport erachter |
+| Een rapport openen | **Rapporten** → tabblad (**Kosten**, **Voertuigen**, **Klanten**, **Transporten**, **Financieel**, **Fiscaal**, **Portaal** of **Kantoor**) → links het rapport |
+| Een rapport afdrukken | Bij het rapport **Afdrukken** → kies **Tegels**, **Grafiek**, **Tabel**, **Liggend** → **Afdrukken** |
+| De periode of de auto kiezen | Filterbalk → **Periode** en **Voertuig** |
+| Vergelijken met een eerdere periode | Filterbalk → **Vergelijk met** → **Vorige periode** of **Zelfde periode vorig jaar** |
+| De regels achter een getal | Klik op de tegel, de staaf of de regel → **CSV** of **Afdrukken** |
+| Kolommen kiezen | Boven de tabel **Kolommen** → vinkjes; terug met **Terug naar standaard** |
+| Een eigen rapport maken | Filterbalk → **Rapportbouwer** → bron → velden → **Rapport uitvoeren** |
+| Een eigen rapport op een tabblad zetten | **Rapportbouwer** → **Opslaan** → **Tabblad** → **Rapport opslaan** |
+| Een opgeslagen rapport verwijderen | **Rapportbouwer** → **Opgeslagen rapporten** → het prullenbakje → **Verwijderen** |
+| De onderhoudskosten bekijken | Filterbalk → **Onderhoudsanalyse** (telt alleen **Onderhoud**, **Banden** en **Remmen**; kosten per km alleen bij **Alle tijd**) |
 
 Zie hoofdstuk 2, paragraaf 2.8.
 

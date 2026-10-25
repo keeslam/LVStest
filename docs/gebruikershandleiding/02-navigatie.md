@@ -407,64 +407,49 @@ het transport te openen. Uitgebreid in hoofdstuk 6.
 *Het scherm **Communicatie**: bovenin de vier tabbladen, daaronder de drie soorten berichten.*
 
 **Rapporten**: het scherm **Rapporten**: *Genereer en analyseer rapporten voor je
-autoverhuurbedrijf.* Rechtsboven staan vijf afdrukknoppen: **APK**, **Garantie**, **Kosten**,
-**Benutting** en **Klanten**. Daaronder staan de twee ingangen **Aangepaste rapportbouwer** en
-**Analyse onderhoudskosten**. Ook staat er het blok **Rapportfilters**. Daarmee stel je het
-**Datumbereik**, het **Voertuig** en de **Kostencategorie** in. Met **Filters herstellen** zet je
-ze terug. Met **Alle gegevens (verleden & toekomst)**, **Deze maand** en **Volgende maand** kies
-je een periode in één klik. De cijfers zelf staan op de tabbladen **Operaties**, **Kosten**,
-**Voertuigen**, **Klanten**, **Transporten**, **Financieel** en **Fiscaal**. Rapporten heeft geen
-eigen hoofdstuk. De klikpaden staan in hoofdstuk 13, paragraaf 13.13.
+autoverhuurbedrijf.* Bovenaan staat de filterbalk. Daar kies je de **Periode** (bijvoorbeeld
+**Deze maand**, **Volgende maand**, **Alle gegevens** of **Zelf kiezen**), **Vergelijk met** en het
+**Voertuig**. Rechts staan de knoppen **Rapportbouwer** en **Onderhoudsanalyse**. Daaronder staan
+de tabbladen **Overzicht**, **Kosten**, **Voertuigen**, **Klanten**, **Transporten**,
+**Financieel**, **Fiscaal**, **Portaal** en **Kantoor**. **Overzicht** toont acht belangrijke
+getallen; klik op een getal en het rapport erachter opent. Op de andere tabbladen staat links de
+lijst met rapporten en rechts één rapport. Elk rapport heeft een eigen knop **Afdrukken** met een
+afdrukvoorbeeld. Alles over dit scherm staat in [hoofdstuk 21](21-rapporten.md).
+
+![Het scherm Rapporten met de filterbalk en de tabbladen](afbeeldingen/21-scherm.png)
+*Het scherm **Rapporten**: 1 **Periode**, 2 **Vergelijk met**, 3 **Voertuig**, 4 **Rapportbouwer**,
+5 **Onderhoudsanalyse**, 6 de tabbladen.*
 
 **Wat je moet weten:**
 
-- **Wat de cijfers delen.** Onder de filters staat één regel. Die zegt waar alle cijfers voor
-  gelden: *Alle cijfers op deze pagina gelden voor <periode> en de hele vloot (N voertuigen).* Elk
-  gemiddelde deelt door de hele vloot. Dus ook door auto's zonder verhuur. Daarom staat bij de
-  benutting *Gemiddelde over de hele vloot van N voertuigen (M met verhuur)*.
-- **De filters werken.** Het **Voertuig**-filter is een zoekveld. Je typt een kenteken (met of
-  zonder streepjes), een merk of een model. De **Kostencategorie** biedt alleen de categorieën
-  die in de gegevens voorkomen. Verander je een filter? Dan staat er *Cijfers worden bijgewerkt...*
-  totdat de nieuwe cijfers er zijn. Zo zie je geen oude cijfers aan voor nieuwe. Het
-  categoriefilter geldt niet op elk tabblad. Bij **Financieel** worden omzet en marge over alle
-  kosten berekend. Ook bij **Fiscaal**, **Transporten** en de overzichten **APK** en **Garantie**
-  geldt het filter niet. Daar staat een regel die dat zegt, bijvoorbeeld *Het categoriefilter
-  (Banden) geldt niet voor dit tabblad.*
-- **Afdrukken.** De vijf afdrukknoppen noemen wat ze afdrukken (*Afdrukken: APK*, ...). Klik op
-  zo'n knop. Je ziet dan eerst een afdrukvoorbeeld van het rapport. Onderin staan **Sluiten** en
-  **Afdrukken**. Pas **Afdrukken** opent het afdrukvenster van je browser. Zo werkt het ook bij
-  **Afdrukken** in de rapportbouwer. Het klantenrapport telt alleen klanten met een reservering in
-  de periode.
+- **Eén rapport tegelijk.** Klik links in de lijst op een rapport. Een rood getal achter een
+  rapport betekent dat er iets te doen is. Op een telefoon is de lijst een keuzemenu (**Kies een
+  rapport**).
+- **Klikken op een getal.** Een tegel, een staaf in een grafiek of een regel in een tabel opent de
+  regels achter dat getal. Een blauw kenteken of een klantnaam opent een klein venster met **Openen
+  in nieuw tabblad**.
+- **Tabellen.** Tien regels per pagina, met **Zoeken** (een kenteken mag zonder streepjes) en
+  sorteren op de kolomkop. Met **Kolommen** kies je welke kolommen je ziet.
+- **Afdrukken.** Klik bij het rapport op **Afdrukken**. Je ziet eerst een voorbeeld op A4. Kies
+  **Tegels**, **Grafiek**, **Tabel** en eventueel **Liggend**. Pas **Afdrukken** in het voorbeeld
+  opent het afdrukvenster van je browser.
 
-  ![Het afdrukvoorbeeld van het APK-rapport, met onderin de knop Afdrukken (1)](afbeeldingen/02-rapporten-afdrukvoorbeeld.png)
-  *Het afdrukvoorbeeld na *Afdrukken: APK*: lees het rapport en klik op **Afdrukken** (1).*
+  ![Het afdrukvoorbeeld met de keuzes links en het voorbeeld rechts](afbeeldingen/21-afdrukvoorbeeld.png)
+  *Het afdrukvoorbeeld: 1 **Tegels**, 2 **Grafiek**, 3 **Tabel**, 4 de keuze voor de regels,
+  5 **Liggend**, 6 **Afdrukken**.*
 
-  ![De knop Afdrukken, van dichtbij](afbeeldingen/02-rapporten-afdrukvoorbeeld-k1.png)
-  *Zo ziet de knop **Afdrukken** eruit. Klik erop. Daarna opent het afdrukvenster van je browser.*
-- **Een stijging vanaf 0.** Gaat een bedrag van 0 naar iets? Dan staat er *nieuw* en geen *+100%*.
-  Is er niets om mee te vergelijken? Dan staat er een streepje.
+- **Vergelijken.** Kies bij **Vergelijk met** **Vorige periode** of **Zelfde periode vorig jaar**.
+  Onder de getallen staat dan het oude getal en het verschil in groen of rood. Gaat een bedrag van 0
+  naar iets? Dan staat er *nieuw* en geen percentage.
 
-**Analyse onderhoudskosten.** Deze analyse telt alleen de kosten die echt onderhoud zijn. Dat zijn
-de categorieën **Onderhoud**, **Banden** en **Remmen**. Schade, brandstof, tol, parkeren,
-verzekering en de rest tellen niet mee. Boven de cijfers staat een regel die dat zegt (*Telt alleen
-onderhoudskosten (...)*). De **Kosten per km** deelt de kosten door de totale kilometerstand van de
-voertuigen die kosten hebben. Daarom staat dit alleen bij **Alle tijd**. Bij een andere periode
-staat er een streepje met *alleen bij Alle tijd: de kilometerstand is een totaal*. Een merk krijgt
-pas een beoordeling bij minstens drie kostenregels en twee voertuigen. Anders staat er
-**Onvoldoende gegevens**. De maanden staan in het Nederlands (*mei 2026*). Periode en merk werken
-nu echt. Ze worden meegestuurd. Vroeger toonde de pagina altijd alle tijd.
+**Analyse onderhoudskosten.** Klik op **Onderhoudsanalyse**. Deze analyse telt alleen de kosten die
+echt onderhoud zijn: **Onderhoud**, **Banden** en **Remmen**. **Kosten per km** staat alleen bij
+**Alle tijd**. Zie hoofdstuk 21, paragraaf 21.9.
 
-**De rapportbouwer.** Bij **Aangepaste rapportbouwer** staan bronnen, velden en voorwaarden in het
-Nederlands. De opgeslagen rapporten blijven werken. Het resultaat heeft **Exporteren naar CSV** en
-**Afdrukken**. Beide knoppen zijn grijs zolang er geen resultaat is. Draai je een opgeslagen
-rapport? Dan staan de kolommen van dat rapport boven de resultaten. Achter een opgeslagen rapport
-staat een verwijderknopje (*Rapport verwijderen: <naam>*). Dat vraagt eerst **Rapport verwijderen?**
-Daarbij staat: *U staat op het punt het opgeslagen rapport "<naam>" te verwijderen. Dit kan niet
-ongedaan worden gemaakt.* Pas na **Verwijderen** is het rapport weg.
-
-![Het scherm Rapporten met de filters en de tabbladen](afbeeldingen/11-rapporten.png)
-*Het scherm **Rapporten**: de afdrukknoppen rechtsboven, daaronder **Rapportfilters** en de
-tabbladen met de cijfers.*
+**De rapportbouwer.** Klik op **Rapportbouwer**. Je kiest een bron, velden (ook van de gekoppelde
+auto of klant), filters, groepen en zelf berekende velden. Met **Opslaan** zet je het rapport op
+een tabblad. Een opgeslagen rapport verwijderen vraagt eerst **Rapport verwijderen?** Pas na
+**Verwijderen** is het weg. Zie hoofdstuk 21, paragraaf 21.8.
 
 ---
 

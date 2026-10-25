@@ -128,7 +128,6 @@ export const steps = [
     ["09-documenten", "/documents"],
     ["08-transporten", "/delivery"],
     ["02-communicatie", "/communications"],
-    ["11-rapporten", "/reports"],
   ].map(([name, route]) => ({
     name,
     async run(page) {
@@ -137,15 +136,4 @@ export const steps = [
       await shot(page, name);
     },
   })),
-  {
-    name: "02-rapporten-afdrukvoorbeeld",
-    async run(page) {
-      await goto(page, "/reports");
-      await page.getByRole("button", { name: "Afdrukken: APK-vervalrapport" }).click();
-      const dlg = page.getByRole("alertdialog").last();
-      await dlg.waitFor();
-      await page.waitForTimeout(800);
-      await shot(page, "02-rapporten-afdrukvoorbeeld", { clip: dlg, marks: [dlg.getByRole("button", { name: "Afdrukken" })] });
-    },
-  },
 ];
