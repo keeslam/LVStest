@@ -319,6 +319,7 @@
     "dialog": {
       "title": "Factuur controleren",
       "titleReadOnly": "Factuur bekijken",
+      "wasInReview": "Stond ter controle: {{reason}}",
       "description": "Controleer wat de app heeft uitgelezen, kies het voertuig en boek de kosten.",
       "previewTitle": "Factuur",
       "noAttachment": "Deze mail had geen bruikbare bijlage.",

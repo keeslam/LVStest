@@ -319,6 +319,7 @@
     "dialog": {
       "title": "Review invoice",
       "titleReadOnly": "View invoice",
+      "wasInReview": "Was waiting for review: {{reason}}",
       "description": "Check what the app read, choose the vehicle and book the expenses.",
       "previewTitle": "Invoice",
       "noAttachment": "This mail had no usable attachment.",

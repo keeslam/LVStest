@@ -14,6 +14,7 @@ import {
   textDaySql,
   officeDaySql,
   instantSql,
+  instantIsoSql,
   inPeriodSql,
   money,
   oneOf,
@@ -130,6 +131,20 @@ describe("SQL-hulpjes", () => {
       return result.rows[0];
     });
     expect(row).toEqual({ naive_is_utc: true, tz_kept: true, type: "timestamp with time zone" });
+  });
+
+  it("instantIsoSql geeft een ISO-moment (UTC) voor naieve en timestamptz-kolommen, ook buiten een UTC-sessie", async () => {
+    const { db } = await import("../db");
+    const { sql } = await import("drizzle-orm");
+    const row = await db.transaction(async (tx) => {
+      await tx.execute(sql`SET LOCAL TIME ZONE 'America/New_York'`);
+      const result = await tx.execute(sql`SELECT
+        ${instantIsoSql(sql`'2026-03-04T23:30:00'::timestamp`)} AS naive,
+        ${instantIsoSql(sql`'2026-03-04T23:30:00Z'::timestamptz`)} AS tz,
+        ${instantIsoSql(sql`NULL::timestamp`)} AS empty`);
+      return result.rows[0];
+    });
+    expect(row).toEqual({ naive: "2026-03-04T23:30:00.000Z", tz: "2026-03-04T23:30:00.000Z", empty: null });
   });
 });
 

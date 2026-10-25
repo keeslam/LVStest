@@ -326,6 +326,7 @@
     "dialog": {
       "title": "Verificar fatura",
       "titleReadOnly": "Ver fatura",
+      "wasInReview": "Estava a aguardar verificação: {{reason}}",
       "description": "Verifique o que a aplicação leu, escolha o veículo e contabilize as despesas.",
       "previewTitle": "Fatura",
       "noAttachment": "Esta mensagem não tinha nenhum anexo utilizável.",

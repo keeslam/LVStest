@@ -23,6 +23,8 @@ vi.mock("@/lib/csv", async (importOriginal) => ({
 
 import { InvoiceInboxReportCard } from "@/pages/reports/invoice-inbox-report-card";
 import { DeliveryReportCard } from "@/pages/reports/delivery-report-card";
+import { setOfficeTimeZone } from "@/lib/office-timezone";
+import { formatLicensePlate } from "@/lib/format-utils";
 import { DamageChecksReportCard } from "@/pages/reports/damage-checks-report-card";
 
 function json(body: unknown, status = 200) {
@@ -257,8 +259,30 @@ describe("Kantoor - schadechecks", () => {
     expect((await screen.findByTestId("damage-checks-tile-withDamage-value")).textContent).toBe("3");
     expect(fetchedPaths()).toContain("/api/reports/damage-checks/summary?from=2019-01-01&to=2019-12-31&vehicleId=12");
     expect(screen.getByTestId("damage-checks-by-customer").textContent).toContain("Zonder reservering");
-    expect(screen.getByTestId("damage-checks-by-vehicle").textContent).toContain("AB123C");
+    expect(screen.getByTestId("damage-checks-by-vehicle").textContent).toContain(formatLicensePlate("AB123C"));
+    expect(formatLicensePlate("AB123C")).not.toBe("AB123C");
     expect(screen.getByTestId("damage-checks-by-customer").textContent).not.toContain("Bedrag");
+  });
+
+  it("de lijst toont de dag van de controle op de kantoorklok, niet die van de browser", async () => {
+    permissions = ["view_reports", "view_damage_checks"];
+    const user = userEvent.setup();
+    const row = { id: 1, checkDate: "2019-03-05T01:30:00.000Z", checkType: "return", vehicleId: 12, licensePlate: "AB123C", reservationId: null, customerId: null, customerName: null, completedBy: "Piet", hasDamage: true, amount: 1 };
+    fetchMock.mockImplementation(async (input: unknown) => {
+      const path = pathOf(input);
+      if (path.startsWith("/api/reports/damage-checks/summary")) return json(damageSummary());
+      if (path.includes("/rows")) return json({ rows: [row], total: 1, page: 1, pageSize: 50 });
+      return json([]);
+    });
+    setOfficeTimeZone("America/New_York"); // 01:30 UTC is still the 4th on this office clock
+    try {
+      renderNode(<DamageChecksReportCard from="2019-01-01" to="2019-12-31" />);
+      await user.click(await screen.findByTestId("button-damage-checks-tile-withDamage"));
+      expect(await screen.findByText("04-03-2019")).toBeInTheDocument();
+      expect(screen.queryByText("05-03-2019")).not.toBeInTheDocument();
+    } finally {
+      setOfficeTimeZone("Europe/Amsterdam");
+    }
   });
 
   it("tegel met schade opent de lijst", async () => {

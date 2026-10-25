@@ -111,7 +111,7 @@ export function DamageChecksReportCard({ from, to, vehicleId }: { from?: string;
             <div className="grid gap-6 lg:grid-cols-2">
               <ReportBreakdownTable
                 title={t("officeReports.damage.byVehicle")}
-                rows={data.byVehicle ?? []}
+                rows={(data.byVehicle ?? []).map((row) => ({ ...row, label: row.label ? formatLicensePlate(row.label) : row.label }))}
                 nullLabel={t("officeReports.damage.unknownVehicle")}
                 hideAmount
                 testId="damage-checks-by-vehicle"

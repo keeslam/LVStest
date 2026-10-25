@@ -326,6 +326,7 @@
     "dialog": {
       "title": "Controllare la fattura",
       "titleReadOnly": "Visualizzare la fattura",
+      "wasInReview": "Era in attesa di controllo: {{reason}}",
       "description": "Controlli ciò che l'app ha letto, scelga il veicolo e registri i costi.",
       "previewTitle": "Fattura",
       "noAttachment": "Questa e-mail non aveva alcun allegato utilizzabile.",

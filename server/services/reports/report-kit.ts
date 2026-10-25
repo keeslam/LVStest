@@ -114,6 +114,11 @@ export function instantSql(column: SQL | AnyPgColumn): SQL {
   return sql`(CASE WHEN pg_typeof(${column}) = 'timestamp with time zone'::regtype THEN (${column})::timestamptz ELSE ((${column})::timestamp AT TIME ZONE 'UTC') END)`;
 }
 
+/** A timestamp column as an ISO string in UTC (`2026-03-04T23:30:00.000Z`), NULL stays NULL. Same reading as instantSql. */
+export function instantIsoSql(column: SQL | AnyPgColumn): SQL {
+  return sql`to_char(${instantSql(column)} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`;
+}
+
 /**
  * A text date (`yyyy-mm-dd…`) as a date. Text that does not start with a real calendar date
  * (no date at all, month 13, 30 February) gives NULL instead of breaking the whole query.

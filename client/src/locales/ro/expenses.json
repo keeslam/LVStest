@@ -326,6 +326,7 @@
     "dialog": {
       "title": "Verificați factura",
       "titleReadOnly": "Vizualizați factura",
+      "wasInReview": "A așteptat verificarea: {{reason}}",
       "description": "Verificați ce a citit aplicația, alegeți vehiculul și înregistrați cheltuielile.",
       "previewTitle": "Factură",
       "noAttachment": "Acest e-mail nu avea un atașament utilizabil.",

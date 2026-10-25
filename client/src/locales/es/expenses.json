@@ -326,6 +326,7 @@
     "dialog": {
       "title": "Revisar factura",
       "titleReadOnly": "Ver factura",
+      "wasInReview": "Estaba pendiente de revisión: {{reason}}",
       "description": "Revise lo que ha leído la aplicación, elija el vehículo y contabilice los gastos.",
       "previewTitle": "Factura",
       "noAttachment": "Este correo no tenía ningún archivo adjunto utilizable.",

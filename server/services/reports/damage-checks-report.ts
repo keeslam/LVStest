@@ -15,7 +15,7 @@ import {
   type DamageCheckReportTile,
 } from "../../../shared/reports/damage-checks-report";
 import { fillMonths } from "../../../shared/report-kit";
-import { inPeriodSql, instantSql, NON_EMPTY_JSON_ARRAY, officeDaySql, type ReportFilter } from "./report-kit";
+import { inPeriodSql, instantIsoSql, NON_EMPTY_JSON_ARRAY, officeDaySql, type ReportFilter } from "./report-kit";
 import { reportBreakdown, rowsOf, sqlReport } from "./sql-report";
 
 const d = interactiveDamageChecks;
@@ -83,7 +83,7 @@ function orderBy(sort: DamageCheckReportSort, dir: "asc" | "desc"): SQL {
   }
 }
 
-const select = (tile: DamageCheckReportTile): SQL => sql`${d.id} AS id, to_char(${instantSql(d.checkDate)} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "checkDate", ${d.checkType} AS "checkType",
+const select = (tile: DamageCheckReportTile): SQL => sql`${d.id} AS id, ${instantIsoSql(d.checkDate)} AS "checkDate", ${d.checkType} AS "checkType",
   ${d.vehicleId} AS "vehicleId", ${vehicles.licensePlate} AS "licensePlate", ${d.reservationId} AS "reservationId",
   ${r.customerId} AS "customerId", ${customers.name} AS "customerName", ${d.completedBy} AS "completedBy",
   ${hasDamageSql} AS "hasDamage", (${tileAmount(tile)})::float8 AS amount`;

@@ -333,6 +333,7 @@
     "dialog": {
       "title": "Sprawdź fakturę",
       "titleReadOnly": "Zobacz fakturę",
+      "wasInReview": "Czekała na sprawdzenie: {{reason}}",
       "description": "Sprawdź, co odczytała aplikacja, wybierz pojazd i zaksięguj koszty.",
       "previewTitle": "Faktura",
       "noAttachment": "Ta wiadomość nie miała użytecznego załącznika.",

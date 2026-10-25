@@ -16,7 +16,7 @@ import {
   type InboxItemReportTile,
 } from "../../../shared/reports/invoice-inbox-report";
 import { fillMonths } from "../../../shared/report-kit";
-import { inPeriodSql, officeDaySql, type ReportFilter } from "./report-kit";
+import { inPeriodSql, instantIsoSql, officeDaySql, type ReportFilter } from "./report-kit";
 import { rowsOf, sqlReport } from "./sql-report";
 
 const i = invoiceInboxItems;
@@ -75,10 +75,10 @@ function orderBy(sort: InboxItemReportSort, dir: "asc" | "desc"): SQL {
   return sql`${i.reviewReason} ${d} NULLS LAST, ${id}`;
 }
 
-const select = (_tile: InboxItemReportTile): SQL => sql`${i.id} AS id, ${i.receivedAt} AS "receivedAt", ${i.mailDate} AS "mailDate",
+const select = (_tile: InboxItemReportTile): SQL => sql`${i.id} AS id, ${instantIsoSql(i.receivedAt)} AS "receivedAt", ${instantIsoSql(i.mailDate)} AS "mailDate",
   ${i.fromAddress} AS "fromAddress", ${i.subject} AS subject, ${i.attachmentName} AS "attachmentName", ${i.status} AS status,
   ${outcomeSql} AS outcome, ${i.reviewReason} AS "reviewReason", ${i.vehicleId} AS "vehicleId", ${vehicles.licensePlate} AS "licensePlate",
-  ${i.processedAt} AS "processedAt",
+  ${instantIsoSql(i.processedAt)} AS "processedAt",
   (CASE WHEN ${outcomeSql} IN ('staffBooked', 'dismissed') THEN ${i.updatedBy} END) AS "handledBy",
   (${tileAmount(_tile)})::float8 AS amount`;
 

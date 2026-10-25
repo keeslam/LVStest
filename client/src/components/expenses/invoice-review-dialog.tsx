@@ -104,7 +104,9 @@ export function InvoiceReviewDialog({ item, vehicles, onClose }: Props) {
         <DialogHeader>
           <DialogTitle>{readOnly ? t("invoiceInbox.dialog.titleReadOnly") : t("invoiceInbox.dialog.title")}</DialogTitle>
           <DialogDescription>
-            {item.reviewReason ? `${t(`invoiceInbox.reasons.${item.reviewReason}`)}. ` : ""}{t("invoiceInbox.dialog.description")}
+            {readOnly
+              ? (item.reviewReason ? t("invoiceInbox.dialog.wasInReview", { reason: t(`invoiceInbox.reasons.${item.reviewReason}`) }) : null)
+              : <>{item.reviewReason ? `${t(`invoiceInbox.reasons.${item.reviewReason}`)}. ` : ""}{t("invoiceInbox.dialog.description")}</>}
           </DialogDescription>
         </DialogHeader>
 

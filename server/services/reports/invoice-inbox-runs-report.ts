@@ -17,7 +17,7 @@ import { fillMonths } from "../../../shared/report-kit";
 import { dateInZone } from "../../../shared/office-timezone";
 import { officeTimeZone } from "../office-time";
 import { RUN_LOG_RETENTION_DAYS } from "../invoice-inbox/run-log";
-import { inPeriodSql, officeDaySql, type ReportFilter } from "./report-kit";
+import { inPeriodSql, instantIsoSql, officeDaySql, type ReportFilter } from "./report-kit";
 import { rowsOf, sqlReport } from "./sql-report";
 
 const r = invoiceInboxRuns;
@@ -71,7 +71,7 @@ function orderBy(sort: InboxRunReportSort, dir: "asc" | "desc"): SQL {
   return sql`${COLUMN[sort]} ${d}, ${id}`;
 }
 
-const select = (tile: InboxRunReportTile): SQL => sql`${r.id} AS id, ${r.startedAt} AS "startedAt", ${r.finishedAt} AS "finishedAt",
+const select = (tile: InboxRunReportTile): SQL => sql`${r.id} AS id, ${instantIsoSql(r.startedAt)} AS "startedAt", ${instantIsoSql(r.finishedAt)} AS "finishedAt",
   ${r.trigger} AS trigger, ${r.triggeredBy} AS "triggeredBy", ${r.mails} AS mails, ${r.attachments} AS attachments,
   ${r.booked} AS booked, ${r.review} AS review, ${r.skipped} AS skipped, ${r.failed} AS failed, ${r.errors} AS errors,
   (${tileAmount(tile)})::float8 AS amount`;
