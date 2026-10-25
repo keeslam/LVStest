@@ -155,4 +155,12 @@ describe("customer value report", () => {
     expect((await customersOnly.get("/api/reports/customer-value/rows").query({ ...Q, tile: "revenue" })).status).toBe(403);
     expect((await customersOnly.get("/api/reports/customer-value/export").query({ ...Q, tile: "revenue" })).status).toBe(403);
   });
+
+  // Last on purpose: it adds data the earlier tests do not expect.
+  it("met voertuigfilter telt een aanvraag op een verwijderde reservering niet mee", async () => {
+    const deleted = await reservation(B, "2026-07-20", "2026-07-21", { totalPrice: "10", deletedAt: new Date() });
+    await request(B, deleted, "2026-07-20T10:00:00Z");
+    const rows = (await staff.get("/api/reports/customer-value/rows").query({ ...Q, tile: "revenue" })).body.rows;
+    expect(rows.find((r: any) => r.customerId === B).portalRequests).toBe(0);
+  });
 });

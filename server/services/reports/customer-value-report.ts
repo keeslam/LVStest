@@ -52,7 +52,7 @@ export function customerValueSql(filter: ReportFilter, today: string): SQL {
   const requestDay = officeDaySql(portalRequests.createdAt);
   const requestVehicle = filter.vehicleId === null
     ? sql``
-    : sql` AND ${portalRequests.reservationId} IN (SELECT rv.id FROM ${r} rv WHERE rv.vehicle_id = ${filter.vehicleId})`;
+    : sql` AND ${portalRequests.reservationId} IN (SELECT rv.id FROM ${r} rv WHERE rv.vehicle_id = ${filter.vehicleId} AND rv.deleted_at IS NULL)`;
   return sql`
     WITH res AS (
       SELECT ${r.customerId} AS customer_id, count(*)::int AS rentals,
