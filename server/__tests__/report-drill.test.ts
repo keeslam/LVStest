@@ -4,13 +4,14 @@
  * Shown on the fines report; the other kit reports have a case in their own test file.
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { inArray } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import { db } from "../db";
 import { fines } from "../../shared/schema";
 import { REPORT_DRILL_NULL_KEY } from "../../shared/report-kit";
 import { FINE_REPORT_DRILLS } from "../../shared/reports/fines-report";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureCustomer, createFixtureVehicle, cleanupFixtures } from "./helpers/fixtures";
+import { sqlReport } from "../services/reports/sql-report";
 import { expectDrillMatchesLines } from "./helpers/report-kit";
 
 describe("report drill-down (fines)", () => {
@@ -127,22 +128,42 @@ describe("report drill-down on reports without breakdowns", () => {
 
   const cases = [
     { path: "occupancy", tile: "rented" },
-    { path: "maintenance-outlook", tile: "all" },
+    { path: "maintenance-outlook", tile: "all", months: false },
     { path: "fleet-mileage", tile: "driven" },
     { path: "invoice-inbox-runs", tile: "runs" },
   ];
 
-  it.each(cases)("$path: drill is a 400, month works", async ({ path, tile }) => {
+  it.each(cases)("$path: drill is a 400, month works (or is refused when the report says so)", async ({ path, tile, months }) => {
     const Q = { from: "2026-01-01", to: "2026-03-31", tile };
     for (const route of ["rows", "export"]) {
       const drill = await admin.get(`/api/reports/${path}/${route}`).query({ ...Q, drill: "customer", key: "1" });
       expect(drill.status, `${path} ${route}`).toBe(400);
       expect(drill.body.code).toBe("INVALID_DRILL");
     }
+    if (months === false) {
+      for (const route of ["rows", "export"]) {
+        const refused = await admin.get(`/api/reports/${path}/${route}`).query({ ...Q, month: "2026-02" });
+        expect(refused.status, `${path} ${route} month`).toBe(400);
+        expect(refused.body.code).toBe("INVALID_DRILL");
+      }
+      return;
+    }
     const month = await admin.get(`/api/reports/${path}/rows`).query({ ...Q, month: "2026-02" });
     expect(month.status).toBe(200);
     const outside = await admin.get(`/api/reports/${path}/rows`).query({ ...Q, month: "2027-02" });
     expect(outside.status).toBe(200);
     expect(outside.body.total).toBe(0);
+  });
+});
+
+describe("sqlReport drill wiring", () => {
+  it("drills without a drillWhere fail at construction, not silently", () => {
+    const spec = {
+      key: "x", tiles: ["a"] as const, sorts: ["s"] as const, defaultSort: "s" as const, defaultDir: "asc" as const,
+      from: sql`x`, tileWhere: () => sql`true`, tileAmount: () => sql`0`, select: () => sql`1`,
+      orderBy: () => sql`1`, mapRow: (r: any) => r, extras: async () => ({}),
+    };
+    expect(() => sqlReport({ ...spec, drills: ["customer"] })).toThrow(/drillWhere/);
+    expect(() => sqlReport(spec)).not.toThrow();
   });
 });

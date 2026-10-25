@@ -146,6 +146,8 @@ export const maintenanceOutlookReport: ReportDefinition<MaintenanceOutlookTile, 
   defaultSort: "dueDate",
   defaultDir: "asc",
   redact: redactOutlookRow,
+  // `from` is "today" here (overdue, forecast), so a month cannot narrow it.
+  months: false,
 
   async summary(filter) {
     const rows = await loadOutlookRows(filter);

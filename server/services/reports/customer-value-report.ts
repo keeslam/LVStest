@@ -135,7 +135,7 @@ function tileAmount(tile: CustomerValueTile): SQL {
 
 /** The one drill: a customer row (top 10 key = cv.customer_id; null = the row without a customer). */
 const drillClause = (filter: ReportFilter): SQL =>
-  filter.drill ? sql` AND ${keyIs(sql`cv.customer_id`, filter.drill.key)}` : sql``;
+  filter.drill?.name === "customer" ? sql` AND ${keyIs(sql`cv.customer_id`, filter.drill.key)}` : sql``;
 
 const customerRows = (filter: ReportFilter, today: string = isoToday()): SQL => sql`(${customerValueSql(filter, today)}) cv`;
 

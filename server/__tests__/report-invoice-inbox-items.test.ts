@@ -87,6 +87,13 @@ describe("invoice inbox items report", () => {
       s.byReason.map((r: { reason: string; count: number }) => ({ key: r.reason, count: r.count })));
   });
 
+  it("uitsplitsing: lege reden (NULL-sleutel) opent de regels zonder reden", async () => {
+    const s = (await staff.get("/api/reports/invoice-inbox-items/summary").query(Q)).body;
+    const unflagged = s.tiles.all.count - s.tiles.flagged.count;
+    expect(unflagged).toBeGreaterThan(0);
+    await expectDrillMatchesLines(staff, "/api/reports/invoice-inbox-items", Q, "all", "reason", [{ key: null, count: unflagged }]);
+  });
+
   it("rechten: rapportrecht en kostenrecht", async () => {
     const status = async (perms: string[] | "admin", path = "summary", extra: Record<string, string> = {}) =>
       (await (await agentFor(perms)).get(`/api/reports/invoice-inbox-items/${path}`).query({ ...Q, ...extra })).status;

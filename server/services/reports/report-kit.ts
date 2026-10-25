@@ -52,10 +52,12 @@ export function narrowReportFilter(
   query: Record<string, unknown>,
   filter: ReportFilter,
   drills: readonly string[] | undefined,
+  months: boolean = true,
 ): { ok: true; filter: ReportFilter; empty: boolean } | { ok: false } {
   let next = filter;
   let empty = false;
   if (query.month !== undefined && query.month !== "") {
+    if (!months) return { ok: false };
     const m = typeof query.month === "string" ? MONTH.exec(query.month) : null;
     if (!m) return { ok: false };
     const first = `${m[1]}-${m[2]}-01`;
@@ -204,6 +206,8 @@ export interface ReportDefinition<Tile extends string, Sort extends string, Row,
   list(filter: ReportFilter, tile: Tile, order: { sort: Sort; dir: "asc" | "desc" }, limit: number, offset: number): Promise<Row[]>;
   /** Breakdown names /rows and /export accept as `drill`; without it every drill is a 400. */
   drills?: readonly string[];
+  /** `false`: the report refuses `month` (400 INVALID_DRILL) because its period start has a meaning of its own. */
+  months?: false;
   /** Longest period in days; a longer one is refused with 400 PERIOD_TOO_LONG on all three routes. */
   maxDays?: number;
   /** Applied to every row of /rows and /export for this viewer (e.g. blank out km readings for non-admins). */
@@ -258,7 +262,7 @@ export function mountReport<Tile extends string, Sort extends string, Row, Summa
     const tile = oneOf(query.tile, def.tiles);
     if (!tile) return invalidTile;
     const paging = parseReportPaging(query, def.sorts, def.defaultSort, def.defaultDir);
-    const narrowed = narrowReportFilter(query, filter, def.drills);
+    const narrowed = narrowReportFilter(query, filter, def.drills, def.months !== false);
     if (!narrowed.ok) return invalidDrill;
     if (narrowed.empty) {
       const none: ReportPage<Row> = { rows: [], total: 0, page: 1, pageSize: paging.pageSize };
@@ -276,7 +280,7 @@ export function mountReport<Tile extends string, Sort extends string, Row, Summa
     const tile = oneOf(query.tile, def.tiles);
     if (!tile) return invalidTile;
     const paging = parseReportPaging(query, def.sorts, def.defaultSort, def.defaultDir);
-    const narrowed = narrowReportFilter(query, filter, def.drills);
+    const narrowed = narrowReportFilter(query, filter, def.drills, def.months !== false);
     if (!narrowed.ok) return invalidDrill;
     if (narrowed.empty) return { status: 200, body: { rows: [], truncated: false } satisfies ReportExport<Row> };
     const rows = await def.list(narrowed.filter, tile, { sort: paging.sort, dir: paging.dir }, REPORT_EXPORT_LIMIT + 1, 0);

@@ -45,6 +45,9 @@ export interface SqlReportSpec<Tile extends string, Sort extends string, Row, Ex
 export function sqlReport<Tile extends string, Sort extends string, Row, Extras extends object>(
   spec: SqlReportSpec<Tile, Sort, Row, Extras>,
 ): ReportDefinition<Tile, Sort, Row, Extras & { tiles: Record<Tile, ReportTileTotal> }> {
+  if (spec.drills?.length && !spec.drillWhere) {
+    throw new Error(`sqlReport ${spec.key}: drills are declared but there is no drillWhere`);
+  }
   const alias = (prefix: string, tile: Tile) => sql.raw(`"${prefix}_${tile}"`);
   /** The drill of a /rows or /export request (never set on the summary). */
   const drillClause = (filter: ReportFilter): SQL =>
