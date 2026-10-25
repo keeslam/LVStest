@@ -176,7 +176,7 @@ Wordt gebouwd vóór Kees deel 1 test; daarna test hij 1 en 1b samen.
 ### Doorklikken naar het dossier
 - In elke lijst zijn kenteken, klant, reservering, bekeuring en factuur klikbaar.
 - Een klik opent eerst een **venster met de belangrijkste gegevens** (auto: kenteken, merk/model, APK, km-stand,
-  huidige huurder; klant: contactgegevens, aantal reserveringen, open bedragen; reservering: klant, auto, periode,
+  huidige huurder; klant: contactgegevens, aantal reserveringen (open bedragen vervallen, Kees 2026-10-25); reservering: klant, auto, periode,
   status, bedrag; bekeuring: datum, kenteken, bedrag, status, gekoppelde klant/bestuurder; factuur: leverancier,
   datum, bedrag, status). Daarin de knop **Openen in nieuw tabblad**, die het volledige dossier in de app opent;
   het rapport blijft staan.
