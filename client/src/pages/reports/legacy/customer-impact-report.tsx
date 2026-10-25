@@ -15,7 +15,7 @@ import { useReportBaseData, type CustomerStatsRow } from "../report-base-data";
 import { useReportFilters } from "../report-filters";
 import { ReportBaseStatus } from "./report-base-status";
 import { tablePrintSection } from "./table-print";
-import { LegacyRowsDialog, drillTitleOf, useLegacyDrill } from "./drill-rows";
+import { LegacyRowsDialog, drillTitleOf, uniqueExpenses, useLegacyDrill } from "./drill-rows";
 
 export function CustomerImpactReport() {
   const { t } = useTranslation("reports");
@@ -29,7 +29,7 @@ export function CustomerImpactReport() {
   const openCustomer = (c: CustomerStatsRow) => drill.open({
     title: drillTitleOf(t("reportsPage.customersTab.impactTitle"), c.name),
     reservations: base.filteredReservations.filter((r) => r.customerId === c.id),
-    expenses: c.relatedExpenses,
+    expenses: uniqueExpenses(c.relatedExpenses),
   });
 
   const columns = useMemo<ReportTableColumn<CustomerStatsRow>[]>(() => {

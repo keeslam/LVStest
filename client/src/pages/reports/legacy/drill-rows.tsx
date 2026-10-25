@@ -28,6 +28,12 @@ export function useLegacyDrill() {
   return { drill, open, close };
 }
 
+/** The same cost can be counted under two reservations of one car; a list shows it once. */
+export const uniqueExpenses = (expenses: Expense[]): Expense[] => {
+  const seen = new Set<number>();
+  return expenses.filter((e) => (seen.has(e.id) ? false : (seen.add(e.id), true)));
+};
+
 /** "<number> · <line>": what was clicked, in the dialog title. */
 export const drillTitleOf = (...parts: Array<string | undefined>) => parts.filter(Boolean).join(" · ");
 

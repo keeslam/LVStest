@@ -119,4 +119,20 @@ describe("Voertuigbenutting en klantimpact", () => {
     expect(within(costs).getAllByTestId(/^legacy-rows-table-1-row-/).map((r) => r.getAttribute("data-testid")).sort())
       .toEqual(["legacy-rows-table-1-row-1", "legacy-rows-table-1-row-4"]);
   });
+  it("klantimpact: een kost die onder twee reserveringen van dezelfde auto valt staat maar één keer in de lijst", async () => {
+    installFetch({
+      vehicles: fleet, expenses, customers,
+      reservations: [...reservations, { id: 13, vehicleId: 1, customerId: 7, startDate: daysFromNow(-1), endDate: daysFromNow(1), status: "confirmed" }],
+    } as any);
+    const user = userEvent.setup();
+    renderWithClient(<ReportsPage />);
+    await user.click(await screen.findByTestId("tab-report-customers"));
+    await user.click(await screen.findByTestId("report-nav-item-customer-impact"));
+    const table = await screen.findByTestId("customer-impact-table");
+    await user.click(await within(table).findByTestId("customer-impact-table-row-7"));
+    const dialog = await screen.findByTestId("dialog-legacy-rows");
+    const costs = within(dialog).getByTestId("legacy-rows-table-1");
+    expect(within(costs).getAllByTestId(/^legacy-rows-table-1-row-/).map((r) => r.getAttribute("data-testid")))
+      .toEqual(["legacy-rows-table-1-row-1", "legacy-rows-table-1-row-4"]);
+  });
 });

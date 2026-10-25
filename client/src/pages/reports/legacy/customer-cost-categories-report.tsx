@@ -14,7 +14,7 @@ import { useReportBaseData, type CustomerStatsRow } from "../report-base-data";
 import { useReportFilters } from "../report-filters";
 import { ReportBaseStatus } from "./report-base-status";
 import { tablePrintSection } from "./table-print";
-import { LegacyRowsDialog, drillTitleOf, useLegacyDrill } from "./drill-rows";
+import { LegacyRowsDialog, drillTitleOf, uniqueExpenses, useLegacyDrill } from "./drill-rows";
 
 export function CustomerCostCategoriesReport() {
   const { t } = useTranslation("reports");
@@ -26,7 +26,7 @@ export function CustomerCostCategoriesReport() {
   // The costs the amounts of the line add up (relatedExpenses of the customer).
   const openCustomer = (c: CustomerStatsRow) => drill.open({
     title: drillTitleOf(t("reportsPage.customersTab.expenseCategoriesTitle"), c.name),
-    expenses: c.relatedExpenses,
+    expenses: uniqueExpenses(c.relatedExpenses),
   });
 
   const columns = useMemo<ReportTableColumn<CustomerStatsRow>[]>(() => {
