@@ -6,7 +6,6 @@
  */
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 import {
   PORTAL_REQUEST_REPORT_TILES, PORTAL_STALE_DAYS,
   type PortalRequestReportRow, type PortalRequestReportSort, type PortalRequestReportSummary, type PortalRequestReportTile,
@@ -18,7 +17,8 @@ import { chartSvgFromRef } from "@/lib/report-document-print";
 import { DrillLineButton, compactSections, breakdownPrintSection, drillLineTestId, textTablePrintSection, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
 import { useReportRange } from "./report-filters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportTiles, tilesPrintSection, useCompareTile, type BetterDir, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { previousOf, useComparedSummary } from "@/components/reports/kit/use-compared";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportBreakdownTable } from "@/components/reports/kit/report-breakdown-table";
 import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
@@ -62,10 +62,8 @@ export function PortalRequestsReportCard(props: { from?: string; to?: string; ve
     () => ({ ...(from ? { from } : {}), ...(to ? { to } : {}) }),
     [from, to],
   );
-  const { data, isLoading, isError } = useQuery<PortalRequestReportSummary>({
-    queryKey: [`${ENDPOINT}/summary`, params],
-    enabled: allowed,
-  });
+  const { data, isLoading, isError, previous, compareRange } = useComparedSummary<PortalRequestReportSummary>(`${ENDPOINT}/summary`, params, { enabled: allowed });
+  const compareTile = useCompareTile();
 
   const tileLabel = (id: PortalRequestReportTile) => t(`reports:portalReports.requests.tiles.${id}`, { days: PORTAL_STALE_DAYS });
   const typeLabel = (type: string) => t(`portal:admin.requests.type.${type}`, { defaultValue: type });
@@ -109,11 +107,15 @@ export function PortalRequestsReportCard(props: { from?: string; to?: string; ve
   }, [t]);
 
 
-  const tiles: Array<ReportTile<PortalRequestReportTile>> = PORTAL_REQUEST_REPORT_TILES.map((id) => ({
+  // "stale" is a work list over all periods: no comparison. The other counts stay neutral.
+  const tiles: Array<ReportTile<PortalRequestReportTile>> = PORTAL_REQUEST_REPORT_TILES.map((id) => compareTile({
     id,
     label: tileLabel(id),
     value: (data?.tiles?.[id]?.count ?? 0).toLocaleString("nl-NL"),
     tone: TILE_TONE[id],
+  }, {
+    current: data?.tiles?.[id]?.count ?? 0,
+    previous: id === "stale" ? undefined : previousOf(previous, (s) => s.tiles?.[id]?.count ?? 0),
   }));
 
   const median = (hours: number | null | undefined): string => {
@@ -172,7 +174,7 @@ export function PortalRequestsReportCard(props: { from?: string; to?: string; ve
             </p>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("reports:portalReports.requests.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth ?? []} series={series} stacked testId="portal-requests-month-chart" chartRef={monthChartRef} onPointClick={openMonth} />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} stacked testId="portal-requests-month-chart" chartRef={monthChartRef} previousData={previous?.byMonth} period={params} compareRange={compareRange} onPointClick={openMonth} />
             </div>
             <div className="space-y-2" data-testid="portal-requests-by-type">
               <h4 className="text-sm font-medium">{t("reports:portalReports.requests.byType")}</h4>

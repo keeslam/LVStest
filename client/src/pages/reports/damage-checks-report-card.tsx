@@ -6,7 +6,6 @@
  */
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 import {
   DAMAGE_CHECK_REPORT_TILES,
   type DamageCheckReportRow, type DamageCheckReportSort, type DamageCheckReportSummary, type DamageCheckReportTile,
@@ -17,7 +16,8 @@ import { useReportPrint } from "@/components/reports/kit/report-print";
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { compactSections, breakdownPrintSection, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
 import { useReportRange } from "./report-filters";
-import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportTiles, tilesPrintSection, useCompareTile, type BetterDir, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { previousOf, useComparedSummary } from "@/components/reports/kit/use-compared";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportBreakdownTable } from "@/components/reports/kit/report-breakdown-table";
 import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
@@ -32,6 +32,9 @@ const ENDPOINT = "/api/reports/damage-checks";
 const TILE_TONE: Partial<Record<DamageCheckReportTile, ReportTile<DamageCheckReportTile>["tone"]>> = {
   withDamage: "red",
 };
+
+/** More checks with damage is worse; the other counts stay neutral. */
+const DAMAGE_BETTER: Partial<Record<DamageCheckReportTile, BetterDir>> = { withDamage: "down" };
 
 const n0 = (n: number) => n.toLocaleString("nl-NL", { maximumFractionDigits: 0 });
 
@@ -61,10 +64,8 @@ export function DamageChecksReportCard(props: { from?: string; to?: string; vehi
     }),
     [from, to, vehicleId],
   );
-  const { data, isLoading, isError } = useQuery<DamageCheckReportSummary>({
-    queryKey: [`${ENDPOINT}/summary`, params],
-    enabled: allowed,
-  });
+  const { data, isLoading, isError, previous, compareRange } = useComparedSummary<DamageCheckReportSummary>(`${ENDPOINT}/summary`, params, { enabled: allowed });
+  const compareTile = useCompareTile();
 
   const tileLabel = (id: string) => t(`officeReports.damage.tiles.${id}`);
 
@@ -87,11 +88,15 @@ export function DamageChecksReportCard(props: { from?: string; to?: string; vehi
   }, [t]);
 
 
-  const tiles: Array<ReportTile<DamageCheckReportTile>> = DAMAGE_CHECK_REPORT_TILES.map((id) => ({
+  const tiles: Array<ReportTile<DamageCheckReportTile>> = DAMAGE_CHECK_REPORT_TILES.map((id) => compareTile({
     id,
     label: tileLabel(id),
     value: n0(data?.tiles?.[id]?.count ?? 0),
     tone: TILE_TONE[id],
+  }, {
+    current: data?.tiles?.[id]?.count ?? 0,
+    previous: previousOf(previous, (s) => s.tiles?.[id]?.count ?? 0),
+    better: DAMAGE_BETTER[id],
   }));
   const series = [
     { key: "pickup" as const, label: tileLabel("pickup"), color: "#3b82f6" },
@@ -129,7 +134,7 @@ export function DamageChecksReportCard(props: { from?: string; to?: string; vehi
             <p className="text-sm text-muted-foreground" data-testid="damage-checks-note">{t("officeReports.damage.withDamageNote")}</p>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("officeReports.damage.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth ?? []} series={series} testId="damage-checks-month-chart" chartRef={monthChartRef} onPointClick={(p) => open(p.series, { month: p.month })} />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} testId="damage-checks-month-chart" chartRef={monthChartRef} previousData={previous?.byMonth} period={params} compareRange={compareRange} onPointClick={(p) => open(p.series, { month: p.month })} />
             </div>
             <div className="grid gap-6 lg:grid-cols-2">
               <ReportBreakdownTable

@@ -6,7 +6,6 @@
  */
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 import {
   TRANSPORT_BILLING_CARD_TILES,
   type TransportBillingRow,
@@ -21,7 +20,8 @@ import { chartSvgFromRef } from "@/lib/report-document-print";
 import { DrillLineButton, compactSections, drillLineTestId, textTablePrintSection } from "@/components/reports/kit/report-breakdown-table";
 import { useReportPeriod } from "./report-filters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportTiles, tilesPrintSection, useCompareTile, type BetterDir, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { previousOf, useComparedSummary } from "@/components/reports/kit/use-compared";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
 import { EntityLink } from "@/components/reports/entity-link";
@@ -37,6 +37,9 @@ const TILE_TONE: Partial<Record<TransportBillingTile, ReportTile<TransportBillin
   invoiced: "green",
   openAllTime: "red",
 };
+
+/** Less left to invoice is better, more invoiced is better; toll stays neutral. */
+const TRANSPORT_BETTER: Partial<Record<TransportBillingTile, BetterDir>> = { notInvoiced: "down", invoiced: "up" };
 
 export function TransportBillingReportCard(props: { from?: string; to?: string; vehicleId?: string }) {
   const { from, to, vehicleId } = useReportPeriod(props);
@@ -62,10 +65,8 @@ export function TransportBillingReportCard(props: { from?: string; to?: string; 
     () => (shownTile === "openAllTime" ? (vehicleId && vehicleId !== "all" ? { vehicleId } : {}) : params),
     [shownTile, params, vehicleId],
   );
-  const { data, isLoading, isError } = useQuery<TransportBillingSummary>({
-    queryKey: [`${ENDPOINT}/summary`, params],
-    enabled: allowed,
-  });
+  const { data, isLoading, isError, previous, compareRange } = useComparedSummary<TransportBillingSummary>(`${ENDPOINT}/summary`, params, { enabled: allowed });
+  const compareTile = useCompareTile();
 
   const columns = useMemo<Array<ReportColumn<TransportBillingRow, TransportBillingSort>>>(() => {
     const day = (v: string | null) => (v ? formatDateNl(v, "short") : "");
@@ -102,13 +103,18 @@ export function TransportBillingReportCard(props: { from?: string; to?: string; 
     const total = data?.tiles?.[id];
     const amount = formatCurrency(total?.amount ?? 0);
     const missing = id === "notInvoiced" ? (data?.missingAmount ?? 0) : 0;
-    return {
+    return compareTile({
       id,
       label: t(`moneyReports.transport.tiles.${id}`),
       value: (total?.count ?? 0).toLocaleString("nl-NL"),
       hint: missing > 0 ? `${amount} · ${t("moneyReports.transport.missingAmount", { n: missing })}` : amount,
       tone: TILE_TONE[id],
-    };
+    }, {
+      current: total?.count ?? 0,
+      // "openAllTime" does not follow the period: no comparison.
+      previous: id === "openAllTime" ? undefined : previousOf(previous, (s) => s.tiles?.[id]?.count ?? 0),
+      better: TRANSPORT_BETTER[id],
+    });
   });
 
   const series = [
@@ -152,7 +158,7 @@ export function TransportBillingReportCard(props: { from?: string; to?: string; 
             />
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("moneyReports.transport.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth ?? []} series={series} money testId="transport-billing-month-chart" chartRef={monthChartRef} onPointClick={(p) => open(p.series, { month: p.month })} />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} money testId="transport-billing-month-chart" chartRef={monthChartRef} previousData={previous?.byMonth} period={params} compareRange={compareRange} onPointClick={(p) => open(p.series, { month: p.month })} />
             </div>
             <div className="space-y-2" data-testid="transport-billing-by-type">
               <h4 className="text-sm font-medium">{t("moneyReports.transport.byType")}</h4>

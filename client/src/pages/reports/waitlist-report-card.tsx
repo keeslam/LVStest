@@ -7,7 +7,6 @@
  */
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 import {
   WAITLIST_REPORT_TILES,
   type WaitlistReportRow, type WaitlistReportSort, type WaitlistReportSummary, type WaitlistReportTile,
@@ -19,7 +18,8 @@ import { chartSvgFromRef } from "@/lib/report-document-print";
 import { DrillLineButton, compactSections, drillLineTestId, textTablePrintSection } from "@/components/reports/kit/report-breakdown-table";
 import { useReportRange } from "./report-filters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportTiles, tilesPrintSection, useCompareTile, type BetterDir, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { previousOf, useComparedSummary } from "@/components/reports/kit/use-compared";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
 import { EntityLink } from "@/components/reports/entity-link";
@@ -57,10 +57,8 @@ export function WaitlistReportCard(props: { from?: string; to?: string; vehicleI
     () => ({ ...(from ? { from } : {}), ...(to ? { to } : {}) }),
     [from, to],
   );
-  const { data, isLoading, isError } = useQuery<WaitlistReportSummary>({
-    queryKey: [`${ENDPOINT}/summary`, params],
-    enabled: allowed,
-  });
+  const { data, isLoading, isError, previous, compareRange } = useComparedSummary<WaitlistReportSummary>(`${ENDPOINT}/summary`, params, { enabled: allowed });
+  const compareTile = useCompareTile();
 
   const tileLabel = (id: WaitlistReportTile) => t(`portalReports.waitlist.tiles.${id}`);
   const statusLabel = (status: string) => t(`portalReports.waitlist.status.${status}`, { defaultValue: status });
@@ -116,11 +114,16 @@ export function WaitlistReportCard(props: { from?: string; to?: string; vehicleI
   }, [t]);
 
 
-  const tiles: Array<ReportTile<WaitlistReportTile>> = WAITLIST_REPORT_TILES.map((id) => ({
+  // More wishes fulfilled is better; the other counts stay neutral.
+  const tiles: Array<ReportTile<WaitlistReportTile>> = WAITLIST_REPORT_TILES.map((id) => compareTile({
     id,
     label: tileLabel(id),
     value: (data?.tiles?.[id]?.count ?? 0).toLocaleString("nl-NL"),
     tone: TILE_TONE[id],
+  }, {
+    current: data?.tiles?.[id]?.count ?? 0,
+    previous: previousOf(previous, (s) => s.tiles?.[id]?.count ?? 0),
+    better: id === "fulfilled" ? "up" : undefined,
   }));
 
   const avgDays = data?.avgDaysToFulfil;
@@ -179,7 +182,7 @@ export function WaitlistReportCard(props: { from?: string; to?: string; vehicleI
                 </p>
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium">{t("portalReports.waitlist.byMonth")}</h4>
-                  <ReportMonthChart data={data.byMonth ?? []} series={series} stacked testId="waitlist-month-chart" chartRef={monthChartRef} onPointClick={(p) => open(p.series, { month: p.month })} />
+                  <ReportMonthChart data={data.byMonth ?? []} series={series} stacked testId="waitlist-month-chart" chartRef={monthChartRef} previousData={previous?.byMonth} period={params} compareRange={compareRange} onPointClick={(p) => open(p.series, { month: p.month })} />
                 </div>
                 <div className="space-y-2" data-testid="waitlist-by-type">
                   <h4 className="text-sm font-medium">{t("portalReports.waitlist.byType")}</h4>

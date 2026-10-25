@@ -6,7 +6,6 @@
  */
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 import {
   EXTRA_COSTS_CARD_TILES,
   type ExtraCostsRow,
@@ -21,7 +20,8 @@ import { useReportPrint } from "@/components/reports/kit/report-print";
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { compactSections, breakdownPrintSection, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
 import { useReportPeriod } from "./report-filters";
-import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportTiles, tilesPrintSection, useCompareTile, type BetterDir, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { previousOf, useComparedSummary } from "@/components/reports/kit/use-compared";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportBreakdownTable } from "@/components/reports/kit/report-breakdown-table";
 import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
@@ -53,10 +53,8 @@ export function ExtraCostsReportCard(props: { from?: string; to?: string; vehicl
     () => ({ from, to, ...(vehicleId && vehicleId !== "all" ? { vehicleId } : {}) }),
     [from, to, vehicleId],
   );
-  const { data, isLoading, isError } = useQuery<ExtraCostsSummary>({
-    queryKey: [`${ENDPOINT}/summary`, params],
-    enabled: allowed,
-  });
+  const { data, isLoading, isError, previous, compareRange } = useComparedSummary<ExtraCostsSummary>(`${ENDPOINT}/summary`, params, { enabled: allowed });
+  const compareTile = useCompareTile();
 
   const columns = useMemo<Array<ReportColumn<ExtraCostsRow, ExtraCostsSort>>>(() => {
     const day = (v: string | null) => (v ? formatDateNl(v, "short") : "");
@@ -78,13 +76,14 @@ export function ExtraCostsReportCard(props: { from?: string; to?: string; vehicl
 
   const tiles: Array<ReportTile<ExtraCostsTile>> = EXTRA_COSTS_CARD_TILES.map((id) => {
     const total = data?.tiles?.[id];
-    return {
+    // Charged to the customer: neither more nor less is plainly better, so the change stays neutral.
+    return compareTile({
       id,
       label: t(`moneyReports.extraCosts.tiles.${id}`),
       value: (total?.count ?? 0).toLocaleString("nl-NL"),
       hint: formatCurrency(total?.amount ?? 0),
       tone: id === "fuel" ? "amber" : undefined,
-    };
+    }, { current: total?.count ?? 0, previous: previousOf(previous, (s) => s.tiles?.[id]?.count ?? 0) });
   });
 
   const series = [
@@ -123,7 +122,7 @@ export function ExtraCostsReportCard(props: { from?: string; to?: string; vehicl
             </p>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("moneyReports.extraCosts.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth ?? []} series={series} money stacked testId="extra-costs-month-chart" chartRef={monthChartRef} onPointClick={(p) => open(p.series === "fuelCost" ? "fuel" : "extraKm", { month: p.month })} />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} money stacked testId="extra-costs-month-chart" chartRef={monthChartRef} previousData={previous?.byMonth} period={params} compareRange={compareRange} onPointClick={(p) => open(p.series === "fuelCost" ? "fuel" : "extraKm", { month: p.month })} />
             </div>
             <div className="grid gap-6 lg:grid-cols-2">
               <ReportBreakdownTable title={t("moneyReports.extraCosts.byCustomer")} rows={data.byCustomer ?? []} nullLabel={t("moneyReports.extraCosts.noCustomer")} money testId="extra-costs-by-customer" onOpen={(row) => openLine("customer", row)} />

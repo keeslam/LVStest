@@ -671,6 +671,13 @@
       "notes": {
         "periodVehicleIgnored": "O período e o veículo não se aplicam a este relatório.",
         "lastThreeMonths": "Sempre os últimos 3 meses."
+      },
+      "compare": {
+        "label": "Comparar com",
+        "none": "Não comparar",
+        "previous": "Período anterior",
+        "lastYear": "Mesmo período do ano passado",
+        "allHint": "Com Todos os dados não há nada para comparar."
       }
     },
     "reports": {
@@ -833,7 +840,12 @@
     "count": "Quantidade",
     "amount": "Valor",
     "periodTooLong": "Escolha um período de no máximo um ano ({{days}} dias).",
-    "noCustomer": "Sem cliente"
+    "noCustomer": "Sem cliente",
+    "compare": {
+      "was": "antes {{value}}",
+      "new": "novo",
+      "previousSeries": "{{label}} (comparação)"
+    }
   },
   "customerReports": {
     "value": {
@@ -1240,7 +1252,8 @@
     "truncated": "Nem todas as linhas cabem na exportação. A lista foi cortada.",
     "printedOn": "Impresso em",
     "vehicleLine": "Veículo: {{vehicle}}",
-    "categoryLine": "Categoria: {{category}}"
+    "categoryLine": "Categoria: {{category}}",
+    "comparedWith": "Comparado com {{period}}"
   },
   "entity": {
     "open": "Abrir num novo separador",

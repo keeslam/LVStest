@@ -7,7 +7,6 @@
  */
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 import {
   INBOX_ITEM_REPORT_TILES, INBOX_RUN_REPORT_TILES,
   type InboxItemReportRow, type InboxItemReportSort, type InboxItemReportSummary, type InboxItemReportTile,
@@ -19,7 +18,8 @@ import { ReportSection } from "@/components/reports/kit/report-section";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { useReportRange } from "./report-filters";
-import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportTiles, tilesPrintSection, useCompareTile, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { previousOf, useComparedSummary } from "@/components/reports/kit/use-compared";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportBreakdownTable, breakdownPrintSection, compactSections, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
 import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
@@ -93,10 +93,8 @@ export function InvoiceInboxRunsReport(props: InboxPartProps) {
     () => ({ ...(from ? { from } : {}), ...(to ? { to } : {}) }),
     [from, to],
   );
-  const runsQuery = useQuery<InboxRunReportSummary>({
-    queryKey: [`${RUNS_ENDPOINT}/summary`, params],
-    enabled: allowedRuns,
-  });
+  const runsQuery = useComparedSummary<InboxRunReportSummary>(`${RUNS_ENDPOINT}/summary`, params, { enabled: allowedRuns });
+  const compareTile = useCompareTile();
 
   const runLabel = (id: string) => t(`reports:officeReports.inbox.tiles.runs.${id}`);
 
@@ -126,13 +124,18 @@ export function InvoiceInboxRunsReport(props: InboxPartProps) {
   const runs = runsQuery.data;
   const runTiles: Array<ReportTile<InboxRunReportTile>> = INBOX_RUN_REPORT_TILES.map((id) => {
     const tile = runs?.tiles?.[id];
-    return {
+    return compareTile({
       id,
       label: runLabel(id),
       value: n0(tile?.amount ?? 0),
       hint: t("reports:officeReports.inbox.runsHint", { count: tile?.count ?? 0 }),
       tone: RUN_TONE[id],
-    };
+    }, {
+      current: tile?.amount ?? 0,
+      previous: previousOf(runsQuery.previous, (s) => s.tiles?.[id]?.amount ?? 0),
+      // Fewer failed rounds is better; the other counts stay neutral.
+      better: id === "failed" ? "down" : undefined,
+    });
   });
   const runSeries = [
     { key: "booked" as const, label: runLabel("booked"), color: "#16a34a" },
@@ -178,7 +181,7 @@ export function InvoiceInboxRunsReport(props: InboxPartProps) {
           />
           <div className="space-y-2">
             <h4 className="text-sm font-medium">{t("reports:officeReports.inbox.runsByMonth")}</h4>
-            <ReportMonthChart data={runs.byMonth ?? []} series={runSeries} stacked testId="invoice-inbox-runs-month-chart" chartRef={monthChartRef} onPointClick={(p) => openRuns(p.series, p.month)} />
+            <ReportMonthChart data={runs.byMonth ?? []} series={runSeries} stacked testId="invoice-inbox-runs-month-chart" chartRef={monthChartRef} previousData={runsQuery.previous?.byMonth} period={params} compareRange={runsQuery.compareRange} onPointClick={(p) => openRuns(p.series, p.month)} />
           </div>
         </>
       )}
@@ -225,10 +228,8 @@ export function InvoiceInboxItemsReport(props: InboxPartProps) {
     () => ({ ...(from ? { from } : {}), ...(to ? { to } : {}) }),
     [from, to],
   );
-  const itemsQuery = useQuery<InboxItemReportSummary>({
-    queryKey: [`${ITEMS_ENDPOINT}/summary`, params],
-    enabled: allowedItems,
-  });
+  const itemsQuery = useComparedSummary<InboxItemReportSummary>(`${ITEMS_ENDPOINT}/summary`, params, { enabled: allowedItems });
+  const compareTile = useCompareTile();
 
   const itemLabel = (id: string) => t(`reports:officeReports.inbox.tiles.items.${id}`);
   const reasonLabel = (reason: string) => t(`expenses:invoiceInbox.reasons.${reason}`, { defaultValue: reason });
@@ -261,11 +262,16 @@ export function InvoiceInboxItemsReport(props: InboxPartProps) {
 
 
   const items = itemsQuery.data;
-  const itemTiles: Array<ReportTile<InboxItemReportTile>> = INBOX_ITEM_REPORT_TILES.map((id) => ({
+  // More booked by itself is better; the other counts stay neutral.
+  const itemTiles: Array<ReportTile<InboxItemReportTile>> = INBOX_ITEM_REPORT_TILES.map((id) => compareTile({
     id,
     label: itemLabel(id),
     value: n0(items?.tiles?.[id]?.count ?? 0),
     tone: ITEM_TONE[id],
+  }, {
+    current: items?.tiles?.[id]?.count ?? 0,
+    previous: previousOf(itemsQuery.previous, (s) => s.tiles?.[id]?.count ?? 0),
+    better: id === "autoBooked" ? "up" : undefined,
   }));
   const itemSeries = [
     { key: "autoBooked" as const, label: outcomeLabel("autoBooked"), color: "#16a34a" },
@@ -305,7 +311,7 @@ export function InvoiceInboxItemsReport(props: InboxPartProps) {
           <p className="text-sm text-muted-foreground" data-testid="invoice-inbox-reasons-note">{t("reports:officeReports.inbox.reasonsNote")}</p>
           <div className="space-y-2">
             <h4 className="text-sm font-medium">{t("reports:officeReports.inbox.itemsByMonth")}</h4>
-            <ReportMonthChart data={items.byMonth ?? []} series={itemSeries} stacked testId="invoice-inbox-items-month-chart" chartRef={monthChartRef} onPointClick={(p) => open(p.series, { month: p.month })} />
+            <ReportMonthChart data={items.byMonth ?? []} series={itemSeries} stacked testId="invoice-inbox-items-month-chart" chartRef={monthChartRef} previousData={itemsQuery.previous?.byMonth} period={params} compareRange={itemsQuery.compareRange} onPointClick={(p) => open(p.series, { month: p.month })} />
           </div>
           {reasonRows.length === 0 ? (
             <div className="space-y-2" data-testid="invoice-inbox-reasons">

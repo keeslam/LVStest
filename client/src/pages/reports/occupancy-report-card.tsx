@@ -11,7 +11,6 @@
  */
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 import {
   OCCUPANCY_MAX_DAYS,
   OCCUPANCY_TILES,
@@ -26,7 +25,8 @@ import { useReportPrint } from "@/components/reports/kit/report-print";
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { compactSections } from "@/components/reports/kit/report-breakdown-table";
 import { useReportRange } from "./report-filters";
-import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportTiles, tilesPrintSection, useCompareTile, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { previousOf, useComparedSummary } from "@/components/reports/kit/use-compared";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
 import { EntityLink } from "@/components/reports/entity-link";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -80,10 +80,11 @@ export function OccupancyReportCard(props: { from?: string; to?: string; vehicle
     [shown.day, params, vehicle],
   );
 
-  const { data, isLoading, isError } = useQuery<OccupancySummary>({
-    queryKey: [`${ENDPOINT}/summary`, params],
-    enabled: allowed && !tooLong,
-  });
+  // A comparison period the server refuses (or longer than it accepts) shows "–" for the old number.
+  const { data, isLoading, isError, previous } = useComparedSummary<OccupancySummary>(
+    `${ENDPOINT}/summary`, params, { enabled: allowed && !tooLong, maxDays: OCCUPANCY_MAX_DAYS },
+  );
+  const compareTile = useCompareTile();
 
   // A day from another period (or vehicle) is no longer on the calendar.
   const days = data?.days ?? [];
@@ -109,13 +110,18 @@ export function OccupancyReportCard(props: { from?: string; to?: string; vehicle
 
   const periodTiles: Array<ReportTile<OccupancyTile>> = OCCUPANCY_TILES.map((id) => {
     const total = data?.tiles?.[id];
-    return {
+    return compareTile({
       id,
       label: k(`tiles.${id}`),
       value: (total?.count ?? 0).toLocaleString("nl-NL"),
       hint: k("tileHint", { count: total?.amount ?? 0 }),
       tone: TILE_TONE[id],
-    };
+    }, {
+      current: total?.count ?? 0,
+      previous: previousOf(previous, (s) => s.tiles?.[id]?.count ?? 0),
+      // More cars rented is better; the other states stay neutral.
+      better: id === "rented" ? "up" : undefined,
+    });
   });
   const dayTiles: Array<ReportTile<OccupancyTile>> = day
     ? OCCUPANCY_TILES.map((id) => ({ id, label: k(`tiles.${id}`), value: day[id].toLocaleString("nl-NL"), tone: TILE_TONE[id] }))

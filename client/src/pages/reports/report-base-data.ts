@@ -73,17 +73,24 @@ const NO_RESERVATIONS: Reservation[] = [];
 const NO_CUSTOMERS: Customer[] = [];
 const NO_TRANSPORTS: VehicleTransport[] = [];
 
-export function useReportBaseData() {
-  const filters = useReportFilters();
-  const canViewExpenses = useHasPermission(UserPermission.MANAGE_EXPENSES);
-  const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
-  const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
-  const canViewCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
+/**
+ * `period`: undefined = the filter bar's period. A period = the same numbers for that period (the
+ * comparison period of a report); null = off, nothing is fetched (a second copy while not comparing).
+ * The vehicles, customers and transports are shared queries, so a second copy asks nothing extra.
+ */
+export function useReportBaseData(period?: { from: string; to: string } | null) {
+  const bar = useReportFilters();
+  const filters = period ? { ...bar, from: period.from, to: period.to } : bar;
+  const on = period !== null;
+  const canViewExpenses = useHasPermission(UserPermission.MANAGE_EXPENSES) && on;
+  const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES) && on;
+  const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS) && on;
+  const canViewCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS) && on;
   // GET /api/transports accepts either family.
   const canViewTransports = useHasPermission(
     UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES,
     UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS,
-  );
+  ) && on;
 
   // The period of the filter bar as whole office days.
   const dateRange = useMemo(
@@ -104,12 +111,12 @@ export function useReportBaseData() {
 
   // B-65: only the expenses of the period (plus the trend's three months), not every expense ever booked.
   const expenseWindow = expenseFetchWindow(reportFrom, reportTo);
-  const { data: expenses = NO_EXPENSES, isFetching: expensesFetching } = useQuery<Expense[]>({
+  const { data: expenses = NO_EXPENSES, isFetching: expensesFetching, isSuccess: expensesLoaded } = useQuery<Expense[]>({
     queryKey: ["/api/expenses", expenseWindow],
     enabled: canViewExpenses,
   });
 
-  const { data: reservations = NO_RESERVATIONS, isFetching: reservationsFetching } = useQuery<Reservation[]>({
+  const { data: reservations = NO_RESERVATIONS, isFetching: reservationsFetching, isSuccess: reservationsLoaded } = useQuery<Reservation[]>({
     queryKey: ["/api/reservations", { from: reportFrom, to: reportTo }],
     enabled: canViewReservations && !!reportFrom && !!reportTo,
   });
@@ -391,6 +398,9 @@ export function useReportBaseData() {
     customers,
     transports,
     dataBusy,
+    /** The expenses and reservations of the period are in (a second copy: its numbers are known). */
+    expensesLoaded,
+    reservationsLoaded,
   };
 }
 

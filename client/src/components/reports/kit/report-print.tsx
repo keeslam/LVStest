@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { releaseIframeFocus } from "@/lib/release-iframe-focus";
 import { reportClientAction } from "@/lib/audit-events";
 import { COMPANY_NAME_KEY, companyNameFromSetting } from "@shared/company-name";
-import { isAllDataRange, useReportFilters } from "@/pages/reports/report-filters";
+import { comparisonRange, isAllDataRange, useReportFilters } from "@/pages/reports/report-filters";
 import { formatExpenseCategory, formatLicensePlate } from "@/lib/format-utils";
 import { reportDocumentHtml, type PrintSection, type ResolvedPrintSection } from "@/lib/report-document-print";
 
@@ -135,6 +135,8 @@ function PrintBody({ title }: { title: string }) {
   }, [sections]);
 
   const hasTiles = sections.some((s) => s.kind === "tiles");
+  // Only a report whose tiles carry an old number names the comparison period in the header.
+  const compared = sections.some((s) => s.kind === "tiles" && s.tiles.some((tile) => tile.previous !== undefined));
   const hasChart = prepared ? prepared.some((p) => p.kind === "plain" && p.part === "chart") : sections.some((s) => s.kind === "chart");
   const hasTable = sections.some((s) => s.kind === "table");
   const hasPage = sections.some((s) => s.kind === "table" && s.pageRows);
@@ -142,6 +144,8 @@ function PrintBody({ title }: { title: string }) {
 
   const filterLines = useMemo(() => {
     const lines: string[] = [];
+    const range = compared && !ignored?.period ? comparisonRange(filters.from, filters.to, filters.compare) : null;
+    if (range) lines.push(t("print.comparedWith", { period: t("reportsPage.shell.periodLabel", { from: dutchDate(range.from), to: dutchDate(range.to) }) }));
     if (filters.vehicleId !== "all" && !ignored?.vehicle) {
       const vehicles = queryClient.getQueryData<Array<{ id: number; licensePlate?: string }>>(["/api/vehicles"]);
       const plate = vehicles?.find((v) => String(v.id) === filters.vehicleId)?.licensePlate;
@@ -149,7 +153,7 @@ function PrintBody({ title }: { title: string }) {
     }
     if (filters.category !== "all") lines.push(t("print.categoryLine", { category: formatExpenseCategory(filters.category) }));
     return lines;
-  }, [filters.vehicleId, filters.category, ignored?.vehicle, queryClient, t]);
+  }, [compared, filters.from, filters.to, filters.compare, filters.vehicleId, filters.category, ignored?.vehicle, ignored?.period, queryClient, t]);
 
   const html = useMemo(() => {
     if (!prepared) return null;

@@ -12,7 +12,7 @@ vi.mock("@/lib/queryClient", () => ({
   invalidateByPrefix: vi.fn(),
 }));
 
-import { presetRange, ReportFiltersProvider, useReportFilters } from "@/pages/reports/report-filters";
+import { comparisonRange, presetRange, ReportFiltersProvider, useReportFilters } from "@/pages/reports/report-filters";
 import { visibleTabs, visibleReports, REPORT_TABS, type ReportAccess, type ReportDef } from "@/pages/reports/report-registry";
 import { useReportSelection } from "@/pages/reports/use-report-selection";
 
@@ -38,7 +38,26 @@ describe("presetRange", () => {
   });
 });
 
+describe("comparisonRange", () => {
+  it("previous period, same period last year, none", () => {
+    expect(comparisonRange("2026-10-01", "2026-10-31", "previous")).toEqual({ from: "2026-08-31", to: "2026-09-30" });
+    expect(comparisonRange("2026-10-01", "2026-12-31", "previous")).toEqual({ from: "2026-07-01", to: "2026-09-30" });
+    expect(comparisonRange("2026-10-01", "2026-10-31", "lastYear")).toEqual({ from: "2025-10-01", to: "2025-10-31" });
+    expect(comparisonRange("2028-02-29", "2028-02-29", "lastYear")).toEqual({ from: "2027-02-28", to: "2027-02-28" });
+    expect(comparisonRange("2026-10-01", "2026-10-31", "none")).toBeNull();
+  });
+});
+
 describe("useReportFilters", () => {
+  it("setCompare keeps the choice next to the period", () => {
+    const { result } = renderHook(() => useReportFilters(), { wrapper: ReportFiltersProvider });
+    expect(result.current.compare).toBe("none");
+    act(() => result.current.setCompare("lastYear"));
+    expect(result.current.compare).toBe("lastYear");
+    act(() => result.current.setPreset("lastMonth"));
+    expect(result.current.compare).toBe("lastYear");
+  });
+
   it("setRange switches the preset to custom", () => {
     const { result } = renderHook(() => useReportFilters(), { wrapper: ReportFiltersProvider });
     expect(result.current.preset).toBe("thisMonth");

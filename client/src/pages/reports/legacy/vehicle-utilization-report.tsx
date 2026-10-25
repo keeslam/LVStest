@@ -14,7 +14,8 @@ import { useReportPrint } from "@/components/reports/kit/report-print";
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { useReportBaseData, type UtilizationRow } from "../report-base-data";
-import { useReportFilters } from "../report-filters";
+import { useComparisonRange, useReportFilters } from "../report-filters";
+import { TileCompareLine, tilesPrintSection, useCompareTile } from "@/components/reports/kit/report-tiles";
 import { ReportBaseStatus } from "./report-base-status";
 import { tablePrintSection } from "./table-print";
 import { LegacyRowsDialog, drillTitleOf, useLegacyDrill } from "./drill-rows";
@@ -23,6 +24,10 @@ export function VehicleUtilizationReport() {
   const { t } = useTranslation("reports");
   const base = useReportBaseData();
   const { from, to, vehicleId } = useReportFilters();
+  // The same average for the comparison period: a second copy of the page data, off while not comparing.
+  const compareRange = useComparisonRange(from, to);
+  const before = useReportBaseData(compareRange);
+  const compareTile = useCompareTile();
   const chartRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<ReportTableView<UtilizationRow> | null>(null);
   const rows = base.vehicleUtilizationData;
@@ -34,7 +39,18 @@ export function VehicleUtilizationReport() {
   });
   const openAll = () => drill.open({ title: t("reportsPage.reports.avgUtilization"), reservations: base.filteredReservations });
 
-  const average = rows.length > 0 ? Math.round(rows.reduce((sum, v) => sum + v.utilizationPercentage, 0) / rows.length) : 0;
+  const averageOf = (list: UtilizationRow[]) => (list.length > 0 ? Math.round(list.reduce((sum, v) => sum + v.utilizationPercentage, 0) / list.length) : 0);
+  const average = averageOf(rows);
+  // A higher occupancy is better.
+  const tileAverage = compareTile(
+    { id: "average", label: t("reportsPage.reports.avgUtilization"), value: `${average}%` },
+    {
+      current: average,
+      previous: compareRange ? (before.reservationsLoaded ? averageOf(before.vehicleUtilizationData) : null) : undefined,
+      format: (n) => `${n}%`,
+      better: "up",
+    },
+  );
   const subtitle = base.isAllDataRange
     ? t("reportsPage.operations.vehicleUtilizationSubtitleYearly", { count: base.fleetVehicleCount, rented: base.rentedVehicleCount })
     : t("reportsPage.operations.vehicleUtilizationSubtitle", { count: base.fleetVehicleCount, rented: base.rentedVehicleCount });
@@ -58,7 +74,7 @@ export function VehicleUtilizationReport() {
   ], [t]);
 
   useReportPrint([
-    { kind: "tiles", tiles: [{ label: t("reportsPage.reports.avgUtilization"), value: `${average}%` }] },
+    tilesPrintSection([tileAverage]),
     { kind: "chart", title: chartTitle, getSvg: () => chartSvgFromRef(chartRef) },
     tablePrintSection({ id: "vehicle-utilization", columns, rows, view }),
   ]);
@@ -80,6 +96,7 @@ export function VehicleUtilizationReport() {
         <CardContent>
           <div className="text-2xl font-bold" data-testid="vehicle-utilization-average">{average}%</div>
           <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
+          <TileCompareLine previous={tileAverage.previous} delta={tileAverage.delta} better={tileAverage.better} testId="vehicle-utilization-average" />
         </CardContent>
       </Card>
 

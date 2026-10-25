@@ -6,7 +6,6 @@
  */
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 import {
   CUSTOMER_VALUE_TILES, type CustomerValueRow, type CustomerValueSort, type CustomerValueSummary, type CustomerValueTile,
 } from "@shared/reports/customer-value-report";
@@ -17,7 +16,8 @@ import { useReportPrint } from "@/components/reports/kit/report-print";
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { compactSections } from "@/components/reports/kit/report-breakdown-table";
 import { useReportRange } from "./report-filters";
-import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportTiles, tilesPrintSection, useCompareTile, type BetterDir, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { previousOf, useComparedSummary } from "@/components/reports/kit/use-compared";
 import { ReportTopChart } from "@/components/reports/kit/report-top-chart";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
 import { EntityLink, EntityQuickView, useCanOpenEntity } from "@/components/reports/entity-link";
@@ -31,6 +31,11 @@ const TILE_TONE: Partial<Record<CustomerValueTile, ReportTile<CustomerValueTile>
   revenue: "green",
   costs: "red",
   late: "amber",
+};
+
+/** More revenue is better; more costs, late returns and cancellations are worse. Requests stay neutral. */
+const CUSTOMER_VALUE_BETTER: Partial<Record<CustomerValueTile, BetterDir>> = {
+  revenue: "up", costs: "down", late: "down", cancelled: "down",
 };
 
 export function CustomerValueReportCard(props: { from?: string; to?: string; vehicleId?: string }) {
@@ -56,10 +61,8 @@ export function CustomerValueReportCard(props: { from?: string; to?: string; veh
     }),
     [from, to, vehicleId],
   );
-  const { data, isLoading, isError } = useQuery<CustomerValueSummary>({
-    queryKey: [`${ENDPOINT}/summary`, params],
-    enabled: allowed,
-  });
+  const { data, isLoading, isError, previous, compareRange } = useComparedSummary<CustomerValueSummary>(`${ENDPOINT}/summary`, params, { enabled: allowed });
+  const compareTile = useCompareTile();
 
   const columns = useMemo<Array<ReportColumn<CustomerValueRow, CustomerValueSort>>>(() => {
     const name = (r: CustomerValueRow) => r.customerName ?? t("reportKit.noCustomer");
@@ -99,13 +102,19 @@ export function CustomerValueReportCard(props: { from?: string; to?: string; veh
   const tiles: Array<ReportTile<CustomerValueTile>> = CUSTOMER_VALUE_TILES.map((id) => {
     const total = data?.tiles?.[id];
     const amount = total?.amount ?? 0;
-    return {
+    const money = id === "revenue" || id === "costs";
+    return compareTile({
       id,
       label: t(`customerReports.value.tiles.${id}`),
-      value: id === "revenue" || id === "costs" ? formatCurrency(amount) : amount.toLocaleString("nl-NL"),
+      value: money ? formatCurrency(amount) : amount.toLocaleString("nl-NL"),
       hint: t("customerReports.value.customersHint", { count: total?.count ?? 0 }),
       tone: TILE_TONE[id],
-    };
+    }, {
+      current: amount,
+      previous: previousOf(previous, (s) => s.tiles?.[id]?.amount ?? 0),
+      format: money ? formatCurrency : undefined,
+      better: CUSTOMER_VALUE_BETTER[id],
+    });
   });
   const noCustomer = t("reportKit.noCustomer");
 

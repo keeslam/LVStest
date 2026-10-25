@@ -18,7 +18,8 @@ import { useReportPrint } from "@/components/reports/kit/report-print";
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { formatCurrency, formatExpenseCategory, formatLicensePlate } from "@/lib/format-utils";
 import { downloadCsv, csvNumber } from "@/lib/csv";
-import { useReportFilters } from "../report-filters";
+import { useComparisonRange, useReportFilters } from "../report-filters";
+import { TileCompareLine, tilesPrintSection, useCompareTile, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { tablePrintSection } from "./table-print";
 
 // Mirrors server/utils/financial-reports.ts
@@ -58,6 +59,13 @@ export function VehicleFinancialsReport() {
   const { data: financials, isLoading } = useQuery<VehicleFinancialsReport>({
     queryKey: [`/api/reports/vehicle-financials?from=${from}&to=${to}${vehicleParam}`],
   });
+  // The same report for the comparison period (same key shape, other dates).
+  const compareRange = useComparisonRange(from, to);
+  const before = useQuery<VehicleFinancialsReport>({
+    queryKey: [`/api/reports/vehicle-financials?from=${compareRange?.from}&to=${compareRange?.to}${vehicleParam}`],
+    enabled: !!compareRange,
+  });
+  const compareTile = useCompareTile();
 
   const activeRows = useMemo(() => (financials?.rows || []).filter((r) => r.rentals > 0 || r.expenses > 0), [financials]);
   const chartRows = useMemo(() => [...activeRows].sort((a, b) => b.revenue - a.revenue).slice(0, 10).map((r) => ({
@@ -148,15 +156,18 @@ export function VehicleFinancialsReport() {
     downloadCsv(t("financialTab.csv.subject"), header, rows);
   };
 
+  // More revenue and margin is better, more costs is worse.
+  const old = (key: "revenue" | "expenses" | "margin") => (compareRange ? (before.data?.totals?.[key] ?? null) : undefined);
+  const moneyTile = (id: "revenue" | "expenses" | "margin", value: string, better: "up" | "down"): ReportTile<string> => compareTile(
+    { id, label: t(`financialTab.summary.${id}`), value },
+    { current: tot?.[id] || 0, previous: old(id), format: formatCurrency, better },
+  );
+  const tileRevenue = moneyTile("revenue", formatCurrency(tot?.revenue || 0), "up");
+  const tileExpenses = moneyTile("expenses", formatCurrency(tot?.expenses || 0), "down");
+  const tileMargin = moneyTile("margin", `${formatCurrency(tot?.margin || 0)} (${tot ? marginPct(tot) : "–"})`, "up");
+
   useReportPrint([
-    {
-      kind: "tiles",
-      tiles: [
-        { label: t("financialTab.summary.revenue"), value: formatCurrency(tot?.revenue || 0) },
-        { label: t("financialTab.summary.expenses"), value: formatCurrency(tot?.expenses || 0) },
-        { label: t("financialTab.summary.margin"), value: `${formatCurrency(tot?.margin || 0)} (${tot ? marginPct(tot) : "–"})` },
-      ],
-    },
+    tilesPrintSection([tileRevenue, tileExpenses, tileMargin]),
     { kind: "chart", title: t("financialTab.chart.title"), getSvg: () => chartSvgFromRef(chartRef) },
     tablePrintSection({ id: "vehicle-financials", columns, rows: activeRows, view, totals }),
   ]);
@@ -174,17 +185,22 @@ export function VehicleFinancialsReport() {
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-financial-revenue">{formatCurrency(tot?.revenue || 0)}</div>
             <p className="text-xs text-gray-500">{t("financialTab.summary.rentals", { count: tot?.rentals || 0, days: tot?.rentalDays || 0 })}</p>
+            <TileCompareLine previous={tileRevenue.previous} delta={tileRevenue.delta} better={tileRevenue.better} testId="text-financial-revenue" />
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-500">{t("financialTab.summary.expenses")}</CardTitle></CardHeader>
-          <CardContent><div className="text-2xl font-bold text-red-600" data-testid="text-financial-expenses">{formatCurrency(tot?.expenses || 0)}</div></CardContent>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600" data-testid="text-financial-expenses">{formatCurrency(tot?.expenses || 0)}</div>
+            <TileCompareLine previous={tileExpenses.previous} delta={tileExpenses.delta} better={tileExpenses.better} testId="text-financial-expenses" />
+          </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-500">{t("financialTab.summary.margin")}</CardTitle></CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${(tot?.margin || 0) >= 0 ? "text-green-600" : "text-red-600"}`} data-testid="text-financial-margin">{formatCurrency(tot?.margin || 0)}</div>
             <p className="text-xs text-gray-500">{tot ? marginPct(tot) : "–"}</p>
+            <TileCompareLine previous={tileMargin.previous} delta={tileMargin.delta} better={tileMargin.better} testId="text-financial-margin" />
           </CardContent>
         </Card>
       </div>

@@ -659,6 +659,13 @@
       "notes": {
         "periodVehicleIgnored": "Periode en voertuig gelden niet voor dit rapport.",
         "lastThreeMonths": "Altijd de laatste 3 maanden."
+      },
+      "compare": {
+        "label": "Vergelijk met",
+        "none": "Niet vergelijken",
+        "previous": "Vorige periode",
+        "lastYear": "Zelfde periode vorig jaar",
+        "allHint": "Bij Alle gegevens is er niets om mee te vergelijken."
       }
     },
     "reports": {
@@ -820,7 +827,12 @@
     "count": "Aantal",
     "amount": "Bedrag",
     "periodTooLong": "Kies een periode van maximaal een jaar ({{days}} dagen).",
-    "noCustomer": "Zonder klant"
+    "noCustomer": "Zonder klant",
+    "compare": {
+      "was": "was {{value}}",
+      "new": "nieuw",
+      "previousSeries": "{{label}} (vergelijking)"
+    }
   },
   "customerReports": {
     "value": {
@@ -1221,7 +1233,8 @@
     "truncated": "Niet alle regels passen in de export. De lijst is afgekapt.",
     "printedOn": "Gedrukt op",
     "vehicleLine": "Auto: {{vehicle}}",
-    "categoryLine": "Categorie: {{category}}"
+    "categoryLine": "Categorie: {{category}}",
+    "comparedWith": "Vergeleken met {{period}}"
   },
   "entity": {
     "open": "Openen in nieuw tabblad",

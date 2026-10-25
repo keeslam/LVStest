@@ -659,6 +659,13 @@
       "notes": {
         "periodVehicleIgnored": "Period and vehicle do not apply to this report.",
         "lastThreeMonths": "Always the last 3 months."
+      },
+      "compare": {
+        "label": "Compare with",
+        "none": "Do not compare",
+        "previous": "Previous period",
+        "lastYear": "Same period last year",
+        "allHint": "With All data there is nothing to compare with."
       }
     },
     "reports": {
@@ -820,7 +827,12 @@
     "count": "Count",
     "amount": "Amount",
     "periodTooLong": "Choose a period of at most one year ({{days}} days).",
-    "noCustomer": "No customer"
+    "noCustomer": "No customer",
+    "compare": {
+      "was": "was {{value}}",
+      "new": "new",
+      "previousSeries": "{{label}} (comparison)"
+    }
   },
   "customerReports": {
     "value": {
@@ -1221,7 +1233,8 @@
     "truncated": "Not all rows fit in the export. The list was cut short.",
     "printedOn": "Printed on",
     "vehicleLine": "Vehicle: {{vehicle}}",
-    "categoryLine": "Category: {{category}}"
+    "categoryLine": "Category: {{category}}",
+    "comparedWith": "Compared with {{period}}"
   },
   "entity": {
     "open": "Open in new tab",

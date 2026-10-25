@@ -6,9 +6,12 @@
  */
 import { escapeHtml as esc } from "@/lib/html-escape";
 
+/** One tile on paper; `previous` ("was 100") and `delta` (an arrow and percent) when the report compares. */
+export interface PrintTile { label: string; value: string; hint?: string; previous?: string; delta?: string }
+
 /** What a report registers for printing (see ReportPrintProvider). */
 export type PrintSection =
-  | { kind: "tiles"; tiles: Array<{ label: string; value: string; hint?: string }> }
+  | { kind: "tiles"; tiles: PrintTile[] }
   | { kind: "chart"; title?: string; getSvg(): string | null }
   | {
       kind: "table";
@@ -27,7 +30,7 @@ export type PrintSection =
 
 /** A section with its data in hand, ready to be written down. */
 export type ResolvedPrintSection =
-  | { kind: "tiles"; tiles: Array<{ label: string; value: string; hint?: string }> }
+  | { kind: "tiles"; tiles: PrintTile[] }
   | { kind: "chart"; title?: string; svg: string }
   | { kind: "table"; title?: string; header: string[]; rows: string[][]; truncated: boolean; totals?: string[] }
   | { kind: "note"; text: string };
@@ -63,7 +66,9 @@ function sectionHtml(section: ResolvedPrintSection, labels: ReportDocumentLabels
   switch (section.kind) {
     case "tiles":
       return `<div class="tiles">${section.tiles
-        .map((tile) => `<div class="tile"><div class="tile-label">${esc(tile.label)}</div><div class="tile-value">${esc(tile.value)}</div>${tile.hint ? `<div class="tile-hint">${esc(tile.hint)}</div>` : ""}</div>`)
+        .map((tile) => `<div class="tile"><div class="tile-label">${esc(tile.label)}</div><div class="tile-value">${esc(tile.value)}</div>${tile.hint ? `<div class="tile-hint">${esc(tile.hint)}</div>` : ""}${
+          tile.previous !== undefined ? `<div class="tile-hint tile-compare">${esc([tile.previous, tile.delta].filter(Boolean).join(" · "))}</div>` : ""
+        }</div>`)
         .join("")}</div>`;
     case "chart":
       return `<div class="chart">${section.title ? `<h2>${esc(section.title)}</h2>` : ""}${section.svg}</div>`;

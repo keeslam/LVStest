@@ -19,7 +19,11 @@ export interface ReportFilters {
   vehicleId: string;
   /** "all" or a category. */
   category: string;
+  /** Compare every period number with the previous period or the same period last year. */
+  compare: ReportCompare;
 }
+
+export type ReportCompare = "none" | "previous" | "lastYear";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const lastDay = (year: number, month: number) => new Date(Date.UTC(year, month, 0)).getUTCDate();
@@ -53,11 +57,34 @@ export function presetRange(preset: Exclude<ReportPreset, "custom">, today: stri
   }
 }
 
+const DAY_MS = 86_400_000;
+const dayNumber = (ymd: string) => Math.round(Date.parse(`${ymd}T00:00:00Z`) / DAY_MS);
+const dayText = (n: number) => new Date(n * DAY_MS).toISOString().slice(0, 10);
+
+/** The same day one year earlier; 29-2 becomes 28-2. */
+function yearBefore(ymd: string): string {
+  const [year, month, day] = ymd.split("-").map(Number);
+  return iso(year - 1, month, Math.min(day, lastDay(year - 1, month)));
+}
+
+/**
+ * The period a report compares with. `previous`: as many days, right before `from`;
+ * `lastYear`: the same dates one year earlier (29-2 becomes 28-2); null for `none`.
+ */
+export function comparisonRange(from: string, to: string, mode: ReportCompare): { from: string; to: string } | null {
+  if (mode === "none") return null;
+  if (mode === "lastYear") return { from: yearBefore(from), to: yearBefore(to) };
+  const start = dayNumber(from);
+  const days = dayNumber(to) - start + 1;
+  return { from: dayText(start - days), to: dayText(start - 1) };
+}
+
 type ReportFiltersApi = ReportFilters & {
   setPreset(preset: Exclude<ReportPreset, "custom">): void;
   setRange(from: string, to: string): void;
   setVehicle(id: string): void;
   setCategory(category: string): void;
+  setCompare(compare: ReportCompare): void;
 };
 
 const ReportFiltersContext = createContext<ReportFiltersApi | null>(null);
@@ -68,6 +95,7 @@ export function ReportFiltersProvider({ children, initial }: { children?: ReactN
     preset: "thisMonth",
     vehicleId: "all",
     category: "all",
+    compare: "none",
     ...initial,
   }));
 
@@ -81,10 +109,11 @@ export function ReportFiltersProvider({ children, initial }: { children?: ReactN
   }, []);
   const setVehicle = useCallback((vehicleId: string) => setState((prev) => ({ ...prev, vehicleId })), []);
   const setCategory = useCallback((category: string) => setState((prev) => ({ ...prev, category })), []);
+  const setCompare = useCallback((compare: ReportCompare) => setState((prev) => ({ ...prev, compare })), []);
 
   const value = useMemo(
-    () => ({ ...state, setPreset, setRange, setVehicle, setCategory }),
-    [state, setPreset, setRange, setVehicle, setCategory],
+    () => ({ ...state, setPreset, setRange, setVehicle, setCategory, setCompare }),
+    [state, setPreset, setRange, setVehicle, setCategory, setCompare],
   );
   return <ReportFiltersContext.Provider value={value}>{children}</ReportFiltersContext.Provider>;
 }
@@ -111,6 +140,18 @@ export function useReportRange(props: { from?: string; to?: string; vehicleId?: 
     to: props.to ?? ctx?.to,
     vehicleId: props.vehicleId ?? ctx?.vehicleId,
   };
+}
+
+/**
+ * The comparison period of a card with period from..to: null when the filter bar does not compare,
+ * when the card has no period, or for "Alle gegevens" (there is nothing before it to compare with).
+ */
+export function useComparisonRange(from: string | undefined, to: string | undefined): { from: string; to: string } | null {
+  const mode = useContext(ReportFiltersContext)?.compare ?? "none";
+  return useMemo(
+    () => (!from || !to || isAllDataRange(from, to) ? null : comparisonRange(from, to, mode)),
+    [from, to, mode],
+  );
 }
 
 /** Same, for a card that always needs a period: this month when nothing else is known. */

@@ -671,6 +671,13 @@
       "notes": {
         "periodVehicleIgnored": "Perioada și vehiculul nu se aplică acestui raport.",
         "lastThreeMonths": "Mereu ultimele 3 luni."
+      },
+      "compare": {
+        "label": "Compară cu",
+        "none": "Nu compara",
+        "previous": "Perioada anterioară",
+        "lastYear": "Aceeași perioadă de anul trecut",
+        "allHint": "La Toate datele nu există nimic de comparat."
       }
     },
     "reports": {
@@ -833,7 +840,12 @@
     "count": "Număr",
     "amount": "Sumă",
     "periodTooLong": "Alegeți o perioadă de cel mult un an ({{days}} de zile).",
-    "noCustomer": "Fără client"
+    "noCustomer": "Fără client",
+    "compare": {
+      "was": "înainte {{value}}",
+      "new": "nou",
+      "previousSeries": "{{label}} (comparație)"
+    }
   },
   "customerReports": {
     "value": {
@@ -1240,7 +1252,8 @@
     "truncated": "Nu toate rândurile încap în export. Lista a fost tăiată.",
     "printedOn": "Tipărit la",
     "vehicleLine": "Vehicul: {{vehicle}}",
-    "categoryLine": "Categorie: {{category}}"
+    "categoryLine": "Categorie: {{category}}",
+    "comparedWith": "Comparat cu {{period}}"
   },
   "entity": {
     "open": "Deschide într-o filă nouă",

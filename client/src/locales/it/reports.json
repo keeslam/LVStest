@@ -671,6 +671,13 @@
       "notes": {
         "periodVehicleIgnored": "Periodo e veicolo non valgono per questo report.",
         "lastThreeMonths": "Sempre gli ultimi 3 mesi."
+      },
+      "compare": {
+        "label": "Confronta con",
+        "none": "Non confrontare",
+        "previous": "Periodo precedente",
+        "lastYear": "Stesso periodo dell'anno scorso",
+        "allHint": "Con Tutti i dati non c'è nulla da confrontare."
       }
     },
     "reports": {
@@ -833,7 +840,12 @@
     "count": "Numero",
     "amount": "Importo",
     "periodTooLong": "Scegli un periodo di al massimo un anno ({{days}} giorni).",
-    "noCustomer": "Senza cliente"
+    "noCustomer": "Senza cliente",
+    "compare": {
+      "was": "prima {{value}}",
+      "new": "nuovo",
+      "previousSeries": "{{label}} (confronto)"
+    }
   },
   "customerReports": {
     "value": {
@@ -1240,7 +1252,8 @@
     "truncated": "Non tutte le righe entrano nell'esportazione. L'elenco è stato tagliato.",
     "printedOn": "Stampato il",
     "vehicleLine": "Veicolo: {{vehicle}}",
-    "categoryLine": "Categoria: {{category}}"
+    "categoryLine": "Categoria: {{category}}",
+    "comparedWith": "Confrontato con {{period}}"
   },
   "entity": {
     "open": "Apri in una nuova scheda",

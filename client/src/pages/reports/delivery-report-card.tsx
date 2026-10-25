@@ -6,7 +6,6 @@
  */
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 import {
   DELIVERY_REPORT_TILES,
   type DeliveryReportRow, type DeliveryReportSort, type DeliveryReportSummary, type DeliveryReportTile,
@@ -18,7 +17,8 @@ import { chartSvgFromRef } from "@/lib/report-document-print";
 import { DrillLineButton, compactSections, drillLineTestId, textTablePrintSection } from "@/components/reports/kit/report-breakdown-table";
 import { useReportRange } from "./report-filters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportTiles, tilesPrintSection, useCompareTile, type BetterDir, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { previousOf, useComparedSummary } from "@/components/reports/kit/use-compared";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
 import { EntityLink } from "@/components/reports/entity-link";
@@ -34,6 +34,9 @@ const TILE_TONE: Partial<Record<DeliveryReportTile, ReportTile<DeliveryReportTil
   late: "red",
   open: "amber",
 };
+
+/** More on time is better, more late is worse; the other counts stay neutral. */
+const DELIVERY_BETTER: Partial<Record<DeliveryReportTile, BetterDir>> = { onTime: "up", late: "down" };
 
 const n0 = (n: number) => n.toLocaleString("nl-NL", { maximumFractionDigits: 0 });
 const n1 = (n: number) => n.toLocaleString("nl-NL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -66,10 +69,8 @@ export function DeliveryReportCard(props: { from?: string; to?: string; vehicleI
     }),
     [from, to, vehicleId],
   );
-  const { data, isLoading, isError } = useQuery<DeliveryReportSummary>({
-    queryKey: [`${ENDPOINT}/summary`, params],
-    enabled: allowed,
-  });
+  const { data, isLoading, isError, previous, compareRange } = useComparedSummary<DeliveryReportSummary>(`${ENDPOINT}/summary`, params, { enabled: allowed });
+  const compareTile = useCompareTile();
 
   const tileLabel = (id: string) => t(`reports:officeReports.delivery.tiles.${id}`);
   const typeLabel = (type: string) => t(`delivery:transportDialog.typeLabels.${type}`, { defaultValue: type });
@@ -107,12 +108,16 @@ export function DeliveryReportCard(props: { from?: string; to?: string; vehicleI
   }, [t]);
 
 
-  const tiles: Array<ReportTile<DeliveryReportTile>> = DELIVERY_REPORT_TILES.map((id) => ({
+  const tiles: Array<ReportTile<DeliveryReportTile>> = DELIVERY_REPORT_TILES.map((id) => compareTile({
     id,
     label: tileLabel(id),
     value: n0(data?.tiles?.[id]?.count ?? 0),
     hint: t("reports:officeReports.delivery.kmHint", { km: n1(data?.tiles?.[id]?.amount ?? 0) }),
     tone: TILE_TONE[id],
+  }, {
+    current: data?.tiles?.[id]?.count ?? 0,
+    previous: previousOf(previous, (s) => s.tiles?.[id]?.count ?? 0),
+    better: DELIVERY_BETTER[id],
   }));
   const series = [
     { key: "onTime" as const, label: punctualityLabel("onTime"), color: "#16a34a" },
@@ -180,7 +185,7 @@ export function DeliveryReportCard(props: { from?: string; to?: string; vehicleI
             </div>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("reports:officeReports.delivery.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth ?? []} series={series} stacked testId="delivery-month-chart" chartRef={monthChartRef} onPointClick={(p) => open(p.series, { month: p.month })} />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} stacked testId="delivery-month-chart" chartRef={monthChartRef} previousData={previous?.byMonth} period={params} compareRange={compareRange} onPointClick={(p) => open(p.series, { month: p.month })} />
             </div>
             <div className="space-y-2" data-testid="delivery-by-type">
               <h4 className="text-sm font-medium">{t("reports:officeReports.delivery.byType")}</h4>

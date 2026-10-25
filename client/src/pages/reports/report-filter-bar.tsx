@@ -9,9 +9,10 @@ import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searcha
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatExpenseCategory, formatLicensePlate } from "@/lib/format-utils";
 import { expenseFetchWindow, presentCategories } from "./report-helpers";
-import { isAllDataRange, useReportFilters, type ReportPreset } from "./report-filters";
+import { isAllDataRange, useReportFilters, type ReportCompare, type ReportPreset } from "./report-filters";
 
 const PRESETS: ReportPreset[] = ["thisMonth", "lastMonth", "nextMonth", "thisQuarter", "thisYear", "all", "custom"];
+const COMPARES: ReportCompare[] = ["none", "previous", "lastYear"];
 
 /** "2026-10-01" -> "1-10-2026" */
 function shortDate(ymd: string): string {
@@ -66,6 +67,8 @@ export function ReportFilterBar({ showCategory, onOpenReportBuilder, onOpenMaint
         tags: [v.licensePlate],
       })),
   ];
+
+  const allData = isAllDataRange(filters.from, filters.to);
 
   const changePreset = (value: string) => {
     if (value === "custom") filters.setRange(filters.from, filters.to);
@@ -122,10 +125,28 @@ export function ReportFilterBar({ showCategory, onOpenReportBuilder, onOpenMaint
         )}
 
         <p className="pb-2 text-sm text-muted-foreground" data-testid="report-period-label">
-          {isAllDataRange(filters.from, filters.to)
+          {allData
             ? t("reportsPage.common.allData")
             : t("reportsPage.shell.periodLabel", { from: shortDate(filters.from), to: shortDate(filters.to) })}
         </p>
+
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted-foreground" id="report-compare-label">{t("reportsPage.shell.compare.label")}</label>
+          {/* "Alle gegevens" has nothing before it: the choice stays, but is not used. */}
+          <Select value={allData ? "none" : filters.compare} onValueChange={(v) => filters.setCompare(v as ReportCompare)} disabled={allData}>
+            <SelectTrigger className="w-52 bg-white" aria-labelledby="report-compare-label" data-testid="select-report-compare">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {COMPARES.map((mode) => (
+                <SelectItem key={mode} value={mode}>{t(`reportsPage.shell.compare.${mode}`)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {allData && (
+            <p className="text-xs text-muted-foreground" data-testid="report-compare-all-hint">{t("reportsPage.shell.compare.allHint")}</p>
+          )}
+        </div>
 
         <div className="w-56 space-y-1">
           <label className="text-xs font-medium text-muted-foreground">{t("reportsPage.common.vehicle")}</label>

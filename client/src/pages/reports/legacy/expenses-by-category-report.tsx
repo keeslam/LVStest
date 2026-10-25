@@ -17,7 +17,8 @@ import { chartSvgFromRef } from "@/lib/report-document-print";
 import { formatCurrency, formatExpenseCategory } from "@/lib/format-utils";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useReportBaseData } from "../report-base-data";
-import { useReportFilters } from "../report-filters";
+import { useComparisonRange, useReportFilters } from "../report-filters";
+import { TileCompareLine, tilesPrintSection, useCompareTile, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { categoryKey } from "../report-helpers";
 import { ReportBaseStatus } from "./report-base-status";
 import { tablePrintSection } from "./table-print";
@@ -29,6 +30,10 @@ export function ExpensesByCategoryReport() {
   const { t } = useTranslation("reports");
   const base = useReportBaseData();
   const { from, to, vehicleId, category } = useReportFilters();
+  // The same numbers for the comparison period: a second copy of the page data, off while not comparing.
+  const compareRange = useComparisonRange(from, to);
+  const before = useReportBaseData(compareRange);
+  const compareTile = useCompareTile();
   const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
   const chartRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<ReportTableView<CategoryRow> | null>(null);
@@ -56,12 +61,18 @@ export function ExpensesByCategoryReport() {
     amount: formatCurrency(Number(base.totalExpenses)),
   };
 
-  const tiles = [
-    { label: t("reportsPage.common.totalExpenses"), value: formatCurrency(Number(base.totalExpenses)) },
-    ...(canViewVehicles ? [{ label: t("reportsPage.operations.avgCostPerVehicleCardTitle"), value: formatCurrency(Number(base.avgExpensePerVehicle)) }] : []),
-  ];
+  // Less cost is better.
+  const old = (n: number) => (compareRange ? (before.expensesLoaded ? n : null) : undefined);
+  const tileTotal: ReportTile<string> = compareTile(
+    { id: "total", label: t("reportsPage.common.totalExpenses"), value: formatCurrency(Number(base.totalExpenses)) },
+    { current: Number(base.totalExpenses), previous: old(Number(before.totalExpenses)), format: formatCurrency, better: "down" },
+  );
+  const tileAvg: ReportTile<string> = compareTile(
+    { id: "avg", label: t("reportsPage.operations.avgCostPerVehicleCardTitle"), value: formatCurrency(Number(base.avgExpensePerVehicle)) },
+    { current: Number(base.avgExpensePerVehicle), previous: old(Number(before.avgExpensePerVehicle)), format: formatCurrency, better: "down" },
+  );
   useReportPrint([
-    { kind: "tiles", tiles },
+    tilesPrintSection(canViewVehicles ? [tileTotal, tileAvg] : [tileTotal]),
     { kind: "chart", title: t("reportsPage.operations.expensesByCategoryTitle"), getSvg: () => chartSvgFromRef(chartRef) },
     tablePrintSection({ id: "expenses-by-category", columns, rows, view, totals: rows.length > 0 ? totals : undefined }),
   ]);
@@ -84,6 +95,7 @@ export function ExpensesByCategoryReport() {
           <CardContent>
             <div className="text-2xl font-bold"><Price value={Number(base.totalExpenses)} /></div>
             <p className="mt-1 text-xs text-muted-foreground">{t("reportsPage.operations.acrossExpenseEntries", { count: base.filteredExpenses.length })}</p>
+            <TileCompareLine previous={tileTotal.previous} delta={tileTotal.delta} better={tileTotal.better} testId="expenses-by-category-tile-total" />
           </CardContent>
         </Card>
         {canViewVehicles && (
@@ -103,6 +115,7 @@ export function ExpensesByCategoryReport() {
               <p className="mt-1 text-xs text-muted-foreground" data-testid="reports-avg-basis">
                 {t("reportsPage.operations.avgBasis", { count: base.fleetVehicleCount })}
               </p>
+              <TileCompareLine previous={tileAvg.previous} delta={tileAvg.delta} better={tileAvg.better} testId="expenses-by-category-tile-avg" />
             </CardContent>
           </Card>
         )}

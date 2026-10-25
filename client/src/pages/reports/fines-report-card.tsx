@@ -6,7 +6,6 @@
  */
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 import { FINE_REPORT_TILES, type FineReportRow, type FineReportSort, type FineReportSummary, type FineReportTile } from "@shared/reports/fines-report";
 import type { ReportBreakdownRow } from "@shared/report-kit";
 import { isLegacyFineStatus } from "@shared/fines";
@@ -16,7 +15,8 @@ import { useReportPrint } from "@/components/reports/kit/report-print";
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { useReportPeriod } from "./report-filters";
 import { Badge } from "@/components/ui/badge";
-import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportTiles, tilesPrintSection, useCompareTile, type BetterDir, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { previousOf, useComparedSummary } from "@/components/reports/kit/use-compared";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportBreakdownTable, breakdownPrintSection, compactSections, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
 import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
@@ -32,6 +32,9 @@ const TILE_TONE: Partial<Record<FineReportTile, ReportTile<FineReportTile>["tone
   new: "amber",
   linked: "green",
 };
+
+/** Fewer fines is better; the steps in between stay neutral. */
+const FINE_BETTER: Partial<Record<FineReportTile, BetterDir>> = { total: "down", new: "down" };
 
 export function FinesReportCard(props: { from?: string; to?: string; vehicleId?: string }) {
   const { from, to, vehicleId } = useReportPeriod(props);
@@ -52,10 +55,8 @@ export function FinesReportCard(props: { from?: string; to?: string; vehicleId?:
     () => ({ from, to, ...(vehicleId && vehicleId !== "all" ? { vehicleId } : {}) }),
     [from, to, vehicleId],
   );
-  const { data, isLoading, isError } = useQuery<FineReportSummary>({
-    queryKey: [`${ENDPOINT}/summary`, params],
-    enabled: allowed,
-  });
+  const { data, isLoading, isError, previous, compareRange } = useComparedSummary<FineReportSummary>(`${ENDPOINT}/summary`, params, { enabled: allowed });
+  const compareTile = useCompareTile();
 
   const columns = useMemo<Array<ReportColumn<FineReportRow, FineReportSort>>>(() => {
     const status = (s: string) => t(`moneyReports.fines.statuses.${s}`, { defaultValue: s });
@@ -87,13 +88,20 @@ export function FinesReportCard(props: { from?: string; to?: string; vehicleId?:
     const total = data?.tiles?.[id];
     const count = (total?.count ?? 0).toLocaleString("nl-NL");
     const amount = formatCurrency(total?.amount ?? 0);
-    return {
+    // The total compares the amount, the other tiles the count.
+    const pick = (s?: FineReportSummary) => (id === "total" ? s?.tiles?.[id]?.amount : s?.tiles?.[id]?.count) ?? 0;
+    return compareTile({
       id,
       label: t(`moneyReports.fines.tiles.${id}`),
       value: id === "total" ? amount : count,
       hint: id === "total" ? t("reportKit.rowsCount", { count: total?.count ?? 0 }) : amount,
       tone: TILE_TONE[id],
-    };
+    }, {
+      current: pick(data),
+      previous: previousOf(previous, pick),
+      format: id === "total" ? formatCurrency : undefined,
+      better: FINE_BETTER[id],
+    });
   });
 
   const series = (["new", "linked", "legacy", "cancelled"] as const).map((key) => ({
@@ -135,7 +143,7 @@ export function FinesReportCard(props: { from?: string; to?: string; vehicleId?:
             </p>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("moneyReports.fines.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth ?? []} series={series} money stacked testId="fines-month-chart" chartRef={monthChartRef} onPointClick={(p) => open(p.series, { month: p.month })} />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} money stacked testId="fines-month-chart" chartRef={monthChartRef} previousData={previous?.byMonth} period={{ from, to }} compareRange={compareRange} onPointClick={(p) => open(p.series, { month: p.month })} />
             </div>
             <div className="grid gap-6 lg:grid-cols-3">
               <ReportBreakdownTable title={t("moneyReports.fines.byCustomer")} rows={data.byCustomer ?? []} nullLabel={notLinked} money testId="fines-by-customer" onOpen={(row) => open("total", { drill: { name: "customer", key: row.key, label: row.label ?? notLinked } })} />

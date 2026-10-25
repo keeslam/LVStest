@@ -8,7 +8,6 @@
  */
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 import {
   FLEET_MILEAGE_TILES,
   type FleetMileageRow,
@@ -24,7 +23,8 @@ import { useReportPrint } from "@/components/reports/kit/report-print";
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { compactSections } from "@/components/reports/kit/report-breakdown-table";
 import { useReportRange } from "./report-filters";
-import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportTiles, tilesPrintSection, useCompareTile, type BetterDir, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { previousOf, useComparedSummary } from "@/components/reports/kit/use-compared";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
 import { EntityLink } from "@/components/reports/entity-link";
@@ -39,6 +39,9 @@ const ENDPOINT = "/api/reports/fleet-mileage";
 const TILE_TONE: Partial<Record<FleetMileageTile, ReportTile<FleetMileageTile>["tone"]>> = {
   warnings: "amber",
 };
+
+/** Fewer warnings and fewer cars with too few readings is better; driven stays neutral. */
+const MILEAGE_BETTER: Partial<Record<FleetMileageTile, BetterDir>> = { warnings: "down", sparse: "down" };
 
 const n = (v: number) => v.toLocaleString("nl-NL");
 const kmText = (v: number | null) => (v === null ? "" : n(v));
@@ -66,10 +69,8 @@ export function FleetMileageReportCard(props: { from?: string; to?: string; vehi
     [from, to, vehicle],
   );
 
-  const { data, isLoading, isError } = useQuery<FleetMileageSummary>({
-    queryKey: [`${ENDPOINT}/summary`, params],
-    enabled: allowed,
-  });
+  const { data, isLoading, isError, previous, compareRange } = useComparedSummary<FleetMileageSummary>(`${ENDPOINT}/summary`, params, { enabled: allowed });
+  const compareTile = useCompareTile();
 
   const months = useMemo(() => (data?.byMonth ?? []).map((m) => m.month), [data]);
 
@@ -149,13 +150,17 @@ export function FleetMileageReportCard(props: { from?: string; to?: string; vehi
 
   const tiles: Array<ReportTile<FleetMileageTile>> = FLEET_MILEAGE_TILES.map((id) => {
     const total = data?.tiles?.[id];
-    return {
+    return compareTile({
       id,
       label: k(`tiles.${id}`),
       value: n(total?.count ?? 0),
       hint: id === "driven" ? k("tileHint", { km: n(total?.amount ?? 0) }) : undefined,
       tone: TILE_TONE[id],
-    };
+    }, {
+      current: total?.count ?? 0,
+      previous: previousOf(previous, (s) => s.tiles?.[id]?.count ?? 0),
+      better: MILEAGE_BETTER[id],
+    });
   });
 
   const isWarnings = shown === "warnings";
@@ -183,6 +188,9 @@ export function FleetMileageReportCard(props: { from?: string; to?: string; vehi
                 series={[{ key: "km", label: k("kmSeries"), color: "#2563eb" }]}
                 testId="fleet-mileage-month-chart"
                 chartRef={monthChartRef}
+                previousData={previous?.byMonth}
+                period={params}
+                compareRange={compareRange}
               />
             </div>
           </>

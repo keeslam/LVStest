@@ -25,9 +25,15 @@ export interface Metric<T> {
 
 const metric = <T,>(value: T | null | undefined, isLoading: boolean): Metric<T> => ({ value: value ?? null, loading: isLoading });
 
+/** A period instead of the filter bar's (the comparison period of the Overzicht). */
+type PeriodOverride = { from: string; to: string } | null | undefined;
+
 /** Total revenue minus costs of the period (same query as the vehicle-financials report). */
-export function useMarginMetric(enabled: boolean): Metric<number> {
-  const { from, to, vehicleId } = useReportFilters();
+export function useMarginMetric(enabled: boolean, period?: PeriodOverride): Metric<number> {
+  const filters = useReportFilters();
+  const { vehicleId } = filters;
+  const from = period?.from ?? filters.from;
+  const to = period?.to ?? filters.to;
   const vehicleParam = vehicleId && vehicleId !== "all" ? `&vehicleId=${vehicleId}` : "";
   const { data, isLoading } = useQuery<{ totals?: { margin: number } }>({
     queryKey: [`/api/reports/vehicle-financials?from=${from}&to=${to}${vehicleParam}`],
@@ -37,8 +43,8 @@ export function useMarginMetric(enabled: boolean): Metric<number> {
 }
 
 /** Average occupancy of the period in percent (null without data or for a period the server refuses). */
-export function useOccupancyMetric(enabled: boolean): Metric<number> & { tooLong: boolean } {
-  const { from, to, vehicleId } = useReportRange({});
+export function useOccupancyMetric(enabled: boolean, period?: PeriodOverride): Metric<number> & { tooLong: boolean } {
+  const { from, to, vehicleId } = useReportRange(period ?? {});
   const today = officeToday();
   const periodFrom = from ?? `${today.slice(0, 4)}-01-01`;
   const periodTo = to ?? today;
@@ -99,8 +105,8 @@ export function useInvoicesWaitingMetric(enabled: boolean): Metric<number> {
 }
 
 /** Transports delivered after the planned day. */
-export function useDeliveriesLateMetric(enabled: boolean): Metric<number> {
-  const { from, to, vehicleId } = useReportRange({});
+export function useDeliveriesLateMetric(enabled: boolean, period?: PeriodOverride): Metric<number> {
+  const { from, to, vehicleId } = useReportRange(period ?? {});
   const params = useMemo<Record<string, string>>(
     () => ({ ...(from ? { from } : {}), ...(to ? { to } : {}), ...(vehicleId && vehicleId !== "all" ? { vehicleId } : {}) }),
     [from, to, vehicleId],
