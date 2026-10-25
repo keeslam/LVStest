@@ -113,7 +113,7 @@ export function WaitlistReportCard({ from, to, vehicleId }: { from?: string; to?
   const avgDays = data?.avgDaysToFulfil;
   const avgText = avgDays === null || avgDays === undefined
     ? "–"
-    : t("portalReports.waitlist.avgDaysValue", { days: avgDays.toLocaleString("nl-NL", { maximumFractionDigits: 1 }) });
+    : t("portalReports.waitlist.avgDaysValue", { count: avgDays, days: avgDays.toLocaleString("nl-NL", { maximumFractionDigits: 1 }) });
   const series = [
     { key: "open" as const, label: t("portalReports.waitlist.series.open"), color: "#f59e0b" },
     { key: "fulfilled" as const, label: t("portalReports.waitlist.series.fulfilled"), color: "#16a34a" },

@@ -740,7 +740,8 @@
         "cancelled": "Geannuleerd"
       },
       "avgDays": "Gemiddelde wachttijd: {{value}}",
-      "avgDaysValue": "{{days}} dagen",
+      "avgDaysValue_one": "{{days}} dag",
+      "avgDaysValue_other": "{{days}} dagen",
       "byMonth": "Vermeldingen per maand",
       "byType": "Per type auto (welk type ontbreekt)",
       "unknownType": "Onbekend",

@@ -740,7 +740,8 @@
         "cancelled": "Cancelled"
       },
       "avgDays": "Average waiting time: {{value}}",
-      "avgDaysValue": "{{days}} days",
+      "avgDaysValue_one": "{{days}} day",
+      "avgDaysValue_other": "{{days}} days",
       "byMonth": "Entries per month",
       "byType": "Per vehicle type (which type is missing)",
       "unknownType": "Unknown",

@@ -753,7 +753,9 @@
         "cancelled": "Canceladas"
       },
       "avgDays": "Tempo médio de espera: {{value}}",
-      "avgDaysValue": "{{days}} dias",
+      "avgDaysValue_one": "{{days}} dia",
+      "avgDaysValue_many": "{{days}} dias",
+      "avgDaysValue_other": "{{days}} dias",
       "byMonth": "Entradas por mês",
       "byType": "Por tipo de veículo (que tipo falta)",
       "unknownType": "Desconhecido",

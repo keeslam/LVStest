@@ -245,6 +245,18 @@ describe("Portaal - wachtlijst", () => {
     expect(fetchedPaths()).toContain("/api/reports/waitlist/summary?from=2019-01-01&to=2019-12-31");
   });
 
+  it("gemiddelde wachttijd: 1 dag enkelvoud, 7 dagen meervoud", async () => {
+    permissions = ["view_reports", "view_portal"];
+    stub(false, 1);
+    const view = renderNode(<WaitlistReportCard from="2019-01-01" to="2019-12-31" />);
+    expect((await screen.findByTestId("waitlist-avg-days")).textContent).toContain("1 dag");
+    expect(screen.getByTestId("waitlist-avg-days").textContent).not.toContain("1 dagen");
+    view.unmount();
+    stub(false, 7);
+    renderNode(<WaitlistReportCard from="2019-01-01" to="2019-12-31" />);
+    expect((await screen.findByTestId("waitlist-avg-days")).textContent).toContain("7 dagen");
+  });
+
   it("zonder afgeronde vermeldingen een streepje", async () => {
     permissions = ["view_reports", "view_portal"];
     stub(false, null);

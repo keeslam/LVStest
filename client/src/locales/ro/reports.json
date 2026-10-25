@@ -753,7 +753,9 @@
         "cancelled": "Anulate"
       },
       "avgDays": "Timp mediu de așteptare: {{value}}",
-      "avgDaysValue": "{{days}} zile",
+      "avgDaysValue_one": "{{days}} zi",
+      "avgDaysValue_few": "{{days}} zile",
+      "avgDaysValue_other": "{{days}} de zile",
       "byMonth": "Înregistrări pe lună",
       "byType": "Pe tip de vehicul (ce tip lipsește)",
       "unknownType": "Necunoscut",
