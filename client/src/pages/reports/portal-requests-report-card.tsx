@@ -176,6 +176,7 @@ export function PortalRequestsReportCard({ from, to, vehicleId }: { from?: strin
               title={t("reports:portalReports.requests.byHandler")}
               rows={data.byHandler ?? []}
               nullLabel={t("reports:portalReports.requests.unknownHandler")}
+              hideAmount
               testId="portal-requests-by-handler"
             />
           </>

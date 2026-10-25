@@ -742,6 +742,56 @@
         "open": "Aperte"
       },
       "csvSubject": "richieste-del-portale"
+    },
+    "waitlist": {
+      "title": "Lista d'attesa",
+      "description": "Clienti in attesa di un veicolo e quanto tempo passa prima che lo ottengano.",
+      "tiles": {
+        "all": "Tutte le voci",
+        "open": "Aperte",
+        "fulfilled": "Soddisfatte",
+        "cancelled": "Annullate"
+      },
+      "avgDays": "Tempo medio di attesa: {{value}}",
+      "avgDaysValue": "{{days}} giorni",
+      "byMonth": "Voci per mese",
+      "byType": "Per tipo di veicolo (quale tipo manca)",
+      "unknownType": "Sconosciuto",
+      "empty": "Non ci sono ancora clienti in lista d'attesa.",
+      "series": {
+        "open": "Aperte",
+        "fulfilled": "Soddisfatte",
+        "cancelled": "Annullate"
+      },
+      "status": {
+        "active": "Attiva",
+        "contacted": "Contattata",
+        "fulfilled": "Soddisfatta",
+        "cancelled": "Annullata"
+      },
+      "priority": {
+        "low": "Bassa",
+        "normal": "Normale",
+        "high": "Alta"
+      },
+      "columns": {
+        "createdAt": "Creata",
+        "customer": "Cliente",
+        "type": "Tipo",
+        "licensePlate": "Targa",
+        "preferredStart": "Inizio desiderato",
+        "preferredEnd": "Fine desiderata",
+        "duration": "Durata (giorni)",
+        "priority": "Priorità",
+        "status": "Stato",
+        "fulfilledAt": "Soddisfatta il",
+        "daysToFulfil": "Tempo di attesa (giorni)",
+        "total": "Totale",
+        "fulfilled": "Soddisfatte",
+        "notFulfilled": "Non soddisfatte",
+        "avgWait": "Attesa media (giorni)"
+      },
+      "csvSubject": "lista-d-attesa"
     }
   },
   "fleetReports": {

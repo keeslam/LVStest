@@ -24,6 +24,7 @@ vi.mock("@/lib/csv", async (importOriginal) => ({
 
 import { CustomerValueReportCard } from "@/pages/reports/customer-value-report-card";
 import { PortalRequestsReportCard } from "@/pages/reports/portal-requests-report-card";
+import { WaitlistReportCard } from "@/pages/reports/waitlist-report-card";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -206,6 +207,94 @@ describe("Portaal - portaalaanvragen", () => {
     await user.click(await screen.findByTestId("button-portal-requests-tile-stale"));
     await waitFor(() => expect(fetchedPaths()).toContain(
       "/api/reports/portal-requests/rows?from=2019-01-01&to=2019-12-31&tile=stale&sort=createdAt&dir=asc&page=1&pageSize=50",
+    ));
+  });
+});
+
+const WL_TILE = (count: number) => ({ count, amount: 0 });
+const waitlistSummary = (empty: boolean, avgDaysToFulfil: number | null) => ({
+  tiles: empty
+    ? { all: WL_TILE(0), open: WL_TILE(0), fulfilled: WL_TILE(0), cancelled: WL_TILE(0) }
+    : { all: WL_TILE(5), open: WL_TILE(2), fulfilled: WL_TILE(2), cancelled: WL_TILE(1) },
+  byMonth: empty ? [] : [{ month: "2019-03", open: 2, fulfilled: 2, cancelled: 1 }],
+  byType: empty ? [] : [
+    { vehicleType: null, total: 2, fulfilled: 1, notFulfilled: 1, avgDaysToFulfil: null },
+    { vehicleType: "Bus", total: 3, fulfilled: 1, notFulfilled: 2, avgDaysToFulfil: 4 },
+  ],
+  avgDaysToFulfil,
+});
+
+describe("Portaal - wachtlijst", () => {
+  const stub = (empty: boolean, avg: number | null) => fetchMock.mockImplementation(async (input: unknown) => {
+    const path = pathOf(input);
+    if (path.startsWith("/api/reports/waitlist/summary")) return json(waitlistSummary(empty, avg));
+    if (path.startsWith("/api/reports/waitlist/rows")) return json({ rows: [], total: 0, page: 1, pageSize: 50 });
+    return json([]);
+  });
+
+  it("type zonder waarde heet Onbekend en de gemiddelde wachttijd staat erbij", async () => {
+    permissions = ["view_reports", "view_portal"];
+    stub(false, 7);
+    renderNode(<WaitlistReportCard from="2019-01-01" to="2019-12-31" />);
+    const table = await screen.findByTestId("waitlist-by-type");
+    expect(within(table).getByText("Onbekend")).toBeInTheDocument();
+    expect(within(table).getByText("Bus")).toBeInTheDocument();
+    expect((await screen.findByTestId("waitlist-avg-days")).textContent).toContain("7");
+    expect(fetchedPaths()).toContain("/api/reports/waitlist/summary?from=2019-01-01&to=2019-12-31");
+  });
+
+  it("zonder afgeronde vermeldingen een streepje", async () => {
+    permissions = ["view_reports", "view_portal"];
+    stub(false, null);
+    renderNode(<WaitlistReportCard from="2019-01-01" to="2019-12-31" />);
+    expect((await screen.findByTestId("waitlist-avg-days")).textContent).toContain("–");
+  });
+
+  it("alle tegels 0 toont de lege melding in plaats van grafiek en tabel", async () => {
+    permissions = ["view_reports", "view_portal"];
+    stub(true, null);
+    renderNode(<WaitlistReportCard from="2019-01-01" to="2019-12-31" />);
+    expect(await screen.findByTestId("waitlist-empty")).toBeInTheDocument();
+    expect(screen.queryByTestId("waitlist-by-type")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("waitlist-month-chart")).not.toBeInTheDocument();
+  });
+
+  it("negeert het voertuigfilter en zegt dat", async () => {
+    permissions = ["view_reports", "view_portal"];
+    stub(false, 7);
+    renderNode(<WaitlistReportCard from="2019-01-01" to="2019-12-31" vehicleId="12" />);
+    expect(await screen.findByTestId("waitlist-vehicle-filter-ignored")).toBeInTheDocument();
+    expect(fetchedPaths()).toContain("/api/reports/waitlist/summary?from=2019-01-01&to=2019-12-31");
+  });
+
+  it("een summary zonder tegels breekt de kaart niet", async () => {
+    permissions = ["view_reports", "view_portal"];
+    fetchMock.mockImplementation(async () => json({}));
+    renderNode(<WaitlistReportCard from="2019-01-01" to="2019-12-31" />);
+    expect((await screen.findByTestId("waitlist-tile-all-value")).textContent).toBe("0");
+  });
+
+  it("zonder portaalrecht of zonder rapportrecht geen kaart en geen verzoek", async () => {
+    for (const perms of [["view_reports"], ["view_portal"]]) {
+      permissions = perms;
+      stub(false, 7);
+      fetchMock.mockClear();
+      const view = renderNode(<WaitlistReportCard from="2019-01-01" to="2019-12-31" />);
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      expect(screen.queryByTestId("card-waitlist-report")).not.toBeInTheDocument();
+      expect(fetchedPaths().some((p) => p.startsWith("/api/reports/waitlist"))).toBe(false);
+      view.unmount();
+    }
+  });
+
+  it("tegel Open opent de lijst", async () => {
+    permissions = ["view_reports", "view_portal"];
+    stub(false, 7);
+    const user = userEvent.setup();
+    renderNode(<WaitlistReportCard from="2019-01-01" to="2019-12-31" />);
+    await user.click(await screen.findByTestId("button-waitlist-tile-open"));
+    await waitFor(() => expect(fetchedPaths()).toContain(
+      "/api/reports/waitlist/rows?from=2019-01-01&to=2019-12-31&tile=open&sort=createdAt&dir=desc&page=1&pageSize=50",
     ));
   });
 });

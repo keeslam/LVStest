@@ -46,6 +46,7 @@ import { WorkshopDowntimeCard } from "./workshop-downtime-card";
 import { OccupancyReportCard } from "./occupancy-report-card";
 import { CustomerValueReportCard } from "./customer-value-report-card";
 import { PortalRequestsReportCard } from "./portal-requests-report-card";
+import { WaitlistReportCard } from "./waitlist-report-card";
 import { MaintenanceOutlookCard } from "./maintenance-outlook-card";
 import { FleetMileageReportCard } from "./fleet-mileage-report-card";
 import { FinancialTab } from "@/pages/reports/financial-tab";
@@ -1642,10 +1643,11 @@ function FullReportsPage() {
           )}
         </TabsList>
 
-        {/* Portal tab: portal requests (the vehicle filter does not apply) */}
+        {/* Portal tab: portal requests and waitlist (the vehicle filter does not apply) */}
         {canViewPortal && (
           <TabsContent value="portal" className="space-y-6">
             <PortalRequestsReportCard from={reportFrom} to={reportTo} vehicleId={selectedVehicle} />
+            <WaitlistReportCard from={reportFrom} to={reportTo} vehicleId={selectedVehicle} />
           </TabsContent>
         )}
 

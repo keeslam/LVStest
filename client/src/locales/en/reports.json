@@ -729,6 +729,56 @@
         "open": "Open"
       },
       "csvSubject": "portal-requests"
+    },
+    "waitlist": {
+      "title": "Waitlist",
+      "description": "Customers waiting for a vehicle and how long it takes before they get one.",
+      "tiles": {
+        "all": "All entries",
+        "open": "Open",
+        "fulfilled": "Fulfilled",
+        "cancelled": "Cancelled"
+      },
+      "avgDays": "Average waiting time: {{value}}",
+      "avgDaysValue": "{{days}} days",
+      "byMonth": "Entries per month",
+      "byType": "Per vehicle type (which type is missing)",
+      "unknownType": "Unknown",
+      "empty": "No customers are on the waitlist yet.",
+      "series": {
+        "open": "Open",
+        "fulfilled": "Fulfilled",
+        "cancelled": "Cancelled"
+      },
+      "status": {
+        "active": "Active",
+        "contacted": "Contacted",
+        "fulfilled": "Fulfilled",
+        "cancelled": "Cancelled"
+      },
+      "priority": {
+        "low": "Low",
+        "normal": "Normal",
+        "high": "High"
+      },
+      "columns": {
+        "createdAt": "Created",
+        "customer": "Customer",
+        "type": "Type",
+        "licensePlate": "License plate",
+        "preferredStart": "Preferred start",
+        "preferredEnd": "Preferred end",
+        "duration": "Duration (days)",
+        "priority": "Priority",
+        "status": "Status",
+        "fulfilledAt": "Fulfilled on",
+        "daysToFulfil": "Waiting time (days)",
+        "total": "Total",
+        "fulfilled": "Fulfilled",
+        "notFulfilled": "Not fulfilled",
+        "avgWait": "Avg. waiting time (days)"
+      },
+      "csvSubject": "waitlist"
     }
   },
   "fleetReports": {

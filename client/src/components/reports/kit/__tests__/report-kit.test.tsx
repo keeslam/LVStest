@@ -309,6 +309,22 @@ describe("report kit", () => {
     expect(screen.getByText("€ 50,00")).toBeInTheDocument();
   });
 
+  it("hideAmount laat de bedragkolom weg", () => {
+    render(
+      <ReportBreakdownTable
+        title="Per medewerker"
+        nullLabel="Onbekend"
+        hideAmount
+        testId="h"
+        rows={[{ key: "piet", label: "piet", count: 4, amount: 4 }]}
+      />,
+    );
+    expect(screen.getByText("piet")).toBeInTheDocument();
+    expect(screen.queryByText("Bedrag")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("cell")).toHaveLength(2);
+    expect(screen.getAllByRole("columnheader")).toHaveLength(2);
+  });
+
   it("een lege grafiek toont 'geen gegevens'", () => {
     render(<ReportMonthChart data={[] as Array<{ month: string; a: number }>} series={[{ key: "a", label: "A", color: "#000" }]} testId="c" />);
     expect(screen.getByTestId("c-empty")).toBeInTheDocument();

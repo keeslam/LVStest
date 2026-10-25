@@ -742,6 +742,56 @@
         "open": "Deschise"
       },
       "csvSubject": "cereri-portal"
+    },
+    "waitlist": {
+      "title": "Listă de așteptare",
+      "description": "Clienți care așteaptă un vehicul și cât durează până îl primesc.",
+      "tiles": {
+        "all": "Toate înregistrările",
+        "open": "Deschise",
+        "fulfilled": "Îndeplinite",
+        "cancelled": "Anulate"
+      },
+      "avgDays": "Timp mediu de așteptare: {{value}}",
+      "avgDaysValue": "{{days}} zile",
+      "byMonth": "Înregistrări pe lună",
+      "byType": "Pe tip de vehicul (ce tip lipsește)",
+      "unknownType": "Necunoscut",
+      "empty": "Încă nu sunt clienți pe lista de așteptare.",
+      "series": {
+        "open": "Deschise",
+        "fulfilled": "Îndeplinite",
+        "cancelled": "Anulate"
+      },
+      "status": {
+        "active": "Activă",
+        "contacted": "Contactată",
+        "fulfilled": "Îndeplinită",
+        "cancelled": "Anulată"
+      },
+      "priority": {
+        "low": "Scăzută",
+        "normal": "Normală",
+        "high": "Ridicată"
+      },
+      "columns": {
+        "createdAt": "Creată",
+        "customer": "Client",
+        "type": "Tip",
+        "licensePlate": "Număr de înmatriculare",
+        "preferredStart": "Început dorit",
+        "preferredEnd": "Sfârșit dorit",
+        "duration": "Durată (zile)",
+        "priority": "Prioritate",
+        "status": "Stare",
+        "fulfilledAt": "Îndeplinită la",
+        "daysToFulfil": "Timp de așteptare (zile)",
+        "total": "Total",
+        "fulfilled": "Îndeplinite",
+        "notFulfilled": "Neîndeplinite",
+        "avgWait": "Așteptare medie (zile)"
+      },
+      "csvSubject": "lista-de-asteptare"
     }
   },
   "fleetReports": {

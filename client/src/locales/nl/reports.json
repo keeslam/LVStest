@@ -729,6 +729,56 @@
         "open": "Open"
       },
       "csvSubject": "portaalaanvragen"
+    },
+    "waitlist": {
+      "title": "Wachtlijst",
+      "description": "Klanten die op een auto wachten en hoe lang het duurt voor ze er een krijgen.",
+      "tiles": {
+        "all": "Alle vermeldingen",
+        "open": "Open",
+        "fulfilled": "Vervuld",
+        "cancelled": "Geannuleerd"
+      },
+      "avgDays": "Gemiddelde wachttijd: {{value}}",
+      "avgDaysValue": "{{days}} dagen",
+      "byMonth": "Vermeldingen per maand",
+      "byType": "Per type auto (welk type ontbreekt)",
+      "unknownType": "Onbekend",
+      "empty": "Er staan nog geen klanten op de wachtlijst.",
+      "series": {
+        "open": "Open",
+        "fulfilled": "Vervuld",
+        "cancelled": "Geannuleerd"
+      },
+      "status": {
+        "active": "Actief",
+        "contacted": "Gebeld",
+        "fulfilled": "Vervuld",
+        "cancelled": "Geannuleerd"
+      },
+      "priority": {
+        "low": "Laag",
+        "normal": "Normaal",
+        "high": "Hoog"
+      },
+      "columns": {
+        "createdAt": "Aangemaakt",
+        "customer": "Klant",
+        "type": "Type",
+        "licensePlate": "Kenteken",
+        "preferredStart": "Gewenste start",
+        "preferredEnd": "Gewenst eind",
+        "duration": "Duur (dagen)",
+        "priority": "Prioriteit",
+        "status": "Status",
+        "fulfilledAt": "Vervuld op",
+        "daysToFulfil": "Wachttijd (dagen)",
+        "total": "Totaal",
+        "fulfilled": "Vervuld",
+        "notFulfilled": "Niet vervuld",
+        "avgWait": "Gem. wachttijd (dagen)"
+      },
+      "csvSubject": "wachtlijst"
     }
   },
   "fleetReports": {

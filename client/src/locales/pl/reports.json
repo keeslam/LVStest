@@ -755,6 +755,56 @@
         "open": "Otwarte"
       },
       "csvSubject": "zgloszenia-z-portalu"
+    },
+    "waitlist": {
+      "title": "Lista oczekujących",
+      "description": "Klienci czekający na pojazd i jak długo trwa, zanim go dostaną.",
+      "tiles": {
+        "all": "Wszystkie wpisy",
+        "open": "Otwarte",
+        "fulfilled": "Zrealizowane",
+        "cancelled": "Anulowane"
+      },
+      "avgDays": "Średni czas oczekiwania: {{value}}",
+      "avgDaysValue": "{{days}} dni",
+      "byMonth": "Wpisy według miesiąca",
+      "byType": "Według typu pojazdu (którego typu brakuje)",
+      "unknownType": "Nieznany",
+      "empty": "Na liście oczekujących nie ma jeszcze klientów.",
+      "series": {
+        "open": "Otwarte",
+        "fulfilled": "Zrealizowane",
+        "cancelled": "Anulowane"
+      },
+      "status": {
+        "active": "Aktywny",
+        "contacted": "Skontaktowano się",
+        "fulfilled": "Zrealizowany",
+        "cancelled": "Anulowany"
+      },
+      "priority": {
+        "low": "Niski",
+        "normal": "Normalny",
+        "high": "Wysoki"
+      },
+      "columns": {
+        "createdAt": "Utworzono",
+        "customer": "Klient",
+        "type": "Typ",
+        "licensePlate": "Numer rejestracyjny",
+        "preferredStart": "Żądany początek",
+        "preferredEnd": "Żądany koniec",
+        "duration": "Czas trwania (dni)",
+        "priority": "Priorytet",
+        "status": "Status",
+        "fulfilledAt": "Zrealizowano",
+        "daysToFulfil": "Czas oczekiwania (dni)",
+        "total": "Razem",
+        "fulfilled": "Zrealizowane",
+        "notFulfilled": "Niezrealizowane",
+        "avgWait": "Śr. czas oczekiwania (dni)"
+      },
+      "csvSubject": "lista-oczekujacych"
     }
   },
   "fleetReports": {
