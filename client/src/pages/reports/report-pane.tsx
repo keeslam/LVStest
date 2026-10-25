@@ -11,7 +11,7 @@ interface ReportPaneProps {
 export function ReportPane({ def }: ReportPaneProps) {
   const { t } = useTranslation(["reports", "fiscal"]);
   const Report = def.Component;
-  const title = t(def.titleKey);
+  const title = def.title ?? t(def.titleKey);
   return (
     <ReportPrintProvider
       ignored={{ period: def.ignoresPeriod, vehicle: def.ignoresVehicle, periodNote: def.noteKey ? t(def.noteKey) : undefined }}

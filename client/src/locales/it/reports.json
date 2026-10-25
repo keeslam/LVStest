@@ -676,9 +676,12 @@
       "reportList": "Report",
       "chooseReport": "Scegli un report",
       "noReports": "Non hai i permessi per vedere i report.",
+      "savedReport": "Report personale",
       "notes": {
         "periodVehicleIgnored": "Periodo e veicolo non valgono per questo report.",
-        "lastThreeMonths": "Sempre gli ultimi 3 mesi."
+        "lastThreeMonths": "Sempre gli ultimi 3 mesi.",
+        "periodNotForReport": "Il periodo non vale per questo report.",
+        "vehicleNotForReport": "Il veicolo non vale per questo report."
       },
       "compare": {
         "label": "Confronta con",

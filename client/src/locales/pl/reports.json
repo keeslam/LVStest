@@ -688,9 +688,12 @@
       "reportList": "Raporty",
       "chooseReport": "Wybierz raport",
       "noReports": "Nie masz uprawnień do przeglądania raportów.",
+      "savedReport": "Własny raport",
       "notes": {
         "periodVehicleIgnored": "Okres i pojazd nie dotyczą tego raportu.",
-        "lastThreeMonths": "Zawsze ostatnie 3 miesiące."
+        "lastThreeMonths": "Zawsze ostatnie 3 miesiące.",
+        "periodNotForReport": "Okres nie dotyczy tego raportu.",
+        "vehicleNotForReport": "Pojazd nie dotyczy tego raportu."
       },
       "compare": {
         "label": "Porównaj z",

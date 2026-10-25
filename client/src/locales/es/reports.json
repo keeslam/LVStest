@@ -676,9 +676,12 @@
       "reportList": "Informes",
       "chooseReport": "Elige un informe",
       "noReports": "No tienes permisos para ver informes.",
+      "savedReport": "Informe propio",
       "notes": {
         "periodVehicleIgnored": "El periodo y el vehículo no se aplican a este informe.",
-        "lastThreeMonths": "Siempre los últimos 3 meses."
+        "lastThreeMonths": "Siempre los últimos 3 meses.",
+        "periodNotForReport": "El periodo no se aplica a este informe.",
+        "vehicleNotForReport": "El vehículo no se aplica a este informe."
       },
       "compare": {
         "label": "Comparar con",

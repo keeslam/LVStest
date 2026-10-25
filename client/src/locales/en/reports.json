@@ -664,9 +664,12 @@
       "reportList": "Reports",
       "chooseReport": "Choose a report",
       "noReports": "You do not have the rights to see reports.",
+      "savedReport": "Own report",
       "notes": {
         "periodVehicleIgnored": "Period and vehicle do not apply to this report.",
-        "lastThreeMonths": "Always the last 3 months."
+        "lastThreeMonths": "Always the last 3 months.",
+        "periodNotForReport": "The period does not apply to this report.",
+        "vehicleNotForReport": "The vehicle does not apply to this report."
       },
       "compare": {
         "label": "Compare with",

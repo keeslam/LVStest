@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Building2, Calculator, Car, DollarSign, FileText, LayoutDashboard, Loader2, MessageSquare, TrendingUp, User, X,
@@ -13,7 +13,9 @@ import { ReportFiltersProvider } from "./report-filters";
 import { ReportFilterBar } from "./report-filter-bar";
 import { ReportNav } from "./report-nav";
 import { ReportPane } from "./report-pane";
-import { REPORTS, visibleReports, visibleTabs, type ReportTabId } from "./report-registry";
+import { invalidateByPrefix } from "@/lib/queryClient";
+import { ReportListContext, useReportList, visibleReports, visibleTabs, type ReportTabId } from "./report-registry";
+import { ReportBuilderOpenerContext } from "./saved-report-view";
 import { useReportAccess } from "./use-report-access";
 import { ReportSelectionContext, useReportSelection } from "./use-report-selection";
 
@@ -42,19 +44,35 @@ function ReportsShellInner() {
   const { t } = useTranslation("reports");
   const access = useReportAccess();
 
-  const selection = useReportSelection(access);
+  // The fixed reports plus the saved builder reports on a tab: one list for the tabs, the list and the URL.
+  const reportList = useReportList(access);
+  const { reports } = reportList;
+  const selection = useReportSelection(access, reports, reportList.savedLoading);
   const { tab, reportId, ready, select } = selection;
-  const tabs = visibleTabs(access);
-  const inTab = visibleReports(access).filter((r) => r.tab === tab);
-  const active = REPORTS.find((r) => r.id === reportId && r.tab === tab);
+  const tabs = visibleTabs(access, reports);
+  const inTab = visibleReports(access, reports).filter((r) => r.tab === tab);
+  const active = reports.find((r) => r.id === reportId && r.tab === tab);
 
   const [reportBuilderOpen, setReportBuilderOpen] = useState(false);
+  // The saved report the builder opens on (Bewerken on a saved report), or none.
+  const [builderEditId, setBuilderEditId] = useState<number | undefined>(undefined);
+  const openBuilder = useCallback((editReportId?: number) => {
+    setBuilderEditId(editReportId);
+    setReportBuilderOpen(true);
+  }, []);
+  const setBuilderOpen = (open: boolean) => {
+    setReportBuilderOpen(open);
+    // Saved, changed or deleted in the builder: the tabs show the saved reports as they are now.
+    if (!open) invalidateByPrefix("/api/reports/saved");
+  };
   const [maintenanceCostsOpen, setMaintenanceCostsOpen] = useState(false);
 
   // Overzicht is one item: no list, the tiles get the whole width.
   const showList = tab !== "overview";
 
   return (
+    <ReportListContext.Provider value={reportList}>
+    <ReportBuilderOpenerContext.Provider value={openBuilder}>
     <ReportSelectionContext.Provider value={selection}>
     <div className="container mx-auto space-y-4 pb-6">
       <div>
@@ -64,7 +82,7 @@ function ReportsShellInner() {
 
       <ReportFilterBar
         showCategory={!!active?.usesCategory}
-        onOpenReportBuilder={() => setReportBuilderOpen(true)}
+        onOpenReportBuilder={() => openBuilder()}
         onOpenMaintenanceCosts={() => setMaintenanceCostsOpen(true)}
       />
 
@@ -103,18 +121,18 @@ function ReportsShellInner() {
         ) : null}
       </div>
 
-      <Dialog open={reportBuilderOpen} onOpenChange={setReportBuilderOpen}>
+      <Dialog open={reportBuilderOpen} onOpenChange={setBuilderOpen}>
         <DialogContent className="max-w-[95vw] w-full h-[95vh] max-h-[95vh] p-0">
           <DialogHeader className="px-6 py-4 border-b">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-2xl">{t("reportBuilderPage.pageTitle")}</DialogTitle>
-              <Button variant="ghost" size="icon" onClick={() => setReportBuilderOpen(false)} data-testid="button-close-report-builder">
+              <Button variant="ghost" size="icon" onClick={() => setBuilderOpen(false)} data-testid="button-close-report-builder">
                 <X className="h-4 w-4" />
               </Button>
             </div>
           </DialogHeader>
           <div className="overflow-auto h-full">
-            <ReportBuilderPage />
+            <ReportBuilderPage key={builderEditId ?? "new"} editReportId={builderEditId} />
           </div>
         </DialogContent>
       </Dialog>
@@ -136,5 +154,7 @@ function ReportsShellInner() {
       </Dialog>
     </div>
     </ReportSelectionContext.Provider>
+    </ReportBuilderOpenerContext.Provider>
+    </ReportListContext.Provider>
   );
 }

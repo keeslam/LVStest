@@ -6,6 +6,7 @@ import {
   REPORTS, REPORT_TABS, visibleReports, visibleTabs,
   type ReportAccess, type ReportDef, type ReportTabId,
 } from "./report-registry";
+import { SAVED_REPORT_PREFIX } from "./saved-report-view";
 
 export const REPORTS_LAST_SELECTED_KEY = "reports_last_selected";
 
@@ -22,13 +23,15 @@ function asLastSelected(value: unknown): LastSelected {
  *
  * `ready` is false while the setting loads; until then the report id comes from
  * the URL only (or "") so the shell can wait instead of flashing the first report.
+ * `savedLoading`: the saved reports are still loading; while the URL or the remembered choice
+ * names a saved report, `ready` stays false too, so it is not replaced by the first report.
  */
-export function useReportSelection(access: ReportAccess, reports: ReportDef[] = REPORTS) {
+export function useReportSelection(access: ReportAccess, reports: ReportDef[] = REPORTS, savedLoading = false) {
   const search = useSearch();
   const { data, status } = useQuery<{ value?: unknown } | null>({
     queryKey: [`/api/user-settings/${REPORTS_LAST_SELECTED_KEY}`],
   });
-  const ready = status !== "pending";
+  const settingReady = status !== "pending";
   const serverLast = asLastSelected(data?.value);
   // Choices made in this session; they win over the (possibly stale) loaded value.
   const written = useRef<LastSelected>({});
@@ -40,13 +43,21 @@ export function useReportSelection(access: ReportAccess, reports: ReportDef[] = 
   const params = new URLSearchParams(search);
 
   const urlTab = params.get("tab") as ReportTabId | null;
-  const tab: ReportTabId = urlTab && tabs.includes(urlTab) ? urlTab : (tabs[0] ?? REPORT_TABS[0]);
+  const urlReport = params.get("report");
+  const isSaved = (id: string | null | undefined) => !!id && id.startsWith(SAVED_REPORT_PREFIX);
+  // A saved report named in the URL (or remembered for that tab) may still be on its way.
+  const savedPending = savedLoading
+    && (isSaved(urlReport) || (!urlReport && !!urlTab && isSaved(last[urlTab])));
+  const ready = settingReady && !savedPending;
+  const tab: ReportTabId = urlTab && (tabs.includes(urlTab) || (savedPending && REPORT_TABS.includes(urlTab)))
+    ? urlTab
+    : (tabs[0] ?? REPORT_TABS[0]);
 
   const inTab = shown.filter((r) => r.tab === tab);
   const pick = (id: string | null | undefined) => inTab.find((r) => r.id === id)?.id;
   const reportId = ready
-    ? (pick(params.get("report")) ?? pick(last[tab]) ?? inTab[0]?.id ?? "")
-    : (pick(params.get("report")) ?? "");
+    ? (pick(urlReport) ?? pick(last[tab]) ?? inTab[0]?.id ?? "")
+    : (pick(urlReport) ?? "");
 
   const put = useCallback((value: LastSelected) => {
     void apiRequest("PUT", `/api/user-settings/${REPORTS_LAST_SELECTED_KEY}`, { value })
@@ -55,16 +66,16 @@ export function useReportSelection(access: ReportAccess, reports: ReportDef[] = 
   }, []);
 
   // Latest render values for the stable select().
-  const latest = useRef({ shown, ready, serverLast });
-  latest.current = { shown, ready, serverLast };
+  const latest = useRef({ shown, ready: settingReady, serverLast });
+  latest.current = { shown, ready: settingReady, serverLast };
 
   // A choice made while loading is written once the setting has arrived, merged into it.
   useEffect(() => {
-    if (ready && dirty.current) {
+    if (settingReady && dirty.current) {
       dirty.current = false;
       put({ ...latest.current.serverLast, ...written.current });
     }
-  }, [ready, put]);
+  }, [settingReady, put]);
 
   const select = useCallback((nextTab: ReportTabId, nextReport?: string) => {
     const { shown: now, ready: isReady, serverLast: server } = latest.current;

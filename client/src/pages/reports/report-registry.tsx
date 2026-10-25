@@ -1,7 +1,9 @@
-import { useMemo, useState, type ComponentType } from "react";
+import { createContext, useContext, useMemo, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { UserPermission, type Vehicle } from "@shared/schema";
+import { canUseReportSource, getDataSource, SAVED_REPORT_TABS, type ReportSourceUser } from "@shared/report-builder-config";
+import { useAuth } from "@/hooks/use-auth";
 import { ReportSection } from "@/components/reports/kit/report-section";
 import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox";
 import { formatExpenseCategory, formatLicensePlate } from "@/lib/format-utils";
@@ -25,6 +27,7 @@ import { WaitlistReportCard } from "./waitlist-report-card";
 import { InvoiceInboxRunsReport, InvoiceInboxItemsReport } from "./invoice-inbox-report-card";
 import { DeliveryReportCard } from "./delivery-report-card";
 import { DamageChecksReportCard } from "./damage-checks-report-card";
+import { SavedReportView, SAVED_REPORT_PREFIX, type SavedReport } from "./saved-report-view";
 import { ExpensesByCategoryReport } from "./legacy/expenses-by-category-report";
 import { ExpenseTrendReport } from "./legacy/expense-trend-report";
 import { RecentExpensesReport } from "./legacy/recent-expenses-report";
@@ -67,6 +70,10 @@ export interface ReportDef {
   ignoresPeriod?: boolean;
   /** The vehicle of the filter bar does not apply; the print leaves the vehicle line out. */
   ignoresVehicle?: boolean;
+  /** A title as it is (a saved report keeps the name it was saved with); wins over titleKey. */
+  title?: string;
+  /** A report someone made in the report builder and saved on this tab. */
+  saved?: boolean;
 }
 
 // ---- Rights, the same rules the cards and the old tabs used ----
@@ -135,7 +142,7 @@ function MileageHistoryReport() {
 function OverviewPane() {
   const access = useReportAccess();
   const { select } = useSharedReportSelection();
-  const visible = visibleReports(access);
+  const visible = visibleReports(access, useContext(ReportListContext)?.reports ?? REPORTS);
   const shown = new Set(visible.map((r) => r.id));
   return (
     <OverviewReport
@@ -228,4 +235,72 @@ export function visibleReports(access: ReportAccess, reports: ReportDef[] = REPO
 export function visibleTabs(access: ReportAccess, reports: ReportDef[] = REPORTS): ReportTabId[] {
   const shown = visibleReports(access, reports);
   return REPORT_TABS.filter((tab) => shown.some((r) => r.tab === tab));
+}
+
+// ---- Saved builder reports on a tab (Rapporten herontwerp deel 2, Task 3) ----
+
+/** The list of the shell: the fixed reports plus the saved reports on a tab. */
+export interface ReportList {
+  reports: ReportDef[];
+  saved: SavedReport[];
+  /** The saved reports are still loading. */
+  savedLoading: boolean;
+}
+
+export const ReportListContext = createContext<ReportList | null>(null);
+
+/** One component per saved report id, so a refreshed list does not remount the report. */
+const savedComponents = new Map<number, ComponentType>();
+function savedComponent(id: number): ComponentType {
+  let Component = savedComponents.get(id);
+  if (!Component) {
+    Component = function SavedReportPane() {
+      const report = useContext(ReportListContext)?.saved.find((r) => r.id === id);
+      return report ? <SavedReportView report={report} /> : null;
+    };
+    savedComponents.set(id, Component);
+  }
+  return Component;
+}
+
+/**
+ * The saved reports that sit on a tab, as reports of that tab. Visible with the report right
+ * and the right for every source (the same rule as the server); a report without a tab stays
+ * under Opgeslagen rapporten of the report builder only.
+ */
+export function savedReportDefs(saved: SavedReport[], user: ReportSourceUser | null | undefined): ReportDef[] {
+  return saved
+    .filter((r) => (SAVED_REPORT_TABS as readonly string[]).includes(r.configuration?.tab ?? ""))
+    .map((r) => {
+      const config = r.configuration;
+      return {
+        id: `${SAVED_REPORT_PREFIX}${r.id}`,
+        tab: config.tab as ReportTabId,
+        titleKey: "",
+        title: r.name,
+        saved: true,
+        visible: (c: ReportAccess) => reports(c) && config.dataSources.length > 0 && config.dataSources.every((id) => {
+          const source = getDataSource(id);
+          return !!source && canUseReportSource(user, source);
+        }),
+        Component: savedComponent(r.id),
+        ignoresPeriod: !config.periodField,
+        ignoresVehicle: !getDataSource(config.dataSources[0] ?? "")?.vehicleField,
+      };
+    });
+}
+
+/** The fixed reports plus the saved reports on a tab, for the shell, the list and the selection. */
+export function useReportList(access: ReportAccess): ReportList {
+  const { user } = useAuth();
+  const allowed = reports(access);
+  const { data, status } = useQuery<SavedReport[]>({ queryKey: ["/api/reports/saved"], enabled: allowed });
+  const saved = useMemo(() => (allowed && Array.isArray(data) ? data : []), [allowed, data]);
+  const role = user?.role ?? null;
+  const permissionKey = ((user?.permissions as string[] | undefined) ?? []).join(",");
+  const list = useMemo(
+    () => [...REPORTS, ...savedReportDefs(saved, { role, permissions: permissionKey ? permissionKey.split(",") : [] })],
+    [saved, role, permissionKey],
+  );
+  return { reports: list, saved, savedLoading: allowed && status === "pending" };
 }

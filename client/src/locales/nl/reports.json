@@ -664,9 +664,12 @@
       "reportList": "Rapporten",
       "chooseReport": "Kies een rapport",
       "noReports": "Je hebt geen rechten om rapporten te zien.",
+      "savedReport": "Eigen rapport",
       "notes": {
         "periodVehicleIgnored": "Periode en voertuig gelden niet voor dit rapport.",
-        "lastThreeMonths": "Altijd de laatste 3 maanden."
+        "lastThreeMonths": "Altijd de laatste 3 maanden.",
+        "periodNotForReport": "Periode geldt niet voor dit rapport.",
+        "vehicleNotForReport": "Voertuig geldt niet voor dit rapport."
       },
       "compare": {
         "label": "Vergelijk met",

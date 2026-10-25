@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Wrench } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { ReportDef, ReportTabId } from "./report-registry";
@@ -23,6 +24,18 @@ function useNarrowScreen(): boolean {
   return narrow;
 }
 
+/** The mark of a report someone made in the report builder. */
+function SavedIcon() {
+  const { t } = useTranslation("reports");
+  const label = t("reportsPage.shell.savedReport");
+  return (
+    <span title={label} className="inline-flex shrink-0" data-testid="report-nav-saved-icon">
+      <Wrench className="h-3.5 w-3.5" aria-hidden="true" />
+      <span className="sr-only">{label}</span>
+    </span>
+  );
+}
+
 interface ReportNavProps {
   tab: ReportTabId;
   reports: ReportDef[];
@@ -44,7 +57,7 @@ export function ReportNav({ tab, reports, selectedId, onSelect }: ReportNavProps
         <SelectContent>
           {reports.map((r) => (
             <SelectItem key={r.id} value={r.id}>
-              {t(r.titleKey)}
+              {r.title ?? t(r.titleKey)}
               {r.badge && <>{" "}<r.badge inline /></>}
             </SelectItem>
           ))}
@@ -71,7 +84,10 @@ export function ReportNav({ tab, reports, selectedId, onSelect }: ReportNavProps
                   active ? "bg-primary text-primary-foreground" : "hover:bg-gray-100",
                 )}
               >
-                <span>{t(r.titleKey)}</span>
+                <span className="flex items-center gap-1.5">
+                  {r.saved && <SavedIcon />}
+                  {r.title ?? t(r.titleKey)}
+                </span>
                 {Badge && <Badge />}
               </button>
             </li>
