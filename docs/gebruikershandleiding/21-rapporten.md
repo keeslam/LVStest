@@ -161,8 +161,9 @@ bussen met kenteken, merk en model. Die lijst kun je naar Excel sturen of afdruk
    rapporten**.*
 
 2. Kies links onder **Gegevensbronnen** waar je rapport over gaat. Een gegevensbron is een soort
-   gegevens in de app. Je kunt kiezen uit **Voertuigen**, **Klanten**, **Reserveringen**,
-   **Kosten** en **Chauffeurs**. Vink het vakje voor de bron aan. Je ziet nu onder de bron een lijst
+   gegevens in de app. Je kunt kiezen uit tien bronnen: **Voertuigen**, **Klanten**, **Reserveringen**,
+   **Kosten**, **Chauffeurs**, **Bekeuringen**, **Transporten**, **Werkplaatsbezoeken**,
+   **Schadechecks** en **Km-historie**. Vink het vakje voor de bron aan. Je ziet nu onder de bron een lijst
    velden met een plusje ervoor.
 
    Er zijn tien bronnen. Welke je ziet, hangt van je vinkjes af (zie 21.9).
@@ -286,8 +287,8 @@ opgeslagen rapporten. Bij elk rapport staat hoeveel kolommen en filters het heef
 *Zo ziet de knop **Opgeslagen rapporten** eruit. Klik erop om je opgeslagen rapporten te zien.*
 
 - **Uitvoeren** draait het rapport meteen. Je ziet direct het venster **Rapportresultaten**.
-- **Bewerken** zet de bronnen, kolommen en filters terug in het tabblad **Bouwer**. Daar kun je ze
-  aanpassen.
+- **Bewerken** zet de bronnen, kolommen, filters, de groepering en de berekeningen terug in het
+  tabblad **Bouwer**. Daar kun je ze aanpassen.
 - Het prullenbakje verwijdert het rapport. Je ziet eerst de vraag **Rapport verwijderen?** Klik op
   **Verwijderen** om het echt weg te halen. Dit kan niet ongedaan worden gemaakt.
 
@@ -503,9 +504,12 @@ mee. Checks bij een reservering in de prullenbak tellen niet mee.
 | De bronnen in de rapportbouwer | Zie de tabel in 21.3 |
 | **Kilometerstanden vloot**, **Km-historie per voertuig**, de bron **Km-historie** en het tabblad **Km-historie** bij een voertuig | Alleen de beheerder. Alles over kilometers is alleen voor de beheerder |
 
-Mis je een vinkje voor een tabblad? Dan kun je het tabblad wel openen. Je ziet dan de melding
-*Geen toegang tot deze gegevens*, met de naam van het recht dat je mist. Mis je het vinkje voor een
-kaart of een bron? Dan is de kaart of de bron er gewoon niet.
+Twee tabbladen verschijnen alleen met het goede vinkje. Zonder **Klantportaal bekijken** (of
+**Klantportaal beheren**) is het tabblad **Portaal** er niet. Zonder rapportvinkje en zonder een
+vinkje voor minstens één kantoorrapport is het tabblad **Kantoor** er niet. De andere tabbladen kun
+je wel openen als je het vinkje mist. Je ziet dan de melding *Geen toegang tot deze gegevens*, met
+de naam van het recht dat je mist. Mis je het vinkje voor een kaart of een bron? Dan is de kaart of
+de bron er gewoon niet.
 
 Heb je alleen **Fiscaal bekijken** en geen rapportvinkje? Dan toont **Rapporten** alleen de fiscale
 check. De afdrukknoppen, de tegels en de andere tabbladen zie je dan niet. Meer over vinkjes staat
