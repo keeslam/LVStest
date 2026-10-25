@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Printer } from "lucide-react";
 import type { ReportExport, ReportPage } from "@shared/report-kit";
-import { REPORT_DRILL_NULL_KEY, REPORT_EXPORT_LIMIT } from "@shared/report-kit";
+import { REPORT_DRILL_EMPTY_KEY, REPORT_DRILL_NULL_KEY, REPORT_EXPORT_LIMIT } from "@shared/report-kit";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -53,7 +53,7 @@ export interface ReportDetailTarget<T extends string> {
 /** The query parameters of a drill and a month, in the order the server reads them. */
 export function drillParams(drill?: ReportDrillTarget, month?: string): Record<string, string> {
   return {
-    ...(drill ? { drill: drill.name, key: drill.key === null ? REPORT_DRILL_NULL_KEY : String(drill.key) } : {}),
+    ...(drill ? { drill: drill.name, key: drill.key === null ? REPORT_DRILL_NULL_KEY : String(drill.key) === "" ? REPORT_DRILL_EMPTY_KEY : String(drill.key) } : {}),
     ...(month ? { month } : {}),
   };
 }

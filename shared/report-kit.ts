@@ -10,6 +10,8 @@ export const REPORT_EXPORT_LIMIT = 20000;
 export const REPORT_BREAKDOWN_LIMIT = 10;
 /** `key=__null` on /rows and /export means "the line without a value" (a breakdown row whose key is null). */
 export const REPORT_DRILL_NULL_KEY = "__null";
+/** `key=__empty` means "the line whose key is an empty string" (a plain `key=` stays an invalid drill). */
+export const REPORT_DRILL_EMPTY_KEY = "__empty";
 
 export interface ReportTileTotal {
   count: number;

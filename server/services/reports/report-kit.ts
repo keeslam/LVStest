@@ -16,6 +16,7 @@ import { dateInZone } from "../../../shared/office-timezone";
 import { UserRole } from "../../../shared/schema";
 import {
   REPORT_DRILL_NULL_KEY,
+  REPORT_DRILL_EMPTY_KEY,
   REPORT_EXPORT_LIMIT,
   type ReportExport,
   type ReportPage,
@@ -70,7 +71,7 @@ export function narrowReportFilter(
   if (query.drill !== undefined && query.drill !== "") {
     const name = oneOf(query.drill, drills ?? []);
     if (!name || typeof query.key !== "string" || query.key === "") return { ok: false };
-    next = { ...next, drill: { name, key: query.key === REPORT_DRILL_NULL_KEY ? null : query.key } };
+    next = { ...next, drill: { name, key: query.key === REPORT_DRILL_NULL_KEY ? null : query.key === REPORT_DRILL_EMPTY_KEY ? "" : query.key } };
   }
   return { ok: true, filter: next, empty };
 }

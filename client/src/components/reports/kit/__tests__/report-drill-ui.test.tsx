@@ -17,6 +17,7 @@ vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: 1, username: "tester", role: "user", permissions, hidePrices: false }, isLoading: false }),
 }));
 
+import { drillParams } from "@/components/reports/kit/report-detail-dialog";
 import { ReportFiltersProvider } from "@/pages/reports/report-filters";
 import { FinesReportCard } from "@/pages/reports/fines-report-card";
 
@@ -80,6 +81,12 @@ describe("bekeuringen: klikken opent de regels erachter", () => {
     const dialog = await screen.findByTestId("dialog-fines-report");
     expect(within(dialog).getByRole("heading")).toHaveTextContent("Totaal (zonder vervallen) · Klant A");
     expect(await within(dialog).findByText("Te hard gereden")).toBeInTheDocument();
+  });
+
+  it("drillParams: an empty string key is sent as __empty, null as __null, never as a bare key=", () => {
+    expect(drillParams({ name: "vehicle", key: "", label: "x" })).toEqual({ drill: "vehicle", key: "__empty" });
+    expect(drillParams({ name: "vehicle", key: null, label: "x" })).toEqual({ drill: "vehicle", key: "__null" });
+    expect(drillParams({ name: "vehicle", key: 0, label: "x" })).toEqual({ drill: "vehicle", key: "0" });
   });
 
   it("'Zonder klant' vraagt key=__null", async () => {

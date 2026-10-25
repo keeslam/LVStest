@@ -7,7 +7,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { inArray, sql } from "drizzle-orm";
 import { db } from "../db";
 import { fines } from "../../shared/schema";
-import { REPORT_DRILL_NULL_KEY } from "../../shared/report-kit";
+import { REPORT_DRILL_NULL_KEY, REPORT_DRILL_EMPTY_KEY } from "../../shared/report-kit";
 import { FINE_REPORT_DRILLS } from "../../shared/reports/fines-report";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureCustomer, createFixtureVehicle, cleanupFixtures } from "./helpers/fixtures";
@@ -50,6 +50,7 @@ describe("report drill-down (fines)", () => {
 
   it("the null key constant and the drill names are shared", () => {
     expect(REPORT_DRILL_NULL_KEY).toBe("__null");
+    expect(REPORT_DRILL_EMPTY_KEY).toBe("__empty");
     expect(FINE_REPORT_DRILLS).toEqual(["customer", "vehicle", "driver"]);
   });
 
@@ -78,6 +79,27 @@ describe("report drill-down (fines)", () => {
         expect(r.status).toBe(400);
         expect(r.body.code).toBe("INVALID_DRILL");
       }
+    }
+  });
+
+  it("key=__empty is the line whose key is an empty string; a missing or blank key stays 400", async () => {
+    const [row] = await db.insert(fines).values({
+      licensePlate: "", vehicleId: Number(Q.vehicleId), offenceAt: new Date("2026-03-12T10:00:00Z"), description: "empty plate",
+      amount: "10.00", adminFee: "0.00", totalAmount: "10.00", status: "new",
+    } as any).returning();
+    ids.push(row.id);
+    try {
+    const r = await staff.get("/api/reports/fines/rows").query({ ...Q, tile: "total", drill: "vehicle", key: REPORT_DRILL_EMPTY_KEY });
+    expect(r.status).toBe(200);
+    expect(r.body.total).toBe(1);
+    expect(r.body.rows.map((x: any) => x.id)).toEqual([row.id]);
+    for (const q of [{ drill: "vehicle", key: "" }, { drill: "vehicle" }]) {
+      const bad = await staff.get("/api/reports/fines/rows").query({ ...Q, tile: "total", ...q });
+      expect(bad.status).toBe(400);
+      expect(bad.body.code).toBe("INVALID_DRILL");
+    }
+    } finally {
+      await db.delete(fines).where(inArray(fines.id, [row.id]));
     }
   });
 
