@@ -1,5 +1,5 @@
 import { UserPermission, UserRole } from './schema';
-import type { CalculatedField } from './report-formula';
+import { referencedFields, type CalculatedField, type FieldRef } from './report-formula';
 
 export type FieldType = 'text' | 'number' | 'date' | 'boolean';
 
@@ -130,12 +130,12 @@ export interface ReportConfiguration {
   totals?: Record<string, 'SUM' | 'AVG' | 'COUNT'>;
 }
 
-const textOperators: FilterOperator[] = [
+export const textOperators: FilterOperator[] = [
   'equals', 'not_equals', 'contains', 'not_contains', 
   'starts_with', 'ends_with', 'is_null', 'is_not_null'
 ];
 
-const numberOperators: FilterOperator[] = [
+export const numberOperators: FilterOperator[] = [
   'equals', 'not_equals', 'greater_than', 'less_than',
   'greater_or_equal', 'less_or_equal', 'between', 'is_null', 'is_not_null'
 ];
@@ -414,7 +414,10 @@ export function canUseReportField(user: ReportSourceUser | null | undefined, sou
 
 type ReportEntry = { table: string; field: string; via: unknown };
 
-/** Every column, filter, grouping and sort entry of a report. */
+/**
+ * Every column, filter, grouping and sort entry of a report, plus every field used in a formula
+ * or if-then rule of its calculated fields (those need the same rights: source, link, km).
+ */
 function reportEntriesOf(config: Partial<ReportConfiguration> | null | undefined): ReportEntry[] {
   const out: ReportEntry[] = [];
   for (const list of [config?.columns, config?.filters, config?.groupBy, config?.orderBy]) {
@@ -425,7 +428,26 @@ function reportEntriesOf(config: Partial<ReportConfiguration> | null | undefined
       }
     }
   }
+  for (const ref of referencedFields(config?.calculatedFields as CalculatedField[])) {
+    out.push({ table: String(ref.table), field: String(ref.field), via: ref.via });
+  }
   return out;
+}
+
+/**
+ * Whether a formula field exists for a report on this main source: a known (or renamed) field of
+ * the main table, or of the target table of one of the main source's links when `via` is set.
+ */
+export function isReportFieldRef(mainSourceId: unknown, ref: FieldRef): boolean {
+  const main = getDataSource(String(mainSourceId));
+  if (!main || typeof ref?.table !== 'string' || typeof ref?.field !== 'string') return false;
+  const key = `${ref.table}.${ref.field}`;
+  if (REMOVED_REPORT_FIELDS.has(key)) return false;
+  if (!getField(ref.table, RENAMED_REPORT_FIELDS[key] ?? ref.field)) return false;
+  const via: unknown = ref.via;
+  if (via === undefined || via === null || via === '') return ref.table === main.table;
+  const link = getReportLink(main.id, via);
+  return !!link && getDataSource(link.target)?.table === ref.table;
 }
 
 /** Whether an entry reads through a link. Any via that is set counts, also one that is not a string. */

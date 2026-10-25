@@ -91,12 +91,14 @@ import {
   snapshotCounts,
   type CascadeSnapshot,
 } from "./services/cascade-snapshot";
-import { getDataSource, getReportLink, getField as getReportField, RENAMED_REPORT_FIELDS, REMOVED_REPORT_FIELDS, isReportPeriodField, type ReportScope } from "../shared/report-builder-config";
+import { getDataSource, getReportLink, getField as getReportField, RENAMED_REPORT_FIELDS, REMOVED_REPORT_FIELDS, isReportPeriodField, isCalcEntry, isReportFieldRef, numberOperators, textOperators, type ReportScope } from "../shared/report-builder-config";
+import { validateCalculatedFields, type CalculatedField, type FormulaNode, type IfThenResult } from "../shared/report-formula";
 import { officeDaySql, textDaySql, isRealDate } from "./services/reports/report-kit";
 import { buildDefaultDamageCheckCanvasFields } from "../shared/damage-check-default-layout";
 
 export class ReportValidationError extends Error {
-  constructor(message: string, public code?: string, public field?: string) {
+  /** `reason`: for REPORT_CALC_INVALID the validation error (UNKNOWN_FIELD, CYCLE, BAD_RULE, ...). */
+  constructor(message: string, public code?: string, public field?: string, public reason?: string) {
     super(message);
     this.name = "ReportValidationError";
   }
@@ -6729,8 +6731,126 @@ export class DatabaseStorage implements IStorage {
       return sql`to_char(${dayExpr(table, field, via)}, 'YYYY-MM')`;
     };
 
+    // Calculated fields (reports redesign part 4): each becomes one SQL expression per row, before
+    // any grouping. Fields go through identFor (the whitelist, also through a link), numbers and
+    // texts are bound parameters, operators come from a fixed list; arithmetic is numeric and a
+    // division by zero gives null. Validated first, so calc references end and stay shallow.
+    const calcList: unknown = configuration?.calculatedFields;
+    const calcFields: CalculatedField[] = Array.isArray(calcList) ? calcList : [];
+    if (calcList !== undefined && calcList !== null) {
+      const v = validateCalculatedFields(calcList as CalculatedField[], (ref) => isReportFieldRef(mainSource.id, ref));
+      if (!v.ok) throw new ReportValidationError("Een berekend veld klopt niet.", "REPORT_CALC_INVALID", v.id, v.error);
+    }
+    const calcById = new Map(calcFields.map((f) => [f.id, f]));
+    const calcFail = (id: string, message: string, reason = "BAD_RULE") =>
+      new ReportValidationError(message, "REPORT_CALC_INVALID", id, reason);
+    const calcOf = (id: string): CalculatedField => {
+      const f = calcById.get(id);
+      if (!f) throw calcFail(id, `Het berekende veld ${id} staat niet in dit rapport.`, "UNKNOWN_FIELD");
+      return f;
+    };
+    const fieldIsNumber = (n: { table: string; field: string }) => getReportField(n.table, canonField(n.table, n.field))?.type === "number";
+    // Whether an expression gives a number; a formula always does, an if-then only with two numbers.
+    const isNumericNode = (n: FormulaNode): boolean =>
+      n.kind === "field" ? fieldIsNumber(n) : n.kind === "calc" ? isNumericCalc(n.id) : true;
+    const isNumericResult = (r: IfThenResult) => "ref" in r && isNumericNode(r.ref);
+    const isNumericCalc = (id: string): boolean => {
+      const f = calcOf(id);
+      return f.kind === "formula" || (isNumericResult(f.rule!.then) && isNumericResult(f.rule!.otherwise));
+    };
+    // A calc used many times inside other calcs is written out each time; cap the total size.
+    let calcExpansions = 0;
+    const calcExpr = (id: string): SQL => {
+      if (++calcExpansions > 1000) throw calcFail(id, "De berekende velden zijn samen te groot.", "TOO_DEEP");
+      const f = calcOf(id);
+      return f.kind === "formula" ? numExpr(f.formula!, id) : ifThenExpr(f);
+    };
+    const numExpr = (n: FormulaNode, id: string): SQL => {
+      switch (n.kind) {
+        case "number":
+          return sql`(${n.value})::numeric`;
+        case "field":
+          if (!fieldIsNumber(n)) {
+            throw calcFail(id, `Rekenen kan alleen met getallen, en ${keyOf(n.table, n.field, n.via)} is geen getal.`);
+          }
+          return sql`(${identFor(n.table, n.field, viaOf(n))})::numeric`;
+        case "calc":
+          if (!isNumericCalc(n.id)) throw calcFail(id, `Rekenen kan alleen met getallen, en ${n.id} geeft tekst.`);
+          return sql`(${calcExpr(n.id)})::numeric`;
+        case "op": {
+          const l = numExpr(n.left, id);
+          const r = numExpr(n.right, id);
+          switch (n.op) {
+            case "+": return sql`(${l} + ${r})`;
+            case "-": return sql`(${l} - ${r})`;
+            case "*": return sql`(${l} * ${r})`;
+            case "/": return sql`(${l} / NULLIF(${r}, 0))`;
+          }
+        }
+      }
+      throw calcFail(id, "Een berekend veld klopt niet.");
+    };
+    // The value of a node as is (a text field stays text), for an if-then test or result.
+    const valueExpr = (n: FormulaNode, id: string): SQL =>
+      n.kind === "field" ? identFor(n.table, n.field, viaOf(n)) : n.kind === "calc" ? calcExpr(n.id) : numExpr(n, id);
+    const resultExpr = (r: IfThenResult, asText: boolean, id: string): SQL => {
+      if (!("ref" in r)) return sql`(${r.text})::text`;
+      return asText ? sql`(${valueExpr(r.ref, id)})::text` : numExpr(r.ref, id);
+    };
+    const ifThenExpr = (f: CalculatedField): SQL => {
+      const rule = f.rule!;
+      const { ref, test, value } = rule.when;
+      const numeric = isNumericNode(ref);
+      const left = valueExpr(ref, f.id);
+      let cond: SQL;
+      if (test === "empty") {
+        cond = numeric ? sql`(${left}) IS NULL` : sql`((${left}) IS NULL OR (${left})::text = '')`;
+      } else if (test === "gt" || test === "lt") {
+        if (!numeric) throw calcFail(f.id, "Groter dan en kleiner dan kunnen alleen met getallen.");
+        cond = sql`(${left})::numeric ${sql.raw(test === "gt" ? ">" : "<")} (${value})::numeric`;
+      } else {
+        const op = sql.raw(test === "eq" ? "=" : "<>");
+        if (numeric) {
+          const num = typeof value === "number" ? value : typeof value === "string" && value.trim() !== "" ? Number(value) : NaN;
+          if (!Number.isFinite(num)) throw calcFail(f.id, "Vergelijk een getal met een getal.");
+          cond = sql`(${left})::numeric ${op} (${num})::numeric`;
+        } else {
+          cond = sql`(${left})::text ${op} (${String(value)})::text`;
+        }
+      }
+      const asText = !(isNumericResult(rule.then) && isNumericResult(rule.otherwise));
+      return sql`(CASE WHEN ${cond} THEN ${resultExpr(rule.then, asText, f.id)} ELSE ${resultExpr(rule.otherwise, asText, f.id)} END)`;
+    };
+    const calcIdOf = (entry: any): string => String(entry.calc);
+    // The key in messages and the result key of any entry.
+    const entryKey = (e: any) => (isCalcEntry(e) ? `calc.${calcIdOf(e)}` : keyOf(e.table, canonField(e.table, e.field), viaOf(e)));
+    const aggregate = (rawAgg: unknown, ident: SQL, alias: ReturnType<typeof sql.identifier>): SQL => {
+      switch (String(rawAgg).toUpperCase()) {
+        case "SUM": return sql`SUM(${ident}) AS ${alias}`;
+        case "AVG": return sql`AVG(${ident}) AS ${alias}`;
+        case "COUNT": return sql`COUNT(${ident}) AS ${alias}`;
+        case "MIN": return sql`MIN(${ident}) AS ${alias}`;
+        case "MAX": return sql`MAX(${ident}) AS ${alias}`;
+        case "COUNT_DISTINCT": return sql`COUNT(DISTINCT ${ident}) AS ${alias}`;
+        default: throw new ReportValidationError(`Unknown aggregation: ${rawAgg}`);
+      }
+    };
+
     // Grouping: validate the period and the field, canonicalise the field name.
-    const groups: { table: string; field: string; period?: "month"; via?: string }[] = (Array.isArray(groupBy) ? groupBy : []).map((g: any) => {
+    // A calculated field groups on its own expression; never per month (it is not a date field).
+    const groups: { table: string; field: string; period?: "month"; via?: string; calc?: string }[] = (Array.isArray(groupBy) ? groupBy : []).map((g: any) => {
+      if (isCalcEntry(g)) {
+        const id = calcIdOf(g);
+        calcOf(id);
+        if (g.period !== undefined && g.period !== null) {
+          throw new ReportValidationError(
+            `Groeperen per maand kan alleen op een datumveld, en calc.${id} is een berekend veld.`,
+            "REPORT_PERIOD_NOT_DATE",
+            `calc.${id}`,
+          );
+        }
+        return { table: "", field: "", calc: id };
+      }
       const field = canonField(g.table, g.field);
       const via = viaOf(g);
       resolveColumn(g.table, field, via);
@@ -6756,13 +6876,16 @@ export class DatabaseStorage implements IStorage {
       return { table: g.table, field, period, via };
     });
     const findGroup = (table: string, field: string, via?: string) =>
-      groups.find((g) => g.table === table && g.field === canonField(table, field) && g.via === via);
+      groups.find((g) => g.calc === undefined && g.table === table && g.field === canonField(table, field) && g.via === via);
+    const findCalcGroup = (id: string) => groups.find((g) => g.calc === id);
 
     // With a grouping or a calculated column, every plain column must be in the grouping.
     if (groups.length > 0 || columns.some((c: any) => c.aggregation)) {
       for (const col of columns) {
-        if (!col.aggregation && !findGroup(col.table, col.field, viaOf(col))) {
-          const key = keyOf(col.table, canonField(col.table, col.field), viaOf(col));
+        if (col.aggregation) continue;
+        const grouped = isCalcEntry(col) ? findCalcGroup(calcIdOf(col)) : findGroup(col.table, col.field, viaOf(col));
+        if (!grouped) {
+          const key = entryKey(col);
           throw new ReportValidationError(
             `De kolom ${key} staat niet in de groepering. Kies er een berekening bij of groepeer erop.`,
             "REPORT_COLUMN_NOT_GROUPED",
@@ -6777,7 +6900,7 @@ export class DatabaseStorage implements IStorage {
       const seen = new Set<string>();
       for (const col of columns) {
         if (col.aggregation) continue;
-        const key = keyOf(col.table, canonField(col.table, col.field), viaOf(col));
+        const key = entryKey(col);
         if (seen.has(key)) {
           throw new ReportValidationError(
             `De kolom ${key} staat twee keer in het rapport. Haal de dubbele kolom weg.`,
@@ -6793,6 +6916,18 @@ export class DatabaseStorage implements IStorage {
     // frontend can read row[col.field] regardless of the DB column casing; a field
     // through a link is row["<link>.<field>"].
     const selectParts: SQL[] = columns.map((col: any) => {
+      // A calculated field: its expression, under "calc.<id>". Checked before any field lookup.
+      if (isCalcEntry(col)) {
+        const id = calcIdOf(col);
+        const expr = calcExpr(id);
+        const alias = sql.identifier(`calc.${id}`);
+        if (!col.aggregation) return sql`${expr} AS ${alias}`;
+        const agg = String(col.aggregation).toUpperCase();
+        if (agg !== "COUNT" && agg !== "COUNT_DISTINCT" && !isNumericCalc(id)) {
+          throw calcFail(id, `Het berekende veld calc.${id} geeft tekst en kan niet met ${agg}.`);
+        }
+        return aggregate(agg, expr, alias);
+      }
       const via = viaOf(col);
       const ident = identFor(col.table, col.field, via);
       const alias = sql.identifier(via === undefined ? String(col.field) : `${via}.${String(col.field)}`);
@@ -6804,22 +6939,7 @@ export class DatabaseStorage implements IStorage {
             `Field ${col.table}.${col.field} cannot be aggregated with ${agg}`
           );
         }
-        switch (agg) {
-          case "SUM":
-            return sql`SUM(${ident}) AS ${alias}`;
-          case "AVG":
-            return sql`AVG(${ident}) AS ${alias}`;
-          case "COUNT":
-            return sql`COUNT(${ident}) AS ${alias}`;
-          case "MIN":
-            return sql`MIN(${ident}) AS ${alias}`;
-          case "MAX":
-            return sql`MAX(${ident}) AS ${alias}`;
-          case "COUNT_DISTINCT":
-            return sql`COUNT(DISTINCT ${ident}) AS ${alias}`;
-          default:
-            throw new ReportValidationError(`Unknown aggregation: ${col.aggregation}`);
-        }
+        return aggregate(col.aggregation, ident, alias);
       }
       const group = findGroup(col.table, col.field, via);
       return sql`${group?.period ? groupExpr(col.table, col.field, group.period, via) : ident} AS ${alias}`;
@@ -6829,17 +6949,28 @@ export class DatabaseStorage implements IStorage {
     // all values passed as bound parameters (never string-concatenated).
     const whereParts: ReturnType<typeof sql>[] = [];
     for (const filter of Array.isArray(filters) ? filters : []) {
-      const def = getReportField(filter.table, canonField(filter.table, filter.field));
-      if (!def) {
-        throw new ReportValidationError(`Unknown filter field: ${filter.table}.${filter.field}`);
-      }
       const operator = String(filter.operator);
-      if (!def.operators.includes(operator as any)) {
-        throw new ReportValidationError(
-          `Operator ${operator} is not allowed for ${filter.table}.${filter.field}`
-        );
+      let ident: SQL;
+      if (isCalcEntry(filter)) {
+        // A calculated field filters per row on its expression, with the operators of its kind.
+        const id = calcIdOf(filter);
+        const allowed = isNumericCalc(id) ? numberOperators : textOperators;
+        if (!allowed.includes(operator as any)) {
+          throw new ReportValidationError(`Operator ${operator} is not allowed for calc.${id}`);
+        }
+        ident = calcExpr(id);
+      } else {
+        const def = getReportField(filter.table, canonField(filter.table, filter.field));
+        if (!def) {
+          throw new ReportValidationError(`Unknown filter field: ${filter.table}.${filter.field}`);
+        }
+        if (!def.operators.includes(operator as any)) {
+          throw new ReportValidationError(
+            `Operator ${operator} is not allowed for ${filter.table}.${filter.field}`
+          );
+        }
+        ident = identFor(filter.table, filter.field, viaOf(filter));
       }
-      const ident = identFor(filter.table, filter.field, viaOf(filter));
       const value = filter.value;
 
       switch (operator) {
@@ -6949,11 +7080,21 @@ export class DatabaseStorage implements IStorage {
     // A per-month expression holds a bound time zone; the same expression written twice
     // would get two parameters and Postgres would not see them as equal. So a month group
     // is referred to by its position in the select list (a hidden column when the report
-    // does not show it); a plain group is the column itself.
+    // does not show it); a plain group is the column itself. A calculated field holds bound
+    // numbers and texts too, so it is grouped by position the same way.
     const hiddenAliases: string[] = [];
     const groupRefs: SQL[] = groups.map((g) => {
+      if (g.calc !== undefined) {
+        const id = g.calc;
+        const position = columns.findIndex((c: any) => !c.aggregation && isCalcEntry(c) && calcIdOf(c) === id);
+        if (position >= 0) return sql.raw(String(position + 1));
+        const alias = `__group_${hiddenAliases.length}`;
+        hiddenAliases.push(alias);
+        selectParts.push(sql`${calcExpr(id)} AS ${sql.identifier(alias)}`);
+        return sql.raw(String(selectParts.length));
+      }
       if (!g.period) return identFor(g.table, g.field, g.via);
-      const position = columns.findIndex((c: any) => !c.aggregation && c.table === g.table && canonField(c.table, c.field) === g.field && viaOf(c) === g.via);
+      const position = columns.findIndex((c: any) => !c.aggregation && !isCalcEntry(c) && c.table === g.table && canonField(c.table, c.field) === g.field && viaOf(c) === g.via);
       if (position >= 0) return sql.raw(String(position + 1));
       const alias = `__group_${hiddenAliases.length}`;
       hiddenAliases.push(alias);

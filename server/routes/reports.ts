@@ -3,7 +3,8 @@ import { storage } from "../storage";
 import { ReportValidationError } from "../database-storage";
 import { UserPermission, UserRole } from "../../shared/schema";
 import { hasPermission, requireAdmin } from "../middleware/permissions.js";
-import { getDataSource, canUseReportSource, isReportPeriodField, linkedSourcesOf, adminOnlyFieldOf, invalidReportLink, SAVED_REPORT_TABS, type DataSource } from "../../shared/report-builder-config";
+import { getDataSource, canUseReportSource, isReportPeriodField, linkedSourcesOf, adminOnlyFieldOf, invalidReportLink, isReportFieldRef, SAVED_REPORT_TABS, type DataSource } from "../../shared/report-builder-config";
+import { validateCalculatedFields } from "../../shared/report-formula";
 
 /**
  * Every data source has its own right (see canUseReportSource in shared/report-builder-config.ts).
@@ -73,6 +74,18 @@ function invalidLinkBody(config: any): { message: string; code: "REPORT_LINK_INV
   const bad = invalidReportLink(config);
   if (!bad) return null;
   return { message: `De koppeling ${bad.via} kan geen velden van ${bad.table} ophalen.`, code: "REPORT_LINK_INVALID", field: `${bad.via}.${bad.table}` };
+}
+/**
+ * Reports redesign part 4: the calculated fields of a report (optional). Unknown fields or calcs,
+ * cycles, too deep, too many or a malformed rule give 400 REPORT_CALC_INVALID with { error, id }.
+ */
+function invalidCalcBody(config: any): { message: string; code: "REPORT_CALC_INVALID"; error: string; id: string } | null {
+  const fields = config?.calculatedFields;
+  if (fields === undefined || fields === null) return null;
+  const main = Array.isArray(config?.dataSources) ? config.dataSources[0] : undefined;
+  const result = validateCalculatedFields(fields, (ref) => isReportFieldRef(main, ref));
+  if (result.ok) return null;
+  return { message: "Een berekend veld klopt niet.", code: "REPORT_CALC_INVALID", error: result.error, id: result.id };
 }
 /** The 403 body for a report configuration: its own sources first, then its links. */
 function deniedReportBody(user: Express.User | undefined, config: any, dataSources: unknown = config?.dataSources) {
@@ -204,6 +217,8 @@ export function registerReportRoutes(app: Express): void {
       if (invalid) return res.status(400).json(invalid);
       const badLink = invalidLinkBody(config);
       if (badLink) return res.status(400).json(badLink);
+      const badCalc = invalidCalcBody(config);
+      if (badCalc) return res.status(400).json(badCalc);
 
       const dataSources: string[] = Array.isArray(config.dataSources) ? config.dataSources : [];
       const columns: Array<{ source?: string; field?: string }> = Array.isArray(config.columns) ? config.columns : [];
@@ -255,6 +270,8 @@ export function registerReportRoutes(app: Express): void {
       if (invalid) return res.status(400).json(invalid);
       const badLink = invalidLinkBody(config);
       if (badLink) return res.status(400).json(badLink);
+      const badCalc = invalidCalcBody(config);
+      if (badCalc) return res.status(400).json(badCalc);
 
       const dataSources: string[] = Array.isArray(config.dataSources) ? config.dataSources : [];
       const columns: Array<{ source?: string; field?: string }> = Array.isArray(config.columns) ? config.columns : [];
@@ -302,11 +319,16 @@ export function registerReportRoutes(app: Express): void {
       }
       const denied = deniedReportBody(req.user, config);
       if (denied) return res.status(403).json(denied);
+      const badCalc = invalidCalcBody(config);
+      if (badCalc) return res.status(400).json(badCalc);
 
       const results = await storage.executeReport(config, scope);
       res.json(results);
     } catch (error) {
       if (error instanceof ReportValidationError) {
+        if (error.code === "REPORT_CALC_INVALID") {
+          return res.status(400).json({ message: error.message, code: error.code, error: error.reason ?? "BAD_RULE", id: error.field ?? "" });
+        }
         if (error.code) {
           return res.status(400).json({ message: error.message, code: error.code, field: error.field });
         }
