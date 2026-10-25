@@ -158,3 +158,38 @@ Per deel een plan, bouw met subagent-controle, volledige testrun, en pas pushen 
   voorbeeld exact gelijk is aan de afdruk.
 - Opslag van kolomkeuze per gebruiker en tabbladkeuze van een opgeslagen rapport (bestaande tabellen/kolommen
   waar mogelijk; nieuwe kolommen additief via schema-columns.json).
+
+## Deel 1b — Details (Kees, 2026-10-25, na het zien van deel 1)
+
+Kees mist detailinformatie in alle rapporten (Voertuigen, Financieel en Kosten, Klanten, Kantoor en Portaal).
+Hij koos: doorklikken naar de regels, doorklikken naar het dossier, en vergelijken met een eerdere periode.
+Wordt gebouwd vóór Kees deel 1 test; daarna test hij 1 en 1b samen.
+
+### Doorklikken naar de regels
+- Klikbaar in elk rapport: elke tegel, elke staaf/punt in een grafiek (maand, dag, top-N), en elke regel van een
+  uitsplitsing (per klant, per voertuig, per bestuurder, per categorie, per soort …).
+- Een klik opent een venster met de losse regels die dat getal vormen, met pagina's, zoeken, sorteren, **CSV** en
+  **Afdrukken** (zelfde afdrukvoorbeeld). Het aantal regels in het venster is gelijk aan het getal waarop je klikte.
+- Voor de serverrapporten (kit) geeft de server de regels (bestaande `/rows` en `/export`, uitgebreid met een
+  uitsplitsing- of maandfilter). Voor de rapporten die in de browser rekenen, filtert de browser.
+
+### Doorklikken naar het dossier
+- In elke lijst zijn kenteken, klant, reservering, bekeuring en factuur klikbaar.
+- Een klik opent eerst een **venster met de belangrijkste gegevens** (auto: kenteken, merk/model, APK, km-stand,
+  huidige huurder; klant: contactgegevens, aantal reserveringen, open bedragen; reservering: klant, auto, periode,
+  status, bedrag; bekeuring: datum, kenteken, bedrag, status, gekoppelde klant/bestuurder; factuur: leverancier,
+  datum, bedrag, status). Daarin de knop **Openen in nieuw tabblad**, die het volledige dossier in de app opent;
+  het rapport blijft staan.
+- Rechten: het venster toont alleen wat de gebruiker in de app ook mag zien; zonder recht geen klikbare link.
+  Km-gegevens alleen voor beheerder.
+
+### Vergelijken
+- Filterbalk: **Vergelijk met**: **Niet vergelijken** (standaard), **Vorige periode** (even lang, direct ervoor),
+  **Zelfde periode vorig jaar**.
+- Aan: elke tegel die de periode volgt toont ook het oude getal en het verschil in % met pijl ↑/↓. Groen/rood alleen
+  waar duidelijk is wat beter is (meer omzet/marge/bezetting = beter; meer kosten/te laat/bekeuringen = slechter);
+  anders neutraal. Bij een oud getal 0 geen percentage maar "nieuw".
+- Maandgrafieken tonen de vergelijkingsperiode als lichtere reeks.
+- Tegels die geen periode volgen (APK verlopen, "Alles wat nog openstaat", onderhoud vooruit) krijgen geen vergelijking.
+- De afdruk toont de vergelijking (oud getal en verschil) en noemt de vergelijkingsperiode in de kop.
+- De keuze geldt voor alle rapporten en wordt onthouden zoals de periode (in de filtercontext, niet per gebruiker opgeslagen).
