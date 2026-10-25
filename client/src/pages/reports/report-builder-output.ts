@@ -9,6 +9,7 @@
 import type { TFunction } from "i18next";
 import { getField, type FilterOperator } from "@shared/report-builder-config";
 import { csvDate, csvNumber } from "@/lib/csv";
+import { formatDateNl } from "@/lib/format-date-nl";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { escapeHtml } from "@/lib/html-escape";
 import { isTrueValue } from "@/lib/utils";
@@ -20,6 +21,13 @@ export function sourceLabel(t: TFunction, id: string, fallback?: string): string
 export function fieldLabel(t: TFunction, table: string, name: string, fallback?: string): string {
   return String(t(`reportBuilderPage.fields.${table}.${name}`, { defaultValue: fallback ?? name }));
 }
+
+export function aggregationLabel(t: TFunction, agg: string): string {
+  return String(t(`reportBuilderPage.aggregation.${agg}`, { defaultValue: agg }));
+}
+
+/** A date grouped per month comes back as "2019-02". */
+const MONTH_VALUE = /^\d{4}-\d{2}$/;
 
 export function operatorLabel(t: TFunction, operator: FilterOperator | string): string {
   return String(t(`reportBuilderPage.operators.${operator}`, { defaultValue: operator.replace(/_/g, " ") }));
@@ -45,7 +53,10 @@ export function csvCell(t: TFunction, column: OutputColumn, value: unknown): str
   const type = getField(column.table, column.field)?.type;
   if (column.field === "licensePlate") return formatLicensePlate(String(value));
   if (type === "boolean" && !column.aggregation) return String(t(isTrueValue(value as any) || value === 1 ? "common:actions.yes" : "common:actions.no"));
-  if (type === "date" && !column.aggregation) return csvDate(String(value));
+  if (type === "date" && !column.aggregation) {
+    if (MONTH_VALUE.test(String(value))) return `${String(value).slice(5, 7)}-${String(value).slice(0, 4)}`;
+    return csvDate(String(value));
+  }
   if (isNumeric(column)) {
     const n = Number(value);
     if (!Number.isFinite(n)) return String(value);
@@ -61,7 +72,10 @@ export function displayCell(t: TFunction, column: OutputColumn, value: unknown):
   const type = getField(column.table, column.field)?.type;
   if (column.field === "licensePlate") return formatLicensePlate(String(value));
   if (type === "boolean" && !column.aggregation) return String(t(isTrueValue(value as any) || value === 1 ? "common:actions.yes" : "common:actions.no"));
-  if (type === "date" && !column.aggregation) return formatDate(String(value));
+  if (type === "date" && !column.aggregation) {
+    if (MONTH_VALUE.test(String(value))) return formatDateNl(`${value}-01T12:00:00`, "MMM yyyy");
+    return formatDate(String(value));
+  }
   return String(value);
 }
 

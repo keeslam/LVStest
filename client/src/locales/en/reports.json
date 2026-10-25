@@ -92,7 +92,6 @@
     "savedReportsTabButton": "Saved Reports",
     "dataSourcesTitle": "Data Sources",
     "dataSourcesDescription": "Select tables to query",
-    "moreFieldsCount": "+{{count}} more...",
     "reportConfigTitle": "Report Configuration",
     "reportConfigDescription": "Build your custom report",
     "saveButton": "Save",
@@ -138,7 +137,12 @@
       "customers": "Customers",
       "reservations": "Reservations",
       "expenses": "Expenses",
-      "drivers": "Drivers"
+      "drivers": "Drivers",
+      "fines": "Fines",
+      "transports": "Transports",
+      "workshop_visits": "Workshop visits",
+      "damage_checks": "Damage checks",
+      "mileage_readings": "Mileage history"
     },
     "fields": {
       "vehicles": {
@@ -197,6 +201,76 @@
         "email": "Email",
         "phone": "Phone",
         "isPrimary": "Is Primary Driver"
+      },
+      "fines": {
+        "id": "ID",
+        "licensePlate": "License plate",
+        "vehicleId": "Vehicle ID",
+        "offenceAt": "Offence date",
+        "receivedAt": "Received on",
+        "reference": "Reference",
+        "description": "Description",
+        "amount": "Fine amount",
+        "adminFee": "Admin fee",
+        "totalAmount": "Total amount",
+        "status": "Status",
+        "source": "Origin",
+        "customerId": "Customer ID",
+        "reservationId": "Reservation ID",
+        "driverId": "Driver ID",
+        "linkedAt": "Linked on"
+      },
+      "vehicle_transports": {
+        "id": "ID",
+        "vehicleId": "Vehicle ID",
+        "isExternalVehicle": "External vehicle",
+        "externalLicensePlate": "External vehicle plate",
+        "transportType": "Transport type",
+        "status": "Status",
+        "scheduledDate": "Scheduled date",
+        "completedDate": "Completed on",
+        "driverName": "Driver",
+        "distanceKm": "Distance (km)",
+        "tollCost": "Toll cost",
+        "billable": "Billable",
+        "billableAmount": "Billable amount",
+        "invoiced": "Invoiced",
+        "invoicedDate": "Invoice date",
+        "isBreakdownOrMaintenance": "Breakdown or maintenance",
+        "customerId": "Customer ID",
+        "reservationId": "Reservation ID"
+      },
+      "workshop_visits": {
+        "id": "ID",
+        "vehicleId": "Vehicle ID",
+        "startDate": "Start date",
+        "endDate": "End date",
+        "status": "Status",
+        "maintenanceStatus": "Workshop status",
+        "maintenanceCategory": "Category",
+        "maintenanceType": "Visit type",
+        "maintenanceDuration": "Duration (days)",
+        "noInvoiceExpected": "No invoice needed",
+        "affectedRentalId": "Affected rental ID"
+      },
+      "interactive_damage_checks": {
+        "id": "ID",
+        "vehicleId": "Vehicle ID",
+        "reservationId": "Reservation ID",
+        "checkType": "Check type",
+        "checkDate": "Check date",
+        "mileage": "Mileage",
+        "fuelLevel": "Fuel level",
+        "completedBy": "Done by"
+      },
+      "vehicle_mileage_readings": {
+        "id": "ID",
+        "vehicleId": "Vehicle ID",
+        "mileage": "Mileage",
+        "recordedAt": "Date",
+        "source": "Source",
+        "actorName": "Recorded by",
+        "voidedAt": "Voided on"
       }
     },
     "operators": {
@@ -223,7 +297,22 @@
     "deleteReportAria": "Delete report: {{name}}",
     "deleteConfirmTitle": "Delete report?",
     "deleteConfirmDescription": "You are about to delete the saved report \"{{name}}\". This cannot be undone.",
-    "deleteConfirmButton": "Delete"
+    "deleteConfirmButton": "Delete",
+    "groupBy": {
+      "label": "Group by",
+      "none": "Don't group",
+      "perMonth": "Per month"
+    },
+    "aggregation": {
+      "label": "Calculation",
+      "none": "None",
+      "SUM": "Sum",
+      "AVG": "Average",
+      "COUNT": "Count",
+      "COUNT_DISTINCT": "Distinct count",
+      "MIN": "Smallest",
+      "MAX": "Largest"
+    }
   },
   "financialTab": {
     "loading": "Loading...",

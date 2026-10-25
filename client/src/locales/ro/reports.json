@@ -95,7 +95,6 @@
     "savedReportsTabButton": "Rapoarte salvate",
     "dataSourcesTitle": "Surse de date",
     "dataSourcesDescription": "Selectați tabelele de interogat",
-    "moreFieldsCount": "+{{count}} în plus...",
     "reportConfigTitle": "Configurarea raportului",
     "reportConfigDescription": "Construiți raportul dumneavoastră personalizat",
     "saveButton": "Salvați",
@@ -144,7 +143,12 @@
       "customers": "Clienți",
       "reservations": "Rezervări",
       "expenses": "Cheltuieli",
-      "drivers": "Șoferi"
+      "drivers": "Șoferi",
+      "fines": "Amenzi",
+      "transports": "Transporturi",
+      "workshop_visits": "Vizite la atelier",
+      "damage_checks": "Verificări daune",
+      "mileage_readings": "Istoric kilometraj"
     },
     "fields": {
       "vehicles": {
@@ -203,6 +207,76 @@
         "email": "E-mail",
         "phone": "Telefon",
         "isPrimary": "Șofer principal"
+      },
+      "fines": {
+        "id": "ID",
+        "licensePlate": "Număr de înmatriculare",
+        "vehicleId": "ID vehicul",
+        "offenceAt": "Data contravenției",
+        "receivedAt": "Primită la",
+        "reference": "Referință",
+        "description": "Descriere",
+        "amount": "Valoarea amenzii",
+        "adminFee": "Taxă administrativă",
+        "totalAmount": "Sumă totală",
+        "status": "Stare",
+        "source": "Origine",
+        "customerId": "ID client",
+        "reservationId": "ID rezervare",
+        "driverId": "ID șofer",
+        "linkedAt": "Asociată la"
+      },
+      "vehicle_transports": {
+        "id": "ID",
+        "vehicleId": "ID vehicul",
+        "isExternalVehicle": "Vehicul extern",
+        "externalLicensePlate": "Număr vehicul extern",
+        "transportType": "Tip transport",
+        "status": "Stare",
+        "scheduledDate": "Data programată",
+        "completedDate": "Finalizat la",
+        "driverName": "Șofer",
+        "distanceKm": "Distanță (km)",
+        "tollCost": "Costuri de taxă de drum",
+        "billable": "Facturabil",
+        "billableAmount": "Sumă de facturat",
+        "invoiced": "Facturat",
+        "invoicedDate": "Data facturii",
+        "isBreakdownOrMaintenance": "Defecțiune sau întreținere",
+        "customerId": "ID client",
+        "reservationId": "ID rezervare"
+      },
+      "workshop_visits": {
+        "id": "ID",
+        "vehicleId": "ID vehicul",
+        "startDate": "Data de început",
+        "endDate": "Data de sfârșit",
+        "status": "Stare",
+        "maintenanceStatus": "Stare atelier",
+        "maintenanceCategory": "Categorie",
+        "maintenanceType": "Tip vizită",
+        "maintenanceDuration": "Durată (zile)",
+        "noInvoiceExpected": "Nu este necesară factură",
+        "affectedRentalId": "ID închiriere afectată"
+      },
+      "interactive_damage_checks": {
+        "id": "ID",
+        "vehicleId": "ID vehicul",
+        "reservationId": "ID rezervare",
+        "checkType": "Tip verificare",
+        "checkDate": "Data verificării",
+        "mileage": "Kilometraj",
+        "fuelLevel": "Nivel combustibil",
+        "completedBy": "Efectuat de"
+      },
+      "vehicle_mileage_readings": {
+        "id": "ID",
+        "vehicleId": "ID vehicul",
+        "mileage": "Kilometraj",
+        "recordedAt": "Data",
+        "source": "Sursă",
+        "actorName": "Înregistrat de",
+        "voidedAt": "Anulată la"
       }
     },
     "operators": {
@@ -230,7 +304,22 @@
     "deleteReportAria": "Ștergeți raportul: {{name}}",
     "deleteConfirmTitle": "Ștergeți raportul?",
     "deleteConfirmDescription": "Sunteți pe punctul de a șterge raportul salvat „{{name}}”. Această acțiune nu poate fi anulată.",
-    "deleteConfirmButton": "Ștergeți"
+    "deleteConfirmButton": "Ștergeți",
+    "groupBy": {
+      "label": "Grupează după",
+      "none": "Nu grupa",
+      "perMonth": "Pe lună"
+    },
+    "aggregation": {
+      "label": "Calcul",
+      "none": "Niciunul",
+      "SUM": "Sumă",
+      "AVG": "Medie",
+      "COUNT": "Număr",
+      "COUNT_DISTINCT": "Număr distinct",
+      "MIN": "Minim",
+      "MAX": "Maxim"
+    }
   },
   "financialTab": {
     "loading": "Se încarcă...",

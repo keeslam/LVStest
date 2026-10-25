@@ -16,16 +16,17 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Play, Save, Trash2, X, Filter as FilterIcon, Download, Printer, Settings, BarChart3 } from "lucide-react";
 import { apiRequest, queryClient, invalidateByPrefix } from "@/lib/queryClient";
 import { UserPermission } from "@shared/schema";
-import { useHasPermission } from "@/hooks/use-has-permission";
+import { useAuth } from "@/hooks/use-auth";
 import { RequiresPermission } from "@/components/ui/requires-permission";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { downloadCsv } from "@/lib/csv";
 import { formatDateTime } from "@/lib/format-utils";
 import {
-  sourceLabel, fieldLabel, operatorLabel, outputHeader, csvCell, displayCell, buildReportTableHtml, reportFileSubject,
+  sourceLabel, fieldLabel, operatorLabel, aggregationLabel, outputHeader, csvCell, displayCell, buildReportTableHtml, reportFileSubject,
 } from "@/pages/reports/report-builder-output";
 import {
-  DATA_SOURCES, 
+  DATA_SOURCES,
+  canUseReportSource,
   type ReportConfiguration, 
   type ReportColumn, 
   type ReportFilter, 
@@ -44,12 +45,14 @@ interface SavedReport {
   createdAt: string;
 }
 
+const GROUP_NONE = "__none";
+
 export default function ReportBuilder() {
   const { t } = useTranslation("reports");
   const { toast } = useToast();
-  // Security review 2026-10-18 (Laag 7): customers and drivers are only offered with the customer right (the server checks too).
-  const canSeeCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
-  const offeredSources = DATA_SOURCES.filter((source) => canSeeCustomers || !["customers", "drivers"].includes(source.table));
+  // Each source is only offered to someone who may use it (customers and drivers, fines, km history, ...); the server checks too.
+  const { user } = useAuth();
+  const offeredSources = DATA_SOURCES.filter((source) => canUseReportSource(user, source));
   const [activeTab, setActiveTab] = useState<'builder' | 'saved'>('builder');
   
   const [reportName, setReportName] = useState('');
@@ -80,6 +83,51 @@ export default function ReportBuilder() {
   const removeColumn = (index: number) => {
     setColumns(prev => prev.filter((_, i) => i !== index));
   };
+
+  const setColumnAggregation = (index: number, aggregation: AggregationFunction | undefined) => {
+    setColumns(prev => prev.map((col, i) => {
+      if (i !== index) return col;
+      const { aggregation: _old, ...rest } = col;
+      return aggregation ? { ...rest, aggregation } : rest;
+    }));
+  };
+
+  const groupFields = offeredSources
+    .filter(ds => selectedDataSources.includes(ds.id))
+    .flatMap(ds => ds.fields);
+
+  // One group field. Picking it adds its column when missing and drops a calculation on it.
+  const changeGroup = (value: string) => {
+    if (value === GROUP_NONE) {
+      setGroupBy([]);
+      return;
+    }
+    const dot = value.indexOf('.');
+    const table = value.slice(0, dot);
+    const name = value.slice(dot + 1);
+    const field = groupFields.find(f => f.table === table && f.name === name);
+    if (!field) return;
+    setGroupBy([{ table, field: name }]);
+    setColumns(prev => {
+      const at = prev.findIndex(c => c.table === table && c.field === name);
+      if (at === -1) return [...prev, { field: name, table, label: field.label }];
+      return prev.map((c, i) => {
+        if (i !== at) return c;
+        const { aggregation: _old, ...rest } = c;
+        return rest;
+      });
+    });
+  };
+
+  const changeGroupMonth = (month: boolean) => {
+    setGroupBy(prev => prev.map(g => {
+      const { period: _old, ...rest } = g;
+      return month ? { ...rest, period: 'month' as const } : rest;
+    }));
+  };
+
+  const isGroupColumn = (col: ReportColumn) =>
+    !col.aggregation && groupBy.some(g => g.table === col.table && g.field === col.field);
 
   const addFilterMutation = useMutation({
     mutationFn: async (filter: ReportFilter) => {
@@ -261,7 +309,7 @@ export default function ReportBuilder() {
                     </div>
                     {selectedDataSources.includes(source.id) && (
                       <div className="ml-6 space-y-1">
-                        {source.fields.slice(0, 5).map(field => (
+                        {source.fields.map(field => (
                           <button
                             key={field.name}
                             onClick={() => addColumnMutation.mutate({
@@ -275,11 +323,6 @@ export default function ReportBuilder() {
                             + {fieldLabel(t, field.table, field.name, field.label)}
                           </button>
                         ))}
-                        {source.fields.length > 5 && (
-                          <span className="text-xs text-muted-foreground">
-                            {t('reportBuilderPage.moreFieldsCount', { count: source.fields.length - 5 })}
-                          </span>
-                        )}
                       </div>
                     )}
                   </div>
@@ -333,8 +376,29 @@ export default function ReportBuilder() {
                       columns.map((col, idx) => (
                         <div key={idx} className="flex items-center justify-between p-2 bg-secondary rounded">
                           <span className="text-sm">
-                            {fieldLabel(t, col.table, col.field, col.label)} {col.aggregation && `(${col.aggregation})`}
+                            {fieldLabel(t, col.table, col.field, col.label)} {col.aggregation && `(${aggregationLabel(t, col.aggregation)})`}
                           </span>
+                          <div className="flex items-center gap-2">
+                          {!isGroupColumn(col) && (
+                            <Select
+                              value={col.aggregation ?? 'none'}
+                              onValueChange={(value) => setColumnAggregation(idx, value === 'none' ? undefined : value as AggregationFunction)}
+                            >
+                              <SelectTrigger className="h-8 w-[170px]" aria-label={t('reportBuilderPage.aggregation.label')} data-testid={`select-column-aggregation-${idx}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">{t('reportBuilderPage.aggregation.none')}</SelectItem>
+                                {(['SUM', 'AVG', 'MIN', 'MAX'] as const)
+                                  .filter(() => getField(col.table, col.field)?.aggregatable)
+                                  .map(agg => (
+                                    <SelectItem key={agg} value={agg}>{aggregationLabel(t, agg)}</SelectItem>
+                                  ))}
+                                <SelectItem value="COUNT">{aggregationLabel(t, 'COUNT')}</SelectItem>
+                                <SelectItem value="COUNT_DISTINCT">{aggregationLabel(t, 'COUNT_DISTINCT')}</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -343,8 +407,43 @@ export default function ReportBuilder() {
                           >
                             <X className="h-4 w-4" />
                           </Button>
+                          </div>
                         </div>
                       ))
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <Label>{t('reportBuilderPage.groupBy.label')}</Label>
+                  <div className="flex items-center gap-4 mt-2">
+                    <Select
+                      value={groupBy[0] ? `${groupBy[0].table}.${groupBy[0].field}` : GROUP_NONE}
+                      onValueChange={changeGroup}
+                    >
+                      <SelectTrigger className="w-[260px]" data-testid="select-report-group-by">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={GROUP_NONE}>{t('reportBuilderPage.groupBy.none')}</SelectItem>
+                        {groupFields.map(field => (
+                          <SelectItem key={`${field.table}.${field.name}`} value={`${field.table}.${field.name}`}>
+                            {fieldLabel(t, field.table, field.name, field.label)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {groupBy[0] && getField(groupBy[0].table, groupBy[0].field)?.type === 'date' && (
+                      <label className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={groupBy[0].period === 'month'}
+                          onChange={(e) => changeGroupMonth(e.target.checked)}
+                          className="h-4 w-4"
+                          data-testid="checkbox-group-by-month"
+                        />
+                        {t('reportBuilderPage.groupBy.perMonth')}
+                      </label>
                     )}
                   </div>
                 </div>

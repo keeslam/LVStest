@@ -95,7 +95,6 @@
     "savedReportsTabButton": "Relatórios guardados",
     "dataSourcesTitle": "Fontes de dados",
     "dataSourcesDescription": "Selecione as tabelas a consultar",
-    "moreFieldsCount": "+{{count}} mais...",
     "reportConfigTitle": "Configuração do relatório",
     "reportConfigDescription": "Construa o seu relatório personalizado",
     "saveButton": "Guardar",
@@ -144,7 +143,12 @@
       "customers": "Clientes",
       "reservations": "Reservas",
       "expenses": "Despesas",
-      "drivers": "Condutores"
+      "drivers": "Condutores",
+      "fines": "Multas",
+      "transports": "Transportes",
+      "workshop_visits": "Visitas à oficina",
+      "damage_checks": "Verificações de danos",
+      "mileage_readings": "Histórico de quilometragem"
     },
     "fields": {
       "vehicles": {
@@ -203,6 +207,76 @@
         "email": "E-mail",
         "phone": "Telefone",
         "isPrimary": "Condutor principal"
+      },
+      "fines": {
+        "id": "ID",
+        "licensePlate": "Matrícula",
+        "vehicleId": "ID do veículo",
+        "offenceAt": "Data da infração",
+        "receivedAt": "Recebida em",
+        "reference": "Referência",
+        "description": "Descrição",
+        "amount": "Valor da multa",
+        "adminFee": "Custos administrativos",
+        "totalAmount": "Valor total",
+        "status": "Estado",
+        "source": "Origem",
+        "customerId": "ID do cliente",
+        "reservationId": "ID da reserva",
+        "driverId": "ID do condutor",
+        "linkedAt": "Associada em"
+      },
+      "vehicle_transports": {
+        "id": "ID",
+        "vehicleId": "ID do veículo",
+        "isExternalVehicle": "Veículo externo",
+        "externalLicensePlate": "Matrícula do veículo externo",
+        "transportType": "Tipo de transporte",
+        "status": "Estado",
+        "scheduledDate": "Data prevista",
+        "completedDate": "Concluído em",
+        "driverName": "Condutor",
+        "distanceKm": "Distância (km)",
+        "tollCost": "Custos de portagem",
+        "billable": "Faturável",
+        "billableAmount": "Valor a faturar",
+        "invoiced": "Faturado",
+        "invoicedDate": "Data da fatura",
+        "isBreakdownOrMaintenance": "Avaria ou manutenção",
+        "customerId": "ID do cliente",
+        "reservationId": "ID da reserva"
+      },
+      "workshop_visits": {
+        "id": "ID",
+        "vehicleId": "ID do veículo",
+        "startDate": "Data de início",
+        "endDate": "Data de fim",
+        "status": "Estado",
+        "maintenanceStatus": "Estado da oficina",
+        "maintenanceCategory": "Categoria",
+        "maintenanceType": "Tipo de visita",
+        "maintenanceDuration": "Duração (dias)",
+        "noInvoiceExpected": "Não é necessária fatura",
+        "affectedRentalId": "ID do aluguer afetado"
+      },
+      "interactive_damage_checks": {
+        "id": "ID",
+        "vehicleId": "ID do veículo",
+        "reservationId": "ID da reserva",
+        "checkType": "Tipo de verificação",
+        "checkDate": "Data da verificação",
+        "mileage": "Quilometragem",
+        "fuelLevel": "Nível de combustível",
+        "completedBy": "Realizado por"
+      },
+      "vehicle_mileage_readings": {
+        "id": "ID",
+        "vehicleId": "ID do veículo",
+        "mileage": "Quilometragem",
+        "recordedAt": "Data",
+        "source": "Fonte",
+        "actorName": "Registado por",
+        "voidedAt": "Anulada em"
       }
     },
     "operators": {
@@ -230,7 +304,22 @@
     "deleteReportAria": "Eliminar relatório: {{name}}",
     "deleteConfirmTitle": "Eliminar relatório?",
     "deleteConfirmDescription": "Está prestes a eliminar o relatório guardado \"{{name}}\". Esta ação não pode ser anulada.",
-    "deleteConfirmButton": "Eliminar"
+    "deleteConfirmButton": "Eliminar",
+    "groupBy": {
+      "label": "Agrupar por",
+      "none": "Não agrupar",
+      "perMonth": "Por mês"
+    },
+    "aggregation": {
+      "label": "Cálculo",
+      "none": "Nenhum",
+      "SUM": "Soma",
+      "AVG": "Média",
+      "COUNT": "Contagem",
+      "COUNT_DISTINCT": "Contagem distinta",
+      "MIN": "Mínimo",
+      "MAX": "Máximo"
+    }
   },
   "financialTab": {
     "loading": "A carregar...",

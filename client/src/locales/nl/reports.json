@@ -92,7 +92,6 @@
     "savedReportsTabButton": "Opgeslagen rapporten",
     "dataSourcesTitle": "Gegevensbronnen",
     "dataSourcesDescription": "Selecteer tabellen om te bevragen",
-    "moreFieldsCount": "+{{count}} meer...",
     "reportConfigTitle": "Rapportconfiguratie",
     "reportConfigDescription": "Bouw je aangepaste rapport",
     "saveButton": "Opslaan",
@@ -138,7 +137,12 @@
       "customers": "Klanten",
       "reservations": "Reserveringen",
       "expenses": "Kosten",
-      "drivers": "Chauffeurs"
+      "drivers": "Chauffeurs",
+      "fines": "Bekeuringen",
+      "transports": "Transporten",
+      "workshop_visits": "Werkplaatsbezoeken",
+      "damage_checks": "Schadechecks",
+      "mileage_readings": "Km-historie"
     },
     "fields": {
       "vehicles": {
@@ -197,6 +201,76 @@
         "email": "E-mail",
         "phone": "Telefoon",
         "isPrimary": "Hoofdchauffeur"
+      },
+      "fines": {
+        "id": "ID",
+        "licensePlate": "Kenteken",
+        "vehicleId": "Voertuig-ID",
+        "offenceAt": "Datum overtreding",
+        "receivedAt": "Ontvangen op",
+        "reference": "Kenmerk",
+        "description": "Omschrijving",
+        "amount": "Boetebedrag",
+        "adminFee": "Administratiekosten",
+        "totalAmount": "Totaalbedrag",
+        "status": "Status",
+        "source": "Herkomst",
+        "customerId": "Klant-ID",
+        "reservationId": "Reservering-ID",
+        "driverId": "Bestuurder-ID",
+        "linkedAt": "Gekoppeld op"
+      },
+      "vehicle_transports": {
+        "id": "ID",
+        "vehicleId": "Voertuig-ID",
+        "isExternalVehicle": "Extern voertuig",
+        "externalLicensePlate": "Kenteken extern voertuig",
+        "transportType": "Soort transport",
+        "status": "Status",
+        "scheduledDate": "Geplande datum",
+        "completedDate": "Afgerond op",
+        "driverName": "Chauffeur",
+        "distanceKm": "Afstand (km)",
+        "tollCost": "Tolkosten",
+        "billable": "Te factureren",
+        "billableAmount": "Te factureren bedrag",
+        "invoiced": "Gefactureerd",
+        "invoicedDate": "Factuurdatum",
+        "isBreakdownOrMaintenance": "Pech of onderhoud",
+        "customerId": "Klant-ID",
+        "reservationId": "Reservering-ID"
+      },
+      "workshop_visits": {
+        "id": "ID",
+        "vehicleId": "Voertuig-ID",
+        "startDate": "Startdatum",
+        "endDate": "Einddatum",
+        "status": "Status",
+        "maintenanceStatus": "Werkplaatsstatus",
+        "maintenanceCategory": "Categorie",
+        "maintenanceType": "Soort bezoek",
+        "maintenanceDuration": "Duur (dagen)",
+        "noInvoiceExpected": "Geen factuur nodig",
+        "affectedRentalId": "Getroffen verhuur-ID"
+      },
+      "interactive_damage_checks": {
+        "id": "ID",
+        "vehicleId": "Voertuig-ID",
+        "reservationId": "Reservering-ID",
+        "checkType": "Soort check",
+        "checkDate": "Datum check",
+        "mileage": "Kilometerstand",
+        "fuelLevel": "Brandstofniveau",
+        "completedBy": "Uitgevoerd door"
+      },
+      "vehicle_mileage_readings": {
+        "id": "ID",
+        "vehicleId": "Voertuig-ID",
+        "mileage": "Kilometerstand",
+        "recordedAt": "Datum",
+        "source": "Bron",
+        "actorName": "Door wie",
+        "voidedAt": "Vervallen op"
       }
     },
     "operators": {
@@ -223,7 +297,22 @@
     "deleteReportAria": "Rapport verwijderen: {{name}}",
     "deleteConfirmTitle": "Rapport verwijderen?",
     "deleteConfirmDescription": "U staat op het punt het opgeslagen rapport \"{{name}}\" te verwijderen. Dit kan niet ongedaan worden gemaakt.",
-    "deleteConfirmButton": "Verwijderen"
+    "deleteConfirmButton": "Verwijderen",
+    "groupBy": {
+      "label": "Groeperen op",
+      "none": "Niet groeperen",
+      "perMonth": "Per maand"
+    },
+    "aggregation": {
+      "label": "Berekening",
+      "none": "Geen",
+      "SUM": "Som",
+      "AVG": "Gemiddelde",
+      "COUNT": "Aantal",
+      "COUNT_DISTINCT": "Aantal verschillend",
+      "MIN": "Kleinste",
+      "MAX": "Grootste"
+    }
   },
   "financialTab": {
     "loading": "Laden...",

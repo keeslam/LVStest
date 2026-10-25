@@ -95,7 +95,6 @@
     "savedReportsTabButton": "Rapporti salvati",
     "dataSourcesTitle": "Origini dati",
     "dataSourcesDescription": "Selezioni le tabelle da interrogare",
-    "moreFieldsCount": "+{{count}} altri...",
     "reportConfigTitle": "Configurazione del rapporto",
     "reportConfigDescription": "Costruisca il Suo rapporto personalizzato",
     "saveButton": "Salvare",
@@ -144,7 +143,12 @@
       "customers": "Clienti",
       "reservations": "Prenotazioni",
       "expenses": "Costi",
-      "drivers": "Conducenti"
+      "drivers": "Conducenti",
+      "fines": "Multe",
+      "transports": "Trasporti",
+      "workshop_visits": "Visite in officina",
+      "damage_checks": "Controlli danni",
+      "mileage_readings": "Storico chilometraggio"
     },
     "fields": {
       "vehicles": {
@@ -203,6 +207,76 @@
         "email": "E-mail",
         "phone": "Telefono",
         "isPrimary": "Conducente principale"
+      },
+      "fines": {
+        "id": "ID",
+        "licensePlate": "Targa",
+        "vehicleId": "ID veicolo",
+        "offenceAt": "Data dell'infrazione",
+        "receivedAt": "Ricevuta il",
+        "reference": "Riferimento",
+        "description": "Descrizione",
+        "amount": "Importo della multa",
+        "adminFee": "Spese amministrative",
+        "totalAmount": "Importo totale",
+        "status": "Stato",
+        "source": "Origine",
+        "customerId": "ID cliente",
+        "reservationId": "ID prenotazione",
+        "driverId": "ID conducente",
+        "linkedAt": "Collegata il"
+      },
+      "vehicle_transports": {
+        "id": "ID",
+        "vehicleId": "ID veicolo",
+        "isExternalVehicle": "Veicolo esterno",
+        "externalLicensePlate": "Targa del veicolo esterno",
+        "transportType": "Tipo di trasporto",
+        "status": "Stato",
+        "scheduledDate": "Data prevista",
+        "completedDate": "Completato il",
+        "driverName": "Conducente",
+        "distanceKm": "Distanza (km)",
+        "tollCost": "Costi di pedaggio",
+        "billable": "Fatturabile",
+        "billableAmount": "Importo da fatturare",
+        "invoiced": "Fatturato",
+        "invoicedDate": "Data fattura",
+        "isBreakdownOrMaintenance": "Guasto o manutenzione",
+        "customerId": "ID cliente",
+        "reservationId": "ID prenotazione"
+      },
+      "workshop_visits": {
+        "id": "ID",
+        "vehicleId": "ID veicolo",
+        "startDate": "Data di inizio",
+        "endDate": "Data di fine",
+        "status": "Stato",
+        "maintenanceStatus": "Stato officina",
+        "maintenanceCategory": "Categoria",
+        "maintenanceType": "Tipo di visita",
+        "maintenanceDuration": "Durata (giorni)",
+        "noInvoiceExpected": "Nessuna fattura necessaria",
+        "affectedRentalId": "ID noleggio interessato"
+      },
+      "interactive_damage_checks": {
+        "id": "ID",
+        "vehicleId": "ID veicolo",
+        "reservationId": "ID prenotazione",
+        "checkType": "Tipo di controllo",
+        "checkDate": "Data del controllo",
+        "mileage": "Chilometraggio",
+        "fuelLevel": "Livello carburante",
+        "completedBy": "Eseguito da"
+      },
+      "vehicle_mileage_readings": {
+        "id": "ID",
+        "vehicleId": "ID veicolo",
+        "mileage": "Chilometraggio",
+        "recordedAt": "Data",
+        "source": "Fonte",
+        "actorName": "Registrato da",
+        "voidedAt": "Annullata il"
       }
     },
     "operators": {
@@ -230,7 +304,22 @@
     "deleteReportAria": "Eliminare il rapporto: {{name}}",
     "deleteConfirmTitle": "Eliminare il rapporto?",
     "deleteConfirmDescription": "Sta per eliminare il rapporto salvato \"{{name}}\". Questa operazione non può essere annullata.",
-    "deleteConfirmButton": "Eliminare"
+    "deleteConfirmButton": "Eliminare",
+    "groupBy": {
+      "label": "Raggruppa per",
+      "none": "Non raggruppare",
+      "perMonth": "Per mese"
+    },
+    "aggregation": {
+      "label": "Calcolo",
+      "none": "Nessuno",
+      "SUM": "Somma",
+      "AVG": "Media",
+      "COUNT": "Conteggio",
+      "COUNT_DISTINCT": "Conteggio distinto",
+      "MIN": "Minimo",
+      "MAX": "Massimo"
+    }
   },
   "financialTab": {
     "loading": "Caricamento...",

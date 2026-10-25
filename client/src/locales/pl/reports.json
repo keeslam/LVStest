@@ -98,7 +98,6 @@
     "savedReportsTabButton": "Zapisane raporty",
     "dataSourcesTitle": "Źródła danych",
     "dataSourcesDescription": "Wybierz tabele do zapytania",
-    "moreFieldsCount": "+{{count}} więcej...",
     "reportConfigTitle": "Konfiguracja raportu",
     "reportConfigDescription": "Zbuduj raport niestandardowy",
     "saveButton": "Zapisz",
@@ -150,7 +149,12 @@
       "customers": "Klienci",
       "reservations": "Rezerwacje",
       "expenses": "Koszty",
-      "drivers": "Kierowcy"
+      "drivers": "Kierowcy",
+      "fines": "Mandaty",
+      "transports": "Transporty",
+      "workshop_visits": "Wizyty w warsztacie",
+      "damage_checks": "Kontrole uszkodzeń",
+      "mileage_readings": "Historia przebiegu"
     },
     "fields": {
       "vehicles": {
@@ -209,6 +213,76 @@
         "email": "E-mail",
         "phone": "Telefon",
         "isPrimary": "Główny kierowca"
+      },
+      "fines": {
+        "id": "ID",
+        "licensePlate": "Numer rejestracyjny",
+        "vehicleId": "ID pojazdu",
+        "offenceAt": "Data wykroczenia",
+        "receivedAt": "Otrzymano",
+        "reference": "Numer referencyjny",
+        "description": "Opis",
+        "amount": "Kwota mandatu",
+        "adminFee": "Opłata administracyjna",
+        "totalAmount": "Kwota całkowita",
+        "status": "Status",
+        "source": "Pochodzenie",
+        "customerId": "ID klienta",
+        "reservationId": "ID rezerwacji",
+        "driverId": "ID kierowcy",
+        "linkedAt": "Powiązano"
+      },
+      "vehicle_transports": {
+        "id": "ID",
+        "vehicleId": "ID pojazdu",
+        "isExternalVehicle": "Pojazd zewnętrzny",
+        "externalLicensePlate": "Numer rej. pojazdu zewnętrznego",
+        "transportType": "Rodzaj transportu",
+        "status": "Status",
+        "scheduledDate": "Planowana data",
+        "completedDate": "Zakończono",
+        "driverName": "Kierowca",
+        "distanceKm": "Dystans (km)",
+        "tollCost": "Koszty opłat drogowych",
+        "billable": "Do zafakturowania",
+        "billableAmount": "Kwota do zafakturowania",
+        "invoiced": "Zafakturowano",
+        "invoicedDate": "Data faktury",
+        "isBreakdownOrMaintenance": "Awaria lub serwis",
+        "customerId": "ID klienta",
+        "reservationId": "ID rezerwacji"
+      },
+      "workshop_visits": {
+        "id": "ID",
+        "vehicleId": "ID pojazdu",
+        "startDate": "Data rozpoczęcia",
+        "endDate": "Data zakończenia",
+        "status": "Status",
+        "maintenanceStatus": "Status warsztatu",
+        "maintenanceCategory": "Kategoria",
+        "maintenanceType": "Rodzaj wizyty",
+        "maintenanceDuration": "Czas trwania (dni)",
+        "noInvoiceExpected": "Faktura niepotrzebna",
+        "affectedRentalId": "ID dotkniętego wynajmu"
+      },
+      "interactive_damage_checks": {
+        "id": "ID",
+        "vehicleId": "ID pojazdu",
+        "reservationId": "ID rezerwacji",
+        "checkType": "Rodzaj kontroli",
+        "checkDate": "Data kontroli",
+        "mileage": "Przebieg",
+        "fuelLevel": "Poziom paliwa",
+        "completedBy": "Wykonał"
+      },
+      "vehicle_mileage_readings": {
+        "id": "ID",
+        "vehicleId": "ID pojazdu",
+        "mileage": "Przebieg",
+        "recordedAt": "Data",
+        "source": "Źródło",
+        "actorName": "Zarejestrował",
+        "voidedAt": "Unieważniono"
       }
     },
     "operators": {
@@ -237,7 +311,22 @@
     "deleteReportAria": "Usuń raport: {{name}}",
     "deleteConfirmTitle": "Usunąć raport?",
     "deleteConfirmDescription": "Za chwilę zostanie usunięty zapisany raport „{{name}}”. Tej operacji nie można cofnąć.",
-    "deleteConfirmButton": "Usuń"
+    "deleteConfirmButton": "Usuń",
+    "groupBy": {
+      "label": "Grupuj według",
+      "none": "Nie grupuj",
+      "perMonth": "Miesięcznie"
+    },
+    "aggregation": {
+      "label": "Obliczenie",
+      "none": "Brak",
+      "SUM": "Suma",
+      "AVG": "Średnia",
+      "COUNT": "Liczba",
+      "COUNT_DISTINCT": "Liczba unikalnych",
+      "MIN": "Najmniejsza",
+      "MAX": "Największa"
+    }
   },
   "financialTab": {
     "loading": "Ładowanie...",

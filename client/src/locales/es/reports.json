@@ -95,7 +95,6 @@
     "savedReportsTabButton": "Informes guardados",
     "dataSourcesTitle": "Fuentes de datos",
     "dataSourcesDescription": "Seleccione las tablas que desea consultar",
-    "moreFieldsCount": "+{{count}} más...",
     "reportConfigTitle": "Configuración del informe",
     "reportConfigDescription": "Cree su informe personalizado",
     "saveButton": "Guardar",
@@ -144,7 +143,12 @@
       "customers": "Clientes",
       "reservations": "Reservas",
       "expenses": "Gastos",
-      "drivers": "Conductores"
+      "drivers": "Conductores",
+      "fines": "Multas",
+      "transports": "Transportes",
+      "workshop_visits": "Visitas al taller",
+      "damage_checks": "Revisiones de daños",
+      "mileage_readings": "Historial de kilometraje"
     },
     "fields": {
       "vehicles": {
@@ -203,6 +207,76 @@
         "email": "Correo electrónico",
         "phone": "Teléfono",
         "isPrimary": "Conductor principal"
+      },
+      "fines": {
+        "id": "ID",
+        "licensePlate": "Matrícula",
+        "vehicleId": "ID del vehículo",
+        "offenceAt": "Fecha de la infracción",
+        "receivedAt": "Recibida el",
+        "reference": "Referencia",
+        "description": "Descripción",
+        "amount": "Importe de la multa",
+        "adminFee": "Gastos de administración",
+        "totalAmount": "Importe total",
+        "status": "Estado",
+        "source": "Origen",
+        "customerId": "ID del cliente",
+        "reservationId": "ID de la reserva",
+        "driverId": "ID del conductor",
+        "linkedAt": "Vinculada el"
+      },
+      "vehicle_transports": {
+        "id": "ID",
+        "vehicleId": "ID del vehículo",
+        "isExternalVehicle": "Vehículo externo",
+        "externalLicensePlate": "Matrícula del vehículo externo",
+        "transportType": "Tipo de transporte",
+        "status": "Estado",
+        "scheduledDate": "Fecha prevista",
+        "completedDate": "Completado el",
+        "driverName": "Conductor",
+        "distanceKm": "Distancia (km)",
+        "tollCost": "Costes de peaje",
+        "billable": "Facturable",
+        "billableAmount": "Importe a facturar",
+        "invoiced": "Facturado",
+        "invoicedDate": "Fecha de factura",
+        "isBreakdownOrMaintenance": "Avería o mantenimiento",
+        "customerId": "ID del cliente",
+        "reservationId": "ID de la reserva"
+      },
+      "workshop_visits": {
+        "id": "ID",
+        "vehicleId": "ID del vehículo",
+        "startDate": "Fecha de inicio",
+        "endDate": "Fecha de fin",
+        "status": "Estado",
+        "maintenanceStatus": "Estado del taller",
+        "maintenanceCategory": "Categoría",
+        "maintenanceType": "Tipo de visita",
+        "maintenanceDuration": "Duración (días)",
+        "noInvoiceExpected": "No se necesita factura",
+        "affectedRentalId": "ID del alquiler afectado"
+      },
+      "interactive_damage_checks": {
+        "id": "ID",
+        "vehicleId": "ID del vehículo",
+        "reservationId": "ID de la reserva",
+        "checkType": "Tipo de revisión",
+        "checkDate": "Fecha de la revisión",
+        "mileage": "Kilometraje",
+        "fuelLevel": "Nivel de combustible",
+        "completedBy": "Realizado por"
+      },
+      "vehicle_mileage_readings": {
+        "id": "ID",
+        "vehicleId": "ID del vehículo",
+        "mileage": "Kilometraje",
+        "recordedAt": "Fecha",
+        "source": "Fuente",
+        "actorName": "Registrado por",
+        "voidedAt": "Anulada el"
       }
     },
     "operators": {
@@ -230,7 +304,22 @@
     "deleteReportAria": "Eliminar informe: {{name}}",
     "deleteConfirmTitle": "¿Eliminar el informe?",
     "deleteConfirmDescription": "Está a punto de eliminar el informe guardado \"{{name}}\". Esta acción no se puede deshacer.",
-    "deleteConfirmButton": "Eliminar"
+    "deleteConfirmButton": "Eliminar",
+    "groupBy": {
+      "label": "Agrupar por",
+      "none": "No agrupar",
+      "perMonth": "Por mes"
+    },
+    "aggregation": {
+      "label": "Cálculo",
+      "none": "Ninguno",
+      "SUM": "Suma",
+      "AVG": "Promedio",
+      "COUNT": "Recuento",
+      "COUNT_DISTINCT": "Recuento distinto",
+      "MIN": "Mínimo",
+      "MAX": "Máximo"
+    }
   },
   "financialTab": {
     "loading": "Cargando...",
