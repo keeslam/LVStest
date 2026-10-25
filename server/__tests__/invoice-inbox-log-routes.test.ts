@@ -195,6 +195,17 @@ describe("invoice inbox log routes", () => {
     }
   });
 
+  it("keeps a booked invoice under Facturen even when it once waited as not_invoice", async () => {
+    const id = await inboxStorage.create({
+      attachmentHash: `${MARK}-${Math.random().toString(36).slice(2)}`, createdBy: INBOX_TEST_ACTOR,
+      subject: `${MARK} toch een factuur`, status: "booked", reviewReason: "not_invoice",
+    }).then((r) => r.id);
+    const invoices = await log(bookkeeper, `kind=invoices&q=${MARK} toch een factuur`);
+    expect(idsOf(invoices.body)).toEqual([id]);
+    const other = await log(bookkeeper, `kind=other&q=${MARK} toch een factuur`);
+    expect(idsOf(other.body)).toEqual([]);
+  });
+
   it("says a mail has no file when its attachment was never stored", async () => {
     const res = await log(bookkeeper, `kind=other&q=${MARK} geen bijlage`);
     const [item] = res.body.items as InboxLogRow[];

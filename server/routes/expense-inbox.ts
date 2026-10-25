@@ -211,7 +211,7 @@ export function registerExpenseInboxRoutes(app: Express): void {
     const alreadyBooked = await inboxStorage.expenseIdsFor(item.id);
     if (alreadyBooked.length > 0) {
       const healed = await inboxStorage.update(item.id, {
-        status: "booked", reviewReason: null, expenseIds: alreadyBooked, processedAt: new Date(), updatedBy: actor(req),
+        status: "booked", expenseIds: alreadyBooked, processedAt: new Date(), updatedBy: actor(req),
       });
       await AuditLogger.logFromRequest(req, "expense.inbox.book.healed", "invoice_inbox_item", item.id, { expenseIds: alreadyBooked });
       return res.status(409).json({ message: "Deze factuur was al geboekt; de boeking is nu afgerond.", item: healed });

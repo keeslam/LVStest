@@ -124,9 +124,10 @@ export const inboxStorage = {
   async searchLog(opts: { kind: "invoices" | "other"; q?: string; status?: InboxStatus; limit?: number; offset?: number }): Promise<{ items: InboxLogRow[]; total: number }> {
     const conditions: SQL[] = [
       opts.kind === "other"
-        ? inArray(invoiceInboxItems.reviewReason, OTHER_REASONS)
+        // A booked item keeps the reason it waited for, but it is an invoice now.
+        ? and(inArray(invoiceInboxItems.reviewReason, OTHER_REASONS), ne(invoiceInboxItems.status, "booked"))!
         // A row without a reason is an invoice too, and NOT IN says nothing about NULL.
-        : or(isNull(invoiceInboxItems.reviewReason), notInArray(invoiceInboxItems.reviewReason, OTHER_REASONS))!,
+        : or(isNull(invoiceInboxItems.reviewReason), notInArray(invoiceInboxItems.reviewReason, OTHER_REASONS), eq(invoiceInboxItems.status, "booked"))!,
     ];
     if (opts.status) conditions.push(eq(invoiceInboxItems.status, opts.status));
 

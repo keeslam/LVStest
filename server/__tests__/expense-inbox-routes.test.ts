@@ -298,7 +298,7 @@ describe("expense inbox routes", () => {
     const res = await request(bookkeeper).post(`/api/expenses/inbox/items/${item.id}/book`).send(body);
     expect(res.status).toBe(409);
     expect(res.body.message).toBe("Deze factuur was al geboekt; de boeking is nu afgerond.");
-    expect(res.body.item).toMatchObject({ status: "booked", expenseIds: [existingExpense.id] });
+    expect(res.body.item).toMatchObject({ status: "booked", reviewReason: "no_plate", expenseIds: [existingExpense.id] });
     expect(audit).toHaveBeenCalledWith(expect.anything(), "expense.inbox.book.healed", "invoice_inbox_item", item.id, { expenseIds: [existingExpense.id] });
     audit.mockRestore();
 
