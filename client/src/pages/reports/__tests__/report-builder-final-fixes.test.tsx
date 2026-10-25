@@ -104,7 +104,7 @@ describe("a saved report without groupBy or filters", () => {
     const user = userEvent.setup();
     renderBuilder();
     await user.click(screen.getByTestId("button-saved-tab"));
-    await user.click(await screen.findByTestId("button-load-report-9"));
+    await user.click(await screen.findByTestId("button-edit-saved-9"));
     await user.click(await screen.findByTestId("button-run-report"));
     await waitFor(() => expect(executeBody).not.toBeNull());
     expect(executeBody.groupBy).toEqual([]);

@@ -1,6 +1,6 @@
 import { describeApiError } from "@/lib/api-error";
 import { HtmlPreviewDialog } from "@/components/documents/html-preview-dialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,7 @@ import { Plus, Play, Save, Trash2, X, Filter as FilterIcon, Download, Printer, S
 import { apiRequest, queryClient, invalidateByPrefix } from "@/lib/queryClient";
 import { UserPermission } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { RequiresPermission } from "@/components/ui/requires-permission";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { downloadCsv } from "@/lib/csv";
@@ -28,6 +29,9 @@ import {
 import {
   DATA_SOURCES,
   canUseReportSource,
+  getDataSource,
+  SAVED_REPORT_TABS,
+  type SavedReportTab,
   type ReportConfiguration, 
   type ReportColumn, 
   type ReportFilter, 
@@ -47,8 +51,14 @@ interface SavedReport {
 }
 
 const GROUP_NONE = "__none";
+const NO_TAB = "__no_tab";
+const NO_PERIOD_FIELD = "__no_period_field";
 
-export default function ReportBuilder() {
+/**
+ * Task 3 opens the builder on a saved report with <ReportBuilder editReportId={id} />: the report is
+ * loaded as soon as the saved list is there, and the builder is in edit mode.
+ */
+export default function ReportBuilder({ editReportId }: { editReportId?: number } = {}) {
   const { t } = useTranslation("reports");
   const { toast } = useToast();
   // Each source is only offered to someone who may use it (customers and drivers, fines, km history, ...); the server checks too.
@@ -72,6 +82,11 @@ export default function ReportBuilder() {
   const [showResultsDialog, setShowResultsDialog] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [loadingReport, setLoadingReport] = useState<number | null>(null);
+  // The tab and period field a report is saved with; editingReport is set while a saved report is being edited.
+  const [saveTab, setSaveTab] = useState<string>(NO_TAB);
+  const [savePeriodField, setSavePeriodField] = useState<string>(NO_PERIOD_FIELD);
+  const [editingReport, setEditingReport] = useState<{ id: number; name: string } | null>(null);
+  const canManageReports = useHasPermission(UserPermission.MANAGE_REPORTS);
 
   const { data: savedReports = [], isLoading: loadingSavedReports } = useQuery<SavedReport[]>({
     queryKey: ['/api/reports/saved'],
@@ -191,14 +206,24 @@ export default function ReportBuilder() {
   });
 
   const saveReportMutation = useMutation({
-    mutationFn: async (config: ReportConfiguration) => {
-      return await apiRequest('POST', '/api/reports/saved', config);
+    mutationFn: async ({ config, updateId }: { config: ReportConfiguration; updateId?: number }) => {
+      return updateId !== undefined
+        ? await apiRequest('PUT', `/api/reports/saved/${updateId}`, config)
+        : await apiRequest('POST', '/api/reports/saved', config);
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       invalidateByPrefix('/api/reports/saved');
       setShowSaveDialog(false);
-      setReportName('');
-      setReportDescription('');
+      if (variables.updateId === undefined) {
+        // A new report: the builder is free again; an update keeps the report open for more changes.
+        setReportName('');
+        setReportDescription('');
+        setEditingReport(null);
+        setSaveTab(NO_TAB);
+        setSavePeriodField(NO_PERIOD_FIELD);
+      } else {
+        setEditingReport({ id: variables.updateId, name: variables.config.name });
+      }
       toast({
         title: t('reportBuilderPage.toasts.reportSavedTitle'),
         description: t('reportBuilderPage.toasts.reportSavedDescription'),
@@ -232,9 +257,34 @@ export default function ReportBuilder() {
     setColumns(report.configuration.columns);
     setFilters(report.configuration.filters ?? []);
     setGroupBy(report.configuration.groupBy ?? []);
+    setReportName(report.name);
+    setReportDescription(report.description ?? report.configuration.description ?? '');
+    setSaveTab(report.configuration.tab ?? NO_TAB);
+    setSavePeriodField(report.configuration.periodField || NO_PERIOD_FIELD);
+    setEditingReport(null);
     setActiveTab('builder');
     setTimeout(() => setLoadingReport(null), 500);
   };
+
+  const editSavedReport = (report: SavedReport) => {
+    loadSavedReport(report);
+    setEditingReport({ id: report.id, name: report.name });
+  };
+
+  // Task 3 opens the builder on one report.
+  const [openedEditId, setOpenedEditId] = useState<number | null>(null);
+  useEffect(() => {
+    if (editReportId === undefined || openedEditId === editReportId) return;
+    const report = savedReports.find((r) => r.id === editReportId);
+    if (!report) return;
+    setOpenedEditId(editReportId);
+    editSavedReport(report);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editReportId, savedReports, openedEditId]);
+
+  // The period field is a date field of the main (first ticked) source.
+  const periodFieldOptions = (getDataSource(selectedDataSources[0] ?? '')?.fields ?? []).filter((f) => f.type === 'date');
+  const savedPeriodField = periodFieldOptions.some((f) => f.name === savePeriodField) ? savePeriodField : NO_PERIOD_FIELD;
 
   const handleRunReport = () => {
     if (columns.length === 0) {
@@ -258,7 +308,7 @@ export default function ReportBuilder() {
     runReportMutation.mutate(config);
   };
 
-  const handleSaveReport = () => {
+  const handleSaveReport = (asNew = false) => {
     if (!reportName) {
       toast({
         title: t('reportBuilderPage.toasts.reportNameRequiredTitle'),
@@ -275,16 +325,20 @@ export default function ReportBuilder() {
       columns,
       filters,
       groupBy,
+      ...(saveTab !== NO_TAB ? { tab: saveTab as SavedReportTab } : {}),
+      ...(savedPeriodField !== NO_PERIOD_FIELD ? { periodField: savedPeriodField } : {}),
     };
 
-    saveReportMutation.mutate(config);
+    saveReportMutation.mutate({ config, updateId: editingReport && !asNew ? editingReport.id : undefined });
   };
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">{t('reportBuilderPage.pageTitle')}</h1>
+          <h1 className="text-3xl font-bold">
+            {editingReport ? t('reportBuilderPage.editingTitle', { name: editingReport.name }) : t('reportBuilderPage.pageTitle')}
+          </h1>
           <p className="text-muted-foreground">{t('reportBuilderPage.pageDescription')}</p>
         </div>
         <div className="flex gap-2">
@@ -490,7 +544,11 @@ export default function ReportBuilder() {
           reports={savedReports}
           loading={loadingSavedReports}
           loadingReport={loadingReport}
-          onLoadReport={loadSavedReport}
+          onEditReport={editSavedReport}
+          canEdit={(report) => canManageReports && report.configuration.dataSources.every((id) => {
+            const source = getDataSource(id);
+            return !source || canUseReportSource(user, source);
+          })}
           onRunReport={(report) => runReportMutation.mutate(report.configuration)}
           onDeleteReport={(id) => deleteReportMutation.mutate(id)}
         />
@@ -523,16 +581,53 @@ export default function ReportBuilder() {
                 data-testid="textarea-report-description"
               />
             </div>
+            <div>
+              <Label>{t('reportBuilderPage.tabLabel')}</Label>
+              <Select value={saveTab} onValueChange={setSaveTab}>
+                <SelectTrigger data-testid="select-saved-report-tab">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_TAB}>{t('reportBuilderPage.noTab')}</SelectItem>
+                  {SAVED_REPORT_TABS.map((id) => (
+                    <SelectItem key={id} value={id}>{t(`reportsPage.tabs.${id}`)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>{t('reportBuilderPage.periodFieldLabel')}</Label>
+              <Select value={savedPeriodField} onValueChange={setSavePeriodField}>
+                <SelectTrigger data-testid="select-saved-report-period-field">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_PERIOD_FIELD}>{t('reportBuilderPage.noPeriodField')}</SelectItem>
+                  {periodFieldOptions.map((f) => (
+                    <SelectItem key={f.name} value={f.name}>{fieldLabel(t, f.table, f.name, f.label)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSaveDialog(false)} data-testid="button-cancel-save">
               {t('reportBuilderPage.cancelButton')}
             </Button>
             <RequiresPermission anyOf={[UserPermission.MANAGE_REPORTS]}>
-              <Button onClick={handleSaveReport} disabled={!reportName || saveReportMutation.isPending} data-testid="button-confirm-save">
-                {saveReportMutation.isPending ? t('reportBuilderPage.savingButton') : t('reportBuilderPage.saveReportButton')}
+              <Button onClick={() => handleSaveReport()} disabled={!reportName || saveReportMutation.isPending} data-testid="button-confirm-save">
+                {saveReportMutation.isPending
+                  ? t('reportBuilderPage.savingButton')
+                  : editingReport ? t('reportBuilderPage.saveButton') : t('reportBuilderPage.saveReportButton')}
               </Button>
             </RequiresPermission>
+            {editingReport && (
+              <RequiresPermission anyOf={[UserPermission.MANAGE_REPORTS]}>
+                <Button variant="outline" onClick={() => handleSaveReport(true)} disabled={!reportName || saveReportMutation.isPending} data-testid="button-confirm-save-as-new">
+                  {t('reportBuilderPage.saveAsNewButton')}
+                </Button>
+              </RequiresPermission>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -692,14 +787,16 @@ function SavedReportsTab({
   reports, 
   loading,
   loadingReport,
-  onLoadReport, 
-  onRunReport, 
+  onEditReport,
+  canEdit,
+  onRunReport,
   onDeleteReport 
 }: { 
   reports: SavedReport[]; 
   loading: boolean;
   loadingReport: number | null;
-  onLoadReport: (report: SavedReport) => void;
+  onEditReport: (report: SavedReport) => void;
+  canEdit: (report: SavedReport) => boolean;
   onRunReport: (report: SavedReport) => void;
   onDeleteReport: (id: number) => void;
 }) {
@@ -749,19 +846,24 @@ function SavedReportsTab({
                   <Badge variant="outline">{t('reportBuilderPage.columnsCount', { count: report.configuration.columns.length })}</Badge>
                   <Badge variant="outline">{t('reportBuilderPage.filtersCount', { count: (report.configuration.filters ?? []).length })}</Badge>
                   <Badge variant="outline">{report.configuration.dataSources.map((id) => sourceLabel(t, id)).join(', ')}</Badge>
+                  {report.configuration.tab && (
+                    <Badge variant="secondary" data-testid={`badge-saved-tab-${report.id}`}>{t(`reportsPage.tabs.${report.configuration.tab}`)}</Badge>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onLoadReport(report)}
-                  disabled={loadingReport === report.id}
-                  data-testid={`button-load-report-${report.id}`}
-                >
-                  <Settings className="h-4 w-4 mr-1" />
-                  {loadingReport === report.id ? t('reportBuilderPage.loadingButton') : t('reportBuilderPage.editButton')}
-                </Button>
+                {canEdit(report) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onEditReport(report)}
+                    disabled={loadingReport === report.id}
+                    data-testid={`button-edit-saved-${report.id}`}
+                  >
+                    <Settings className="h-4 w-4 mr-1" />
+                    {loadingReport === report.id ? t('reportBuilderPage.loadingButton') : t('reportBuilderPage.editButton')}
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   onClick={() => onRunReport(report)}

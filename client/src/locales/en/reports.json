@@ -324,7 +324,13 @@
       "needsAggregate": "Choose a calculation for a column, such as Sum or Count, to see a chart.",
       "firstGroups_one": "The chart shows the first {{count}} group.",
       "firstGroups_other": "The chart shows the first {{count}} groups."
-    }
+    },
+    "tabLabel": "Tab",
+    "noTab": "Not on a tab",
+    "periodFieldLabel": "Period field",
+    "noPeriodField": "None (whole table)",
+    "saveAsNewButton": "Save as new",
+    "editingTitle": "Editing: {{name}}"
   },
   "financialTab": {
     "loading": "Loading...",

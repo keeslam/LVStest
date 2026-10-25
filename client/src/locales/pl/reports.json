@@ -340,7 +340,13 @@
       "firstGroups_few": "Wykres pokazuje pierwsze {{count}} grupy.",
       "firstGroups_many": "Wykres pokazuje pierwszych {{count}} grup.",
       "firstGroups_other": "Wykres pokazuje pierwszych {{count}} grupy."
-    }
+    },
+    "tabLabel": "Zakładka",
+    "noTab": "Bez zakładki",
+    "periodFieldLabel": "Pole okresu",
+    "noPeriodField": "Brak (cała tabela)",
+    "saveAsNewButton": "Zapisz jako nowy",
+    "editingTitle": "Edycja: {{name}}"
   },
   "financialTab": {
     "loading": "Ładowanie...",

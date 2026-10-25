@@ -485,7 +485,11 @@
       "ALREADY_HANDLED": "Deze aanvraag is al afgehandeld.",
       "SPARE_CONFLICT": "De toegewezen vervanger is niet vrij in de nieuwe periode. Wijs eerst een andere auto toe.",
       "WORKSHOP_OVERRIDE_FORBIDDEN": "Alleen een beheerder mag een voertuig meegeven dat in de werkplaats staat of niet verhuurbaar is.",
-      "WORKSHOP_OVERRIDE_REASON_REQUIRED": "Vul een reden in (minimaal 3 tekens) om een geblokkeerd voertuig toch mee te geven."
+      "WORKSHOP_OVERRIDE_REASON_REQUIRED": "Vul een reden in (minimaal 3 tekens) om een geblokkeerd voertuig toch mee te geven.",
+      "REPORT_TAB_INVALID": "Dit tabblad kan geen eigen rapport tonen. Kies een ander tabblad.",
+      "REPORT_PERIOD_FIELD_INVALID": "Het periodeveld moet een datumveld van de bron zijn.",
+      "REPORT_SOURCE_REQUIRED": "Kies eerst een gegevensbron voor het rapport.",
+      "REPORT_SCOPE_INVALID": "De periode of het voertuig voor dit rapport klopt niet."
     }
   },
   "validation": {

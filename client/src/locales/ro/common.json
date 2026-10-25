@@ -489,7 +489,11 @@
       "ALREADY_HANDLED": "Această cerere a fost deja tratată.",
       "SPARE_CONFLICT": "Vehiculul de înlocuire atribuit nu este liber în noua perioadă. Atribuiți mai întâi o altă mașină.",
       "WORKSHOP_OVERRIDE_FORBIDDEN": "Doar un administrator poate preda un vehicul aflat în atelier sau care nu poate fi închiriat.",
-      "WORKSHOP_OVERRIDE_REASON_REQUIRED": "Completați un motiv (minimum 3 caractere) pentru a preda totuși un vehicul blocat."
+      "WORKSHOP_OVERRIDE_REASON_REQUIRED": "Completați un motiv (minimum 3 caractere) pentru a preda totuși un vehicul blocat.",
+      "REPORT_TAB_INVALID": "Această filă nu poate afișa un raport propriu. Alege altă filă.",
+      "REPORT_PERIOD_FIELD_INVALID": "Câmpul de perioadă trebuie să fie un câmp de dată al sursei.",
+      "REPORT_SOURCE_REQUIRED": "Alege mai întâi o sursă de date pentru raport.",
+      "REPORT_SCOPE_INVALID": "Perioada sau vehiculul acestui raport nu este valid."
     }
   },
   "validation": {

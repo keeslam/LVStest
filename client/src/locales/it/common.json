@@ -489,7 +489,11 @@
       "ALREADY_HANDLED": "Questa richiesta è già stata gestita.",
       "SPARE_CONFLICT": "Il veicolo sostitutivo assegnato non è libero nel nuovo periodo. Assegni prima un’altra auto.",
       "WORKSHOP_OVERRIDE_FORBIDDEN": "Solo un amministratore può consegnare un veicolo che si trova in officina o che non è noleggiabile.",
-      "WORKSHOP_OVERRIDE_REASON_REQUIRED": "Inserisca un motivo (almeno 3 caratteri) per consegnare comunque un veicolo bloccato."
+      "WORKSHOP_OVERRIDE_REASON_REQUIRED": "Inserisca un motivo (almeno 3 caratteri) per consegnare comunque un veicolo bloccato.",
+      "REPORT_TAB_INVALID": "Questa scheda non può mostrare un rapporto proprio. Scegli un'altra scheda.",
+      "REPORT_PERIOD_FIELD_INVALID": "Il campo del periodo deve essere un campo data della fonte.",
+      "REPORT_SOURCE_REQUIRED": "Scegli prima una fonte di dati per il rapporto.",
+      "REPORT_SCOPE_INVALID": "Il periodo o il veicolo di questo rapporto non è valido."
     }
   },
   "validation": {

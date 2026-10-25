@@ -489,7 +489,11 @@
       "ALREADY_HANDLED": "Este pedido já foi tratado.",
       "SPARE_CONFLICT": "A viatura de substituição atribuída não está livre no novo período. Atribua primeiro outra viatura.",
       "WORKSHOP_OVERRIDE_FORBIDDEN": "Só um administrador pode entregar uma viatura que está na oficina ou que não está disponível para aluguer.",
-      "WORKSHOP_OVERRIDE_REASON_REQUIRED": "Indique um motivo (mínimo de 3 caracteres) para entregar mesmo assim uma viatura bloqueada."
+      "WORKSHOP_OVERRIDE_REASON_REQUIRED": "Indique um motivo (mínimo de 3 caracteres) para entregar mesmo assim uma viatura bloqueada.",
+      "REPORT_TAB_INVALID": "Este separador não pode mostrar um relatório próprio. Escolha outro separador.",
+      "REPORT_PERIOD_FIELD_INVALID": "O campo de período tem de ser um campo de data da fonte.",
+      "REPORT_SOURCE_REQUIRED": "Escolha primeiro uma fonte de dados para o relatório.",
+      "REPORT_SCOPE_INVALID": "O período ou o veículo deste relatório não é válido."
     }
   },
   "validation": {

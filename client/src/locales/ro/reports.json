@@ -332,7 +332,13 @@
       "firstGroups_one": "Graficul arată primul grup ({{count}}).",
       "firstGroups_few": "Graficul arată primele {{count}} grupuri.",
       "firstGroups_other": "Graficul arată primele {{count}} de grupuri."
-    }
+    },
+    "tabLabel": "Filă",
+    "noTab": "Nu pe o filă",
+    "periodFieldLabel": "Câmp de perioadă",
+    "noPeriodField": "Niciunul (tot tabelul)",
+    "saveAsNewButton": "Salvează ca nou",
+    "editingTitle": "Editare: {{name}}"
   },
   "financialTab": {
     "loading": "Se încarcă...",

@@ -489,7 +489,11 @@
       "ALREADY_HANDLED": "Esta solicitud ya se ha tramitado.",
       "SPARE_CONFLICT": "El vehículo de sustitución asignado no está libre en el nuevo periodo. Asigne primero otro coche.",
       "WORKSHOP_OVERRIDE_FORBIDDEN": "Solo un administrador puede entregar un vehículo que está en el taller o que no se puede alquilar.",
-      "WORKSHOP_OVERRIDE_REASON_REQUIRED": "Indique un motivo (mínimo 3 caracteres) para entregar de todos modos un vehículo bloqueado."
+      "WORKSHOP_OVERRIDE_REASON_REQUIRED": "Indique un motivo (mínimo 3 caracteres) para entregar de todos modos un vehículo bloqueado.",
+      "REPORT_TAB_INVALID": "Esta pestaña no puede mostrar un informe propio. Elige otra pestaña.",
+      "REPORT_PERIOD_FIELD_INVALID": "El campo de periodo debe ser un campo de fecha de la fuente.",
+      "REPORT_SOURCE_REQUIRED": "Primero elige una fuente de datos para el informe.",
+      "REPORT_SCOPE_INVALID": "El periodo o el vehículo de este informe no es válido."
     }
   },
   "validation": {

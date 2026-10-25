@@ -493,7 +493,11 @@
       "ALREADY_HANDLED": "Ten wniosek został już rozpatrzony.",
       "SPARE_CONFLICT": "Przypisany pojazd zastępczy nie jest wolny w nowym okresie. Najpierw przypisz inny samochód.",
       "WORKSHOP_OVERRIDE_FORBIDDEN": "Tylko administrator może wydać pojazd, który jest w warsztacie lub nie jest dostępny do wynajmu.",
-      "WORKSHOP_OVERRIDE_REASON_REQUIRED": "Podaj powód (co najmniej 3 znaki), aby mimo to wydać zablokowany pojazd."
+      "WORKSHOP_OVERRIDE_REASON_REQUIRED": "Podaj powód (co najmniej 3 znaki), aby mimo to wydać zablokowany pojazd.",
+      "REPORT_TAB_INVALID": "Ta zakładka nie może pokazać własnego raportu. Wybierz inną zakładkę.",
+      "REPORT_PERIOD_FIELD_INVALID": "Pole okresu musi być polem daty ze źródła.",
+      "REPORT_SOURCE_REQUIRED": "Najpierw wybierz źródło danych dla raportu.",
+      "REPORT_SCOPE_INVALID": "Okres lub pojazd tego raportu jest nieprawidłowy."
     }
   },
   "validation": {

@@ -332,7 +332,13 @@
       "firstGroups_one": "Il grafico mostra il primo {{count}} gruppo.",
       "firstGroups_many": "Il grafico mostra i primi {{count}} gruppi.",
       "firstGroups_other": "Il grafico mostra i primi {{count}} gruppi."
-    }
+    },
+    "tabLabel": "Scheda",
+    "noTab": "Non su una scheda",
+    "periodFieldLabel": "Campo del periodo",
+    "noPeriodField": "Nessuno (tutta la tabella)",
+    "saveAsNewButton": "Salva come nuovo",
+    "editingTitle": "Modifica: {{name}}"
   },
   "financialTab": {
     "loading": "Caricamento...",

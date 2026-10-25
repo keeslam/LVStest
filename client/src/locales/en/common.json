@@ -485,7 +485,11 @@
       "ALREADY_HANDLED": "This request has already been handled.",
       "SPARE_CONFLICT": "The assigned replacement is not free in the new period. Assign another car first.",
       "WORKSHOP_OVERRIDE_FORBIDDEN": "Only an administrator may hand over a vehicle that is in the workshop or not for rental.",
-      "WORKSHOP_OVERRIDE_REASON_REQUIRED": "Enter a reason (at least 3 characters) to hand over a blocked vehicle anyway."
+      "WORKSHOP_OVERRIDE_REASON_REQUIRED": "Enter a reason (at least 3 characters) to hand over a blocked vehicle anyway.",
+      "REPORT_TAB_INVALID": "This tab cannot show its own report. Choose another tab.",
+      "REPORT_PERIOD_FIELD_INVALID": "The period field must be a date field of the source.",
+      "REPORT_SOURCE_REQUIRED": "First choose a data source for the report.",
+      "REPORT_SCOPE_INVALID": "The period or vehicle for this report is not valid."
     }
   },
   "validation": {

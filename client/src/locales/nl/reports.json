@@ -324,7 +324,13 @@
       "needsAggregate": "Kies bij een kolom een berekening, zoals Som of Aantal, om een grafiek te zien.",
       "firstGroups_one": "De grafiek toont de eerste {{count}} groep.",
       "firstGroups_other": "De grafiek toont de eerste {{count}} groepen."
-    }
+    },
+    "tabLabel": "Tabblad",
+    "noTab": "Niet op een tabblad",
+    "periodFieldLabel": "Periodeveld",
+    "noPeriodField": "Geen (hele tabel)",
+    "saveAsNewButton": "Opslaan als nieuw",
+    "editingTitle": "Bewerken: {{name}}"
   },
   "financialTab": {
     "loading": "Laden...",
