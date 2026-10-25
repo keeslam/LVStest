@@ -652,7 +652,8 @@
       "print": "Afdrukken",
       "loadingReport": "Rapport laden...",
       "reportList": "Rapporten",
-      "chooseReport": "Kies een rapport"
+      "chooseReport": "Kies een rapport",
+      "noReports": "Je hebt geen rechten om rapporten te zien."
     }
   },
   "moneyReports": {

@@ -652,7 +652,8 @@
       "print": "Print",
       "loadingReport": "Loading report...",
       "reportList": "Reports",
-      "chooseReport": "Choose a report"
+      "chooseReport": "Choose a report",
+      "noReports": "You do not have the rights to see reports."
     }
   },
   "moneyReports": {

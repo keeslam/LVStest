@@ -664,7 +664,8 @@
       "print": "Stampa",
       "loadingReport": "Caricamento report...",
       "reportList": "Report",
-      "chooseReport": "Scegli un report"
+      "chooseReport": "Scegli un report",
+      "noReports": "Non hai i permessi per vedere i report."
     }
   },
   "moneyReports": {

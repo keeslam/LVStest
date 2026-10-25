@@ -60,7 +60,9 @@ export function ReportFiltersProvider({ children, initial }: { children?: ReactN
     setState((prev) => ({ ...prev, ...presetRange(preset, officeToday()), preset }));
   }, []);
   const setRange = useCallback((from: string, to: string) => {
-    setState((prev) => ({ ...prev, from, to, preset: "custom" }));
+    // A range typed the wrong way round is turned around ("yyyy-MM-dd" compares as text).
+    const [start, end] = from <= to ? [from, to] : [to, from];
+    setState((prev) => ({ ...prev, from: start, to: end, preset: "custom" }));
   }, []);
   const setVehicle = useCallback((vehicleId: string) => setState((prev) => ({ ...prev, vehicleId })), []);
   const setCategory = useCallback((category: string) => setState((prev) => ({ ...prev, category })), []);

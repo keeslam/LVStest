@@ -9,7 +9,7 @@
  * Runs in the jsdom project.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
@@ -125,6 +125,49 @@ describe("reports shell - admin", () => {
     expect(await screen.findByTestId("select-report-category")).toBeInTheDocument();
     await user.click(screen.getByTestId("tab-report-portal"));
     await waitFor(() => expect(screen.queryByTestId("select-report-category")).toBeNull());
+  });
+});
+
+describe("reports shell - fix round 1", () => {
+  beforeEach(() => { role = UserRole.ADMIN; permissions = []; });
+
+  it("turns a custom range that is the wrong way round", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByTestId("select-report-preset"));
+    await user.click(await screen.findByRole("option", { name: "Zelf kiezen" }));
+    fireEvent.change(await screen.findByTestId("input-report-from"), { target: { value: "2026-10-10" } });
+    fireEvent.change(screen.getByTestId("input-report-to"), { target: { value: "2026-10-01" } });
+    await waitFor(() => expect(screen.getByTestId("report-period-label")).toHaveTextContent("1-10-2026 t/m 10-10-2026"));
+    expect(screen.getByTestId("input-report-from")).toHaveValue("2026-10-01");
+    expect(screen.getByTestId("input-report-to")).toHaveValue("2026-10-10");
+  });
+
+  it("keeps a chosen category clearable on a report that ignores it, with the note", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("fetch", vi.fn(async (input: any) => {
+      const path = (typeof input === "string" ? input : input.url).replace(/^https?:\/\/[^/]+/, "");
+      if (path.startsWith("/api/expenses/facets")) return json({ categories: ["maintenance", "fuel"] });
+      return json([]);
+    }));
+    renderPage();
+    await user.click(await screen.findByTestId("select-report-category"));
+    await user.click(await screen.findByRole("option", { name: "Onderhoud" }));
+    await user.click(screen.getByTestId("tab-report-transports"));
+    expect(await screen.findByTestId("category-filter-note")).toHaveTextContent("Onderhoud");
+    // Transporten does not use the category, but the select stays so it can be cleared.
+    await user.click(screen.getByTestId("select-report-category"));
+    await user.click(await screen.findByRole("option", { name: "Alle categorieën" }));
+    await waitFor(() => expect(screen.queryByTestId("select-report-category")).toBeNull());
+    expect(screen.queryByTestId("category-filter-note")).toBeNull();
+  });
+
+  it("says so when the user may see no report at all", async () => {
+    role = UserRole.USER;
+    permissions = [];
+    renderPage();
+    expect(await screen.findByTestId("report-pane-empty")).toHaveTextContent("Je hebt geen rechten om rapporten te zien.");
+    expect(screen.queryAllByRole("tab")).toHaveLength(0);
   });
 });
 

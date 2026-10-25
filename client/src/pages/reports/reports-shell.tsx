@@ -88,7 +88,7 @@ function ReportsShellInner() {
       </Tabs>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-[240px_minmax(0,1fr)]">
-        <aside className="md:sticky md:top-24 md:self-start">
+        <aside>
           <ReportNav tab={tab} reports={inTab} selectedId={reportId} onSelect={(id) => select(tab, id)} />
         </aside>
         {active ? (
@@ -98,6 +98,8 @@ function ReportsShellInner() {
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
             {t("reportsPage.shell.loadingReport")}
           </div>
+        ) : tabs.length === 0 ? (
+          <p className="text-sm text-muted-foreground" data-testid="report-pane-empty">{t("reportsPage.shell.noReports")}</p>
         ) : null}
       </div>
 

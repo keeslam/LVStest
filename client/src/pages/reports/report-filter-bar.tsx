@@ -71,7 +71,7 @@ export function ReportFilterBar({ showCategory, onOpenReportBuilder, onOpenMaint
   return (
     <div
       data-testid="report-filter-bar"
-      className="sticky top-0 z-20 -mx-4 border-b bg-gray-50/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80"
+      className="sticky top-0 z-20 rounded-md border-b bg-gray-50/95 py-3 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80"
     >
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1">
@@ -134,7 +134,8 @@ export function ReportFilterBar({ showCategory, onOpenReportBuilder, onOpenMaint
           />
         </div>
 
-        {showCategory && (
+        {/* Also shown while a category is chosen, so it can be cleared on a report that ignores it. */}
+        {(showCategory || filters.category !== "all") && (
           <div className="w-48 space-y-1">
             <label className="text-xs font-medium text-muted-foreground">{t("reportsPage.filters.expenseCategoryLabel")}</label>
             <Select value={filters.category} onValueChange={filters.setCategory}>

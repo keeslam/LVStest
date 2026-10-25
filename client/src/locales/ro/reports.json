@@ -664,7 +664,8 @@
       "print": "Tipărește",
       "loadingReport": "Se încarcă raportul...",
       "reportList": "Rapoarte",
-      "chooseReport": "Alege un raport"
+      "chooseReport": "Alege un raport",
+      "noReports": "Nu ai drepturi să vezi rapoarte."
     }
   },
   "moneyReports": {
