@@ -909,6 +909,38 @@
         "km": "Km"
       },
       "csvSubject": "livrari-preluari"
+    },
+    "damage": {
+      "title": "Verificări de daune",
+      "description": "Verificările de daune la preluare și la returnare în perioada aleasă, în ziua verificării.",
+      "withDamageNote": "Cu daune numără doar verificările de returnare cu cel puțin un punct de daună. Daunele deja notate la preluare nu se numără.",
+      "byMonth": "Verificări de daune pe lună",
+      "byVehicle": "Cele mai multe daune pe vehicul",
+      "byCustomer": "Cele mai multe daune pe client",
+      "unknownVehicle": "Vehicul necunoscut",
+      "noReservation": "Fără rezervare",
+      "checkType": {
+        "pickup": "Preluare",
+        "return": "Returnare"
+      },
+      "yes": "Da",
+      "no": "Nu",
+      "tiles": {
+        "all": "Toate verificările",
+        "pickup": "Preluare",
+        "return": "Returnare",
+        "withDamage": "Cu daune"
+      },
+      "columns": {
+        "checkDate": "Data",
+        "checkType": "Tip",
+        "licensePlate": "Număr de înmatriculare",
+        "customer": "Client",
+        "reservation": "Rezervare",
+        "completedBy": "Efectuată de",
+        "damage": "Daune"
+      },
+      "csvSubject": "verificari-daune"
     }
   },
   "fleetReports": {

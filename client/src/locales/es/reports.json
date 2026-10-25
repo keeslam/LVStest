@@ -909,6 +909,38 @@
         "km": "Km"
       },
       "csvSubject": "entregas-recogidas"
+    },
+    "damage": {
+      "title": "Revisiones de daños",
+      "description": "Las revisiones de daños en la recogida y la devolución en el periodo elegido, en el día de la revisión.",
+      "withDamageNote": "Con daños solo cuenta las revisiones de devolución con al menos un punto de daño. Los daños ya anotados en la recogida no cuentan.",
+      "byMonth": "Revisiones de daños por mes",
+      "byVehicle": "Más daños por vehículo",
+      "byCustomer": "Más daños por cliente",
+      "unknownVehicle": "Vehículo desconocido",
+      "noReservation": "Sin reserva",
+      "checkType": {
+        "pickup": "Recogida",
+        "return": "Devolución"
+      },
+      "yes": "Sí",
+      "no": "No",
+      "tiles": {
+        "all": "Todas las revisiones",
+        "pickup": "Recogida",
+        "return": "Devolución",
+        "withDamage": "Con daños"
+      },
+      "columns": {
+        "checkDate": "Fecha",
+        "checkType": "Tipo",
+        "licensePlate": "Matrícula",
+        "customer": "Cliente",
+        "reservation": "Reserva",
+        "completedBy": "Realizada por",
+        "damage": "Daños"
+      },
+      "csvSubject": "revisiones-de-danos"
     }
   },
   "fleetReports": {

@@ -909,6 +909,38 @@
         "km": "Km"
       },
       "csvSubject": "consegne-ritiri"
+    },
+    "damage": {
+      "title": "Controlli danni",
+      "description": "I controlli danni al ritiro e alla riconsegna nel periodo scelto, nel giorno del controllo.",
+      "withDamageNote": "Con danni conta solo i controlli di riconsegna con almeno un punto di danno. I danni già segnalati al ritiro non contano.",
+      "byMonth": "Controlli danni per mese",
+      "byVehicle": "Più danni per veicolo",
+      "byCustomer": "Più danni per cliente",
+      "unknownVehicle": "Veicolo sconosciuto",
+      "noReservation": "Senza prenotazione",
+      "checkType": {
+        "pickup": "Ritiro",
+        "return": "Riconsegna"
+      },
+      "yes": "Sì",
+      "no": "No",
+      "tiles": {
+        "all": "Tutti i controlli",
+        "pickup": "Ritiro",
+        "return": "Riconsegna",
+        "withDamage": "Con danni"
+      },
+      "columns": {
+        "checkDate": "Data",
+        "checkType": "Tipo",
+        "licensePlate": "Targa",
+        "customer": "Cliente",
+        "reservation": "Prenotazione",
+        "completedBy": "Eseguito da",
+        "damage": "Danni"
+      },
+      "csvSubject": "controlli-danni"
     }
   },
   "fleetReports": {

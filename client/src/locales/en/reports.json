@@ -893,6 +893,38 @@
         "km": "Km"
       },
       "csvSubject": "deliveries-collections"
+    },
+    "damage": {
+      "title": "Damage checks",
+      "description": "The pickup and return damage checks in the chosen period, on the day of the check.",
+      "withDamageNote": "With damage only counts return checks with at least one damage marker. Damage already reported at pickup is not counted.",
+      "byMonth": "Damage checks per month",
+      "byVehicle": "Most damage per vehicle",
+      "byCustomer": "Most damage per customer",
+      "unknownVehicle": "Unknown vehicle",
+      "noReservation": "No reservation",
+      "checkType": {
+        "pickup": "Pickup",
+        "return": "Return"
+      },
+      "yes": "Yes",
+      "no": "No",
+      "tiles": {
+        "all": "All checks",
+        "pickup": "Pickup",
+        "return": "Return",
+        "withDamage": "With damage"
+      },
+      "columns": {
+        "checkDate": "Date",
+        "checkType": "Type",
+        "licensePlate": "License plate",
+        "customer": "Customer",
+        "reservation": "Reservation",
+        "completedBy": "Done by",
+        "damage": "Damage"
+      },
+      "csvSubject": "damage-checks"
     }
   },
   "fleetReports": {

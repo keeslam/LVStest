@@ -925,6 +925,38 @@
         "km": "Km"
       },
       "csvSubject": "dostawy-odbiory"
+    },
+    "damage": {
+      "title": "Kontrole uszkodzeń",
+      "description": "Kontrole uszkodzeń przy odbiorze i zwrocie w wybranym okresie, w dniu kontroli.",
+      "withDamageNote": "Z uszkodzeniami liczy tylko kontrole zwrotu z co najmniej jednym punktem uszkodzenia. Uszkodzenia zgłoszone już przy odbiorze nie są liczone.",
+      "byMonth": "Kontrole uszkodzeń według miesięcy",
+      "byVehicle": "Najwięcej uszkodzeń według pojazdu",
+      "byCustomer": "Najwięcej uszkodzeń według klienta",
+      "unknownVehicle": "Nieznany pojazd",
+      "noReservation": "Bez rezerwacji",
+      "checkType": {
+        "pickup": "Odbiór",
+        "return": "Zwrot"
+      },
+      "yes": "Tak",
+      "no": "Nie",
+      "tiles": {
+        "all": "Wszystkie kontrole",
+        "pickup": "Odbiór",
+        "return": "Zwrot",
+        "withDamage": "Z uszkodzeniami"
+      },
+      "columns": {
+        "checkDate": "Data",
+        "checkType": "Rodzaj",
+        "licensePlate": "Numer rejestracyjny",
+        "customer": "Klient",
+        "reservation": "Rezerwacja",
+        "completedBy": "Wykonał(a)",
+        "damage": "Uszkodzenia"
+      },
+      "csvSubject": "kontrole-uszkodzen"
     }
   },
   "fleetReports": {

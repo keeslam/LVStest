@@ -909,6 +909,38 @@
         "km": "Km"
       },
       "csvSubject": "entregas-recolhas"
+    },
+    "damage": {
+      "title": "Verificações de danos",
+      "description": "As verificações de danos na recolha e na devolução no período escolhido, no dia da verificação.",
+      "withDamageNote": "Com danos conta apenas as verificações de devolução com pelo menos um ponto de dano. Os danos já registados na recolha não contam.",
+      "byMonth": "Verificações de danos por mês",
+      "byVehicle": "Mais danos por veículo",
+      "byCustomer": "Mais danos por cliente",
+      "unknownVehicle": "Veículo desconhecido",
+      "noReservation": "Sem reserva",
+      "checkType": {
+        "pickup": "Recolha",
+        "return": "Devolução"
+      },
+      "yes": "Sim",
+      "no": "Não",
+      "tiles": {
+        "all": "Todas as verificações",
+        "pickup": "Recolha",
+        "return": "Devolução",
+        "withDamage": "Com danos"
+      },
+      "columns": {
+        "checkDate": "Data",
+        "checkType": "Tipo",
+        "licensePlate": "Matrícula",
+        "customer": "Cliente",
+        "reservation": "Reserva",
+        "completedBy": "Feita por",
+        "damage": "Danos"
+      },
+      "csvSubject": "verificacoes-de-danos"
     }
   },
   "fleetReports": {

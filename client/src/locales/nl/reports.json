@@ -893,6 +893,38 @@
         "km": "Km"
       },
       "csvSubject": "bezorgen-ophalen"
+    },
+    "damage": {
+      "title": "Schadechecks",
+      "description": "De schadechecks bij ophalen en inleveren in de gekozen periode, op de dag van de check.",
+      "withDamageNote": "Met schade telt alleen de inleverchecks met minstens één schadepunt. Schade die al bij het ophalen is gemeld telt niet mee.",
+      "byMonth": "Schadechecks per maand",
+      "byVehicle": "Meeste schades per voertuig",
+      "byCustomer": "Meeste schades per klant",
+      "unknownVehicle": "Onbekend voertuig",
+      "noReservation": "Zonder reservering",
+      "checkType": {
+        "pickup": "Ophalen",
+        "return": "Inleveren"
+      },
+      "yes": "Ja",
+      "no": "Nee",
+      "tiles": {
+        "all": "Alle checks",
+        "pickup": "Ophalen",
+        "return": "Inleveren",
+        "withDamage": "Met schade"
+      },
+      "columns": {
+        "checkDate": "Datum",
+        "checkType": "Soort",
+        "licensePlate": "Kenteken",
+        "customer": "Klant",
+        "reservation": "Reservering",
+        "completedBy": "Uitgevoerd door",
+        "damage": "Schade"
+      },
+      "csvSubject": "schadechecks"
     }
   },
   "fleetReports": {

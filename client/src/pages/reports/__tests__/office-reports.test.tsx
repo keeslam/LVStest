@@ -23,6 +23,7 @@ vi.mock("@/lib/csv", async (importOriginal) => ({
 
 import { InvoiceInboxReportCard } from "@/pages/reports/invoice-inbox-report-card";
 import { DeliveryReportCard } from "@/pages/reports/delivery-report-card";
+import { DamageChecksReportCard } from "@/pages/reports/damage-checks-report-card";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -60,9 +61,17 @@ const deliverySummary = () => ({
   tripsWithDistance: 10,
 });
 
+const damageSummary = () => ({
+  tiles: { all: T(10), pickup: T(6), return: T(4), withDamage: T(3) },
+  byMonth: [{ month: "2019-03", pickup: 6, return: 4, withDamage: 3 }],
+  byVehicle: [{ key: 12, label: "AB123C", count: 2, amount: 0 }],
+  byCustomer: [{ key: null, label: null, count: 1, amount: 0 }, { key: 5, label: "Jansen", count: 2, amount: 0 }],
+});
+
 beforeEach(() => {
   fetchMock = vi.fn(async (input: unknown) => {
     const path = pathOf(input);
+    if (path.startsWith("/api/reports/damage-checks/summary")) return json(damageSummary());
     if (path.startsWith("/api/reports/deliveries/summary")) return json(deliverySummary());
     if (path.startsWith("/api/reports/invoice-inbox-runs/summary")) return json(runsSummary());
     if (path.startsWith("/api/reports/invoice-inbox-items/summary")) return json(itemsSummary());
@@ -238,5 +247,50 @@ describe("Kantoor - bezorgen en ophalen", () => {
     fetchMock.mockImplementation(async () => json({}));
     renderNode(<DeliveryReportCard from="2019-01-01" to="2019-12-31" />);
     expect((await screen.findByTestId("delivery-tile-all-value")).textContent).toBe("0");
+  });
+});
+
+describe("Kantoor - schadechecks", () => {
+  it("vraagt de samenvatting met voertuigfilter en toont tegel, uitsplitsingen en 'Zonder reservering'", async () => {
+    permissions = ["view_reports", "view_damage_checks"];
+    renderNode(<DamageChecksReportCard from="2019-01-01" to="2019-12-31" vehicleId="12" />);
+    expect((await screen.findByTestId("damage-checks-tile-withDamage-value")).textContent).toBe("3");
+    expect(fetchedPaths()).toContain("/api/reports/damage-checks/summary?from=2019-01-01&to=2019-12-31&vehicleId=12");
+    expect(screen.getByTestId("damage-checks-by-customer").textContent).toContain("Zonder reservering");
+    expect(screen.getByTestId("damage-checks-by-vehicle").textContent).toContain("AB123C");
+    expect(screen.getByTestId("damage-checks-by-customer").textContent).not.toContain("Bedrag");
+  });
+
+  it("tegel met schade opent de lijst", async () => {
+    permissions = ["view_reports", "view_damage_checks"];
+    const user = userEvent.setup();
+    renderNode(<DamageChecksReportCard from="2019-01-01" to="2019-12-31" vehicleId="12" />);
+    await user.click(await screen.findByTestId("button-damage-checks-tile-withDamage"));
+    await waitFor(() => expect(fetchedPaths()).toContain(
+      "/api/reports/damage-checks/rows?from=2019-01-01&to=2019-12-31&vehicleId=12&tile=withDamage&sort=checkDate&dir=desc&page=1&pageSize=50",
+    ));
+  });
+
+  it("zonder schadecheckrecht: geen kaart en geen verzoek", async () => {
+    permissions = ["view_reports", "manage_expenses"];
+    renderNode(<DamageChecksReportCard from="2019-01-01" to="2019-12-31" />);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(screen.queryByTestId("card-damage-checks-report")).not.toBeInTheDocument();
+    expect(fetchedPaths().some((p) => p.startsWith("/api/reports/damage-checks"))).toBe(false);
+  });
+
+  it("schadecheckrecht zonder rapportrecht: geen kaart", async () => {
+    permissions = ["view_damage_checks"];
+    renderNode(<DamageChecksReportCard from="2019-01-01" to="2019-12-31" />);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(screen.queryByTestId("card-damage-checks-report")).not.toBeInTheDocument();
+    expect(fetchedPaths().some((p) => p.startsWith("/api/reports/damage-checks"))).toBe(false);
+  });
+
+  it("een summary zonder tegels breekt de kaart niet", async () => {
+    permissions = ["view_reports", "view_damage_checks"];
+    fetchMock.mockImplementation(async () => json({}));
+    renderNode(<DamageChecksReportCard from="2019-01-01" to="2019-12-31" />);
+    expect((await screen.findByTestId("damage-checks-tile-all-value")).textContent).toBe("0");
   });
 });

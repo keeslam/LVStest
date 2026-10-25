@@ -223,4 +223,18 @@ describe("/reports - tabblad Kantoor", () => {
     await waitFor(() => expect(calledWith("/api/reports/deliveries/summary")).toBe(true));
     expect(calledPrefix("/api/reports/invoice-inbox")).toBe(false);
   });
+
+  it("met alleen het schadecheckrecht staat het tabblad er en opent de schadecheckkaart", async () => {
+    role = UserRole.USER;
+    permissions = [UserPermission.VIEW_REPORTS, UserPermission.VIEW_DAMAGE_CHECKS];
+    const user = userEvent.setup();
+    withClient(<ReportsPage />);
+    await user.click(await screen.findByTestId("tab-report-office"));
+    expect(await screen.findByTestId("card-damage-checks-report")).toBeInTheDocument();
+    expect(screen.queryByTestId("card-invoice-inbox-report")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("card-delivery-report")).not.toBeInTheDocument();
+    await waitFor(() => expect(calledWith("/api/reports/damage-checks/summary")).toBe(true));
+    expect(calledPrefix("/api/reports/invoice-inbox")).toBe(false);
+    expect(calledPrefix("/api/reports/deliveries")).toBe(false);
+  });
 });

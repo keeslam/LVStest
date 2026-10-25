@@ -49,6 +49,7 @@ import { PortalRequestsReportCard } from "./portal-requests-report-card";
 import { WaitlistReportCard } from "./waitlist-report-card";
 import { InvoiceInboxReportCard } from "./invoice-inbox-report-card";
 import { DeliveryReportCard } from "./delivery-report-card";
+import { DamageChecksReportCard } from "./damage-checks-report-card";
 import { MaintenanceOutlookCard } from "./maintenance-outlook-card";
 import { FleetMileageReportCard } from "./fleet-mileage-report-card";
 import { FinancialTab } from "@/pages/reports/financial-tab";
@@ -1657,11 +1658,12 @@ function FullReportsPage() {
           )}
         </TabsList>
 
-        {/* Office tab: invoice inbox (the vehicle filter does not apply), deliveries and collections */}
+        {/* Office tab: invoice inbox (the vehicle filter does not apply), deliveries and collections, damage checks */}
         {canViewOffice && (
           <TabsContent value="office" className="space-y-6">
             <InvoiceInboxReportCard from={reportFrom} to={reportTo} vehicleId={selectedVehicle} />
             <DeliveryReportCard from={reportFrom} to={reportTo} vehicleId={selectedVehicle} />
+            <DamageChecksReportCard from={reportFrom} to={reportTo} vehicleId={selectedVehicle} />
           </TabsContent>
         )}
 
