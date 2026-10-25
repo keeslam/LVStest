@@ -10,6 +10,7 @@ import { db } from "../db";
 import { reservations } from "../../shared/schema";
 import { OCCUPANCY_TILES, type OccupancyDay } from "../../shared/reports/occupancy-report";
 import { occupancyReport } from "../services/reports/occupancy-report";
+import { isoToday } from "../services/lifecycle";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureReservation, createFixtureVehicle, cleanupFixtures } from "./helpers/fixtures";
 import { expectTilesMatchRows } from "./helpers/report-kit";
@@ -18,7 +19,9 @@ import { countSql } from "./helpers/sqlCounter";
 describe("occupancy report", () => {
   const P = { from: "2026-03-01", to: "2026-03-10" };
   let staff: TestAgent;
-  let V1: number, V2: number, V3: number, V4: number, V5: number;
+  let V1: number, V2: number, V3: number, V4: number, V5: number, V6: number, V7: number;
+  const today = isoToday();
+  const shift = (days: number) => new Date(Date.parse(`${today}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
 
   beforeAll(async () => {
     staff = await agentFor(["view_reports", "view_reservations"]);
@@ -34,7 +37,7 @@ describe("occupancy report", () => {
     V2 = (await createFixtureVehicle({ outOfFleetDate: "2026-03-06", availabilityStatus: "not_for_rental" })).id;
 
     V3 = (await createFixtureVehicle({ availabilityStatus: "not_for_rental" })).id;
-    await createFixtureReservation({ vehicleId: V3, startDate: "2026-03-03", endDate: "2026-03-03" });
+    await createFixtureReservation({ vehicleId: V3, startDate: "2026-03-03", endDate: "2026-03-03", status: "returned" });
 
     V4 = (await createFixtureVehicle()).id;
     await createFixtureReservation({ vehicleId: V4, startDate: "2026-03-08", endDate: null, status: "picked_up" });
@@ -42,6 +45,14 @@ describe("occupancy report", () => {
     V5 = (await createFixtureVehicle()).id;
     const lateOnly = await createFixtureReservation({ vehicleId: V5, startDate: "2026-03-02", endDate: "2026-03-03", status: "returned" });
     await db.update(reservations).set({ actualReturnDate: "2026-03-04" }).where(eq(reservations.id, lateOnly.id));
+
+    // A no-show: booked in the past, never picked up.
+    V6 = (await createFixtureVehicle()).id;
+    await createFixtureReservation({ vehicleId: V6, startDate: "2026-03-04", endDate: "2026-03-05", status: "booked" });
+
+    // Booked from 3 days ago to 2 days ahead, not picked up yet: only today and later count as booked.
+    V7 = (await createFixtureVehicle()).id;
+    await createFixtureReservation({ vehicleId: V7, startDate: shift(-3), endDate: shift(2), status: "booked" });
   });
 
   afterAll(async () => {
@@ -84,6 +95,20 @@ describe("occupancy report", () => {
     const s = (await staff.get("/api/reports/occupancy/summary").query({ ...P, vehicleId: V5 })).body;
     expect(s.tiles.rented).toEqual({ count: 1, amount: 3 });
     expect(s.days.find((d: OccupancyDay) => d.date === "2026-03-04")).toMatchObject({ rented: 1, available: 0 });
+  });
+
+  it("V6 no-show: een geboekte huur in het verleden die nooit is opgehaald telt niet als verhuurd", async () => {
+    const s = (await staff.get("/api/reports/occupancy/summary").query({ ...P, vehicleId: V6 })).body;
+    expect(s.tiles.rented).toEqual({ count: 0, amount: 0 });
+    expect(s.tiles.available).toEqual({ count: 1, amount: 10 });
+    expect(s.days.find((d: OccupancyDay) => d.date === "2026-03-04")).toMatchObject({ rented: 0, available: 1 });
+  });
+
+  it("V7 geboekt, nog niet opgehaald: verleden niet, vandaag en later wel verhuurd", async () => {
+    const s = (await staff.get("/api/reports/occupancy/summary").query({ from: shift(-5), to: shift(5), vehicleId: V7 })).body;
+    expect(s.tiles.rented).toEqual({ count: 1, amount: 3 });
+    expect(s.days.find((d: OccupancyDay) => d.date === shift(-1))).toMatchObject({ rented: 0, available: 1 });
+    expect(s.days.find((d: OccupancyDay) => d.date === today)).toMatchObject({ rented: 1, available: 0 });
   });
 
   it("een dag apart geeft dezelfde aantallen als die dag in de periode", async () => {
