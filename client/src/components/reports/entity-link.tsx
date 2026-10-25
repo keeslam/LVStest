@@ -28,8 +28,14 @@ export function EntityLink({ kind, id, label, children }: {
   const [open, setOpen] = useState(false);
   const shown = children ?? label;
   if (!allowed || id == null || !label) return <>{shown}</>;
+  // The quick view is a portal, but React events still bubble to the table row (onRowClick): stop them here.
+  const stop = (e: React.SyntheticEvent) => e.stopPropagation();
   return (
-    <>
+    <span
+      className="contents"
+      onClick={stop}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") e.stopPropagation(); }}
+    >
       <button
         type="button"
         className="text-left text-primary underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
@@ -39,6 +45,6 @@ export function EntityLink({ kind, id, label, children }: {
         {shown}
       </button>
       {open && <EntityQuickView kind={kind} id={id} label={label} open={open} onOpenChange={setOpen} />}
-    </>
+    </span>
   );
 }
