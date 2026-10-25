@@ -2097,6 +2097,13 @@
         "default": null
       },
       {
+        "name": "supplier",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
         "name": "created_at",
         "type": "timestamp with time zone",
         "notNull": true,

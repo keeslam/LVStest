@@ -191,9 +191,13 @@ export function ExpenseForm({
       amount: 0,
       date: today,
       description: "",
+      supplier: "",
       receiptUrl: "",
     },
   });
+
+  // Onderhoudsanalyse: supplier names already used on costs, offered as suggestions.
+  const { data: supplierSuggestions } = useQuery<string[]>({ queryKey: ["/api/expenses/suppliers"] });
 
   // Round 2 punt 11: the chosen car's workshop visits, newest first, for "hoort bij werkplaatsbezoek".
   const watchedVehicleId = form.watch("vehicleId");
@@ -257,6 +261,7 @@ export function ExpenseForm({
         if (data.description) {
           formData.append("description", data.description);
         }
+        formData.append("supplier", data.supplier ?? "");
         
         // Add the file
         formData.append("receiptFile", selectedFile, selectedFile.name);
@@ -523,6 +528,30 @@ export function ExpenseForm({
                 )}
               />
               
+              <FormField
+                control={form.control}
+                name="supplier"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>{t('form.supplier')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        list="expense-supplier-options"
+                        maxLength={120}
+                        autoComplete="off"
+                        placeholder={t('form.supplierPlaceholder')}
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <datalist id="expense-supplier-options">
+                      {(supplierSuggestions ?? []).map((name) => <option key={name} value={name} />)}
+                    </datalist>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <div className="md:col-span-2">
                 <FormLabel className="mb-2 block">{t('form.receipt')}</FormLabel>
                 <Tabs defaultValue="url" value={receiptTab} onValueChange={setReceiptTab}>

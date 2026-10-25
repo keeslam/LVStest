@@ -213,6 +213,12 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
     res.json(await storage.getExpenseFacets());
   });
 
+  /** Onderhoudsanalyse: supplier names already used on costs, for the suggestions in the cost form. */
+  app.get("/api/expenses/suppliers", hasPermission(UserPermission.MANAGE_EXPENSES), async (_req, res) => {
+    noStore(res);
+    res.json(await storage.getExpenseSuppliers());
+  });
+
   /**
    * Kosten (2026-10-16): the selection summed per category, with the newest
    * `recent` rows of each (5 by default, at most 20) for the category sections.

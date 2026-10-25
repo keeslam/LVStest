@@ -3515,6 +3515,7 @@ export class DatabaseStorage implements IStorage {
       conditions.push(sql`(
         lower(coalesce(${expenses.description}, '')) like ${like}
         or lower(coalesce(${expenses.category}, '')) like ${like}
+        or lower(coalesce(${expenses.supplier}, '')) like ${like}
         or replace(replace(lower(coalesce(${vehicles.licensePlate}, '')), '-', ''), ' ', '') like ${plateLike}
         or lower(coalesce(${vehicles.brand}, '') || ' ' || coalesce(${vehicles.model}, '')) like ${like}
       )`);
@@ -3530,6 +3531,7 @@ export class DatabaseStorage implements IStorage {
       plate: sql`coalesce(${vehicles.licensePlate}, '')`,
       category: sql`lower(btrim(${expenses.category}))`,
       description: sql`lower(coalesce(${expenses.description}, ''))`,
+      supplier: sql`lower(coalesce(${expenses.supplier}, ''))`,
       amount: sql`${expenses.amount}::numeric`,
     }[sort];
     return sort === "date"
@@ -3664,6 +3666,17 @@ export class DatabaseStorage implements IStorage {
       vehicles: vehicleRows,
       categories: categoryRows.map((r) => r.category ?? "").filter(Boolean).sort(),
     };
+  }
+
+  /** Onderhoudsanalyse: the supplier names in use, one per name ignoring case and outer spaces, sorted. */
+  async getExpenseSuppliers(): Promise<string[]> {
+    const rows = await db
+      .select({ name: sql<string>`min(btrim(${expenses.supplier}))` })
+      .from(expenses)
+      .where(sql`btrim(coalesce(${expenses.supplier}, '')) <> ''`)
+      .groupBy(sql`lower(btrim(${expenses.supplier}))`)
+      .orderBy(sql`lower(btrim(${expenses.supplier}))`);
+    return rows.map((r) => r.name).filter(Boolean);
   }
 
   async getExpense(id: number): Promise<Expense | undefined> {

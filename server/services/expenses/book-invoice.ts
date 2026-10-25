@@ -112,6 +112,7 @@ export async function bookInvoiceAsExpenses(input: BookInvoiceInput): Promise<Bo
         amount: line.amount,
         date: input.invoice.invoiceDate,
         description: invoiceExpenseDescription(line, input.invoice),
+        supplier: String(input.invoice.vendor ?? "").trim().slice(0, 120) || null,
         createdBy: input.createdBy,
         updatedBy: null,
       });

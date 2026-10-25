@@ -6,7 +6,7 @@
 import type { Expense } from "./schema";
 
 /** The columns the Kosten list can be sorted on. */
-export const EXPENSE_SORT_KEYS = ["date", "plate", "category", "description", "amount"] as const;
+export const EXPENSE_SORT_KEYS = ["date", "plate", "category", "description", "supplier", "amount"] as const;
 export type ExpenseSortKey = typeof EXPENSE_SORT_KEYS[number];
 export type SortDirection = "asc" | "desc";
 

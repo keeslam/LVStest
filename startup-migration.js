@@ -610,6 +610,68 @@ async function lowercaseExpenseCategories() {
   }
 }
 
+// ==================== ONDERHOUDSANALYSE: SUPPLIER ON EXPENSES ====================
+// expenses.supplier is a new nullable column (added by the manifest sync). Expenses booked from
+// the invoice inbox get it filled once: the vendor the scanner read (parsed.vendor), else the
+// name in the mail's From header, else the bare address. Hand-typed expenses stay empty.
+// Only rows that are still empty are touched; the app_settings marker stops a second pass.
+// Never aborts the boot: a failure is reported and skipped (no marker, so the next start retries).
+const EXPENSE_SUPPLIER_MARKER = 'migration:expense_supplier_v1';
+
+async function backfillExpenseSupplier() {
+  try {
+    const tables = await db.execute(sql`
+      SELECT tablename FROM pg_tables
+       WHERE schemaname = 'public' AND tablename IN ('expenses', 'invoice_inbox_items', 'app_settings')
+    `);
+    if (tables.rows.length < 3) {
+      console.log('⚠️ expenses, invoice_inbox_items or app_settings does not exist yet, skipping the expense supplier backfill');
+      return;
+    }
+    const already = await db.execute(sql`SELECT 1 FROM app_settings WHERE key = ${EXPENSE_SUPPLIER_MARKER}`);
+    if (already.rows.length > 0) {
+      console.log('Expense suppliers already backfilled, skipping');
+      return;
+    }
+
+    let updated = 0;
+    await db.transaction(async (tx) => {
+      const result = await tx.execute(sql`
+        UPDATE expenses e
+           SET supplier = left(src.name, 120)
+          FROM (
+            SELECT i.id,
+                   COALESCE(
+                     NULLIF(btrim(i.parsed ->> 'vendor'), ''),
+                     NULLIF(btrim(COALESCE(substring(i.from_address from '^[[:space:]]*"?([^"<]+?)"?[[:space:]]*<'), '')), ''),
+                     NULLIF(btrim(regexp_replace(COALESCE(i.from_address, ''), '[<>]', '', 'g')), '')
+                   ) AS name
+              FROM invoice_inbox_items i
+          ) src
+         WHERE e.inbox_item_id = src.id
+           AND e.supplier IS NULL
+           AND src.name IS NOT NULL
+      `);
+      updated = result.rowCount ?? 0;
+
+      await tx.execute(sql`
+        INSERT INTO app_settings (key, value, category, description)
+        VALUES (
+          ${EXPENSE_SUPPLIER_MARKER},
+          ${JSON.stringify({ appliedAt: new Date().toISOString(), updated })}::jsonb,
+          'general',
+          'Onderhoudsanalyse: expenses booked from the invoice inbox got their supplier filled once'
+        )
+        ON CONFLICT (key) DO NOTHING
+      `);
+    });
+
+    console.log('Expense suppliers backfilled: ' + updated + ' row(s) changed');
+  } catch (error) {
+    console.error('⚠️ Expense supplier backfill skipped, will retry on the next start:', error && error.message ? error.message : error);
+  }
+}
+
 // ==================== P2 (audit A-12-2): NO EMPTY COMPANY NAME ====================
 // The customer form used to send "" for an empty company name, and "" is not
 // NULL: `coalesce(company_name, name)` kept the empty string, so the fines list
@@ -2419,6 +2481,9 @@ async function runMigrations() {
 
     // Audit P1 (A-9-1): one lower-case key per expense category.
     await lowercaseExpenseCategories();
+
+    // Onderhoudsanalyse: expenses booked from the invoice inbox get their supplier, once.
+    await backfillExpenseSupplier();
 
     // Audit P2 (A-12-2): customers with an empty company name get NULL.
     await nullEmptyCompanyNames();

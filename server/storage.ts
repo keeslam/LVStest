@@ -241,6 +241,7 @@ export interface IStorage {
   getExpensePage(filters: ExpenseFilters, options: Required<ExpenseListOptions>): Promise<ExpensePage>;
   getExpenseSummary(filters: ExpenseFilters, recentPerCategory: number): Promise<ExpenseSummary>;
   getExpenseFacets(): Promise<ExpenseFacets>;
+  getExpenseSuppliers(): Promise<string[]>;
   /** The selection summed per vehicle, newest cost first: one row per vehicle. */
   getExpenseVehicleGroups(filters: ExpenseFilters): Promise<ExpenseVehicleGroup[]>;
   getExpense(id: number): Promise<Expense | undefined>;

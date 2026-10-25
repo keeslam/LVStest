@@ -54,12 +54,14 @@ const defaultDir = (key: ExpenseSortKey): SortDirection => (key === "date" ? "de
  * tabular figures. A click anywhere on the row opens the cost (2026-10-18).
  * The same rows serve the paged list and the dialogs.
  */
-export function ExpenseRows({ rows, onDelete, testIdPrefix = "row-expense", showCategory = true }: {
+export function ExpenseRows({ rows, onDelete, testIdPrefix = "row-expense", showCategory = true, showSupplier = false }: {
   rows: Expense[];
   onDelete?: (expense: Expense) => void;
   testIdPrefix?: string;
   /** Off inside a category section, where every row is of that category already. */
   showCategory?: boolean;
+  /** Onderhoudsanalyse: the Leverancier column, on in the main list only. */
+  showSupplier?: boolean;
 }) {
   const { t } = useTranslation(["expenses", "common"]);
   const { openExpenseDialog } = useGlobalDialog();
@@ -79,6 +81,11 @@ export function ExpenseRows({ rows, onDelete, testIdPrefix = "row-expense", show
           {showCategory && (
             <TableCell className="whitespace-nowrap">
               <Badge variant="outline" className="font-normal">{formatExpenseCategory(expense.category)}</Badge>
+            </TableCell>
+          )}
+          {showSupplier && (
+            <TableCell className="max-w-0" data-testid={`cell-supplier-${expense.id}`}>
+              <span className="block truncate" title={expense.supplier || undefined}>{expense.supplier || "—"}</span>
             </TableCell>
           )}
           <TableCell className="max-w-0">
@@ -119,6 +126,7 @@ export const EXPENSE_COLUMN_CLASSES = {
   plate: "w-48",
   category: "w-32",
   description: "",
+  supplier: "w-40",
   amount: "w-36 whitespace-nowrap text-right",
   actions: "w-20",
 } as const;
@@ -186,19 +194,20 @@ export function ExpenseListTable({ filters, onDelete, testId = "expenses", initi
   return (
     <div className={cn("space-y-3", className)}>
       <div className="rounded-md border">
-        <Table className="min-w-[44rem] table-fixed">
+        <Table className="min-w-[52rem] table-fixed">
           <TableHeader className="sticky top-0 z-10 bg-background">
             <TableRow>
               {head("date", t("expenses:indexPage.dateColumnHeader"), EXPENSE_COLUMN_CLASSES.date)}
               {head("plate", t("expenses:indexPage.vehicleColumnHeader"), EXPENSE_COLUMN_CLASSES.plate)}
               {showCategory && head("category", t("expenses:indexPage.categoryColumnHeader"), EXPENSE_COLUMN_CLASSES.category)}
+              {head("supplier", t("expenses:indexPage.supplierColumnHeader"), EXPENSE_COLUMN_CLASSES.supplier)}
               {head("description", t("expenses:indexPage.descriptionColumnHeader"), EXPENSE_COLUMN_CLASSES.description)}
               {head("amount", t("expenses:indexPage.amountColumnHeaderShort"), cn(EXPENSE_COLUMN_CLASSES.amount, "[&>button]:ml-auto [&>button]:flex-row-reverse"))}
               <TableHead className={EXPENSE_COLUMN_CLASSES.actions} />
             </TableRow>
           </TableHeader>
           <TableBody>
-            <ExpenseRows rows={data?.rows ?? []} onDelete={onDelete} showCategory={showCategory} />
+            <ExpenseRows rows={data?.rows ?? []} onDelete={onDelete} showCategory={showCategory} showSupplier />
           </TableBody>
         </Table>
       </div>

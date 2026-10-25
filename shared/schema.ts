@@ -1373,6 +1373,9 @@ export const expenses = pgTable("expenses", {
   // this cost belongs to. Set only through PUT /api/expenses/:id/maintenance-block, which
   // checks the visit is one of the same vehicle (omitted from the insert schema below).
   maintenanceBlockId: integer("maintenance_block_id"),
+  // Onderhoudsanalyse: who the cost was paid to. Filled from parsed.vendor when an invoice is
+  // booked from the inbox, typed by hand otherwise (max 120, trimmed; see the write schema).
+  supplier: text("supplier"),
 
   // Tracking
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -1422,6 +1425,10 @@ export const insertExpenseSchema = createInsertSchema(expenses).omit({
     message: "Amount must be greater than 0 and no more than €1,000,000",
   }),
   receiptPath: z.string().nullable().optional(),
+  supplier: z.preprocess(
+    (v) => (typeof v === "string" ? (v.trim() === "" ? null : v.trim()) : v),
+    z.string().max(120).nullable().optional(),
+  ),
   // FIX-R (BUG-072): this is a link an employee types in and another employee
   // later opens with window.open(). `javascript:alert(1)` stored here executed
   // in the application's own origin. The client refuses to open an unsafe one;
