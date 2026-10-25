@@ -336,7 +336,8 @@
       "transports": "Trasporti",
       "financial": "Finanziario",
       "fiscal": "Fiscale",
-      "portal": "Portale"
+      "portal": "Portale",
+      "office": "Ufficio"
     },
     "common": {
       "vehicle": "Veicolo",
@@ -794,6 +795,77 @@
         "avgWait": "Attesa media (giorni)"
       },
       "csvSubject": "lista-d-attesa"
+    }
+  },
+  "officeReports": {
+    "vehicleFilterIgnored": "Il filtro veicolo qui non si applica: i giri e le fatture raramente riguardano una sola auto.",
+    "inbox": {
+      "title": "Casella fatture",
+      "description": "Ciò che la casella delle fatture porta con sé: i giri di raccolta e le fatture stesse.",
+      "runsTitle": "Giri di raccolta",
+      "itemsTitle": "Fatture ricevute",
+      "runsHint_one": "{{count}} giro",
+      "runsHint_many": "{{count}} di giri",
+      "runsHint_other": "{{count}} giri",
+      "retention_one": "Il registro dei giri viene conservato {{count}} giorno. I giri precedenti al {{date}} non ci sono più.",
+      "retention_many": "Il registro dei giri viene conservato {{count}} di giorni. I giri precedenti al {{date}} non ci sono più.",
+      "retention_other": "Il registro dei giri viene conservato {{count}} giorni. I giri precedenti al {{date}} non ci sono più.",
+      "scheduler": "Automatico",
+      "reasonsNote": "Il motivo resta salvato anche se la fattura viene registrata in seguito. Nelle fatture più vecchie registrate dopo il controllo il motivo manca.",
+      "runsByMonth": "Giri per mese",
+      "itemsByMonth": "Fatture per mese",
+      "reasons": "Motivi di controllo più frequenti",
+      "reasonsEmpty": "Nessuna fattura con un motivo di controllo in questo periodo.",
+      "outcome": {
+        "autoBooked": "Registrata automaticamente",
+        "staffBooked": "Registrata dall'ufficio",
+        "waiting": "In attesa di controllo",
+        "dismissed": "Rifiutata"
+      },
+      "tiles": {
+        "runs": {
+          "runs": "Giri di raccolta",
+          "mails": "E-mail viste",
+          "attachments": "Allegati",
+          "booked": "Registrate",
+          "review": "Da controllare",
+          "skipped": "Saltate",
+          "failed": "Non riuscite"
+        },
+        "items": {
+          "all": "Tutte le fatture",
+          "autoBooked": "Registrate automaticamente",
+          "staffBooked": "Registrate dall'ufficio",
+          "waiting": "In attesa di controllo",
+          "dismissed": "Rifiutate",
+          "flagged": "Con motivo di controllo"
+        }
+      },
+      "columns": {
+        "runs": {
+          "startedAt": "Avviato",
+          "by": "Da",
+          "mails": "E-mail",
+          "attachments": "Allegati",
+          "booked": "Registrate",
+          "review": "Da controllare",
+          "skipped": "Saltate",
+          "failed": "Non riuscite",
+          "errors": "Errori"
+        },
+        "items": {
+          "receivedAt": "Ricevuta",
+          "from": "Mittente",
+          "subject": "Oggetto",
+          "attachment": "Allegato",
+          "outcome": "Esito",
+          "reason": "Motivo",
+          "licensePlate": "Targa",
+          "handledBy": "Gestita da"
+        }
+      },
+      "csvSubjectRuns": "giri-di-raccolta",
+      "csvSubjectItems": "casella-fatture"
     }
   },
   "fleetReports": {

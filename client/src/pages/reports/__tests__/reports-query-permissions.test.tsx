@@ -183,3 +183,32 @@ describe("/reports - tabblad Portaal", () => {
     expect(await screen.findByTestId("card-portal-requests-report")).toBeInTheDocument();
   });
 });
+
+describe("/reports - tabblad Kantoor", () => {
+  const calledPrefix = (prefix: string) => fetchMock.mock.calls.some(([input]) => {
+    const requestUrl = typeof input === "string" ? input : (input as Request)?.url ?? "";
+    return requestUrl.replace(/^https?:\/\/[^/]+/, "").startsWith(prefix);
+  });
+
+  it("zonder bronrecht geen tabblad en geen verzoek", async () => {
+    role = UserRole.USER;
+    permissions = [UserPermission.VIEW_REPORTS];
+    withClient(<ReportsPage />);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(screen.queryByTestId("tab-report-office")).not.toBeInTheDocument();
+    expect(calledPrefix("/api/reports/invoice-inbox")).toBe(false);
+    expect(calledPrefix("/api/reports/deliveries")).toBe(false);
+    expect(calledPrefix("/api/reports/damage-checks")).toBe(false);
+  });
+
+  it("met alleen manage_settings: tabblad, rondes, geen factuurlijst", async () => {
+    role = UserRole.USER;
+    permissions = [UserPermission.VIEW_REPORTS, UserPermission.MANAGE_SETTINGS];
+    const user = userEvent.setup();
+    withClient(<ReportsPage />);
+    await user.click(await screen.findByTestId("tab-report-office"));
+    expect(await screen.findByTestId("card-invoice-inbox-report")).toBeInTheDocument();
+    await waitFor(() => expect(calledWith("/api/reports/invoice-inbox-runs/summary")).toBe(true));
+    expect(calledPrefix("/api/reports/invoice-inbox-items")).toBe(false);
+  });
+});

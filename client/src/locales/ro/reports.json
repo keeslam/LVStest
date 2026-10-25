@@ -336,7 +336,8 @@
       "transports": "Transporturi",
       "financial": "Financiar",
       "fiscal": "Fiscal",
-      "portal": "Portal"
+      "portal": "Portal",
+      "office": "Birou"
     },
     "common": {
       "vehicle": "Vehicul",
@@ -794,6 +795,77 @@
         "avgWait": "Așteptare medie (zile)"
       },
       "csvSubject": "lista-de-asteptare"
+    }
+  },
+  "officeReports": {
+    "vehicleFilterIgnored": "Filtrul de vehicul nu se aplică aici: rundele și facturile rareori țin de o singură mașină.",
+    "inbox": {
+      "title": "Căsuța de facturi",
+      "description": "Ce aduce căsuța de e-mail pentru facturi: rundele de preluare și facturile în sine.",
+      "runsTitle": "Runde de preluare",
+      "itemsTitle": "Facturi primite",
+      "runsHint_one": "{{count}} rundă",
+      "runsHint_few": "{{count}} runde",
+      "runsHint_other": "{{count}} de runde",
+      "retention_one": "Jurnalul rundelor se păstrează {{count}} zi. Rundele dinainte de {{date}} nu mai apar.",
+      "retention_few": "Jurnalul rundelor se păstrează {{count}} zile. Rundele dinainte de {{date}} nu mai apar.",
+      "retention_other": "Jurnalul rundelor se păstrează {{count}} de zile. Rundele dinainte de {{date}} nu mai apar.",
+      "scheduler": "Automat",
+      "reasonsNote": "Motivul se păstrează chiar dacă factura este înregistrată ulterior. La facturile mai vechi înregistrate după verificare, motivul lipsește.",
+      "runsByMonth": "Runde pe lună",
+      "itemsByMonth": "Facturi pe lună",
+      "reasons": "Cele mai frecvente motive de verificare",
+      "reasonsEmpty": "Nicio factură cu motiv de verificare în această perioadă.",
+      "outcome": {
+        "autoBooked": "Înregistrată automat",
+        "staffBooked": "Înregistrată de birou",
+        "waiting": "Așteaptă verificarea",
+        "dismissed": "Respinsă"
+      },
+      "tiles": {
+        "runs": {
+          "runs": "Runde de preluare",
+          "mails": "E-mailuri verificate",
+          "attachments": "Atașamente",
+          "booked": "Înregistrate",
+          "review": "De verificat",
+          "skipped": "Omise",
+          "failed": "Eșuate"
+        },
+        "items": {
+          "all": "Toate facturile",
+          "autoBooked": "Înregistrate automat",
+          "staffBooked": "Înregistrate de birou",
+          "waiting": "Așteaptă verificarea",
+          "dismissed": "Respinse",
+          "flagged": "Cu motiv de verificare"
+        }
+      },
+      "columns": {
+        "runs": {
+          "startedAt": "Început",
+          "by": "De către",
+          "mails": "E-mailuri",
+          "attachments": "Atașamente",
+          "booked": "Înregistrate",
+          "review": "De verificat",
+          "skipped": "Omise",
+          "failed": "Eșuate",
+          "errors": "Erori"
+        },
+        "items": {
+          "receivedAt": "Primită",
+          "from": "Expeditor",
+          "subject": "Subiect",
+          "attachment": "Atașament",
+          "outcome": "Rezultat",
+          "reason": "Motiv",
+          "licensePlate": "Număr de înmatriculare",
+          "handledBy": "Tratată de"
+        }
+      },
+      "csvSubjectRuns": "runde-de-preluare",
+      "csvSubjectItems": "casuta-de-facturi"
     }
   },
   "fleetReports": {

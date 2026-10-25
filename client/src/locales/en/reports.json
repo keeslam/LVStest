@@ -328,7 +328,8 @@
       "transports": "Transports",
       "financial": "Financial",
       "fiscal": "Fiscal",
-      "portal": "Portal"
+      "portal": "Portal",
+      "office": "Office"
     },
     "common": {
       "vehicle": "Vehicle",
@@ -780,6 +781,75 @@
         "avgWait": "Avg. waiting time (days)"
       },
       "csvSubject": "waitlist"
+    }
+  },
+  "officeReports": {
+    "vehicleFilterIgnored": "The vehicle filter does not apply here: pickup rounds and invoices seldom belong to one car.",
+    "inbox": {
+      "title": "Invoice inbox",
+      "description": "What the invoice mailbox brings in: the pickup rounds and the invoices themselves.",
+      "runsTitle": "Pickup rounds",
+      "itemsTitle": "Invoices received",
+      "runsHint_one": "{{count}} round",
+      "runsHint_other": "{{count}} rounds",
+      "retention_one": "The pickup rounds log is kept for {{count}} day. Rounds before {{date}} are no longer in it.",
+      "retention_other": "The pickup rounds log is kept for {{count}} days. Rounds before {{date}} are no longer in it.",
+      "scheduler": "Automatic",
+      "reasonsNote": "A reason is kept even when the invoice is booked afterwards. For older invoices booked after a check, the reason is missing.",
+      "runsByMonth": "Rounds per month",
+      "itemsByMonth": "Invoices per month",
+      "reasons": "Most common reasons for a check",
+      "reasonsEmpty": "No invoices with a check reason in this period.",
+      "outcome": {
+        "autoBooked": "Booked automatically",
+        "staffBooked": "Booked by the office",
+        "waiting": "Waiting for a check",
+        "dismissed": "Rejected"
+      },
+      "tiles": {
+        "runs": {
+          "runs": "Pickup rounds",
+          "mails": "Mails looked at",
+          "attachments": "Attachments",
+          "booked": "Booked",
+          "review": "For checking",
+          "skipped": "Skipped",
+          "failed": "Failed"
+        },
+        "items": {
+          "all": "All invoices",
+          "autoBooked": "Booked automatically",
+          "staffBooked": "Booked by the office",
+          "waiting": "Waiting for a check",
+          "dismissed": "Rejected",
+          "flagged": "With a check reason"
+        }
+      },
+      "columns": {
+        "runs": {
+          "startedAt": "Started",
+          "by": "By",
+          "mails": "Mails",
+          "attachments": "Attachments",
+          "booked": "Booked",
+          "review": "For checking",
+          "skipped": "Skipped",
+          "failed": "Failed",
+          "errors": "Errors"
+        },
+        "items": {
+          "receivedAt": "Received",
+          "from": "Sender",
+          "subject": "Subject",
+          "attachment": "Attachment",
+          "outcome": "Outcome",
+          "reason": "Reason",
+          "licensePlate": "License plate",
+          "handledBy": "Handled by"
+        }
+      },
+      "csvSubjectRuns": "pickup-rounds",
+      "csvSubjectItems": "invoice-inbox"
     }
   },
   "fleetReports": {

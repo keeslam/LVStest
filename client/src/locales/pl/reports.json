@@ -344,7 +344,8 @@
       "transports": "Transporty",
       "financial": "Finanse",
       "fiscal": "Podatki",
-      "portal": "Portal"
+      "portal": "Portal",
+      "office": "Biuro"
     },
     "common": {
       "vehicle": "Pojazd",
@@ -808,6 +809,79 @@
         "avgWait": "Śr. czas oczekiwania (dni)"
       },
       "csvSubject": "lista-oczekujacych"
+    }
+  },
+  "officeReports": {
+    "vehicleFilterIgnored": "Filtr pojazdu nie działa tutaj: rundy i faktury rzadko dotyczą jednego samochodu.",
+    "inbox": {
+      "title": "Skrzynka faktur",
+      "description": "Co przynosi skrzynka na faktury: rundy pobierania i same faktury.",
+      "runsTitle": "Rundy pobierania",
+      "itemsTitle": "Otrzymane faktury",
+      "runsHint_one": "{{count}} runda",
+      "runsHint_few": "{{count}} rundy",
+      "runsHint_many": "{{count}} rund",
+      "runsHint_other": "{{count}} rundy",
+      "retention_one": "Dziennik rund jest przechowywany {{count}} dzień. Rund sprzed {{date}} już w nim nie ma.",
+      "retention_few": "Dziennik rund jest przechowywany {{count}} dni. Rund sprzed {{date}} już w nim nie ma.",
+      "retention_many": "Dziennik rund jest przechowywany {{count}} dni. Rund sprzed {{date}} już w nim nie ma.",
+      "retention_other": "Dziennik rund jest przechowywany {{count}} dnia. Rund sprzed {{date}} już w nim nie ma.",
+      "scheduler": "Automatycznie",
+      "reasonsNote": "Powód zostaje zachowany, nawet gdy fakturę zaksięgowano później. Przy starszych fakturach zaksięgowanych po kontroli powodu brakuje.",
+      "runsByMonth": "Rundy według miesięcy",
+      "itemsByMonth": "Faktury według miesięcy",
+      "reasons": "Najczęstsze powody kontroli",
+      "reasonsEmpty": "Brak faktur z powodem kontroli w tym okresie.",
+      "outcome": {
+        "autoBooked": "Zaksięgowana automatycznie",
+        "staffBooked": "Zaksięgowana przez biuro",
+        "waiting": "Czeka na kontrolę",
+        "dismissed": "Odrzucona"
+      },
+      "tiles": {
+        "runs": {
+          "runs": "Rundy pobierania",
+          "mails": "Przejrzane e-maile",
+          "attachments": "Załączniki",
+          "booked": "Zaksięgowane",
+          "review": "Do kontroli",
+          "skipped": "Pominięte",
+          "failed": "Nieudane"
+        },
+        "items": {
+          "all": "Wszystkie faktury",
+          "autoBooked": "Zaksięgowane automatycznie",
+          "staffBooked": "Zaksięgowane przez biuro",
+          "waiting": "Czekają na kontrolę",
+          "dismissed": "Odrzucone",
+          "flagged": "Z powodem kontroli"
+        }
+      },
+      "columns": {
+        "runs": {
+          "startedAt": "Start",
+          "by": "Przez",
+          "mails": "E-maile",
+          "attachments": "Załączniki",
+          "booked": "Zaksięgowane",
+          "review": "Do kontroli",
+          "skipped": "Pominięte",
+          "failed": "Nieudane",
+          "errors": "Błędy"
+        },
+        "items": {
+          "receivedAt": "Otrzymana",
+          "from": "Nadawca",
+          "subject": "Temat",
+          "attachment": "Załącznik",
+          "outcome": "Wynik",
+          "reason": "Powód",
+          "licensePlate": "Numer rejestracyjny",
+          "handledBy": "Obsłużona przez"
+        }
+      },
+      "csvSubjectRuns": "rundy-pobierania",
+      "csvSubjectItems": "skrzynka-faktur"
     }
   },
   "fleetReports": {

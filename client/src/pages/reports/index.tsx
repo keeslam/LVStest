@@ -35,7 +35,7 @@ import { addDays, subMonths, subDays, startOfMonth, endOfMonth, isWithinInterval
 import { formatNl as format } from "@/lib/format-date-nl";
 import { 
   Calendar, Download, FileText, TrendingUp, Car, Settings, User, Calculator,
-  DollarSign, AlertTriangle, Printer, Search, ExternalLink, Database, LineChart, X, Loader2, MessageSquare
+  DollarSign, AlertTriangle, Printer, Search, ExternalLink, Database, LineChart, X, Loader2, MessageSquare, Building2
 } from "lucide-react";
 import { Link } from "wouter";
 import { DateRange } from "react-day-picker";
@@ -47,6 +47,7 @@ import { OccupancyReportCard } from "./occupancy-report-card";
 import { CustomerValueReportCard } from "./customer-value-report-card";
 import { PortalRequestsReportCard } from "./portal-requests-report-card";
 import { WaitlistReportCard } from "./waitlist-report-card";
+import { InvoiceInboxReportCard } from "./invoice-inbox-report-card";
 import { MaintenanceOutlookCard } from "./maintenance-outlook-card";
 import { FleetMileageReportCard } from "./fleet-mileage-report-card";
 import { FinancialTab } from "@/pages/reports/financial-tab";
@@ -82,7 +83,7 @@ function FiscalOnlyReportsPage() {
 }
 
 // Literal class names so Tailwind keeps them.
-const TAB_COLS = { 6: "grid-cols-6", 7: "grid-cols-7", 8: "grid-cols-8" } as const;
+const TAB_COLS = { 6: "grid-cols-6", 7: "grid-cols-7", 8: "grid-cols-8", 9: "grid-cols-9" } as const;
 
 function FullReportsPage() {
   const { t } = useTranslation("reports");
@@ -187,11 +188,17 @@ function FullReportsPage() {
   const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
   const canViewCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
   const canViewPortal = useHasPermission(UserPermission.VIEW_PORTAL, UserPermission.MANAGE_PORTAL);
+  // Kantoor tab: the report right plus the right of at least one source (invoice rounds: expenses or
+  // settings; invoices: expenses; deliveries: the transports family; damage checks: their own pair).
+  const canViewReports = useHasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS);
+  const canManageSettings = useHasPermission(UserPermission.MANAGE_SETTINGS);
+  const canViewDamageChecks = useHasPermission(UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS);
   // GET /api/transports (routes.ts:8089) accepts either family.
   const canViewTransports = useHasPermission(
     UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES,
     UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS,
   );
+  const canViewOffice = canViewReports && (canViewExpenses || canManageSettings || canViewTransports || canViewDamageChecks);
 
   // Fetch all vehicles for filtering
   const { data: vehicles = [], isFetching: vehiclesFetching } = useQuery<Vehicle[]>({
@@ -1604,7 +1611,7 @@ function FullReportsPage() {
 
       {/* Report Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className={`grid w-full ${TAB_COLS[(6 + (canViewFiscal ? 1 : 0) + (canViewPortal ? 1 : 0)) as 6 | 7 | 8]}`}>
+        <TabsList className={`grid w-full ${TAB_COLS[(6 + (canViewFiscal ? 1 : 0) + (canViewPortal ? 1 : 0) + (canViewOffice ? 1 : 0)) as 6 | 7 | 8 | 9]}`}>
           <TabsTrigger value="operations">
             <Settings className="h-4 w-4 mr-2" />
             {t('reportsPage.tabs.operations')}
@@ -1641,7 +1648,20 @@ function FullReportsPage() {
               {t('reportsPage.tabs.portal')}
             </TabsTrigger>
           )}
+          {canViewOffice && (
+            <TabsTrigger value="office" data-testid="tab-report-office">
+              <Building2 className="h-4 w-4 mr-2" />
+              {t('reportsPage.tabs.office')}
+            </TabsTrigger>
+          )}
         </TabsList>
+
+        {/* Office tab: invoice inbox (the vehicle filter does not apply) */}
+        {canViewOffice && (
+          <TabsContent value="office" className="space-y-6">
+            <InvoiceInboxReportCard from={reportFrom} to={reportTo} vehicleId={selectedVehicle} />
+          </TabsContent>
+        )}
 
         {/* Portal tab: portal requests and waitlist (the vehicle filter does not apply) */}
         {canViewPortal && (

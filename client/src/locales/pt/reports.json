@@ -336,7 +336,8 @@
       "transports": "Transportes",
       "financial": "Financeiro",
       "fiscal": "Fiscal",
-      "portal": "Portal"
+      "portal": "Portal",
+      "office": "Escritório"
     },
     "common": {
       "vehicle": "Veículo",
@@ -794,6 +795,77 @@
         "avgWait": "Espera média (dias)"
       },
       "csvSubject": "lista-de-espera"
+    }
+  },
+  "officeReports": {
+    "vehicleFilterIgnored": "O filtro de veículo não se aplica aqui: as rondas e as faturas raramente pertencem a um só carro.",
+    "inbox": {
+      "title": "Caixa de faturas",
+      "description": "O que a caixa de correio de faturas traz: as rondas de recolha e as próprias faturas.",
+      "runsTitle": "Rondas de recolha",
+      "itemsTitle": "Faturas recebidas",
+      "runsHint_one": "{{count}} ronda",
+      "runsHint_many": "{{count}} de rondas",
+      "runsHint_other": "{{count}} rondas",
+      "retention_one": "O registo das rondas é guardado {{count}} dia. As rondas anteriores a {{date}} já não aparecem.",
+      "retention_many": "O registo das rondas é guardado {{count}} de dias. As rondas anteriores a {{date}} já não aparecem.",
+      "retention_other": "O registo das rondas é guardado {{count}} dias. As rondas anteriores a {{date}} já não aparecem.",
+      "scheduler": "Automático",
+      "reasonsNote": "O motivo é guardado mesmo que a fatura seja lançada depois. Nas faturas antigas lançadas após a verificação, o motivo falta.",
+      "runsByMonth": "Rondas por mês",
+      "itemsByMonth": "Faturas por mês",
+      "reasons": "Motivos de verificação mais frequentes",
+      "reasonsEmpty": "Não há faturas com motivo de verificação neste período.",
+      "outcome": {
+        "autoBooked": "Lançada automaticamente",
+        "staffBooked": "Lançada pelo escritório",
+        "waiting": "A aguardar verificação",
+        "dismissed": "Rejeitada"
+      },
+      "tiles": {
+        "runs": {
+          "runs": "Rondas de recolha",
+          "mails": "E-mails vistos",
+          "attachments": "Anexos",
+          "booked": "Lançadas",
+          "review": "Para verificar",
+          "skipped": "Ignoradas",
+          "failed": "Falhadas"
+        },
+        "items": {
+          "all": "Todas as faturas",
+          "autoBooked": "Lançadas automaticamente",
+          "staffBooked": "Lançadas pelo escritório",
+          "waiting": "A aguardar verificação",
+          "dismissed": "Rejeitadas",
+          "flagged": "Com motivo de verificação"
+        }
+      },
+      "columns": {
+        "runs": {
+          "startedAt": "Início",
+          "by": "Por",
+          "mails": "E-mails",
+          "attachments": "Anexos",
+          "booked": "Lançadas",
+          "review": "Para verificar",
+          "skipped": "Ignoradas",
+          "failed": "Falhadas",
+          "errors": "Erros"
+        },
+        "items": {
+          "receivedAt": "Recebida",
+          "from": "Remetente",
+          "subject": "Assunto",
+          "attachment": "Anexo",
+          "outcome": "Resultado",
+          "reason": "Motivo",
+          "licensePlate": "Matrícula",
+          "handledBy": "Tratada por"
+        }
+      },
+      "csvSubjectRuns": "rondas-de-recolha",
+      "csvSubjectItems": "caixa-de-faturas"
     }
   },
   "fleetReports": {

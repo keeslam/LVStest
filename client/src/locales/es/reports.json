@@ -336,7 +336,8 @@
       "transports": "Transportes",
       "financial": "Financiero",
       "fiscal": "Fiscal",
-      "portal": "Portal"
+      "portal": "Portal",
+      "office": "Oficina"
     },
     "common": {
       "vehicle": "Vehículo",
@@ -794,6 +795,77 @@
         "avgWait": "Espera media (días)"
       },
       "csvSubject": "lista-de-espera"
+    }
+  },
+  "officeReports": {
+    "vehicleFilterIgnored": "El filtro de vehículo no se aplica aquí: las rondas y las facturas rara vez pertenecen a un solo coche.",
+    "inbox": {
+      "title": "Buzón de facturas",
+      "description": "Lo que trae el buzón de facturas: las rondas de recogida y las propias facturas.",
+      "runsTitle": "Rondas de recogida",
+      "itemsTitle": "Facturas recibidas",
+      "runsHint_one": "{{count}} ronda",
+      "runsHint_many": "{{count}} de rondas",
+      "runsHint_other": "{{count}} rondas",
+      "retention_one": "El registro de rondas se conserva {{count}} día. Las rondas anteriores al {{date}} ya no aparecen.",
+      "retention_many": "El registro de rondas se conserva {{count}} de días. Las rondas anteriores al {{date}} ya no aparecen.",
+      "retention_other": "El registro de rondas se conserva {{count}} días. Las rondas anteriores al {{date}} ya no aparecen.",
+      "scheduler": "Automático",
+      "reasonsNote": "El motivo se conserva aunque la factura se contabilice después. En las facturas antiguas contabilizadas tras la revisión falta el motivo.",
+      "runsByMonth": "Rondas por mes",
+      "itemsByMonth": "Facturas por mes",
+      "reasons": "Motivos de revisión más frecuentes",
+      "reasonsEmpty": "No hay facturas con motivo de revisión en este periodo.",
+      "outcome": {
+        "autoBooked": "Contabilizada automáticamente",
+        "staffBooked": "Contabilizada por la oficina",
+        "waiting": "Pendiente de revisión",
+        "dismissed": "Rechazada"
+      },
+      "tiles": {
+        "runs": {
+          "runs": "Rondas de recogida",
+          "mails": "Correos revisados",
+          "attachments": "Adjuntos",
+          "booked": "Contabilizadas",
+          "review": "Para revisar",
+          "skipped": "Omitidas",
+          "failed": "Fallidas"
+        },
+        "items": {
+          "all": "Todas las facturas",
+          "autoBooked": "Contabilizadas automáticamente",
+          "staffBooked": "Contabilizadas por la oficina",
+          "waiting": "Pendientes de revisión",
+          "dismissed": "Rechazadas",
+          "flagged": "Con motivo de revisión"
+        }
+      },
+      "columns": {
+        "runs": {
+          "startedAt": "Inicio",
+          "by": "Por",
+          "mails": "Correos",
+          "attachments": "Adjuntos",
+          "booked": "Contabilizadas",
+          "review": "Para revisar",
+          "skipped": "Omitidas",
+          "failed": "Fallidas",
+          "errors": "Errores"
+        },
+        "items": {
+          "receivedAt": "Recibida",
+          "from": "Remitente",
+          "subject": "Asunto",
+          "attachment": "Adjunto",
+          "outcome": "Resultado",
+          "reason": "Motivo",
+          "licensePlate": "Matrícula",
+          "handledBy": "Gestionada por"
+        }
+      },
+      "csvSubjectRuns": "rondas-de-recogida",
+      "csvSubjectItems": "buzon-de-facturas"
     }
   },
   "fleetReports": {

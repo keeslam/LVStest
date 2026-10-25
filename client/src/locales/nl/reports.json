@@ -328,7 +328,8 @@
       "transports": "Transporten",
       "financial": "Financieel",
       "fiscal": "Fiscaal",
-      "portal": "Portaal"
+      "portal": "Portaal",
+      "office": "Kantoor"
     },
     "common": {
       "vehicle": "Voertuig",
@@ -780,6 +781,75 @@
         "avgWait": "Gem. wachttijd (dagen)"
       },
       "csvSubject": "wachtlijst"
+    }
+  },
+  "officeReports": {
+    "vehicleFilterIgnored": "Het voertuigfilter geldt hier niet: rondes en facturen horen meestal niet bij één auto.",
+    "inbox": {
+      "title": "Factuurpostvak",
+      "description": "Wat het postvak voor facturen binnenhaalt: de ophaalrondes en de facturen zelf.",
+      "runsTitle": "Ophaalrondes",
+      "itemsTitle": "Binnengekomen facturen",
+      "runsHint_one": "{{count}} ronde",
+      "runsHint_other": "{{count}} rondes",
+      "retention_one": "Het logboek met ophaalrondes wordt {{count}} dag bewaard. Rondes van vóór {{date}} staan er niet meer in.",
+      "retention_other": "Het logboek met ophaalrondes wordt {{count}} dagen bewaard. Rondes van vóór {{date}} staan er niet meer in.",
+      "scheduler": "Automatisch",
+      "reasonsNote": "Een reden blijft bewaard ook als de factuur daarna alsnog is geboekt. Bij oudere facturen die na controle zijn geboekt ontbreekt de reden.",
+      "runsByMonth": "Rondes per maand",
+      "itemsByMonth": "Facturen per maand",
+      "reasons": "Meest voorkomende redenen voor controle",
+      "reasonsEmpty": "Geen facturen met een controlereden in deze periode.",
+      "outcome": {
+        "autoBooked": "Automatisch geboekt",
+        "staffBooked": "Door kantoor geboekt",
+        "waiting": "Wacht op controle",
+        "dismissed": "Afgewezen"
+      },
+      "tiles": {
+        "runs": {
+          "runs": "Ophaalrondes",
+          "mails": "Mails bekeken",
+          "attachments": "Bijlagen",
+          "booked": "Geboekt",
+          "review": "Ter controle",
+          "skipped": "Overgeslagen",
+          "failed": "Mislukt"
+        },
+        "items": {
+          "all": "Alle facturen",
+          "autoBooked": "Automatisch geboekt",
+          "staffBooked": "Door kantoor geboekt",
+          "waiting": "Wacht op controle",
+          "dismissed": "Afgewezen",
+          "flagged": "Met controlereden"
+        }
+      },
+      "columns": {
+        "runs": {
+          "startedAt": "Gestart",
+          "by": "Door",
+          "mails": "Mails",
+          "attachments": "Bijlagen",
+          "booked": "Geboekt",
+          "review": "Ter controle",
+          "skipped": "Overgeslagen",
+          "failed": "Mislukt",
+          "errors": "Fouten"
+        },
+        "items": {
+          "receivedAt": "Ontvangen",
+          "from": "Afzender",
+          "subject": "Onderwerp",
+          "attachment": "Bijlage",
+          "outcome": "Uitkomst",
+          "reason": "Reden",
+          "licensePlate": "Kenteken",
+          "handledBy": "Afgehandeld door"
+        }
+      },
+      "csvSubjectRuns": "ophaalrondes",
+      "csvSubjectItems": "factuurpostvak"
     }
   },
   "fleetReports": {
