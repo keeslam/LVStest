@@ -202,6 +202,8 @@ export function displayCell(t: TFunction, column: OutputColumn, value: unknown):
     // A calculation comes back as a long decimal string: show it like the CSV, with Dutch separators.
     const n = Number(value);
     if (!Number.isFinite(n)) return String(value);
+    // A Som, Gemiddelde, Kleinste or Grootste of an amount is still an amount: euros, like its cells.
+    if (!isCount(column.aggregation) && MONEY_DISPLAY.test(column.field)) return formatCurrency(n);
     const whole = Number.isInteger(n) && !MONEY_FIELD.test(column.field) && column.aggregation !== "AVG";
     const digits = whole ? 0 : 2;
     return n.toLocaleString("nl-NL", { minimumFractionDigits: digits, maximumFractionDigits: digits });

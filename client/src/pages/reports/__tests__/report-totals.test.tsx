@@ -101,6 +101,22 @@ function renderSaved(report: SavedReport = savedReport) {
 beforeEach(() => csvSpy.mockClear());
 afterEach(async () => { vi.unstubAllGlobals(); await i18n.changeLanguage("nl"); });
 
+describe("money totals", () => {
+  it("a Som of a plain amount field shows euros, like its cells", () => {
+    const t = i18n.getFixedT("nl", "reports");
+    const amount: OutputColumn = { table: "expenses", field: "amount", label: "Bedrag" } as OutputColumn;
+    const row = totalsRow(t, [{ amount: "104.00" }, { amount: "110.00" }], [amount], { amount: "SUM" }, "Totaal");
+    expect(row?.[0]).toMatch(/^Totaal: €\s214,00$/);
+  });
+
+  it("an aggregated Som of an amount field shows euros too", () => {
+    const t = i18n.getFixedT("nl", "reports");
+    const summed: OutputColumn = { table: "expenses", field: "amount", label: "Bedrag", aggregation: "SUM" } as OutputColumn;
+    const row = totalsRow(t, [{ "amount.SUM": "104.00" }, { "amount.SUM": "110.00" }], [summed], { "amount.SUM": "SUM" }, "Totaal");
+    expect(row?.[0]).toMatch(/^Totaal: €\s214,00$/);
+  });
+});
+
 describe("saved report with a totals row", () => {
   it("shows the total under the table, over all rows", async () => {
     renderSaved();
@@ -135,12 +151,12 @@ describe("saved report with a totals row", () => {
     await user.click(await screen.findByTestId("button-report-print"));
     const dialog = await screen.findByTestId("dialog-report-print");
     await waitFor(() => expect(srcDoc()).toContain("<tfoot>"));
-    expect(srcDoc()).toMatch(/<tfoot><tr><td>Totaal<\/td><td>78,00<\/td>/);
+    expect(srcDoc()).toMatch(/<tfoot><tr><td>Totaal<\/td><td>€\s78,00<\/td>/);
     expect(srcDoc()).not.toContain("Totaal (deze pagina)");
     await user.selectOptions(within(dialog).getByTestId("print-option-rows"), "page");
     await waitFor(() => expect(srcDoc()).toContain("Totaal (deze pagina)"));
     // rows 1 to 10 on the first page: 55
-    expect(srcDoc()).toMatch(/<td>Totaal \(deze pagina\)<\/td><td>55,00<\/td>/);
+    expect(srcDoc()).toMatch(/<td>Totaal \(deze pagina\)<\/td><td>€\s55,00<\/td>/);
   });
 });
 
