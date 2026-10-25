@@ -1,4 +1,5 @@
 import { UserPermission, UserRole } from './schema';
+import type { CalculatedField } from './report-formula';
 
 export type FieldType = 'text' | 'number' | 'date' | 'boolean';
 
@@ -63,6 +64,8 @@ export interface DataSource {
 export interface ReportColumn {
   field: string;
   table: string;
+  /** Id of a calculated field of the report; then field/table are empty. */
+  calc?: string;
   label: string;
   aggregation?: AggregationFunction;
   /** Name of a link of the main source: the field is read from the linked row. */
@@ -72,6 +75,8 @@ export interface ReportColumn {
 export interface ReportFilter {
   field: string;
   table: string;
+  /** Id of a calculated field of the report; then field/table are empty. */
+  calc?: string;
   operator: FilterOperator;
   value: string | number | boolean | null;
   value2?: string | number;
@@ -82,6 +87,8 @@ export interface ReportFilter {
 export interface ReportGrouping {
   field: string;
   table: string;
+  /** Id of a calculated field of the report; then field/table are empty. */
+  calc?: string;
   /** Date fields only: group per office-time month instead of per value. */
   period?: "month";
   /** Name of a link of the main source: the field is read from the linked row. */
@@ -117,6 +124,10 @@ export interface ReportConfiguration {
   tab?: SavedReportTab;
   /** Date field of the source that the period of a tab applies to; none means the whole table. */
   periodField?: string;
+  /** Fields computed from other fields (formulas and if-then rules); at most 20. */
+  calculatedFields?: CalculatedField[];
+  /** Total row per column key (field name or calculated-field id). */
+  totals?: Record<string, 'SUM' | 'AVG' | 'COUNT'>;
 }
 
 const textOperators: FilterOperator[] = [
