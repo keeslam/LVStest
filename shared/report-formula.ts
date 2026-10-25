@@ -97,7 +97,9 @@ export function parseFormula(
     if (tk.t === "(") {
       pos++;
       const inner = parseExpr();
-      pos++; // the matching ")" (balance was checked up front)
+      const close = tokens[pos];
+      if (!close || close.t !== ")") throw new ParseFail("MISSING_OPERATOR"); // balance was checked, so an operand is left over
+      pos++;
       return inner;
     }
     pos++;
@@ -107,7 +109,7 @@ export function parseFormula(
       return node;
     }
     if (tk.t === "calc") return { kind: "calc", id: tk.id };
-    if (tk.t === "number") return { kind: "number", value: tk.value };
+    if (tk.t === "number" && Number.isFinite(tk.value)) return { kind: "number", value: tk.value };
     throw new ParseFail("MISSING_OPERAND"); // operator or ")" where an operand belongs
   };
 
@@ -148,79 +150,150 @@ export function formulaTokens(node: FormulaNode): FormulaToken[] {
   }
 }
 
-function fieldRoots(f: CalculatedField): FormulaNode[] {
-  if (f.kind === "formula") return f.formula ? [f.formula] : [];
+type FieldNode = Extract<FormulaNode, { kind: "field" }>;
+
+const OPS: readonly string[] = ["+", "-", "*", "/"];
+const TESTS: readonly string[] = ["eq", "neq", "gt", "lt", "empty"];
+
+const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
+
+/**
+ * Depth = number of nested operator levels: a lone field or number is depth 0,
+ * `a + b` is depth 1, `(a + b) * c` is depth 2. A formula may be at most
+ * MAX_FORMULA_DEPTH (10) levels deep; calc references add the depth of the calc they point at.
+ */
+type Walk =
+  | { ok: true; leaves: FormulaNode[]; depth: number }
+  | { ok: false; error: "BAD_RULE" | "TOO_DEEP" };
+
+/** Iterative, bounded walk over untrusted input: never recurses, stops at the depth limit. */
+function walk(root: unknown): Walk {
+  const leaves: FormulaNode[] = [];
+  let maxDepth = 0;
+  const stack: Array<[unknown, number]> = [[root, 0]];
+  while (stack.length > 0) {
+    const [node, d] = stack.pop()!;
+    if (!isObj(node)) return { ok: false, error: "BAD_RULE" };
+    switch (node.kind) {
+      case "number":
+        if (typeof node.value !== "number" || !Number.isFinite(node.value)) return { ok: false, error: "BAD_RULE" };
+        leaves.push(node as unknown as FormulaNode);
+        break;
+      case "field":
+        if (typeof node.table !== "string" || typeof node.field !== "string") return { ok: false, error: "BAD_RULE" };
+        if (node.via !== undefined && typeof node.via !== "string") return { ok: false, error: "BAD_RULE" };
+        leaves.push(node as unknown as FormulaNode);
+        break;
+      case "calc":
+        if (typeof node.id !== "string") return { ok: false, error: "BAD_RULE" };
+        leaves.push(node as unknown as FormulaNode);
+        break;
+      case "op":
+        if (typeof node.op !== "string" || !OPS.includes(node.op)) return { ok: false, error: "BAD_RULE" };
+        if (d + 1 > MAX_FORMULA_DEPTH) return { ok: false, error: "TOO_DEEP" };
+        maxDepth = Math.max(maxDepth, d + 1);
+        stack.push([node.right, d + 1], [node.left, d + 1]);
+        break;
+      default:
+        return { ok: false, error: "BAD_RULE" };
+    }
+  }
+  return { ok: true, leaves, depth: maxDepth };
+}
+
+/** The expression roots of a calculated field, or null when its shape is malformed. */
+function rootsOf(f: unknown): unknown[] | null {
+  if (!isObj(f)) return null;
+  if (f.kind === "formula") return f.formula === undefined || f.formula === null ? null : [f.formula];
+  if (f.kind !== "ifThen") return null;
   const r = f.rule;
-  if (!r) return [];
-  const roots: FormulaNode[] = [r.when.ref];
-  if ("ref" in r.then) roots.push(r.then.ref);
-  if ("ref" in r.otherwise) roots.push(r.otherwise.ref);
+  if (!isObj(r) || !isObj(r.when) || !isObj(r.then) || !isObj(r.otherwise)) return null;
+  const roots: unknown[] = [r.when.ref];
+  for (const res of [r.then, r.otherwise]) {
+    if ("ref" in res) roots.push(res.ref);
+    else if (typeof res.text !== "string" || res.text.length > MAX_RULE_TEXT) return null;
+  }
+  const test = r.when.test;
+  if (typeof test !== "string" || !TESTS.includes(test)) return null;
+  const v = r.when.value;
+  if (test === "gt" || test === "lt") {
+    if (typeof v !== "number" || !Number.isFinite(v)) return null;
+  } else if (test !== "empty") {
+    const okValue = (typeof v === "number" && Number.isFinite(v)) || (typeof v === "string" && v !== "");
+    if (!okValue) return null;
+  }
   return roots;
 }
 
-function collectLeaves(node: FormulaNode, out: FormulaNode[]): void {
-  if (node.kind === "op") {
-    collectLeaves(node.left, out);
-    collectLeaves(node.right, out);
-  } else out.push(node);
+/** All field references of all calculated fields (for the permission check). Tolerates malformed input. */
+export function referencedFields(fields: CalculatedField[]): FieldNode[] {
+  const out: FieldNode[] = [];
+  if (!Array.isArray(fields)) return out;
+  for (const f of fields) {
+    const roots = isObj(f) && f.kind === "ifThen" ? ruleRoots(f.rule) : rootsOf(f);
+    for (const root of roots ?? []) {
+      const w = walk(root);
+      if (w.ok) for (const l of w.leaves) if (isFieldNode(l)) out.push(l);
+    }
+  }
+  return out;
 }
 
-/** All field references of all calculated fields (for the permission check). */
-export function referencedFields(fields: CalculatedField[]): FormulaNode[] {
-  const leaves: FormulaNode[] = [];
-  for (const f of fields) for (const root of fieldRoots(f)) collectLeaves(root, leaves);
-  return leaves.filter((n) => n.kind === "field");
+function isFieldNode(n: FormulaNode): n is FieldNode {
+  return n.kind === "field";
 }
 
-function treeDepth(node: FormulaNode): number {
-  return node.kind === "op" ? 1 + Math.max(treeDepth(node.left), treeDepth(node.right)) : 1;
+/** Roots of a rule without judging its other parts (used by the lenient permission scan). */
+function ruleRoots(r: unknown): unknown[] {
+  if (!isObj(r)) return [];
+  const roots: unknown[] = [];
+  if (isObj(r.when)) roots.push(r.when.ref);
+  for (const res of [r.then, r.otherwise]) if (isObj(res) && "ref" in res) roots.push(res.ref);
+  return roots;
 }
 
 export type ValidationError = "UNKNOWN_FIELD" | "CYCLE" | "TOO_DEEP" | "TOO_MANY" | "BAD_RULE";
 
+/** Never throws, whatever the input looks like. */
 export function validateCalculatedFields(
   fields: CalculatedField[],
   isKnownField: (ref: FieldRef) => boolean,
 ): { ok: true } | { ok: false; error: ValidationError; id: string } {
+  if (!Array.isArray(fields)) return { ok: false, error: "BAD_RULE", id: "" };
+  const idOf = (f: unknown, i: number): string => (isObj(f) && typeof f.id === "string" ? f.id : String(i));
   if (fields.length > MAX_CALCULATED_FIELDS) {
-    return { ok: false, error: "TOO_MANY", id: fields[MAX_CALCULATED_FIELDS].id };
-  }
-  const byId = new Map(fields.map((f) => [f.id, f] as const));
-
-  // Shape of each field first.
-  for (const f of fields) {
-    if (f.kind === "formula") {
-      if (!f.formula) return { ok: false, error: "BAD_RULE", id: f.id };
-    } else {
-      const r = f.rule;
-      if (!r) return { ok: false, error: "BAD_RULE", id: f.id };
-      if (r.when.test !== "empty" && (r.when.value === undefined || r.when.value === "")) {
-        return { ok: false, error: "BAD_RULE", id: f.id };
-      }
-      for (const res of [r.then, r.otherwise]) {
-        if ("text" in res && res.text.length > MAX_RULE_TEXT) return { ok: false, error: "BAD_RULE", id: f.id };
-      }
-    }
+    return { ok: false, error: "TOO_MANY", id: idOf(fields[MAX_CALCULATED_FIELDS], MAX_CALCULATED_FIELDS) };
   }
 
-  // Unknown references and own tree depth.
-  for (const f of fields) {
-    for (const root of fieldRoots(f)) {
-      if (treeDepth(root) > MAX_FORMULA_DEPTH) return { ok: false, error: "TOO_DEEP", id: f.id };
-      const leaves: FormulaNode[] = [];
-      collectLeaves(root, leaves);
-      for (const leaf of leaves) {
+  const info = new Map<string, { own: number; deps: string[] }>();
+  for (let i = 0; i < fields.length; i++) {
+    const f = fields[i] as unknown;
+    const id = idOf(f, i);
+    if (!isObj(f) || typeof f.id !== "string" || f.id === "" || info.has(f.id)) return { ok: false, error: "BAD_RULE", id };
+    const roots = rootsOf(f);
+    if (!roots) return { ok: false, error: "BAD_RULE", id };
+    let own = 0;
+    const deps: string[] = [];
+    for (const root of roots) {
+      const w = walk(root);
+      if (!w.ok) return { ok: false, error: w.error, id };
+      own = Math.max(own, w.depth);
+      for (const leaf of w.leaves) {
         if (leaf.kind === "field" && !isKnownField({ table: leaf.table, field: leaf.field, via: leaf.via })) {
-          return { ok: false, error: "UNKNOWN_FIELD", id: f.id };
+          return { ok: false, error: "UNKNOWN_FIELD", id };
         }
-        if (leaf.kind === "calc" && !byId.has(leaf.id)) return { ok: false, error: "UNKNOWN_FIELD", id: f.id };
+        if (leaf.kind === "calc") deps.push(leaf.id);
       }
     }
+    info.set(f.id, { own, deps });
+  }
+  for (const [id, { deps }] of info) {
+    if (deps.some((d) => !info.has(d))) return { ok: false, error: "UNKNOWN_FIELD", id };
   }
 
-  // Cycles and total depth through calc references.
+  // Cycles and total depth through calc references (at most 20 fields, so recursion is shallow).
   const state = new Map<string, "visiting" | "done">();
-  const depthOf = new Map<string, number>();
+  const total = new Map<string, number>();
   let failure: { error: "CYCLE" | "TOO_DEEP"; id: string } | null = null;
   const visit = (id: string): number => {
     const st = state.get(id);
@@ -228,25 +301,19 @@ export function validateCalculatedFields(
       if (!failure) failure = { error: "CYCLE", id };
       return 0;
     }
-    if (st === "done") return depthOf.get(id) ?? 0;
+    if (st === "done") return total.get(id) ?? 0;
     state.set(id, "visiting");
-    const f = byId.get(id)!;
-    let own = 1;
-    const leaves: FormulaNode[] = [];
-    for (const root of fieldRoots(f)) {
-      own = Math.max(own, treeDepth(root));
-      collectLeaves(root, leaves);
-    }
-    let deepestDep = 0;
-    for (const leaf of leaves) if (leaf.kind === "calc") deepestDep = Math.max(deepestDep, visit(leaf.id));
-    const total = own + deepestDep;
-    if (total > MAX_FORMULA_DEPTH && !failure) failure = { error: "TOO_DEEP", id };
+    const { own, deps } = info.get(id)!;
+    let deepest = 0;
+    for (const d of deps) deepest = Math.max(deepest, visit(d));
+    const t = own + deepest;
+    if (t > MAX_FORMULA_DEPTH && !failure) failure = { error: "TOO_DEEP", id };
     state.set(id, "done");
-    depthOf.set(id, total);
-    return total;
+    total.set(id, t);
+    return t;
   };
-  for (const f of fields) {
-    visit(f.id);
+  for (const id of info.keys()) {
+    visit(id);
     if (failure) return { ok: false, ...(failure as { error: "CYCLE" | "TOO_DEEP"; id: string }) };
   }
   return { ok: true };

@@ -508,3 +508,8 @@ export const REMOVED_REPORT_FIELDS: ReadonlySet<string> = new Set([
   'reservations.paidAmount',
   'expenses.mileage',
 ]);
+
+/** True for an entry that points at a calculated field (server and client branch on this first; table/field are then empty strings). */
+export function isCalcEntry(entry: { calc?: string }): boolean {
+  return typeof entry.calc === 'string' && entry.calc !== '';
+}
