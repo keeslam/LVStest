@@ -99,6 +99,12 @@ function deniedReportBody(user: Express.User | undefined, config: any, dataSourc
 }
 import type { Express } from "express";
 import { buildMaintenanceCostReport } from "../utils/maintenance-costs";
+import {
+  parseMaintenanceQuery, loadMaintenanceData, overviewPart, brandsPart, vehiclesPart, suppliersPart, trendsPart, signalsPart, rowsPart,
+  type MaintenanceData, type MaintenanceQuery,
+} from "../services/maintenance-analysis";
+import { officeTimeZone } from "../services/office-time";
+import { dateInZone } from "../../shared/office-timezone";
 import { buildVehicleFinancials, type DateRangeYmd } from "../utils/financial-reports";
 import { mountReport } from "../services/reports/report-kit";
 import { finesReport } from "../services/reports/fines-report";
@@ -186,6 +192,39 @@ export function registerReportRoutes(app: Express): void {
       console.error("Error fetching maintenance cost analysis:", error);
       res.status(500).json({ message: "Error fetching maintenance cost analysis" });
     }
+  });
+
+  // Onderhoudsanalyse (Kees, 2026-10-26): one endpoint per tab of the window, all with the same filter.
+  // The report right, as for the old analysis; every km field and the km-band filter/drill are admin only.
+  const analysisParts = {
+    overview: (data: MaintenanceData, q: MaintenanceQuery) => overviewPart(data, q),
+    brands: (data: MaintenanceData, q: MaintenanceQuery) => brandsPart(data, q),
+    vehicles: (data: MaintenanceData, q: MaintenanceQuery) => vehiclesPart(data, q),
+    suppliers: (data: MaintenanceData, q: MaintenanceQuery) => suppliersPart(data, q),
+    trends: (data: MaintenanceData, q: MaintenanceQuery) => trendsPart(data, q),
+    signals: (data: MaintenanceData, q: MaintenanceQuery) => signalsPart(data, q),
+  } as const;
+  const analysisRoute = (path: string, run: (data: MaintenanceData, q: MaintenanceQuery, query: Record<string, unknown>) => Promise<{ status: number; body: unknown }>) => {
+    app.get(`/api/reports/maintenance-analysis/${path}`, hasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS), async (req: Request, res: Response) => {
+      try {
+        const isAdmin = req.user?.role === UserRole.ADMIN;
+        const query = req.query as Record<string, unknown>;
+        const parsed = parseMaintenanceQuery(query, dateInZone(new Date(), officeTimeZone()), isAdmin);
+        if (!parsed.ok) return res.status(parsed.status).json(parsed.body);
+        const { status, body } = await run(await loadMaintenanceData(isAdmin), parsed.q, query);
+        res.status(status).json(body);
+      } catch (error) {
+        console.error(`Error loading the maintenance analysis (${path}):`, error);
+        res.status(500).json({ message: "Failed to load the maintenance analysis", code: "MAINTENANCE_ANALYSIS_FAILED" });
+      }
+    });
+  };
+  for (const [path, part] of Object.entries(analysisParts)) {
+    analysisRoute(path, async (data, q) => ({ status: 200, body: await part(data, q) }));
+  }
+  analysisRoute("rows", async (data, q, query) => {
+    const result = rowsPart(data, q, query);
+    return result.ok ? { status: 200, body: result.body } : { status: result.status, body: result.body };
   });
 
   // ============================================

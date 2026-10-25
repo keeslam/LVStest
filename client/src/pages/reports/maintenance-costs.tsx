@@ -11,6 +11,7 @@ import { Price } from "@/components/ui/price";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { TrendingUp, TrendingDown, DollarSign, Wrench, Car, Calendar } from "lucide-react";
 import { QueryErrorState } from "@/components/ui/query-error-state";
+import { MIN_EXPENSES_FOR_RATING, MIN_VEHICLES_FOR_RATING, RATING_GOOD_FACTOR } from "@shared/maintenance-analysis";
 
 interface MaintenanceCostData {
   totalCosts: number;
@@ -36,14 +37,8 @@ interface MaintenanceCostData {
   monthlyTrend: Array<{month: string, amount: number}>;
 }
 
-/**
- * A brand is rated "Uitstekend / Goed / Gemiddeld" only when this many cost
- * lines and at least MIN_VEHICLES_FOR_RATING vehicles stand behind it (A-14-2): the brand AUDIT, with a single line of
- * EUR 25.50, used to come out "Uitstekend" on nothing.
- */
-const MIN_EXPENSES_FOR_RATING = 3;
-// One vehicle with three oil changes says nothing about a brand.
-const MIN_VEHICLES_FOR_RATING = 2;
+// A-14-2: the rating thresholds (MIN_EXPENSES_FOR_RATING, MIN_VEHICLES_FOR_RATING, RATING_GOOD_FACTOR)
+// live in shared/maintenance-analysis.ts, shared with the server's maintenance analysis.
 
 /** "2026-05" as "mei 2026". */
 function monthLabel(key: string): string {
@@ -342,8 +337,8 @@ export default function MaintenanceCostsPage() {
                         const overallAvg = costData.averageCostPerVehicle;
                         // A-14-2: no rating on a handful of cost lines; say so instead.
                         const enoughData = (brand.expenseCount ?? 0) >= MIN_EXPENSES_FOR_RATING && brand.vehicleCount >= MIN_VEHICLES_FOR_RATING && overallAvg > 0;
-                        const efficiency = !enoughData ? t('maintenanceCostsPage.efficiencyInsufficient') : avgCost < overallAvg ? t('maintenanceCostsPage.efficiencyExcellent') : avgCost < overallAvg * 1.2 ? t('maintenanceCostsPage.efficiencyGood') : t('maintenanceCostsPage.efficiencyAverage');
-                        const efficiencyColor = !enoughData ? 'text-muted-foreground' : avgCost < overallAvg ? 'text-green-600' : avgCost < overallAvg * 1.2 ? 'text-blue-600' : 'text-orange-600';
+                        const efficiency = !enoughData ? t('maintenanceCostsPage.efficiencyInsufficient') : avgCost < overallAvg ? t('maintenanceCostsPage.efficiencyExcellent') : avgCost < overallAvg * RATING_GOOD_FACTOR ? t('maintenanceCostsPage.efficiencyGood') : t('maintenanceCostsPage.efficiencyAverage');
+                        const efficiencyColor = !enoughData ? 'text-muted-foreground' : avgCost < overallAvg ? 'text-green-600' : avgCost < overallAvg * RATING_GOOD_FACTOR ? 'text-blue-600' : 'text-orange-600';
                         
                         return (
                           <tr key={brand.brand} className="border-b hover:bg-gray-50">
