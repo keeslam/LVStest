@@ -172,6 +172,29 @@ describe("report builder sources", () => {
     expect(res.body).toMatchObject({ code: "REPORT_COLUMN_NOT_GROUPED", field: "fines.status" });
   });
 
+  it("een leeg item in kolommen, groepering of filters geeft 400, geen 500", async () => {
+    const a = await admin.post("/api/reports/execute").send({ name: "t", dataSources: ["fines"], columns: [null], filters: [] });
+    expect(a.status).toBe(400);
+    const b = await admin.post("/api/reports/execute").send({
+      name: "t", dataSources: ["fines"], columns: [{ table: "fines", field: "status" }], filters: [], groupBy: [null],
+    });
+    expect(b.status).toBe(400);
+    const c = await admin.post("/api/reports/execute").send({
+      name: "t", dataSources: ["fines"], columns: [{ table: "fines", field: "status" }], filters: [null],
+    });
+    expect(c.status).toBe(400);
+  });
+
+  it("dezelfde gewone kolom twee keer bij een groepering geeft 400, geen 500", async () => {
+    const res = await admin.post("/api/reports/execute").send({
+      name: "t", dataSources: ["fines"], filters: [],
+      columns: [{ table: "fines", field: "offenceAt" }, { table: "fines", field: "offenceAt" }, { table: "fines", field: "id", aggregation: "COUNT" }],
+      groupBy: [{ table: "fines", field: "offenceAt", period: "month" }],
+    });
+    expect(res.status).toBe(400);
+    expect(res.body).toMatchObject({ code: "REPORT_COLUMN_DUPLICATE", field: "fines.offenceAt" });
+  });
+
   it("per maand alleen bij een datumveld, alleen 'month'", async () => {
     const base = { name: "t", dataSources: ["fines"], columns: [{ table: "fines", field: "status" }], filters: [] };
     const a = await admin.post("/api/reports/execute").send({ ...base, groupBy: [{ table: "fines", field: "status", period: "month" }] });

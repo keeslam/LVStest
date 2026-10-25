@@ -6612,6 +6612,13 @@ export class DatabaseStorage implements IStorage {
     if (!Array.isArray(columns) || columns.length === 0) {
       return [];
     }
+    // A null or non-object entry is a malformed report, not a server fault.
+    const isEntry = (x: unknown) => !!x && typeof x === "object" && !Array.isArray(x);
+    for (const list of [columns, groupBy, filters]) {
+      if (list !== undefined && list !== null && (!Array.isArray(list) || !list.every(isEntry))) {
+        throw new ReportValidationError("Columns, grouping and filters must be lists of objects", "INVALID_REPORT");
+      }
+    }
     if (!Array.isArray(dataSources) || dataSources.length === 0) {
       throw new ReportValidationError("No data source specified");
     }
@@ -6715,6 +6722,23 @@ export class DatabaseStorage implements IStorage {
             key,
           );
         }
+      }
+    }
+
+    // The same plain column twice cannot be grouped (one alias, one expression per month).
+    if (groups.length > 0 || columns.some((c: any) => c.aggregation)) {
+      const seen = new Set<string>();
+      for (const col of columns) {
+        if (col.aggregation) continue;
+        const key = `${col.table}.${canonField(col.table, col.field)}`;
+        if (seen.has(key)) {
+          throw new ReportValidationError(
+            `De kolom ${key} staat twee keer in het rapport. Haal de dubbele kolom weg.`,
+            "REPORT_COLUMN_DUPLICATE",
+            key,
+          );
+        }
+        seen.add(key);
       }
     }
 

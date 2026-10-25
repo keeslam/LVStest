@@ -53,6 +53,12 @@ async function agentOf(perms: string[]): Promise<Agent> {
   return a;
 }
 
+let adminCached: Agent | undefined;
+async function adminAgent(): Promise<Agent> {
+  adminCached ??= await agentFor("admin");
+  return adminCached;
+}
+
 afterAll(async () => {
   await cleanupFixtureUsers();
 });
@@ -74,6 +80,11 @@ describe("rapportroutes: rechten en inloggen", () => {
         expect((await agent.agent.get(url)).status, `${perms.join("+")} ${url}`).toBe(403);
       }
     }
+  }, 60_000);
+
+  it.each(REPORTS)("$path: een beheerder krijgt wel 200 op summary (de 403's komen van de rechten)", async (r) => {
+    const admin = await adminAgent();
+    expect((await admin.agent.get(`/api/reports/${r.path}/summary`)).status, r.path).toBe(200);
   }, 60_000);
 
   it.each(REPORTS)("$path: 401 zonder inloggen", async (r) => {
