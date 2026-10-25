@@ -26,18 +26,8 @@ async function choose(page, triggerTestId, optionText, scope = page) {
   await page.waitForTimeout(250);
 }
 
-/**
- * Verbergt meldingen (toasts) op de foto. Op een verse database geeft het scherm nu een
- * foutmelding omdat de server de gebruikersinstellingen van de rapporten niet kent
- * (zie het verslag); die hoort niet in de handleiding.
- */
-async function hideToasts(page) {
-  await page.addStyleTag({ content: '[role="region"][aria-label^="Notifications"], [role="region"][aria-label^="Meldingen"] { display: none !important; }' }).catch(() => {});
-}
-
 async function openReports(page, query = "") {
   await goto(page, `/reports${query}`);
-  await hideToasts(page);
   await closeDialogs(page);
   await tid(page, "report-filter-bar").waitFor();
   await settle(page);
@@ -161,7 +151,7 @@ export const steps = [
       if (report === "mileage-history") {
         await tid(page, "select-report-mileage-vehicle").click();
         await page.locator('[role="option"]').first().waitFor();
-        await page.keyboard.type("PRC");
+        await page.keyboard.type("65PRC8");
         await page.waitForTimeout(300);
         await page.keyboard.press("Enter");
         await tid(page, "mileage-history-panel").waitFor();
@@ -507,10 +497,19 @@ export const steps = [
         marks: [
           { locator: res.getByTestId("row-report-totals"), text: "Totaal" },
           { locator: res.getByTestId("button-export-report-csv"), text: "Exporteren naar CSV" },
-          { locator: res.getByTestId("button-print-report"), text: "Afdrukken" },
+          { locator: res.getByTestId("button-report-print"), text: "Afdrukken" },
           { locator: res.getByTestId("button-close-results"), text: "Sluiten" },
         ],
       });
+      // Afdrukken in de resultaten: hetzelfde afdrukvoorbeeld als bij de vaste rapporten.
+      await res.getByTestId("button-report-print").click();
+      const pdlg = tid(page, "dialog-report-print");
+      await pdlg.waitFor();
+      await tid(page, "print-preview-frame").waitFor();
+      await page.waitForTimeout(1000);
+      await shot(page, "21-resultaten-afdrukken", { clip: pdlg, closeups: false });
+      await page.keyboard.press("Escape");
+      await pdlg.waitFor({ state: "detached" });
       await res.getByTestId("button-close-results").click();
       await res.waitFor({ state: "detached" });
 
@@ -582,7 +581,7 @@ export const steps = [
         clip: b.locator('[data-testid^="button-delete-report-"]').first().locator("xpath=ancestor::div[contains(@class,'rounded')][1]"),
         marks: [{ locator: b.locator('[data-testid^="button-delete-report-"]').first(), text: "prullenbak" }],
       });
-      await tid(page, "button-close-report-builder").click();
+      await closeDialogs(page);
       await settle(page);
     },
   },
@@ -635,7 +634,7 @@ export const steps = [
         ],
       });
       await save.getByTestId("button-cancel-save").click();
-      await tid(page, "button-close-report-builder").click();
+      await closeDialogs(page);
     },
   },
   {
@@ -656,8 +655,7 @@ export const steps = [
     async run(page) {
       await page.setViewportSize({ width: 1280, height: 1000 });
       await openVehicle(page, "65-PRC-8");
-      await hideToasts(page);
-      await tid(page, "tab-vehicle-mileage").click();
+          await tid(page, "tab-vehicle-mileage").click();
       const panel = tid(page, "mileage-history-panel");
       await panel.waitFor();
       await settle(page);

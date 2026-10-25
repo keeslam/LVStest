@@ -63,8 +63,8 @@ vergelijken**. Hoe dat werkt, staat in 21.6.
 ![Het veld Vergelijk met, van dichtbij](afbeeldingen/21-scherm-k2.png)
 *Zo ziet het veld **Vergelijk met** eruit.*
 
-**Voertuig.** Kies één auto, of laat **Alle voertuigen** staan. Klik op het veld. Typ een stuk van
-het kenteken, of het merk of model. Klik daarna op de auto.
+**Voertuig.** Kies één auto, of laat **Alle voertuigen** staan. Klik op het veld. Typ het kenteken
+(met of zonder streepjes), of het merk of model. Klik daarna op de auto.
 
 ![Het veld Voertuig, van dichtbij](afbeeldingen/21-scherm-k3.png)
 *Zo ziet het veld **Voertuig** eruit. Klik erop en typ om te zoeken.*
@@ -1010,6 +1010,10 @@ uitvoeren**, 5 **Opslaan**.*
 
 De totaalregel staat ook in de resultaten, op de afdruk en in de CSV.
 
+Een rapport toont hoogstens 1000 regels. Zijn het er meer? Dan staat boven de tabel *Eerste 1000
+regels — het totaal is niet volledig.* De totaalregel heet dan *Totaal (eerste 1000 regels)*. Maak
+het rapport kleiner met een filter of een kortere periode, of groepeer per maand.
+
 ### Het rapport uitvoeren
 
 12. Klik rechtsboven op **Rapport uitvoeren**. De knop is grijs zolang er geen kolom is. Daarna
@@ -1031,11 +1035,16 @@ De totaalregel staat ook in de resultaten, op de afdruk en in de CSV.
     ![Exporteren naar CSV, van dichtbij](afbeeldingen/21-resultaten-k2.png)
     *Zo ziet **Exporteren naar CSV** eruit.*
 
-14. Wil je de lijst op papier? Klik op **Afdrukken**. Je ziet eerst een afdrukvoorbeeld. Klik daar
-    op **Afdrukken**.
+14. Wil je de lijst op papier? Klik op **Afdrukken**. Daarna zie je hetzelfde afdrukvoorbeeld als
+    bij de vaste rapporten (21.7), met **Tabel**, de keuze voor de regels en **Liggend**. Heb je
+    gegroepeerd? Dan staat ook **Grafiek** erbij. Klik in het voorbeeld op **Afdrukken**.
 
     ![Afdrukken, van dichtbij](afbeeldingen/21-resultaten-k3.png)
     *Zo ziet **Afdrukken** eruit.*
+
+    ![Het afdrukvoorbeeld van de rapportresultaten](afbeeldingen/21-resultaten-afdrukken.png)
+    *Het afdrukvoorbeeld van de rapportresultaten, met de totaalregel. Een rapport dat nog geen naam
+    heeft, heet hier *Naamloos rapport*.*
 
 15. Klik op **Sluiten**. Daarna ben je terug in de rapportbouwer.
 
@@ -1151,7 +1160,8 @@ Een eigen rapport werkt als elk ander rapport:
   ![Afdrukken, van dichtbij](afbeeldingen/21-eigen-rapport-k4.png)
   *Zo ziet **Afdrukken** eruit.*
 
-- De totaalregel telt alle regels die je ziet, ook na zoeken.
+- De totaalregel telt alle regels die je ziet, ook na zoeken. Bij meer dan 1000 regels staat er
+  *Eerste 1000 regels — het totaal is niet volledig.*
 
   ![De regel Totaal, van dichtbij](afbeeldingen/21-eigen-rapport-k5.png)
   *Zo ziet de regel **Totaal** eruit.*
