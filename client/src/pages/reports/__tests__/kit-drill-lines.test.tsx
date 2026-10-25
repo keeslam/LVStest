@@ -61,7 +61,7 @@ const SUMMARIES: Record<string, unknown> = {
     tiles: tiles(INBOX_ITEM_REPORT_TILES), byMonth: [], byReason: [{ reason: "no_vehicle", count: 2 }],
   },
   "/api/reports/extra-costs/summary": {
-    tiles: tiles(EXTRA_COSTS_TILES), totalExtraKm: 0, byMonth: [], byCustomer: [line(7, "Klant A")], byVehicle: [line(3, "AB12CD")],
+    tiles: tiles(EXTRA_COSTS_TILES), totalExtraKm: 0, byMonth: [], byCustomer: [line(7, "Klant A")], byVehicle: [line(3, "AB12CD"), line(null, null)],
   },
   "/api/reports/transport-billing/summary": {
     tiles: tiles(TRANSPORT_BILLING_TILES), missingAmount: 0, byMonth: [],
@@ -114,6 +114,17 @@ describe("elke uitsplitsingsregel opent de lijst die bij zijn getal hoort", () =
     renderNode(node);
     await user.click(await screen.findByTestId(testId));
     await waitFor(() => expect(rowsPaths().some((p) => p.includes(wanted)), rowsPaths().join("\n")).toBe(true));
+  });
+
+  it("meer-km: de lege voertuigregel heet Geen voertuig (niet Geen klant)", async () => {
+    const user = userEvent.setup();
+    renderNode(<ExtraCostsReportCard {...range} />);
+    const row = await screen.findByTestId("extra-costs-by-vehicle-row-null");
+    expect(row).toHaveTextContent("Geen voertuig");
+    await user.click(row);
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByRole("heading")).toHaveTextContent("Geen voertuig");
+    expect(within(dialog).getByRole("heading")).not.toHaveTextContent("Geen klant");
   });
 
   it("de extra tegels withCosts en all zijn geen kaart", async () => {

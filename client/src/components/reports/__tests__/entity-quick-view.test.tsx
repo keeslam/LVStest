@@ -65,6 +65,17 @@ describe("EntityLink and the quick view", () => {
     expect(await within(dialog).findByText("Bakkerij Jansen")).toBeInTheDocument();
   });
 
+  it("on a phone a field is one column (label above value); two columns from sm", async () => {
+    mount(<EntityLink kind="vehicle" id={7} label="AB-12-CD" />);
+    await userEvent.click(screen.getByRole("button", { name: "AB-12-CD" }));
+    const dialog = await screen.findByTestId("dialog-entity-vehicle");
+    const field = await within(dialog).findByTestId("entity-field-licensePlate");
+    const classes = field.className.split(" ");
+    expect(classes).toContain("grid-cols-1");
+    expect(classes).toContain("sm:grid-cols-[10rem_1fr]");
+    expect(classes).not.toContain("grid-cols-[10rem_1fr]");
+  });
+
   it("Openen in nieuw tabblad opens the full record in a new tab", async () => {
     mount(<EntityLink kind="vehicle" id={7} label="AB-12-CD" />);
     await userEvent.click(screen.getByRole("button", { name: "AB-12-CD" }));

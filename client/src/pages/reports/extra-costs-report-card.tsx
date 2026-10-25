@@ -92,14 +92,15 @@ export function ExtraCostsReportCard(props: { from?: string; to?: string; vehicl
   ];
 
   const noCustomer = t("moneyReports.extraCosts.noCustomer");
+  const noVehicle = t("moneyReports.extraCosts.noVehicle");
   // The breakdowns count rentals with extra km cost OR fuel cost: the (hidden) withCosts tile.
   const openLine = (name: "customer" | "vehicle", row: ReportBreakdownRow) =>
-    open("withCosts", { drill: { name, key: row.key, label: row.label ?? noCustomer } });
+    open("withCosts", { drill: { name, key: row.key, label: row.label ?? (name === "vehicle" ? noVehicle : noCustomer) } });
   useReportPrint(allowed && data ? compactSections([
     tilesPrintSection(tiles),
     { kind: "chart", title: t("moneyReports.extraCosts.byMonth"), getSvg: () => chartSvgFromRef(monthChartRef) },
     breakdownPrintSection({ id: "extra-costs-by-customer", title: t("moneyReports.extraCosts.byCustomer"), rows: data.byCustomer ?? [], nullLabel: noCustomer, money: true, header }),
-    breakdownPrintSection({ id: "extra-costs-by-vehicle", title: t("moneyReports.extraCosts.byVehicle"), rows: data.byVehicle ?? [], nullLabel: noCustomer, money: true, header }),
+    breakdownPrintSection({ id: "extra-costs-by-vehicle", title: t("moneyReports.extraCosts.byVehicle"), rows: data.byVehicle ?? [], nullLabel: noVehicle, money: true, header }),
   ]) : null);
 
   if (!allowed) return null;
@@ -126,7 +127,7 @@ export function ExtraCostsReportCard(props: { from?: string; to?: string; vehicl
             </div>
             <div className="grid gap-6 lg:grid-cols-2">
               <ReportBreakdownTable title={t("moneyReports.extraCosts.byCustomer")} rows={data.byCustomer ?? []} nullLabel={t("moneyReports.extraCosts.noCustomer")} money testId="extra-costs-by-customer" onOpen={(row) => openLine("customer", row)} />
-              <ReportBreakdownTable title={t("moneyReports.extraCosts.byVehicle")} rows={data.byVehicle ?? []} nullLabel={t("moneyReports.extraCosts.noCustomer")} money testId="extra-costs-by-vehicle" onOpen={(row) => openLine("vehicle", row)} />
+              <ReportBreakdownTable title={t("moneyReports.extraCosts.byVehicle")} rows={data.byVehicle ?? []} nullLabel={noVehicle} money testId="extra-costs-by-vehicle" onOpen={(row) => openLine("vehicle", row)} />
             </div>
           </>
         )}

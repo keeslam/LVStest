@@ -760,6 +760,7 @@
       "byCustomer": "Por cliente",
       "byVehicle": "Por veículo",
       "noCustomer": "Sem cliente",
+      "noVehicle": "Sem veículo",
       "columns": {
         "reservation": "Reserva",
         "startDate": "Início",

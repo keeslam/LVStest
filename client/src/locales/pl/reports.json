@@ -772,6 +772,7 @@
       "byCustomer": "Według klienta",
       "byVehicle": "Według pojazdu",
       "noCustomer": "Brak klienta",
+      "noVehicle": "Brak pojazdu",
       "columns": {
         "reservation": "Rezerwacja",
         "startDate": "Start",

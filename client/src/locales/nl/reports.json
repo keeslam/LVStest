@@ -748,6 +748,7 @@
       "byCustomer": "Per klant",
       "byVehicle": "Per voertuig",
       "noCustomer": "Geen klant",
+      "noVehicle": "Geen voertuig",
       "columns": {
         "reservation": "Reservering",
         "startDate": "Start",

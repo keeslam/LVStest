@@ -760,6 +760,7 @@
       "byCustomer": "Per cliente",
       "byVehicle": "Per veicolo",
       "noCustomer": "Nessun cliente",
+      "noVehicle": "Nessun veicolo",
       "columns": {
         "reservation": "Prenotazione",
         "startDate": "Inizio",

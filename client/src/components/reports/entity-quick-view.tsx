@@ -88,7 +88,7 @@ interface InvoiceRecord {
 
 function Field({ name, label, children }: { name: string; label: string; children: ReactNode }) {
   return (
-    <div className="grid grid-cols-[10rem_1fr] gap-2 py-1 text-sm" data-testid={`entity-field-${name}`}>
+    <div className="grid grid-cols-1 gap-0.5 sm:grid-cols-[10rem_1fr] sm:gap-2 py-1 text-sm" data-testid={`entity-field-${name}`}>
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="min-w-0 break-words">{children}</dd>
     </div>

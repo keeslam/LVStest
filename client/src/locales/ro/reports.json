@@ -760,6 +760,7 @@
       "byCustomer": "Pe client",
       "byVehicle": "Pe vehicul",
       "noCustomer": "Fără client",
+      "noVehicle": "Fără vehicul",
       "columns": {
         "reservation": "Rezervare",
         "startDate": "Început",

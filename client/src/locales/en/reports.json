@@ -748,6 +748,7 @@
       "byCustomer": "Per customer",
       "byVehicle": "Per vehicle",
       "noCustomer": "No customer",
+      "noVehicle": "No vehicle",
       "columns": {
         "reservation": "Reservation",
         "startDate": "Start",
