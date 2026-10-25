@@ -4,7 +4,7 @@
  * permission and the transports permission family, like GET /api/transports. Follows the
  * vehicle filter. "Too late" only counts what was not finished on the planned day.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -12,9 +12,13 @@ import {
   type DeliveryReportRow, type DeliveryReportSort, type DeliveryReportSummary, type DeliveryReportTile,
 } from "@shared/reports/delivery-report";
 import { UserPermission } from "@shared/schema";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReportSection } from "@/components/reports/kit/report-section";
+import { useReportPrint } from "@/components/reports/kit/report-print";
+import { chartSvgFromRef } from "@/lib/report-document-print";
+import { compactSections, breakdownPrintSection, textTablePrintSection, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
+import { useReportRange, useReportPeriod } from "./report-filters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ReportTiles, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -33,8 +37,10 @@ const TILE_TONE: Partial<Record<DeliveryReportTile, ReportTile<DeliveryReportTil
 const n0 = (n: number) => n.toLocaleString("nl-NL", { maximumFractionDigits: 0 });
 const n1 = (n: number) => n.toLocaleString("nl-NL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
-export function DeliveryReportCard({ from, to, vehicleId }: { from?: string; to?: string; vehicleId?: string }) {
+export function DeliveryReportCard(props: { from?: string; to?: string; vehicleId?: string }) {
+  const { from, to, vehicleId } = useReportRange(props);
   const { t } = useTranslation(["reports", "delivery"]);
+  const monthChartRef = useRef<HTMLDivElement>(null);
   const allowedReports = useHasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS);
   const allowedSource = useHasPermission(
     UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES,
@@ -92,7 +98,6 @@ export function DeliveryReportCard({ from, to, vehicleId }: { from?: string; to?
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [t]);
 
-  if (!allowed) return null;
 
   const tiles: Array<ReportTile<DeliveryReportTile>> = DELIVERY_REPORT_TILES.map((id) => ({
     id,
@@ -111,13 +116,27 @@ export function DeliveryReportCard({ from, to, vehicleId }: { from?: string; to?
   const byType = data?.byType ?? [];
   const byDriver = data?.byDriver ?? [];
 
+  useReportPrint(allowed && data ? compactSections([
+    tilesPrintSection(tiles),
+    { kind: "chart", title: t("reports:officeReports.delivery.byMonth"), getSvg: () => chartSvgFromRef(monthChartRef) },
+    textTablePrintSection(
+      "delivery-by-type",
+      t("reports:officeReports.delivery.byType"),
+      [col("type"), col("total"), punctualityLabel("onTime"), punctualityLabel("late"), punctualityLabel("open"), col("km")],
+      byType.map((row) => [typeLabel(row.type), n0(row.total), n0(row.onTime), n0(row.late), n0(row.open), n1(row.km)]),
+    ),
+    textTablePrintSection(
+      "delivery-by-driver",
+      t("reports:officeReports.delivery.byDriver"),
+      [col("driver"), col("trips"), punctualityLabel("onTime"), punctualityLabel("late"), col("km")],
+      byDriver.map((row) => [row.driver ?? t("reports:officeReports.delivery.unknownDriver"), n0(row.trips), n0(row.onTime), n0(row.late), n1(row.km)]),
+    ),
+  ]) : null);
+
+  if (!allowed) return null;
+
   return (
-    <Card data-testid="card-delivery-report">
-      <CardHeader>
-        <CardTitle>{t("reports:officeReports.delivery.title")}</CardTitle>
-        <CardDescription>{t("reports:officeReports.delivery.description")}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <ReportSection testId="card-delivery-report" title={t("reports:officeReports.delivery.title")} description={t("reports:officeReports.delivery.description")}>
         {isLoading ? (
           <p className="text-sm text-muted-foreground" data-testid="delivery-loading">{t("reports:reportKit.loading")}</p>
         ) : isError || !data ? (
@@ -149,7 +168,7 @@ export function DeliveryReportCard({ from, to, vehicleId }: { from?: string; to?
             </div>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("reports:officeReports.delivery.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth ?? []} series={series} stacked testId="delivery-month-chart" />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} stacked testId="delivery-month-chart" chartRef={monthChartRef} />
             </div>
             <div className="space-y-2" data-testid="delivery-by-type">
               <h4 className="text-sm font-medium">{t("reports:officeReports.delivery.byType")}</h4>
@@ -215,7 +234,6 @@ export function DeliveryReportCard({ from, to, vehicleId }: { from?: string; to?
             </div>
           </>
         )}
-      </CardContent>
       <ReportDetailDialog<DeliveryReportRow, DeliveryReportSort>
         open={openTile !== null}
         onOpenChange={(o) => { if (!o) setOpenTile(null); }}
@@ -231,6 +249,6 @@ export function DeliveryReportCard({ from, to, vehicleId }: { from?: string; to?
         reportName="deliveries"
         testId="delivery-report"
       />
-    </Card>
+    </ReportSection>
   );
 }

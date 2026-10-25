@@ -4,7 +4,7 @@
  * the requests handled per staff member. Needs the report permission AND the portal
  * permission; ignores the page's vehicle filter (requests are seldom about one car).
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -12,9 +12,13 @@ import {
   type PortalRequestReportRow, type PortalRequestReportSort, type PortalRequestReportSummary, type PortalRequestReportTile,
 } from "@shared/reports/portal-requests-report";
 import { UserPermission } from "@shared/schema";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReportSection } from "@/components/reports/kit/report-section";
+import { useReportPrint } from "@/components/reports/kit/report-print";
+import { chartSvgFromRef } from "@/lib/report-document-print";
+import { compactSections, breakdownPrintSection, textTablePrintSection, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
+import { useReportRange, useReportPeriod } from "./report-filters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ReportTiles, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportBreakdownTable } from "@/components/reports/kit/report-breakdown-table";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
@@ -31,8 +35,11 @@ const TILE_TONE: Partial<Record<PortalRequestReportTile, ReportTile<PortalReques
   stale: "red",
 };
 
-export function PortalRequestsReportCard({ from, to, vehicleId }: { from?: string; to?: string; vehicleId?: string }) {
+export function PortalRequestsReportCard(props: { from?: string; to?: string; vehicleId?: string }) {
+  const { from, to, vehicleId } = useReportRange(props);
   const { t } = useTranslation(["reports", "portal"]);
+  const monthChartRef = useRef<HTMLDivElement>(null);
+  const header = useBreakdownHeader();
   const allowedReports = useHasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS);
   const allowedPortal = useHasPermission(UserPermission.VIEW_PORTAL, UserPermission.MANAGE_PORTAL);
   const allowed = allowedReports && allowedPortal;
@@ -90,7 +97,6 @@ export function PortalRequestsReportCard({ from, to, vehicleId }: { from?: strin
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [t]);
 
-  if (!allowed) return null;
 
   const tiles: Array<ReportTile<PortalRequestReportTile>> = PORTAL_REQUEST_REPORT_TILES.map((id) => ({
     id,
@@ -113,13 +119,23 @@ export function PortalRequestsReportCard({ from, to, vehicleId }: { from?: strin
   const count = (n: number) => n.toLocaleString("nl-NL");
   const byType = data?.byType ?? [];
 
+  useReportPrint(allowed && data ? compactSections([
+    tilesPrintSection(tiles),
+    { kind: "note", text: t("reports:portalReports.requests.median", { value: median(data.medianReplyHours) }) },
+    { kind: "chart", title: t("reports:portalReports.requests.byMonth"), getSvg: () => chartSvgFromRef(monthChartRef) },
+    textTablePrintSection(
+      "portal-requests-by-type",
+      t("reports:portalReports.requests.byType"),
+      [t("reports:portalReports.requests.columns.type"), t("reports:portalReports.requests.columns.total"), t("reports:portalReports.requests.columns.open"), statusLabel("done"), statusLabel("rejected")],
+      byType.map((row) => [typeLabel(row.type), count(row.total), count(row.open), count(row.done), count(row.rejected)]),
+    ),
+    breakdownPrintSection({ id: "portal-requests-by-handler", title: t("reports:portalReports.requests.byHandler"), rows: data.byHandler ?? [], nullLabel: t("reports:portalReports.requests.unknownHandler"), hideAmount: true, header }),
+  ]) : null);
+
+  if (!allowed) return null;
+
   return (
-    <Card data-testid="card-portal-requests-report">
-      <CardHeader>
-        <CardTitle>{t("reports:portalReports.requests.title")}</CardTitle>
-        <CardDescription>{t("reports:portalReports.requests.description")}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <ReportSection testId="card-portal-requests-report" title={t("reports:portalReports.requests.title")} description={t("reports:portalReports.requests.description")}>
         {vehicleId && vehicleId !== "all" && (
           <p className="text-sm text-muted-foreground" data-testid="portal-vehicle-filter-ignored">{t("reports:portalReports.vehicleFilterIgnored")}</p>
         )}
@@ -139,7 +155,7 @@ export function PortalRequestsReportCard({ from, to, vehicleId }: { from?: strin
             </p>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("reports:portalReports.requests.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth ?? []} series={series} stacked testId="portal-requests-month-chart" />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} stacked testId="portal-requests-month-chart" chartRef={monthChartRef} />
             </div>
             <div className="space-y-2" data-testid="portal-requests-by-type">
               <h4 className="text-sm font-medium">{t("reports:portalReports.requests.byType")}</h4>
@@ -181,7 +197,6 @@ export function PortalRequestsReportCard({ from, to, vehicleId }: { from?: strin
             />
           </>
         )}
-      </CardContent>
       <ReportDetailDialog<PortalRequestReportRow, PortalRequestReportSort>
         open={openTile !== null}
         onOpenChange={(o) => { if (!o) setOpenTile(null); }}
@@ -197,6 +212,6 @@ export function PortalRequestsReportCard({ from, to, vehicleId }: { from?: strin
         reportName="portal-requests"
         testId="portal-requests-report"
       />
-    </Card>
+    </ReportSection>
   );
 }

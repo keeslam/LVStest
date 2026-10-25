@@ -6,7 +6,7 @@
  * Only an admin gets the card and the requests: the server refuses everyone else (requireAdmin),
  * and the card does not even ask. The list has one column per month of the summary.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -19,8 +19,12 @@ import {
   type FleetMileageWarningRow,
 } from "@shared/reports/fleet-mileage-report";
 import { UserPermission, UserRole } from "@shared/schema";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ReportTiles, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportSection } from "@/components/reports/kit/report-section";
+import { useReportPrint } from "@/components/reports/kit/report-print";
+import { chartSvgFromRef } from "@/lib/report-document-print";
+import { compactSections, breakdownPrintSection, textTablePrintSection, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
+import { useReportRange, useReportPeriod } from "./report-filters";
+import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
 import { useAuth } from "@/hooks/use-auth";
@@ -42,8 +46,10 @@ const instantText = (iso: string | null) => (iso ? formatDateNl(iso, "medium") :
 
 type Column = ReportColumn<FleetMileageRow, FleetMileageSort>;
 
-export function FleetMileageReportCard({ from, to, vehicleId }: { from?: string; to?: string; vehicleId?: string }) {
+export function FleetMileageReportCard(props: { from?: string; to?: string; vehicleId?: string }) {
+  const { from, to, vehicleId } = useReportRange(props);
   const { t } = useTranslation("reports");
+  const monthChartRef = useRef<HTMLDivElement>(null);
   const k = (key: string, opts?: Record<string, unknown>) => t(`fleetReports.mileage.${key}`, opts);
   const { user } = useAuth();
   const isAdmin = user?.role === UserRole.ADMIN;
@@ -134,7 +140,6 @@ export function FleetMileageReportCard({ from, to, vehicleId }: { from?: string;
     ];
   }, [t]);
 
-  if (!allowed) return null;
 
   const open = (tile: FleetMileageTile) => {
     setShown(tile);
@@ -154,13 +159,15 @@ export function FleetMileageReportCard({ from, to, vehicleId }: { from?: string;
 
   const isWarnings = shown === "warnings";
 
+  useReportPrint(allowed && data ? compactSections([
+    tilesPrintSection(tiles),
+    { kind: "chart", title: k("byMonth"), getSvg: () => chartSvgFromRef(monthChartRef) },
+  ]) : null);
+
+  if (!allowed) return null;
+
   return (
-    <Card data-testid="card-fleet-mileage-report">
-      <CardHeader>
-        <CardTitle>{k("title")}</CardTitle>
-        <CardDescription>{k("description")}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <ReportSection testId="card-fleet-mileage-report" title={k("title")} description={k("description")}>
         {isLoading ? (
           <p className="text-sm text-muted-foreground" data-testid="fleet-mileage-loading">{t("reportKit.loading")}</p>
         ) : isError || !data ? (
@@ -174,11 +181,11 @@ export function FleetMileageReportCard({ from, to, vehicleId }: { from?: string;
                 data={data.byMonth ?? []}
                 series={[{ key: "km", label: k("kmSeries"), color: "#2563eb" }]}
                 testId="fleet-mileage-month-chart"
+                chartRef={monthChartRef}
               />
             </div>
           </>
         )}
-      </CardContent>
       <ReportDetailDialog<FleetMileageRow, FleetMileageSort>
         open={openTile !== null}
         onOpenChange={(o) => { if (!o) setOpenTile(null); }}
@@ -194,6 +201,6 @@ export function FleetMileageReportCard({ from, to, vehicleId }: { from?: string;
         reportName="fleet-mileage"
         testId="fleet-mileage"
       />
-    </Card>
+    </ReportSection>
   );
 }

@@ -4,7 +4,7 @@
  * periods), a month chart, a table per transport type and the rows behind a
  * tile. Needs only the report permission, like the Financieel tab.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -15,9 +15,13 @@ import {
   type TransportBillingTile,
 } from "@shared/reports/transport-billing-report";
 import { UserPermission } from "@shared/schema";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReportSection } from "@/components/reports/kit/report-section";
+import { useReportPrint } from "@/components/reports/kit/report-print";
+import { chartSvgFromRef } from "@/lib/report-document-print";
+import { compactSections, breakdownPrintSection, textTablePrintSection, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
+import { useReportRange, useReportPeriod } from "./report-filters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ReportTiles, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -33,8 +37,10 @@ const TILE_TONE: Partial<Record<TransportBillingTile, ReportTile<TransportBillin
   openAllTime: "red",
 };
 
-export function TransportBillingReportCard({ from, to, vehicleId }: { from: string; to: string; vehicleId?: string }) {
+export function TransportBillingReportCard(props: { from?: string; to?: string; vehicleId?: string }) {
+  const { from, to, vehicleId } = useReportPeriod(props);
   const { t } = useTranslation("reports");
+  const monthChartRef = useRef<HTMLDivElement>(null);
   const allowed = useHasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS);
   const [openTile, setOpenTile] = useState<TransportBillingTile | null>(null);
   const [shownTile, setShownTile] = useState<TransportBillingTile>("notInvoiced");
@@ -83,7 +89,6 @@ export function TransportBillingReportCard({ from, to, vehicleId }: { from: stri
     ];
   }, [t]);
 
-  if (!allowed) return null;
 
   const tiles: Array<ReportTile<TransportBillingTile>> = TRANSPORT_BILLING_TILES.map((id) => {
     const total = data?.tiles?.[id];
@@ -104,13 +109,24 @@ export function TransportBillingReportCard({ from, to, vehicleId }: { from: stri
     { key: "toll" as const, label: t("moneyReports.transport.series.toll"), color: "#6b7280" },
   ];
 
+  useReportPrint(allowed && data ? compactSections([
+    tilesPrintSection(tiles),
+    { kind: "chart", title: t("moneyReports.transport.byMonth"), getSvg: () => chartSvgFromRef(monthChartRef) },
+    textTablePrintSection(
+      "transport-billing-by-type",
+      t("moneyReports.transport.byType"),
+      ["type", "count", "billable", "notInvoiced", "toll"].map((k) => t(`moneyReports.transport.typeColumns.${k}`)),
+      (data.byType ?? []).map((row) => [
+        t(`delivery:transportDialog.typeLabels.${row.type}`, { defaultValue: row.type }),
+        row.count.toLocaleString("nl-NL"), formatCurrency(row.billable), formatCurrency(row.notInvoiced), formatCurrency(row.toll),
+      ]),
+    ),
+  ]) : null);
+
+  if (!allowed) return null;
+
   return (
-    <Card data-testid="card-transport-billing-report">
-      <CardHeader>
-        <CardTitle>{t("moneyReports.transport.title")}</CardTitle>
-        <CardDescription>{t("moneyReports.transport.description")}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <ReportSection testId="card-transport-billing-report" title={t("moneyReports.transport.title")} description={t("moneyReports.transport.description")}>
         {isLoading ? (
           <p className="text-sm text-muted-foreground" data-testid="transport-billing-report-loading">{t("reportKit.loading")}</p>
         ) : isError || !data ? (
@@ -124,7 +140,7 @@ export function TransportBillingReportCard({ from, to, vehicleId }: { from: stri
             />
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("moneyReports.transport.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth ?? []} series={series} money testId="transport-billing-month-chart" />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} money testId="transport-billing-month-chart" chartRef={monthChartRef} />
             </div>
             <div className="space-y-2" data-testid="transport-billing-by-type">
               <h4 className="text-sm font-medium">{t("moneyReports.transport.byType")}</h4>
@@ -159,7 +175,6 @@ export function TransportBillingReportCard({ from, to, vehicleId }: { from: stri
             </div>
           </>
         )}
-      </CardContent>
       <ReportDetailDialog<TransportBillingRow, TransportBillingSort>
         open={openTile !== null}
         onOpenChange={(o) => { if (!o) setOpenTile(null); }}
@@ -175,6 +190,6 @@ export function TransportBillingReportCard({ from, to, vehicleId }: { from: stri
         reportName="transport-billing"
         testId="transport-billing-report"
       />
-    </Card>
+    </ReportSection>
   );
 }

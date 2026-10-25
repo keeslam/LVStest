@@ -4,15 +4,19 @@
  * of best and most expensive customers. A money report: only the report permission (Kees),
  * no customer permission needed.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
   CUSTOMER_VALUE_TILES, type CustomerValueRow, type CustomerValueSort, type CustomerValueSummary, type CustomerValueTile,
 } from "@shared/reports/customer-value-report";
 import { UserPermission } from "@shared/schema";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ReportTiles, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportSection } from "@/components/reports/kit/report-section";
+import { useReportPrint } from "@/components/reports/kit/report-print";
+import { chartSvgFromRef } from "@/lib/report-document-print";
+import { compactSections, breakdownPrintSection, textTablePrintSection, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
+import { useReportRange, useReportPeriod } from "./report-filters";
+import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportTopChart } from "@/components/reports/kit/report-top-chart";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -27,8 +31,11 @@ const TILE_TONE: Partial<Record<CustomerValueTile, ReportTile<CustomerValueTile>
   late: "amber",
 };
 
-export function CustomerValueReportCard({ from, to, vehicleId }: { from?: string; to?: string; vehicleId?: string }) {
+export function CustomerValueReportCard(props: { from?: string; to?: string; vehicleId?: string }) {
+  const { from, to, vehicleId } = useReportRange(props);
   const { t } = useTranslation("reports");
+  const revenueChartRef = useRef<HTMLDivElement>(null);
+  const costsChartRef = useRef<HTMLDivElement>(null);
   const allowed = useHasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS);
   const [openTile, setOpenTile] = useState<CustomerValueTile | null>(null);
   const [shownTile, setShownTile] = useState<CustomerValueTile>("revenue");
@@ -80,7 +87,6 @@ export function CustomerValueReportCard({ from, to, vehicleId }: { from?: string
     ];
   }, [t]);
 
-  if (!allowed) return null;
 
   const tiles: Array<ReportTile<CustomerValueTile>> = CUSTOMER_VALUE_TILES.map((id) => {
     const total = data?.tiles?.[id];
@@ -95,13 +101,17 @@ export function CustomerValueReportCard({ from, to, vehicleId }: { from?: string
   });
   const noCustomer = t("reportKit.noCustomer");
 
+  useReportPrint(allowed && data ? compactSections([
+    tilesPrintSection(tiles),
+    { kind: "note", text: t("customerReports.value.costsNote") },
+    (data.topRevenue ?? []).length > 0 && { kind: "chart", title: t("customerReports.value.topRevenue"), getSvg: () => chartSvgFromRef(revenueChartRef) },
+    (data.topCosts ?? []).length > 0 && { kind: "chart", title: t("customerReports.value.topCosts"), getSvg: () => chartSvgFromRef(costsChartRef) },
+  ]) : null);
+
+  if (!allowed) return null;
+
   return (
-    <Card data-testid="card-customer-value-report">
-      <CardHeader>
-        <CardTitle>{t("customerReports.value.title")}</CardTitle>
-        <CardDescription>{t("customerReports.value.description")}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <ReportSection testId="card-customer-value-report" title={t("customerReports.value.title")} description={t("customerReports.value.description")}>
         {isLoading ? (
           <p className="text-sm text-muted-foreground" data-testid="customer-value-loading">{t("reportKit.loading")}</p>
         ) : isError || !data ? (
@@ -117,16 +127,15 @@ export function CustomerValueReportCard({ from, to, vehicleId }: { from?: string
             <div className="grid gap-6 lg:grid-cols-2">
               <div className="space-y-2">
                 <h4 className="text-sm font-medium">{t("customerReports.value.topRevenue")}</h4>
-                <ReportTopChart rows={data.topRevenue ?? []} nullLabel={noCustomer} money valueLabel={t("customerReports.value.columns.revenue")} color="#16a34a" testId="customer-value-top-revenue" />
+                <ReportTopChart rows={data.topRevenue ?? []} nullLabel={noCustomer} money valueLabel={t("customerReports.value.columns.revenue")} color="#16a34a" testId="customer-value-top-revenue" chartRef={revenueChartRef} />
               </div>
               <div className="space-y-2">
                 <h4 className="text-sm font-medium">{t("customerReports.value.topCosts")}</h4>
-                <ReportTopChart rows={data.topCosts ?? []} nullLabel={noCustomer} money valueLabel={t("customerReports.value.columns.costs")} color="#dc2626" testId="customer-value-top-costs" />
+                <ReportTopChart rows={data.topCosts ?? []} nullLabel={noCustomer} money valueLabel={t("customerReports.value.columns.costs")} color="#dc2626" testId="customer-value-top-costs" chartRef={costsChartRef} />
               </div>
             </div>
           </>
         )}
-      </CardContent>
       <ReportDetailDialog<CustomerValueRow, CustomerValueSort>
         open={openTile !== null}
         onOpenChange={(o) => { if (!o) setOpenTile(null); }}
@@ -142,6 +151,6 @@ export function CustomerValueReportCard({ from, to, vehicleId }: { from?: string
         reportName="customer-value"
         testId="customer-value-report"
       />
-    </Card>
+    </ReportSection>
   );
 }

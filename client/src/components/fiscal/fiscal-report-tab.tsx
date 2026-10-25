@@ -11,6 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { UserPermission } from "@shared/schema";
+import { ReportSection } from "@/components/reports/kit/report-section";
+import { useReportPrint } from "@/components/reports/kit/report-print";
+import { compactSections, textTablePrintSection } from "@/components/reports/kit/report-breakdown-table";
 import { FiscalOverviewDialog } from "./fiscal-overview-dialog";
 import type { FiscalReport } from "./types";
 
@@ -56,14 +59,46 @@ export function FiscalReportTab() {
 
   const stateTone: Record<string, string> = { final: "bg-emerald-100 text-emerald-900", settled: "bg-slate-100 text-slate-800", provisional: "bg-amber-100 text-amber-900" };
 
+  useReportPrint(report ? compactSections([
+    {
+      kind: "tiles",
+      tiles: [
+        { label: t("report.totals.amount"), value: report.totals.amount ? formatEuro(report.totals.amount) : "—" },
+        { label: t("report.totals.settled"), value: report.totals.settled ? formatEuro(report.totals.settled) : "—" },
+        { label: t("report.totals.provisional"), value: report.totals.provisional ? formatEuro(report.totals.provisional) : "—" },
+        { label: t("report.totals.chargedMonths"), value: String(report.totals.chargedMonths) },
+        { label: t("report.totals.periods"), value: String(report.totals.periods) },
+        { label: t("report.totals.unassessed"), value: String(report.totals.unassessedPeriods) },
+      ],
+    },
+    customerId === null && report.byCustomer.length > 1
+      ? textTablePrintSection(
+        "fiscal-by-customer",
+        t("report.byCustomer"),
+        [t("report.columns.customer"), t("report.totals.periods"), t("report.totals.chargedMonths"), t("report.totals.settled"), t("report.totals.provisional"), t("report.totals.amount")],
+        report.byCustomer.map((c) => [
+          c.customerName, String(c.periods), String(c.chargedMonths),
+          c.settled ? formatEuro(c.settled) : "—", c.provisional ? formatEuro(c.provisional) : "—", c.amount ? formatEuro(c.amount) : "—",
+        ]),
+      )
+      : null,
+    textTablePrintSection(
+      "fiscal-rows",
+      undefined,
+      ["customer", "plate", "period", "month", "days", "reason", "amount", "state", "status"].map((c) => t(`report.columns.${c}`)),
+      report.rows.map((r) => [
+        r.customerName, r.licensePlate ?? "—",
+        `${dateLabelNl(r.periodStart)} t/m ${r.periodEnd ? dateLabelNl(r.periodEnd) : t("report.open")}`,
+        monthLabelNl(r.month), String(r.days), r.reasonLabel, r.amount ? formatEuro(r.amount) : "—",
+        t(`report.state.${r.state}`), r.statusLabel,
+      ]),
+    ),
+  ]) : null);
+
   return (
-    <div className="space-y-4" data-testid="fiscal-report-tab">
+    <ReportSection testId="fiscal-report-tab" title={t("report.title")} description={t("report.intro")} bodyClassName="space-y-4">
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">{t("report.title")}</CardTitle>
-          <CardDescription>{t("report.intro")}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap items-end gap-3">
+        <CardContent className="flex flex-wrap items-end gap-3 pt-4">
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground" htmlFor="fiscal-report-year">{t("report.year")}</label>
             <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
@@ -214,6 +249,6 @@ export function FiscalReportTab() {
           <p className="text-xs text-muted-foreground">{t("common.disclaimer")}</p>
         </>
       )}
-    </div>
+    </ReportSection>
   );
 }

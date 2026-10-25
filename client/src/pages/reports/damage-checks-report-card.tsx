@@ -4,7 +4,7 @@
  * least one damage marker as the red tile. Needs the report permission and the damage-check
  * permission, like GET /api/interactive-damage-checks. Follows the vehicle filter.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -12,8 +12,12 @@ import {
   type DamageCheckReportRow, type DamageCheckReportSort, type DamageCheckReportSummary, type DamageCheckReportTile,
 } from "@shared/reports/damage-checks-report";
 import { UserPermission } from "@shared/schema";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ReportTiles, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportSection } from "@/components/reports/kit/report-section";
+import { useReportPrint } from "@/components/reports/kit/report-print";
+import { chartSvgFromRef } from "@/lib/report-document-print";
+import { compactSections, breakdownPrintSection, textTablePrintSection, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
+import { useReportRange, useReportPeriod } from "./report-filters";
+import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportBreakdownTable } from "@/components/reports/kit/report-breakdown-table";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
@@ -30,8 +34,11 @@ const TILE_TONE: Partial<Record<DamageCheckReportTile, ReportTile<DamageCheckRep
 
 const n0 = (n: number) => n.toLocaleString("nl-NL", { maximumFractionDigits: 0 });
 
-export function DamageChecksReportCard({ from, to, vehicleId }: { from?: string; to?: string; vehicleId?: string }) {
+export function DamageChecksReportCard(props: { from?: string; to?: string; vehicleId?: string }) {
+  const { from, to, vehicleId } = useReportRange(props);
   const { t } = useTranslation("reports");
+  const monthChartRef = useRef<HTMLDivElement>(null);
+  const header = useBreakdownHeader();
   const allowedReports = useHasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS);
   const allowedSource = useHasPermission(UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS);
   const allowed = allowedReports && allowedSource;
@@ -71,7 +78,6 @@ export function DamageChecksReportCard({ from, to, vehicleId }: { from?: string;
     ];
   }, [t]);
 
-  if (!allowed) return null;
 
   const tiles: Array<ReportTile<DamageCheckReportTile>> = DAMAGE_CHECK_REPORT_TILES.map((id) => ({
     id,
@@ -85,13 +91,22 @@ export function DamageChecksReportCard({ from, to, vehicleId }: { from?: string;
     { key: "withDamage" as const, label: tileLabel("withDamage"), color: "#dc2626" },
   ];
 
+  useReportPrint(allowed && data ? compactSections([
+    tilesPrintSection(tiles),
+    { kind: "note", text: t("officeReports.damage.withDamageNote") },
+    { kind: "chart", title: t("officeReports.damage.byMonth"), getSvg: () => chartSvgFromRef(monthChartRef) },
+    breakdownPrintSection({
+      id: "damage-checks-by-vehicle", title: t("officeReports.damage.byVehicle"),
+      rows: (data.byVehicle ?? []).map((row) => ({ ...row, label: row.label ? formatLicensePlate(row.label) : row.label })),
+      nullLabel: t("officeReports.damage.unknownVehicle"), hideAmount: true, header,
+    }),
+    breakdownPrintSection({ id: "damage-checks-by-customer", title: t("officeReports.damage.byCustomer"), rows: data.byCustomer ?? [], nullLabel: t("officeReports.damage.noReservation"), hideAmount: true, header }),
+  ]) : null);
+
+  if (!allowed) return null;
+
   return (
-    <Card data-testid="card-damage-checks-report">
-      <CardHeader>
-        <CardTitle>{t("officeReports.damage.title")}</CardTitle>
-        <CardDescription>{t("officeReports.damage.description")}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <ReportSection testId="card-damage-checks-report" title={t("officeReports.damage.title")} description={t("officeReports.damage.description")}>
         {isLoading ? (
           <p className="text-sm text-muted-foreground" data-testid="damage-checks-loading">{t("reportKit.loading")}</p>
         ) : isError || !data ? (
@@ -106,7 +121,7 @@ export function DamageChecksReportCard({ from, to, vehicleId }: { from?: string;
             <p className="text-sm text-muted-foreground" data-testid="damage-checks-note">{t("officeReports.damage.withDamageNote")}</p>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("officeReports.damage.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth ?? []} series={series} testId="damage-checks-month-chart" />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} testId="damage-checks-month-chart" chartRef={monthChartRef} />
             </div>
             <div className="grid gap-6 lg:grid-cols-2">
               <ReportBreakdownTable
@@ -126,7 +141,6 @@ export function DamageChecksReportCard({ from, to, vehicleId }: { from?: string;
             </div>
           </>
         )}
-      </CardContent>
       <ReportDetailDialog<DamageCheckReportRow, DamageCheckReportSort>
         open={openTile !== null}
         onOpenChange={(o) => { if (!o) setOpenTile(null); }}
@@ -142,6 +156,6 @@ export function DamageChecksReportCard({ from, to, vehicleId }: { from?: string;
         reportName="damage-checks"
         testId="damage-checks-report"
       />
-    </Card>
+    </ReportSection>
   );
 }

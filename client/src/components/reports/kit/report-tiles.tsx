@@ -4,6 +4,12 @@
  * behind its number.
  */
 import { cn } from "@/lib/utils";
+import type { PrintSection } from "@/lib/report-document-print";
+
+/** The tiles of a card as a print section: label and the formatted value. */
+export function tilesPrintSection<T extends string>(tiles: Array<ReportTile<T>>): PrintSection {
+  return { kind: "tiles", tiles: tiles.map((tile) => ({ label: tile.label, value: tile.value })) };
+}
 
 export type ReportTileTone = "default" | "green" | "red" | "amber";
 

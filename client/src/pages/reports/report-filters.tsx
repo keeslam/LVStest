@@ -94,3 +94,28 @@ export function useReportFilters(): ReportFiltersApi {
   if (!ctx) throw new Error("useReportFilters must be used inside ReportFiltersProvider");
   return ctx;
 }
+
+/** Like useReportFilters, but null outside the provider (a card shown on its own). */
+export function useOptionalReportFilters(): ReportFiltersApi | null {
+  return useContext(ReportFiltersContext);
+}
+
+/**
+ * The period and vehicle of a card: the props when given (an override), else the filter bar, else this
+ * month. from/to are "yyyy-MM-dd" office dates.
+ */
+export function useReportRange(props: { from?: string; to?: string; vehicleId?: string }): { from?: string; to?: string; vehicleId?: string } {
+  const ctx = useContext(ReportFiltersContext);
+  return {
+    from: props.from ?? ctx?.from,
+    to: props.to ?? ctx?.to,
+    vehicleId: props.vehicleId ?? ctx?.vehicleId,
+  };
+}
+
+/** Same, for a card that always needs a period: this month when nothing else is known. */
+export function useReportPeriod(props: { from?: string; to?: string; vehicleId?: string }): { from: string; to: string; vehicleId?: string } {
+  const r = useReportRange(props);
+  const fallback = presetRange("thisMonth", officeToday());
+  return { from: r.from ?? fallback.from, to: r.to ?? fallback.to, vehicleId: r.vehicleId };
+}

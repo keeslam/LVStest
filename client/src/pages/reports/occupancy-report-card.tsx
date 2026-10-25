@@ -9,7 +9,7 @@
  * without them no card and no request. A period over OCCUPANCY_MAX_DAYS is not
  * asked for (the server would refuse it), the card says to pick a shorter one.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -21,8 +21,12 @@ import {
   type OccupancyTile,
 } from "@shared/reports/occupancy-report";
 import { UserPermission } from "@shared/schema";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ReportTiles, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportSection } from "@/components/reports/kit/report-section";
+import { useReportPrint } from "@/components/reports/kit/report-print";
+import { chartSvgFromRef } from "@/lib/report-document-print";
+import { compactSections, breakdownPrintSection, textTablePrintSection, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
+import { useReportRange, useReportPeriod } from "./report-filters";
+import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatLicensePlate } from "@/lib/format-utils";
@@ -46,8 +50,10 @@ function periodDays(from: string, to: string): number {
 
 const pctText = (pct: number | null) => (pct === null ? "–" : `${pct.toLocaleString("nl-NL")}%`);
 
-export function OccupancyReportCard({ from, to, vehicleId }: { from?: string; to?: string; vehicleId?: string }) {
+export function OccupancyReportCard(props: { from?: string; to?: string; vehicleId?: string }) {
+  const { from, to, vehicleId } = useReportRange(props);
   const { t } = useTranslation("reports");
+  const linesRef = useRef<HTMLDivElement>(null);
   const k = (key: string, opts?: Record<string, unknown>) => t(`fleetReports.occupancy.${key}`, opts);
   const canReports = useHasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS);
   const canReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
@@ -99,7 +105,6 @@ export function OccupancyReportCard({ from, to, vehicleId }: { from?: string; to
     ];
   }, [t]);
 
-  if (!allowed) return null;
 
   const periodTiles: Array<ReportTile<OccupancyTile>> = OCCUPANCY_TILES.map((id) => {
     const total = data?.tiles?.[id];
@@ -124,13 +129,16 @@ export function OccupancyReportCard({ from, to, vehicleId }: { from?: string; to
     ? `${k(`tiles.${shown.tile}`)} · ${formatDateNl(shown.day, "medium")}`
     : k(`tiles.${shown.tile}`);
 
+  useReportPrint(allowed && data && !tooLong ? compactSections([
+    tilesPrintSection(periodTiles),
+    { kind: "note", text: k("avgPct", { pct: pctText(data.avgPct ?? null) }) },
+    { kind: "chart", title: k("title"), getSvg: () => chartSvgFromRef(linesRef) },
+  ]) : null);
+
+  if (!allowed) return null;
+
   return (
-    <Card data-testid="card-occupancy-report">
-      <CardHeader>
-        <CardTitle>{k("title")}</CardTitle>
-        <CardDescription>{k("description")}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <ReportSection testId="card-occupancy-report" title={k("title")} description={k("description")}>
         {tooLong ? (
           <p className="text-sm text-muted-foreground" data-testid="occupancy-period-too-long">
             {t("reportKit.periodTooLong", { days: OCCUPANCY_MAX_DAYS })}
@@ -143,7 +151,7 @@ export function OccupancyReportCard({ from, to, vehicleId }: { from?: string; to
           <>
             <ReportTiles tiles={periodTiles} testIdPrefix="occupancy" onOpen={(id) => open(id, null)} />
             <p className="text-sm" data-testid="occupancy-avg-pct">{k("avgPct", { pct: pctText(data.avgPct ?? null) })}</p>
-            <OccupancyHeatmap days={days} selectedDay={day?.date ?? null} onSelectDay={setSelectedDay} />
+            <OccupancyHeatmap linesRef={linesRef} days={days} selectedDay={day?.date ?? null} onSelectDay={setSelectedDay} />
             {day && (
               <div className="space-y-2" data-testid="occupancy-day-detail">
                 <h4 className="text-sm font-medium">
@@ -154,7 +162,6 @@ export function OccupancyReportCard({ from, to, vehicleId }: { from?: string; to
             )}
           </>
         )}
-      </CardContent>
       <ReportDetailDialog<OccupancyRow, OccupancySort>
         open={openTile !== null}
         onOpenChange={(o) => { if (!o) setOpenTile(null); }}
@@ -170,6 +177,6 @@ export function OccupancyReportCard({ from, to, vehicleId }: { from?: string; to
         reportName="occupancy"
         testId="occupancy-report"
       />
-    </Card>
+    </ReportSection>
   );
 }

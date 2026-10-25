@@ -7,6 +7,7 @@
  * Dates are the office dates the server sends (`yyyy-mm-dd`); the weekday is
  * read from the date itself (UTC), not from the browser's time zone.
  */
+import type { Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { OccupancyDay } from "@shared/reports/occupancy-report";
@@ -59,8 +60,10 @@ const LINE_COLORS = { rented: "#16a34a", workshop: "#f97316", replacement: "#3b8
 
 const pctText = (pct: number | null) => (pct === null ? "–" : `${pct.toLocaleString("nl-NL")}%`);
 
-export function OccupancyHeatmap({ days, onSelectDay, selectedDay }: {
+export function OccupancyHeatmap({ days, onSelectDay, selectedDay, linesRef }: {
   days: OccupancyDay[];
+  /** Wrapper of the line chart; the print reads its svg. */
+  linesRef?: Ref<HTMLDivElement>;
   onSelectDay: (date: string) => void;
   selectedDay: string | null;
 }) {
@@ -131,7 +134,7 @@ export function OccupancyHeatmap({ days, onSelectDay, selectedDay }: {
         <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-500" />{k("legend.replacement")}</span>
         <span className="flex items-center gap-1"><span className="h-3 w-3 rounded-sm bg-muted" />{k("legend.none")}</span>
       </div>
-      <div className="h-64 w-full" data-testid="occupancy-lines">
+      <div ref={linesRef} className="h-64 w-full" data-testid="occupancy-lines">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={lines} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />

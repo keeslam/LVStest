@@ -5,7 +5,7 @@
  * permission; ignores the page's vehicle filter. Nothing in the app writes the waitlist yet,
  * so an all-zero summary shows an empty-state message instead of chart and table.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -13,9 +13,13 @@ import {
   type WaitlistReportRow, type WaitlistReportSort, type WaitlistReportSummary, type WaitlistReportTile,
 } from "@shared/reports/waitlist-report";
 import { UserPermission } from "@shared/schema";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReportSection } from "@/components/reports/kit/report-section";
+import { useReportPrint } from "@/components/reports/kit/report-print";
+import { chartSvgFromRef } from "@/lib/report-document-print";
+import { compactSections, breakdownPrintSection, textTablePrintSection, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
+import { useReportRange, useReportPeriod } from "./report-filters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ReportTiles, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -30,8 +34,10 @@ const TILE_TONE: Partial<Record<WaitlistReportTile, ReportTile<WaitlistReportTil
   cancelled: "red",
 };
 
-export function WaitlistReportCard({ from, to, vehicleId }: { from?: string; to?: string; vehicleId?: string }) {
+export function WaitlistReportCard(props: { from?: string; to?: string; vehicleId?: string }) {
+  const { from, to, vehicleId } = useReportRange(props);
   const { t } = useTranslation("reports");
+  const monthChartRef = useRef<HTMLDivElement>(null);
   const allowedReports = useHasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS);
   const allowedPortal = useHasPermission(UserPermission.VIEW_PORTAL, UserPermission.MANAGE_PORTAL);
   const allowed = allowedReports && allowedPortal;
@@ -101,7 +107,6 @@ export function WaitlistReportCard({ from, to, vehicleId }: { from?: string; to?
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [t]);
 
-  if (!allowed) return null;
 
   const tiles: Array<ReportTile<WaitlistReportTile>> = WAITLIST_REPORT_TILES.map((id) => ({
     id,
@@ -123,13 +128,25 @@ export function WaitlistReportCard({ from, to, vehicleId }: { from?: string; to?
   const byType = data?.byType ?? [];
   const isEmpty = data !== undefined && WAITLIST_REPORT_TILES.every((id) => (data.tiles?.[id]?.count ?? 0) === 0);
 
+  useReportPrint(allowed && data && !isEmpty ? compactSections([
+    tilesPrintSection(tiles),
+    { kind: "note", text: t("portalReports.waitlist.avgDays", { value: avgText }) },
+    { kind: "chart", title: t("portalReports.waitlist.byMonth"), getSvg: () => chartSvgFromRef(monthChartRef) },
+    textTablePrintSection(
+      "waitlist-by-type",
+      t("portalReports.waitlist.byType"),
+      ["type", "total", "fulfilled", "notFulfilled", "avgWait"].map((c) => t(`portalReports.waitlist.columns.${c}`)),
+      byType.map((row) => [
+        row.vehicleType ?? unknownType, count(row.total), count(row.fulfilled), count(row.notFulfilled),
+        row.avgDaysToFulfil === null ? "–" : row.avgDaysToFulfil.toLocaleString("nl-NL", { maximumFractionDigits: 1 }),
+      ]),
+    ),
+  ]) : null);
+
+  if (!allowed) return null;
+
   return (
-    <Card data-testid="card-waitlist-report">
-      <CardHeader>
-        <CardTitle>{t("portalReports.waitlist.title")}</CardTitle>
-        <CardDescription>{t("portalReports.waitlist.description")}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <ReportSection testId="card-waitlist-report" title={t("portalReports.waitlist.title")} description={t("portalReports.waitlist.description")}>
         {vehicleId && vehicleId !== "all" && (
           <p className="text-sm text-muted-foreground" data-testid="waitlist-vehicle-filter-ignored">{t("portalReports.vehicleFilterIgnored")}</p>
         )}
@@ -153,7 +170,7 @@ export function WaitlistReportCard({ from, to, vehicleId }: { from?: string; to?
                 </p>
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium">{t("portalReports.waitlist.byMonth")}</h4>
-                  <ReportMonthChart data={data.byMonth ?? []} series={series} stacked testId="waitlist-month-chart" />
+                  <ReportMonthChart data={data.byMonth ?? []} series={series} stacked testId="waitlist-month-chart" chartRef={monthChartRef} />
                 </div>
                 <div className="space-y-2" data-testid="waitlist-by-type">
                   <h4 className="text-sm font-medium">{t("portalReports.waitlist.byType")}</h4>
@@ -192,7 +209,6 @@ export function WaitlistReportCard({ from, to, vehicleId }: { from?: string; to?
             )}
           </>
         )}
-      </CardContent>
       <ReportDetailDialog<WaitlistReportRow, WaitlistReportSort>
         open={openTile !== null}
         onOpenChange={(o) => { if (!o) setOpenTile(null); }}
@@ -208,6 +224,6 @@ export function WaitlistReportCard({ from, to, vehicleId }: { from?: string; to?
         reportName="waitlist"
         testId="waitlist-report"
       />
-    </Card>
+    </ReportSection>
   );
 }

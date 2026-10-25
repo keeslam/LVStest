@@ -4,7 +4,7 @@
  * total of extra km driven, a stacked month chart, two top lists and the rows
  * behind a tile. Needs only the report permission, like the Financieel tab.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -15,8 +15,12 @@ import {
   type ExtraCostsTile,
 } from "@shared/reports/extra-costs-report";
 import { UserPermission } from "@shared/schema";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ReportTiles, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportSection } from "@/components/reports/kit/report-section";
+import { useReportPrint } from "@/components/reports/kit/report-print";
+import { chartSvgFromRef } from "@/lib/report-document-print";
+import { compactSections, breakdownPrintSection, textTablePrintSection, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
+import { useReportRange, useReportPeriod } from "./report-filters";
+import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportBreakdownTable } from "@/components/reports/kit/report-breakdown-table";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
@@ -27,8 +31,11 @@ import { csvDate, csvNumber } from "@/lib/csv";
 
 const ENDPOINT = "/api/reports/extra-costs";
 
-export function ExtraCostsReportCard({ from, to, vehicleId }: { from: string; to: string; vehicleId?: string }) {
+export function ExtraCostsReportCard(props: { from?: string; to?: string; vehicleId?: string }) {
+  const { from, to, vehicleId } = useReportPeriod(props);
   const { t } = useTranslation("reports");
+  const monthChartRef = useRef<HTMLDivElement>(null);
+  const header = useBreakdownHeader();
   const allowed = useHasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS);
   const [openTile, setOpenTile] = useState<ExtraCostsTile | null>(null);
   const [shownTile, setShownTile] = useState<ExtraCostsTile>("extraKm");
@@ -59,7 +66,6 @@ export function ExtraCostsReportCard({ from, to, vehicleId }: { from: string; to
     ];
   }, [t, shownTile]);
 
-  if (!allowed) return null;
 
   const tiles: Array<ReportTile<ExtraCostsTile>> = EXTRA_COSTS_TILES.map((id) => {
     const total = data?.tiles?.[id];
@@ -77,13 +83,18 @@ export function ExtraCostsReportCard({ from, to, vehicleId }: { from: string; to
     { key: "fuelCost" as const, label: t("moneyReports.extraCosts.tiles.fuel"), color: "#f59e0b" },
   ];
 
+  const noCustomer = t("moneyReports.extraCosts.noCustomer");
+  useReportPrint(allowed && data ? compactSections([
+    tilesPrintSection(tiles),
+    { kind: "chart", title: t("moneyReports.extraCosts.byMonth"), getSvg: () => chartSvgFromRef(monthChartRef) },
+    breakdownPrintSection({ id: "extra-costs-by-customer", title: t("moneyReports.extraCosts.byCustomer"), rows: data.byCustomer ?? [], nullLabel: noCustomer, money: true, header }),
+    breakdownPrintSection({ id: "extra-costs-by-vehicle", title: t("moneyReports.extraCosts.byVehicle"), rows: data.byVehicle ?? [], nullLabel: noCustomer, money: true, header }),
+  ]) : null);
+
+  if (!allowed) return null;
+
   return (
-    <Card data-testid="card-extra-costs-report">
-      <CardHeader>
-        <CardTitle>{t("moneyReports.extraCosts.title")}</CardTitle>
-        <CardDescription>{t("moneyReports.extraCosts.description")}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <ReportSection testId="card-extra-costs-report" title={t("moneyReports.extraCosts.title")} description={t("moneyReports.extraCosts.description")}>
         {isLoading ? (
           <p className="text-sm text-muted-foreground" data-testid="extra-costs-report-loading">{t("reportKit.loading")}</p>
         ) : isError || !data ? (
@@ -100,7 +111,7 @@ export function ExtraCostsReportCard({ from, to, vehicleId }: { from: string; to
             </p>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("moneyReports.extraCosts.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth ?? []} series={series} money stacked testId="extra-costs-month-chart" />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} money stacked testId="extra-costs-month-chart" chartRef={monthChartRef} />
             </div>
             <div className="grid gap-6 lg:grid-cols-2">
               <ReportBreakdownTable title={t("moneyReports.extraCosts.byCustomer")} rows={data.byCustomer ?? []} nullLabel={t("moneyReports.extraCosts.noCustomer")} money testId="extra-costs-by-customer" />
@@ -108,7 +119,6 @@ export function ExtraCostsReportCard({ from, to, vehicleId }: { from: string; to
             </div>
           </>
         )}
-      </CardContent>
       <ReportDetailDialog<ExtraCostsRow, ExtraCostsSort>
         open={openTile !== null}
         onOpenChange={(o) => { if (!o) setOpenTile(null); }}
@@ -124,6 +134,6 @@ export function ExtraCostsReportCard({ from, to, vehicleId }: { from: string; to
         reportName="extra-costs"
         testId="extra-costs-report"
       />
-    </Card>
+    </ReportSection>
   );
 }

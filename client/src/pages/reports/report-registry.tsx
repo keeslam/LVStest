@@ -1,9 +1,8 @@
 import { useMemo, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { endOfDay, parseISO } from "date-fns";
 import { UserPermission, type Vehicle } from "@shared/schema";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReportSection } from "@/components/reports/kit/report-section";
 import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox";
 import { formatExpenseCategory, formatLicensePlate } from "@/lib/format-utils";
 import { MileageHistoryPanel } from "@/components/vehicles/mileage-history-panel";
@@ -19,7 +18,7 @@ import { FleetMileageReportCard } from "./fleet-mileage-report-card";
 import { CustomerValueReportCard } from "./customer-value-report-card";
 import { PortalRequestsReportCard } from "./portal-requests-report-card";
 import { WaitlistReportCard } from "./waitlist-report-card";
-import { InvoiceInboxReportCard } from "./invoice-inbox-report-card";
+import { InvoiceInboxRunsReport, InvoiceInboxItemsReport } from "./invoice-inbox-report-card";
 import { DeliveryReportCard } from "./delivery-report-card";
 import { DamageChecksReportCard } from "./damage-checks-report-card";
 import { ExpensesByCategoryReport } from "./legacy/expenses-by-category-report";
@@ -73,31 +72,6 @@ const portal = (ctx: ReportAccess) => any(ctx, UserPermission.VIEW_PORTAL, UserP
 const transports = (ctx: ReportAccess) => vehicles(ctx) || reservations(ctx);
 const expenses = (ctx: ReportAccess) => any(ctx, UserPermission.MANAGE_EXPENSES);
 
-// ---- Wrappers: the kit cards with the values of the filter bar ----
-function useRange() {
-  const { from, to, vehicleId } = useReportFilters();
-  return { from, to, vehicleId };
-}
-
-function FinesReport() { const r = useRange(); return <FinesReportCard {...r} />; }
-function ExtraCostsReport() { const r = useRange(); return <ExtraCostsReportCard {...r} />; }
-function TransportBillingReport() { const r = useRange(); return <TransportBillingReportCard {...r} />; }
-function OccupancyReport() { const r = useRange(); return <OccupancyReportCard {...r} />; }
-function MaintenanceOutlookReport() { const { vehicleId } = useRange(); return <MaintenanceOutlookCard vehicleId={vehicleId} />; }
-function FleetMileageReport() { const r = useRange(); return <FleetMileageReportCard {...r} />; }
-function CustomerValueReport() { const r = useRange(); return <CustomerValueReportCard {...r} />; }
-function PortalRequestsReport() { const r = useRange(); return <PortalRequestsReportCard {...r} />; }
-function WaitlistReport() { const r = useRange(); return <WaitlistReportCard {...r} />; }
-function InvoiceInboxReport() { const r = useRange(); return <InvoiceInboxReportCard {...r} />; }
-function DeliveriesReport() { const r = useRange(); return <DeliveryReportCard {...r} />; }
-function DamageChecksReport() { const r = useRange(); return <DamageChecksReportCard {...r} />; }
-
-function WorkshopDowntimeReport() {
-  const { from, to } = useRange();
-  const dateRange = useMemo(() => ({ from: parseISO(from), to: endOfDay(parseISO(to)) }), [from, to]);
-  return <WorkshopDowntimeCard dateRange={dateRange} />;
-}
-
 /** Fiscal check; it does not read the category filter and says so. */
 function FiscalReport() {
   const { t } = useTranslation("reports");
@@ -127,12 +101,7 @@ function MileageHistoryReport() {
     [fleet],
   );
   return (
-    <Card data-testid="card-report-mileage-history">
-      <CardHeader>
-        <CardTitle>{t("reportsPage.vehiclesTab.mileageHistory.title")}</CardTitle>
-        <CardDescription>{t("reportsPage.vehiclesTab.mileageHistory.description")}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <ReportSection testId="card-report-mileage-history" title={t("reportsPage.vehiclesTab.mileageHistory.title")} description={t("reportsPage.vehiclesTab.mileageHistory.description")}>
         <div className="max-w-sm space-y-2">
           <label className="text-sm font-medium">{t("reportsPage.vehiclesTab.mileageHistory.vehicle")}</label>
           <SearchableCombobox
@@ -150,8 +119,7 @@ function MileageHistoryReport() {
         ) : (
           <p className="text-sm text-gray-500">{t("reportsPage.vehiclesTab.mileageHistory.noVehicle")}</p>
         )}
-      </CardContent>
-    </Card>
+    </ReportSection>
   );
 }
 
@@ -179,13 +147,13 @@ export const REPORTS: ReportDef[] = [
   { id: "warranty", tab: "vehicles", titleKey: "reportsPage.vehiclesTab.warrantyOverviewTitle",
     visible: (c) => reports(c) && vehicles(c), Component: WarrantyReport },
   { id: "occupancy", tab: "vehicles", titleKey: "fleetReports.occupancy.title",
-    visible: (c) => reports(c) && vehicles(c) && reservations(c), Component: OccupancyReport },
+    visible: (c) => reports(c) && vehicles(c) && reservations(c), Component: OccupancyReportCard },
   { id: "maintenance-outlook", tab: "vehicles", titleKey: "fleetReports.outlook.title",
-    visible: (c) => reports(c) && vehicles(c), Component: MaintenanceOutlookReport },
+    visible: (c) => reports(c) && vehicles(c), Component: MaintenanceOutlookCard },
   { id: "workshop-downtime", tab: "vehicles", titleKey: "reportsPage.downtime.title",
-    visible: (c) => reports(c) && vehicles(c), Component: WorkshopDowntimeReport },
+    visible: (c) => reports(c) && vehicles(c), Component: WorkshopDowntimeCard },
   { id: "fleet-mileage", tab: "vehicles", titleKey: "fleetReports.mileage.title",
-    visible: (c) => c.isAdmin, Component: FleetMileageReport },
+    visible: (c) => c.isAdmin, Component: FleetMileageReportCard },
   { id: "mileage-history", tab: "vehicles", titleKey: "reportsPage.vehiclesTab.mileageHistory.title",
     visible: (c) => c.isAdmin, Component: MileageHistoryReport },
   // Klanten. The customer reports are built from the customers' reservations; the cost columns
@@ -197,7 +165,7 @@ export const REPORTS: ReportDef[] = [
   { id: "customer-reservations", tab: "customers", titleKey: "reportsPage.reports.customerReservations",
     visible: (c) => reports(c) && customers(c) && reservations(c), Component: RecentCustomerReservationsReport },
   { id: "customer-value", tab: "customers", titleKey: "customerReports.value.title",
-    visible: reports, Component: CustomerValueReport },
+    visible: reports, Component: CustomerValueReportCard },
   // Transporten (the period and vehicle of the filter bar do not apply; the pane says so)
   { id: "transports", tab: "transports", titleKey: "reportsPage.transportsTab.cardTitle",
     noteKey: "reportsPage.shell.notes.periodVehicleIgnored",
@@ -205,24 +173,25 @@ export const REPORTS: ReportDef[] = [
   // Financieel (money reports: the report right only)
   { id: "vehicle-financials", tab: "financial", titleKey: "financialTab.table.title",
     visible: reports, Component: VehicleFinancialsReport },
-  { id: "fines", tab: "financial", titleKey: "moneyReports.fines.title", visible: reports, Component: FinesReport },
-  { id: "extra-costs", tab: "financial", titleKey: "moneyReports.extraCosts.title", visible: reports, Component: ExtraCostsReport },
-  { id: "transport-billing", tab: "financial", titleKey: "moneyReports.transport.title", visible: reports, Component: TransportBillingReport },
+  { id: "fines", tab: "financial", titleKey: "moneyReports.fines.title", visible: reports, Component: FinesReportCard },
+  { id: "extra-costs", tab: "financial", titleKey: "moneyReports.extraCosts.title", visible: reports, Component: ExtraCostsReportCard },
+  { id: "transport-billing", tab: "financial", titleKey: "moneyReports.transport.title", visible: reports, Component: TransportBillingReportCard },
   // Fiscaal (exactly view_fiscal)
   { id: "fiscal", tab: "fiscal", titleKey: "fiscal:report.title", visible: (c) => c.canViewFiscal, Component: FiscalReport },
   // Portaal
   { id: "portal-requests", tab: "portal", titleKey: "portalReports.requests.title",
-    visible: (c) => reports(c) && portal(c), Component: PortalRequestsReport },
+    visible: (c) => reports(c) && portal(c), Component: PortalRequestsReportCard },
   { id: "waitlist", tab: "portal", titleKey: "portalReports.waitlist.title",
-    visible: (c) => reports(c) && portal(c), Component: WaitlistReport },
-  // Kantoor. For now one entry renders the whole invoice-inbox card (rounds and, with the
-  // expenses right, the invoices); Task 6 splits it into invoice-inbox-runs and -items.
-  { id: "invoice-inbox-runs", tab: "office", titleKey: "officeReports.inbox.title",
-    visible: (c) => reports(c) && any(c, UserPermission.MANAGE_EXPENSES, UserPermission.MANAGE_SETTINGS), Component: InvoiceInboxReport },
+    visible: (c) => reports(c) && portal(c), Component: WaitlistReportCard },
+  // Kantoor. The invoice inbox is two reports: the pickup rounds and the invoices that came in.
+  { id: "invoice-inbox-runs", tab: "office", titleKey: "officeReports.inbox.runsTitle",
+    visible: (c) => reports(c) && any(c, UserPermission.MANAGE_EXPENSES, UserPermission.MANAGE_SETTINGS), Component: InvoiceInboxRunsReport },
+  { id: "invoice-inbox-items", tab: "office", titleKey: "officeReports.inbox.itemsTitle",
+    visible: (c) => reports(c) && any(c, UserPermission.MANAGE_EXPENSES), Component: InvoiceInboxItemsReport },
   { id: "deliveries", tab: "office", titleKey: "officeReports.delivery.title",
-    visible: (c) => reports(c) && transports(c), Component: DeliveriesReport },
+    visible: (c) => reports(c) && transports(c), Component: DeliveryReportCard },
   { id: "damage-checks", tab: "office", titleKey: "officeReports.damage.title",
-    visible: (c) => reports(c) && any(c, UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS), Component: DamageChecksReport },
+    visible: (c) => reports(c) && any(c, UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS), Component: DamageChecksReportCard },
 ];
 
 export function visibleReports(access: ReportAccess, reports: ReportDef[] = REPORTS): ReportDef[] {

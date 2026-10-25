@@ -4,17 +4,21 @@
  * time from receipt to linking, a stacked month chart, three top lists and the
  * rows behind a tile. Needs only the report permission, like the Financieel tab.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { FINE_REPORT_TILES, type FineReportRow, type FineReportSort, type FineReportSummary, type FineReportTile } from "@shared/reports/fines-report";
+import type { ReportBreakdownRow } from "@shared/report-kit";
 import { isLegacyFineStatus } from "@shared/fines";
 import { UserPermission } from "@shared/schema";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReportSection } from "@/components/reports/kit/report-section";
+import { useReportPrint } from "@/components/reports/kit/report-print";
+import { chartSvgFromRef } from "@/lib/report-document-print";
+import { useReportPeriod } from "./report-filters";
 import { Badge } from "@/components/ui/badge";
-import { ReportTiles, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
-import { ReportBreakdownTable } from "@/components/reports/kit/report-breakdown-table";
+import { ReportBreakdownTable, breakdownPrintSection, compactSections, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatCurrency, formatLicensePlate } from "@/lib/format-utils";
@@ -28,8 +32,11 @@ const TILE_TONE: Partial<Record<FineReportTile, ReportTile<FineReportTile>["tone
   linked: "green",
 };
 
-export function FinesReportCard({ from, to, vehicleId }: { from: string; to: string; vehicleId?: string }) {
+export function FinesReportCard(props: { from?: string; to?: string; vehicleId?: string }) {
+  const { from, to, vehicleId } = useReportPeriod(props);
   const { t } = useTranslation("reports");
+  const monthChartRef = useRef<HTMLDivElement>(null);
+  const header = useBreakdownHeader();
   const allowed = useHasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS);
   const [openTile, setOpenTile] = useState<FineReportTile | null>(null);
   const [shownTile, setShownTile] = useState<FineReportTile>("total");
@@ -68,7 +75,6 @@ export function FinesReportCard({ from, to, vehicleId }: { from: string; to: str
     ];
   }, [t]);
 
-  if (!allowed) return null;
 
   const tiles: Array<ReportTile<FineReportTile>> = FINE_REPORT_TILES.map((id) => {
     const total = data?.tiles?.[id];
@@ -90,13 +96,20 @@ export function FinesReportCard({ from, to, vehicleId }: { from: string; to: str
   }));
   const notLinked = t("moneyReports.fines.notLinked");
 
+  const bd = (id: string, title: string, rows: ReportBreakdownRow[]) =>
+    breakdownPrintSection({ id, title, rows, nullLabel: notLinked, money: true, header });
+  useReportPrint(allowed && data ? compactSections([
+    tilesPrintSection(tiles),
+    { kind: "chart", title: t("moneyReports.fines.byMonth"), getSvg: () => chartSvgFromRef(monthChartRef) },
+    bd("fines-by-customer", t("moneyReports.fines.byCustomer"), data.byCustomer ?? []),
+    bd("fines-by-vehicle", t("moneyReports.fines.byVehicle"), data.byVehicle ?? []),
+    bd("fines-by-driver", t("moneyReports.fines.byDriver"), data.byDriver ?? []),
+  ]) : null);
+
+  if (!allowed) return null;
+
   return (
-    <Card data-testid="card-fines-report">
-      <CardHeader>
-        <CardTitle>{t("moneyReports.fines.title")}</CardTitle>
-        <CardDescription>{t("moneyReports.fines.description")}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <ReportSection testId="card-fines-report" title={t("moneyReports.fines.title")} description={t("moneyReports.fines.description")}>
         {isLoading ? (
           <p className="text-sm text-muted-foreground" data-testid="fines-report-loading">{t("reportKit.loading")}</p>
         ) : isError || !data ? (
@@ -115,7 +128,7 @@ export function FinesReportCard({ from, to, vehicleId }: { from: string; to: str
             </p>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("moneyReports.fines.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth ?? []} series={series} money stacked testId="fines-month-chart" />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} money stacked testId="fines-month-chart" chartRef={monthChartRef} />
             </div>
             <div className="grid gap-6 lg:grid-cols-3">
               <ReportBreakdownTable title={t("moneyReports.fines.byCustomer")} rows={data.byCustomer ?? []} nullLabel={notLinked} money testId="fines-by-customer" />
@@ -124,7 +137,6 @@ export function FinesReportCard({ from, to, vehicleId }: { from: string; to: str
             </div>
           </>
         )}
-      </CardContent>
       <ReportDetailDialog<FineReportRow, FineReportSort>
         open={openTile !== null}
         onOpenChange={(o) => { if (!o) setOpenTile(null); }}
@@ -140,6 +152,6 @@ export function FinesReportCard({ from, to, vehicleId }: { from: string; to: str
         reportName="fines"
         testId="fines-report"
       />
-    </Card>
+    </ReportSection>
   );
 }

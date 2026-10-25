@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { PrintButtonInner, ReportPrintProvider } from "@/components/reports/kit/report-print";
+import { InReportPaneProvider } from "@/components/reports/kit/report-section";
 import type { ReportDef } from "./report-registry";
 
 interface ReportPaneProps {
@@ -21,7 +22,7 @@ export function ReportPane({ def }: ReportPaneProps) {
         {def.noteKey && (
           <p className="-mt-2 text-sm text-muted-foreground" data-testid="report-pane-note">{t(def.noteKey)}</p>
         )}
-        <Report />
+        <InReportPaneProvider><Report /></InReportPaneProvider>
       </section>
     </ReportPrintProvider>
   );

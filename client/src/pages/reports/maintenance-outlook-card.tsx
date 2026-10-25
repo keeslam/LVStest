@@ -8,7 +8,7 @@
  * columns are for admins only: the server sends null for everyone else, and the
  * card does not show those columns at all.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { addDays, addMonths, format, getISOWeek, parseISO } from "date-fns";
@@ -24,8 +24,12 @@ import {
 import { UserPermission, UserRole } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ReportTiles, type ReportTile } from "@/components/reports/kit/report-tiles";
+import { ReportSection } from "@/components/reports/kit/report-section";
+import { useReportPrint } from "@/components/reports/kit/report-print";
+import { chartSvgFromRef } from "@/lib/report-document-print";
+import { compactSections, breakdownPrintSection, textTablePrintSection, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
+import { useReportRange, useReportPeriod } from "./report-filters";
+import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -43,7 +47,8 @@ const TILE_TONE: Partial<Record<MaintenanceOutlookTile, ReportTile<MaintenanceOu
 const n = (v: number) => v.toLocaleString("nl-NL");
 const kmText = (v: number | null) => (v === null ? "" : n(v));
 
-export function MaintenanceOutlookCard({ vehicleId }: { vehicleId?: string }) {
+export function MaintenanceOutlookCard(props: { vehicleId?: string }) {
+  const { vehicleId } = useReportRange(props);
   const { t } = useTranslation("reports");
   const k = (key: string, opts?: Record<string, unknown>) => t(`fleetReports.outlook.${key}`, opts);
   const { user } = useAuth();
@@ -101,7 +106,6 @@ export function MaintenanceOutlookCard({ vehicleId }: { vehicleId?: string }) {
     ];
   }, [t, isAdmin]);
 
-  if (!allowed) return null;
 
   const open = (tile: MaintenanceOutlookTile) => {
     setShown(tile);
@@ -117,13 +121,22 @@ export function MaintenanceOutlookCard({ vehicleId }: { vehicleId?: string }) {
   const weeks = data?.byWeek ?? [];
   const overdueCount = data?.tiles?.overdue?.count ?? 0;
 
+  useReportPrint(allowed && data ? compactSections([
+    tilesPrintSection(tiles),
+    textTablePrintSection(
+      "maintenance-outlook-weeks",
+      undefined,
+      [k("columns.licensePlate"), k("columns.kind"), k("columns.dueDate")],
+      weeks.flatMap((w) => w.items.map((item) => [
+        formatLicensePlate(item.licensePlate), k(`kinds.${item.kind}`), formatDateNl(item.dueDate, "medium"),
+      ])),
+    ),
+  ]) : null);
+
+  if (!allowed) return null;
+
   return (
-    <Card data-testid="card-maintenance-outlook">
-      <CardHeader>
-        <CardTitle>{k("title")}</CardTitle>
-        <CardDescription>{k("description")}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <ReportSection testId="card-maintenance-outlook" title={k("title")} description={k("description")}>
         <div className="flex items-center gap-2">
           <label htmlFor="outlook-horizon" className="text-sm font-medium">{k("horizon")}</label>
           <select
@@ -192,7 +205,6 @@ export function MaintenanceOutlookCard({ vehicleId }: { vehicleId?: string }) {
             )}
           </>
         )}
-      </CardContent>
       <ReportDetailDialog<MaintenanceOutlookRow, MaintenanceOutlookSort>
         open={openTile !== null}
         onOpenChange={(o) => { if (!o) setOpenTile(null); }}
@@ -208,6 +220,6 @@ export function MaintenanceOutlookCard({ vehicleId }: { vehicleId?: string }) {
         reportName="maintenance-outlook"
         testId="maintenance-outlook"
       />
-    </Card>
+    </ReportSection>
   );
 }
