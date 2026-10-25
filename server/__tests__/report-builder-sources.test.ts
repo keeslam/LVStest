@@ -190,6 +190,51 @@ describe("report builder sources", () => {
     expect(res.body.map((r: any) => [r.scheduledDate, Number(r.id)])).toEqual([["2019-03", 2]]);
   });
 
+  const fineFilter = () => [{ table: "fines", field: "vehicleId", operator: "equals", value: V }];
+
+  it("maandgroep die niet als kolom staat: verborgen kolom komt niet in het resultaat", async () => {
+    const res = await admin.post("/api/reports/execute").send({
+      name: "t", dataSources: ["fines"],
+      columns: [{ table: "fines", field: "totalAmount", aggregation: "SUM" }],
+      filters: fineFilter(),
+      groupBy: [{ table: "fines", field: "offenceAt", period: "month" }],
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.map((r: any) => Number(r.totalAmount))).toEqual([80, 25]);
+    for (const row of res.body) expect(Object.keys(row).filter((k) => k.startsWith("__group_"))).toEqual([]);
+  });
+
+  it("maandgroep op een veld dat alleen met een berekening in de kolommen staat", async () => {
+    const res = await admin.post("/api/reports/execute").send({
+      name: "t", dataSources: ["fines"],
+      columns: [{ table: "fines", field: "offenceAt", aggregation: "COUNT" }],
+      filters: fineFilter(),
+      groupBy: [{ table: "fines", field: "offenceAt", period: "month" }],
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.map((r: any) => Number(r.offenceAt))).toEqual([2, 1]);
+    for (const row of res.body) expect(Object.keys(row)).toEqual(["offenceAt"]);
+  });
+
+  it("twee groepen: maand en tekst, op welke plek de kolommen ook staan", async () => {
+    const one = await admin.post("/api/reports/execute").send({
+      name: "t", dataSources: ["fines"],
+      columns: [{ table: "fines", field: "status" }, { table: "fines", field: "offenceAt" }, { table: "fines", field: "id", aggregation: "COUNT" }],
+      filters: fineFilter(),
+      groupBy: [{ table: "fines", field: "offenceAt", period: "month" }, { table: "fines", field: "status" }],
+    });
+    expect(one.status).toBe(200);
+    expect(one.body.map((r: any) => [r.offenceAt, r.status, Number(r.id)])).toEqual([["2019-02", "linked", 1], ["2019-02", "new", 1], ["2019-03", "new", 1]]);
+    const two = await admin.post("/api/reports/execute").send({
+      name: "t", dataSources: ["fines"],
+      columns: [{ table: "fines", field: "id", aggregation: "COUNT" }, { table: "fines", field: "offenceAt" }, { table: "fines", field: "status" }],
+      filters: fineFilter(),
+      groupBy: [{ table: "fines", field: "status" }, { table: "fines", field: "offenceAt", period: "month" }],
+    });
+    expect(two.status).toBe(200);
+    expect(two.body.map((r: any) => [r.status, r.offenceAt, Number(r.id)])).toEqual([["linked", "2019-02", 1], ["new", "2019-02", 1], ["new", "2019-03", 1]]);
+  });
+
   it("elke genoemde bron telt, niet alleen de eerste", async () => {
     const agent = await agentFor(["view_reports", "view_vehicles"]);
     const res = await agent.post("/api/reports/execute").send({ name: "t", dataSources: ["vehicles", "mileage_readings"], columns: [{ table: "vehicles", field: "licensePlate" }], filters: [] });

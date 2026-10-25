@@ -6669,6 +6669,8 @@ export class DatabaseStorage implements IStorage {
       if (!period) return ident;
       const col = tableObj[canonField(table, field)];
       const isTimestamp = col?.columnType === "PgTimestamp" || col?.columnType === "PgTimestampString";
+      const isRealDate = col?.columnType === "PgDate" || col?.columnType === "PgDateString";
+      if (isRealDate) return sql`to_char(${ident}, 'YYYY-MM')`;
       return isTimestamp
         ? sql`to_char(${officeDaySql(ident)}, 'YYYY-MM')`
         : sql`to_char(${textDaySql(ident)}, 'YYYY-MM')`;
