@@ -326,6 +326,19 @@
       "COUNT_DISTINCT": "Liczba unikalnych",
       "MIN": "Najmniejsza",
       "MAX": "Największa"
+    },
+    "chart": {
+      "title": "Wykres",
+      "type": "Rodzaj wykresu",
+      "bar": "Słupkowy",
+      "line": "Liniowy",
+      "pie": "Kołowy",
+      "other": "Pozostałe",
+      "needsAggregate": "Wybierz obliczenie dla kolumny, na przykład Suma lub Liczba, aby zobaczyć wykres.",
+      "firstGroups_one": "Wykres pokazuje pierwszą {{count}} grupę.",
+      "firstGroups_few": "Wykres pokazuje pierwsze {{count}} grupy.",
+      "firstGroups_many": "Wykres pokazuje pierwszych {{count}} grup.",
+      "firstGroups_other": "Wykres pokazuje pierwszych {{count}} grupy."
     }
   },
   "financialTab": {

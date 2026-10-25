@@ -319,6 +319,18 @@
       "COUNT_DISTINCT": "Recuento distinto",
       "MIN": "Mínimo",
       "MAX": "Máximo"
+    },
+    "chart": {
+      "title": "Gráfico",
+      "type": "Tipo de gráfico",
+      "bar": "Barras",
+      "line": "Líneas",
+      "pie": "Circular",
+      "other": "Otros",
+      "needsAggregate": "Elige un cálculo en una columna, como Suma o Recuento, para ver un gráfico.",
+      "firstGroups_one": "El gráfico muestra el primer {{count}} grupo.",
+      "firstGroups_many": "El gráfico muestra los primeros {{count}} grupos.",
+      "firstGroups_other": "El gráfico muestra los primeros {{count}} grupos."
     }
   },
   "financialTab": {

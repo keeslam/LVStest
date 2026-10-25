@@ -312,6 +312,17 @@
       "COUNT_DISTINCT": "Aantal verschillend",
       "MIN": "Kleinste",
       "MAX": "Grootste"
+    },
+    "chart": {
+      "title": "Grafiek",
+      "type": "Soort grafiek",
+      "bar": "Staaf",
+      "line": "Lijn",
+      "pie": "Taart",
+      "other": "Overig",
+      "needsAggregate": "Kies bij een kolom een berekening, zoals Som of Aantal, om een grafiek te zien.",
+      "firstGroups_one": "De grafiek toont de eerste {{count}} groep.",
+      "firstGroups_other": "De grafiek toont de eerste {{count}} groepen."
     }
   },
   "financialTab": {

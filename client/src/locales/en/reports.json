@@ -312,6 +312,17 @@
       "COUNT_DISTINCT": "Distinct count",
       "MIN": "Smallest",
       "MAX": "Largest"
+    },
+    "chart": {
+      "title": "Chart",
+      "type": "Chart type",
+      "bar": "Bar",
+      "line": "Line",
+      "pie": "Pie",
+      "other": "Other",
+      "needsAggregate": "Choose a calculation for a column, such as Sum or Count, to see a chart.",
+      "firstGroups_one": "The chart shows the first {{count}} group.",
+      "firstGroups_other": "The chart shows the first {{count}} groups."
     }
   },
   "financialTab": {

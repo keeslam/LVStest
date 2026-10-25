@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { RequiresPermission } from "@/components/ui/requires-permission";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { downloadCsv } from "@/lib/csv";
+import { ReportBuilderChart } from "@/pages/reports/report-builder-chart";
 import { formatDateTime } from "@/lib/format-utils";
 import {
   sourceLabel, fieldLabel, operatorLabel, aggregationLabel, outputHeader, csvCell, displayCell, buildReportTableHtml, reportFileSubject,
@@ -66,6 +67,8 @@ export default function ReportBuilder() {
   // it in the builder, so the result must not borrow the builder's own (possibly empty) columns.
   const [resultColumns, setResultColumns] = useState<ReportColumn[]>([]);
   const [resultName, setResultName] = useState('');
+  // The grouping of the report that was last run (not the editor's live state): decides if the result gets a chart.
+  const [resultGroupBy, setResultGroupBy] = useState<ReportGrouping[]>([]);
   const [showResultsDialog, setShowResultsDialog] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [loadingReport, setLoadingReport] = useState<number | null>(null);
@@ -163,6 +166,7 @@ export default function ReportBuilder() {
       setReportResults(data);
       setResultColumns(config.columns);
       setResultName(config.name);
+      setResultGroupBy(config.groupBy ?? []);
       setShowResultsDialog(true);
       toast({
         title: t('reportBuilderPage.toasts.reportExecutedTitle'),
@@ -531,6 +535,7 @@ export default function ReportBuilder() {
         results={reportResults}
         columns={resultColumns}
         reportName={resultName}
+        groupBy={resultGroupBy}
       />
     </div>
   );
@@ -784,12 +789,14 @@ function ReportResultsDialog({
   results,
   columns,
   reportName,
+  groupBy,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   results: any[];
   columns: ReportColumn[];
   reportName: string;
+  groupBy: ReportGrouping[];
 }) {
   const { t } = useTranslation("reports");
   const header = outputHeader(t, columns);
@@ -834,6 +841,7 @@ function ReportResultsDialog({
           <DialogTitle>{t('reportBuilderPage.reportResultsTitle')}</DialogTitle>
           <DialogDescription>{t('reportBuilderPage.foundResultsCount', { count: results.length })}</DialogDescription>
         </DialogHeader>
+        <ReportBuilderChart rows={results} columns={columns} groupBy={groupBy} />
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>

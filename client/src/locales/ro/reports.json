@@ -319,6 +319,18 @@
       "COUNT_DISTINCT": "Număr distinct",
       "MIN": "Minim",
       "MAX": "Maxim"
+    },
+    "chart": {
+      "title": "Grafic",
+      "type": "Tip de grafic",
+      "bar": "Bare",
+      "line": "Linii",
+      "pie": "Circular",
+      "other": "Altele",
+      "needsAggregate": "Alege un calcul pentru o coloană, cum ar fi Sumă sau Număr, ca să vezi un grafic.",
+      "firstGroups_one": "Graficul arată primul grup ({{count}}).",
+      "firstGroups_few": "Graficul arată primele {{count}} grupuri.",
+      "firstGroups_other": "Graficul arată primele {{count}} de grupuri."
     }
   },
   "financialTab": {

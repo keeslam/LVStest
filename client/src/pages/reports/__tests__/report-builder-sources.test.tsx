@@ -191,3 +191,72 @@ describe("the group follows its source and column", () => {
     expect(executeBody.groupBy).toEqual([]);
   });
 });
+
+describe("chart of a grouped result", () => {
+  async function setupGrouped(withCalculation: boolean) {
+    installFetch([{ status: "new", id: "2" }, { status: "linked", id: "1" }]);
+    const user = userEvent.setup();
+    renderBuilder();
+    await user.click(screen.getByTestId("checkbox-datasource-vehicles"));
+    await user.click(screen.getByTestId("checkbox-datasource-fines"));
+    await user.click(screen.getByTestId("button-add-field-id"));
+    await user.click(screen.getByTestId("select-report-group-by"));
+    await user.click(await screen.findByRole("option", { name: "Status" }));
+    if (withCalculation) {
+      await user.click(screen.getByTestId("select-column-aggregation-0"));
+      await user.click(await screen.findByRole("option", { name: "Aantal" }));
+    }
+    await user.click(screen.getByTestId("button-run-report"));
+    await screen.findByTestId("dialog-report-results");
+    return user;
+  }
+
+  it("shows a bar chart and switches to line and pie", async () => {
+    const user = await setupGrouped(true);
+    expect(await screen.findByTestId("report-builder-chart")).toHaveAttribute("data-chart-type", "bar");
+    await user.click(screen.getByTestId("select-report-chart-type"));
+    await user.click(await screen.findByRole("option", { name: "Lijn" }));
+    expect(screen.getByTestId("report-builder-chart")).toHaveAttribute("data-chart-type", "line");
+    await user.click(screen.getByTestId("select-report-chart-type"));
+    await user.click(await screen.findByRole("option", { name: "Taart" }));
+    expect(screen.getByTestId("report-builder-chart")).toHaveAttribute("data-chart-type", "pie");
+  });
+
+  it("shows no chart and no chart choice for an ungrouped result", async () => {
+    installFetch([{ brand: "Toyota" }]);
+    const user = userEvent.setup();
+    renderBuilder();
+    await user.click(screen.getByTestId("button-add-field-brand"));
+    await user.click(screen.getByTestId("button-run-report"));
+    await screen.findByTestId("dialog-report-results");
+    expect(screen.queryByTestId("report-builder-chart")).toBeNull();
+    expect(screen.queryByTestId("select-report-chart-type")).toBeNull();
+  });
+
+  it("tells to pick a calculation when a grouped result has none", async () => {
+    await setupGrouped(false);
+    expect(await screen.findByTestId("report-builder-chart-needs-aggregate")).toBeInTheDocument();
+  });
+
+  it("shows the chart of a saved grouped report run from the saved tab", async () => {
+    const savedReport = {
+      id: 9, name: "Per status", description: "", createdAt: new Date().toISOString(),
+      configuration: {
+        name: "Per status", dataSources: ["fines"], filters: [],
+        groupBy: [{ table: "fines", field: "status" }],
+        columns: [{ table: "fines", field: "status", label: "Status" }, { table: "fines", field: "id", label: "ID", aggregation: "COUNT" }],
+      },
+    };
+    vi.stubGlobal("fetch", vi.fn(async (input: any) => {
+      const url = typeof input === "string" ? input : input.url;
+      const path = url.replace(/^https?:\/\/[^/]+/, "");
+      const body = path === "/api/reports/execute" ? [{ status: "new", id: "2" }] : path.startsWith("/api/reports/saved") ? [savedReport] : [];
+      return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
+    }));
+    const user = userEvent.setup();
+    renderBuilder();
+    await user.click(screen.getByTestId("button-saved-tab"));
+    await user.click(await screen.findByTestId("button-run-saved-9"));
+    expect(await screen.findByTestId("report-builder-chart")).toBeInTheDocument();
+  });
+});

@@ -319,6 +319,18 @@
       "COUNT_DISTINCT": "Conteggio distinto",
       "MIN": "Minimo",
       "MAX": "Massimo"
+    },
+    "chart": {
+      "title": "Grafico",
+      "type": "Tipo di grafico",
+      "bar": "Barre",
+      "line": "Linee",
+      "pie": "A torta",
+      "other": "Altro",
+      "needsAggregate": "Scegli un calcolo per una colonna, come Somma o Conteggio, per vedere un grafico.",
+      "firstGroups_one": "Il grafico mostra il primo {{count}} gruppo.",
+      "firstGroups_many": "Il grafico mostra i primi {{count}} gruppi.",
+      "firstGroups_other": "Il grafico mostra i primi {{count}} gruppi."
     }
   },
   "financialTab": {
