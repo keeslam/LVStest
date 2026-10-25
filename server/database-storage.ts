@@ -91,7 +91,7 @@ import {
   snapshotCounts,
   type CascadeSnapshot,
 } from "./services/cascade-snapshot";
-import { getDataSource, getReportLink, getField as getReportField, RENAMED_REPORT_FIELDS, REMOVED_REPORT_FIELDS, isReportPeriodField, isCalcEntry, isReportFieldRef, numberOperators, textOperators, type ReportScope } from "../shared/report-builder-config";
+import { getDataSource, getReportLink, getField as getReportField, RENAMED_REPORT_FIELDS, REMOVED_REPORT_FIELDS, isReportPeriodField, isCalcEntry, isReportFieldRef, calcTypeProblem, numberOperators, textOperators, type ReportScope } from "../shared/report-builder-config";
 import { validateCalculatedFields, type CalculatedField, type FormulaNode, type IfThenResult } from "../shared/report-formula";
 import { officeDaySql, textDaySql, isRealDate } from "./services/reports/report-kit";
 import { buildDefaultDamageCheckCanvasFields } from "../shared/damage-check-default-layout";
@@ -6741,6 +6741,8 @@ export class DatabaseStorage implements IStorage {
       const v = validateCalculatedFields(calcList as CalculatedField[], (ref) => isReportFieldRef(mainSource.id, ref));
       if (!v.ok) throw new ReportValidationError("Een berekend veld klopt niet.", "REPORT_CALC_INVALID", v.id, v.error);
     }
+    const typed = calcTypeProblem(configuration);
+    if (typed) throw new ReportValidationError(typed.message, "REPORT_CALC_INVALID", typed.id, "BAD_RULE");
     const calcById = new Map(calcFields.map((f) => [f.id, f]));
     const calcFail = (id: string, message: string, reason = "BAD_RULE") =>
       new ReportValidationError(message, "REPORT_CALC_INVALID", id, reason);
@@ -6754,9 +6756,16 @@ export class DatabaseStorage implements IStorage {
     const isNumericNode = (n: FormulaNode): boolean =>
       n.kind === "field" ? fieldIsNumber(n) : n.kind === "calc" ? isNumericCalc(n.id) : true;
     const isNumericResult = (r: IfThenResult) => "ref" in r && isNumericNode(r.ref);
+    // Memoized per calc id, so a calc used many times is looked at once.
+    const numericCalcs = new Map<string, boolean>();
     const isNumericCalc = (id: string): boolean => {
+      const known = numericCalcs.get(id);
+      if (known !== undefined) return known;
       const f = calcOf(id);
-      return f.kind === "formula" || (isNumericResult(f.rule!.then) && isNumericResult(f.rule!.otherwise));
+      numericCalcs.set(id, false);
+      const numeric = f.kind === "formula" || (isNumericResult(f.rule!.then) && isNumericResult(f.rule!.otherwise));
+      numericCalcs.set(id, numeric);
+      return numeric;
     };
     // A calc used many times inside other calcs is written out each time; cap the total size.
     let calcExpansions = 0;
@@ -6807,6 +6816,7 @@ export class DatabaseStorage implements IStorage {
         cond = numeric ? sql`(${left}) IS NULL` : sql`((${left}) IS NULL OR (${left})::text = '')`;
       } else if (test === "gt" || test === "lt") {
         if (!numeric) throw calcFail(f.id, "Groter dan en kleiner dan kunnen alleen met getallen.");
+        if (typeof value !== "number" || !Number.isFinite(value)) throw calcFail(f.id, "Vergelijk een getal met een getal.");
         cond = sql`(${left})::numeric ${sql.raw(test === "gt" ? ">" : "<")} (${value})::numeric`;
       } else {
         const op = sql.raw(test === "eq" ? "=" : "<>");

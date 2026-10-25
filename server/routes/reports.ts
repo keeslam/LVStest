@@ -3,7 +3,7 @@ import { storage } from "../storage";
 import { ReportValidationError } from "../database-storage";
 import { UserPermission, UserRole } from "../../shared/schema";
 import { hasPermission, requireAdmin } from "../middleware/permissions.js";
-import { getDataSource, canUseReportSource, isReportPeriodField, linkedSourcesOf, adminOnlyFieldOf, invalidReportLink, isReportFieldRef, SAVED_REPORT_TABS, type DataSource } from "../../shared/report-builder-config";
+import { getDataSource, canUseReportSource, isReportPeriodField, linkedSourcesOf, adminOnlyFieldOf, invalidReportLink, isReportFieldRef, calcTypeProblem, SAVED_REPORT_TABS, type DataSource } from "../../shared/report-builder-config";
 import { validateCalculatedFields } from "../../shared/report-formula";
 
 /**
@@ -81,11 +81,15 @@ function invalidLinkBody(config: any): { message: string; code: "REPORT_LINK_INV
  */
 function invalidCalcBody(config: any): { message: string; code: "REPORT_CALC_INVALID"; error: string; id: string } | null {
   const fields = config?.calculatedFields;
-  if (fields === undefined || fields === null) return null;
-  const main = Array.isArray(config?.dataSources) ? config.dataSources[0] : undefined;
-  const result = validateCalculatedFields(fields, (ref) => isReportFieldRef(main, ref));
-  if (result.ok) return null;
-  return { message: "Een berekend veld klopt niet.", code: "REPORT_CALC_INVALID", error: result.error, id: result.id };
+  if (fields !== undefined && fields !== null) {
+    const main = Array.isArray(config?.dataSources) ? config.dataSources[0] : undefined;
+    const result = validateCalculatedFields(fields, (ref) => isReportFieldRef(main, ref));
+    if (!result.ok) return { message: "Een berekend veld klopt niet.", code: "REPORT_CALC_INVALID", error: result.error, id: result.id };
+  }
+  // Also on save: a report whose calculated fields cannot run is refused (text in a sum, ...).
+  const typed = calcTypeProblem(config);
+  if (typed) return { message: typed.message, code: "REPORT_CALC_INVALID", error: "BAD_RULE", id: typed.id };
+  return null;
 }
 /** The 403 body for a report configuration: its own sources first, then its links. */
 function deniedReportBody(user: Express.User | undefined, config: any, dataSources: unknown = config?.dataSources) {

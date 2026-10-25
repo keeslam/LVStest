@@ -212,6 +212,68 @@ describe("report builder calculated fields", () => {
     expect(small.body.map((r: any) => Number(r["calc.f3"])).sort((a: number, b: number) => a - b)).toEqual([50, 100, 600, 800]);
   });
 
+  it("greater/less than with a value that is not a number is 400, never 500", async () => {
+    for (const value of ["abc", "", null, "12abc"]) {
+      const rule = { id: "g", name: "G", kind: "ifThen", type: "text", rule: { when: { ref: AMT, test: "gt", value }, then: { text: "a" }, otherwise: { text: "b" } } };
+      const res = await admin.post("/api/reports/execute").send(report({ columns: [calc("g")], calculatedFields: [rule] }));
+      expect(res.status, JSON.stringify(value)).toBe(400);
+      expect(res.body.code).toBe("REPORT_CALC_INVALID");
+      expect(res.body.error).toBe("BAD_RULE");
+      expect(res.body.id).toBe("g");
+    }
+  });
+
+  it("a report that cannot run is not saved (text in a sum, greater than on text)", async () => {
+    const textMath = { id: "tm", name: "T", kind: "formula", type: "number", formula: { kind: "op", op: "*", left: { kind: "field", table: "expenses", field: "description" }, right: { kind: "number", value: 2 } } };
+    const gtText = { id: "gt", name: "G", kind: "ifThen", type: "text", rule: { when: { ref: { kind: "field", table: "expenses", field: "category" }, test: "gt", value: 5 }, then: { text: "a" }, otherwise: { text: "b" } } };
+    const textCalcMath = { id: "tc", name: "TC", kind: "formula", type: "number", formula: { kind: "op", op: "+", left: { kind: "calc", id: "hoog" }, right: { kind: "number", value: 1 } } };
+    const ok = await admin.post("/api/reports/saved").send({ ...report({ columns: [calc("inclVat")] }), name: `Calc fixt ${Date.now()}` });
+    expect(ok.status).toBe(200);
+    savedIds.push(ok.body.id);
+    for (const [bad, extra] of [[textMath, []], [gtText, []], [textCalcMath, [hoog]]] as const) {
+      const cfg = { ...report({ columns: [calc((bad as any).id)], calculatedFields: [...extra, bad] }), name: "nope" };
+      const post = await admin.post("/api/reports/saved").send(cfg);
+      expect(post.status, (bad as any).id).toBe(400);
+      expect(post.body.code).toBe("REPORT_CALC_INVALID");
+      expect(post.body.error).toBe("BAD_RULE");
+      expect(post.body.id).toBe((bad as any).id);
+      const put = await admin.put(`/api/reports/saved/${ok.body.id}`).send(cfg);
+      expect(put.status, (bad as any).id).toBe(400);
+      expect(put.body.code).toBe("REPORT_CALC_INVALID");
+    }
+  });
+
+  it("malformed calculated fields are 400, never 500, on execute and save", async () => {
+    let deep: any = { kind: "number", value: 1 };
+    for (let i = 0; i < 3000; i++) deep = { kind: "op", op: "+", left: deep, right: { kind: "number", value: 1 } };
+    const payloads: unknown[] = [
+      "x", 5, { id: "a" }, [null], [5], [{}], [{ id: "a", kind: "formula" }],
+      [{ id: "a", kind: "formula", type: "number", formula: { kind: "field", table: 1, field: [] } }],
+      [{ id: "a", kind: "formula", type: "number", formula: { kind: "field", table: "vehicles", field: "brand", via: ["vehicle"] } }],
+      [{ id: "a", kind: "ifThen", type: "text", rule: { when: null, then: { text: "a" }, otherwise: { text: "b" } } }],
+      [{ id: "a", kind: "ifThen", type: "text", rule: { when: { ref: { kind: "calc", id: { x: 1 } }, test: "empty" }, then: "a", otherwise: 7 } }],
+      [{ id: "a", kind: "formula", type: "number", formula: deep }],
+    ];
+    for (const calculatedFields of payloads) {
+      const cfg = { ...report({ columns: [calc("a")] }), calculatedFields };
+      const res = await admin.post("/api/reports/execute").send(cfg);
+      expect(res.status, JSON.stringify(calculatedFields).slice(0, 80)).toBe(400);
+      expect(res.body.code).toBe("REPORT_CALC_INVALID");
+      const post = await admin.post("/api/reports/saved").send({ ...cfg, name: "nope" });
+      expect(post.status, JSON.stringify(calculatedFields).slice(0, 80)).toBe(400);
+    }
+  });
+
+  it("a calc entry in orderBy is refused with 400 (sorting is not run on the server)", async () => {
+    const cfg = { ...report({ columns: [calc("inclVat")] }), orderBy: [{ calc: "inclVat", table: "", field: "", direction: "asc" }] };
+    const res = await admin.post("/api/reports/execute").send(cfg);
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe("REPORT_CALC_INVALID");
+    expect(res.body.id).toBe("inclVat");
+    const post = await admin.post("/api/reports/saved").send({ ...cfg, name: "nope" });
+    expect(post.status).toBe(400);
+  });
+
   it("reports without calculated fields work as before", async () => {
     const res = await admin.post("/api/reports/execute").send({
       dataSources: ["expenses"], columns: [{ table: "expenses", field: "amount" }],

@@ -1,5 +1,5 @@
 import { UserPermission, UserRole } from './schema';
-import { referencedFields, type CalculatedField, type FieldRef } from './report-formula';
+import { referencedFields, type CalculatedField, type FieldRef, type FormulaNode, type IfThenResult } from './report-formula';
 
 export type FieldType = 'text' | 'number' | 'date' | 'boolean';
 
@@ -432,6 +432,71 @@ function reportEntriesOf(config: Partial<ReportConfiguration> | null | undefined
     out.push({ table: String(ref.table), field: String(ref.field), via: ref.via });
   }
   return out;
+}
+
+/**
+ * Type problems of calculated fields that validateCalculatedFields does not see, so a report that
+ * cannot run is never saved: arithmetic on a field or calc that is not a number, greater/less than
+ * on text or with a value that is not a number, equal/not equal of a number with a non-number, and
+ * a calc entry in orderBy (sorting is not run on the server). Call only after validation passed
+ * (references end, depth is bounded). Returns the calc id and a message, or null. Never throws.
+ */
+export function calcTypeProblem(config: Partial<ReportConfiguration> | null | undefined): { id: string; message: string } | null {
+  const orderBy: unknown = config?.orderBy;
+  if (Array.isArray(orderBy)) {
+    for (const entry of orderBy) {
+      if (entry && typeof entry === 'object' && isCalcEntry(entry as { calc?: string })) {
+        return { id: String((entry as { calc: string }).calc), message: 'Sorteren op een berekend veld kan niet.' };
+      }
+    }
+  }
+  const list: unknown = config?.calculatedFields;
+  const fields: CalculatedField[] = Array.isArray(list) ? list : [];
+  const byId = new Map(fields.map((f) => [f.id, f]));
+  const memo = new Map<string, boolean>();
+  const isNumField = (n: { table: string; field: string }) =>
+    getField(n.table, RENAMED_REPORT_FIELDS[`${n.table}.${n.field}`] ?? n.field)?.type === 'number';
+  const isNumNode = (n: FormulaNode): boolean =>
+    n.kind === 'field' ? isNumField(n) : n.kind === 'calc' ? isNumCalc(n.id) : true;
+  const isNumResult = (r: IfThenResult | undefined) => !!r && 'ref' in r && isNumNode(r.ref);
+  // Memoized per calc id; a calc being looked at counts as not numeric (no cycles after validation).
+  const isNumCalc = (id: string): boolean => {
+    const known = memo.get(id);
+    if (known !== undefined) return known;
+    memo.set(id, false);
+    const f = byId.get(id);
+    const numeric = !!f && (f.kind === 'formula' || (isNumResult(f.rule?.then) && isNumResult(f.rule?.otherwise)));
+    memo.set(id, numeric);
+    return numeric;
+  };
+  // A node that is calculated with: every field and calc in it must give a number.
+  const arithmetic = (n: FormulaNode): string | null => {
+    if (n.kind === 'field') return isNumField(n) ? null : `Rekenen kan alleen met getallen, en ${n.field} is geen getal.`;
+    if (n.kind === 'calc') return isNumCalc(n.id) ? null : `Rekenen kan alleen met getallen, en ${n.id} geeft tekst.`;
+    if (n.kind === 'op') return arithmetic(n.left) ?? arithmetic(n.right);
+    return null;
+  };
+  // A value in an if-then is read as is, unless it is a calculation.
+  const asValue = (n: FormulaNode) => (n.kind === 'op' ? arithmetic(n) : null);
+  for (const f of fields) {
+    let problem: string | null = null;
+    if (f.kind === 'formula' && f.formula) {
+      problem = arithmetic(f.formula);
+    } else if (f.kind === 'ifThen' && f.rule) {
+      const { ref, test, value } = f.rule.when;
+      problem = asValue(ref);
+      for (const r of [f.rule.then, f.rule.otherwise]) if (!problem && 'ref' in r) problem = asValue(r.ref);
+      const numericValue = typeof value === 'number' ? value : typeof value === 'string' && value.trim() !== '' ? Number(value) : NaN;
+      if (!problem && (test === 'gt' || test === 'lt')) {
+        if (!isNumNode(ref)) problem = 'Groter dan en kleiner dan kunnen alleen met getallen.';
+        else if (typeof value !== 'number' || !Number.isFinite(value)) problem = 'Vergelijk een getal met een getal.';
+      } else if (!problem && (test === 'eq' || test === 'neq') && isNumNode(ref) && !Number.isFinite(numericValue)) {
+        problem = 'Vergelijk een getal met een getal.';
+      }
+    }
+    if (problem) return { id: f.id, message: problem };
+  }
+  return null;
 }
 
 /**
