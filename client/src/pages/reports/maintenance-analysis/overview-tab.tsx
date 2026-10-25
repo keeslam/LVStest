@@ -20,6 +20,7 @@ import { ANALYSIS_ENDPOINT, countText, useAnalysis, useComparedAnalysisParams, u
 import { AnalysisChart } from "./analysis-chart";
 import { useAnalysisDrill } from "./analysis-rows";
 import { AnalysisPanel } from "./analysis-panel";
+import { AnalysisCsvButton } from "./analysis-csv";
 
 type TileId = "total" | "perVehicleMonth" | "count" | "perKm";
 type TopVehicle = MaintenanceOverview["topVehicles"][number];
@@ -118,6 +119,7 @@ export function OverviewTab() {
               defaultSort={{ id: "total", dir: "desc" }}
               testId="ma-top-vehicles-table"
               onView={setView}
+              toolbar={<AnalysisCsvButton columns={columns} rows={topVehicles} view={view} name="onderhoud-duurste-autos" testId="button-ma-top-vehicles-csv" />}
               onRowClick={(r) => drill({
                 title: `${k("rows.title")} · ${formatLicensePlate(r.licensePlate)}`,
                 drill: "vehicle",

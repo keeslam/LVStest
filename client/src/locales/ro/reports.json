@@ -90,7 +90,18 @@
       "vehiclesWithCosts": "Cu costuri",
       "perVehicleMonth": "Pe mașină pe lună",
       "perKm": "Pe km",
-      "rating": "Evaluare"
+      "rating": "Evaluare",
+      "year": "An de fabricație",
+      "kmBand": "Interval km",
+      "perMonth": "Pe lună",
+      "lastDate": "Ultimul cost",
+      "avg": "Medie pe poziție",
+      "visits": "Vizite",
+      "days": "Zile imobilizat",
+      "month": "Luna",
+      "kmPerDay": "Km pe zi",
+      "signal": "Semnal",
+      "reason": "Motiv"
     },
     "rating": {
       "excellent": "Excelent",
@@ -104,6 +115,42 @@
       "loading": "Se încarcă…",
       "summary": "{{lines}} poziții, în total {{amount}}",
       "csv": "intretinere-pozitii-de-cost"
+    },
+    "vehicles": {
+      "title": "Costuri pe mașină",
+      "description": "Faceți clic pe o mașină pentru pozițiile de cost. Puteți căuta și un număr fără cratime."
+    },
+    "suppliers": {
+      "chartTitle": "Costuri pe furnizor",
+      "title": "Furnizori",
+      "downtimeTitle": "Timp în service",
+      "downtimeDesc": "Vizite în service și zile de imobilizare pe mașină în această perioadă.",
+      "topRepairsTitle": "Cele mai mari reparații"
+    },
+    "trends": {
+      "chartTitle": "Costuri pe lună",
+      "previous": "Perioada de comparație",
+      "forecast": "Estimare",
+      "forecastAmount": "Estimare ({{months}} luni)",
+      "forecastTitle": "Estimare pe mașină",
+      "forecastDesc": "Pentru următoarele {{months}} luni: km pe zi × cost pe km al aceluiași tip în același interval km. Doar pentru administratori.",
+      "forecastHint": "Linia punctată este estimarea. Faceți clic pe o lună pentru pozițiile de cost."
+    },
+    "signals": {
+      "title": "Semnale",
+      "description": "Mașini care cer atenție. Faceți clic pe un rând pentru pozițiile de cost.",
+      "none": "Nu există semnale în această perioadă.",
+      "kinds": {
+        "aboveGroup": "Mai scumpă decât grupul",
+        "rising": "Costuri în creștere",
+        "repeated": "Reparație repetată"
+      },
+      "reasons": {
+        "aboveGroupMonth": "Cu {{percent}}% mai scumpă pe lună decât media altor {{comparables}} {{group}} ({{value}} față de {{average}}).",
+        "aboveGroupKm": "Cu {{percent}}% mai scumpă pe km decât media altor {{comparables}} {{group}} în intervalul {{band}} ({{value}} față de {{average}}).",
+        "rising": "Costuri mai mari decât luna anterioară timp de {{months}} luni la rând: {{list}}.",
+        "repeated": "{{category}} de două ori în {{days}} zile (pe {{first}} și {{second}})."
+      }
     }
   },
   "reportBuilderPage": {

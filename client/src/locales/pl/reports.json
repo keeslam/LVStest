@@ -90,7 +90,18 @@
       "vehiclesWithCosts": "Z kosztami",
       "perVehicleMonth": "Na auto na miesiąc",
       "perKm": "Na km",
-      "rating": "Ocena"
+      "rating": "Ocena",
+      "year": "Rok produkcji",
+      "kmBand": "Przedział km",
+      "perMonth": "Na miesiąc",
+      "lastDate": "Ostatni koszt",
+      "avg": "Średnio na pozycję",
+      "visits": "Wizyty",
+      "days": "Dni postoju",
+      "month": "Miesiąc",
+      "kmPerDay": "Km dziennie",
+      "signal": "Sygnał",
+      "reason": "Powód"
     },
     "rating": {
       "excellent": "Doskonała",
@@ -104,6 +115,42 @@
       "loading": "Ładowanie…",
       "summary": "Pozycje: {{lines}}, razem {{amount}}",
       "csv": "konserwacja-pozycje-kosztow"
+    },
+    "vehicles": {
+      "title": "Koszty na auto",
+      "description": "Kliknij auto, aby zobaczyć pozycje kosztów. Możesz też szukać numeru bez myślników."
+    },
+    "suppliers": {
+      "chartTitle": "Koszty według dostawcy",
+      "title": "Dostawcy",
+      "downtimeTitle": "Czas w warsztacie",
+      "downtimeDesc": "Wizyty w warsztacie i dni postoju na auto w tym okresie.",
+      "topRepairsTitle": "Największe naprawy"
+    },
+    "trends": {
+      "chartTitle": "Koszty na miesiąc",
+      "previous": "Okres porównawczy",
+      "forecast": "Prognoza",
+      "forecastAmount": "Prognoza ({{months}} mies.)",
+      "forecastTitle": "Prognoza na auto",
+      "forecastDesc": "Na najbliższe miesiące ({{months}}): km dziennie × koszt na km tego samego typu w tym samym przedziale km. Tylko dla administratorów.",
+      "forecastHint": "Linia przerywana to prognoza. Kliknij miesiąc, aby zobaczyć pozycje kosztów."
+    },
+    "signals": {
+      "title": "Sygnały",
+      "description": "Auta wymagające uwagi. Kliknij wiersz, aby zobaczyć pozycje kosztów.",
+      "none": "Brak sygnałów w tym okresie.",
+      "kinds": {
+        "aboveGroup": "Droższe niż grupa",
+        "rising": "Rosnące koszty",
+        "repeated": "Powtórzona naprawa"
+      },
+      "reasons": {
+        "aboveGroupMonth": "{{percent}}% drożej na miesiąc niż średnia innych aut {{group}} (liczba: {{comparables}}; {{value}} wobec {{average}}).",
+        "aboveGroupKm": "{{percent}}% drożej na km niż średnia innych aut {{group}} w przedziale {{band}} (liczba: {{comparables}}; {{value}} wobec {{average}}).",
+        "rising": "Koszty wyższe niż w poprzednim miesiącu przez kolejne miesiące ({{months}}): {{list}}.",
+        "repeated": "{{category}} dwa razy w ciągu {{days}} dni ({{first}} i {{second}})."
+      }
     }
   },
   "reportBuilderPage": {

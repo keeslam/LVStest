@@ -23,6 +23,7 @@ import { ANALYSIS_ENDPOINT, countText, useAnalysis, useAnalysisParams, useCompar
 import { AnalysisChart, type AnalysisMetric } from "./analysis-chart";
 import { useAnalysisDrill } from "./analysis-rows";
 import { AnalysisPanel } from "./analysis-panel";
+import { AnalysisCsvButton } from "./analysis-csv";
 
 type BrandLine = MaintenanceBrands["brands"][number];
 type ModelLine = MaintenanceBrands["models"][number];
@@ -166,6 +167,7 @@ export function BrandsTab() {
           defaultSort={{ id: "total", dir: "desc" }}
           testId="ma-brands-table"
           onView={setBrandView}
+          toolbar={<AnalysisCsvButton columns={brandColumns} rows={brands} view={brandView} name="onderhoud-merken" testId="button-ma-brands-csv" />}
         />
       </AnalysisPanel>
 
@@ -183,6 +185,7 @@ export function BrandsTab() {
             defaultSort={{ id: "total", dir: "desc" }}
             testId="ma-models-table"
             onView={setModelView}
+            toolbar={<AnalysisCsvButton columns={modelColumns} rows={models} view={modelView} name="onderhoud-typen" testId="button-ma-models-csv" />}
             onRowClick={(r) => drill({ title: `${rowsTitle} · ${r.brand} ${r.model}`, drill: "model", key: r.key })}
           />
         </AnalysisPanel>

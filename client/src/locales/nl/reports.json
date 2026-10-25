@@ -90,7 +90,18 @@
       "vehiclesWithCosts": "Met kosten",
       "perVehicleMonth": "Per auto per maand",
       "perKm": "Per km",
-      "rating": "Oordeel"
+      "rating": "Oordeel",
+      "year": "Bouwjaar",
+      "kmBand": "Km-klasse",
+      "perMonth": "Per maand",
+      "lastDate": "Laatste kosten",
+      "avg": "Gemiddeld per post",
+      "visits": "Bezoeken",
+      "days": "Dagen stil",
+      "month": "Maand",
+      "kmPerDay": "Km per dag",
+      "signal": "Signaal",
+      "reason": "Reden"
     },
     "rating": {
       "excellent": "Uitstekend",
@@ -104,6 +115,42 @@
       "loading": "Laden…",
       "summary": "{{lines}} regels, samen {{amount}}",
       "csv": "onderhoud-kostenregels"
+    },
+    "vehicles": {
+      "title": "Kosten per auto",
+      "description": "Klik op een auto voor de kostenregels. Zoeken kan ook op kenteken zonder streepjes."
+    },
+    "suppliers": {
+      "chartTitle": "Kosten per leverancier",
+      "title": "Leveranciers",
+      "downtimeTitle": "Stilstand in de werkplaats",
+      "downtimeDesc": "Werkplaatsbezoeken en dagen stil per auto in deze periode.",
+      "topRepairsTitle": "Grootste reparaties"
+    },
+    "trends": {
+      "chartTitle": "Kosten per maand",
+      "previous": "Vergelijkingsperiode",
+      "forecast": "Verwachting",
+      "forecastAmount": "Verwachting ({{months}} mnd)",
+      "forecastTitle": "Verwachting per auto",
+      "forecastDesc": "Voor de komende {{months}} maanden: km per dag × kosten per km van hetzelfde type in dezelfde km-klasse. Alleen voor beheerders.",
+      "forecastHint": "De stippellijn is de verwachting. Klik op een maand voor de kostenregels."
+    },
+    "signals": {
+      "title": "Signalen",
+      "description": "Auto's die aandacht vragen. Klik op een regel voor de kostenregels.",
+      "none": "Geen signalen in deze periode.",
+      "kinds": {
+        "aboveGroup": "Duurder dan de groep",
+        "rising": "Stijgende kosten",
+        "repeated": "Herhaalde reparatie"
+      },
+      "reasons": {
+        "aboveGroupMonth": "{{percent}}% duurder per maand dan het gemiddelde van {{comparables}} andere {{group}} ({{value}} tegen {{average}}).",
+        "aboveGroupKm": "{{percent}}% duurder per km dan het gemiddelde van {{comparables}} andere {{group}} in km-klasse {{band}} ({{value}} tegen {{average}}).",
+        "rising": "Kosten {{months}} maanden op rij hoger dan de maand ervoor: {{list}}.",
+        "repeated": "{{category}} 2 keer binnen {{days}} dagen (op {{first}} en {{second}})."
+      }
     }
   },
   "reportBuilderPage": {

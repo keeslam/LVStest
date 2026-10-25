@@ -90,7 +90,18 @@
       "vehiclesWithCosts": "With costs",
       "perVehicleMonth": "Per car per month",
       "perKm": "Per km",
-      "rating": "Rating"
+      "rating": "Rating",
+      "year": "Year built",
+      "kmBand": "Km band",
+      "perMonth": "Per month",
+      "lastDate": "Last cost",
+      "avg": "Average per line",
+      "visits": "Visits",
+      "days": "Days off the road",
+      "month": "Month",
+      "kmPerDay": "Km per day",
+      "signal": "Signal",
+      "reason": "Reason"
     },
     "rating": {
       "excellent": "Excellent",
@@ -104,6 +115,42 @@
       "loading": "Loading…",
       "summary": "{{lines}} lines, together {{amount}}",
       "csv": "maintenance-cost-lines"
+    },
+    "vehicles": {
+      "title": "Costs per car",
+      "description": "Click a car for its cost lines. You can also search a plate without dashes."
+    },
+    "suppliers": {
+      "chartTitle": "Costs per supplier",
+      "title": "Suppliers",
+      "downtimeTitle": "Time in the workshop",
+      "downtimeDesc": "Workshop visits and days off the road per car in this period.",
+      "topRepairsTitle": "Largest repairs"
+    },
+    "trends": {
+      "chartTitle": "Costs per month",
+      "previous": "Comparison period",
+      "forecast": "Forecast",
+      "forecastAmount": "Forecast ({{months}} mo)",
+      "forecastTitle": "Forecast per car",
+      "forecastDesc": "For the next {{months}} months: km per day × cost per km of the same type in the same km band. Admins only.",
+      "forecastHint": "The dashed line is the forecast. Click a month for its cost lines."
+    },
+    "signals": {
+      "title": "Signals",
+      "description": "Cars that need attention. Click a line for its cost lines.",
+      "none": "No signals in this period.",
+      "kinds": {
+        "aboveGroup": "More expensive than the group",
+        "rising": "Rising costs",
+        "repeated": "Repeated repair"
+      },
+      "reasons": {
+        "aboveGroupMonth": "{{percent}}% more expensive per month than the average of {{comparables}} other {{group}} ({{value}} against {{average}}).",
+        "aboveGroupKm": "{{percent}}% more expensive per km than the average of {{comparables}} other {{group}} in km band {{band}} ({{value}} against {{average}}).",
+        "rising": "Costs higher than the month before for {{months}} months in a row: {{list}}.",
+        "repeated": "{{category}} twice within {{days}} days (on {{first}} and {{second}})."
+      }
     }
   },
   "reportBuilderPage": {

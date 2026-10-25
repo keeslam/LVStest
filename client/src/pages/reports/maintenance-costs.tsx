@@ -21,6 +21,10 @@ import { AnalysisFilterBar } from "./maintenance-analysis/analysis-filter-bar";
 import { AnalysisDrillProvider } from "./maintenance-analysis/analysis-rows";
 import { OverviewTab } from "./maintenance-analysis/overview-tab";
 import { BrandsTab } from "./maintenance-analysis/brands-tab";
+import { VehiclesTab } from "./maintenance-analysis/vehicles-tab";
+import { SuppliersTab } from "./maintenance-analysis/suppliers-tab";
+import { TrendsTab } from "./maintenance-analysis/trends-tab";
+import { SignalsTab } from "./maintenance-analysis/signals-tab";
 
 export const MAINTENANCE_ANALYSIS_TABS = ["overview", "brands", "vehicles", "suppliers", "trends", "signals"] as const;
 export type MaintenanceAnalysisTab = (typeof MAINTENANCE_ANALYSIS_TABS)[number];
@@ -77,7 +81,9 @@ function TabBody({ tab }: { tab: MaintenanceAnalysisTab }) {
   switch (tab) {
     case "overview": return <OverviewTab />;
     case "brands": return <BrandsTab />;
-    // Voertuigen, Leveranciers, Trends and Signalen follow in Task 4.
-    default: return <p className="text-sm text-muted-foreground" data-testid={`ma-${tab}-placeholder`}>—</p>;
+    case "vehicles": return <VehiclesTab />;
+    case "suppliers": return <SuppliersTab />;
+    case "trends": return <TrendsTab />;
+    case "signals": return <SignalsTab />;
   }
 }

@@ -90,7 +90,18 @@
       "vehiclesWithCosts": "Con costi",
       "perVehicleMonth": "Per auto al mese",
       "perKm": "Per km",
-      "rating": "Giudizio"
+      "rating": "Giudizio",
+      "year": "Anno di costruzione",
+      "kmBand": "Fascia km",
+      "perMonth": "Al mese",
+      "lastDate": "Ultimo costo",
+      "avg": "Media per voce",
+      "visits": "Visite",
+      "days": "Giorni fermo",
+      "month": "Mese",
+      "kmPerDay": "Km al giorno",
+      "signal": "Segnale",
+      "reason": "Motivo"
     },
     "rating": {
       "excellent": "Ottimo",
@@ -104,6 +115,42 @@
       "loading": "Caricamento…",
       "summary": "{{lines}} voci, in totale {{amount}}",
       "csv": "manutenzione-voci-di-costo"
+    },
+    "vehicles": {
+      "title": "Costi per auto",
+      "description": "Clicca su un'auto per le voci di costo. Puoi cercare anche una targa senza trattini."
+    },
+    "suppliers": {
+      "chartTitle": "Costi per fornitore",
+      "title": "Fornitori",
+      "downtimeTitle": "Tempo in officina",
+      "downtimeDesc": "Visite in officina e giorni di fermo per auto in questo periodo.",
+      "topRepairsTitle": "Riparazioni più grandi"
+    },
+    "trends": {
+      "chartTitle": "Costi per mese",
+      "previous": "Periodo di confronto",
+      "forecast": "Previsione",
+      "forecastAmount": "Previsione ({{months}} mesi)",
+      "forecastTitle": "Previsione per auto",
+      "forecastDesc": "Per i prossimi {{months}} mesi: km al giorno × costo per km dello stesso tipo nella stessa fascia km. Solo per amministratori.",
+      "forecastHint": "La linea tratteggiata è la previsione. Clicca su un mese per le voci di costo."
+    },
+    "signals": {
+      "title": "Segnali",
+      "description": "Auto che richiedono attenzione. Clicca su una riga per le voci di costo.",
+      "none": "Nessun segnale in questo periodo.",
+      "kinds": {
+        "aboveGroup": "Più cara del gruppo",
+        "rising": "Costi in aumento",
+        "repeated": "Riparazione ripetuta"
+      },
+      "reasons": {
+        "aboveGroupMonth": "{{percent}}% più cara al mese della media di altre {{comparables}} {{group}} ({{value}} contro {{average}}).",
+        "aboveGroupKm": "{{percent}}% più cara per km della media di altre {{comparables}} {{group}} nella fascia {{band}} ({{value}} contro {{average}}).",
+        "rising": "Costi più alti del mese precedente per {{months}} mesi di fila: {{list}}.",
+        "repeated": "{{category}} due volte in {{days}} giorni (il {{first}} e il {{second}})."
+      }
     }
   },
   "reportBuilderPage": {

@@ -90,7 +90,18 @@
       "vehiclesWithCosts": "Com custos",
       "perVehicleMonth": "Por carro por mês",
       "perKm": "Por km",
-      "rating": "Avaliação"
+      "rating": "Avaliação",
+      "year": "Ano de fabrico",
+      "kmBand": "Escalão de km",
+      "perMonth": "Por mês",
+      "lastDate": "Último custo",
+      "avg": "Média por linha",
+      "visits": "Visitas",
+      "days": "Dias parado",
+      "month": "Mês",
+      "kmPerDay": "Km por dia",
+      "signal": "Sinal",
+      "reason": "Motivo"
     },
     "rating": {
       "excellent": "Excelente",
@@ -104,6 +115,42 @@
       "loading": "A carregar…",
       "summary": "{{lines}} linhas, no total {{amount}}",
       "csv": "manutencao-linhas-de-custo"
+    },
+    "vehicles": {
+      "title": "Custos por carro",
+      "description": "Clique num carro para ver as linhas de custo. Também pode pesquisar uma matrícula sem hífenes."
+    },
+    "suppliers": {
+      "chartTitle": "Custos por fornecedor",
+      "title": "Fornecedores",
+      "downtimeTitle": "Tempo na oficina",
+      "downtimeDesc": "Visitas à oficina e dias parado por carro neste período.",
+      "topRepairsTitle": "Maiores reparações"
+    },
+    "trends": {
+      "chartTitle": "Custos por mês",
+      "previous": "Período de comparação",
+      "forecast": "Previsão",
+      "forecastAmount": "Previsão ({{months}} meses)",
+      "forecastTitle": "Previsão por carro",
+      "forecastDesc": "Para os próximos {{months}} meses: km por dia × custo por km do mesmo tipo no mesmo escalão de km. Só para administradores.",
+      "forecastHint": "A linha tracejada é a previsão. Clique num mês para ver as linhas de custo."
+    },
+    "signals": {
+      "title": "Sinais",
+      "description": "Carros que pedem atenção. Clique numa linha para ver as linhas de custo.",
+      "none": "Sem sinais neste período.",
+      "kinds": {
+        "aboveGroup": "Mais caro do que o grupo",
+        "rising": "Custos a subir",
+        "repeated": "Reparação repetida"
+      },
+      "reasons": {
+        "aboveGroupMonth": "{{percent}}% mais caro por mês do que a média de outros {{comparables}} {{group}} ({{value}} contra {{average}}).",
+        "aboveGroupKm": "{{percent}}% mais caro por km do que a média de outros {{comparables}} {{group}} no escalão {{band}} ({{value}} contra {{average}}).",
+        "rising": "Custos mais altos do que no mês anterior durante {{months}} meses seguidos: {{list}}.",
+        "repeated": "{{category}} duas vezes em {{days}} dias (em {{first}} e {{second}})."
+      }
     }
   },
   "reportBuilderPage": {
