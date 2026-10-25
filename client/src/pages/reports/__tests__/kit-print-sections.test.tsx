@@ -5,14 +5,15 @@
  * Runs in the jsdom project.
  */
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { UserRole } from "@shared/schema";
 import { installFetch, renderWithClient, openReport, printPreviewBody } from "./p7a-harness";
 
 let role: string = UserRole.ADMIN;
+let permissions: string[] = [];
 vi.mock("@/hooks/use-auth", () => ({
-  useAuth: () => ({ user: { id: 1, username: "tester", role, permissions: [], hidePrices: false }, isLoading: false }),
+  useAuth: () => ({ user: { id: 1, username: "tester", role, permissions, hidePrices: false }, isLoading: false }),
 }));
 vi.mock("recharts", async () => {
   const React = await import("react");
@@ -25,12 +26,15 @@ vi.mock("recharts", async () => {
 });
 
 import ReportsPage from "@/pages/reports/index";
+import { ReportFiltersProvider } from "@/pages/reports/report-filters";
+import { ExtraCostsReportCard } from "@/pages/reports/extra-costs-report-card";
 import { REPORTS, visibleReports } from "@/pages/reports/report-registry";
 import { breakdownPrintSection } from "@/components/reports/kit/report-breakdown-table";
 
 afterEach(() => {
   vi.unstubAllGlobals();
   role = UserRole.ADMIN;
+  permissions = [];
 });
 
 const zero = { count: 0, amount: 0 };
@@ -60,6 +64,45 @@ describe("kit card in the pane", () => {
     expect(body).toContain("Totaal");
     expect(body).toContain("Per klant");
     expect(body).toContain("Klant 12"); // all rows, not only the first page
+  });
+
+  it("extra-costs: the print keeps the euro amount from the tile hint, and the vehicle filter reaches the request", async () => {
+    const { fetchMock } = installFetch({
+      vehicles: [{ id: 3, licensePlate: "AB12CD", brand: "A", model: "B" }],
+      extra: {
+        "/api/reports/extra-costs/summary": {
+          tiles: { extraKm: { count: 1, amount: 123.45 }, fuel: zero, withExtraKm: zero },
+          totalExtraKm: 5, byMonth: [], byCustomer: [], byVehicle: [],
+        },
+      },
+    });
+    window.history.replaceState(null, "", "/reports");
+    const user = userEvent.setup();
+    renderWithClient(<ReportsPage />);
+    await openReport(user, "financial", "extra-costs");
+    await screen.findByTestId("card-extra-costs-report");
+    const body = await printPreviewBody(user);
+    expect(body).toContain("123,45");
+    expect(fetchMock).toHaveBeenCalled();
+  });
+
+  it("extra-costs: the vehicle of the filter context reaches the summary request", async () => {
+    const { calls } = installFetch({ extra: { "/api/reports/extra-costs/summary": { tiles: {}, byMonth: [], byCustomer: [], byVehicle: [] } } });
+    renderWithClient(<ReportFiltersProvider initial={{ vehicleId: "7" }}><ExtraCostsReportCard /></ReportFiltersProvider>);
+    await screen.findByTestId("card-extra-costs-report");
+    await waitFor(() => expect(calls.some((c) => c.startsWith("/api/reports/extra-costs/summary") && c.includes("vehicleId=7"))).toBe(true));
+  });
+
+  it("fleet-mileage: not listed and not fetched for a non-admin with report and vehicle rights", async () => {
+    role = UserRole.USER;
+    permissions = ["view_reports", "view_vehicles"];
+    const { calls } = installFetch({});
+    const user = userEvent.setup();
+    renderWithClient(<ReportsPage />);
+    await user.click(await screen.findByTestId("tab-report-vehicles"));
+    await screen.findByTestId("report-nav-item-apk-overview");
+    expect(screen.queryByTestId("report-nav-item-fleet-mileage")).not.toBeInTheDocument();
+    expect(calls.some((c) => c.startsWith("/api/reports/fleet-mileage"))).toBe(false);
   });
 
   it("splits the invoice inbox into two registered reports with their own gates", () => {

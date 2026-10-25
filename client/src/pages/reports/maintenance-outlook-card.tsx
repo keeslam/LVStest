@@ -8,7 +8,7 @@
  * columns are for admins only: the server sends null for everyone else, and the
  * card does not show those columns at all.
  */
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { addDays, addMonths, format, getISOWeek, parseISO } from "date-fns";
@@ -26,9 +26,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ReportSection } from "@/components/reports/kit/report-section";
 import { useReportPrint } from "@/components/reports/kit/report-print";
-import { chartSvgFromRef } from "@/lib/report-document-print";
-import { compactSections, breakdownPrintSection, textTablePrintSection, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
-import { useReportRange, useReportPeriod } from "./report-filters";
+import { compactSections, textTablePrintSection } from "@/components/reports/kit/report-breakdown-table";
+import { useReportRange } from "./report-filters";
 import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
 import { useAuth } from "@/hooks/use-auth";

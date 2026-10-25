@@ -23,6 +23,11 @@ describe("reportDocumentHtml", () => {
     expect(html).toContain("counter(page)");
   });
 
+  it("prints a tile hint under the value, escaped", () => {
+    const html = reportDocumentHtml({ ...base, sections: [{ kind: "tiles", tiles: [{ label: "Extra km", value: "2", hint: "€ 30,00 <b>x</b>" }] }] });
+    expect(html).toContain('<div class="tile-hint">€ 30,00 &lt;b&gt;x&lt;/b&gt;</div>');
+  });
+
   it("prints portrait by default and leaves out the note when nothing was cut", () => {
     const html = reportDocumentHtml({ ...base, sections: [{ kind: "table", header: ["A"], rows: [["x"]], truncated: false }] });
     expect(html).toContain("size: A4 portrait");

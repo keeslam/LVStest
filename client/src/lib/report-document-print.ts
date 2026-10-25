@@ -8,7 +8,7 @@ import { escapeHtml as esc } from "@/lib/html-escape";
 
 /** What a report registers for printing (see ReportPrintProvider). */
 export type PrintSection =
-  | { kind: "tiles"; tiles: Array<{ label: string; value: string }> }
+  | { kind: "tiles"; tiles: Array<{ label: string; value: string; hint?: string }> }
   | { kind: "chart"; title?: string; getSvg(): string | null }
   | {
       kind: "table";
@@ -27,7 +27,7 @@ export type PrintSection =
 
 /** A section with its data in hand, ready to be written down. */
 export type ResolvedPrintSection =
-  | { kind: "tiles"; tiles: Array<{ label: string; value: string }> }
+  | { kind: "tiles"; tiles: Array<{ label: string; value: string; hint?: string }> }
   | { kind: "chart"; title?: string; svg: string }
   | { kind: "table"; title?: string; header: string[]; rows: string[][]; truncated: boolean; totals?: string[] }
   | { kind: "note"; text: string };
@@ -58,7 +58,7 @@ function sectionHtml(section: ResolvedPrintSection, labels: ReportDocumentLabels
   switch (section.kind) {
     case "tiles":
       return `<div class="tiles">${section.tiles
-        .map((tile) => `<div class="tile"><div class="tile-label">${esc(tile.label)}</div><div class="tile-value">${esc(tile.value)}</div></div>`)
+        .map((tile) => `<div class="tile"><div class="tile-label">${esc(tile.label)}</div><div class="tile-value">${esc(tile.value)}</div>${tile.hint ? `<div class="tile-hint">${esc(tile.hint)}</div>` : ""}</div>`)
         .join("")}</div>`;
     case "chart":
       return `<div class="chart">${section.title ? `<h2>${esc(section.title)}</h2>` : ""}${section.svg}</div>`;
@@ -93,6 +93,7 @@ export function reportDocumentHtml(input: ReportDocumentInput): string {
   .tile { border: 1px solid #e5e7eb; border-radius: 4px; padding: 6px 10px; min-width: 110px; }
   .tile-label { color: #6b7280; font-size: 10px; }
   .tile-value { font-size: 15px; font-weight: bold; }
+  .tile-hint { color: #6b7280; font-size: 10px; }
   .chart svg { max-width: 100%; height: auto; }
   .note { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 4px; padding: 6px 10px; margin: 8px 0; }
   table { width: 100%; border-collapse: collapse; }

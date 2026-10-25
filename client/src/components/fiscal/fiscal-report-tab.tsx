@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Calculator, Download } from "lucide-react";
 import { USAGE_PERIOD_DERIVATION_START } from "@shared/fiscal-types";
 import { dateLabelNl, formatEuro, monthLabelNl } from "@shared/fiscal-format";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useHasPermission } from "@/hooks/use-has-permission";
