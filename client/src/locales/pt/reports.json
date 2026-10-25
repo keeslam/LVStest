@@ -847,6 +847,16 @@
     "noMatches": "Nenhuma linha encontrada para esta pesquisa."
   },
   "reportKit": {
+    "columns": {
+      "button": "Colunas",
+      "shown": "Mostrar colunas",
+      "extra": "Campos extra",
+      "reset": "Voltar ao padrão",
+      "plate": "Matrícula",
+      "brand": "Marca",
+      "model": "Modelo",
+      "customerName": "Nome do cliente"
+    },
     "csv": "CSV",
     "print": "Imprimir",
     "empty": "Não há linhas para este bloco neste período.",

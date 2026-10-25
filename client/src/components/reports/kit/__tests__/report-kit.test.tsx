@@ -12,6 +12,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 
 vi.mock("@/lib/csv", async (orig) => ({ ...(await orig<typeof import("@/lib/csv")>()), downloadCsv: vi.fn() }));
+// The dialog's Kolommen button checks the rights for the extra fields (deel 3, Task 3).
+vi.mock("@/hooks/use-auth", () => ({
+  useAuth: () => ({ user: { id: 1, username: "tester", role: "admin", permissions: [] }, isLoading: false }),
+}));
 
 import { downloadCsv } from "@/lib/csv";
 import { ReportTiles } from "@/components/reports/kit/report-tiles";
@@ -206,6 +210,7 @@ describe("report kit", () => {
     const pending: Array<() => void> = [];
     fetchMock.mockImplementation(async (input: unknown) => {
       const path = pathOf(input);
+      if (path.startsWith("/api/user-settings/")) return json(null);
       const body = path.includes("tile=a&")
         ? (path.includes("to=2026-12-31") ? { rows: [ROW], total: 1, page: 1, pageSize: 50 } : { rows: [ROW_B], total: 9, page: 1, pageSize: 50 })
         : { rows: [ROW_B], total: 5, page: 1, pageSize: 50 };
@@ -245,6 +250,7 @@ describe("report kit", () => {
     const pending: Array<() => void> = [];
     fetchMock.mockImplementation(async (input: unknown) => {
       const path = pathOf(input);
+      if (path.startsWith("/api/user-settings/")) return json(null);
       if (path.includes("page=1&")) return json({ rows: [ROW], total: 120, page: 1, pageSize: 50 });
       return new Promise<Response>((resolve) => pending.push(() => resolve(json({ rows: [{ ...ROW, id: 3, date: "2026-05-05" }], total: 120, page: 2, pageSize: 50 }))));
     });

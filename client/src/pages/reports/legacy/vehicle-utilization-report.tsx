@@ -19,6 +19,7 @@ import { TileCompareLine, tilesPrintSection, useCompareTile } from "@/components
 import { ReportBaseStatus } from "./report-base-status";
 import { tablePrintSection } from "./table-print";
 import { LegacyRowsDialog, drillTitleOf, useLegacyDrill } from "./drill-rows";
+import { useReportColumns } from "@/components/reports/kit/use-report-columns";
 
 export function VehicleUtilizationReport() {
   const { t } = useTranslation("reports");
@@ -56,7 +57,7 @@ export function VehicleUtilizationReport() {
     : t("reportsPage.operations.vehicleUtilizationSubtitle", { count: base.fleetVehicleCount, rented: base.rentedVehicleCount });
   const chartTitle = base.isAllDataRange ? t("reportsPage.operations.top10YearlyDesc") : t("reportsPage.operations.top10PeriodDesc");
 
-  const columns = useMemo<ReportTableColumn<UtilizationRow>[]>(() => [
+  const baseColumns = useMemo<ReportTableColumn<UtilizationRow>[]>(() => [
     { id: "vehicle", label: t("reportsPage.common.vehicle"), cell: (r) => `${r.brand} ${r.model}`, text: (r) => `${r.brand} ${r.model}`, sortValue: (r) => `${r.brand} ${r.model}` },
     { id: "plate", label: t("reportsPage.common.licensePlate"), cell: (r) => <EntityLink kind="vehicle" id={r.id} label={formatLicensePlate(r.licensePlate)} />, text: (r) => formatLicensePlate(r.licensePlate), sortValue: (r) => r.licensePlate },
     { id: "days", label: t("reportsPage.vehiclesTab.daysReserved"), cell: (r) => `${r.daysReserved} ${t("common:units.days")}`, text: (r) => String(r.daysReserved), sortValue: (r) => r.daysReserved, align: "right" },
@@ -72,6 +73,8 @@ export function VehicleUtilizationReport() {
       text: (r) => `${r.utilizationPercentage}%`, sortValue: (r) => r.utilizationPercentage, align: "right",
     },
   ], [t]);
+  // Kolommen: hide/show columns (per user). The rows are the records themselves: no extra fields.
+  const { columns, menu } = useReportColumns("vehicle-utilization", baseColumns);
 
   useReportPrint([
     tilesPrintSection([tileAverage]),
@@ -124,6 +127,7 @@ export function VehicleUtilizationReport() {
             testId="vehicle-utilization-table"
             resetKey={`${from}|${to}|${vehicleId}`}
             onView={setView}
+            toolbar={menu}
             onRowClick={(r) => openVehicle(r.id, r.licensePlate)}
           />
       </ReportSection>

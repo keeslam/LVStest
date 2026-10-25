@@ -847,6 +847,16 @@
     "noMatches": "Nessuna riga trovata per questa ricerca."
   },
   "reportKit": {
+    "columns": {
+      "button": "Colonne",
+      "shown": "Mostra colonne",
+      "extra": "Campi extra",
+      "reset": "Torna a predefinito",
+      "plate": "Targa",
+      "brand": "Marca",
+      "model": "Modello",
+      "customerName": "Nome cliente"
+    },
     "csv": "CSV",
     "print": "Stampa",
     "empty": "Nessuna riga per questo riquadro in questo periodo.",

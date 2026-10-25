@@ -26,6 +26,10 @@ import { EntityLink } from "@/components/reports/entity-link";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatDateTime } from "@/lib/format-utils";
 import { csvDateTime, csvNumber } from "@/lib/csv";
+import type { ReportLinks } from "@/components/reports/kit/report-extra-columns";
+
+/** Kolommen: the car and customer of a row, for the extra fields of the list. */
+const ROW_LINKS: ReportLinks<PortalRequestReportRow> = { customerId: (r) => r.customerId };
 
 const ENDPOINT = "/api/reports/portal-requests";
 
@@ -230,6 +234,7 @@ export function PortalRequestsReportCard(props: { from?: string; to?: string; ve
         drill={narrow.drill}
         month={narrow.month}
         columns={columns}
+        links={ROW_LINKS}
         defaultSort={shownTile === "stale" ? { key: "createdAt", dir: "asc" } : { key: "createdAt", dir: "desc" }}
         rowKey={(r) => r.id}
         csvSubject={t("reports:portalReports.requests.csvSubject")}

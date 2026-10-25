@@ -30,6 +30,10 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatCurrency, formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
 import { csvDate, csvNumber } from "@/lib/csv";
+import type { ReportLinks } from "@/components/reports/kit/report-extra-columns";
+
+/** Kolommen: the car and customer of a row, for the extra fields of the list. */
+const ROW_LINKS: ReportLinks<ExtraCostsRow> = { vehicleId: (r) => r.vehicleId, customerId: (r) => r.customerId };
 
 const ENDPOINT = "/api/reports/extra-costs";
 
@@ -142,6 +146,7 @@ export function ExtraCostsReportCard(props: { from?: string; to?: string; vehicl
         drill={narrow.drill}
         month={narrow.month}
         columns={columns}
+        links={ROW_LINKS}
         defaultSort={{ key: "startDate", dir: "desc" }}
         rowKey={(r) => r.reservationId}
         csvSubject={t("moneyReports.extraCosts.csvSubject")}

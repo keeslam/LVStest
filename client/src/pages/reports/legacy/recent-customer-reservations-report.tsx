@@ -16,6 +16,10 @@ import { useReportBaseData } from "../report-base-data";
 import { useReportFilters } from "../report-filters";
 import { ReportBaseStatus } from "./report-base-status";
 import { tablePrintSection } from "./table-print";
+import { useReportColumns } from "@/components/reports/kit/use-report-columns";
+import { useReportExtraColumns, type ReportLinks } from "@/components/reports/kit/report-extra-columns";
+
+const RESERVATION_LINKS: ReportLinks<Reservation> = { vehicleId: (r) => r.vehicleId, customerId: (r) => r.customerId };
 
 export function RecentCustomerReservationsReport() {
   const { t } = useTranslation("reports");
@@ -24,7 +28,7 @@ export function RecentCustomerReservationsReport() {
   const [view, setView] = useState<ReportTableView<Reservation> | null>(null);
   const { vehicles, customers, recentCustomerReservations: rows } = base;
 
-  const columns = useMemo<ReportTableColumn<Reservation>[]>(() => {
+  const baseColumns = useMemo<ReportTableColumn<Reservation>[]>(() => {
     const customerName = (r: Reservation) => customers.find((c) => c.id === r.customerId)?.name || t("reportsPage.common.unknown");
     const vehicleName = (r: Reservation) => {
       const vehicle = vehicles.find((v) => v.id === r.vehicleId);
@@ -39,6 +43,9 @@ export function RecentCustomerReservationsReport() {
       { id: "status", label: t("common:fields.status"), cell: (r) => formatReservationStatus(r.status), text: (r) => formatReservationStatus(r.status), sortValue: (r) => formatReservationStatus(r.status) },
     ];
   }, [t, vehicles, customers]);
+  // Kolommen: hide/show columns and the extra fields of the linked car/customer (per user).
+  const extraColumns = useReportExtraColumns("customer-reservations", RESERVATION_LINKS);
+  const { columns, menu } = useReportColumns("customer-reservations", baseColumns, extraColumns);
 
   useReportPrint([tablePrintSection({ id: "customer-reservations", columns, rows, view })]);
 
@@ -53,6 +60,7 @@ export function RecentCustomerReservationsReport() {
             testId="customer-recent-reservations"
             resetKey={`${from}|${to}|${vehicleId}`}
             onView={setView}
+            toolbar={menu}
           />
         </ReportSection>
     </div>

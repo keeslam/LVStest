@@ -15,6 +15,7 @@ import { useReportFilters } from "../report-filters";
 import { ReportBaseStatus } from "./report-base-status";
 import { tablePrintSection } from "./table-print";
 import { LegacyRowsDialog, drillTitleOf, uniqueExpenses, useLegacyDrill } from "./drill-rows";
+import { useReportColumns } from "@/components/reports/kit/use-report-columns";
 
 export function CustomerCostCategoriesReport() {
   const { t } = useTranslation("reports");
@@ -29,7 +30,7 @@ export function CustomerCostCategoriesReport() {
     expenses: uniqueExpenses(c.relatedExpenses),
   });
 
-  const columns = useMemo<ReportTableColumn<CustomerStatsRow>[]>(() => {
+  const baseColumns = useMemo<ReportTableColumn<CustomerStatsRow>[]>(() => {
     const highest = (c: CustomerStatsRow) => categories.reduce(
       (prev, key) => ((c.expensesByCategory[key] || 0) > prev.amount ? { category: key, amount: c.expensesByCategory[key] } : prev),
       { category: "", amount: 0 },
@@ -49,6 +50,8 @@ export function CustomerCostCategoriesReport() {
       })),
     ];
   }, [t, categories]);
+  // Kolommen: hide/show columns (per user). The rows are the records themselves: no extra fields.
+  const { columns, menu } = useReportColumns("customer-cost-categories", baseColumns);
 
   useReportPrint([tablePrintSection({ id: "customer-cost-categories", columns, rows, view })]);
 
@@ -63,6 +66,7 @@ export function CustomerCostCategoriesReport() {
             testId="customer-category-costs"
             resetKey={`${from}|${to}|${vehicleId}|${category}`}
             onView={setView}
+            toolbar={menu}
             onRowClick={openCustomer}
           />
         </ReportSection>

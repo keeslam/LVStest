@@ -21,6 +21,7 @@ import { downloadCsv, csvNumber } from "@/lib/csv";
 import { useComparisonRange, useReportFilters } from "../report-filters";
 import { TileCompareLine, tilesPrintSection, useCompareTile, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { tablePrintSection } from "./table-print";
+import { useReportColumns } from "@/components/reports/kit/use-report-columns";
 
 // Mirrors server/utils/financial-reports.ts
 interface VehicleFinancialRow {
@@ -75,7 +76,7 @@ export function VehicleFinancialsReport() {
     margin: r.margin,
   })), [activeRows]);
 
-  const columns = useMemo<ReportTableColumn<VehicleFinancialRow>[]>(() => [
+  const baseColumns = useMemo<ReportTableColumn<VehicleFinancialRow>[]>(() => [
     {
       id: "vehicle", label: t("financialTab.table.vehicle"),
       cell: (r) => (<><div className="font-medium"><EntityLink kind="vehicle" id={r.vehicleId} label={formatLicensePlate(r.licensePlate)} /></div><div className="text-xs text-gray-500">{r.brand} {r.model}</div></>),
@@ -122,6 +123,8 @@ export function VehicleFinancialsReport() {
       text: (r) => `${formatCurrency(r.margin)} ${marginPct(r)}`,
     },
   ], [t]);
+  // Kolommen: hide/show columns (per user). The rows are the records themselves: no extra fields.
+  const { columns, menu } = useReportColumns("vehicle-financials", baseColumns);
 
   const tot = financials?.totals;
   const totals = tot && activeRows.length > 0 ? {
@@ -140,19 +143,24 @@ export function VehicleFinancialsReport() {
   const exportCsv = () => {
     if (!financials) return;
     const c = (key: string) => t(`financialTab.csv.${key}`);
-    const header = ["licensePlate", "brand", "model", "rentals", "rentalDays", "revenue", "extraCosts", "perDay", "dailyPrice", "expenses", "margin", "marginPct"].map(c);
     const perDay = (r: { revenue: number; rentalDays: number }) => (r.rentalDays > 0 ? csvNumber(r.revenue / r.rentalDays) : "");
-    const rows: (string | number)[][] = activeRows.map((r) => [
-      formatLicensePlate(r.licensePlate), r.brand, r.model, r.rentals, r.rentalDays,
-      csvNumber(r.revenue), csvNumber(r.extraCosts ?? 0), perDay(r), csvNumber(r.dailyPrice),
-      csvNumber(r.expenses), csvNumber(r.margin), marginPctCsv(r),
-    ]);
     const total = financials.totals;
-    rows.push([
-      t("financialTab.table.total"), "", "", total.rentals, total.rentalDays,
-      csvNumber(total.revenue), csvNumber(total.extraCosts ?? 0), perDay(total), "",
-      csvNumber(total.expenses), csvNumber(total.margin), marginPctCsv(total),
-    ]);
+    type Cell = string | number;
+    // The CSV fields behind each column on screen; the CSV follows the chosen columns (Kolommen).
+    const parts: Record<string, { keys: string[]; row: (r: VehicleFinancialRow) => Cell[]; total: Cell[] }> = {
+      vehicle: { keys: ["licensePlate", "brand", "model"], row: (r) => [formatLicensePlate(r.licensePlate), r.brand, r.model], total: [t("financialTab.table.total"), "", ""] },
+      rentals: { keys: ["rentals"], row: (r) => [r.rentals], total: [total.rentals] },
+      rentalDays: { keys: ["rentalDays"], row: (r) => [r.rentalDays], total: [total.rentalDays] },
+      revenue: { keys: ["revenue", "extraCosts"], row: (r) => [csvNumber(r.revenue), csvNumber(r.extraCosts ?? 0)], total: [csvNumber(total.revenue), csvNumber(total.extraCosts ?? 0)] },
+      perDay: { keys: ["perDay"], row: (r) => [perDay(r)], total: [perDay(total)] },
+      dailyPrice: { keys: ["dailyPrice"], row: (r) => [csvNumber(r.dailyPrice)], total: [""] },
+      expenses: { keys: ["expenses"], row: (r) => [csvNumber(r.expenses)], total: [csvNumber(total.expenses)] },
+      margin: { keys: ["margin", "marginPct"], row: (r) => [csvNumber(r.margin), marginPctCsv(r)], total: [csvNumber(total.margin), marginPctCsv(total)] },
+    };
+    const shown = columns.flatMap((col) => (parts[col.id] ? [parts[col.id]] : []));
+    const header = shown.flatMap((p) => p.keys.map(c));
+    const rows: Cell[][] = activeRows.map((r) => shown.flatMap((p) => p.row(r)));
+    rows.push(shown.flatMap((p) => p.total));
     downloadCsv(t("financialTab.csv.subject"), header, rows);
   };
 
@@ -252,6 +260,7 @@ export function VehicleFinancialsReport() {
             testId="vehicle-financials-table"
             resetKey={`${from}|${to}|${vehicleId}`}
             onView={setView}
+            toolbar={menu}
           />
       </ReportSection>
     </div>

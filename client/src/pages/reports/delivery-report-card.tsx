@@ -26,6 +26,10 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
 import { csvDate, csvNumber } from "@/lib/csv";
+import type { ReportLinks } from "@/components/reports/kit/report-extra-columns";
+
+/** Kolommen: the car and customer of a row, for the extra fields of the list. */
+const ROW_LINKS: ReportLinks<DeliveryReportRow> = { vehicleId: (r) => r.vehicleId, customerId: (r) => r.customerId };
 
 const ENDPOINT = "/api/reports/deliveries";
 
@@ -266,6 +270,7 @@ export function DeliveryReportCard(props: { from?: string; to?: string; vehicleI
         drill={narrow.drill}
         month={narrow.month}
         columns={columns}
+        links={ROW_LINKS}
         defaultSort={{ key: "scheduledDate", dir: shownTile === "open" ? "asc" : "desc" }}
         rowKey={(r) => r.id}
         csvSubject={t("reports:officeReports.delivery.csvSubject")}

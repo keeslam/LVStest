@@ -16,6 +16,7 @@ import { useReportFilters } from "../report-filters";
 import { ReportBaseStatus } from "./report-base-status";
 import { tablePrintSection } from "./table-print";
 import { LegacyRowsDialog, drillTitleOf, uniqueExpenses, useLegacyDrill } from "./drill-rows";
+import { useReportColumns } from "@/components/reports/kit/use-report-columns";
 
 export function CustomerImpactReport() {
   const { t } = useTranslation("reports");
@@ -32,7 +33,7 @@ export function CustomerImpactReport() {
     expenses: uniqueExpenses(c.relatedExpenses),
   });
 
-  const columns = useMemo<ReportTableColumn<CustomerStatsRow>[]>(() => {
+  const baseColumns = useMemo<ReportTableColumn<CustomerStatsRow>[]>(() => {
     const impact = (c: CustomerStatsRow): { text: string; className: string } | null => {
       if (!(c.expensePerDay > 0)) return null;
       if (c.expensePerDay > (avg / 30) * 2) return { text: t("reportsPage.customersTab.impactHigh"), className: "bg-red-100 text-red-800" };
@@ -61,6 +62,8 @@ export function CustomerImpactReport() {
       },
     ];
   }, [t, avg]);
+  // Kolommen: hide/show columns (per user). The rows are the records themselves: no extra fields.
+  const { columns, menu } = useReportColumns("customer-impact", baseColumns);
 
   useReportPrint([tablePrintSection({ id: "customer-impact", columns, rows, view })]);
 
@@ -75,6 +78,7 @@ export function CustomerImpactReport() {
             testId="customer-impact-table"
             resetKey={`${from}|${to}|${vehicleId}|${category}`}
             onView={setView}
+            toolbar={menu}
             onRowClick={openCustomer}
           />
         </ReportSection>

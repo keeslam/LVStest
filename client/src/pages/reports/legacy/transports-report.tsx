@@ -21,6 +21,10 @@ import { formatCurrency, formatDate, formatLicensePlate, sumMoney } from "@/lib/
 import { useReportBaseData } from "../report-base-data";
 import { CategoryIgnoredNote } from "./report-base-status";
 import { tablePrintSection } from "./table-print";
+import { useReportColumns } from "@/components/reports/kit/use-report-columns";
+import { useReportExtraColumns, type ReportLinks } from "@/components/reports/kit/report-extra-columns";
+
+const TRANSPORT_LINKS: ReportLinks<VehicleTransport> = { vehicleId: (tr) => tr.vehicleId, customerId: (tr) => tr.customerId };
 
 export function TransportsReport() {
   const { t } = useTranslation("reports");
@@ -49,7 +53,7 @@ export function TransportsReport() {
   const pendingBilling = sumMoney(rows.filter((tr) => tr.billable && !tr.invoiced), (tr) => Number(tr.billableAmount || 0));
 
   // The columns that are printed and searched; the checkbox column comes in front of them on screen.
-  const columns = useMemo<ReportTableColumn<VehicleTransport>[]>(() => {
+  const baseColumns = useMemo<ReportTableColumn<VehicleTransport>[]>(() => {
     const vehicleName = (tr: VehicleTransport) => {
       const vehicle = tr.vehicle || vehicles.find((v) => v.id === tr.vehicleId);
       return vehicle ? `${vehicle.brand} ${vehicle.model} (${formatLicensePlate(vehicle.licensePlate)})` : t("reportsPage.common.unknown");
@@ -71,6 +75,9 @@ export function TransportsReport() {
       { id: "status", label: t("common:fields.status"), cell: (tr) => <span className="capitalize">{status(tr)}</span>, text: status, sortValue: status },
     ];
   }, [t, vehicles, typeLabels]);
+  // Kolommen: hide/show columns and the extra fields of the linked car/customer (per user).
+  const extraColumns = useReportExtraColumns("transports", TRANSPORT_LINKS);
+  const { columns, menu } = useReportColumns("transports", baseColumns, extraColumns);
 
   const screenColumns = useMemo<ReportTableColumn<VehicleTransport>[]>(() => [
     {
@@ -174,6 +181,7 @@ export function TransportsReport() {
             testId="transports-table"
             resetKey={`${typeFilter}|${statusFilter}`}
             onView={setView}
+            toolbar={menu}
           />
       </ReportSection>
     </div>

@@ -847,6 +847,16 @@
     "noMatches": "Nu s-au găsit rânduri pentru această căutare."
   },
   "reportKit": {
+    "columns": {
+      "button": "Coloane",
+      "shown": "Afișează coloane",
+      "extra": "Câmpuri suplimentare",
+      "reset": "Înapoi la standard",
+      "plate": "Număr de înmatriculare",
+      "brand": "Marcă",
+      "model": "Model",
+      "customerName": "Nume client"
+    },
     "csv": "CSV",
     "print": "Tipărește",
     "empty": "Nu există rânduri pentru această casetă în această perioadă.",

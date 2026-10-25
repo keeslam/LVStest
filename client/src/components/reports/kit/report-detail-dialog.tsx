@@ -6,7 +6,7 @@
  * the same filters and sort. Changing the sort or the page size goes back to
  * page 1.
  */
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Printer } from "lucide-react";
@@ -24,6 +24,10 @@ import { reportTableHtml } from "@/lib/report-table-print";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
+import { useReportColumns } from "./use-report-columns";
+import { toDetailColumn, useReportExtraColumns, type ReportLinks } from "./report-extra-columns";
+
+const NO_LINKS: ReportLinks<unknown> = {};
 
 export interface ReportColumn<Row, S extends string> {
   id: string;
@@ -70,7 +74,7 @@ const printValue = <Row, S extends string>(column: ReportColumn<Row, S>, row: Ro
   column.print ? column.print(row) : String(column.csv(row) ?? "");
 
 export function ReportDetailDialog<Row, S extends string>({
-  open, onOpenChange, title: tileTitle, description, endpoint, params, tile, drill, month, columns, defaultSort, rowKey, csvSubject, reportName, testId,
+  open, onOpenChange, title: tileTitle, description, endpoint, params, tile, drill, month, columns: baseColumns, defaultSort, rowKey, csvSubject, reportName, testId, columnsId, links,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -90,9 +94,18 @@ export function ReportDetailDialog<Row, S extends string>({
   /** Named in the activity log row when printed (`report.print`). */
   reportName: string;
   testId: string;
+  /** Key of the user's Kolommen choice for this list; defaults to `testId`. */
+  columnsId?: string;
+  /** The car and customer of a row, for the extra fields of the Kolommen button (keep it stable). */
+  links?: ReportLinks<Row>;
 }) {
   const { t } = useTranslation("reports");
   const { toast } = useToast();
+  // The Kolommen button: the screen, CSV and print all use the chosen columns.
+  const columnsKey = columnsId ?? testId;
+  const extraColumns = useReportExtraColumns<Row>(columnsKey, links ?? (NO_LINKS as ReportLinks<Row>));
+  const detailExtras = useMemo(() => extraColumns.map((c) => toDetailColumn<Row, S>(c)), [extraColumns]);
+  const { columns, menu: columnsMenu } = useReportColumns(columnsKey, baseColumns, detailExtras);
   const [sort, setSort] = useState<SortState<S>>(defaultSort);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
@@ -189,6 +202,7 @@ export function ReportDetailDialog<Row, S extends string>({
               {data ? t("reportKit.rowsCount", { count: total }) : ""}
             </span>
             <div className="ml-auto flex gap-2">
+              {columnsMenu}
               <Button variant="outline" size="sm" onClick={exportCsv} disabled={busy !== null || total === 0} data-testid={`button-${testId}-csv`}>
                 <Download className="mr-1 h-4 w-4" />{t("reportKit.csv")}
               </Button>

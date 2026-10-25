@@ -26,6 +26,10 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
 import { csvDateTime } from "@/lib/csv";
+import type { ReportLinks } from "@/components/reports/kit/report-extra-columns";
+
+/** Kolommen: the car and customer of a row, for the extra fields of the list. */
+const ROW_LINKS: ReportLinks<DamageCheckReportRow> = { vehicleId: (r) => r.vehicleId, customerId: (r) => r.customerId };
 
 const ENDPOINT = "/api/reports/damage-checks";
 
@@ -167,6 +171,7 @@ export function DamageChecksReportCard(props: { from?: string; to?: string; vehi
         drill={narrow.drill}
         month={narrow.month}
         columns={columns}
+        links={ROW_LINKS}
         defaultSort={{ key: "checkDate", dir: "desc" }}
         rowKey={(r) => r.id}
         csvSubject={t("officeReports.damage.csvSubject")}

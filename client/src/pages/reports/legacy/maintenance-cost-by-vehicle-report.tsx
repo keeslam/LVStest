@@ -18,6 +18,7 @@ import { ReportBaseStatus } from "./report-base-status";
 import { tablePrintSection } from "./table-print";
 import { isMaintenanceExpenseCategory } from "@shared/expense-categories";
 import { LegacyRowsDialog, drillTitleOf, useLegacyDrill } from "./drill-rows";
+import { useReportColumns } from "@/components/reports/kit/use-report-columns";
 
 export function MaintenanceCostByVehicleReport() {
   const { t } = useTranslation("reports");
@@ -32,12 +33,14 @@ export function MaintenanceCostByVehicleReport() {
     expenses: base.filteredExpenses.filter((e) => e.vehicleId === r.id && isMaintenanceExpenseCategory(e.category)),
   });
 
-  const columns = useMemo<ReportTableColumn<MaintenanceCostRow>[]>(() => [
+  const baseColumns = useMemo<ReportTableColumn<MaintenanceCostRow>[]>(() => [
     { id: "vehicle", label: t("reportsPage.common.vehicle"), cell: (r) => `${r.brand} ${r.model}`, text: (r) => `${r.brand} ${r.model}`, sortValue: (r) => `${r.brand} ${r.model}` },
     { id: "plate", label: t("reportsPage.common.licensePlate"), cell: (r) => <EntityLink kind="vehicle" id={r.id} label={formatLicensePlate(r.licensePlate)} />, text: (r) => formatLicensePlate(r.licensePlate), sortValue: (r) => r.licensePlate },
     { id: "count", label: t("reportsPage.vehiclesTab.expenseCount"), cell: (r) => t("reportsPage.vehiclesTab.entriesSuffix", { count: r.expenseCount }), text: (r) => String(r.expenseCount), sortValue: (r) => r.expenseCount, align: "right" },
     { id: "cost", label: t("reportsPage.vehiclesTab.totalCost"), cell: (r) => <Price value={Number(r.maintenanceCost)} />, text: (r) => formatCurrency(Number(r.maintenanceCost)), sortValue: (r) => r.maintenanceCost, align: "right" },
   ], [t]);
+  // Kolommen: hide/show columns (per user). The rows are the records themselves: no extra fields.
+  const { columns, menu } = useReportColumns("maintenance-cost-by-vehicle", baseColumns);
 
   useReportPrint([tablePrintSection({ id: "maintenance-cost-by-vehicle", columns, rows, view })]);
 
@@ -52,6 +55,7 @@ export function MaintenanceCostByVehicleReport() {
             testId="maintenance-cost-by-vehicle-table"
             resetKey={`${from}|${to}|${vehicleId}|${category}`}
             onView={setView}
+            toolbar={menu}
             onRowClick={openVehicle}
           />
         </ReportSection>

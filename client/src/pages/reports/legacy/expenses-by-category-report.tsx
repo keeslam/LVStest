@@ -23,6 +23,7 @@ import { categoryKey } from "../report-helpers";
 import { ReportBaseStatus } from "./report-base-status";
 import { tablePrintSection } from "./table-print";
 import { LegacyRowsDialog, drillTitleOf, useLegacyDrill } from "./drill-rows";
+import { useReportColumns } from "@/components/reports/kit/use-report-columns";
 
 interface CategoryRow { category: string; count: number; amount: number }
 
@@ -50,11 +51,13 @@ export function ExpensesByCategoryReport() {
     .map(([key, amount]) => ({ category: key, amount, count: base.filteredExpenses.filter((e) => categoryKey(e.category) === key).length })),
   [base.expensesByCategory, base.filteredExpenses]);
 
-  const columns = useMemo<ReportTableColumn<CategoryRow>[]>(() => [
+  const baseColumns = useMemo<ReportTableColumn<CategoryRow>[]>(() => [
     { id: "category", label: t("reportsPage.common.category"), cell: (r) => formatExpenseCategory(r.category), text: (r) => formatExpenseCategory(r.category), sortValue: (r) => formatExpenseCategory(r.category) },
     { id: "count", label: t("reportsPage.vehiclesTab.expenseCount"), cell: (r) => r.count, text: (r) => String(r.count), sortValue: (r) => r.count, align: "right" },
     { id: "amount", label: t("common:fields.amount"), cell: (r) => <Price value={r.amount} />, text: (r) => formatCurrency(r.amount), sortValue: (r) => r.amount, align: "right" },
   ], [t]);
+  // Kolommen: hide/show columns (per user). The rows are the records themselves: no extra fields.
+  const { columns, menu } = useReportColumns("expenses-by-category", baseColumns);
   const totals = {
     category: t("reportsPage.reports.total"),
     count: String(base.filteredExpenses.length),
@@ -145,6 +148,7 @@ export function ExpensesByCategoryReport() {
             testId="expenses-by-category-table"
             resetKey={`${from}|${to}|${vehicleId}|${category}`}
             onView={setView}
+            toolbar={menu}
             onRowClick={(r) => openCategory(r.category)}
           />
         </CardContent>

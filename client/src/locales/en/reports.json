@@ -835,6 +835,16 @@
     "noMatches": "No rows found for this search."
   },
   "reportKit": {
+    "columns": {
+      "button": "Columns",
+      "shown": "Show columns",
+      "extra": "Extra fields",
+      "reset": "Back to default",
+      "plate": "Licence plate",
+      "brand": "Make",
+      "model": "Model",
+      "customerName": "Customer name"
+    },
     "csv": "CSV",
     "print": "Print",
     "empty": "No rows for this tile in this period.",

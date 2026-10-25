@@ -15,6 +15,7 @@ import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { useReportBaseData, type WarrantyRow } from "../report-base-data";
 import { CategoryIgnoredNote, ReportBaseStatus } from "./report-base-status";
 import { tablePrintSection } from "./table-print";
+import { useReportColumns } from "@/components/reports/kit/use-report-columns";
 
 export function WarrantyReport() {
   const { t } = useTranslation("reports");
@@ -38,7 +39,7 @@ export function WarrantyReport() {
 
   const rows = useMemo(() => warrantyStatusList.filter((v) => status === "all" || v.warrantyStatus === status), [warrantyStatusList, status]);
 
-  const columns = useMemo<ReportTableColumn<WarrantyRow>[]>(() => {
+  const baseColumns = useMemo<ReportTableColumn<WarrantyRow>[]>(() => {
     const statusOf = (v: WarrantyRow): { text: string; className: string } => {
       const days = v.daysRemaining;
       if (days === null) return { text: t("reportsPage.common.notSet"), className: "bg-slate-100 text-slate-800" };
@@ -59,6 +60,8 @@ export function WarrantyReport() {
       },
     ];
   }, [t]);
+  // Kolommen: hide/show columns (per user). The rows are the records themselves: no extra fields.
+  const { columns, menu } = useReportColumns("warranty", baseColumns);
 
   useReportPrint([
     { kind: "tiles", tiles: tiles.map(({ label, value }) => ({ label, value })) },
@@ -102,6 +105,7 @@ export function WarrantyReport() {
             testId="warranty-table"
             resetKey={status}
             onView={setView}
+            toolbar={menu}
           />
       </ReportSection>
     </div>

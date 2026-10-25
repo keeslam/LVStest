@@ -835,6 +835,16 @@
     "noMatches": "Geen regels gevonden voor deze zoekterm."
   },
   "reportKit": {
+    "columns": {
+      "button": "Kolommen",
+      "shown": "Kolommen tonen",
+      "extra": "Extra velden",
+      "reset": "Terug naar standaard",
+      "plate": "Kenteken",
+      "brand": "Merk",
+      "model": "Model",
+      "customerName": "Klantnaam"
+    },
     "csv": "CSV",
     "print": "Afdrukken",
     "empty": "Geen regels voor deze tegel in deze periode.",

@@ -12,6 +12,7 @@ import { Price } from "@/components/ui/price";
 import { ReportRowsDialog, csvSlug, rowsPart } from "@/components/reports/kit/report-rows-dialog";
 import { EntityLink } from "@/components/reports/entity-link";
 import type { ReportTableColumn } from "@/components/reports/kit/report-table";
+import type { ReportLinks } from "@/components/reports/kit/report-extra-columns";
 import { formatCurrency, formatDate, formatExpenseCategory, formatLicensePlate, formatReservationStatus } from "@/lib/format-utils";
 
 export interface LegacyDrill {
@@ -90,7 +91,7 @@ export function LegacyRowsDialog({ drill, onClose, vehicles, customers }: {
   const title = drill?.title ?? "";
   const slug = csvSlug(title);
   const more = useMemo(() => (drill?.reservations && drill.expenses
-    ? [rowsPart({ title: t("expenseChart.expenses"), rows: drill.expenses, columns: expenseColumns, csvName: `${slug}-${csvSlug(t("expenseChart.expenses"))}` })]
+    ? [rowsPart({ title: t("expenseChart.expenses"), rows: drill.expenses, columns: expenseColumns, csvName: `${slug}-${csvSlug(t("expenseChart.expenses"))}`, columnsId: EXPENSE_COLUMNS_ID, links: EXPENSE_LINKS })]
     : undefined), [drill, expenseColumns, slug, t]);
 
   if (drill?.reservations) {
@@ -104,6 +105,8 @@ export function LegacyRowsDialog({ drill, onClose, vehicles, customers }: {
         rowsTitle={more ? t("reportsPage.common.reservations") : undefined}
         csvName={more ? `${slug}-${csvSlug(t("reportsPage.common.reservations"))}` : slug}
         more={more}
+        columnsId="legacy-rows-reservations"
+        links={RESERVATION_LINKS}
         testId="legacy-rows"
       />
     );
@@ -116,9 +119,16 @@ export function LegacyRowsDialog({ drill, onClose, vehicles, customers }: {
       rows={drill?.expenses ?? NO_EXPENSES}
       columns={expenseColumns}
       csvName={slug}
+      columnsId={EXPENSE_COLUMNS_ID}
+      links={EXPENSE_LINKS}
       testId="legacy-rows"
     />
   );
 }
 
 const NO_EXPENSES: Expense[] = [];
+
+// Kolommen: one choice for the cost lists and one for the reservation lists behind a number, in every report.
+const EXPENSE_COLUMNS_ID = "legacy-rows-expenses";
+const EXPENSE_LINKS: ReportLinks<Expense> = { vehicleId: (e) => e.vehicleId };
+const RESERVATION_LINKS: ReportLinks<Reservation> = { vehicleId: (r) => r.vehicleId, customerId: (r) => r.customerId };

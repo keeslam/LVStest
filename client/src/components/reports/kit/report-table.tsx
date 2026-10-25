@@ -36,7 +36,7 @@ function compareValues(a: string | number | null, b: string | number | null): nu
 
 const NO_SORT: SortState<string> = { key: "", dir: "asc" };
 
-export function ReportTable<R>({ rows, columns, rowKey, searchPlaceholder, defaultSort, totals, testId, resetKey, onView, onRowClick }: {
+export function ReportTable<R>({ rows, columns, rowKey, searchPlaceholder, defaultSort, totals, testId, resetKey, onView, onRowClick, toolbar }: {
   rows: R[];
   columns: ReportTableColumn<R>[];
   rowKey: (r: R) => string | number;
@@ -50,6 +50,8 @@ export function ReportTable<R>({ rows, columns, rowKey, searchPlaceholder, defau
   onView?: (view: ReportTableView<R>) => void;
   /** Makes every row clickable (mouse, Enter or space): opens the rows behind it. */
   onRowClick?: (r: R) => void;
+  /** Next to the search field, e.g. the Kolommen button (useReportColumns). */
+  toolbar?: ReactNode;
 }) {
   const { t } = useTranslation("reports");
   const [search, setSearch] = useState("");
@@ -97,14 +99,17 @@ export function ReportTable<R>({ rows, columns, rowKey, searchPlaceholder, defau
 
   return (
     <div className="space-y-2" data-testid={testId}>
-      <Input
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder={placeholder}
-        aria-label={placeholder}
-        className="h-8 max-w-xs"
-        data-testid={`${testId}-search`}
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={placeholder}
+          aria-label={placeholder}
+          className="h-8 max-w-xs"
+          data-testid={`${testId}-search`}
+        />
+        {toolbar}
+      </div>
       {rows.length === 0 ? (
         <p className="text-sm text-muted-foreground" data-testid={`${testId}-empty`}>{t("reportKit.tableEmpty")}</p>
       ) : (

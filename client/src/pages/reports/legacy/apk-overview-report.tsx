@@ -14,6 +14,7 @@ import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { useReportBaseData, type ApkRow } from "../report-base-data";
 import { CategoryIgnoredNote, ReportBaseStatus } from "./report-base-status";
 import { tablePrintSection } from "./table-print";
+import { useReportColumns } from "@/components/reports/kit/use-report-columns";
 
 export function ApkOverviewReport() {
   const { t } = useTranslation("reports");
@@ -32,7 +33,7 @@ export function ApkOverviewReport() {
 
   const rows = useMemo(() => list.filter((v) => status === "all" || v.apkStatus === status), [list, status]);
 
-  const columns = useMemo<ReportTableColumn<ApkRow>[]>(() => {
+  const baseColumns = useMemo<ReportTableColumn<ApkRow>[]>(() => {
     const statusOf = (v: ApkRow): { text: string; className: string } => {
       const days = v.daysUntilExpiry;
       if (days === null) return { text: t("reportsPage.common.notSet"), className: "bg-slate-100 text-slate-800" };
@@ -43,7 +44,8 @@ export function ApkOverviewReport() {
     };
     const apkDate = (v: ApkRow) => (v.apkDate ? formatDate(v.apkDate) : t("reportsPage.common.notSet"));
     return [
-      { id: "vehicle", label: t("reportsPage.common.vehicle"), cell: (v) => `${v.brand} ${v.model}`, text: (v) => `${v.brand} ${v.model}`, sortValue: (v) => `${v.brand} ${v.model}` },
+      { id: "brand", label: t("reportKit.columns.brand"), cell: (v) => v.brand, text: (v) => v.brand ?? "", sortValue: (v) => v.brand ?? null },
+      { id: "model", label: t("reportKit.columns.model"), cell: (v) => v.model, text: (v) => v.model ?? "", sortValue: (v) => v.model ?? null },
       { id: "plate", label: t("reportsPage.common.licensePlate"), cell: (v) => <EntityLink kind="vehicle" id={v.id} label={formatLicensePlate(v.licensePlate)} />, text: (v) => formatLicensePlate(v.licensePlate), sortValue: (v) => v.licensePlate },
       { id: "apkDate", label: t("reportsPage.vehiclesTab.apkExpiry"), cell: apkDate, text: apkDate, sortValue: (v) => (v.apkDate ? new Date(v.apkDate).getTime() : null) },
       {
@@ -54,6 +56,8 @@ export function ApkOverviewReport() {
       },
     ];
   }, [t]);
+  // Kolommen: the rows are the cars themselves (make, model and plate are columns already), so no extra fields.
+  const { columns, menu } = useReportColumns("apk-overview", baseColumns);
 
   useReportPrint([
     { kind: "tiles", tiles: tiles.map(({ label, value }) => ({ label, value })) },
@@ -98,6 +102,7 @@ export function ApkOverviewReport() {
             testId="apk-overview-table"
             resetKey={status}
             onView={setView}
+            toolbar={menu}
           />
       </ReportSection>
     </div>

@@ -21,6 +21,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency, formatLicensePlate } from "@/lib/format-utils";
 import { downloadCsv, csvNumber } from "@/lib/csv";
 import type { DowntimeModelRow, DowntimeRow } from "@shared/workshop-visit";
+import { useReportColumns } from "@/components/reports/kit/use-report-columns";
 
 const ymd = (d: Date | undefined, fallback: string) => (d ? format(d, "yyyy-MM-dd") : fallback);
 
@@ -37,7 +38,7 @@ export function WorkshopDowntimeCard({ dateRange }: { dateRange?: DateRange }) {
   const rows = data?.rows ?? [];
   const byModel = data?.byModel ?? [];
 
-  const columns = useMemo<ReportTableColumn<DowntimeRow>[]>(() => [
+  const baseColumns = useMemo<ReportTableColumn<DowntimeRow>[]>(() => [
     {
       id: "licensePlate", label: t("reportsPage.common.licensePlate"),
       cell: (r) => <span className="font-medium"><EntityLink kind="vehicle" id={r.vehicleId} label={formatLicensePlate(r.licensePlate)} /></span>,
@@ -53,6 +54,8 @@ export function WorkshopDowntimeCard({ dateRange }: { dateRange?: DateRange }) {
     { id: "breakdowns", label: t("reportsPage.downtime.breakdowns"), align: "right", cell: (r) => r.breakdowns, text: (r) => String(r.breakdowns), sortValue: (r) => r.breakdowns },
     { id: "costs", label: t("reportsPage.downtime.costs"), align: "right", cell: (r) => formatCurrency(r.costs), text: (r) => formatCurrency(r.costs), sortValue: (r) => r.costs },
   ], [t]);
+  // Kolommen: hide/show columns (per user). The rows are the records themselves: no extra fields.
+  const { columns, menu } = useReportColumns("workshop-downtime", baseColumns);
   const [view, setView] = useState<ReportTableView<DowntimeRow> | null>(null);
 
   useReportPrint(rows.length > 0 ? compactSections([
@@ -72,15 +75,23 @@ export function WorkshopDowntimeCard({ dateRange }: { dateRange?: DateRange }) {
     ),
   ]) : null);
 
-  const exportCsv = () =>
+  // The CSV fields behind each column on screen; the CSV follows the chosen columns (Kolommen).
+  const csvParts: Record<string, { header: string[]; row: (r: DowntimeRow) => Array<string | number> }> = {
+    licensePlate: { header: [t("reportsPage.common.licensePlate")], row: (r) => [formatLicensePlate(r.licensePlate)] },
+    brandModel: { header: [t("reportsPage.downtime.brand"), t("reportsPage.downtime.model")], row: (r) => [r.brand, r.model] },
+    visits: { header: [t("reportsPage.downtime.visits")], row: (r) => [r.visits] },
+    days: { header: [t("reportsPage.downtime.days")], row: (r) => [r.days] },
+    breakdowns: { header: [t("reportsPage.downtime.breakdowns")], row: (r) => [r.breakdowns] },
+    costs: { header: [t("reportsPage.downtime.costs")], row: (r) => [csvNumber(r.costs)] },
+  };
+  const exportCsv = () => {
+    const shown = columns.flatMap((c) => (csvParts[c.id] ? [csvParts[c.id]] : []));
     downloadCsv(
       t("reportsPage.downtime.csvSubject"),
-      [
-        t("reportsPage.common.licensePlate"), t("reportsPage.downtime.brand"), t("reportsPage.downtime.model"),
-        t("reportsPage.downtime.visits"), t("reportsPage.downtime.days"), t("reportsPage.downtime.breakdowns"), t("reportsPage.downtime.costs"),
-      ],
-      rows.map((r) => [formatLicensePlate(r.licensePlate), r.brand, r.model, r.visits, r.days, r.breakdowns, csvNumber(r.costs)]),
+      shown.flatMap((p) => p.header),
+      rows.map((r) => shown.flatMap((p) => p.row(r))),
     );
+  };
 
   return (
     <ReportSection testId="report-workshop-downtime" title={t("reportsPage.downtime.title")} description={t("reportsPage.downtime.description")}>
@@ -94,7 +105,7 @@ export function WorkshopDowntimeCard({ dateRange }: { dateRange?: DateRange }) {
         <p className="text-sm text-muted-foreground" data-testid="downtime-empty">{t("reportsPage.downtime.none")}</p>
       ) : (
         <>
-          <ReportTable rows={rows} columns={columns} rowKey={(r) => r.vehicleId} testId="downtime" resetKey={`${from}|${to}`} onView={setView} />
+          <ReportTable rows={rows} columns={columns} rowKey={(r) => r.vehicleId} testId="downtime" resetKey={`${from}|${to}`} onView={setView} toolbar={menu} />
 
           <div>
             <h4 className="mb-2 text-sm font-semibold">{t("reportsPage.downtime.perModel")}</h4>

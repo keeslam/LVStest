@@ -33,6 +33,10 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
 import { csvNumber } from "@/lib/csv";
+import type { ReportLinks } from "@/components/reports/kit/report-extra-columns";
+
+/** Kolommen: the car and customer of a row, for the extra fields of the list. */
+const ROW_LINKS: ReportLinks<FleetMileageRow> = { vehicleId: (r) => r.vehicleId };
 
 const ENDPOINT = "/api/reports/fleet-mileage";
 
@@ -204,6 +208,7 @@ export function FleetMileageReportCard(props: { from?: string; to?: string; vehi
         params={params}
         tile={shown}
         columns={isWarnings ? warningColumns : vehicleColumns}
+        links={ROW_LINKS}
         defaultSort={isWarnings ? { key: "date", dir: "desc" } : shown === "driven" ? { key: "km", dir: "desc" } : { key: "licensePlate", dir: "asc" }}
         rowKey={(r) => r.id}
         csvSubject={k("csvSubject")}

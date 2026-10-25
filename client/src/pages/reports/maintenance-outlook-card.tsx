@@ -37,6 +37,10 @@ import { formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
 import { csvNumber } from "@/lib/csv";
 import { officeToday } from "@/lib/office-date";
+import type { ReportLinks } from "@/components/reports/kit/report-extra-columns";
+
+/** Kolommen: the car and customer of a row, for the extra fields of the list. */
+const ROW_LINKS: ReportLinks<MaintenanceOutlookRow> = { vehicleId: (r) => r.vehicleId };
 
 const ENDPOINT = "/api/reports/maintenance-outlook";
 
@@ -214,6 +218,7 @@ export function MaintenanceOutlookCard(props: { vehicleId?: string }) {
         params={params}
         tile={shown}
         columns={columns}
+        links={ROW_LINKS}
         defaultSort={{ key: "dueDate", dir: "asc" }}
         rowKey={(r) => r.id}
         csvSubject={k("csvSubject")}

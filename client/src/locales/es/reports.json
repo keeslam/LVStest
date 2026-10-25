@@ -847,6 +847,16 @@
     "noMatches": "No se encontraron filas para esta búsqueda."
   },
   "reportKit": {
+    "columns": {
+      "button": "Columnas",
+      "shown": "Mostrar columnas",
+      "extra": "Campos extra",
+      "reset": "Volver a lo predeterminado",
+      "plate": "Matrícula",
+      "brand": "Marca",
+      "model": "Modelo",
+      "customerName": "Nombre del cliente"
+    },
     "csv": "CSV",
     "print": "Imprimir",
     "empty": "No hay filas para esta casilla en este periodo.",

@@ -17,6 +17,10 @@ import { useReportBaseData } from "../report-base-data";
 import { useReportFilters } from "../report-filters";
 import { ReportBaseStatus } from "./report-base-status";
 import { tablePrintSection } from "./table-print";
+import { useReportColumns } from "@/components/reports/kit/use-report-columns";
+import { useReportExtraColumns, type ReportLinks } from "@/components/reports/kit/report-extra-columns";
+
+const EXPENSE_LINKS: ReportLinks<Expense> = { vehicleId: (e) => e.vehicleId };
 
 export function RecentExpensesReport() {
   const { t } = useTranslation("reports");
@@ -25,7 +29,7 @@ export function RecentExpensesReport() {
   const [view, setView] = useState<ReportTableView<Expense> | null>(null);
   const { vehicles } = base;
 
-  const columns = useMemo<ReportTableColumn<Expense>[]>(() => {
+  const baseColumns = useMemo<ReportTableColumn<Expense>[]>(() => {
     const vehicleName = (e: Expense) => {
       const vehicle = vehicles.find((v) => v.id === e.vehicleId);
       return vehicle
@@ -40,6 +44,9 @@ export function RecentExpensesReport() {
       { id: "amount", label: t("common:fields.amount"), cell: (e) => <Price value={Number(e.amount)} />, text: (e) => formatCurrency(Number(e.amount)), sortValue: (e) => Number(e.amount), align: "right" },
     ];
   }, [t, vehicles]);
+  // Kolommen: hide/show columns and the extra fields of the linked car/customer (per user).
+  const extraColumns = useReportExtraColumns("expenses-in-period", EXPENSE_LINKS);
+  const { columns, menu } = useReportColumns("expenses-in-period", baseColumns, extraColumns);
 
   const rows = base.filteredExpenses;
   useReportPrint([tablePrintSection({ id: "expenses-in-period", columns, rows, view })]);
@@ -56,6 +63,7 @@ export function RecentExpensesReport() {
             testId="expenses-in-period-table"
             resetKey={`${from}|${to}|${vehicleId}|${category}`}
             onView={setView}
+            toolbar={menu}
           />
         </ReportSection>
     </div>

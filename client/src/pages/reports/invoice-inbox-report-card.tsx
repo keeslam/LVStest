@@ -27,6 +27,10 @@ import { EntityLink } from "@/components/reports/entity-link";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatDate, formatDateTime, formatLicensePlate } from "@/lib/format-utils";
 import { csvDateTime, csvNumber } from "@/lib/csv";
+import type { ReportLinks } from "@/components/reports/kit/report-extra-columns";
+
+/** Kolommen: the car and customer of a row, for the extra fields of the list. */
+const ROW_LINKS: ReportLinks<InboxItemReportRow> = { vehicleId: (r) => r.vehicleId };
 
 const RUNS_ENDPOINT = "/api/reports/invoice-inbox-runs";
 const ITEMS_ENDPOINT = "/api/reports/invoice-inbox-items";
@@ -341,6 +345,7 @@ export function InvoiceInboxItemsReport(props: InboxPartProps) {
         drill={narrow.drill}
         month={narrow.month}
         columns={itemColumns}
+        links={ROW_LINKS}
         defaultSort={{ key: "receivedAt", dir: "desc" }}
         rowKey={(r) => r.id}
         csvSubject={t("reports:officeReports.inbox.csvSubjectItems")}

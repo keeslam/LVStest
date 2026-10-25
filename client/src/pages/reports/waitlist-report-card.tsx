@@ -26,6 +26,10 @@ import { EntityLink } from "@/components/reports/entity-link";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatDate, formatDateTime } from "@/lib/format-utils";
 import { csvDate, csvDateTime, csvNumber } from "@/lib/csv";
+import type { ReportLinks } from "@/components/reports/kit/report-extra-columns";
+
+/** Kolommen: the car and customer of a row, for the extra fields of the list. */
+const ROW_LINKS: ReportLinks<WaitlistReportRow> = { vehicleId: (r) => r.vehicleId, customerId: (r) => r.customerId };
 
 const ENDPOINT = "/api/reports/waitlist";
 
@@ -234,6 +238,7 @@ export function WaitlistReportCard(props: { from?: string; to?: string; vehicleI
         drill={narrow.drill}
         month={narrow.month}
         columns={columns}
+        links={ROW_LINKS}
         defaultSort={{ key: "createdAt", dir: "desc" }}
         rowKey={(r) => r.id}
         csvSubject={t("portalReports.waitlist.csvSubject")}

@@ -859,6 +859,16 @@
     "noMatches": "Nie znaleziono wierszy dla tego wyszukiwania."
   },
   "reportKit": {
+    "columns": {
+      "button": "Kolumny",
+      "shown": "Pokaż kolumny",
+      "extra": "Dodatkowe pola",
+      "reset": "Przywróć domyślne",
+      "plate": "Numer rejestracyjny",
+      "brand": "Marka",
+      "model": "Model",
+      "customerName": "Nazwa klienta"
+    },
     "csv": "CSV",
     "print": "Drukuj",
     "empty": "Brak wierszy dla tego kafelka w tym okresie.",

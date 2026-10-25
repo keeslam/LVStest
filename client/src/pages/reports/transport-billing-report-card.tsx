@@ -29,6 +29,10 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatCurrency, formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
 import { csvDate, csvNumber } from "@/lib/csv";
+import type { ReportLinks } from "@/components/reports/kit/report-extra-columns";
+
+/** Kolommen: the car and customer of a row, for the extra fields of the list. */
+const ROW_LINKS: ReportLinks<TransportBillingRow> = { vehicleId: (r) => r.vehicleId, customerId: (r) => r.customerId };
 
 const ENDPOINT = "/api/reports/transport-billing";
 
@@ -212,6 +216,7 @@ export function TransportBillingReportCard(props: { from?: string; to?: string; 
         drill={narrow.drill}
         month={narrow.month}
         columns={columns}
+        links={ROW_LINKS}
         defaultSort={{ key: "date", dir: "desc" }}
         rowKey={(r) => r.id}
         csvSubject={t("moneyReports.transport.csvSubject")}
