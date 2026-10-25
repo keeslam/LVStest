@@ -34,6 +34,7 @@ function ruleWhere(tile: ExtraCostsTile): SQL {
     case "extraKm": return sql`${extraKmCost} <> 0`;
     case "fuel": return sql`${fuelCost} <> 0`;
     case "withExtraKm": return sql`coalesce(${reservations.extraKm}, 0) > 0`;
+    case "withCosts": return sql`(${extraKmCost} <> 0 OR ${fuelCost} <> 0)`;
   }
 }
 
@@ -44,6 +45,7 @@ function tileWhere(tile: ExtraCostsTile, filter: ReportFilter): SQL {
 
 /** The money a tile adds up. */
 function tileAmount(tile: ExtraCostsTile): SQL {
+  if (tile === "withCosts") return sql`(${extraKmCost} + ${fuelCost})`;
   return tile === "fuel" ? fuelCost : extraKmCost;
 }
 
@@ -52,7 +54,7 @@ const FROM = sql`${reservations}
   LEFT JOIN ${customers} ON ${customers.id} = ${reservations.customerId}`;
 
 /** Rentals with extra km cost or fuel cost: what the breakdowns and the month chart add up. */
-const withCosts = (filter: ReportFilter): SQL => sql`(${tileWhere("extraKm", filter)} OR ${tileWhere("fuel", filter)})`;
+const withCosts = (filter: ReportFilter): SQL => tileWhere("withCosts", filter);
 
 /** The key expression of each breakdown, shared by the summary and the drill so the counts agree. */
 const CUSTOMER_KEY = sql`${customers.id}`;
@@ -66,7 +68,7 @@ function drillWhere(drill: ReportDrill): SQL {
 }
 
 const breakdown = (filter: ReportFilter, key: SQL, label: SQL) =>
-  reportBreakdown({ from: FROM, where: withCosts(filter), key, label, amount: sql`${extraKmCost} + ${fuelCost}` });
+  reportBreakdown({ from: FROM, where: withCosts(filter), key, label, amount: tileAmount("withCosts") });
 
 async function extras(filter: ReportFilter): Promise<Omit<ExtraCostsSummary, "tiles">> {
   const [km] = await rowsOf<{ total_km: number }>(sql`

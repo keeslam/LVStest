@@ -745,7 +745,8 @@
       "tiles": {
         "extraKm": "Costi km extra",
         "fuel": "Costi carburante",
-        "withExtraKm": "Noleggi con km extra"
+        "withExtraKm": "Noleggi con km extra",
+        "withCosts": "Costi km extra o carburante"
       },
       "totalExtraKm": "{{km}} km extra percorsi in totale",
       "byMonth": "Importo per mese",
@@ -771,7 +772,8 @@
         "notInvoiced": "Ancora da fatturare",
         "invoiced": "Fatturato",
         "toll": "Costi di pedaggio",
-        "openAllTime": "Ancora da fatturare (tutti i periodi)"
+        "openAllTime": "Ancora da fatturare (tutti i periodi)",
+        "all": "Tutti i trasporti"
       },
       "missingAmount": "{{n}} senza importo",
       "byMonth": "Importo per mese",

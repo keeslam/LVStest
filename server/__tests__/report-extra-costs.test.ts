@@ -48,7 +48,11 @@ describe("extra km and fuel report", () => {
 
   it("tegels, totaal meer-km en maandverdeling", async () => {
     const s = (await staff.get("/api/reports/extra-costs/summary").query(Q)).body;
-    expect(s.tiles).toEqual({ extraKm: { count: 2, amount: 25 }, fuel: { count: 3, amount: 75.5 }, withExtraKm: { count: 1, amount: 30 } });
+    expect(s.tiles).toEqual({
+      extraKm: { count: 2, amount: 25 }, fuel: { count: 3, amount: 75.5 }, withExtraKm: { count: 1, amount: 30 },
+      // not a card: the rentals the breakdowns count (extra km cost or fuel cost), net
+      withCosts: { count: 3, amount: 100.5 },
+    });
     expect(s.totalExtraKm).toBe(120);
     expect(s.byMonth).toEqual([{ month: "2026-02", extraKmCost: 25, fuelCost: 75.5 }]);
     // the chart adds up the same rows as the tiles (a negative correction stays out of the extra km tile)
@@ -73,10 +77,27 @@ describe("extra km and fuel report", () => {
     await expectTilesMatchRows(staff, "/api/reports/extra-costs", Q, EXTRA_COSTS_TILES);
   });
 
+  it("uitsplitsing: een huur met alleen meer-km telt mee en opent ook onder withCosts", async () => {
+    // a rental with extra km cost only would be missing under the fuel tile
+    const r = await createFixtureReservation({ customerId: C, vehicleId: V, startDate: "2026-03-03", endDate: "2026-03-03" });
+    await db.update(reservations).set({ extraKmCost: "12.00" } as any).where(eq(reservations.id, r.id));
+    try {
+      const s = (await staff.get("/api/reports/extra-costs/summary").query(Q)).body;
+      expect(s.byCustomer[0].count).toBe(4);
+      await expectDrillMatchesLines(staff, "/api/reports/extra-costs", Q, "withCosts", "customer", s.byCustomer);
+    } finally {
+      await db.delete(reservations).where(eq(reservations.id, r.id));
+    }
+  });
+
   it("uitsplitsing: klant en voertuig openen precies hun regels", async () => {
     const s = (await staff.get("/api/reports/extra-costs/summary").query(Q)).body;
-    await expectDrillMatchesLines(staff, "/api/reports/extra-costs", Q, "fuel", "customer", s.byCustomer);
-    await expectDrillMatchesLines(staff, "/api/reports/extra-costs", Q, "fuel", "vehicle", s.byVehicle);
+    await expectDrillMatchesLines(staff, "/api/reports/extra-costs", Q, "withCosts", "customer", s.byCustomer);
+    await expectDrillMatchesLines(staff, "/api/reports/extra-costs", Q, "withCosts", "vehicle", s.byVehicle);
+    // the lines together are exactly the withCosts tile
+    const lines = (rows: Array<{ count: number }>) => rows.reduce((n, r) => n + r.count, 0);
+    expect(lines(s.byCustomer)).toBe(s.tiles.withCosts.count);
+    expect(lines(s.byVehicle)).toBe(s.tiles.withCosts.count);
   });
 
   it("rechten: alleen het rapportrecht", async () => {

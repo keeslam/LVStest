@@ -66,6 +66,19 @@ describe("fleet mileage report", () => {
 
   it("elke tegel opent precies zijn rijen, ook voor de hele vloot", () => expectTilesMatchRows(admin, "/api/reports/fleet-mileage", { ...P }, FLEET_MILEAGE_TILES));
 
+  it("maandstaaf: km zijn over de dagen verdeeld, dus niet gelijk aan de lijst van die maand (niet klikbaar)", async () => {
+    // Rapporten deel 1b: a month bar would open "driven" narrowed to the month. drivenKmByMonth spreads a
+    // reading's km over the days since the previous one; the narrowed list counts per reading. They differ,
+    // so the card keeps its bars unclickable.
+    const q = { ...P, vehicleId: String(V8) };
+    const s = (await admin.get("/api/reports/fleet-mileage/summary").query(q)).body;
+    const jan = s.byMonth.find((m: { month: string }) => m.month === "2026-01").km;
+    const list = (await admin.get("/api/reports/fleet-mileage/rows").query({ ...q, tile: "driven", month: "2026-01" })).body;
+    const listKm = list.rows.reduce((n: number, r: { drivenKm: number }) => n + r.drivenKm, 0);
+    expect(jan).toBe(600);
+    expect(listKm).not.toBe(jan); // the month-narrowed list gives 200 km here
+  });
+
   it("alleen admin, ook met alle rapport- en voertuigrechten", async () => {
     const staff = await agentFor(["manage_reports", "manage_vehicles", "manage_reservations"]);
     for (const p of ["summary", "rows?tile=driven", "export?tile=driven"]) expect((await staff.get(`/api/reports/fleet-mileage/${p}`)).status).toBe(403);

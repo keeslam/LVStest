@@ -13,7 +13,7 @@ export const PORTAL_STALE_DAYS = 2;
  */
 export const PORTAL_REQUEST_REPORT_TILES = ["all", "open", "done", "rejected", "stale"] as const;
 /** Breakdown names that /rows and /export accept as `drill`. */
-export const PORTAL_REQUEST_REPORT_DRILLS = ["type", "handler"] as const;
+export const PORTAL_REQUEST_REPORT_DRILLS = ["type", "handler", "status"] as const;
 export type PortalRequestReportTile = (typeof PORTAL_REQUEST_REPORT_TILES)[number];
 
 export const PORTAL_REQUEST_REPORT_SORTS = ["createdAt", "type", "status", "customer", "replyHours"] as const;

@@ -9,7 +9,12 @@ import type { ReportTileTotal } from "../report-kit";
  * notInvoiced = billable and not invoiced yet, invoiced = billable and invoiced, toll = toll cost above 0.
  * openAllTime = the same rows as notInvoiced over ALL periods (ignores from/to): the money that is left behind.
  */
-export const TRANSPORT_BILLING_TILES = ["notInvoiced", "invoiced", "toll", "openAllTime"] as const;
+export const TRANSPORT_BILLING_TILES = ["notInvoiced", "invoiced", "toll", "openAllTime", "all"] as const;
+/**
+ * all = every transport of the period (not cancelled), what the type breakdown counts; amount = the billable
+ * amount. Not a card: a type line opens it narrowed to that type.
+ */
+export const TRANSPORT_BILLING_CARD_TILES = ["notInvoiced", "invoiced", "toll", "openAllTime"] as const;
 /** Breakdown names that /rows and /export accept as `drill`. */
 export const TRANSPORT_BILLING_DRILLS = ["type"] as const;
 export type TransportBillingTile = (typeof TRANSPORT_BILLING_TILES)[number];

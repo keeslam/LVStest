@@ -757,7 +757,8 @@
       "tiles": {
         "extraKm": "Koszty dodatkowych km",
         "fuel": "Koszty paliwa",
-        "withExtraKm": "Wynajmy z dodatkowymi km"
+        "withExtraKm": "Wynajmy z dodatkowymi km",
+        "withCosts": "Koszty dodatkowych km lub paliwa"
       },
       "totalExtraKm": "Łącznie przejechano {{km}} dodatkowych km",
       "byMonth": "Kwota na miesiąc",
@@ -783,7 +784,8 @@
         "notInvoiced": "Do zafakturowania",
         "invoiced": "Zafakturowane",
         "toll": "Koszty opłat drogowych",
-        "openAllTime": "Do zafakturowania (wszystkie okresy)"
+        "openAllTime": "Do zafakturowania (wszystkie okresy)",
+        "all": "Wszystkie transporty"
       },
       "missingAmount": "{{n}} bez kwoty",
       "byMonth": "Kwota na miesiąc",

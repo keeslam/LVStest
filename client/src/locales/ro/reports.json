@@ -745,7 +745,8 @@
       "tiles": {
         "extraKm": "Costuri km în plus",
         "fuel": "Costuri combustibil",
-        "withExtraKm": "Închirieri cu km în plus"
+        "withExtraKm": "Închirieri cu km în plus",
+        "withCosts": "Costuri km în plus sau combustibil"
       },
       "totalExtraKm": "{{km}} km în plus parcurși în total",
       "byMonth": "Sumă pe lună",
@@ -771,7 +772,8 @@
         "notInvoiced": "De facturat",
         "invoiced": "Facturat",
         "toll": "Costuri de taxă de drum",
-        "openAllTime": "De facturat (toate perioadele)"
+        "openAllTime": "De facturat (toate perioadele)",
+        "all": "Toate transporturile"
       },
       "missingAmount": "{{n}} fără sumă",
       "byMonth": "Suma pe lună",

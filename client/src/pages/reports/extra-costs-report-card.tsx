@@ -8,12 +8,13 @@ import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
-  EXTRA_COSTS_TILES,
+  EXTRA_COSTS_CARD_TILES,
   type ExtraCostsRow,
   type ExtraCostsSort,
   type ExtraCostsSummary,
   type ExtraCostsTile,
 } from "@shared/reports/extra-costs-report";
+import type { ReportBreakdownRow } from "@shared/report-kit";
 import { UserPermission } from "@shared/schema";
 import { ReportSection } from "@/components/reports/kit/report-section";
 import { useReportPrint } from "@/components/reports/kit/report-print";
@@ -74,7 +75,7 @@ export function ExtraCostsReportCard(props: { from?: string; to?: string; vehicl
   }, [t, shownTile]);
 
 
-  const tiles: Array<ReportTile<ExtraCostsTile>> = EXTRA_COSTS_TILES.map((id) => {
+  const tiles: Array<ReportTile<ExtraCostsTile>> = EXTRA_COSTS_CARD_TILES.map((id) => {
     const total = data?.tiles?.[id];
     return {
       id,
@@ -91,6 +92,9 @@ export function ExtraCostsReportCard(props: { from?: string; to?: string; vehicl
   ];
 
   const noCustomer = t("moneyReports.extraCosts.noCustomer");
+  // The breakdowns count rentals with extra km cost OR fuel cost: the (hidden) withCosts tile.
+  const openLine = (name: "customer" | "vehicle", row: ReportBreakdownRow) =>
+    open("withCosts", { drill: { name, key: row.key, label: row.label ?? noCustomer } });
   useReportPrint(allowed && data ? compactSections([
     tilesPrintSection(tiles),
     { kind: "chart", title: t("moneyReports.extraCosts.byMonth"), getSvg: () => chartSvgFromRef(monthChartRef) },
@@ -121,8 +125,8 @@ export function ExtraCostsReportCard(props: { from?: string; to?: string; vehicl
               <ReportMonthChart data={data.byMonth ?? []} series={series} money stacked testId="extra-costs-month-chart" chartRef={monthChartRef} onPointClick={(p) => open(p.series === "fuelCost" ? "fuel" : "extraKm", { month: p.month })} />
             </div>
             <div className="grid gap-6 lg:grid-cols-2">
-              <ReportBreakdownTable title={t("moneyReports.extraCosts.byCustomer")} rows={data.byCustomer ?? []} nullLabel={t("moneyReports.extraCosts.noCustomer")} money testId="extra-costs-by-customer" />
-              <ReportBreakdownTable title={t("moneyReports.extraCosts.byVehicle")} rows={data.byVehicle ?? []} nullLabel={t("moneyReports.extraCosts.noCustomer")} money testId="extra-costs-by-vehicle" />
+              <ReportBreakdownTable title={t("moneyReports.extraCosts.byCustomer")} rows={data.byCustomer ?? []} nullLabel={t("moneyReports.extraCosts.noCustomer")} money testId="extra-costs-by-customer" onOpen={(row) => openLine("customer", row)} />
+              <ReportBreakdownTable title={t("moneyReports.extraCosts.byVehicle")} rows={data.byVehicle ?? []} nullLabel={t("moneyReports.extraCosts.noCustomer")} money testId="extra-costs-by-vehicle" onOpen={(row) => openLine("vehicle", row)} />
             </div>
           </>
         )}

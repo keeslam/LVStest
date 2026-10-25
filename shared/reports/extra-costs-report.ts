@@ -5,8 +5,13 @@
  */
 import type { ReportBreakdownRow, ReportTileTotal } from "../report-kit";
 
-/** extraKm = rentals with extra km cost, fuel = rentals with fuel cost, withExtraKm = rentals that drove extra km. */
-export const EXTRA_COSTS_TILES = ["extraKm", "fuel", "withExtraKm"] as const;
+/**
+ * extraKm = rentals with extra km cost, fuel = rentals with fuel cost, withExtraKm = rentals that drove extra km.
+ * withCosts = extra km cost or fuel cost: what the customer and vehicle breakdowns count. It is not shown as a
+ * card; a breakdown line opens it narrowed to that line (EXTRA_COSTS_CARD_TILES are the cards).
+ */
+export const EXTRA_COSTS_TILES = ["extraKm", "fuel", "withExtraKm", "withCosts"] as const;
+export const EXTRA_COSTS_CARD_TILES = ["extraKm", "fuel", "withExtraKm"] as const;
 /** Breakdown names that /rows and /export accept as `drill`. */
 export const EXTRA_COSTS_DRILLS = ["customer", "vehicle"] as const;
 export type ExtraCostsTile = (typeof EXTRA_COSTS_TILES)[number];
@@ -27,7 +32,7 @@ export interface ExtraCostsRow {
   extraKm: number | null;
   extraKmCost: number | null;
   fuelCost: number | null;
-  /** The amount of the opened tile: extraKmCost for extraKm / withExtraKm, fuelCost for fuel. */
+  /** The amount of the opened tile: extraKmCost for extraKm / withExtraKm, fuelCost for fuel, both for withCosts. */
   amount: number;
 }
 

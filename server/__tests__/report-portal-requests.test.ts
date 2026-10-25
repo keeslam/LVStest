@@ -90,6 +90,22 @@ describe("portal requests report", () => {
     await expectDrillMatchesLines(staff, "/api/reports/portal-requests", Q, "all", "handler", s.byHandler);
   });
 
+  it("maandstaaf: elke status van elke maand opent onder 'all' precies zoveel aanvragen", async () => {
+    const s = (await staff.get("/api/reports/portal-requests/summary").query(Q)).body;
+    const STATUS = { new: "new", inProgress: "in_progress", done: "done", rejected: "rejected" } as const;
+    let checked = 0;
+    for (const m of s.byMonth as Array<Record<string, number | string>>) {
+      for (const [series, status] of Object.entries(STATUS)) {
+        const r = await staff.get("/api/reports/portal-requests/rows")
+          .query({ ...Q, tile: "all", drill: "status", key: status, month: String(m.month) });
+        expect(r.status).toBe(200);
+        expect(r.body.total, `${m.month} ${series}`).toBe(m[series]);
+        checked += Number(m[series]);
+      }
+    }
+    expect(checked).toBe(s.tiles.all.count);
+  });
+
   it("rechten: rapportrecht en portaalrecht", async () => {
     const status = async (perms: string[] | "admin") => (await (await agentFor(perms)).get("/api/reports/portal-requests/summary").query(Q)).status;
     expect(await status(["view_reports"])).toBe(403);

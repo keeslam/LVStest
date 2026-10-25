@@ -8,7 +8,7 @@ import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
-  TRANSPORT_BILLING_TILES,
+  TRANSPORT_BILLING_CARD_TILES,
   type TransportBillingRow,
   type TransportBillingSort,
   type TransportBillingSummary,
@@ -18,7 +18,7 @@ import { UserPermission } from "@shared/schema";
 import { ReportSection } from "@/components/reports/kit/report-section";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { chartSvgFromRef } from "@/lib/report-document-print";
-import { DrillLineButton, compactSections, textTablePrintSection } from "@/components/reports/kit/report-breakdown-table";
+import { DrillLineButton, compactSections, drillLineTestId, textTablePrintSection } from "@/components/reports/kit/report-breakdown-table";
 import { useReportPeriod } from "./report-filters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
@@ -97,7 +97,7 @@ export function TransportBillingReportCard(props: { from?: string; to?: string; 
   }, [t]);
 
 
-  const tiles: Array<ReportTile<TransportBillingTile>> = TRANSPORT_BILLING_TILES.map((id) => {
+  const tiles: Array<ReportTile<TransportBillingTile>> = TRANSPORT_BILLING_CARD_TILES.map((id) => {
     const total = data?.tiles?.[id];
     const amount = formatCurrency(total?.amount ?? 0);
     const missing = id === "notInvoiced" ? (data?.missingAmount ?? 0) : 0;
@@ -116,8 +116,8 @@ export function TransportBillingReportCard(props: { from?: string; to?: string; 
     { key: "toll" as const, label: t("moneyReports.transport.series.toll"), color: "#6b7280" },
   ];
 
-  // There is no "all transports" tile: the per-type amounts open the tile they add up to.
-  const openType = (tile: "notInvoiced" | "toll", type: string) =>
+  // A type line opens the (hidden) "all" tile: its count. The amounts open the tile they add up to.
+  const openType = (tile: "all" | "notInvoiced" | "toll", type: string) =>
     open(tile, { drill: { name: "type", key: type, label: t(`delivery:transportDialog.typeLabels.${type}`, { defaultValue: type }) } });
 
   useReportPrint(allowed && data ? compactSections([
@@ -171,8 +171,12 @@ export function TransportBillingReportCard(props: { from?: string; to?: string; 
                     </TableHeader>
                     <TableBody>
                       {(data.byType ?? []).map((row) => (
-                        <TableRow key={row.type} data-testid="transport-billing-by-type-row">
-                          <TableCell>{t(`delivery:transportDialog.typeLabels.${row.type}`, { defaultValue: row.type })}</TableCell>
+                        <TableRow key={row.type} data-testid="transport-billing-by-type-row" className="cursor-pointer" onClick={() => openType("all", row.type)}>
+                          <TableCell>
+                            <DrillLineButton onClick={() => openType("all", row.type)} testId={drillLineTestId("transport-billing-by-type", row.type)}>
+                              {t(`delivery:transportDialog.typeLabels.${row.type}`, { defaultValue: row.type })}
+                            </DrillLineButton>
+                          </TableCell>
                           <TableCell className="text-right tabular-nums">{row.count.toLocaleString("nl-NL")}</TableCell>
                           <TableCell className="text-right tabular-nums">{formatCurrency(row.billable)}</TableCell>
                           <TableCell className="text-right tabular-nums">

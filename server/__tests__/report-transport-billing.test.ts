@@ -62,6 +62,8 @@ describe("transport billing report", () => {
       invoiced: { count: 1, amount: 80 },
       toll: { count: 2, amount: 20 },
       openAllTime: { count: 3, amount: 190 },
+      // not a card: every transport of the period, what the type breakdown counts
+      all: { count: 6, amount: 1562 },
     });
     expect(s.missingAmount).toBe(1);
     expect(s.byType).toEqual([
@@ -105,6 +107,12 @@ describe("transport billing report", () => {
 
   it("elke tegel opent precies zijn rijen", async () => {
     await expectTilesMatchRows(staff, "/api/reports/transport-billing", Q, TRANSPORT_BILLING_TILES);
+  });
+
+  it("uitsplitsing: een soort opent onder 'all' precies zijn aantal", async () => {
+    const s = (await staff.get("/api/reports/transport-billing/summary").query(Q)).body;
+    await expectDrillMatchesLines(staff, "/api/reports/transport-billing", Q, "all", "type",
+      s.byType.map((t: { type: string; count: number }) => ({ key: t.type, count: t.count })));
   });
 
   it("uitsplitsing: de soorten samen zijn precies de tegel", async () => {

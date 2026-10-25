@@ -313,7 +313,7 @@ export function InvoiceInboxItemsReport(props: InboxPartProps) {
               nullLabel={t("reports:reportKit.noData")}
               hideAmount
               testId="invoice-inbox-reasons"
-              onOpen={(row) => open("flagged", { drill: { name: "reason", key: row.key, label: row.label ?? "" } })}
+              onOpen={(row) => open("flagged", { drill: { name: "reason", key: row.key, label: row.label ?? t("reports:reportKit.noData") } })}
             />
           )}
         </>

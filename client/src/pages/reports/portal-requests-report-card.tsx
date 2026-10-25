@@ -28,13 +28,8 @@ import { csvDateTime, csvNumber } from "@/lib/csv";
 
 const ENDPOINT = "/api/reports/portal-requests";
 
-/** A month bar opens the tile its status belongs to; new and in progress are both "open". */
-const MONTH_SERIES_TILE: Record<"new" | "inProgress" | "done" | "rejected", PortalRequestReportTile> = {
-  new: "open",
-  inProgress: "open",
-  done: "done",
-  rejected: "rejected",
-};
+/** The status of each month bar: done and rejected have their own tile, new and in progress open "all" narrowed to the status. */
+const MONTH_SERIES_STATUS = { new: "new", inProgress: "in_progress", done: "done", rejected: "rejected" } as const;
 
 const TILE_TONE: Partial<Record<PortalRequestReportTile, ReportTile<PortalRequestReportTile>["tone"]>> = {
   open: "amber",
@@ -133,6 +128,11 @@ export function PortalRequestsReportCard(props: { from?: string; to?: string; ve
   ];
   const count = (n: number) => n.toLocaleString("nl-NL");
   const byType = data?.byType ?? [];
+  const openMonth = ({ month, series }: { month: string; series: keyof typeof MONTH_SERIES_STATUS }) => {
+    if (series === "done" || series === "rejected") return open(series, { month });
+    const status = MONTH_SERIES_STATUS[series];
+    open("all", { drill: { name: "status", key: status, label: statusLabel(status) }, month });
+  };
   const openType = (type: string) => open("all", { drill: { name: "type", key: type, label: typeLabel(type) } });
 
   useReportPrint(allowed && data ? compactSections([
@@ -171,7 +171,7 @@ export function PortalRequestsReportCard(props: { from?: string; to?: string; ve
             </p>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("reports:portalReports.requests.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth ?? []} series={series} stacked testId="portal-requests-month-chart" chartRef={monthChartRef} onPointClick={(p) => open(MONTH_SERIES_TILE[p.series], { month: p.month })} />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} stacked testId="portal-requests-month-chart" chartRef={monthChartRef} onPointClick={openMonth} />
             </div>
             <div className="space-y-2" data-testid="portal-requests-by-type">
               <h4 className="text-sm font-medium">{t("reports:portalReports.requests.byType")}</h4>

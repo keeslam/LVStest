@@ -745,7 +745,8 @@
       "tiles": {
         "extraKm": "Custos de km extra",
         "fuel": "Custos de combustível",
-        "withExtraKm": "Aluguéis com km extra"
+        "withExtraKm": "Aluguéis com km extra",
+        "withCosts": "Custos de km extra ou combustível"
       },
       "totalExtraKm": "{{km}} km extra percorridos no total",
       "byMonth": "Valor por mês",
@@ -771,7 +772,8 @@
         "notInvoiced": "Por faturar",
         "invoiced": "Faturado",
         "toll": "Custos de portagem",
-        "openAllTime": "Por faturar (todos os períodos)"
+        "openAllTime": "Por faturar (todos os períodos)",
+        "all": "Todos os transportes"
       },
       "missingAmount": "{{n}} sem valor",
       "byMonth": "Valor por mês",

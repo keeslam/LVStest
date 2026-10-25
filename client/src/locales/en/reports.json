@@ -733,7 +733,8 @@
       "tiles": {
         "extraKm": "Extra km costs",
         "fuel": "Fuel costs",
-        "withExtraKm": "Rentals with extra km"
+        "withExtraKm": "Rentals with extra km",
+        "withCosts": "Extra km or fuel costs"
       },
       "totalExtraKm": "{{km}} extra km driven in total",
       "byMonth": "Amount per month",
@@ -759,7 +760,8 @@
         "notInvoiced": "Still to invoice",
         "invoiced": "Invoiced",
         "toll": "Toll costs",
-        "openAllTime": "Still to invoice (all periods)"
+        "openAllTime": "Still to invoice (all periods)",
+        "all": "All transports"
       },
       "missingAmount": "{{n}} without amount",
       "byMonth": "Amount per month",

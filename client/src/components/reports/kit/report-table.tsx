@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -126,17 +126,24 @@ export function ReportTable<R>({ rows, columns, rowKey, searchPlaceholder, defau
                 <TableRow
                   key={rowKey(r)}
                   data-testid={`${testId}-row-${rowKey(r)}`}
-                  {...(onRowClick ? {
-                    role: "button",
-                    tabIndex: 0,
-                    className: "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                    onClick: () => onRowClick(r),
-                    onKeyDown: (e: KeyboardEvent<HTMLTableRowElement>) => {
-                      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onRowClick(r); }
-                    },
-                  } : {})}
+                  className={onRowClick ? "cursor-pointer" : undefined}
+                  onClick={onRowClick ? () => onRowClick(r) : undefined}
                 >
-                  {columns.map((c) => <TableCell key={c.id} className={alignClass(c)}>{c.cell(r)}</TableCell>)}
+                  {columns.map((c, i) => (
+                    <TableCell key={c.id} className={alignClass(c)}>
+                      {onRowClick && i === 0 ? (
+                        // The keyboard and screen-reader way in: a real button; the row click is for the mouse.
+                        <button
+                          type="button"
+                          className="text-left underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          onClick={(e) => { e.stopPropagation(); onRowClick(r); }}
+                          data-testid={`${testId}-open-${rowKey(r)}`}
+                        >
+                          {c.cell(r)}
+                        </button>
+                      ) : c.cell(r)}
+                    </TableCell>
+                  ))}
                 </TableRow>
               ))}
               {totals && (

@@ -39,6 +39,7 @@ function ruleWhere(tile: TransportBillingTile): SQL {
     case "openAllTime": return sql`${t.billable} AND NOT ${t.invoiced} AND ${t.status} = 'completed'`;
     case "invoiced": return sql`${t.billable} AND ${t.invoiced}`;
     case "toll": return sql`${tollCost} > 0`;
+    case "all": return sql`TRUE`;
   }
 }
 
@@ -50,6 +51,8 @@ function tileWhere(tile: TransportBillingTile, filter: ReportFilter): SQL {
 
 /** The money a tile adds up. */
 function tileAmount(tile: TransportBillingTile): SQL {
+  // all: the billable amount of a billable transport, the same sum as the type breakdown's "billable"
+  if (tile === "all") return sql`(CASE WHEN ${t.billable} THEN ${billableAmount} ELSE 0 END)`;
   return tile === "toll" ? tollCost : billableAmount;
 }
 

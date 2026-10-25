@@ -55,6 +55,8 @@ function drillWhere(drill: ReportDrill): SQL {
   switch (drill.name as (typeof PORTAL_REQUEST_REPORT_DRILLS)[number]) {
     case "type": return keyIs(TYPE_KEY, drill.key);
     case "handler": return sql`${HANDLED} AND ${keyIs(HANDLER_KEY, drill.key)}`;
+    // the month chart's series: one status per bar
+    case "status": return keyIs(sql`${r.status}`, drill.key);
   }
 }
 

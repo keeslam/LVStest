@@ -745,7 +745,8 @@
       "tiles": {
         "extraKm": "Costes de km extra",
         "fuel": "Costes de combustible",
-        "withExtraKm": "Alquileres con km extra"
+        "withExtraKm": "Alquileres con km extra",
+        "withCosts": "Costes de km extra o combustible"
       },
       "totalExtraKm": "{{km}} km extra recorridos en total",
       "byMonth": "Importe por mes",
@@ -771,7 +772,8 @@
         "notInvoiced": "Pendiente de facturar",
         "invoiced": "Facturado",
         "toll": "Costes de peaje",
-        "openAllTime": "Pendiente de facturar (todos los periodos)"
+        "openAllTime": "Pendiente de facturar (todos los periodos)",
+        "all": "Todos los transportes"
       },
       "missingAmount": "{{n}} sin importe",
       "byMonth": "Importe por mes",

@@ -733,7 +733,8 @@
       "tiles": {
         "extraKm": "Meer-km-kosten",
         "fuel": "Brandstofkosten",
-        "withExtraKm": "Verhuur met meer-km"
+        "withExtraKm": "Verhuur met meer-km",
+        "withCosts": "Meer-km- of brandstofkosten"
       },
       "totalExtraKm": "In totaal {{km}} extra km gereden",
       "byMonth": "Bedrag per maand",
@@ -759,7 +760,8 @@
         "notInvoiced": "Nog te factureren",
         "invoiced": "Gefactureerd",
         "toll": "Tolkosten",
-        "openAllTime": "Nog te factureren (alle perioden)"
+        "openAllTime": "Nog te factureren (alle perioden)",
+        "all": "Alle transporten"
       },
       "missingAmount": "{{n}} zonder bedrag",
       "byMonth": "Bedrag per maand",
