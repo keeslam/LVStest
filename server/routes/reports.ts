@@ -27,6 +27,7 @@ import { finesReport } from "../services/reports/fines-report";
 import { extraCostsReport } from "../services/reports/extra-costs-report";
 import { transportBillingReport } from "../services/reports/transport-billing-report";
 import { portalRequestsReport } from "../services/reports/portal-requests-report";
+import { waitlistReport } from "../services/reports/waitlist-report";
 import { occupancyReport } from "../services/reports/occupancy-report";
 import { maintenanceOutlookReport } from "../services/reports/maintenance-outlook-report";
 import { fleetMileageReport } from "../services/reports/fleet-mileage-report";
@@ -73,6 +74,7 @@ export function registerReportRoutes(app: Express): void {
   // Rapporten fase 4: portal requests need the report right and the portal right.
   const portalReportGuards = [reportRight, hasPermission(UserPermission.VIEW_PORTAL, UserPermission.MANAGE_PORTAL)];
   mountReport(app, "/api/reports/portal-requests", portalReportGuards, portalRequestsReport);
+  mountReport(app, "/api/reports/waitlist", portalReportGuards, waitlistReport);
 
 
   // ============================================
