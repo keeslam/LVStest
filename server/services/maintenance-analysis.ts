@@ -397,13 +397,18 @@ function costMatches(c: CostCtx, q: MaintenanceQuery, period: Period, ignore: Ig
 }
 
 /**
- * Months owned inside the period (period end clamped to today), at least 1 for a vehicle owned
- * at all in it (a 2-day owner with one bill is not EUR 750 a month); 0 when not owned at all.
+ * Months owned inside the period (period end clamped to today); 0 when not owned at all. A vehicle
+ * owned at all in it counts at least 1 month (a 2-day owner with one bill is not EUR 750 a month),
+ * but never more than the period itself, so a one-week period stays a monthly rate.
  */
 function ownedMonths(v: VehicleCtx, period: Period, today: string): number {
-  const from = Math.max(v.ownedFrom, dayOf(period.from));
-  const to = Math.min(v.ownedTo, dayOf(period.to < today ? period.to : today));
-  return to >= from ? Math.max(1, (to - from + 1) / DAYS_PER_MONTH) : 0;
+  const periodFrom = dayOf(period.from);
+  const periodTo = dayOf(period.to < today ? period.to : today);
+  const from = Math.max(v.ownedFrom, periodFrom);
+  const to = Math.min(v.ownedTo, periodTo);
+  if (to < from) return 0;
+  const floor = Math.min(1, Math.max(1, periodTo - periodFrom + 1) / DAYS_PER_MONTH);
+  return Math.max(floor, (to - from + 1) / DAYS_PER_MONTH);
 }
 
 /** kmByBandInPeriod of one vehicle, memoised per request. */

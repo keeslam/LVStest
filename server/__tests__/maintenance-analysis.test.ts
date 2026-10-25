@@ -303,7 +303,7 @@ describe("maintenance analysis: removed vehicles and months owned", () => {
   const deletedRecordIds: number[] = [];
   let snapId: number;
   let bareId: number;
-  let mid: number, sold: number, short: number;
+  let mid: number, sold: number, short: number, weekly: number;
   const months = (days: number) => days / (365.25 / 12);
   const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -329,6 +329,8 @@ describe("maintenance analysis: removed vehicles and months owned", () => {
     mid = (await createFixtureVehicle({ brand: OWN, model: "X", dateIn: "2026-08-01" })).id;
     sold = (await createFixtureVehicle({ brand: OWN, model: "X", dateIn: "2025-01-01", outOfFleetDate: "2026-03-31", outOfFleetReason: "sold" })).id;
     short = (await createFixtureVehicle({ brand: OWN, model: "X", dateIn: "2026-09-29" })).id;
+    weekly = (await createFixtureVehicle({ brand: "FIXTMAWEEK", model: "Y", dateIn: "2025-01-01" })).id;
+    await db.insert(expenses).values({ vehicleId: weekly, category: "tires", amount: "100.00", date: "2026-09-25", description: "FIXT-ma" });
     await db.insert(expenses).values([
       { vehicleId: mid, category: "maintenance", amount: "200.00", date: "2026-08-15", description: "FIXT-ma" },
       { vehicleId: sold, category: "maintenance", amount: "135.00", date: "2026-05-15", description: "FIXT-ma" },
@@ -370,5 +372,13 @@ describe("maintenance analysis: removed vehicles and months owned", () => {
     expect(of(short)).toBe(50); // 29 .. 30 Sep is 2 days: counted as 1 month
     const tiles = (await staff.get(`${BASE}/overview`).query({ ...P, brand: OWN })).body.tiles;
     expect(tiles.perVehicleMonth).toBe(r2(385 / (months(61) + months(135) + 1)));
+  });
+
+  it("the 1-month floor is never longer than the period: one week stays a monthly rate", async () => {
+    const week = { from: "2026-09-24", to: "2026-09-30", brand: "FIXTMAWEEK" };
+    const line = (await staff.get(`${BASE}/vehicles`).query(week)).body.vehicles[0];
+    expect(line.vehicleId).toBe(weekly);
+    expect(line.perMonth).toBe(r2(100 / months(7))); // about EUR 434.82, not EUR 100
+    expect((await staff.get(`${BASE}/overview`).query(week)).body.tiles.perVehicleMonth).toBe(r2(100 / months(7)));
   });
 });
