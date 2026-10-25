@@ -55,7 +55,12 @@ export function ReportTable<R>({ rows, columns, rowKey, searchPlaceholder, defau
 }) {
   const { t } = useTranslation("reports");
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<SortState<string>>(defaultSort ? { key: defaultSort.id, dir: defaultSort.dir } : NO_SORT);
+  const [chosenSort, setSort] = useState<SortState<string>>(defaultSort ? { key: defaultSort.id, dir: defaultSort.dir } : NO_SORT);
+  // A sort on a column that is no longer shown (Kolommen) falls back to the default sort.
+  const shownSortable = (key: string) => columns.some((c) => c.id === key && c.sortValue);
+  const sort: SortState<string> = !chosenSort.key || shownSortable(chosenSort.key)
+    ? chosenSort
+    : defaultSort && shownSortable(defaultSort.id) ? { key: defaultSort.id, dir: defaultSort.dir } : NO_SORT;
 
   const view = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -118,7 +123,7 @@ export function ReportTable<R>({ rows, columns, rowKey, searchPlaceholder, defau
             <TableHeader>
               <TableRow>
                 {columns.map((c) => c.sortValue ? (
-                  <SortableHead key={c.id} label={c.label} sortKey={c.id} sort={sort} onSort={(k) => setSort((cur) => nextSort(cur, k))} testId={`${testId}-sort-${c.id}`} className={alignClass(c)} />
+                  <SortableHead key={c.id} label={c.label} sortKey={c.id} sort={sort} onSort={(k) => setSort(nextSort(sort, k))} testId={`${testId}-sort-${c.id}`} className={alignClass(c)} />
                 ) : (
                   <TableHead key={c.id} className={alignClass(c)}>{c.label}</TableHead>
                 ))}

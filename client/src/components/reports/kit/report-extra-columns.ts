@@ -15,7 +15,7 @@ import { EntityLink } from "@/components/reports/entity-link";
 import { formatLicensePlate } from "@/lib/format-utils";
 import type { ReportTableColumn } from "./report-table";
 import type { ReportColumn } from "./report-detail-dialog";
-import { asReportColumnsSetting, REPORT_COLUMNS_QUERY_KEY } from "./use-report-columns";
+import { useEffectiveReportColumnsChoice } from "./use-report-columns";
 
 type LinkId = number | null | undefined;
 
@@ -49,7 +49,7 @@ export function vehicleExtras<R>(
   const of = (r: R) => { const id = vehicleId(r); return id == null ? undefined : vehiclesById.get(id); };
   const plate = (r: R) => { const v = of(r); return v?.licensePlate ? formatLicensePlate(v.licensePlate) : ""; };
   return [
-    { ...textColumn<R>("vehicle.licensePlate", t("reportKit.columns.plate"), plate), cell: (r) => createElement(EntityLink, { kind: "vehicle", id: vehicleId(r), label: plate(r) }) },
+    { ...textColumn<R>("vehicle.licensePlate", t("reportKit.columns.plate"), plate), cell: (r) => (plate(r) ? createElement(EntityLink, { kind: "vehicle", id: vehicleId(r), label: plate(r) }) : "") },
     textColumn<R>("vehicle.brand", t("reportKit.columns.brand"), (r) => of(r)?.brand ?? ""),
     textColumn<R>("vehicle.model", t("reportKit.columns.model"), (r) => of(r)?.model ?? ""),
   ];
@@ -65,7 +65,7 @@ export function customerExtras<R>(
   if (!access.customers) return [];
   const name = (r: R) => { const id = customerId(r); return (id == null ? undefined : customersById.get(id)?.name) ?? ""; };
   return [
-    { ...textColumn<R>("customer.name", t("reportKit.columns.customerName"), name), cell: (r) => createElement(EntityLink, { kind: "customer", id: customerId(r), label: name(r) }) },
+    { ...textColumn<R>("customer.name", t("reportKit.columns.customerName"), name), cell: (r) => (name(r) ? createElement(EntityLink, { kind: "customer", id: customerId(r), label: name(r) }) : "") },
   ];
 }
 
@@ -82,8 +82,9 @@ export function useReportExtraColumns<R>(reportId: string, links: ReportLinks<R>
     vehicles: useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES),
     customers: useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS),
   };
-  const { data: setting } = useQuery<{ value?: unknown } | null>({ queryKey: REPORT_COLUMNS_QUERY_KEY });
-  const on = new Set(asReportColumnsSetting(setting?.value)[reportId]?.extra ?? []);
+  // The same choice the columns on screen come from (this session first, then the loaded one).
+  const { choice } = useEffectiveReportColumnsChoice(reportId);
+  const on = new Set(choice?.extra ?? []);
   const wantVehicles = !!links.vehicleId && access.vehicles && VEHICLE_EXTRA_IDS.some((id) => on.has(id));
   const wantCustomers = !!links.customerId && access.customers && CUSTOMER_EXTRA_IDS.some((id) => on.has(id));
   const { data: vehicles = NO_VEHICLES } = useQuery<Vehicle[]>({ queryKey: ["/api/vehicles"], enabled: wantVehicles });

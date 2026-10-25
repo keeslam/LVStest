@@ -106,7 +106,9 @@ export function ReportDetailDialog<Row, S extends string>({
   const extraColumns = useReportExtraColumns<Row>(columnsKey, links ?? (NO_LINKS as ReportLinks<Row>));
   const detailExtras = useMemo(() => extraColumns.map((c) => toDetailColumn<Row, S>(c)), [extraColumns]);
   const { columns, menu: columnsMenu } = useReportColumns(columnsKey, baseColumns, detailExtras);
-  const [sort, setSort] = useState<SortState<S>>(defaultSort);
+  const [chosenSort, setSort] = useState<SortState<S>>(defaultSort);
+  // A sort on a column that is no longer shown (Kolommen) falls back to the default sort.
+  const sort: SortState<S> = columns.some((c) => c.sortKey === chosenSort.key) ? chosenSort : defaultSort;
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [busy, setBusy] = useState<"csv" | "print" | null>(null);

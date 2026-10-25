@@ -7,8 +7,8 @@
  * Works for every column type with an `id` and a `label` (ReportTable and ReportDetailDialog
  * columns), so the screen, CSV and print all use the `columns` this hook returns.
  */
-import { createElement, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { createElement, useCallback, useEffect, useMemo, useRef, useSyncExternalStore, type ReactNode } from "react";
+import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { ReportColumnsMenu } from "./report-columns-menu";
 
@@ -39,52 +39,88 @@ export function asReportColumnsSetting(value: unknown): ReportColumnsSetting {
 
 type SettingData = { value?: unknown; source?: string } | null;
 
+// ---- Choices made in this session ----
+// One store per QueryClient (so every list on the page, and the extra-field fetch, see the same
+// choice). A session choice wins over the loaded value: `null` = reset, absent = nothing chosen.
+type SessionChoices = Map<string, ReportColumnsChoice | null>;
+interface SessionStore { choices: SessionChoices; listeners: Set<() => void> }
+const sessionStores = new WeakMap<QueryClient, SessionStore>();
+
+function sessionStore(client: QueryClient): SessionStore {
+  let store = sessionStores.get(client);
+  if (!store) {
+    store = { choices: new Map(), listeners: new Set() };
+    sessionStores.set(client, store);
+  }
+  return store;
+}
+
+function setSessionChoice(client: QueryClient, reportId: string, choice: ReportColumnsChoice | null) {
+  const store = sessionStore(client);
+  store.choices = new Map(store.choices).set(reportId, choice);
+  store.listeners.forEach((l) => l());
+}
+
 /**
- * The choice of one report, and a writer that is safe against a setting still loading and
- * against other reports writing the same setting: every write merges into the newest value
- * (the query cache, updated at once) and a write made while loading waits for the value.
+ * The choice of one report as shown: the choice made in this session, else the loaded one.
+ * Used for the columns on screen and for deciding which extra-field lists to fetch.
+ */
+export function useEffectiveReportColumnsChoice(reportId: string) {
+  const queryClient = useQueryClient();
+  const store = sessionStore(queryClient);
+  const subscribe = useCallback((listener: () => void) => {
+    store.listeners.add(listener);
+    return () => { store.listeners.delete(listener); };
+  }, [store]);
+  const choices = useSyncExternalStore(subscribe, () => store.choices, () => store.choices);
+  const query = useQuery<SettingData>({ queryKey: REPORT_COLUMNS_QUERY_KEY });
+  const server = asReportColumnsSetting(query.data?.value);
+  const choice: ReportColumnsChoice | undefined = choices.has(reportId) ? choices.get(reportId) ?? undefined : server[reportId];
+  return { choice, status: query.status };
+}
+
+/**
+ * The choice of one report, and a writer that never loses the user's other choices:
+ * - every write merges into the newest loaded value (the query cache, updated at once), so two
+ *   lists on one page cannot overwrite each other;
+ * - a write made while the setting loads waits for it;
+ * - after a failed load nothing is written (it would replace every other report's choice with
+ *   only this one): the choice then holds for this session only.
  */
 export function useReportColumnsChoice(reportId: string) {
   const queryClient = useQueryClient();
-  const { data, status } = useQuery<SettingData>({ queryKey: REPORT_COLUMNS_QUERY_KEY });
-  const ready = status !== "pending";
-  // The choice made in this session for this report: wins over a (possibly stale) loaded value.
-  // `undefined` = nothing chosen here, `null` = reset.
-  const [own, setOwn] = useState<ReportColumnsChoice | null | undefined>(undefined);
-  const written = useRef(own);
+  const { choice, status } = useEffectiveReportColumnsChoice(reportId);
   const dirty = useRef(false);
 
-  const server = asReportColumnsSetting(data?.value);
-  const choice: ReportColumnsChoice | undefined = own === undefined ? server[reportId] : own ?? undefined;
-
   const write = useCallback(() => {
+    const own = sessionStore(queryClient).choices.get(reportId);
     const cached = queryClient.getQueryData<SettingData>(REPORT_COLUMNS_QUERY_KEY);
     const next = { ...asReportColumnsSetting(cached?.value) };
-    if (written.current) next[reportId] = written.current;
+    if (own) next[reportId] = own;
     else delete next[reportId];
     queryClient.setQueryData<SettingData>(REPORT_COLUMNS_QUERY_KEY, (old) => ({ ...(old ?? {}), value: next }));
     void apiRequest("PUT", `/api/user-settings/${REPORT_COLUMNS_KEY}`, { value: next })
       .catch(() => invalidateByPrefix("/api/user-settings"));
   }, [queryClient, reportId]);
 
-  const latestReady = useRef(ready);
-  latestReady.current = ready;
+  const latestStatus = useRef(status);
+  latestStatus.current = status;
 
   useEffect(() => {
-    if (ready && dirty.current) {
+    if (status === "success" && dirty.current) {
       dirty.current = false;
       write();
     }
-  }, [ready, write]);
+  }, [status, write]);
 
   const set = useCallback((next: ReportColumnsChoice | null) => {
-    written.current = next;
-    setOwn(next);
-    if (latestReady.current) write();
-    else dirty.current = true;
-  }, [write]);
+    setSessionChoice(queryClient, reportId, next);
+    if (latestStatus.current === "success") write();
+    else if (latestStatus.current === "pending") dirty.current = true;
+    // status "error": keep it for this session only.
+  }, [queryClient, reportId, write]);
 
-  return { choice, ready, set };
+  return { choice, ready: status !== "pending", set };
 }
 
 interface ColumnLike { id: string; label: string }
@@ -99,20 +135,23 @@ export function useReportColumns<C extends ColumnLike>(reportId: string, baseCol
   const hiddenKey = (choice?.hidden ?? []).join("\u0001");
   const extraKey = (choice?.extra ?? []).join("\u0001");
 
+  // Never an empty table: when every own column is hidden (an old choice), show them all,
+  // and the menu shows them ticked (what is really on screen).
+  const hidden = useMemo(() => {
+    const ids = new Set(hiddenKey ? hiddenKey.split("\u0001") : []);
+    return baseColumns.every((c) => ids.has(c.id)) ? new Set<string>() : ids;
+  }, [baseColumns, hiddenKey]);
+
   const columns = useMemo(() => {
-    const hidden = new Set(hiddenKey ? hiddenKey.split("\u0001") : []);
     const extra = new Set(extraKey ? extraKey.split("\u0001") : []);
-    const own = baseColumns.filter((c) => !hidden.has(c.id));
-    // Never an empty table: when every own column is hidden (an old choice), show them all.
-    const shownOwn = own.length > 0 ? own : baseColumns;
-    return [...shownOwn, ...extras.filter((c) => extra.has(c.id))];
-  }, [baseColumns, extras, hiddenKey, extraKey]);
+    return [...baseColumns.filter((c) => !hidden.has(c.id)), ...extras.filter((c) => extra.has(c.id))];
+  }, [baseColumns, extras, hidden, extraKey]);
 
   const menu = createElement(ReportColumnsMenu, {
     reportId,
     columns: baseColumns.map((c) => ({ id: c.id, label: c.label })),
     extras: extras.map((c) => ({ id: c.id, label: c.label })),
-    value: choice ?? null,
+    value: choice ? { hidden: baseColumns.filter((c) => hidden.has(c.id)).map((c) => c.id), extra: choice.extra } : null,
     onChange: set,
   });
 
