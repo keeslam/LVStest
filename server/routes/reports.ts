@@ -1,9 +1,9 @@
 import type { Request, Response } from "express";
 import { storage } from "../storage";
 import { ReportValidationError } from "../database-storage";
-import { UserPermission } from "../../shared/schema";
+import { UserPermission, UserRole } from "../../shared/schema";
 import { hasPermission, requireAdmin } from "../middleware/permissions.js";
-import { getDataSource, canUseReportSource, isReportPeriodField, SAVED_REPORT_TABS, type DataSource } from "../../shared/report-builder-config";
+import { getDataSource, canUseReportSource, isReportPeriodField, linkedSourcesOf, usesLinkedKmField, SAVED_REPORT_TABS, type DataSource } from "../../shared/report-builder-config";
 
 /**
  * Every data source has its own right (see canUseReportSource in shared/report-builder-config.ts).
@@ -49,6 +49,28 @@ function sourceDeniedBody(source: DataSource) {
     return { message: "A report on customers or drivers needs the customer right", code: "CUSTOMER_RIGHT_REQUIRED" as const, source: source.id };
   }
   return { message: "A report on this source needs the right of that part of the app", code: "REPORT_SOURCE_RIGHT_REQUIRED" as const, source: source.id };
+}
+/**
+ * Reports redesign part 3: a field read through a link needs the right of the linked source,
+ * and a km field stays admin only, also through a link. Returns the 403 body, or null.
+ */
+function deniedReportLink(user: Express.User | undefined, config: any): { message: string; code: "REPORT_SOURCE_RIGHT_REQUIRED"; source: string } | null {
+  for (const id of linkedSourcesOf(config)) {
+    const source = getDataSource(id);
+    if (source && !canUseReportSource(user, source)) {
+      return { message: "A field of a linked source needs the right of that part of the app", code: "REPORT_SOURCE_RIGHT_REQUIRED", source: source.id };
+    }
+  }
+  if (usesLinkedKmField(config) && user?.role !== UserRole.ADMIN) {
+    return { message: "Km fields are for admins only", code: "REPORT_SOURCE_RIGHT_REQUIRED", source: "mileage_readings" };
+  }
+  return null;
+}
+/** The 403 body for a report configuration: its own sources first, then its links. */
+function deniedReportBody(user: Express.User | undefined, config: any, dataSources: unknown = config?.dataSources) {
+  const denied = deniedReportSource(user, dataSources);
+  if (denied) return sourceDeniedBody(denied);
+  return deniedReportLink(user, config);
 }
 import type { Express } from "express";
 import { buildMaintenanceCostReport } from "../utils/maintenance-costs";
@@ -149,7 +171,7 @@ export function registerReportRoutes(app: Express): void {
   app.get("/api/reports/saved", hasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS), async (req: Request, res: Response) => {
     try {
       const reports = await storage.getAllSavedReports();
-      res.json(reports.filter((r: any) => deniedReportSource(req.user, r.configuration?.dataSources ?? [r.dataSource]) === null));
+      res.json(reports.filter((r: any) => deniedReportBody(req.user, r.configuration, r.configuration?.dataSources ?? [r.dataSource]) === null));
     } catch (error) {
       console.error("Error fetching saved reports:", error);
       res.status(500).json({ message: "Error fetching saved reports" });
@@ -166,8 +188,8 @@ export function registerReportRoutes(app: Express): void {
         return res.status(400).json({ message: "Report name is required" });
       }
 
-      const denied = deniedReportSource(user, config.dataSources);
-      if (denied) return res.status(403).json(sourceDeniedBody(denied));
+      const denied = deniedReportBody(user, config);
+      if (denied) return res.status(403).json(denied);
       const noSource = missingSource(config);
       if (noSource) return res.status(400).json(noSource);
       const invalid = invalidTabSettings(config);
@@ -209,10 +231,10 @@ export function registerReportRoutes(app: Express): void {
       const existing = await storage.getSavedReport(id);
       if (!existing) return res.status(404).json({ message: "Report not found" });
 
-      const deniedExisting = deniedReportSource(user, existing.configuration?.dataSources ?? [existing.dataSource]);
-      if (deniedExisting) return res.status(403).json(sourceDeniedBody(deniedExisting));
-      const denied = deniedReportSource(user, config?.dataSources);
-      if (denied) return res.status(403).json(sourceDeniedBody(denied));
+      const deniedExisting = deniedReportBody(user, existing.configuration, existing.configuration?.dataSources ?? [existing.dataSource]);
+      if (deniedExisting) return res.status(403).json(deniedExisting);
+      const denied = deniedReportBody(user, config);
+      if (denied) return res.status(403).json(denied);
 
       if (!config?.name) {
         return res.status(400).json({ message: "Report name is required" });
@@ -248,8 +270,8 @@ export function registerReportRoutes(app: Express): void {
       if (Number.isNaN(id)) return res.status(404).json({ message: "Report not found" });
       const existing = await storage.getSavedReport(id);
       if (!existing) return res.status(404).json({ message: "Report not found" });
-      const denied = deniedReportSource(req.user, existing.configuration?.dataSources ?? [existing.dataSource]);
-      if (denied) return res.status(403).json(sourceDeniedBody(denied));
+      const denied = deniedReportBody(req.user, existing.configuration, existing.configuration?.dataSources ?? [existing.dataSource]);
+      if (denied) return res.status(403).json(denied);
       await storage.deleteSavedReport(id);
       res.json({ success: true });
     } catch (error) {
@@ -266,8 +288,8 @@ export function registerReportRoutes(app: Express): void {
       if (!config.columns || config.columns.length === 0) {
         return res.status(400).json({ message: "No columns specified" });
       }
-      const denied = deniedReportSource(req.user, config.dataSources);
-      if (denied) return res.status(403).json(sourceDeniedBody(denied));
+      const denied = deniedReportBody(req.user, config);
+      if (denied) return res.status(403).json(denied);
 
       const results = await storage.executeReport(config, scope);
       res.json(results);

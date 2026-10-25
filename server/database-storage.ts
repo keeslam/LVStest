@@ -91,7 +91,7 @@ import {
   snapshotCounts,
   type CascadeSnapshot,
 } from "./services/cascade-snapshot";
-import { getDataSource, getField as getReportField, RENAMED_REPORT_FIELDS, REMOVED_REPORT_FIELDS, isReportPeriodField, type ReportScope } from "../shared/report-builder-config";
+import { getDataSource, getReportLink, getField as getReportField, RENAMED_REPORT_FIELDS, REMOVED_REPORT_FIELDS, isReportPeriodField, type ReportScope } from "../shared/report-builder-config";
 import { officeDaySql, textDaySql, isRealDate } from "./services/reports/report-kit";
 import { buildDefaultDamageCheckCanvasFields } from "../shared/damage-check-default-layout";
 
@@ -176,7 +176,7 @@ class RestoreAbort extends Error {
 }
 import { addMonths, addDays, parseISO, isBefore, isAfter, isEqual } from "date-fns";
 import { db, type DbTransaction } from "./db";
-import { eq, ne, and, gte, lte, asc, desc, sql, inArray, not, or, ilike, isNull, isNotNull, getTableColumns, type SQL } from "drizzle-orm";
+import { eq, ne, and, gte, lte, asc, desc, sql, inArray, not, or, ilike, isNull, isNotNull, getTableColumns, getTableName, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { COLLECTION_LEG_REASON } from "../shared/portal-handover";
 import { IStorage, type CompleteMaintenanceResult, type CompleteMaintenanceFile, type ExpenseFilters, type ExpenseListOptions, type ExpenseSortKey, type ExpensePage, type ExpenseSummary, type ExpenseFacets, type ExpenseVehicleGroup } from "./storage";
@@ -6653,32 +6653,61 @@ export class DatabaseStorage implements IStorage {
       return RENAMED_REPORT_FIELDS[key] ?? field;
     };
 
-    const resolveColumn = (table: string, rawField: string): string => {
+    // Links (reports redesign part 3): a field read "via" a link of the main source comes from the
+    // row that link points at, through one LEFT JOIN per used link (many-to-one, so rows never
+    // double; no linked row gives null). The target's fixed conditions do not apply to the join:
+    // a fine on a reservation in the recycle bin or on a vehicle out of the fleet still shows that
+    // row's fields, because it is history. The link name is the join alias (whitelisted names only).
+    const viaOf = (entry: any): string | undefined =>
+      entry?.via === undefined || entry?.via === null || entry?.via === "" ? undefined : String(entry.via);
+    const usedLinks = new Map<string, { target: Record<string, any>; fk: string }>();
+    const linkTable = (via: string, table: string): Record<string, any> => {
+      const link = getReportLink(mainSource.id, via);
+      const target = link ? getDataSource(link.target) : undefined;
+      const targetSource = target ? REPORT_SOURCE_TABLES[target.table] : undefined;
+      const fk = link ? tableObj[link.column] : undefined;
+      if (!link || !target || !targetSource || target.table !== table || !fk || typeof fk.name !== "string") {
+        throw new ReportValidationError(
+          `De koppeling ${via} kan geen velden van ${table} ophalen.`,
+          "REPORT_LINK_INVALID",
+          `${via}.${table}`,
+        );
+      }
+      if (!usedLinks.has(link.name)) usedLinks.set(link.name, { target: targetSource.table, fk: fk.name });
+      return targetSource.table;
+    };
+    const tableFor = (table: string, via?: string) => (via === undefined ? tableObj : linkTable(via, table));
+    // The key in messages and the result key: "<table>.<field>", or "<link>.<field>" through a link.
+    const keyOf = (table: string, field: string, via?: string) => (via === undefined ? `${table}.${field}` : `${via}.${field}`);
+
+    const resolveColumn = (table: string, rawField: string, via?: string): string => {
       const field = canonField(table, rawField);
       const def = getReportField(table, field);
       if (!def) {
         throw new ReportValidationError(`Unknown field: ${table}.${field}`);
       }
-      if (table !== mainTable) {
+      if (via === undefined && table !== mainTable) {
         throw new ReportValidationError(
           `Field ${table}.${field} does not belong to the selected data source (${mainTable})`
         );
       }
-      const col = tableObj[field];
+      const col = tableFor(table, via)[field];
       if (!col || typeof col.name !== "string") {
         throw new ReportValidationError(`Field not queryable: ${table}.${field}`);
       }
       return col.name;
     };
 
-    const identFor = (table: string, field: string) =>
-      sql`${sql.identifier(mainTable)}.${sql.identifier(resolveColumn(table, field))}`;
+    const identFor = (table: string, field: string, via?: string) => {
+      const column = resolveColumn(table, field, via);
+      return sql`${sql.identifier(via ?? mainTable)}.${sql.identifier(column)}`;
+    };
 
     // The office day of a date field, per column type (the same reading the month grouping uses):
     // a real date as is, a timestamp in office time, a yyyy-mm-dd text through textDaySql.
-    const dayExpr = (table: string, field: string): SQL => {
-      const ident = identFor(table, field);
-      const col = tableObj[canonField(table, field)];
+    const dayExpr = (table: string, field: string, via?: string): SQL => {
+      const ident = identFor(table, field, via);
+      const col = tableFor(table, via)[canonField(table, field)];
       const isTimestamp = col?.columnType === "PgTimestamp" || col?.columnType === "PgTimestampString";
       const isRealDate = col?.columnType === "PgDate" || col?.columnType === "PgDateString";
       if (isRealDate) return ident;
@@ -6687,16 +6716,17 @@ export class DatabaseStorage implements IStorage {
 
     // A group expression. Per month: the calendar month in office time for a timestamp
     // column, the month of a yyyy-mm-dd text for a text date; plain: the column itself.
-    const groupExpr = (table: string, field: string, period?: string) => {
-      if (!period) return identFor(table, field);
-      return sql`to_char(${dayExpr(table, field)}, 'YYYY-MM')`;
+    const groupExpr = (table: string, field: string, period?: string, via?: string) => {
+      if (!period) return identFor(table, field, via);
+      return sql`to_char(${dayExpr(table, field, via)}, 'YYYY-MM')`;
     };
 
     // Grouping: validate the period and the field, canonicalise the field name.
-    const groups: { table: string; field: string; period?: "month" }[] = (Array.isArray(groupBy) ? groupBy : []).map((g: any) => {
+    const groups: { table: string; field: string; period?: "month"; via?: string }[] = (Array.isArray(groupBy) ? groupBy : []).map((g: any) => {
       const field = canonField(g.table, g.field);
-      resolveColumn(g.table, field);
-      const key = `${g.table}.${field}`;
+      const via = viaOf(g);
+      resolveColumn(g.table, field, via);
+      const key = keyOf(g.table, field, via);
       let period: "month" | undefined;
       if (g.period !== undefined && g.period !== null) {
         if (g.period !== "month") {
@@ -6715,16 +6745,16 @@ export class DatabaseStorage implements IStorage {
         }
         period = "month";
       }
-      return { table: g.table, field, period };
+      return { table: g.table, field, period, via };
     });
-    const findGroup = (table: string, field: string) =>
-      groups.find((g) => g.table === table && g.field === canonField(table, field));
+    const findGroup = (table: string, field: string, via?: string) =>
+      groups.find((g) => g.table === table && g.field === canonField(table, field) && g.via === via);
 
     // With a grouping or a calculated column, every plain column must be in the grouping.
     if (groups.length > 0 || columns.some((c: any) => c.aggregation)) {
       for (const col of columns) {
-        if (!col.aggregation && !findGroup(col.table, col.field)) {
-          const key = `${col.table}.${canonField(col.table, col.field)}`;
+        if (!col.aggregation && !findGroup(col.table, col.field, viaOf(col))) {
+          const key = keyOf(col.table, canonField(col.table, col.field), viaOf(col));
           throw new ReportValidationError(
             `De kolom ${key} staat niet in de groepering. Kies er een berekening bij of groepeer erop.`,
             "REPORT_COLUMN_NOT_GROUPED",
@@ -6739,7 +6769,7 @@ export class DatabaseStorage implements IStorage {
       const seen = new Set<string>();
       for (const col of columns) {
         if (col.aggregation) continue;
-        const key = `${col.table}.${canonField(col.table, col.field)}`;
+        const key = keyOf(col.table, canonField(col.table, col.field), viaOf(col));
         if (seen.has(key)) {
           throw new ReportValidationError(
             `De kolom ${key} staat twee keer in het rapport. Haal de dubbele kolom weg.`,
@@ -6752,10 +6782,12 @@ export class DatabaseStorage implements IStorage {
     }
 
     // SELECT list — every column is aliased to its camelCase config name so the
-    // frontend can read row[col.field] regardless of the DB column casing.
+    // frontend can read row[col.field] regardless of the DB column casing; a field
+    // through a link is row["<link>.<field>"].
     const selectParts: SQL[] = columns.map((col: any) => {
-      const ident = identFor(col.table, col.field);
-      const alias = sql.identifier(String(col.field));
+      const via = viaOf(col);
+      const ident = identFor(col.table, col.field, via);
+      const alias = sql.identifier(via === undefined ? String(col.field) : `${via}.${String(col.field)}`);
       if (col.aggregation) {
         const def = getReportField(col.table, canonField(col.table, col.field))!;
         const agg = String(col.aggregation).toUpperCase();
@@ -6781,8 +6813,8 @@ export class DatabaseStorage implements IStorage {
             throw new ReportValidationError(`Unknown aggregation: ${col.aggregation}`);
         }
       }
-      const group = findGroup(col.table, col.field);
-      return sql`${group?.period ? groupExpr(col.table, col.field, group.period) : ident} AS ${alias}`;
+      const group = findGroup(col.table, col.field, via);
+      return sql`${group?.period ? groupExpr(col.table, col.field, group.period, via) : ident} AS ${alias}`;
     });
 
     // WHERE clause — operators validated per-field against the config,
@@ -6799,7 +6831,7 @@ export class DatabaseStorage implements IStorage {
           `Operator ${operator} is not allowed for ${filter.table}.${filter.field}`
         );
       }
-      const ident = identFor(filter.table, filter.field);
+      const ident = identFor(filter.table, filter.field, viaOf(filter));
       const value = filter.value;
 
       switch (operator) {
@@ -6912,16 +6944,20 @@ export class DatabaseStorage implements IStorage {
     // does not show it); a plain group is the column itself.
     const hiddenAliases: string[] = [];
     const groupRefs: SQL[] = groups.map((g) => {
-      if (!g.period) return identFor(g.table, g.field);
-      const position = columns.findIndex((c: any) => !c.aggregation && c.table === g.table && canonField(c.table, c.field) === g.field);
+      if (!g.period) return identFor(g.table, g.field, g.via);
+      const position = columns.findIndex((c: any) => !c.aggregation && c.table === g.table && canonField(c.table, c.field) === g.field && viaOf(c) === g.via);
       if (position >= 0) return sql.raw(String(position + 1));
       const alias = `__group_${hiddenAliases.length}`;
       hiddenAliases.push(alias);
-      selectParts.push(sql`${groupExpr(g.table, g.field, g.period)} AS ${sql.identifier(alias)}`);
+      selectParts.push(sql`${groupExpr(g.table, g.field, g.period, g.via)} AS ${sql.identifier(alias)}`);
       return sql.raw(String(selectParts.length));
     });
 
     let query = sql`SELECT ${sql.join(selectParts, sql`, `)} FROM ${reportSource.from}`;
+    for (const [name, link] of usedLinks) {
+      const alias = sql.identifier(name);
+      query = sql`${query} LEFT JOIN ${sql.identifier(getTableName(link.target as any))} AS ${alias} ON ${alias}."id" = ${sql.identifier(mainTable)}.${sql.identifier(link.fk)}`;
+    }
     if (whereParts.length > 0) {
       query = sql`${query} WHERE ${sql.join(whereParts, sql` AND `)}`;
     }

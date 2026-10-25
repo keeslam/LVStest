@@ -21,6 +21,21 @@ export interface DataSourceField {
   aggregatable: boolean;
 }
 
+/** The ids of the builder's data sources. */
+export type ReportSourceId =
+  | 'vehicles' | 'customers' | 'reservations' | 'expenses' | 'drivers'
+  | 'fines' | 'transports' | 'workshop_visits' | 'damage_checks' | 'mileage_readings';
+
+/**
+ * A many-to-one link from a source to the row its column points at (never one-to-many,
+ * so a report row never doubles). `column` is the main table's property that holds the id.
+ */
+export interface ReportSourceLink {
+  name: 'vehicle' | 'customer' | 'reservation' | 'driver';
+  target: ReportSourceId;
+  column: string;
+}
+
 /** Who may use a source: admins only, or anyone holding one of these permissions. */
 export type ReportSourceAccess = { adminOnly: true } | { anyOf: readonly string[] };
 
@@ -33,6 +48,8 @@ export interface DataSource {
   access?: ReportSourceAccess;
   /** The column that holds the vehicle id (scope on one vehicle); none for sources without a vehicle. */
   vehicleField?: string;
+  /** Rows of other sources this source points at; their fields can be shown "via" the link. */
+  links?: ReportSourceLink[];
   joinable?: {
     sourceTable: string;
     sourceField: string;
@@ -46,6 +63,8 @@ export interface ReportColumn {
   table: string;
   label: string;
   aggregation?: AggregationFunction;
+  /** Name of a link of the main source: the field is read from the linked row. */
+  via?: string;
 }
 
 export interface ReportFilter {
@@ -54,6 +73,8 @@ export interface ReportFilter {
   operator: FilterOperator;
   value: string | number | boolean | null;
   value2?: string | number;
+  /** Name of a link of the main source: the field is read from the linked row. */
+  via?: string;
 }
 
 export interface ReportGrouping {
@@ -61,6 +82,8 @@ export interface ReportGrouping {
   table: string;
   /** Date fields only: group per office-time month instead of per value. */
   period?: "month";
+  /** Name of a link of the main source: the field is read from the linked row. */
+  via?: string;
 }
 
 /** Tabs a saved builder report can be placed on (not overview, not fiscal). */
@@ -128,6 +151,11 @@ const CUSTOMER_ACCESS: ReportSourceAccess = {
   anyOf: [UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS],
 };
 
+const VEHICLE_LINK: ReportSourceLink = { name: 'vehicle', target: 'vehicles', column: 'vehicleId' };
+const CUSTOMER_LINK: ReportSourceLink = { name: 'customer', target: 'customers', column: 'customerId' };
+const RESERVATION_LINK: ReportSourceLink = { name: 'reservation', target: 'reservations', column: 'reservationId' };
+const DRIVER_LINK: ReportSourceLink = { name: 'driver', target: 'drivers', column: 'driverId' };
+
 export const DATA_SOURCES: DataSource[] = [
   {
     id: 'vehicles',
@@ -170,6 +198,7 @@ export const DATA_SOURCES: DataSource[] = [
   {
     id: 'reservations',
     vehicleField: 'vehicleId',
+    links: [VEHICLE_LINK, CUSTOMER_LINK, DRIVER_LINK],
     name: 'Reservations',
     table: 'reservations',
     fields: [
@@ -188,6 +217,7 @@ export const DATA_SOURCES: DataSource[] = [
   {
     id: 'expenses',
     vehicleField: 'vehicleId',
+    links: [VEHICLE_LINK],
     name: 'Expenses',
     table: 'expenses',
     fields: [
@@ -200,6 +230,7 @@ export const DATA_SOURCES: DataSource[] = [
   },
   {
     id: 'drivers',
+    links: [CUSTOMER_LINK],
     name: 'Drivers',
     table: 'drivers',
     access: CUSTOMER_ACCESS,
@@ -215,6 +246,7 @@ export const DATA_SOURCES: DataSource[] = [
   {
     id: 'fines',
     vehicleField: 'vehicleId',
+    links: [VEHICLE_LINK, CUSTOMER_LINK, DRIVER_LINK, RESERVATION_LINK],
     name: 'Fines',
     table: 'fines',
     access: { anyOf: [UserPermission.VIEW_FINES, UserPermission.MANAGE_FINES] },
@@ -240,6 +272,7 @@ export const DATA_SOURCES: DataSource[] = [
   {
     id: 'transports',
     vehicleField: 'vehicleId',
+    links: [VEHICLE_LINK, CUSTOMER_LINK, RESERVATION_LINK],
     name: 'Transports',
     table: 'vehicle_transports',
     access: {
@@ -273,6 +306,8 @@ export const DATA_SOURCES: DataSource[] = [
     // Virtual table: reservations AS workshop_visits, maintenance blocks only.
     id: 'workshop_visits',
     vehicleField: 'vehicleId',
+    // A visit points at the rental it affects (affectedRentalId), not at its own reservation.
+    links: [VEHICLE_LINK, { name: 'reservation', target: 'reservations', column: 'affectedRentalId' }],
     name: 'Workshop Visits',
     table: 'workshop_visits',
     access: {
@@ -295,6 +330,8 @@ export const DATA_SOURCES: DataSource[] = [
   {
     id: 'damage_checks',
     vehicleField: 'vehicleId',
+    // No customer link: interactive_damage_checks has no customer column.
+    links: [VEHICLE_LINK, RESERVATION_LINK],
     name: 'Damage Checks',
     table: 'interactive_damage_checks',
     access: { anyOf: [UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS] },
@@ -312,6 +349,7 @@ export const DATA_SOURCES: DataSource[] = [
   {
     id: 'mileage_readings',
     vehicleField: 'vehicleId',
+    links: [VEHICLE_LINK],
     name: 'Mileage History',
     table: 'vehicle_mileage_readings',
     access: { adminOnly: true },
@@ -347,6 +385,57 @@ export function canUseReportSource(user: ReportSourceUser | null | undefined, so
 
 export function getDataSource(id: string): DataSource | undefined {
   return DATA_SOURCES.find(ds => ds.id === id);
+}
+
+/** Km fields: admin only, also when a report reaches them through a link. Keyed "<table>.<field>". */
+export const REPORT_KM_FIELDS: ReadonlySet<string> = new Set([
+  'vehicles.currentMileage',
+  'reservations.pickupMileage',
+  'reservations.returnMileage',
+]);
+
+type LinkedEntry = { table: string; field: string; via: string };
+
+/** The column, filter, grouping and sort entries of a report that read a field through a link. */
+function linkedEntriesOf(config: Partial<ReportConfiguration> | null | undefined): LinkedEntry[] {
+  const out: LinkedEntry[] = [];
+  for (const list of [config?.columns, config?.filters, config?.groupBy, config?.orderBy]) {
+    if (!Array.isArray(list)) continue;
+    for (const entry of list as any[]) {
+      if (entry && typeof entry === 'object' && typeof entry.via === 'string' && entry.via !== '') {
+        out.push({ table: String(entry.table), field: String(entry.field), via: entry.via });
+      }
+    }
+  }
+  return out;
+}
+
+/** The link with this name of the report's main (first) source; undefined when it has none. */
+export function getReportLink(mainSourceId: unknown, via: unknown): ReportSourceLink | undefined {
+  if (typeof via !== 'string') return undefined;
+  return getDataSource(String(mainSourceId))?.links?.find((l) => l.name === via);
+}
+
+/**
+ * The sources a report reads through its links, each once. Unknown links are left out:
+ * running the report refuses them with REPORT_LINK_INVALID.
+ */
+export function linkedSourcesOf(config: Partial<ReportConfiguration> | null | undefined): ReportSourceId[] {
+  const main = Array.isArray(config?.dataSources) ? config!.dataSources[0] : undefined;
+  const out: ReportSourceId[] = [];
+  for (const entry of linkedEntriesOf(config)) {
+    const link = getReportLink(main, entry.via);
+    if (link && !out.includes(link.target)) out.push(link.target);
+  }
+  return out;
+}
+
+/** Whether the report reads a km field through a link (admin only, like the km history). */
+export function usesLinkedKmField(config: Partial<ReportConfiguration> | null | undefined): boolean {
+  return linkedEntriesOf(config).some((e) => {
+    const key = `${e.table}.${e.field}`;
+    return REPORT_KM_FIELDS.has(`${e.table}.${RENAMED_REPORT_FIELDS[key] ?? e.field}`);
+  });
 }
 
 /** A date field of the source, as a report period can apply to it. */
