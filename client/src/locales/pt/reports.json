@@ -338,7 +338,9 @@
     "periodFieldLabel": "Campo de período",
     "noPeriodField": "Nenhum (tabela inteira)",
     "saveAsNewButton": "Guardar como novo",
-    "editingTitle": "A editar: {{name}}"
+    "editingTitle": "A editar: {{name}}",
+    "useAsStartButton": "Usar como ponto de partida",
+    "stopEditingButton": "Parar de editar"
   },
   "financialTab": {
     "loading": "A carregar...",

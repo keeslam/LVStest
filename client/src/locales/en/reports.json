@@ -330,7 +330,9 @@
     "periodFieldLabel": "Period field",
     "noPeriodField": "None (whole table)",
     "saveAsNewButton": "Save as new",
-    "editingTitle": "Editing: {{name}}"
+    "editingTitle": "Editing: {{name}}",
+    "useAsStartButton": "Use as a start",
+    "stopEditingButton": "Stop editing"
   },
   "financialTab": {
     "loading": "Loading...",

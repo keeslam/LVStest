@@ -346,7 +346,9 @@
     "periodFieldLabel": "Pole okresu",
     "noPeriodField": "Brak (cała tabela)",
     "saveAsNewButton": "Zapisz jako nowy",
-    "editingTitle": "Edycja: {{name}}"
+    "editingTitle": "Edycja: {{name}}",
+    "useAsStartButton": "Użyj jako punktu wyjścia",
+    "stopEditingButton": "Zakończ edycję"
   },
   "financialTab": {
     "loading": "Ładowanie...",

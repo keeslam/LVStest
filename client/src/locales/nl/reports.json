@@ -330,7 +330,9 @@
     "periodFieldLabel": "Periodeveld",
     "noPeriodField": "Geen (hele tabel)",
     "saveAsNewButton": "Opslaan als nieuw",
-    "editingTitle": "Bewerken: {{name}}"
+    "editingTitle": "Bewerken: {{name}}",
+    "useAsStartButton": "Gebruiken als begin",
+    "stopEditingButton": "Stop met bewerken"
   },
   "financialTab": {
     "loading": "Laden...",

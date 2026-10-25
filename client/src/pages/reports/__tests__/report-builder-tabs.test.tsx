@@ -145,3 +145,76 @@ describe("editing a saved report", () => {
     expect(await screen.findByTestId("button-edit-saved-7")).toBeInTheDocument();
   });
 });
+
+describe("fix round: start from a saved report, leave edit mode", () => {
+  it("lets a view-only user load a saved report as a start, without Bewerken", async () => {
+    role = UserRole.USER;
+    permissions = [UserPermission.VIEW_REPORTS, UserPermission.VIEW_VEHICLES];
+    installFetch();
+    const user = userEvent.setup();
+    renderBuilder();
+    await user.click(screen.getByTestId("button-saved-tab"));
+    expect(screen.queryByTestId("button-edit-saved-7")).toBeNull();
+    expect(await screen.findByText("Gebruiken als begin")).toBeInTheDocument();
+    await user.click(await screen.findByTestId("button-load-report-7"));
+    expect(await screen.findByTestId("button-run-report")).toBeInTheDocument();
+    expect(screen.queryByText("Bewerken: Toyota-lijst")).toBeNull();
+    expect(screen.getByTestId("button-remove-column-0")).toBeInTheDocument();
+  });
+
+  it("leaves edit mode with Stop met bewerken and keeps the form", async () => {
+    installFetch();
+    const user = userEvent.setup();
+    renderBuilder({ editReportId: 7 });
+    expect(await screen.findByText("Bewerken: Toyota-lijst")).toBeInTheDocument();
+    await user.click(screen.getByTestId("button-stop-editing"));
+    expect(screen.queryByText("Bewerken: Toyota-lijst")).toBeNull();
+    expect(screen.queryByTestId("button-stop-editing")).toBeNull();
+    expect(screen.getByTestId("button-remove-column-0")).toBeInTheDocument();
+    await user.click(screen.getByTestId("button-save-report"));
+    await user.click(screen.getByTestId("button-confirm-save"));
+    await waitFor(() => expect(calls.length).toBe(1));
+    expect(calls[0].method).toBe("POST");
+  });
+
+  it("clears edit mode when the edited report is deleted", async () => {
+    installFetch();
+    const user = userEvent.setup();
+    renderBuilder({ editReportId: 7 });
+    expect(await screen.findByText("Bewerken: Toyota-lijst")).toBeInTheDocument();
+    await user.click(screen.getByTestId("button-saved-tab"));
+    await user.click(await screen.findByTestId("button-delete-report-7"));
+    await user.click(await screen.findByTestId("confirm-delete-saved-report"));
+    await waitFor(() => expect(calls.some((c) => c.method === "DELETE")).toBe(true));
+    await waitFor(() => expect(screen.queryByText("Bewerken: Toyota-lijst")).toBeNull());
+  });
+
+  it("does not enter edit mode through editReportId without rights; it loads as a start", async () => {
+    role = UserRole.USER;
+    permissions = [UserPermission.VIEW_REPORTS, UserPermission.VIEW_VEHICLES];
+    installFetch();
+    renderBuilder({ editReportId: 7 });
+    expect(await screen.findByTestId("button-remove-column-0")).toBeInTheDocument();
+    expect(screen.queryByText("Bewerken: Toyota-lijst")).toBeNull();
+  });
+
+  it("drops a stale period field when the source changes, and sends no tab or period for none", async () => {
+    installFetch();
+    const user = userEvent.setup();
+    renderBuilder({ editReportId: 7 });
+    expect(await screen.findByText("Bewerken: Toyota-lijst")).toBeInTheDocument();
+    // swap the source: apkDate is not a date field of fines
+    await user.click(screen.getByTestId("checkbox-datasource-fines"));
+    await user.click(screen.getByTestId("checkbox-datasource-vehicles"));
+    await user.click(screen.getByTestId("button-add-field-offenceAt"));
+    await user.click(screen.getByTestId("button-save-report"));
+    expect(screen.getByTestId("select-saved-report-period-field")).toHaveTextContent("Geen (hele tabel)");
+    await user.click(screen.getByTestId("select-saved-report-tab"));
+    await user.click(await screen.findByRole("option", { name: "Niet op een tabblad" }));
+    await user.click(screen.getByTestId("button-confirm-save"));
+    await waitFor(() => expect(calls.length).toBe(1));
+    expect(calls[0].method).toBe("PUT");
+    expect(calls[0].body.tab).toBeUndefined();
+    expect(calls[0].body.periodField).toBeUndefined();
+  });
+});

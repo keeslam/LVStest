@@ -241,8 +241,10 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
   const deleteReportMutation = useMutation({
     mutationFn: async (id: number) => {
       await apiRequest('DELETE', `/api/reports/saved/${id}`);
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
+      setEditingReport((current) => (current && current.id === id ? null : current));
       invalidateByPrefix('/api/reports/saved');
       toast({
         title: t('reportBuilderPage.toasts.reportDeletedTitle'),
@@ -266,6 +268,11 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
     setTimeout(() => setLoadingReport(null), 500);
   };
 
+  const canEditReport = (report: SavedReport) => canManageReports && report.configuration.dataSources.every((id) => {
+    const source = getDataSource(id);
+    return !source || canUseReportSource(user, source);
+  });
+
   const editSavedReport = (report: SavedReport) => {
     loadSavedReport(report);
     setEditingReport({ id: report.id, name: report.name });
@@ -278,7 +285,8 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
     const report = savedReports.find((r) => r.id === editReportId);
     if (!report) return;
     setOpenedEditId(editReportId);
-    editSavedReport(report);
+    if (canEditReport(report)) editSavedReport(report);
+    else loadSavedReport(report);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editReportId, savedReports, openedEditId]);
 
@@ -339,6 +347,11 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
           <h1 className="text-3xl font-bold">
             {editingReport ? t('reportBuilderPage.editingTitle', { name: editingReport.name }) : t('reportBuilderPage.pageTitle')}
           </h1>
+          {editingReport && (
+            <Button variant="link" className="h-auto p-0" onClick={() => setEditingReport(null)} data-testid="button-stop-editing">
+              {t('reportBuilderPage.stopEditingButton')}
+            </Button>
+          )}
           <p className="text-muted-foreground">{t('reportBuilderPage.pageDescription')}</p>
         </div>
         <div className="flex gap-2">
@@ -544,11 +557,9 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
           reports={savedReports}
           loading={loadingSavedReports}
           loadingReport={loadingReport}
+          onLoadReport={loadSavedReport}
           onEditReport={editSavedReport}
-          canEdit={(report) => canManageReports && report.configuration.dataSources.every((id) => {
-            const source = getDataSource(id);
-            return !source || canUseReportSource(user, source);
-          })}
+          canEdit={canEditReport}
           onRunReport={(report) => runReportMutation.mutate(report.configuration)}
           onDeleteReport={(id) => deleteReportMutation.mutate(id)}
         />
@@ -787,6 +798,7 @@ function SavedReportsTab({
   reports, 
   loading,
   loadingReport,
+  onLoadReport,
   onEditReport,
   canEdit,
   onRunReport,
@@ -795,6 +807,7 @@ function SavedReportsTab({
   reports: SavedReport[]; 
   loading: boolean;
   loadingReport: number | null;
+  onLoadReport: (report: SavedReport) => void;
   onEditReport: (report: SavedReport) => void;
   canEdit: (report: SavedReport) => boolean;
   onRunReport: (report: SavedReport) => void;
@@ -852,6 +865,16 @@ function SavedReportsTab({
                 </div>
               </div>
               <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onLoadReport(report)}
+                  disabled={loadingReport === report.id}
+                  data-testid={`button-load-report-${report.id}`}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  {t('reportBuilderPage.useAsStartButton')}
+                </Button>
                 {canEdit(report) && (
                   <Button
                     variant="outline"

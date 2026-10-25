@@ -338,7 +338,9 @@
     "periodFieldLabel": "Câmp de perioadă",
     "noPeriodField": "Niciunul (tot tabelul)",
     "saveAsNewButton": "Salvează ca nou",
-    "editingTitle": "Editare: {{name}}"
+    "editingTitle": "Editare: {{name}}",
+    "useAsStartButton": "Folosește ca punct de pornire",
+    "stopEditingButton": "Oprește editarea"
   },
   "financialTab": {
     "loading": "Se încarcă...",
