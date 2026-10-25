@@ -230,7 +230,7 @@ export function registerExpenseInboxRoutes(app: Express): void {
     const total = item.parsed?.totalAmount ?? lineItems.reduce((sum, l) => sum + l.amount, 0);
     const parsed: InboxParsedInvoice = { currency: "EUR", ...(item.parsed ?? {}), ...invoice, totalAmount: total, lineItems };
     const updated = await inboxStorage.update(item.id, {
-      status: "booked", reviewReason: null, vehicleId, expenseIds: booked.expenses.map((e) => e.id),
+      status: "booked", vehicleId, expenseIds: booked.expenses.map((e) => e.id),
       parsed, invoiceHash: computeInvoiceHash(parsed),
       errorMessage: booked.errors.length ? booked.errors.join("; ").slice(0, 2000) : null,
       processedAt: new Date(), updatedBy: actor(req),

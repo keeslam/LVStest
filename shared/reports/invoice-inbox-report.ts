@@ -48,3 +48,53 @@ export interface InboxRunReportSummary {
   /** Office day today minus retentionDays (yyyy-mm-dd): rounds before it are gone. */
   retentionCutoff: string;
 }
+
+/**
+ * Part 13: the invoices the mailbox brought in (invoice_inbox_items, mail only). Server:
+ * server/services/reports/invoice-inbox-items-report.ts. The four outcomes add up to tile `all`;
+ * `flagged` (a review reason is set) is the source of the reasons list.
+ */
+export const INBOX_ITEM_REPORT_TILES = ["all", "autoBooked", "staffBooked", "waiting", "dismissed", "flagged"] as const;
+export type InboxItemReportTile = (typeof INBOX_ITEM_REPORT_TILES)[number];
+
+export const INBOX_ITEM_REPORT_SORTS = ["receivedAt", "fromAddress", "outcome", "reviewReason"] as const;
+export type InboxItemReportSort = (typeof INBOX_ITEM_REPORT_SORTS)[number];
+
+export type InboxItemOutcome = "autoBooked" | "staffBooked" | "waiting" | "dismissed";
+
+export interface InboxItemReportRow {
+  id: number;
+  receivedAt: string;
+  mailDate: string | null;
+  fromAddress: string | null;
+  subject: string | null;
+  attachmentName: string | null;
+  status: string;
+  outcome: InboxItemOutcome;
+  reviewReason: string | null;
+  vehicleId: number | null;
+  licensePlate: string | null;
+  processedAt: string | null;
+  /** updated_by for staffBooked and dismissed, else null. */
+  handledBy: string | null;
+  amount: number;
+}
+
+export interface InboxItemMonth {
+  month: string;
+  autoBooked: number;
+  staffBooked: number;
+  waiting: number;
+  dismissed: number;
+}
+
+export interface InboxReasonCount {
+  reason: string;
+  count: number;
+}
+
+export interface InboxItemReportSummary {
+  tiles: Record<InboxItemReportTile, ReportTileTotal>;
+  byMonth: InboxItemMonth[];
+  byReason: InboxReasonCount[];
+}

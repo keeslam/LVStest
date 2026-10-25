@@ -19,6 +19,9 @@ import { UserPermission, expenses } from "../../shared/schema";
 import { DEFAULT_INVOICE_INBOX_CONFIG, INVOICE_INBOX_CONFIG_KEY, INVOICE_INBOX_PASSWORD_MASK, type InboxParsedInvoice } from "../../shared/invoice-inbox";
 import { buildStaffTestApp, createTestVehicle, cleanupPortalTestData, TEST_PREFIX } from "./portal-helpers";
 import { cleanupInboxTestData, INBOX_TEST_ACTOR } from "./invoice-inbox-helpers";
+import { agentFor } from "./helpers/app";
+import { dateInZone } from "../../shared/office-timezone";
+import { officeTimeZone } from "../services/office-time";
 
 const unique = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const VENDOR = `${TEST_PREFIX}Garage`;
@@ -254,11 +257,31 @@ describe("expense inbox routes", () => {
     expect(res.body.expenses).toHaveLength(1);
     expect(res.body.expenses[0]).toMatchObject({ vehicleId, amount: "100", category: "maintenance", date: "2026-09-11", inboxItemId: item.id, receiptFilePath: item.attachmentPath });
     expect(res.body.expenses[0].description).toBe(`Beurt • Olie (Factuur GECORRIGEERD-1, ${VENDOR})`);
-    expect(res.body.item).toMatchObject({ status: "booked", reviewReason: null, vehicleId, updatedBy: "staff-test", expenseIds: [res.body.expenses[0].id] });
+    expect(res.body.item).toMatchObject({ status: "booked", reviewReason: "no_plate", vehicleId, updatedBy: "staff-test", expenseIds: [res.body.expenses[0].id] });
     expect(res.body.item.parsed.invoiceNumber).toBe("GECORRIGEERD-1");
 
     expect((await request(bookkeeper).post(`/api/expenses/inbox/items/${item.id}/book`).send(body)).status).toBe(409);
     expect((await request(bookkeeper).post(`/api/expenses/inbox/items/${item.id}/dismiss`).send({})).status).toBe(409);
+  });
+
+  it("keeps the reason an invoice waited for once it is booked, and the report counts it", async () => {
+    const item = await reviewItem({ reviewReason: "plate_unknown" });
+    const res = await request(bookkeeper).post(`/api/expenses/inbox/items/${item.id}/book`).send({
+      vehicleId, invoice: { vendor: VENDOR, invoiceNumber: `KEEP-${unique()}`, invoiceDate: "2026-09-11" },
+      lineItems: [{ description: "Beurt", amount: 80, category: "Maintenance" }],
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.item).toMatchObject({ status: "booked", reviewReason: "plate_unknown" });
+    // "Te controleren" is the status, not the reason: a booked invoice is gone from that tab.
+    const waiting = await request(bookkeeper).get("/api/expenses/inbox/items?status=review");
+    expect(waiting.body.some((i: any) => i.id === item.id)).toBe(false);
+    const reporter = await agentFor("admin");
+    const day = dateInZone(new Date(), officeTimeZone());
+    const period = { from: day, to: day };
+    const summary = (await reporter.get("/api/reports/invoice-inbox-items/summary").query(period)).body;
+    expect(summary.byReason.find((r: any) => r.reason === "plate_unknown")?.count).toBeGreaterThanOrEqual(1);
+    const rows = (await reporter.get("/api/reports/invoice-inbox-items/rows").query({ ...period, tile: "flagged", pageSize: "250" })).body.rows;
+    expect(rows.find((r: any) => r.id === item.id)).toMatchObject({ status: "booked", outcome: "staffBooked", reviewReason: "plate_unknown" });
   });
 
   it("finishes an earlier interrupted booking instead of booking the invoice a second time", async () => {
