@@ -29,7 +29,6 @@ import { VehicleDetails } from "@/components/vehicles/vehicle-details";
 import { MileageHistoryPanel } from "@/components/vehicles/mileage-history-panel";
 import { VehicleFinancialsReport } from "@/pages/reports/legacy/vehicle-financials-report";
 import { ReportFiltersProvider } from "@/pages/reports/report-filters";
-import { mileageHistoryHtml } from "@/lib/mileage-history-print";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -229,65 +228,22 @@ const ONE_READING = {
   summary: { drivenKm: 0, avgPerMonth: 0, freeKm: 1700, overFreeKm: 0, readings: 1, warnings: 0, periodFrom: "2026-03-15", periodTo: "2026-03-31" },
 };
 
-const LABELS = {
-  title: "Km-historie", period: "Periode", drivenKm: "Gereden km", avgPerMonth: "Gemiddeld per maand",
-  freeKm: "Vrije km", overFreeKm: "Boven vrije km", warnings: "Waarschuwingen", chart: "Km-stand",
-  date: "Datum", mileage: "Km-stand", driven: "Gereden sinds vorige", source: "Bron", actor: "Door wie",
-  warning: "Waarschuwing", voided: "vervallen", empty: "Leeg",
-  sources: { pickup: "Ophalen", return: "Inleveren", damage_check: "Schadecheck", manual: "Handmatig", portal: "Klantportaal", service: "Onderhoud", import: "Import" },
-  warningTypes: { decrease: "Km-stand lager dan vorige", jump: "Onlogische sprong" },
-};
-type PrintData = Parameters<typeof mileageHistoryHtml>[0];
-const ASKED = { from: "2000-01-01", to: "2050-12-31" };
-
-describe("mileageHistoryHtml", () => {
-  it("the header shows the effective period, not the asked one", () => {
-    const html = mileageHistoryHtml(HISTORY as PrintData, LABELS, ASKED);
-    expect(html).toMatch(/1 mrt\.? 2026 – 20 mrt\.? 2026/);
-    expect(html).not.toContain("2050");
-  });
-
-  it("zero rows: the empty text, no chart, no table, the asked period", () => {
-    const data = { ...HISTORY, rows: [], summary: { drivenKm: 0, avgPerMonth: null, freeKm: null, overFreeKm: null, readings: 0, warnings: 0, periodFrom: null, periodTo: null } } as PrintData;
-    const html = mileageHistoryHtml(data, LABELS, { from: "2026-03-01", to: "2026-03-31" });
-    expect(html).toContain("<p>Leeg</p>");
-    expect(html).not.toContain("<polyline");
-    expect(html).not.toContain("<table");
-    expect(html).toMatch(/1 mrt\.? 2026 – 31 mrt\.? 2026/);
-    expect(html).not.toMatch(/NaN|undefined|null/);
-  });
-
-  it("all rows voided: no chart line, every row listed as vervallen", () => {
-    const rows = HISTORY.rows.map((r) => ({ ...r, voided: true, drivenSincePrevious: null, warning: null }));
-    const data = { ...HISTORY, rows, summary: { drivenKm: 0, avgPerMonth: null, freeKm: 3100, overFreeKm: 0, readings: 0, warnings: 0, periodFrom: null, periodTo: null } } as PrintData;
-    const html = mileageHistoryHtml(data, LABELS, { from: "2026-03-01", to: "2026-03-31" });
-    expect(html).not.toContain("<polyline");
-    expect(html.match(/<tr class="voided">/g)).toHaveLength(4);
-    expect(html.match(/<td>vervallen<\/td>/g)).toHaveLength(4);
-    expect(html).not.toMatch(/NaN|undefined/);
-  });
-
-  it("exactly one reading: one point, finite coordinates, no NaN", () => {
-    const html = mileageHistoryHtml(ONE_READING as PrintData, LABELS, { from: "2026-03-01", to: "2026-03-31" });
-    const points = /<polyline points="([^"]*)"/.exec(html)?.[1];
-    expect(points).toBe("350.0,100.0");
-    expect(html.match(/<circle /g)).toHaveLength(1);
-    expect(html.match(/<tbody>[\s\S]*<\/tbody>/)?.[0].match(/<tr/g)).toHaveLength(1);
-    expect(html).not.toMatch(/NaN|undefined/);
-  });
-
-  it("escapes every value and draws the chart as an SVG polyline", () => {
-    const data = {
-      ...HISTORY,
-      vehicle: { ...HISTORY.vehicle, brand: "<script>x</script>" },
-      rows: HISTORY.rows.map((r) => (r.id === 12 ? { ...r, actorName: "<b>Klaas</b>" } : r)),
-    } as PrintData;
-    const html = mileageHistoryHtml(data, LABELS, { from: "2026-03-01", to: "2026-03-31" });
-    expect(html).not.toContain("<script>x</script>");
-    expect(html).toContain("&lt;script&gt;");
-    expect(html).not.toContain("<b>Klaas</b>");
-    expect(html).toContain("<polyline");
+describe("Afdrukken", () => {
+  it("opens the report print dialog: the plate in the title, every reading (voided too) in the table", async () => {
+    const user = userEvent.setup();
+    renderPanel();
+    await screen.findByTestId("mileage-row-11");
+    await user.click(screen.getByTestId("button-report-print"));
+    const dialog = await screen.findByTestId("dialog-report-print");
+    expect(within(dialog).getByTestId("print-option-table")).toBeInTheDocument();
+    const frame = (await within(dialog).findByTestId("print-preview-frame")) as HTMLIFrameElement;
+    const html = frame.getAttribute("srcdoc") ?? "";
+    expect(html).toContain("Km-historie AB-123-C");
+    for (const km of ["10.000 km", "12.500 km", "11.000 km", "99.999 km"]) expect(html).toContain(km);
+    expect(html).toContain("vervallen");
     expect(html).toContain("Km-stand lager dan vorige");
+    expect(html).toMatch(/1 mrt.? 2026 – 20 mrt.? 2026/);
+    expect(html).not.toMatch(/NaN|undefined/);
   });
 });
 

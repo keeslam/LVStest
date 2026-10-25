@@ -3,17 +3,19 @@
  * vehicle screen (tab "Km-historie") and in Rapporten > Voertuigen; both are
  * admin only, like GET /api/mileage-history/:vehicleId itself.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Ban, FileDown, Printer, RotateCcw } from "lucide-react";
+import { Ban, FileDown, RotateCcw } from "lucide-react";
 import { MILEAGE_SOURCES, type AnalysedRow, type MileageSource } from "@shared/mileage-history";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { HtmlPreviewDialog } from "@/components/documents/html-preview-dialog";
+import { ReportPrintButton } from "@/components/reports/kit/report-print";
+import { ReportFiltersProvider } from "@/pages/reports/report-filters";
+import { chartSvgFromRef, type PrintSection } from "@/lib/report-document-print";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -27,7 +29,6 @@ import { formatLicensePlate } from "@/lib/format-utils";
 import {
   formatKm,
   mileageChartPoints,
-  mileageHistoryHtml,
   type MileageHistoryLabels,
   type MileageHistoryResponse,
 } from "@/lib/mileage-history-print";
@@ -47,7 +48,7 @@ export function MileageHistoryPanel({ vehicleId, defaultFrom, defaultTo }: {
   const [from, setFrom] = useState(defaultFrom ?? `${today.slice(0, 4)}-01-01`);
   const [to, setTo] = useState(defaultTo ?? today);
   const [filter, setFilter] = useState<Filter>("all");
-  const [printHtml, setPrintHtml] = useState<string | null>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
   // A reading to void (or make valid again), waiting for the admin to confirm.
   const [toggleRow, setToggleRow] = useState<AnalysedRow | null>(null);
   const { toast } = useToast();
@@ -111,10 +112,42 @@ export function MileageHistoryPanel({ vehicleId, defaultFrom, defaultTo }: {
     );
   };
 
-  const handlePrint = () => {
-    if (!data) return;
-    setPrintHtml(mileageHistoryHtml(data, labels, { from, to }));
-  };
+  // What the print dialog gets: the tiles, the chart as drawn, and every reading (voided ones too).
+  const printTitle = data ? `${labels.title} ${formatLicensePlate(data.vehicle.licensePlate)}` : labels.title;
+  const printSections: PrintSection[] | null = data ? [
+    {
+      kind: "tiles",
+      tiles: [
+        { label: labels.drivenKm, value: formatKm(data.summary.drivenKm), hint: t("mileageHistory.tiles.readings", { n: data.summary.readings }) },
+        {
+          label: labels.period,
+          value: data.summary.periodFrom && data.summary.periodTo
+            ? formatDateRangeNl(data.summary.periodFrom, data.summary.periodTo)
+            : formatDateRangeNl(from, to),
+        },
+        { label: labels.warnings, value: String(data.summary.warnings) },
+      ],
+    },
+    ...(data.rows.length > 0 ? [
+      { kind: "chart" as const, title: labels.chart, getSvg: () => chartSvgFromRef(chartRef) },
+      {
+        kind: "table" as const,
+        id: "mileage-readings",
+        header: [labels.date, labels.mileage, labels.driven, labels.source, labels.actor, labels.warning],
+        allRows: () => ({
+          rows: data.rows.map((r) => [
+            formatDateTimeNl(r.recordedAt),
+            formatKm(r.mileage),
+            r.drivenSincePrevious == null ? "–" : formatKm(r.drivenSincePrevious),
+            sourceLabel(r.source),
+            r.actorName ?? "–",
+            warningText(r),
+          ]),
+          truncated: false,
+        }),
+      },
+    ] : []),
+  ] : null;
 
   const freeTile = summary?.freeKm == null
     ? t("mileageHistory.tiles.noFreeKm")
@@ -132,9 +165,10 @@ export function MileageHistoryPanel({ vehicleId, defaultFrom, defaultTo }: {
           <Input id={`mileage-to-${vehicleId}`} type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-44" data-testid="input-mileage-to" />
         </div>
         <div className="ml-auto flex gap-2">
-          <Button variant="outline" size="sm" onClick={handlePrint} disabled={!data} data-testid="button-mileage-print">
-            <Printer className="mr-2 h-4 w-4" />{t("mileageHistory.print")}
-          </Button>
+          {/* The dialog reads the period from the report filters; the vehicle screen has none, so give it this panel's own. */}
+          <ReportFiltersProvider key={`${from}|${to}`} initial={{ from, to, preset: "custom" }}>
+            <ReportPrintButton title={printTitle} sections={printSections} />
+          </ReportFiltersProvider>
           <Button variant="outline" size="sm" onClick={handleCsv} disabled={!data} data-testid="button-mileage-csv">
             <FileDown className="mr-2 h-4 w-4" />{t("mileageHistory.csv")}
           </Button>
@@ -191,7 +225,7 @@ export function MileageHistoryPanel({ vehicleId, defaultFrom, defaultTo }: {
             <>
               <div>
                 <h3 className="mb-2 text-sm font-medium">{labels.chart}</h3>
-                <div className="h-64">
+                <div className="h-64" ref={chartRef}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -277,13 +311,6 @@ export function MileageHistoryPanel({ vehicleId, defaultFrom, defaultTo }: {
         </>
       )}
 
-      <HtmlPreviewDialog
-        open={printHtml !== null}
-        onOpenChange={(open) => { if (!open) setPrintHtml(null); }}
-        html={printHtml}
-        title={data ? `${labels.title} ${formatLicensePlate(data.vehicle.licensePlate)}` : labels.title}
-        reportName="mileage-history"
-      />
       <AlertDialog open={toggleRow !== null} onOpenChange={(open) => { if (!open && !toggleVoided.isPending) setToggleRow(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
