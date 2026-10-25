@@ -7,6 +7,7 @@
 import { sql, type SQL } from "drizzle-orm";
 import { customers, vehicles, vehicleWaitlist } from "../../../shared/schema";
 import {
+  WAITLIST_REPORT_DRILLS,
   WAITLIST_REPORT_SORTS,
   WAITLIST_REPORT_TILES,
   type WaitlistReportRow,
@@ -15,7 +16,7 @@ import {
   type WaitlistReportTile,
 } from "../../../shared/reports/waitlist-report";
 import { fillMonths } from "../../../shared/report-kit";
-import { inPeriodSql, officeDaySql, type ReportFilter } from "./report-kit";
+import { inPeriodSql, keyIs, officeDaySql, type ReportDrill, type ReportFilter } from "./report-kit";
 import { rowsOf, sqlReport } from "./sql-report";
 
 const w = vehicleWaitlist;
@@ -36,6 +37,13 @@ function tileWhere(tile: WaitlistReportTile, filter: ReportFilter): SQL {
 }
 
 const tileAmount = (_tile: WaitlistReportTile): SQL => sql`0`;
+
+/** The group expression of the type breakdown (the wanted type) is the drill key. */
+function drillWhere(drill: ReportDrill): SQL {
+  switch (drill.name as (typeof WAITLIST_REPORT_DRILLS)[number]) {
+    case "type": return keyIs(wantedType, drill.key);
+  }
+}
 
 const FROM = sql`${w} JOIN ${customers} ON ${customers.id} = ${w.customerId} LEFT JOIN ${vehicles} ON ${vehicles.id} = ${w.vehicleId}`;
 
@@ -126,6 +134,8 @@ export const waitlistReport = sqlReport<WaitlistReportTile, WaitlistReportSort, 
   defaultSort: "createdAt",
   defaultDir: "desc",
   from: FROM,
+  drills: WAITLIST_REPORT_DRILLS,
+  drillWhere,
   tileWhere,
   tileAmount,
   select,

@@ -8,6 +8,8 @@
 export const REPORT_PAGE_SIZES = [25, 50, 100, 250] as const;
 export const REPORT_EXPORT_LIMIT = 20000;
 export const REPORT_BREAKDOWN_LIMIT = 10;
+/** `key=__null` on /rows and /export means "the line without a value" (a breakdown row whose key is null). */
+export const REPORT_DRILL_NULL_KEY = "__null";
 
 export interface ReportTileTotal {
   count: number;

@@ -10,6 +10,8 @@ import type { ReportTileTotal } from "../report-kit";
  * openAllTime = the same rows as notInvoiced over ALL periods (ignores from/to): the money that is left behind.
  */
 export const TRANSPORT_BILLING_TILES = ["notInvoiced", "invoiced", "toll", "openAllTime"] as const;
+/** Breakdown names that /rows and /export accept as `drill`. */
+export const TRANSPORT_BILLING_DRILLS = ["type"] as const;
 export type TransportBillingTile = (typeof TRANSPORT_BILLING_TILES)[number];
 
 export const TRANSPORT_BILLING_SORTS = ["date", "amount", "tollCost", "transportType", "status"] as const;

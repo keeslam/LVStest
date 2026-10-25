@@ -14,6 +14,8 @@ import type { ReportBreakdownRow, ReportTileTotal } from "../report-kit";
  * (amount = how many times).
  */
 export const CUSTOMER_VALUE_TILES = ["revenue", "costs", "late", "cancelled", "requests"] as const;
+/** Breakdown names that /rows and /export accept as `drill`. */
+export const CUSTOMER_VALUE_DRILLS = ["customer"] as const;
 export type CustomerValueTile = (typeof CUSTOMER_VALUE_TILES)[number];
 
 export const CUSTOMER_VALUE_SORTS = [

@@ -10,7 +10,7 @@ import { vehicleTransports } from "../../shared/schema";
 import { TRANSPORT_BILLING_TILES } from "../../shared/reports/transport-billing-report";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureCustomer, createFixtureVehicle, cleanupFixtures } from "./helpers/fixtures";
-import { expectTilesMatchRows } from "./helpers/report-kit";
+import { expectDrillMatchesLines, expectTilesMatchRows } from "./helpers/report-kit";
 
 describe("transport billing report", () => {
   let staff: TestAgent;
@@ -105,6 +105,19 @@ describe("transport billing report", () => {
 
   it("elke tegel opent precies zijn rijen", async () => {
     await expectTilesMatchRows(staff, "/api/reports/transport-billing", Q, TRANSPORT_BILLING_TILES);
+  });
+
+  it("uitsplitsing: de soorten samen zijn precies de tegel", async () => {
+    const s = (await staff.get("/api/reports/transport-billing/summary").query(Q)).body;
+    for (const tile of ["notInvoiced", "invoiced", "toll"]) {
+      let sum = 0;
+      for (const t of s.byType as Array<{ type: string }>) {
+        const r = await staff.get("/api/reports/transport-billing/rows").query({ ...Q, tile, drill: "type", key: t.type });
+        expect(r.status).toBe(200);
+        sum += r.body.total;
+      }
+      expect(sum, tile).toBe(s.tiles[tile].count);
+    }
   });
 
   it("rechten: alleen het rapportrecht", async () => {

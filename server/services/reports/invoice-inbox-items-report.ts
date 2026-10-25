@@ -7,6 +7,7 @@
 import { sql, type SQL } from "drizzle-orm";
 import { auditLogs, invoiceInboxItems, vehicles } from "../../../shared/schema";
 import {
+  INBOX_ITEM_REPORT_DRILLS,
   INBOX_ITEM_REPORT_SORTS,
   INBOX_ITEM_REPORT_TILES,
   type InboxItemOutcome,
@@ -16,7 +17,7 @@ import {
   type InboxItemReportTile,
 } from "../../../shared/reports/invoice-inbox-report";
 import { fillMonths } from "../../../shared/report-kit";
-import { inPeriodSql, instantIsoSql, officeDaySql, type ReportFilter } from "./report-kit";
+import { inPeriodSql, instantIsoSql, keyIs, officeDaySql, type ReportDrill, type ReportFilter } from "./report-kit";
 import { rowsOf, sqlReport } from "./sql-report";
 
 const i = invoiceInboxItems;
@@ -40,6 +41,13 @@ function tileWhere(tile: InboxItemReportTile, filter: ReportFilter): SQL {
 }
 
 const tileAmount = (_tile: InboxItemReportTile): SQL => sql`0`;
+
+/** The group expression of the reason breakdown (byReason, over the flagged rows) is the drill key. */
+function drillWhere(drill: ReportDrill): SQL {
+  switch (drill.name as (typeof INBOX_ITEM_REPORT_DRILLS)[number]) {
+    case "reason": return keyIs(i.reviewReason, drill.key);
+  }
+}
 
 const FROM = sql`${i} LEFT JOIN ${vehicles} ON ${vehicles.id} = ${i.vehicleId}`;
 
@@ -109,6 +117,8 @@ export const invoiceInboxItemsReport = sqlReport<InboxItemReportTile, InboxItemR
   defaultSort: "receivedAt",
   defaultDir: "desc",
   from: FROM,
+  drills: INBOX_ITEM_REPORT_DRILLS,
+  drillWhere,
   tileWhere,
   tileAmount,
   select,

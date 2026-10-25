@@ -55,6 +55,8 @@ export interface InboxRunReportSummary {
  * `flagged` (a review reason is set) is the source of the reasons list.
  */
 export const INBOX_ITEM_REPORT_TILES = ["all", "autoBooked", "staffBooked", "waiting", "dismissed", "flagged"] as const;
+/** Breakdown names that /rows and /export accept as `drill`. */
+export const INBOX_ITEM_REPORT_DRILLS = ["reason"] as const;
 export type InboxItemReportTile = (typeof INBOX_ITEM_REPORT_TILES)[number];
 
 export const INBOX_ITEM_REPORT_SORTS = ["receivedAt", "fromAddress", "outcome", "reviewReason"] as const;

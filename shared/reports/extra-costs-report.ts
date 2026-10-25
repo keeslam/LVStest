@@ -7,6 +7,8 @@ import type { ReportBreakdownRow, ReportTileTotal } from "../report-kit";
 
 /** extraKm = rentals with extra km cost, fuel = rentals with fuel cost, withExtraKm = rentals that drove extra km. */
 export const EXTRA_COSTS_TILES = ["extraKm", "fuel", "withExtraKm"] as const;
+/** Breakdown names that /rows and /export accept as `drill`. */
+export const EXTRA_COSTS_DRILLS = ["customer", "vehicle"] as const;
 export type ExtraCostsTile = (typeof EXTRA_COSTS_TILES)[number];
 
 export const EXTRA_COSTS_SORTS = ["startDate", "amount", "extraKm", "fuelCost", "licensePlate", "customer"] as const;

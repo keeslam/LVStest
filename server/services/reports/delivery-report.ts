@@ -10,6 +10,7 @@
 import { sql, type SQL } from "drizzle-orm";
 import { customers, vehicles, vehicleTransports } from "../../../shared/schema";
 import {
+  DELIVERY_REPORT_DRILLS,
   DELIVERY_REPORT_SORTS,
   DELIVERY_REPORT_TILES,
   DELIVERY_REPORT_TYPES,
@@ -20,7 +21,7 @@ import {
   type DeliveryReportTile,
 } from "../../../shared/reports/delivery-report";
 import { fillMonths } from "../../../shared/report-kit";
-import { inPeriodSql, money, officeDaySql, textDaySql, type ReportFilter } from "./report-kit";
+import { inPeriodSql, keyIs, money, officeDaySql, textDaySql, type ReportDrill, type ReportFilter } from "./report-kit";
 import { rowsOf, sqlReport } from "./sql-report";
 
 const t = vehicleTransports;
@@ -57,6 +58,14 @@ function tileWhere(tile: DeliveryReportTile, filter: ReportFilter): SQL {
 }
 
 const tileAmount = (_tile: DeliveryReportTile): SQL => km;
+
+/** The group expressions of the type and driver breakdowns are the drill keys. */
+function drillWhere(drill: ReportDrill): SQL {
+  switch (drill.name as (typeof DELIVERY_REPORT_DRILLS)[number]) {
+    case "type": return keyIs(t.transportType, drill.key);
+    case "driver": return keyIs(driver, drill.key);
+  }
+}
 
 const FROM = sql`${t}
   LEFT JOIN ${vehicles} ON ${vehicles.id} = ${t.vehicleId}
@@ -164,6 +173,8 @@ export const deliveryReport = sqlReport<DeliveryReportTile, DeliveryReportSort, 
   defaultSort: "scheduledDate",
   defaultDir: "desc",
   from: FROM,
+  drills: DELIVERY_REPORT_DRILLS,
+  drillWhere,
   tileWhere,
   tileAmount,
   select,

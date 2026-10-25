@@ -9,7 +9,7 @@ import { portalRequestMessages, portalRequests } from "../../shared/schema";
 import { PORTAL_REQUEST_REPORT_TILES } from "../../shared/reports/portal-requests-report";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureCustomer, cleanupFixtures } from "./helpers/fixtures";
-import { expectTilesMatchRows } from "./helpers/report-kit";
+import { expectDrillMatchesLines, expectTilesMatchRows } from "./helpers/report-kit";
 
 describe("portal requests report", () => {
   let staff: TestAgent;
@@ -82,6 +82,13 @@ describe("portal requests report", () => {
   });
 
   it("elke tegel opent precies zijn rijen", () => expectTilesMatchRows(staff, "/api/reports/portal-requests", Q, PORTAL_REQUEST_REPORT_TILES));
+
+  it("uitsplitsing: soort en afhandelaar openen precies hun regels", async () => {
+    const s = (await staff.get("/api/reports/portal-requests/summary").query(Q)).body;
+    await expectDrillMatchesLines(staff, "/api/reports/portal-requests", Q, "all", "type",
+      s.byType.map((t: { type: string; total: number }) => ({ key: t.type, count: t.total })));
+    await expectDrillMatchesLines(staff, "/api/reports/portal-requests", Q, "all", "handler", s.byHandler);
+  });
 
   it("rechten: rapportrecht en portaalrecht", async () => {
     const status = async (perms: string[] | "admin") => (await (await agentFor(perms)).get("/api/reports/portal-requests/summary").query(Q)).status;

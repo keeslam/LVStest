@@ -35,3 +35,34 @@ export async function expectTilesMatchRows(
     expect(total.amount, `amount of tile ${tile}`).toBe(round2(sum));
   }
 }
+
+export interface DrillLine {
+  key: number | string | null;
+  count: number;
+}
+
+/**
+ * Drill-down check: every breakdown line of a report, opened on `/rows` and `/export` with
+ * `drill=<name>&key=<key>`, shows exactly as many rows as the line says (key null = `__null`).
+ */
+export async function expectDrillMatchesLines(
+  agent: TestAgent,
+  basePath: string,
+  params: Record<string, string>,
+  tile: string,
+  drill: string,
+  lines: readonly DrillLine[],
+): Promise<void> {
+  expect(lines.length, `${drill}: lines to check`).toBeGreaterThan(0);
+  for (const line of lines) {
+    const key = line.key === null ? "__null" : String(line.key);
+    const q = queryString({ ...params, tile, drill, key, pageSize: "250" });
+    const rows = await agent.get(`${basePath}/rows?${q}`);
+    expect(rows.status, `${basePath}/rows ${drill}=${key}`).toBe(200);
+    expect(rows.body.total, `${drill}=${key} total`).toBe(line.count);
+    expect(rows.body.rows, `${drill}=${key} rows`).toHaveLength(line.count);
+    const exported = await agent.get(`${basePath}/export?${q}`);
+    expect(exported.status).toBe(200);
+    expect(exported.body.rows, `${drill}=${key} export`).toHaveLength(line.count);
+  }
+}

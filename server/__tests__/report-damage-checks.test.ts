@@ -10,7 +10,7 @@ import { interactiveDamageChecks, reservations } from "../../shared/schema";
 import { DAMAGE_CHECK_REPORT_TILES } from "../../shared/reports/damage-checks-report";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureCustomer, createFixtureReservation, createFixtureVehicle, cleanupFixtures } from "./helpers/fixtures";
-import { expectTilesMatchRows } from "./helpers/report-kit";
+import { expectDrillMatchesLines, expectTilesMatchRows } from "./helpers/report-kit";
 
 describe("damage checks report", () => {
   let staff: TestAgent;
@@ -95,6 +95,12 @@ describe("damage checks report", () => {
   });
 
   it("elke tegel opent precies zijn rijen", () => expectTilesMatchRows(staff, "/api/reports/damage-checks", Q, DAMAGE_CHECK_REPORT_TILES));
+
+  it("uitsplitsing: voertuig en klant (ook zonder klant) openen precies hun regels", async () => {
+    const s = (await staff.get("/api/reports/damage-checks/summary").query(Q)).body;
+    await expectDrillMatchesLines(staff, "/api/reports/damage-checks", Q, "withDamage", "vehicle", s.byVehicle);
+    await expectDrillMatchesLines(staff, "/api/reports/damage-checks", Q, "withDamage", "customer", s.byCustomer);
+  });
 
   it("rechten: rapportrecht en schadecheckrecht", async () => {
     const status = async (perms: string[] | "admin") => (await (await agentFor(perms as any)).get("/api/reports/damage-checks/summary").query(Q)).status;

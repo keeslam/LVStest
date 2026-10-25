@@ -22,6 +22,7 @@ import { sql, type SQL } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { customers, fines, interactiveDamageChecks, portalRequests, reservations, vehicles } from "../../../shared/schema";
 import {
+  CUSTOMER_VALUE_DRILLS,
   CUSTOMER_VALUE_SORTS,
   CUSTOMER_VALUE_TILES,
   type CustomerValueRow,
@@ -31,7 +32,7 @@ import {
 } from "../../../shared/reports/customer-value-report";
 import { REPORT_BREAKDOWN_LIMIT, type ReportBreakdownRow, type ReportTileTotal } from "../../../shared/report-kit";
 import { isoToday } from "../lifecycle";
-import { inPeriodSql, money, NON_EMPTY_JSON_ARRAY, officeDaySql, textDaySql, type ReportDefinition, type ReportFilter } from "./report-kit";
+import { inPeriodSql, keyIs, money, NON_EMPTY_JSON_ARRAY, officeDaySql, textDaySql, type ReportDefinition, type ReportFilter } from "./report-kit";
 import { rowsOf } from "./sql-report";
 
 const r = reservations;
@@ -132,6 +133,10 @@ function tileAmount(tile: CustomerValueTile): SQL {
   }
 }
 
+/** The one drill: a customer row (top 10 key = cv.customer_id; null = the row without a customer). */
+const drillClause = (filter: ReportFilter): SQL =>
+  filter.drill ? sql` AND ${keyIs(sql`cv.customer_id`, filter.drill.key)}` : sql``;
+
 const customerRows = (filter: ReportFilter, today: string = isoToday()): SQL => sql`(${customerValueSql(filter, today)}) cv`;
 
 /** Top 10 of a tile on its amount; count = rentals. */
@@ -171,7 +176,7 @@ async function summary(filter: ReportFilter): Promise<CustomerValueSummary> {
 }
 
 async function count(filter: ReportFilter, tile: CustomerValueTile): Promise<number> {
-  const [row] = await rowsOf<{ n: number }>(sql`SELECT count(*)::int AS n FROM ${customerRows(filter)} WHERE ${tileIs(tile)}`);
+  const [row] = await rowsOf<{ n: number }>(sql`SELECT count(*)::int AS n FROM ${customerRows(filter)} WHERE ${tileIs(tile)}${drillClause(filter)}`);
   return Number(row?.n ?? 0);
 }
 
@@ -205,7 +210,7 @@ async function list(
   const rows = await rowsOf<Record<string, any>>(sql`
     SELECT cv.*, ${tileAmount(tile)} AS amount
     FROM ${customerRows(filter)}
-    WHERE ${tileIs(tile)}
+    WHERE ${tileIs(tile)}${drillClause(filter)}
     ORDER BY ${orderBy(order.sort, order.dir, tile)}
     LIMIT ${limit} OFFSET ${offset}`);
   return rows.map((row) => ({
@@ -233,6 +238,7 @@ export const customerValueReport: ReportDefinition<CustomerValueTile, CustomerVa
   sorts: CUSTOMER_VALUE_SORTS,
   defaultSort: "amount",
   defaultDir: "desc",
+  drills: CUSTOMER_VALUE_DRILLS,
   summary,
   count,
   list,

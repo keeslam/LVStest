@@ -9,6 +9,8 @@ export const DELIVERY_REPORT_TYPES = ["delivery", "repossession"] as const;
 
 /** all = onTime + late + open + undated (every trip is in exactly one of the four). */
 export const DELIVERY_REPORT_TILES = ["all", "onTime", "late", "open", "undated"] as const;
+/** Breakdown names that /rows and /export accept as `drill`. */
+export const DELIVERY_REPORT_DRILLS = ["type", "driver"] as const;
 export type DeliveryReportTile = (typeof DELIVERY_REPORT_TILES)[number];
 
 export const DELIVERY_REPORT_SORTS = ["scheduledDate", "completedDate", "transportType", "driver", "distanceKm", "daysLate"] as const;

@@ -7,6 +7,7 @@
 import { sql, type SQL } from "drizzle-orm";
 import { customers, portalRequestMessages, portalRequests } from "../../../shared/schema";
 import {
+  PORTAL_REQUEST_REPORT_DRILLS,
   PORTAL_REQUEST_REPORT_SORTS,
   PORTAL_REQUEST_REPORT_TILES,
   PORTAL_STALE_DAYS,
@@ -16,7 +17,7 @@ import {
   type PortalRequestReportTile,
 } from "../../../shared/reports/portal-requests-report";
 import { fillMonths } from "../../../shared/report-kit";
-import { inPeriodSql, instantSql, officeDaySql, type ReportFilter } from "./report-kit";
+import { inPeriodSql, instantSql, keyIs, officeDaySql, type ReportDrill, type ReportFilter } from "./report-kit";
 import { reportBreakdown, rowsOf, sqlReport } from "./sql-report";
 
 const r = portalRequests;
@@ -45,6 +46,18 @@ function tileWhere(tile: PortalRequestReportTile, filter: ReportFilter): SQL {
 
 const tileAmount = (_tile: PortalRequestReportTile): SQL => sql`0`;
 
+/** Breakdown keys and the handler line's own rule (done or rejected, with a handler), shared by the summary and the drill. */
+const TYPE_KEY = sql`${r.type}`;
+const HANDLER_KEY = sql`${r.handledBy}`;
+const HANDLED = sql`${r.status} IN ('done', 'rejected') AND ${r.handledBy} IS NOT NULL`;
+
+function drillWhere(drill: ReportDrill): SQL {
+  switch (drill.name as (typeof PORTAL_REQUEST_REPORT_DRILLS)[number]) {
+    case "type": return keyIs(TYPE_KEY, drill.key);
+    case "handler": return sql`${HANDLED} AND ${keyIs(HANDLER_KEY, drill.key)}`;
+  }
+}
+
 const FROM = sql`${r} JOIN ${customers} ON ${customers.id} = ${r.customerId}`;
 
 async function extras(filter: ReportFilter): Promise<Omit<PortalRequestReportSummary, "tiles">> {
@@ -72,8 +85,8 @@ async function extras(filter: ReportFilter): Promise<Omit<PortalRequestReportSum
 
   const byHandler = await reportBreakdown({
     from: FROM,
-    where: sql`${inAll} AND ${r.status} IN ('done', 'rejected') AND ${r.handledBy} IS NOT NULL`,
-    key: sql`${r.handledBy}`,
+    where: sql`${inAll} AND ${HANDLED}`,
+    key: HANDLER_KEY,
     label: sql`${r.handledBy}`,
     amount: sql`0`,
   });
@@ -136,6 +149,8 @@ export const portalRequestsReport = sqlReport<PortalRequestReportTile, PortalReq
   defaultSort: "createdAt",
   defaultDir: "desc",
   from: FROM,
+  drills: PORTAL_REQUEST_REPORT_DRILLS,
+  drillWhere,
   tileWhere,
   tileAmount,
   select,

@@ -10,7 +10,7 @@ import { vehicleWaitlist } from "../../shared/schema";
 import { WAITLIST_REPORT_TILES } from "../../shared/reports/waitlist-report";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureCustomer, createFixtureVehicle, cleanupFixtures } from "./helpers/fixtures";
-import { expectTilesMatchRows } from "./helpers/report-kit";
+import { expectDrillMatchesLines, expectTilesMatchRows } from "./helpers/report-kit";
 
 describe("waitlist report", () => {
   let staff: TestAgent;
@@ -60,6 +60,12 @@ describe("waitlist report", () => {
   });
 
   it("elke tegel opent precies zijn rijen", () => expectTilesMatchRows(staff, "/api/reports/waitlist", Q, WAITLIST_REPORT_TILES));
+
+  it("uitsplitsing: gewenst type (ook zonder) opent precies zijn regels", async () => {
+    const s = (await staff.get("/api/reports/waitlist/summary").query(Q)).body;
+    await expectDrillMatchesLines(staff, "/api/reports/waitlist", Q, "all", "type",
+      s.byType.map((t: { vehicleType: string | null; total: number }) => ({ key: t.vehicleType, count: t.total })));
+  });
 
   it("rechten: rapportrecht en portaalrecht", async () => {
     const status = async (perms: string[] | "admin") => (await (await agentFor(perms)).get("/api/reports/waitlist/summary").query(Q)).status;

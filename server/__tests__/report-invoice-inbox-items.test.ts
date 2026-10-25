@@ -9,7 +9,7 @@ import { db } from "../db";
 import { invoiceInboxItems, auditLogs } from "../../shared/schema";
 import { INBOX_ITEM_REPORT_TILES } from "../../shared/reports/invoice-inbox-report";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
-import { expectTilesMatchRows } from "./helpers/report-kit";
+import { expectDrillMatchesLines, expectTilesMatchRows } from "./helpers/report-kit";
 
 describe("invoice inbox items report", () => {
   let staff: TestAgent;
@@ -80,6 +80,12 @@ describe("invoice inbox items report", () => {
   });
 
   it("elke tegel opent precies zijn rijen", () => expectTilesMatchRows(staff, "/api/reports/invoice-inbox-items", Q, INBOX_ITEM_REPORT_TILES));
+
+  it("uitsplitsing: reden opent precies zijn regels", async () => {
+    const s = (await staff.get("/api/reports/invoice-inbox-items/summary").query(Q)).body;
+    await expectDrillMatchesLines(staff, "/api/reports/invoice-inbox-items", Q, "flagged", "reason",
+      s.byReason.map((r: { reason: string; count: number }) => ({ key: r.reason, count: r.count })));
+  });
 
   it("rechten: rapportrecht en kostenrecht", async () => {
     const status = async (perms: string[] | "admin", path = "summary", extra: Record<string, string> = {}) =>

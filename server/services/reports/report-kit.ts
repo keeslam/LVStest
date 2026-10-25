@@ -15,16 +15,62 @@ import { officeTimeZone } from "../office-time";
 import { dateInZone } from "../../../shared/office-timezone";
 import { UserRole } from "../../../shared/schema";
 import {
+  REPORT_DRILL_NULL_KEY,
   REPORT_EXPORT_LIMIT,
   type ReportExport,
   type ReportPage,
   type ReportTileTotal,
 } from "../../../shared/report-kit";
 
+/** One breakdown line to open on /rows and /export: the breakdown's name and its key (null = the line without a value). */
+export interface ReportDrill {
+  name: string;
+  key: string | null;
+}
+
 export interface ReportFilter {
   from: string;
   to: string;
   vehicleId: number | null;
+  /** Only set by /rows and /export; the summary never reads it. */
+  drill?: ReportDrill;
+}
+
+/** `expression = key` compared as text (a numeric id and a plate take the same path, a junk key just finds nothing); null key = IS NULL. */
+export function keyIs(expression: SQL | AnyPgColumn, key: string | null): SQL {
+  return key === null ? sql`${expression} IS NULL` : sql`(${expression})::text = ${key}`;
+}
+
+const MONTH = /^(\d{4})-(0[1-9]|1[0-2])$/;
+
+/**
+ * `drill` + `key` and `month` of a /rows or /export request, folded into the filter. A month
+ * narrows from/to to the part of that month inside the period (`empty` when none of it is).
+ * Unknown drill name, a drill without key or a malformed month is the caller's 400 INVALID_DRILL.
+ */
+export function narrowReportFilter(
+  query: Record<string, unknown>,
+  filter: ReportFilter,
+  drills: readonly string[] | undefined,
+): { ok: true; filter: ReportFilter; empty: boolean } | { ok: false } {
+  let next = filter;
+  let empty = false;
+  if (query.month !== undefined && query.month !== "") {
+    const m = typeof query.month === "string" ? MONTH.exec(query.month) : null;
+    if (!m) return { ok: false };
+    const first = `${m[1]}-${m[2]}-01`;
+    const last = new Date(Date.UTC(Number(m[1]), Number(m[2]), 0)).toISOString().slice(0, 10);
+    const from = first > filter.from ? first : filter.from;
+    const to = last < filter.to ? last : filter.to;
+    if (from > to) empty = true;
+    else next = { ...next, from, to };
+  }
+  if (query.drill !== undefined && query.drill !== "") {
+    const name = oneOf(query.drill, drills ?? []);
+    if (!name || typeof query.key !== "string" || query.key === "") return { ok: false };
+    next = { ...next, drill: { name, key: query.key === REPORT_DRILL_NULL_KEY ? null : query.key } };
+  }
+  return { ok: true, filter: next, empty };
 }
 
 /** yyyy-mm-dd and a real calendar date (no 2026-02-30). */
@@ -156,6 +202,8 @@ export interface ReportDefinition<Tile extends string, Sort extends string, Row,
   summary(filter: ReportFilter): Promise<Summary>;
   count(filter: ReportFilter, tile: Tile): Promise<number>;
   list(filter: ReportFilter, tile: Tile, order: { sort: Sort; dir: "asc" | "desc" }, limit: number, offset: number): Promise<Row[]>;
+  /** Breakdown names /rows and /export accept as `drill`; without it every drill is a 400. */
+  drills?: readonly string[];
   /** Longest period in days; a longer one is refused with 400 PERIOD_TOO_LONG on all three routes. */
   maxDays?: number;
   /** Applied to every row of /rows and /export for this viewer (e.g. blank out km readings for non-admins). */
@@ -199,6 +247,7 @@ export function mountReport<Tile extends string, Sort extends string, Row, Summa
   };
   const redactRows = (rows: Row[], viewer: ReportViewer): Row[] => (def.redact ? rows.map((r) => def.redact!(r, viewer)) : rows);
   const invalidTile = { status: 400, body: { message: "Invalid tile", code: "INVALID_TILE" } };
+  const invalidDrill = { status: 400, body: { message: "Invalid drill-down", code: "INVALID_DRILL" } };
 
   route("summary", async (_query, filter) => {
     const summary = await def.summary(filter);
@@ -209,10 +258,16 @@ export function mountReport<Tile extends string, Sort extends string, Row, Summa
     const tile = oneOf(query.tile, def.tiles);
     if (!tile) return invalidTile;
     const paging = parseReportPaging(query, def.sorts, def.defaultSort, def.defaultDir);
-    const total = await def.count(filter, tile);
+    const narrowed = narrowReportFilter(query, filter, def.drills);
+    if (!narrowed.ok) return invalidDrill;
+    if (narrowed.empty) {
+      const none: ReportPage<Row> = { rows: [], total: 0, page: 1, pageSize: paging.pageSize };
+      return { status: 200, body: none };
+    }
+    const total = await def.count(narrowed.filter, tile);
     const pages = Math.max(1, Math.ceil(total / paging.pageSize));
     const page = Math.min(paging.page, pages);
-    const rows = await def.list(filter, tile, { sort: paging.sort, dir: paging.dir }, paging.pageSize, (page - 1) * paging.pageSize);
+    const rows = await def.list(narrowed.filter, tile, { sort: paging.sort, dir: paging.dir }, paging.pageSize, (page - 1) * paging.pageSize);
     const body: ReportPage<Row> = { rows: redactRows(rows, viewer), total, page, pageSize: paging.pageSize };
     return { status: 200, body };
   });
@@ -221,7 +276,10 @@ export function mountReport<Tile extends string, Sort extends string, Row, Summa
     const tile = oneOf(query.tile, def.tiles);
     if (!tile) return invalidTile;
     const paging = parseReportPaging(query, def.sorts, def.defaultSort, def.defaultDir);
-    const rows = await def.list(filter, tile, { sort: paging.sort, dir: paging.dir }, REPORT_EXPORT_LIMIT + 1, 0);
+    const narrowed = narrowReportFilter(query, filter, def.drills);
+    if (!narrowed.ok) return invalidDrill;
+    if (narrowed.empty) return { status: 200, body: { rows: [], truncated: false } satisfies ReportExport<Row> };
+    const rows = await def.list(narrowed.filter, tile, { sort: paging.sort, dir: paging.dir }, REPORT_EXPORT_LIMIT + 1, 0);
     const body: ReportExport<Row> = { rows: redactRows(rows.slice(0, REPORT_EXPORT_LIMIT), viewer), truncated: rows.length > REPORT_EXPORT_LIMIT };
     return { status: 200, body };
   });

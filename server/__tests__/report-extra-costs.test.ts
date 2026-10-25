@@ -10,7 +10,7 @@ import { reservations } from "../../shared/schema";
 import { EXTRA_COSTS_TILES } from "../../shared/reports/extra-costs-report";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureCustomer, createFixtureReservation, createFixtureVehicle, cleanupFixtures } from "./helpers/fixtures";
-import { expectTilesMatchRows } from "./helpers/report-kit";
+import { expectDrillMatchesLines, expectTilesMatchRows } from "./helpers/report-kit";
 
 describe("extra km and fuel report", () => {
   let staff: TestAgent;
@@ -71,6 +71,12 @@ describe("extra km and fuel report", () => {
 
   it("elke tegel opent precies zijn rijen", async () => {
     await expectTilesMatchRows(staff, "/api/reports/extra-costs", Q, EXTRA_COSTS_TILES);
+  });
+
+  it("uitsplitsing: klant en voertuig openen precies hun regels", async () => {
+    const s = (await staff.get("/api/reports/extra-costs/summary").query(Q)).body;
+    await expectDrillMatchesLines(staff, "/api/reports/extra-costs", Q, "fuel", "customer", s.byCustomer);
+    await expectDrillMatchesLines(staff, "/api/reports/extra-costs", Q, "fuel", "vehicle", s.byVehicle);
   });
 
   it("rechten: alleen het rapportrecht", async () => {

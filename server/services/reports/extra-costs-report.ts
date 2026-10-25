@@ -7,6 +7,7 @@
 import { sql, type SQL } from "drizzle-orm";
 import { customers, reservations, vehicles } from "../../../shared/schema";
 import {
+  EXTRA_COSTS_DRILLS,
   EXTRA_COSTS_SORTS,
   EXTRA_COSTS_TILES,
   type ExtraCostsRow,
@@ -15,7 +16,7 @@ import {
   type ExtraCostsTile,
 } from "../../../shared/reports/extra-costs-report";
 import { fillMonths } from "../../../shared/report-kit";
-import { inPeriodSql, money, textDaySql, type ReportFilter } from "./report-kit";
+import { inPeriodSql, keyIs, money, textDaySql, type ReportDrill, type ReportFilter } from "./report-kit";
 import { reportBreakdown, rowsOf, sqlReport } from "./sql-report";
 
 const startDay = textDaySql(reservations.startDate);
@@ -53,6 +54,17 @@ const FROM = sql`${reservations}
 /** Rentals with extra km cost or fuel cost: what the breakdowns and the month chart add up. */
 const withCosts = (filter: ReportFilter): SQL => sql`(${tileWhere("extraKm", filter)} OR ${tileWhere("fuel", filter)})`;
 
+/** The key expression of each breakdown, shared by the summary and the drill so the counts agree. */
+const CUSTOMER_KEY = sql`${customers.id}`;
+const VEHICLE_KEY = sql`${vehicles.id}`;
+
+function drillWhere(drill: ReportDrill): SQL {
+  switch (drill.name as (typeof EXTRA_COSTS_DRILLS)[number]) {
+    case "customer": return keyIs(CUSTOMER_KEY, drill.key);
+    case "vehicle": return keyIs(VEHICLE_KEY, drill.key);
+  }
+}
+
 const breakdown = (filter: ReportFilter, key: SQL, label: SQL) =>
   reportBreakdown({ from: FROM, where: withCosts(filter), key, label, amount: sql`${extraKmCost} + ${fuelCost}` });
 
@@ -71,8 +83,8 @@ async function extras(filter: ReportFilter): Promise<Omit<ExtraCostsSummary, "ti
   return {
     totalExtraKm: Number(km?.total_km ?? 0),
     byMonth: fillMonths(months, (month) => ({ month, extraKmCost: 0, fuelCost: 0 })),
-    byCustomer: await breakdown(filter, sql`${customers.id}`, sql`${customers.name}`),
-    byVehicle: await breakdown(filter, sql`${vehicles.id}`, sql`${vehicles.licensePlate}`),
+    byCustomer: await breakdown(filter, CUSTOMER_KEY, sql`${customers.name}`),
+    byVehicle: await breakdown(filter, VEHICLE_KEY, sql`${vehicles.licensePlate}`),
   };
 }
 
@@ -121,6 +133,8 @@ export const extraCostsReport = sqlReport<ExtraCostsTile, ExtraCostsSort, ExtraC
   defaultSort: "startDate",
   defaultDir: "desc",
   from: FROM,
+  drills: EXTRA_COSTS_DRILLS,
+  drillWhere,
   tileWhere,
   tileAmount,
   select,

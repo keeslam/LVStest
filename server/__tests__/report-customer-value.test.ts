@@ -11,7 +11,7 @@ import { fines, interactiveDamageChecks, portalRequests, reservations } from "..
 import { CUSTOMER_VALUE_TILES } from "../../shared/reports/customer-value-report";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureCustomer, createFixtureReservation, createFixtureVehicle, cleanupFixtures } from "./helpers/fixtures";
-import { expectTilesMatchRows } from "./helpers/report-kit";
+import { expectDrillMatchesLines, expectTilesMatchRows } from "./helpers/report-kit";
 
 describe("customer value report", () => {
   let staff: TestAgent;
@@ -145,6 +145,14 @@ describe("customer value report", () => {
 
   it("elke tegel opent precies zijn rijen", async () => {
     await expectTilesMatchRows(staff, "/api/reports/customer-value", Q, CUSTOMER_VALUE_TILES);
+  });
+
+  it("uitsplitsing: een klant uit de top 10 opent precies zijn regel", async () => {
+    const s = (await staff.get("/api/reports/customer-value/summary").query(Q)).body;
+    await expectDrillMatchesLines(staff, "/api/reports/customer-value", Q, "revenue", "customer",
+      s.topRevenue.map((r: { key: number | null }) => ({ key: r.key, count: 1 })));
+    await expectDrillMatchesLines(staff, "/api/reports/customer-value", Q, "costs", "customer",
+      s.topCosts.map((r: { key: number | null }) => ({ key: r.key, count: 1 })));
   });
 
   it("rechten: alleen het rapportrecht", async () => {

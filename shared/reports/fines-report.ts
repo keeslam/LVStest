@@ -7,6 +7,8 @@ import type { ReportBreakdownRow, ReportTileTotal } from "../report-kit";
 
 /** new / linked / cancelled by status, legacy = the old statuses, total = everything but cancelled. */
 export const FINE_REPORT_TILES = ["new", "linked", "cancelled", "legacy", "total"] as const;
+/** Breakdown names that /rows and /export accept as `drill`. */
+export const FINE_REPORT_DRILLS = ["customer", "vehicle", "driver"] as const;
 export type FineReportTile = (typeof FINE_REPORT_TILES)[number];
 
 export const FINE_REPORT_SORTS = ["offenceAt", "amount", "status", "licensePlate", "customer"] as const;

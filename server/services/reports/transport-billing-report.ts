@@ -8,6 +8,7 @@
 import { sql, type SQL } from "drizzle-orm";
 import { customers, vehicles, vehicleTransports } from "../../../shared/schema";
 import {
+  TRANSPORT_BILLING_DRILLS,
   TRANSPORT_BILLING_SORTS,
   TRANSPORT_BILLING_TILES,
   type TransportBillingRow,
@@ -16,7 +17,7 @@ import {
   type TransportBillingTile,
 } from "../../../shared/reports/transport-billing-report";
 import { fillMonths } from "../../../shared/report-kit";
-import { inPeriodSql, money, textDaySql, type ReportFilter } from "./report-kit";
+import { inPeriodSql, keyIs, money, textDaySql, type ReportDrill, type ReportFilter } from "./report-kit";
 import { rowsOf, sqlReport } from "./sql-report";
 
 const t = vehicleTransports;
@@ -50,6 +51,13 @@ function tileWhere(tile: TransportBillingTile, filter: ReportFilter): SQL {
 /** The money a tile adds up. */
 function tileAmount(tile: TransportBillingTile): SQL {
   return tile === "toll" ? tollCost : billableAmount;
+}
+
+/** The group expression of the type breakdown is the drill key. */
+function drillWhere(drill: ReportDrill): SQL {
+  switch (drill.name as (typeof TRANSPORT_BILLING_DRILLS)[number]) {
+    case "type": return keyIs(t.transportType, drill.key);
+  }
 }
 
 const FROM = sql`${t}
@@ -138,6 +146,8 @@ export const transportBillingReport = sqlReport<TransportBillingTile, TransportB
   defaultSort: "date",
   defaultDir: "desc",
   from: FROM,
+  drills: TRANSPORT_BILLING_DRILLS,
+  drillWhere,
   tileWhere,
   tileAmount,
   select,

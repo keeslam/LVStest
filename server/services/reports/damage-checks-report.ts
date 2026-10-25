@@ -7,6 +7,7 @@
 import { sql, type SQL } from "drizzle-orm";
 import { customers, interactiveDamageChecks, reservations, vehicles } from "../../../shared/schema";
 import {
+  DAMAGE_CHECK_REPORT_DRILLS,
   DAMAGE_CHECK_REPORT_SORTS,
   DAMAGE_CHECK_REPORT_TILES,
   type DamageCheckReportRow,
@@ -15,7 +16,7 @@ import {
   type DamageCheckReportTile,
 } from "../../../shared/reports/damage-checks-report";
 import { fillMonths } from "../../../shared/report-kit";
-import { inPeriodSql, instantIsoSql, NON_EMPTY_JSON_ARRAY, officeDaySql, type ReportFilter } from "./report-kit";
+import { inPeriodSql, instantIsoSql, keyIs, NON_EMPTY_JSON_ARRAY, officeDaySql, type ReportDrill, type ReportFilter } from "./report-kit";
 import { reportBreakdown, rowsOf, sqlReport } from "./sql-report";
 
 const d = interactiveDamageChecks;
@@ -42,6 +43,17 @@ function tileWhere(tile: DamageCheckReportTile, filter: ReportFilter): SQL {
 
 const tileAmount = (_tile: DamageCheckReportTile): SQL => sql`0`;
 
+/** The key expression of each breakdown, shared by the summary and the drill so the counts agree. */
+const VEHICLE_KEY = sql`${d.vehicleId}`;
+const CUSTOMER_KEY = sql`${r.customerId}`;
+
+function drillWhere(drill: ReportDrill): SQL {
+  switch (drill.name as (typeof DAMAGE_CHECK_REPORT_DRILLS)[number]) {
+    case "vehicle": return keyIs(VEHICLE_KEY, drill.key);
+    case "customer": return keyIs(CUSTOMER_KEY, drill.key);
+  }
+}
+
 const FROM = sql`${d}
   INNER JOIN ${vehicles} ON ${vehicles.id} = ${d.vehicleId}
   LEFT JOIN ${r} ON ${r.id} = ${d.reservationId}
@@ -61,8 +73,8 @@ async function extras(filter: ReportFilter): Promise<Omit<DamageCheckReportSumma
   const where = tileWhere("withDamage", filter);
   const amount = tileAmount("withDamage");
   const [byVehicle, byCustomer] = await Promise.all([
-    reportBreakdown({ from: FROM, where, key: sql`${d.vehicleId}`, label: sql`${vehicles.licensePlate}`, amount }),
-    reportBreakdown({ from: FROM, where, key: sql`${r.customerId}`, label: sql`${customers.name}`, amount }),
+    reportBreakdown({ from: FROM, where, key: VEHICLE_KEY, label: sql`${vehicles.licensePlate}`, amount }),
+    reportBreakdown({ from: FROM, where, key: CUSTOMER_KEY, label: sql`${customers.name}`, amount }),
   ]);
 
   return {
@@ -111,6 +123,8 @@ export const damageChecksReport = sqlReport<DamageCheckReportTile, DamageCheckRe
   defaultSort: "checkDate",
   defaultDir: "desc",
   from: FROM,
+  drills: DAMAGE_CHECK_REPORT_DRILLS,
+  drillWhere,
   tileWhere,
   tileAmount,
   select,

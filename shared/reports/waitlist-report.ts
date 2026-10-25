@@ -6,6 +6,8 @@ import type { ReportTileTotal } from "../report-kit";
 
 /** All tiles: office day of created_at inside the period. open = active or contacted. */
 export const WAITLIST_REPORT_TILES = ["all", "open", "fulfilled", "cancelled"] as const;
+/** Breakdown names that /rows and /export accept as `drill`. */
+export const WAITLIST_REPORT_DRILLS = ["type"] as const;
 export type WaitlistReportTile = (typeof WAITLIST_REPORT_TILES)[number];
 
 export const WAITLIST_REPORT_SORTS = ["createdAt", "preferredStartDate", "status", "customer", "vehicleType"] as const;

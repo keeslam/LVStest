@@ -6,6 +6,8 @@ import type { ReportBreakdownRow, ReportTileTotal } from "../report-kit";
 
 /** pickup + return = all; withDamage = return checks with at least one damage marker. */
 export const DAMAGE_CHECK_REPORT_TILES = ["all", "pickup", "return", "withDamage"] as const;
+/** Breakdown names that /rows and /export accept as `drill`. */
+export const DAMAGE_CHECK_REPORT_DRILLS = ["vehicle", "customer"] as const;
 export type DamageCheckReportTile = (typeof DAMAGE_CHECK_REPORT_TILES)[number];
 
 export const DAMAGE_CHECK_REPORT_SORTS = ["checkDate", "checkType", "licensePlate", "customer"] as const;

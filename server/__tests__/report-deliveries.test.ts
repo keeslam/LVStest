@@ -13,7 +13,7 @@ import { dateInZone } from "../../shared/office-timezone";
 import { officeTimeZone } from "../services/office-time";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureCustomer, createFixtureVehicle, cleanupFixtures } from "./helpers/fixtures";
-import { expectTilesMatchRows } from "./helpers/report-kit";
+import { expectDrillMatchesLines, expectTilesMatchRows } from "./helpers/report-kit";
 
 const addDays = (ymd: string, n: number) => new Date(Date.parse(`${ymd}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 
@@ -110,6 +110,14 @@ describe("deliveries and collections report", () => {
   });
 
   it("elke tegel opent precies zijn rijen", () => expectTilesMatchRows(staff, "/api/reports/deliveries", Q, DELIVERY_REPORT_TILES));
+
+  it("uitsplitsing: soort en medewerker (ook zonder) openen precies hun regels", async () => {
+    const s = (await staff.get("/api/reports/deliveries/summary").query(Q)).body;
+    await expectDrillMatchesLines(staff, "/api/reports/deliveries", Q, "all", "type",
+      s.byType.map((t: { type: string; total: number }) => ({ key: t.type, count: t.total })));
+    await expectDrillMatchesLines(staff, "/api/reports/deliveries", Q, "all", "driver",
+      s.byDriver.map((d: { driver: string | null; trips: number }) => ({ key: d.driver, count: d.trips })));
+  });
 
   it("rechten: rapportrecht en voertuig- of reserveringsrecht", async () => {
     const status = async (perms: string[]) => (await (await agentFor(perms)).get("/api/reports/deliveries/summary").query(Q)).status;
