@@ -30,6 +30,7 @@ import { portalRequestsReport } from "../services/reports/portal-requests-report
 import { waitlistReport } from "../services/reports/waitlist-report";
 import { invoiceInboxRunsReport } from "../services/reports/invoice-inbox-runs-report";
 import { invoiceInboxItemsReport } from "../services/reports/invoice-inbox-items-report";
+import { deliveryReport } from "../services/reports/delivery-report";
 import { occupancyReport } from "../services/reports/occupancy-report";
 import { maintenanceOutlookReport } from "../services/reports/maintenance-outlook-report";
 import { fleetMileageReport } from "../services/reports/fleet-mileage-report";
@@ -82,6 +83,9 @@ export function registerReportRoutes(app: Express): void {
   mountReport(app, "/api/reports/invoice-inbox-runs", inboxRunGuards, invoiceInboxRunsReport);
   // The invoices themselves need the report right and the right of GET /api/expenses/inbox/items (not settings).
   mountReport(app, "/api/reports/invoice-inbox-items", [reportRight, hasPermission(UserPermission.MANAGE_EXPENSES)], invoiceInboxItemsReport);
+  // Deliveries and collections need the report right and the source right of GET /api/transports.
+  const deliveryGuards = [reportRight, hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES, UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS)];
+  mountReport(app, "/api/reports/deliveries", deliveryGuards, deliveryReport);
 
 
   // ============================================
