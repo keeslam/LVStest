@@ -91,7 +91,7 @@ import {
   snapshotCounts,
   type CascadeSnapshot,
 } from "./services/cascade-snapshot";
-import { getDataSource, getField as getReportField, RENAMED_REPORT_FIELDS, REMOVED_REPORT_FIELDS } from "../shared/report-builder-config";
+import { getDataSource, getField as getReportField, RENAMED_REPORT_FIELDS, REMOVED_REPORT_FIELDS, isReportPeriodField, type ReportScope } from "../shared/report-builder-config";
 import { officeDaySql, textDaySql } from "./services/reports/report-kit";
 import { buildDefaultDamageCheckCanvasFields } from "../shared/damage-check-default-layout";
 
@@ -6601,12 +6601,17 @@ export class DatabaseStorage implements IStorage {
     return newReport;
   }
 
+  async updateSavedReport(id: number, report: Partial<InsertSavedReport>): Promise<SavedReport | undefined> {
+    const [updated] = await db.update(savedReports).set({ ...report, updatedAt: new Date() }).where(eq(savedReports.id, id)).returning();
+    return updated || undefined;
+  }
+
   async deleteSavedReport(id: number): Promise<boolean> {
     const result = await db.delete(savedReports).where(eq(savedReports.id, id));
     return (result.rowCount ?? 0) > 0;
   }
 
-  async executeReport(configuration: any): Promise<any[]> {
+  async executeReport(configuration: any, scope?: ReportScope): Promise<any[]> {
     const { columns, filters, groupBy, dataSources } = configuration ?? {};
 
     if (!Array.isArray(columns) || columns.length === 0) {
@@ -6669,18 +6674,22 @@ export class DatabaseStorage implements IStorage {
     const identFor = (table: string, field: string) =>
       sql`${sql.identifier(mainTable)}.${sql.identifier(resolveColumn(table, field))}`;
 
-    // A group expression. Per month: the calendar month in office time for a timestamp
-    // column, the month of a yyyy-mm-dd text for a text date; plain: the column itself.
-    const groupExpr = (table: string, field: string, period?: string) => {
+    // The office day of a date field, per column type (the same reading the month grouping uses):
+    // a real date as is, a timestamp in office time, a yyyy-mm-dd text through textDaySql.
+    const dayExpr = (table: string, field: string): SQL => {
       const ident = identFor(table, field);
-      if (!period) return ident;
       const col = tableObj[canonField(table, field)];
       const isTimestamp = col?.columnType === "PgTimestamp" || col?.columnType === "PgTimestampString";
       const isRealDate = col?.columnType === "PgDate" || col?.columnType === "PgDateString";
-      if (isRealDate) return sql`to_char(${ident}, 'YYYY-MM')`;
-      return isTimestamp
-        ? sql`to_char(${officeDaySql(ident)}, 'YYYY-MM')`
-        : sql`to_char(${textDaySql(ident)}, 'YYYY-MM')`;
+      if (isRealDate) return ident;
+      return isTimestamp ? officeDaySql(ident) : textDaySql(ident);
+    };
+
+    // A group expression. Per month: the calendar month in office time for a timestamp
+    // column, the month of a yyyy-mm-dd text for a text date; plain: the column itself.
+    const groupExpr = (table: string, field: string, period?: string) => {
+      if (!period) return identFor(table, field);
+      return sql`to_char(${dayExpr(table, field)}, 'YYYY-MM')`;
     };
 
     // Grouping: validate the period and the field, canonicalise the field name.
@@ -6860,6 +6869,33 @@ export class DatabaseStorage implements IStorage {
           break;
         default:
           throw new ReportValidationError(`Unknown operator: ${operator}`);
+      }
+    }
+
+    // The scope of a tab: the period on the report's own date field and one vehicle. Always
+    // bound parameters. No period field (or no scope) means the whole table; a source without
+    // a vehicle column ignores the vehicle.
+    if (scope !== undefined && scope !== null) {
+      const YMD = /^\d{4}-\d{2}-\d{2}$/;
+      const validDay = (v: unknown) => typeof v === "string" && YMD.test(v) && !Number.isNaN(Date.parse(v));
+      if (typeof scope !== "object" || !validDay(scope.from) || !validDay(scope.to)
+        || (scope.vehicleId !== undefined && scope.vehicleId !== null && !Number.isInteger(scope.vehicleId))) {
+        throw new ReportValidationError("De periode klopt niet; kies een begin- en einddatum.", "REPORT_SCOPE_INVALID");
+      }
+      const periodField = configuration?.periodField;
+      if (periodField !== undefined && periodField !== null && periodField !== "") {
+        if (!isReportPeriodField(mainSource.id, canonField(mainTable, String(periodField)))) {
+          throw new ReportValidationError(
+            `Het periodeveld ${mainTable}.${String(periodField)} is geen datumveld van deze bron.`,
+            "REPORT_PERIOD_FIELD_INVALID",
+            `${mainTable}.${String(periodField)}`,
+          );
+        }
+        const day = dayExpr(mainTable, String(periodField));
+        whereParts.push(sql`${day} >= ${scope.from}::date AND ${day} <= ${scope.to}::date`);
+      }
+      if (scope.vehicleId !== undefined && scope.vehicleId !== null && mainSource.vehicleField) {
+        whereParts.push(sql`${identFor(mainTable, mainSource.vehicleField)} = ${scope.vehicleId}`);
       }
     }
 

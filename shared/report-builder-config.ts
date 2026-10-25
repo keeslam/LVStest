@@ -31,6 +31,8 @@ export interface DataSource {
   fields: DataSourceField[];
   /** No access rule means the report right alone is enough. */
   access?: ReportSourceAccess;
+  /** The column that holds the vehicle id (scope on one vehicle); none for sources without a vehicle. */
+  vehicleField?: string;
   joinable?: {
     sourceTable: string;
     sourceField: string;
@@ -61,6 +63,17 @@ export interface ReportGrouping {
   period?: "month";
 }
 
+/** Tabs a saved builder report can be placed on (not overview, not fiscal). */
+export const SAVED_REPORT_TABS = ['expenses', 'vehicles', 'customers', 'transports', 'financial', 'portal', 'office'] as const;
+export type SavedReportTab = typeof SAVED_REPORT_TABS[number];
+
+/** The period (office days, both ends included) and optional vehicle a tab runs a report within. */
+export interface ReportScope {
+  from: string;
+  to: string;
+  vehicleId?: number;
+}
+
 export interface ReportConfiguration {
   name: string;
   description?: string;
@@ -74,6 +87,10 @@ export interface ReportConfiguration {
     direction: 'ASC' | 'DESC';
   }[];
   limit?: number;
+  /** Tab the saved report is shown on; none means only under Saved reports. */
+  tab?: SavedReportTab;
+  /** Date field of the source that the period of a tab applies to; none means the whole table. */
+  periodField?: string;
 }
 
 const textOperators: FilterOperator[] = [
@@ -113,6 +130,7 @@ const CUSTOMER_ACCESS: ReportSourceAccess = {
 export const DATA_SOURCES: DataSource[] = [
   {
     id: 'vehicles',
+    vehicleField: 'id',
     name: 'Vehicles',
     table: 'vehicles',
     fields: [
@@ -150,6 +168,7 @@ export const DATA_SOURCES: DataSource[] = [
   },
   {
     id: 'reservations',
+    vehicleField: 'vehicleId',
     name: 'Reservations',
     table: 'reservations',
     fields: [
@@ -167,6 +186,7 @@ export const DATA_SOURCES: DataSource[] = [
   },
   {
     id: 'expenses',
+    vehicleField: 'vehicleId',
     name: 'Expenses',
     table: 'expenses',
     fields: [
@@ -193,6 +213,7 @@ export const DATA_SOURCES: DataSource[] = [
   },
   {
     id: 'fines',
+    vehicleField: 'vehicleId',
     name: 'Fines',
     table: 'fines',
     access: { anyOf: [UserPermission.VIEW_FINES, UserPermission.MANAGE_FINES] },
@@ -217,6 +238,7 @@ export const DATA_SOURCES: DataSource[] = [
   },
   {
     id: 'transports',
+    vehicleField: 'vehicleId',
     name: 'Transports',
     table: 'vehicle_transports',
     access: {
@@ -249,6 +271,7 @@ export const DATA_SOURCES: DataSource[] = [
   {
     // Virtual table: reservations AS workshop_visits, maintenance blocks only.
     id: 'workshop_visits',
+    vehicleField: 'vehicleId',
     name: 'Workshop Visits',
     table: 'workshop_visits',
     access: {
@@ -270,6 +293,7 @@ export const DATA_SOURCES: DataSource[] = [
   },
   {
     id: 'damage_checks',
+    vehicleField: 'vehicleId',
     name: 'Damage Checks',
     table: 'interactive_damage_checks',
     access: { anyOf: [UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS] },
@@ -286,6 +310,7 @@ export const DATA_SOURCES: DataSource[] = [
   },
   {
     id: 'mileage_readings',
+    vehicleField: 'vehicleId',
     name: 'Mileage History',
     table: 'vehicle_mileage_readings',
     access: { adminOnly: true },
@@ -321,6 +346,12 @@ export function canUseReportSource(user: ReportSourceUser | null | undefined, so
 
 export function getDataSource(id: string): DataSource | undefined {
   return DATA_SOURCES.find(ds => ds.id === id);
+}
+
+/** A date field of the source, as a report period can apply to it. */
+export function isReportPeriodField(sourceId: string, field: unknown): boolean {
+  const source = getDataSource(sourceId);
+  return !!source && typeof field === 'string' && source.fields.some((f) => f.name === field && f.type === 'date');
 }
 
 export function getField(table: string, fieldName: string): DataSourceField | undefined {

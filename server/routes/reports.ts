@@ -3,7 +3,7 @@ import { storage } from "../storage";
 import { ReportValidationError } from "../database-storage";
 import { UserPermission } from "../../shared/schema";
 import { hasPermission, requireAdmin } from "../middleware/permissions.js";
-import { getDataSource, canUseReportSource, type DataSource } from "../../shared/report-builder-config";
+import { getDataSource, canUseReportSource, isReportPeriodField, SAVED_REPORT_TABS, type DataSource } from "../../shared/report-builder-config";
 
 /**
  * Every data source has its own right (see canUseReportSource in shared/report-builder-config.ts).
@@ -15,6 +15,24 @@ function deniedReportSource(user: Express.User | undefined, dataSources: unknown
   for (const id of dataSources) {
     const source = getDataSource(String(id));
     if (source && !canUseReportSource(user, source)) return source;
+  }
+  return null;
+}
+/**
+ * The tab and the period field of a saved report. Returns the error body to send, or null
+ * when both are fine (both are optional; no tab means the report only shows under Saved reports).
+ */
+function invalidTabSettings(config: any): { message: string; code: string; field?: string } | null {
+  const tab = config?.tab;
+  if (tab !== undefined && tab !== null && !(SAVED_REPORT_TABS as readonly string[]).includes(tab)) {
+    return { message: "Dit tabblad kan geen eigen rapport tonen.", code: "REPORT_TAB_INVALID", field: String(tab) };
+  }
+  const periodField = config?.periodField;
+  if (periodField !== undefined && periodField !== null && periodField !== "") {
+    const source = Array.isArray(config.dataSources) ? String(config.dataSources[0]) : "";
+    if (!isReportPeriodField(source, periodField)) {
+      return { message: "Het periodeveld moet een datumveld van de bron zijn.", code: "REPORT_PERIOD_FIELD_INVALID", field: String(periodField) };
+    }
   }
   return null;
 }
@@ -142,6 +160,8 @@ export function registerReportRoutes(app: Express): void {
 
       const denied = deniedReportSource(user, config.dataSources);
       if (denied) return res.status(403).json(sourceDeniedBody(denied));
+      const invalid = invalidTabSettings(config);
+      if (invalid) return res.status(400).json(invalid);
 
       const dataSources: string[] = Array.isArray(config.dataSources) ? config.dataSources : [];
       const columns: Array<{ source?: string; field?: string }> = Array.isArray(config.columns) ? config.columns : [];
@@ -167,6 +187,48 @@ export function registerReportRoutes(app: Express): void {
     }
   });
 
+  // Update a saved report. The user needs the right for the source of the existing report
+  // and of the new one; an unknown report is 404 before anything else.
+  app.put("/api/reports/saved/:id", hasPermission(UserPermission.MANAGE_REPORTS), async (req: Request, res: Response) => {
+    try {
+      const user = req.user;
+      const id = parseInt(req.params.id, 10);
+      if (Number.isNaN(id)) return res.status(404).json({ message: "Report not found" });
+      const config: any = req.body;
+
+      const existing = await storage.getSavedReport(id);
+      if (!existing) return res.status(404).json({ message: "Report not found" });
+
+      const deniedExisting = deniedReportSource(user, existing.configuration?.dataSources ?? [existing.dataSource]);
+      if (deniedExisting) return res.status(403).json(sourceDeniedBody(deniedExisting));
+      const denied = deniedReportSource(user, config?.dataSources);
+      if (denied) return res.status(403).json(sourceDeniedBody(denied));
+
+      if (!config?.name) {
+        return res.status(400).json({ message: "Report name is required" });
+      }
+      const invalid = invalidTabSettings(config);
+      if (invalid) return res.status(400).json(invalid);
+
+      const dataSources: string[] = Array.isArray(config.dataSources) ? config.dataSources : [];
+      const columns: Array<{ source?: string; field?: string }> = Array.isArray(config.columns) ? config.columns : [];
+      const report = await storage.updateSavedReport(id, {
+        name: config.name,
+        description: config.description || null,
+        dataSource: dataSources[0] || "vehicles",
+        fields: columns.map((c) => (c.source ? `${c.source}.${c.field}` : String(c.field ?? ""))).filter(Boolean),
+        configuration: config,
+        updatedBy: user ? user.username : null,
+      });
+      if (!report) return res.status(404).json({ message: "Report not found" });
+
+      res.json(report);
+    } catch (error) {
+      console.error("Error updating report:", error);
+      res.status(500).json({ message: "Error updating report" });
+    }
+  });
+
   // Delete a saved report
   app.delete("/api/reports/saved/:id", hasPermission(UserPermission.MANAGE_REPORTS), async (req: Request, res: Response) => {
     try {
@@ -182,7 +244,7 @@ export function registerReportRoutes(app: Express): void {
   // Execute a report
   app.post("/api/reports/execute", hasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS), async (req: Request, res: Response) => {
     try {
-      const config: any = req.body;
+      const { scope, ...config }: any = req.body ?? {};
 
       if (!config.columns || config.columns.length === 0) {
         return res.status(400).json({ message: "No columns specified" });
@@ -190,7 +252,7 @@ export function registerReportRoutes(app: Express): void {
       const denied = deniedReportSource(req.user, config.dataSources);
       if (denied) return res.status(403).json(sourceDeniedBody(denied));
 
-      const results = await storage.executeReport(config);
+      const results = await storage.executeReport(config, scope);
       res.json(results);
     } catch (error) {
       if (error instanceof ReportValidationError) {

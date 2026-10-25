@@ -27,6 +27,7 @@ import {
   vehicleCustomerBlacklist, type VehicleCustomerBlacklist, type InsertVehicleCustomerBlacklist,
   vehicleTransports, type VehicleTransport, type InsertVehicleTransport
 } from "../shared/schema";
+import type { ReportScope } from "../shared/report-builder-config";
 import { formatVehicleBarcode } from "../shared/barcode";
 import type { DbTransaction } from "./db";
 import { addMonths, addDays, parseISO, isBefore, isAfter, isEqual } from "date-fns";
@@ -371,8 +372,9 @@ export interface IStorage {
   getAllSavedReports(): Promise<any[]>;
   getSavedReport(id: number): Promise<any | undefined>;
   createSavedReport(report: any): Promise<any>;
+  updateSavedReport(id: number, report: any): Promise<any | undefined>;
   deleteSavedReport(id: number): Promise<boolean>;
-  executeReport(configuration: any): Promise<any[]>;
+  executeReport(configuration: any, scope?: ReportScope): Promise<any[]>;
   
   // Damage Check Template methods
   getAllDamageCheckTemplates(): Promise<any[]>;
