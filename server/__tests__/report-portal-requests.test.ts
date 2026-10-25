@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { db } from "../db";
-import { portalRequests } from "../../shared/schema";
+import { portalRequestMessages, portalRequests } from "../../shared/schema";
 import { PORTAL_REQUEST_REPORT_TILES } from "../../shared/reports/portal-requests-report";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureCustomer, cleanupFixtures } from "./helpers/fixtures";
@@ -14,7 +14,7 @@ import { expectTilesMatchRows } from "./helpers/report-kit";
 describe("portal requests report", () => {
   let staff: TestAgent;
   let P: number;
-  let Q3: number, Q4: number, Q7: number, Q8: number, Q9: number;
+  let Q1: number, Q3: number, Q4: number, Q7: number, Q8: number, Q9: number;
   const Q = { from: "2019-01-01", to: "2019-12-31" };
   const DAY = 24 * 3600 * 1000;
 
@@ -26,7 +26,7 @@ describe("portal requests report", () => {
   beforeAll(async () => {
     staff = await agentFor(["view_reports", "view_portal"]);
     P = (await createFixtureCustomer("Portaal")).id;
-    await request({ type: "extension", status: "done", createdAt: new Date("2019-03-04T09:00:00Z"), repliedAt: new Date("2019-03-04T15:00:00Z"), handledBy: "anna" });
+    Q1 = await request({ type: "extension", status: "done", createdAt: new Date("2019-03-04T09:00:00Z"), repliedAt: new Date("2019-03-04T15:00:00Z"), handledBy: "anna" });
     await request({ type: "damage", status: "rejected", createdAt: new Date("2019-03-10T08:00:00Z"), repliedAt: new Date("2019-03-11T08:00:00Z"), handledBy: "anna" });
     Q3 = await request({ type: "extension", status: "in_progress", createdAt: new Date("2019-04-01T10:00:00Z"), handledBy: "bram" });
     Q4 = await request({ type: "other", status: "new", createdAt: new Date("2019-04-02T10:00:00Z") });
@@ -34,6 +34,14 @@ describe("portal requests report", () => {
     await request({ type: "other", status: "new", createdAt: new Date("2019-12-31T23:30:00Z") });
     Q8 = await request({ type: "other", status: "new", createdAt: new Date(Date.now() - DAY) });
     Q9 = await request({ type: "other", status: "new", createdAt: new Date(Date.now() - 3 * DAY) });
+    // Reaction time = created -> FIRST staff message; customer messages do not count.
+    const message = (requestId: number, author: string, at: string) =>
+      db.insert(portalRequestMessages).values({ requestId, author, authorName: "FIXT", body: "FIXT", createdAt: new Date(at) });
+    await message(Q1, "customer", "2019-03-04T09:30:00Z");
+    await message(Q1, "staff", "2019-03-04T10:00:00Z");
+    await message(Q1, "staff", "2019-03-04T15:00:00Z");
+    await message(Q7, "staff", "2019-01-01T00:00:00Z");
+    await message(Q3, "staff", "2019-04-01T14:00:00Z");
   });
 
   afterAll(async () => {
@@ -56,8 +64,9 @@ describe("portal requests report", () => {
       { type: "other", total: 2, open: 1, done: 1, rejected: 0 },
       { type: "damage", total: 1, open: 0, done: 0, rejected: 1 },
     ]);
-    expect(s.medianReplyHours).toBe(6);
-    expect(s.repliedCount).toBe(3);
+    // First staff reply per request: Q1 1h (not the 6h last reply), damage 24h (repliedAt), Q7 0.5h, Q3 4h.
+    expect(s.medianReplyHours).toBe(2.5);
+    expect(s.repliedCount).toBe(4);
     expect(s.byHandler).toEqual([{ key: "anna", label: "anna", count: 2, amount: 0 }, { key: "bram", label: "bram", count: 1, amount: 0 }]);
   });
 
@@ -69,7 +78,7 @@ describe("portal requests report", () => {
 
   it("rij", async () => {
     const r = (await staff.get("/api/reports/portal-requests/rows").query({ ...Q, tile: "done", sort: "createdAt", dir: "asc" })).body.rows[0];
-    expect(r).toMatchObject({ id: Q7, type: "other", status: "done", customerId: P, handledBy: "bram", replyHours: 2, openDays: null, amount: 0 });
+    expect(r).toMatchObject({ id: Q7, type: "other", status: "done", customerId: P, handledBy: "bram", replyHours: 0.5, openDays: null, amount: 0 });
   });
 
   it("elke tegel opent precies zijn rijen", () => expectTilesMatchRows(staff, "/api/reports/portal-requests", Q, PORTAL_REQUEST_REPORT_TILES));

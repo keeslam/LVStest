@@ -5,7 +5,7 @@
  * (requests rarely concern one car). No money: amount is always 0.
  */
 import { sql, type SQL } from "drizzle-orm";
-import { customers, portalRequests } from "../../../shared/schema";
+import { customers, portalRequestMessages, portalRequests } from "../../../shared/schema";
 import {
   PORTAL_REQUEST_REPORT_SORTS,
   PORTAL_REQUEST_REPORT_TILES,
@@ -16,13 +16,21 @@ import {
   type PortalRequestReportTile,
 } from "../../../shared/reports/portal-requests-report";
 import { fillMonths } from "../../../shared/report-kit";
-import { inPeriodSql, officeDaySql, type ReportFilter } from "./report-kit";
+import { inPeriodSql, instantSql, officeDaySql, type ReportFilter } from "./report-kit";
 import { reportBreakdown, rowsOf, sqlReport } from "./sql-report";
 
 const r = portalRequests;
 const createdDay = officeDaySql(r.createdAt);
 const isOpen = sql`${r.status} IN ('new', 'in_progress')`;
-const replySeconds = sql`extract(epoch FROM ${r.repliedAt} - ${r.createdAt})`;
+/**
+ * Reaction time runs to the FIRST staff reply: the earliest staff message on the request, else
+ * replied_at (older requests without messages). replied_at alone is overwritten on every reply.
+ */
+const m = portalRequestMessages;
+const firstReplyAt = sql`coalesce(
+  (SELECT min(${instantSql(sql`m.created_at`)}) FROM ${m} m WHERE m.request_id = ${r.id} AND m.author = 'staff'),
+  ${instantSql(r.repliedAt)})`;
+const replySeconds = sql`extract(epoch FROM ${firstReplyAt} - ${instantSql(r.createdAt)})`;
 
 function tileWhere(tile: PortalRequestReportTile, filter: ReportFilter): SQL {
   const period = inPeriodSql(createdDay, filter);
@@ -31,7 +39,7 @@ function tileWhere(tile: PortalRequestReportTile, filter: ReportFilter): SQL {
     case "open": return sql`${period} AND ${isOpen}`;
     case "done": return sql`${period} AND ${r.status} = 'done'`;
     case "rejected": return sql`${period} AND ${r.status} = 'rejected'`;
-    case "stale": return sql`${isOpen} AND ${r.createdAt} < now() - make_interval(days => ${PORTAL_STALE_DAYS})`;
+    case "stale": return sql`${isOpen} AND ${instantSql(r.createdAt)} < now() - make_interval(days => ${PORTAL_STALE_DAYS})`;
   }
 }
 
@@ -73,7 +81,7 @@ async function extras(filter: ReportFilter): Promise<Omit<PortalRequestReportSum
   const [reply] = await rowsOf<{ median: number | null; n: number }>(sql`
     SELECT round((percentile_cont(0.5) WITHIN GROUP (ORDER BY ${replySeconds}) / 3600)::numeric, 1)::float8 AS median,
       count(*)::int AS n
-    FROM ${FROM} WHERE ${inAll} AND ${r.repliedAt} IS NOT NULL`);
+    FROM ${FROM} WHERE ${inAll} AND ${firstReplyAt} IS NOT NULL`);
 
   return {
     byMonth: fillMonths(months, (month) => ({ month, new: 0, inProgress: 0, done: 0, rejected: 0 })),

@@ -13,6 +13,7 @@ import {
   isRealDate,
   textDaySql,
   officeDaySql,
+  instantSql,
   inPeriodSql,
   money,
   oneOf,
@@ -115,6 +116,20 @@ describe("SQL-hulpjes", () => {
       ${officeDaySql(sql`'2026-03-31T23:30:00'::timestamp`)}::text AS naive_summer,
       ${officeDaySql(sql`'2026-03-04T23:30:00Z'::timestamptz`)}::text AS tz_winter`);
     expect(result.rows[0]).toEqual({ naive_winter: "2026-03-05", naive_summer: "2026-04-01", tz_winter: "2026-03-05" });
+  });
+
+  it("instantSql leest een naieve timestamp als UTC en laat een timestamptz staan, ook buiten een UTC-sessie", async () => {
+    const { db } = await import("../db");
+    const { sql } = await import("drizzle-orm");
+    const row = await db.transaction(async (tx) => {
+      await tx.execute(sql`SET LOCAL TIME ZONE 'Europe/Amsterdam'`);
+      const result = await tx.execute(sql`SELECT
+        ${instantSql(sql`'2026-03-04T23:30:00'::timestamp`)} = '2026-03-04T23:30:00Z'::timestamptz AS naive_is_utc,
+        ${instantSql(sql`'2026-03-04T23:30:00Z'::timestamptz`)} = '2026-03-04T23:30:00Z'::timestamptz AS tz_kept,
+        pg_typeof(${instantSql(sql`'2026-03-04T23:30:00'::timestamp`)})::text AS type`);
+      return result.rows[0];
+    });
+    expect(row).toEqual({ naive_is_utc: true, tz_kept: true, type: "timestamp with time zone" });
   });
 });
 

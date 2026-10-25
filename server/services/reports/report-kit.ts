@@ -102,7 +102,16 @@ export function parseReportPaging<S extends string>(
  * runs): a naive value holds UTC wall time, because Drizzle writes ISO strings with Z.
  */
 export function officeDaySql(column: SQL | AnyPgColumn): SQL {
-  return sql`((CASE WHEN pg_typeof(${column}) = 'timestamp with time zone'::regtype THEN (${column})::timestamptz ELSE ((${column})::timestamp AT TIME ZONE 'UTC') END) AT TIME ZONE ${officeTimeZone()})::date`;
+  return sql`(${instantSql(column)} AT TIME ZONE ${officeTimeZone()})::date`;
+}
+
+/**
+ * A timestamp column as a moment (timestamptz), whatever its type: timestamptz as is, a naive
+ * `timestamp` read as UTC wall time (see officeDaySql). Use it whenever a report compares a
+ * timestamp column with now() or with another column, so the session TimeZone never matters.
+ */
+export function instantSql(column: SQL | AnyPgColumn): SQL {
+  return sql`(CASE WHEN pg_typeof(${column}) = 'timestamp with time zone'::regtype THEN (${column})::timestamptz ELSE ((${column})::timestamp AT TIME ZONE 'UTC') END)`;
 }
 
 /**
