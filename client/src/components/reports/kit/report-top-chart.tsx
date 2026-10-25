@@ -5,6 +5,7 @@
  * tooltip shows the full name), the value axis uses compact numbers, and `valueLabel` names
  * the value in the tooltip (default "Bedrag").
  */
+import type { Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { ReportBreakdownRow } from "@shared/report-kit";
@@ -42,7 +43,7 @@ export function topChartTooltip(n: number, money: boolean, label: string): [stri
   return [money ? formatCurrency(n) : Number(n).toLocaleString("nl-NL"), label];
 }
 
-export function ReportTopChart({ rows, nullLabel, money, valueLabel, color, testId }: {
+export function ReportTopChart({ rows, nullLabel, money, valueLabel, color, testId, chartRef }: {
   rows: ReportBreakdownRow[];
   nullLabel: string;
   money?: boolean;
@@ -50,6 +51,8 @@ export function ReportTopChart({ rows, nullLabel, money, valueLabel, color, test
   valueLabel?: string;
   color: string;
   testId: string;
+  /** Wrapper of the drawn chart; a report reads its svg for the print (chartSvgFromRef). */
+  chartRef?: Ref<HTMLDivElement>;
 }) {
   const { t } = useTranslation("reports");
   if (rows.length === 0) {
@@ -58,7 +61,7 @@ export function ReportTopChart({ rows, nullLabel, money, valueLabel, color, test
   const label = valueLabel ?? t("reportKit.amount");
   const data = topChartData(rows, nullLabel);
   return (
-    <div className="w-full" style={{ height: Math.max(160, 32 * data.length) }} data-testid={testId} data-value-label={label}>
+    <div ref={chartRef} className="w-full" style={{ height: Math.max(160, 32 * data.length) }} data-testid={testId} data-value-label={label}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" horizontal={false} />

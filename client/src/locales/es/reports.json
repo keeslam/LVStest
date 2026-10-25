@@ -1190,5 +1190,23 @@
       },
       "csvSubject": "kilometraje-flota"
     }
+  },
+  "print": {
+    "description": "Elige qué imprimir. A la derecha ves exactamente lo que saldrá en papel.",
+    "options": "Qué imprimir",
+    "tiles": "Tarjetas",
+    "chart": "Gráfico",
+    "table": "Tabla",
+    "rows": "Filas",
+    "rowsAll": "Todas las filas",
+    "rowsPage": "Solo esta página",
+    "rowsSelected": "Solo las marcadas",
+    "landscape": "Horizontal",
+    "loading": "Creando la vista previa...",
+    "loadFailed": "No se pudo crear la vista previa.",
+    "truncated": "No caben todas las filas en la exportación. La lista se ha cortado.",
+    "printedOn": "Impreso el",
+    "vehicleLine": "Vehículo: {{vehicle}}",
+    "categoryLine": "Categoría: {{category}}"
   }
 }

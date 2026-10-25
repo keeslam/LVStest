@@ -1190,5 +1190,23 @@
       },
       "csvSubject": "quilometragem-frota"
     }
+  },
+  "print": {
+    "description": "Escolha o que imprimir. À direita vê exatamente o que ficará no papel.",
+    "options": "O que imprimir",
+    "tiles": "Cartões",
+    "chart": "Gráfico",
+    "table": "Tabela",
+    "rows": "Linhas",
+    "rowsAll": "Todas as linhas",
+    "rowsPage": "Só esta página",
+    "rowsSelected": "Só as marcadas",
+    "landscape": "Horizontal",
+    "loading": "A criar a pré-visualização...",
+    "loadFailed": "Não foi possível criar a pré-visualização.",
+    "truncated": "Nem todas as linhas cabem na exportação. A lista foi cortada.",
+    "printedOn": "Impresso em",
+    "vehicleLine": "Veículo: {{vehicle}}",
+    "categoryLine": "Categoria: {{category}}"
   }
 }

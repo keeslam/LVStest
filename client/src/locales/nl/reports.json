@@ -1171,5 +1171,23 @@
       },
       "csvSubject": "kilometerstanden-vloot"
     }
+  },
+  "print": {
+    "description": "Kies wat je wilt afdrukken. Rechts zie je precies wat er op papier komt.",
+    "options": "Wat afdrukken",
+    "tiles": "Tegels",
+    "chart": "Grafiek",
+    "table": "Tabel",
+    "rows": "Regels",
+    "rowsAll": "Alle regels",
+    "rowsPage": "Alleen deze pagina",
+    "rowsSelected": "Alleen aangevinkte",
+    "landscape": "Liggend",
+    "loading": "Voorbeeld maken...",
+    "loadFailed": "Het voorbeeld kon niet worden gemaakt.",
+    "truncated": "Niet alle regels passen in de export. De lijst is afgekapt.",
+    "printedOn": "Gedrukt op",
+    "vehicleLine": "Auto: {{vehicle}}",
+    "categoryLine": "Categorie: {{category}}"
   }
 }

@@ -1190,5 +1190,23 @@
       },
       "csvSubject": "kilometraj-flota"
     }
+  },
+  "print": {
+    "description": "Alege ce vrei să tipărești. În dreapta vezi exact ce va ieși pe hârtie.",
+    "options": "Ce se tipărește",
+    "tiles": "Casete",
+    "chart": "Grafic",
+    "table": "Tabel",
+    "rows": "Rânduri",
+    "rowsAll": "Toate rândurile",
+    "rowsPage": "Doar această pagină",
+    "rowsSelected": "Doar cele bifate",
+    "landscape": "Peisaj",
+    "loading": "Se creează previzualizarea...",
+    "loadFailed": "Previzualizarea nu a putut fi creată.",
+    "truncated": "Nu toate rândurile încap în export. Lista a fost tăiată.",
+    "printedOn": "Tipărit la",
+    "vehicleLine": "Vehicul: {{vehicle}}",
+    "categoryLine": "Categorie: {{category}}"
   }
 }

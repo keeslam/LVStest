@@ -1190,5 +1190,23 @@
       },
       "csvSubject": "chilometraggio-flotta"
     }
+  },
+  "print": {
+    "description": "Scegli cosa stampare. A destra vedi esattamente cosa uscirà su carta.",
+    "options": "Cosa stampare",
+    "tiles": "Riquadri",
+    "chart": "Grafico",
+    "table": "Tabella",
+    "rows": "Righe",
+    "rowsAll": "Tutte le righe",
+    "rowsPage": "Solo questa pagina",
+    "rowsSelected": "Solo quelle spuntate",
+    "landscape": "Orizzontale",
+    "loading": "Creazione dell'anteprima...",
+    "loadFailed": "Impossibile creare l'anteprima.",
+    "truncated": "Non tutte le righe entrano nell'esportazione. L'elenco è stato tagliato.",
+    "printedOn": "Stampato il",
+    "vehicleLine": "Veicolo: {{vehicle}}",
+    "categoryLine": "Categoria: {{category}}"
   }
 }

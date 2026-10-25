@@ -1209,5 +1209,23 @@
       },
       "csvSubject": "przebieg-floty"
     }
+  },
+  "print": {
+    "description": "Wybierz, co wydrukować. Po prawej widzisz dokładnie, co znajdzie się na papierze.",
+    "options": "Co wydrukować",
+    "tiles": "Kafelki",
+    "chart": "Wykres",
+    "table": "Tabela",
+    "rows": "Wiersze",
+    "rowsAll": "Wszystkie wiersze",
+    "rowsPage": "Tylko ta strona",
+    "rowsSelected": "Tylko zaznaczone",
+    "landscape": "Poziomo",
+    "loading": "Tworzenie podglądu...",
+    "loadFailed": "Nie udało się utworzyć podglądu.",
+    "truncated": "Nie wszystkie wiersze mieszczą się w eksporcie. Lista została skrócona.",
+    "printedOn": "Wydrukowano",
+    "vehicleLine": "Pojazd: {{vehicle}}",
+    "categoryLine": "Kategoria: {{category}}"
   }
 }

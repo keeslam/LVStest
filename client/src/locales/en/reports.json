@@ -1171,5 +1171,23 @@
       },
       "csvSubject": "fleet-mileage"
     }
+  },
+  "print": {
+    "description": "Choose what to print. On the right you see exactly what will be on paper.",
+    "options": "What to print",
+    "tiles": "Tiles",
+    "chart": "Chart",
+    "table": "Table",
+    "rows": "Rows",
+    "rowsAll": "All rows",
+    "rowsPage": "This page only",
+    "rowsSelected": "Ticked rows only",
+    "landscape": "Landscape",
+    "loading": "Making the preview...",
+    "loadFailed": "The preview could not be made.",
+    "truncated": "Not all rows fit in the export. The list was cut short.",
+    "printedOn": "Printed on",
+    "vehicleLine": "Vehicle: {{vehicle}}",
+    "categoryLine": "Category: {{category}}"
   }
 }

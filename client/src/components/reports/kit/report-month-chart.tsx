@@ -3,6 +3,7 @@
  * bar per series, side by side or stacked. Fill empty months first with
  * `fillMonths` from @shared/report-kit so the axis has no gaps.
  */
+import type { Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatCurrency } from "@/lib/format-utils";
@@ -17,12 +18,14 @@ export interface ReportMonthSeries<K extends string = string> {
 const monthLabel = (month: string) => formatDateNl(`${month}-01T12:00:00`, "MMM yyyy");
 
 /** Generic over the month row, so a series key must be one of its fields (no cast in the cards). */
-export function ReportMonthChart<T extends { month: string }>({ data, series, money, stacked, testId }: {
+export function ReportMonthChart<T extends { month: string }>({ data, series, money, stacked, testId, chartRef }: {
   data: T[];
   series: Array<ReportMonthSeries<Exclude<Extract<keyof T, string>, "month">>>;
   money?: boolean;
   stacked?: boolean;
   testId: string;
+  /** Wrapper of the drawn chart; a report reads its svg for the print (chartSvgFromRef). */
+  chartRef?: Ref<HTMLDivElement>;
 }) {
   const { t } = useTranslation("reports");
   if (data.length === 0) {
@@ -30,7 +33,7 @@ export function ReportMonthChart<T extends { month: string }>({ data, series, mo
   }
   const value = (n: number) => (money ? formatCurrency(n) : Number(n).toLocaleString("nl-NL"));
   return (
-    <div className="h-72 w-full" data-testid={testId}>
+    <div ref={chartRef} className="h-72 w-full" data-testid={testId}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" />
