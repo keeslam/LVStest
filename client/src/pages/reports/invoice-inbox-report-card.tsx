@@ -22,7 +22,7 @@ import { useReportRange } from "./report-filters";
 import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportBreakdownTable, breakdownPrintSection, compactSections, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
-import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
+import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatDate, formatDateTime, formatLicensePlate } from "@/lib/format-utils";
 import { csvDateTime, csvNumber } from "@/lib/csv";
@@ -80,6 +80,12 @@ export function InvoiceInboxRunsReport(props: InboxPartProps) {
   const monthChartRef = useRef<HTMLDivElement>(null);
   const [runsTile, setRunsTile] = useState<InboxRunReportTile | null>(null);
   const [shownRunsTile, setShownRunsTile] = useState<InboxRunReportTile>("runs");
+  const [runsMonth, setRunsMonth] = useState<string | undefined>(undefined);
+  const openRuns = (tile: InboxRunReportTile, month?: string) => {
+    setShownRunsTile(tile);
+    setRunsMonth(month);
+    setRunsTile(tile);
+  };
 
   // No vehicleId on purpose: rounds have no vehicle.
   const params = useMemo<Record<string, string>>(
@@ -167,11 +173,11 @@ export function InvoiceInboxRunsReport(props: InboxPartProps) {
           <ReportTiles
             tiles={runTiles}
             testIdPrefix="invoice-inbox-runs"
-            onOpen={(id) => { setShownRunsTile(id); setRunsTile(id); }}
+            onOpen={(id) => openRuns(id)}
           />
           <div className="space-y-2">
             <h4 className="text-sm font-medium">{t("reports:officeReports.inbox.runsByMonth")}</h4>
-            <ReportMonthChart data={runs.byMonth ?? []} series={runSeries} stacked testId="invoice-inbox-runs-month-chart" chartRef={monthChartRef} />
+            <ReportMonthChart data={runs.byMonth ?? []} series={runSeries} stacked testId="invoice-inbox-runs-month-chart" chartRef={monthChartRef} onPointClick={(p) => openRuns(p.series, p.month)} />
           </div>
         </>
       )}
@@ -183,6 +189,7 @@ export function InvoiceInboxRunsReport(props: InboxPartProps) {
         endpoint={RUNS_ENDPOINT}
         params={params}
         tile={shownRunsTile}
+        month={runsMonth}
         columns={runColumns}
         defaultSort={{ key: "startedAt", dir: "desc" }}
         rowKey={(r) => r.id}
@@ -205,6 +212,12 @@ export function InvoiceInboxItemsReport(props: InboxPartProps) {
   const header = useBreakdownHeader();
   const [itemsTile, setItemsTile] = useState<InboxItemReportTile | null>(null);
   const [shownItemsTile, setShownItemsTile] = useState<InboxItemReportTile>("all");
+  const [narrow, setNarrow] = useState<{ drill?: ReportDrillTarget; month?: string }>({});
+  const open = (tile: InboxItemReportTile, by: { drill?: ReportDrillTarget; month?: string } = {}) => {
+    setShownItemsTile(tile);
+    setNarrow(by);
+    setItemsTile(tile);
+  };
 
   // No vehicleId on purpose: many invoices have no vehicle.
   const params = useMemo<Record<string, string>>(
@@ -281,12 +294,12 @@ export function InvoiceInboxItemsReport(props: InboxPartProps) {
           <ReportTiles
             tiles={itemTiles}
             testIdPrefix="invoice-inbox-items"
-            onOpen={(id) => { setShownItemsTile(id); setItemsTile(id); }}
+            onOpen={(id) => open(id)}
           />
           <p className="text-sm text-muted-foreground" data-testid="invoice-inbox-reasons-note">{t("reports:officeReports.inbox.reasonsNote")}</p>
           <div className="space-y-2">
             <h4 className="text-sm font-medium">{t("reports:officeReports.inbox.itemsByMonth")}</h4>
-            <ReportMonthChart data={items.byMonth ?? []} series={itemSeries} stacked testId="invoice-inbox-items-month-chart" chartRef={monthChartRef} />
+            <ReportMonthChart data={items.byMonth ?? []} series={itemSeries} stacked testId="invoice-inbox-items-month-chart" chartRef={monthChartRef} onPointClick={(p) => open(p.series, { month: p.month })} />
           </div>
           {reasonRows.length === 0 ? (
             <div className="space-y-2" data-testid="invoice-inbox-reasons">
@@ -300,6 +313,7 @@ export function InvoiceInboxItemsReport(props: InboxPartProps) {
               nullLabel={t("reports:reportKit.noData")}
               hideAmount
               testId="invoice-inbox-reasons"
+              onOpen={(row) => open("flagged", { drill: { name: "reason", key: row.key, label: row.label ?? "" } })}
             />
           )}
         </>
@@ -312,6 +326,8 @@ export function InvoiceInboxItemsReport(props: InboxPartProps) {
         endpoint={ITEMS_ENDPOINT}
         params={params}
         tile={shownItemsTile}
+        drill={narrow.drill}
+        month={narrow.month}
         columns={itemColumns}
         defaultSort={{ key: "receivedAt", dir: "desc" }}
         rowKey={(r) => r.id}

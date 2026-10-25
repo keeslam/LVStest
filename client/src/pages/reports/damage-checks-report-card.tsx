@@ -20,7 +20,7 @@ import { useReportRange } from "./report-filters";
 import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportBreakdownTable } from "@/components/reports/kit/report-breakdown-table";
-import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
+import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
@@ -44,6 +44,13 @@ export function DamageChecksReportCard(props: { from?: string; to?: string; vehi
   const allowed = allowedReports && allowedSource;
   const [openTile, setOpenTile] = useState<DamageCheckReportTile | null>(null);
   const [shownTile, setShownTile] = useState<DamageCheckReportTile>("all");
+  // A tile alone, or narrowed to one breakdown line or one month.
+  const [narrow, setNarrow] = useState<{ drill?: ReportDrillTarget; month?: string }>({});
+  const open = (tile: DamageCheckReportTile, by: { drill?: ReportDrillTarget; month?: string } = {}) => {
+    setShownTile(tile);
+    setNarrow(by);
+    setOpenTile(tile);
+  };
 
   const params = useMemo<Record<string, string>>(
     () => ({
@@ -116,12 +123,12 @@ export function DamageChecksReportCard(props: { from?: string; to?: string; vehi
             <ReportTiles
               tiles={tiles}
               testIdPrefix="damage-checks"
-              onOpen={(id) => { setShownTile(id); setOpenTile(id); }}
+              onOpen={(id) => open(id)}
             />
             <p className="text-sm text-muted-foreground" data-testid="damage-checks-note">{t("officeReports.damage.withDamageNote")}</p>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("officeReports.damage.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth ?? []} series={series} testId="damage-checks-month-chart" chartRef={monthChartRef} />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} testId="damage-checks-month-chart" chartRef={monthChartRef} onPointClick={(p) => open(p.series, { month: p.month })} />
             </div>
             <div className="grid gap-6 lg:grid-cols-2">
               <ReportBreakdownTable
@@ -130,6 +137,7 @@ export function DamageChecksReportCard(props: { from?: string; to?: string; vehi
                 nullLabel={t("officeReports.damage.unknownVehicle")}
                 hideAmount
                 testId="damage-checks-by-vehicle"
+                onOpen={(row) => open("withDamage", { drill: { name: "vehicle", key: row.key, label: row.label ?? t("officeReports.damage.unknownVehicle") } })}
               />
               <ReportBreakdownTable
                 title={t("officeReports.damage.byCustomer")}
@@ -137,6 +145,7 @@ export function DamageChecksReportCard(props: { from?: string; to?: string; vehi
                 nullLabel={t("officeReports.damage.noReservation")}
                 hideAmount
                 testId="damage-checks-by-customer"
+                onOpen={(row) => open("withDamage", { drill: { name: "customer", key: row.key, label: row.label ?? t("officeReports.damage.noReservation") } })}
               />
             </div>
           </>
@@ -149,6 +158,8 @@ export function DamageChecksReportCard(props: { from?: string; to?: string; vehi
         endpoint={ENDPOINT}
         params={params}
         tile={shownTile}
+        drill={narrow.drill}
+        month={narrow.month}
         columns={columns}
         defaultSort={{ key: "checkDate", dir: "desc" }}
         rowKey={(r) => r.id}

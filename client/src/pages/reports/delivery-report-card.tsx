@@ -15,12 +15,12 @@ import { UserPermission } from "@shared/schema";
 import { ReportSection } from "@/components/reports/kit/report-section";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { chartSvgFromRef } from "@/lib/report-document-print";
-import { compactSections, textTablePrintSection } from "@/components/reports/kit/report-breakdown-table";
+import { DrillLineButton, compactSections, drillLineTestId, textTablePrintSection } from "@/components/reports/kit/report-breakdown-table";
 import { useReportRange } from "./report-filters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
-import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
+import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
@@ -49,6 +49,13 @@ export function DeliveryReportCard(props: { from?: string; to?: string; vehicleI
   const allowed = allowedReports && allowedSource;
   const [openTile, setOpenTile] = useState<DeliveryReportTile | null>(null);
   const [shownTile, setShownTile] = useState<DeliveryReportTile>("all");
+  // A tile alone, or narrowed to one breakdown line or one month.
+  const [narrow, setNarrow] = useState<{ drill?: ReportDrillTarget; month?: string }>({});
+  const open = (tile: DeliveryReportTile, by: { drill?: ReportDrillTarget; month?: string } = {}) => {
+    setShownTile(tile);
+    setNarrow(by);
+    setOpenTile(tile);
+  };
 
   const params = useMemo<Record<string, string>>(
     () => ({
@@ -115,6 +122,10 @@ export function DeliveryReportCard(props: { from?: string; to?: string; vehicleI
   const col = (id: string) => t(`reports:officeReports.delivery.columns.${id}`);
   const byType = data?.byType ?? [];
   const byDriver = data?.byDriver ?? [];
+  // A line counts the trips of the period: the "all" tile narrowed to it has exactly as many rows.
+  const openType = (type: string) => open("all", { drill: { name: "type", key: type, label: typeLabel(type) } });
+  const openDriver = (driver: string | null) =>
+    open("all", { drill: { name: "driver", key: driver, label: driver ?? t("reports:officeReports.delivery.unknownDriver") } });
 
   useReportPrint(allowed && data ? compactSections([
     tilesPrintSection(tiles),
@@ -146,7 +157,7 @@ export function DeliveryReportCard(props: { from?: string; to?: string; vehicleI
             <ReportTiles
               tiles={tiles}
               testIdPrefix="delivery"
-              onOpen={(id) => { setShownTile(id); setOpenTile(id); }}
+              onOpen={(id) => open(id)}
             />
             <div className="flex flex-wrap gap-x-8 gap-y-1 text-sm">
               <p data-testid="delivery-on-time-pct">
@@ -168,7 +179,7 @@ export function DeliveryReportCard(props: { from?: string; to?: string; vehicleI
             </div>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("reports:officeReports.delivery.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth ?? []} series={series} stacked testId="delivery-month-chart" chartRef={monthChartRef} />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} stacked testId="delivery-month-chart" chartRef={monthChartRef} onPointClick={(p) => open(p.series, { month: p.month })} />
             </div>
             <div className="space-y-2" data-testid="delivery-by-type">
               <h4 className="text-sm font-medium">{t("reports:officeReports.delivery.byType")}</h4>
@@ -188,8 +199,10 @@ export function DeliveryReportCard(props: { from?: string; to?: string; vehicleI
                   </TableHeader>
                   <TableBody>
                     {byType.map((row) => (
-                      <TableRow key={row.type} data-testid="delivery-by-type-row">
-                        <TableCell>{typeLabel(row.type)}</TableCell>
+                      <TableRow key={row.type} data-testid="delivery-by-type-row" className="cursor-pointer" onClick={() => openType(row.type)}>
+                        <TableCell>
+                          <DrillLineButton onClick={() => openType(row.type)} testId={drillLineTestId("delivery-by-type", row.type)}>{typeLabel(row.type)}</DrillLineButton>
+                        </TableCell>
                         <TableCell className="text-right tabular-nums">{n0(row.total)}</TableCell>
                         <TableCell className="text-right tabular-nums">{n0(row.onTime)}</TableCell>
                         <TableCell className="text-right tabular-nums">{n0(row.late)}</TableCell>
@@ -218,9 +231,11 @@ export function DeliveryReportCard(props: { from?: string; to?: string; vehicleI
                   </TableHeader>
                   <TableBody>
                     {byDriver.map((row) => (
-                      <TableRow key={row.driver ?? "unknown"} data-testid="delivery-by-driver-row">
+                      <TableRow key={row.driver ?? "unknown"} data-testid="delivery-by-driver-row" className="cursor-pointer" onClick={() => openDriver(row.driver)}>
                         <TableCell className={row.driver === null ? "italic text-muted-foreground" : undefined}>
-                          {row.driver ?? t("reports:officeReports.delivery.unknownDriver")}
+                          <DrillLineButton onClick={() => openDriver(row.driver)} testId={drillLineTestId("delivery-by-driver", row.driver)}>
+                            {row.driver ?? t("reports:officeReports.delivery.unknownDriver")}
+                          </DrillLineButton>
                         </TableCell>
                         <TableCell className="text-right tabular-nums">{n0(row.trips)}</TableCell>
                         <TableCell className="text-right tabular-nums">{n0(row.onTime)}</TableCell>
@@ -242,6 +257,8 @@ export function DeliveryReportCard(props: { from?: string; to?: string; vehicleI
         endpoint={ENDPOINT}
         params={params}
         tile={shownTile}
+        drill={narrow.drill}
+        month={narrow.month}
         columns={columns}
         defaultSort={{ key: "scheduledDate", dir: shownTile === "open" ? "asc" : "desc" }}
         rowKey={(r) => r.id}

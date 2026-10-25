@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -36,7 +36,7 @@ function compareValues(a: string | number | null, b: string | number | null): nu
 
 const NO_SORT: SortState<string> = { key: "", dir: "asc" };
 
-export function ReportTable<R>({ rows, columns, rowKey, searchPlaceholder, defaultSort, totals, testId, resetKey, onView }: {
+export function ReportTable<R>({ rows, columns, rowKey, searchPlaceholder, defaultSort, totals, testId, resetKey, onView, onRowClick }: {
   rows: R[];
   columns: ReportTableColumn<R>[];
   rowKey: (r: R) => string | number;
@@ -48,6 +48,8 @@ export function ReportTable<R>({ rows, columns, rowKey, searchPlaceholder, defau
   /** Verandert dit (bv. de periode), dan gaat de tabel terug naar pagina 1; de zoekterm blijft. */
   resetKey?: string;
   onView?: (view: ReportTableView<R>) => void;
+  /** Makes every row clickable (mouse, Enter or space): opens the rows behind it. */
+  onRowClick?: (r: R) => void;
 }) {
   const { t } = useTranslation("reports");
   const [search, setSearch] = useState("");
@@ -121,7 +123,19 @@ export function ReportTable<R>({ rows, columns, rowKey, searchPlaceholder, defau
               {pageRows.length === 0 ? (
                 <TableRow><TableCell colSpan={columns.length} className="text-muted-foreground" data-testid={`${testId}-no-match`}>{t("reportTable.noMatches")}</TableCell></TableRow>
               ) : pageRows.map((r) => (
-                <TableRow key={rowKey(r)} data-testid={`${testId}-row-${rowKey(r)}`}>
+                <TableRow
+                  key={rowKey(r)}
+                  data-testid={`${testId}-row-${rowKey(r)}`}
+                  {...(onRowClick ? {
+                    role: "button",
+                    tabIndex: 0,
+                    className: "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    onClick: () => onRowClick(r),
+                    onKeyDown: (e: KeyboardEvent<HTMLTableRowElement>) => {
+                      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onRowClick(r); }
+                    },
+                  } : {})}
+                >
                   {columns.map((c) => <TableCell key={c.id} className={alignClass(c)}>{c.cell(r)}</TableCell>)}
                 </TableRow>
               ))}

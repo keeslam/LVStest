@@ -21,6 +21,7 @@ import { useReportFilters } from "../report-filters";
 import { categoryKey } from "../report-helpers";
 import { ReportBaseStatus } from "./report-base-status";
 import { tablePrintSection } from "./table-print";
+import { LegacyRowsDialog, drillTitleOf, useLegacyDrill } from "./drill-rows";
 
 interface CategoryRow { category: string; count: number; amount: number }
 
@@ -31,6 +32,13 @@ export function ExpensesByCategoryReport() {
   const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
   const chartRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<ReportTableView<CategoryRow> | null>(null);
+  const drill = useLegacyDrill();
+  const sectionTitle = t("reportsPage.operations.expensesByCategoryTitle");
+  const openCategory = (key: string) => drill.open({
+    title: drillTitleOf(sectionTitle, formatExpenseCategory(key)),
+    expenses: base.filteredExpenses.filter((e) => categoryKey(e.category) === key),
+  });
+  const openAll = (title: string) => drill.open({ title, expenses: base.filteredExpenses });
 
   const rows = useMemo<CategoryRow[]>(() => Object.entries(base.expensesByCategory)
     .sort(([, a], [, b]) => b - a)
@@ -62,7 +70,14 @@ export function ExpensesByCategoryReport() {
     <div className="space-y-6">
       <ReportBaseStatus base={base} basis={canViewVehicles} />
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <Card>
+        <Card
+          role="button"
+          tabIndex={0}
+          className="cursor-pointer transition hover:border-primary/50"
+          onClick={() => openAll(t("reportsPage.common.totalExpenses"))}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openAll(t("reportsPage.common.totalExpenses")); } }}
+          data-testid="button-expenses-by-category-tile-total"
+        >
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">{t("reportsPage.common.totalExpenses")}</CardTitle>
           </CardHeader>
@@ -72,7 +87,14 @@ export function ExpensesByCategoryReport() {
           </CardContent>
         </Card>
         {canViewVehicles && (
-          <Card>
+          <Card
+            role="button"
+            tabIndex={0}
+            className="cursor-pointer transition hover:border-primary/50"
+            onClick={() => openAll(t("reportsPage.operations.avgCostPerVehicleCardTitle"))}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openAll(t("reportsPage.operations.avgCostPerVehicleCardTitle")); } }}
+            data-testid="button-expenses-by-category-tile-avg"
+          >
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">{t("reportsPage.operations.avgCostPerVehicleCardTitle")}</CardTitle>
             </CardHeader>
@@ -92,7 +114,7 @@ export function ExpensesByCategoryReport() {
         description={t("reportsPage.operations.expensesByCategoryDesc")}
       >
           <div ref={chartRef} className="h-80">
-            <ExpenseChart data={base.expenseChartData} />
+            <ExpenseChart data={base.expenseChartData} onBarClick={(p) => { if (p.category) openCategory(p.category); }} />
           </div>
       </ReportSection>
 
@@ -110,9 +132,11 @@ export function ExpensesByCategoryReport() {
             testId="expenses-by-category-table"
             resetKey={`${from}|${to}|${vehicleId}|${category}`}
             onView={setView}
+            onRowClick={(r) => openCategory(r.category)}
           />
         </CardContent>
       </Card>
+      <LegacyRowsDialog drill={drill.drill} onClose={drill.close} vehicles={base.vehicles} customers={base.customers} />
     </div>
   );
 }

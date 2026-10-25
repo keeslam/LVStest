@@ -16,6 +16,7 @@ import { useReportBaseData, type UtilizationRow } from "../report-base-data";
 import { useReportFilters } from "../report-filters";
 import { ReportBaseStatus } from "./report-base-status";
 import { tablePrintSection } from "./table-print";
+import { LegacyRowsDialog, drillTitleOf, useLegacyDrill } from "./drill-rows";
 
 export function VehicleUtilizationReport() {
   const { t } = useTranslation("reports");
@@ -24,6 +25,13 @@ export function VehicleUtilizationReport() {
   const chartRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<ReportTableView<UtilizationRow> | null>(null);
   const rows = base.vehicleUtilizationData;
+  const drill = useLegacyDrill();
+  // The reservations the numbers come from: the period's reservations of that vehicle.
+  const openVehicle = (id: number, plate: string) => drill.open({
+    title: drillTitleOf(t("reportsPage.common.vehicleUtilization"), formatLicensePlate(plate)),
+    reservations: base.filteredReservations.filter((r) => r.vehicleId === id),
+  });
+  const openAll = () => drill.open({ title: t("reportsPage.reports.avgUtilization"), reservations: base.filteredReservations });
 
   const average = rows.length > 0 ? Math.round(rows.reduce((sum, v) => sum + v.utilizationPercentage, 0) / rows.length) : 0;
   const subtitle = base.isAllDataRange
@@ -57,7 +65,14 @@ export function VehicleUtilizationReport() {
   return (
     <div className="space-y-6">
       <ReportBaseStatus base={base} basis />
-      <Card className="max-w-sm">
+      <Card
+        className="max-w-sm cursor-pointer transition hover:border-primary/50"
+        role="button"
+        tabIndex={0}
+        onClick={openAll}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openAll(); } }}
+        data-testid="button-vehicle-utilization-tile-average"
+      >
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">{t("reportsPage.reports.avgUtilization")}</CardTitle>
         </CardHeader>
@@ -74,7 +89,7 @@ export function VehicleUtilizationReport() {
         </CardHeader>
         <CardContent>
           <div ref={chartRef} className="h-80">
-            <UtilizationChart data={base.utilizationChartData} />
+            <UtilizationChart data={base.utilizationChartData} onBarClick={(p) => { if (p.vehicleId != null) openVehicle(p.vehicleId, p.name); }} />
           </div>
         </CardContent>
       </Card>
@@ -91,8 +106,10 @@ export function VehicleUtilizationReport() {
             testId="vehicle-utilization-table"
             resetKey={`${from}|${to}|${vehicleId}`}
             onView={setView}
+            onRowClick={(r) => openVehicle(r.id, r.licensePlate)}
           />
       </ReportSection>
+      <LegacyRowsDialog drill={drill.drill} onClose={drill.close} vehicles={base.vehicles} customers={base.customers} />
     </div>
   );
 }

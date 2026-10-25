@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportBreakdownTable, breakdownPrintSection, compactSections, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
-import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
+import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatCurrency, formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
@@ -40,6 +40,12 @@ export function FinesReportCard(props: { from?: string; to?: string; vehicleId?:
   const allowed = useHasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS);
   const [openTile, setOpenTile] = useState<FineReportTile | null>(null);
   const [shownTile, setShownTile] = useState<FineReportTile>("total");
+  const [narrow, setNarrow] = useState<{ drill?: ReportDrillTarget; month?: string }>({});
+  const open = (tile: FineReportTile, by: { drill?: ReportDrillTarget; month?: string } = {}) => {
+    setShownTile(tile);
+    setNarrow(by);
+    setOpenTile(tile);
+  };
 
   const params = useMemo<Record<string, string>>(
     () => ({ from, to, ...(vehicleId && vehicleId !== "all" ? { vehicleId } : {}) }),
@@ -119,7 +125,7 @@ export function FinesReportCard(props: { from?: string; to?: string; vehicleId?:
             <ReportTiles
               tiles={tiles}
               testIdPrefix="fines"
-              onOpen={(id) => { setShownTile(id); setOpenTile(id); }}
+              onOpen={(id) => open(id)}
             />
             <p className="text-sm text-muted-foreground" data-testid="fines-avg-days">
               {data.avgDaysToLink == null
@@ -128,12 +134,12 @@ export function FinesReportCard(props: { from?: string; to?: string; vehicleId?:
             </p>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("moneyReports.fines.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth ?? []} series={series} money stacked testId="fines-month-chart" chartRef={monthChartRef} />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} money stacked testId="fines-month-chart" chartRef={monthChartRef} onPointClick={(p) => open(p.series, { month: p.month })} />
             </div>
             <div className="grid gap-6 lg:grid-cols-3">
-              <ReportBreakdownTable title={t("moneyReports.fines.byCustomer")} rows={data.byCustomer ?? []} nullLabel={notLinked} money testId="fines-by-customer" />
-              <ReportBreakdownTable title={t("moneyReports.fines.byVehicle")} rows={data.byVehicle ?? []} nullLabel={notLinked} money testId="fines-by-vehicle" />
-              <ReportBreakdownTable title={t("moneyReports.fines.byDriver")} rows={data.byDriver ?? []} nullLabel={notLinked} money testId="fines-by-driver" />
+              <ReportBreakdownTable title={t("moneyReports.fines.byCustomer")} rows={data.byCustomer ?? []} nullLabel={notLinked} money testId="fines-by-customer" onOpen={(row) => open("total", { drill: { name: "customer", key: row.key, label: row.label ?? notLinked } })} />
+              <ReportBreakdownTable title={t("moneyReports.fines.byVehicle")} rows={data.byVehicle ?? []} nullLabel={notLinked} money testId="fines-by-vehicle" onOpen={(row) => open("total", { drill: { name: "vehicle", key: row.key, label: row.label ?? notLinked } })} />
+              <ReportBreakdownTable title={t("moneyReports.fines.byDriver")} rows={data.byDriver ?? []} nullLabel={notLinked} money testId="fines-by-driver" onOpen={(row) => open("total", { drill: { name: "driver", key: row.key, label: row.label ?? notLinked } })} />
             </div>
           </>
         )}
@@ -145,6 +151,8 @@ export function FinesReportCard(props: { from?: string; to?: string; vehicleId?:
         endpoint={ENDPOINT}
         params={params}
         tile={shownTile}
+        drill={narrow.drill}
+        month={narrow.month}
         columns={columns}
         defaultSort={{ key: "offenceAt", dir: "desc" }}
         rowKey={(r) => r.id}

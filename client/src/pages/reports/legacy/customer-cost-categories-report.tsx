@@ -14,6 +14,7 @@ import { useReportBaseData, type CustomerStatsRow } from "../report-base-data";
 import { useReportFilters } from "../report-filters";
 import { ReportBaseStatus } from "./report-base-status";
 import { tablePrintSection } from "./table-print";
+import { LegacyRowsDialog, drillTitleOf, useLegacyDrill } from "./drill-rows";
 
 export function CustomerCostCategoriesReport() {
   const { t } = useTranslation("reports");
@@ -21,6 +22,12 @@ export function CustomerCostCategoriesReport() {
   const { from, to, vehicleId, category } = useReportFilters();
   const [view, setView] = useState<ReportTableView<CustomerStatsRow> | null>(null);
   const { customerCostRows: rows, customerCostCategories: categories } = base;
+  const drill = useLegacyDrill();
+  // The costs the amounts of the line add up (relatedExpenses of the customer).
+  const openCustomer = (c: CustomerStatsRow) => drill.open({
+    title: drillTitleOf(t("reportsPage.customersTab.expenseCategoriesTitle"), c.name),
+    expenses: c.relatedExpenses,
+  });
 
   const columns = useMemo<ReportTableColumn<CustomerStatsRow>[]>(() => {
     const highest = (c: CustomerStatsRow) => categories.reduce(
@@ -56,8 +63,10 @@ export function CustomerCostCategoriesReport() {
             testId="customer-category-costs"
             resetKey={`${from}|${to}|${vehicleId}|${category}`}
             onView={setView}
+            onRowClick={openCustomer}
           />
         </ReportSection>
+      <LegacyRowsDialog drill={drill.drill} onClose={drill.close} vehicles={base.vehicles} customers={base.customers} />
     </div>
   );
 }

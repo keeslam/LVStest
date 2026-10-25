@@ -18,12 +18,12 @@ import { UserPermission } from "@shared/schema";
 import { ReportSection } from "@/components/reports/kit/report-section";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { chartSvgFromRef } from "@/lib/report-document-print";
-import { compactSections, textTablePrintSection } from "@/components/reports/kit/report-breakdown-table";
+import { DrillLineButton, compactSections, textTablePrintSection } from "@/components/reports/kit/report-breakdown-table";
 import { useReportPeriod } from "./report-filters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
-import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
+import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatCurrency, formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
@@ -44,6 +44,13 @@ export function TransportBillingReportCard(props: { from?: string; to?: string; 
   const allowed = useHasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS);
   const [openTile, setOpenTile] = useState<TransportBillingTile | null>(null);
   const [shownTile, setShownTile] = useState<TransportBillingTile>("notInvoiced");
+  // A tile alone, or narrowed to one breakdown line or one month.
+  const [narrow, setNarrow] = useState<{ drill?: ReportDrillTarget; month?: string }>({});
+  const open = (tile: TransportBillingTile, by: { drill?: ReportDrillTarget; month?: string } = {}) => {
+    setShownTile(tile);
+    setNarrow(by);
+    setOpenTile(tile);
+  };
 
   const params = useMemo<Record<string, string>>(
     () => ({ from, to, ...(vehicleId && vehicleId !== "all" ? { vehicleId } : {}) }),
@@ -109,6 +116,10 @@ export function TransportBillingReportCard(props: { from?: string; to?: string; 
     { key: "toll" as const, label: t("moneyReports.transport.series.toll"), color: "#6b7280" },
   ];
 
+  // There is no "all transports" tile: the per-type amounts open the tile they add up to.
+  const openType = (tile: "notInvoiced" | "toll", type: string) =>
+    open(tile, { drill: { name: "type", key: type, label: t(`delivery:transportDialog.typeLabels.${type}`, { defaultValue: type }) } });
+
   useReportPrint(allowed && data ? compactSections([
     tilesPrintSection(tiles),
     { kind: "chart", title: t("moneyReports.transport.byMonth"), getSvg: () => chartSvgFromRef(monthChartRef) },
@@ -136,11 +147,11 @@ export function TransportBillingReportCard(props: { from?: string; to?: string; 
             <ReportTiles
               tiles={tiles}
               testIdPrefix="transport-billing"
-              onOpen={(id) => { setShownTile(id); setOpenTile(id); }}
+              onOpen={(id) => open(id)}
             />
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("moneyReports.transport.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth ?? []} series={series} money testId="transport-billing-month-chart" chartRef={monthChartRef} />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} money testId="transport-billing-month-chart" chartRef={monthChartRef} onPointClick={(p) => open(p.series, { month: p.month })} />
             </div>
             <div className="space-y-2" data-testid="transport-billing-by-type">
               <h4 className="text-sm font-medium">{t("moneyReports.transport.byType")}</h4>
@@ -164,8 +175,12 @@ export function TransportBillingReportCard(props: { from?: string; to?: string; 
                           <TableCell>{t(`delivery:transportDialog.typeLabels.${row.type}`, { defaultValue: row.type })}</TableCell>
                           <TableCell className="text-right tabular-nums">{row.count.toLocaleString("nl-NL")}</TableCell>
                           <TableCell className="text-right tabular-nums">{formatCurrency(row.billable)}</TableCell>
-                          <TableCell className="text-right tabular-nums">{formatCurrency(row.notInvoiced)}</TableCell>
-                          <TableCell className="text-right tabular-nums">{formatCurrency(row.toll)}</TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            <DrillLineButton onClick={() => openType("notInvoiced", row.type)} testId={`transport-billing-by-type-row-${row.type}-notInvoiced`}>{formatCurrency(row.notInvoiced)}</DrillLineButton>
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            <DrillLineButton onClick={() => openType("toll", row.type)} testId={`transport-billing-by-type-row-${row.type}-toll`}>{formatCurrency(row.toll)}</DrillLineButton>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -183,6 +198,8 @@ export function TransportBillingReportCard(props: { from?: string; to?: string; 
         endpoint={ENDPOINT}
         params={listParams}
         tile={shownTile}
+        drill={narrow.drill}
+        month={narrow.month}
         columns={columns}
         defaultSort={{ key: "date", dir: "desc" }}
         rowKey={(r) => r.id}

@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Printer } from "lucide-react";
 import type { ReportExport, ReportPage } from "@shared/report-kit";
-import { REPORT_EXPORT_LIMIT } from "@shared/report-kit";
+import { REPORT_DRILL_NULL_KEY, REPORT_EXPORT_LIMIT } from "@shared/report-kit";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -36,11 +36,41 @@ export interface ReportColumn<Row, S extends string> {
   print?: (row: Row) => string;
 }
 
+/** One breakdown line to narrow the list to: the drill name, the line's key (null = the "without" line) and its label. */
+export interface ReportDrillTarget {
+  name: string;
+  key: string | number | null;
+  label: string;
+}
+
+/** What a kit card opens: a tile, optionally narrowed to one breakdown line or one month (`yyyy-MM`). */
+export interface ReportDetailTarget<T extends string> {
+  tile: T;
+  drill?: ReportDrillTarget;
+  month?: string;
+}
+
+/** The query parameters of a drill and a month, in the order the server reads them. */
+export function drillParams(drill?: ReportDrillTarget, month?: string): Record<string, string> {
+  return {
+    ...(drill ? { drill: drill.name, key: drill.key === null ? REPORT_DRILL_NULL_KEY : String(drill.key) } : {}),
+    ...(month ? { month } : {}),
+  };
+}
+
+/** "<tile> · <line>" or "<tile> · <month>" for the dialog title. */
+export function drillTitle(tileTitle: string, drill?: ReportDrillTarget, month?: string): string {
+  const parts = [tileTitle];
+  if (drill) parts.push(drill.label);
+  if (month) parts.push(formatDateNl(`${month}-01T12:00:00`, "MMM yyyy"));
+  return parts.join(" · ");
+}
+
 const printValue = <Row, S extends string>(column: ReportColumn<Row, S>, row: Row): string =>
   column.print ? column.print(row) : String(column.csv(row) ?? "");
 
 export function ReportDetailDialog<Row, S extends string>({
-  open, onOpenChange, title, description, endpoint, params, tile, columns, defaultSort, rowKey, csvSubject, reportName, testId,
+  open, onOpenChange, title: tileTitle, description, endpoint, params, tile, drill, month, columns, defaultSort, rowKey, csvSubject, reportName, testId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -49,6 +79,10 @@ export function ReportDetailDialog<Row, S extends string>({
   endpoint: string;
   params: Record<string, string>;
   tile: string;
+  /** Narrow the tile's rows to one breakdown line; the title becomes "<tile> · <label>". */
+  drill?: ReportDrillTarget;
+  /** Narrow the tile's rows to one month, `yyyy-MM`; the title gets the month. */
+  month?: string;
   columns: Array<ReportColumn<Row, S>>;
   defaultSort: SortState<S>;
   rowKey: (row: Row) => string | number;
@@ -69,9 +103,12 @@ export function ReportDetailDialog<Row, S extends string>({
   // new tile, or on opening again, start over with the default sort on page 1.
   // Adjusted during render (not in an effect) so no request goes out with the
   // previous tile's page or sort first.
-  const [shownFor, setShownFor] = useState({ tile, open });
-  if (shownFor.tile !== tile || shownFor.open !== open) {
-    setShownFor({ tile, open });
+  const extra = drillParams(drill, month);
+  const title = drillTitle(tileTitle, drill, month);
+  const target = JSON.stringify({ tile, ...extra });
+  const [shownFor, setShownFor] = useState({ target, open });
+  if (shownFor.target !== target || shownFor.open !== open) {
+    setShownFor({ target, open });
     if (open) {
       setSort(defaultSort);
       setPage(1);
@@ -82,9 +119,9 @@ export function ReportDetailDialog<Row, S extends string>({
   // Keep the previous page on screen only while paging or sorting the same list.
   // For another tile or other filters the old rows and count would sit under the
   // new tile's title (a tile that does not match its list), so show loading instead.
-  const listKey = JSON.stringify({ endpoint, params, tile });
+  const listKey = JSON.stringify({ endpoint, params, tile, ...extra });
   const { data, isLoading, isError, isFetching } = useQuery<ReportPage<Row>>({
-    queryKey: [`${endpoint}/rows`, { ...params, tile, sort: sort.key, dir: sort.dir, page, pageSize }],
+    queryKey: [`${endpoint}/rows`, { ...params, tile, ...extra, sort: sort.key, dir: sort.dir, page, pageSize }],
     meta: { listKey },
     placeholderData: (previous, previousQuery) => (previousQuery?.meta?.listKey === listKey ? previous : undefined),
     enabled: open,
@@ -98,7 +135,7 @@ export function ReportDetailDialog<Row, S extends string>({
 
   const fetchExport = async (): Promise<ReportExport<Row>> => {
     // The app's request path: timeout, and a 401 logs out like every other query.
-    const query = new URLSearchParams({ ...params, tile, sort: sort.key, dir: sort.dir });
+    const query = new URLSearchParams({ ...params, tile, ...extra, sort: sort.key, dir: sort.dir });
     const response = await apiRequest("GET", `${endpoint}/export?${query}`);
     return response.json();
   };

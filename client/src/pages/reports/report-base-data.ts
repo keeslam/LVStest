@@ -60,9 +60,9 @@ export interface CustomerStatsRow {
 }
 
 export interface ExpenseTrend {
-  currentMonth: { name: string; total: number; changePercentage: MonthChange };
-  previousMonth: { name: string; total: number; changePercentage: MonthChange };
-  twoMonthsAgo: { name: string; total: number };
+  currentMonth: { name: string; total: number; changePercentage: MonthChange; expenses: Expense[] };
+  previousMonth: { name: string; total: number; changePercentage: MonthChange; expenses: Expense[] };
+  twoMonthsAgo: { name: string; total: number; expenses: Expense[] };
 }
 
 // Stable empty lists while a query loads or may not run: a fresh `[]` on every render would
@@ -332,13 +332,13 @@ export function useReportBaseData() {
       .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
 
     const expenseChartData: ExpenseChartData[] = Object.entries(expensesByCategory)
-      .map(([category, amount]) => ({ name: formatExpenseCategory(category), expenses: amount }))
+      .map(([category, amount]) => ({ name: formatExpenseCategory(category), expenses: amount, category }))
       .sort((a, b) => b.expenses - a.expenses);
 
     const utilizationChartData: UtilizationChartData[] = vehicleUtilizationData
       .filter(v => v.utilizationPercentage > 0)
       .slice(0, 10)
-      .map(vehicle => ({ name: formatLicensePlate(vehicle.licensePlate), utilization: vehicle.utilizationPercentage }));
+      .map(vehicle => ({ name: formatLicensePlate(vehicle.licensePlate), utilization: vehicle.utilizationPercentage, vehicleId: vehicle.id }));
 
     // Expense trend: the last three calendar months. A-14-4: it honours the category and vehicle
     // filters, not the period (known gap, kept as it is).
@@ -350,22 +350,26 @@ export function useReportBaseData() {
       const trendExpenses = expenses.filter(expense =>
         (selectedCategory === "all" || categoryKey(expense.category) === selectedCategory) &&
         (selectedVehicle === "all" || String(expense.vehicleId) === selectedVehicle));
-      const currentMonthExpenses = sumMoney(trendExpenses.filter(expense => {
+      // The rows of each month stay with the total: a click on a month shows them.
+      const currentMonthRows = trendExpenses.filter(expense => {
         const expenseDate = new Date(expense.date);
         return expenseDate >= currentMonth && expenseDate <= endOfMonth(currentMonth);
-      }), expense => expense.amount);
-      const previousMonthExpenses = sumMoney(trendExpenses.filter(expense => {
+      });
+      const previousMonthRows = trendExpenses.filter(expense => {
         const expenseDate = new Date(expense.date);
         return expenseDate >= previousMonth && expenseDate < currentMonth;
-      }), expense => expense.amount);
-      const twoMonthsAgoExpenses = sumMoney(trendExpenses.filter(expense => {
+      });
+      const twoMonthsAgoRows = trendExpenses.filter(expense => {
         const expenseDate = new Date(expense.date);
         return expenseDate >= twoMonthsAgo && expenseDate < previousMonth;
-      }), expense => expense.amount);
+      });
+      const currentMonthExpenses = sumMoney(currentMonthRows, expense => expense.amount);
+      const previousMonthExpenses = sumMoney(previousMonthRows, expense => expense.amount);
+      const twoMonthsAgoExpenses = sumMoney(twoMonthsAgoRows, expense => expense.amount);
       return {
-        currentMonth: { name: format(currentMonth, "MMM yyyy"), total: currentMonthExpenses, changePercentage: monthChange(previousMonthExpenses, currentMonthExpenses) },
-        previousMonth: { name: format(previousMonth, "MMM yyyy"), total: previousMonthExpenses, changePercentage: monthChange(twoMonthsAgoExpenses, previousMonthExpenses) },
-        twoMonthsAgo: { name: format(twoMonthsAgo, "MMM yyyy"), total: twoMonthsAgoExpenses },
+        currentMonth: { name: format(currentMonth, "MMM yyyy"), total: currentMonthExpenses, changePercentage: monthChange(previousMonthExpenses, currentMonthExpenses), expenses: currentMonthRows },
+        previousMonth: { name: format(previousMonth, "MMM yyyy"), total: previousMonthExpenses, changePercentage: monthChange(twoMonthsAgoExpenses, previousMonthExpenses), expenses: previousMonthRows },
+        twoMonthsAgo: { name: format(twoMonthsAgo, "MMM yyyy"), total: twoMonthsAgoExpenses, expenses: twoMonthsAgoRows },
       };
     })();
 

@@ -6,13 +6,17 @@ import { formatCurrency } from '@/lib/format-utils';
 export interface ExpenseChartData {
   name: string;
   expenses: number;
+  /** The category key, for a click on the bar. */
+  category?: string;
 }
 
 interface ExpenseChartProps {
   data: ExpenseChartData[];
+  /** Makes the bars clickable; gets the clicked bar's data. */
+  onBarClick?: (point: ExpenseChartData) => void;
 }
 
-export function ExpenseChart({ data }: ExpenseChartProps) {
+export function ExpenseChart({ data, onBarClick }: ExpenseChartProps) {
   const { t } = useTranslation('reports');
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -29,7 +33,13 @@ export function ExpenseChart({ data }: ExpenseChartProps) {
           formatter={(value: number) => [formatCurrency(value), t('expenseChart.expenses')]}
         />
         <Legend />
-        <Bar dataKey="expenses" name={t('expenseChart.expenses')} fill="#ef4444" />
+        <Bar
+          dataKey="expenses"
+          name={t('expenseChart.expenses')}
+          fill="#ef4444"
+          cursor={onBarClick ? 'pointer' : undefined}
+          onClick={onBarClick ? (_entry: unknown, index: number) => { const point = data[index]; if (point) onBarClick(point); } : undefined}
+        />
       </BarChart>
     </ResponsiveContainer>
   );

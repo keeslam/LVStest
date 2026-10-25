@@ -15,6 +15,8 @@ import { useReportBaseData, type MaintenanceCostRow } from "../report-base-data"
 import { useReportFilters } from "../report-filters";
 import { ReportBaseStatus } from "./report-base-status";
 import { tablePrintSection } from "./table-print";
+import { isMaintenanceExpenseCategory } from "@shared/expense-categories";
+import { LegacyRowsDialog, drillTitleOf, useLegacyDrill } from "./drill-rows";
 
 export function MaintenanceCostByVehicleReport() {
   const { t } = useTranslation("reports");
@@ -22,6 +24,12 @@ export function MaintenanceCostByVehicleReport() {
   const { from, to, vehicleId, category } = useReportFilters();
   const [view, setView] = useState<ReportTableView<MaintenanceCostRow> | null>(null);
   const rows = useMemo(() => base.maintenanceCostByVehicle.filter((v) => v.maintenanceCost > 0), [base.maintenanceCostByVehicle]);
+  const drill = useLegacyDrill();
+  // The same costs as the line: the vehicle's maintenance costs of the period.
+  const openVehicle = (r: MaintenanceCostRow) => drill.open({
+    title: drillTitleOf(t("reportsPage.vehiclesTab.maintenanceCostsTitle"), formatLicensePlate(r.licensePlate)),
+    expenses: base.filteredExpenses.filter((e) => e.vehicleId === r.id && isMaintenanceExpenseCategory(e.category)),
+  });
 
   const columns = useMemo<ReportTableColumn<MaintenanceCostRow>[]>(() => [
     { id: "vehicle", label: t("reportsPage.common.vehicle"), cell: (r) => `${r.brand} ${r.model}`, text: (r) => `${r.brand} ${r.model}`, sortValue: (r) => `${r.brand} ${r.model}` },
@@ -43,8 +51,10 @@ export function MaintenanceCostByVehicleReport() {
             testId="maintenance-cost-by-vehicle-table"
             resetKey={`${from}|${to}|${vehicleId}|${category}`}
             onView={setView}
+            onRowClick={openVehicle}
           />
         </ReportSection>
+      <LegacyRowsDialog drill={drill.drill} onClose={drill.close} vehicles={base.vehicles} customers={base.customers} />
     </div>
   );
 }

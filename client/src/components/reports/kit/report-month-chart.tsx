@@ -17,8 +17,20 @@ export interface ReportMonthSeries<K extends string = string> {
 
 const monthLabel = (month: string) => formatDateNl(`${month}-01T12:00:00`, "MMM yyyy");
 
+/** A clicked bar: its month (`yyyy-MM`) and the series it belongs to. */
+export interface ReportMonthPoint<K extends string = string> {
+  month: string;
+  series: K;
+}
+
+/** recharts calls a Bar onClick with the drawn rectangle; its payload is the month row. */
+export function monthPointFromBar<K extends string>(entry: unknown, series: K): ReportMonthPoint<K> | null {
+  const month = (entry as { payload?: { month?: unknown } } | null)?.payload?.month;
+  return typeof month === "string" && /^\d{4}-\d{2}$/.test(month) ? { month, series } : null;
+}
+
 /** Generic over the month row, so a series key must be one of its fields (no cast in the cards). */
-export function ReportMonthChart<T extends { month: string }>({ data, series, money, stacked, testId, chartRef }: {
+export function ReportMonthChart<T extends { month: string }>({ data, series, money, stacked, testId, chartRef, onPointClick }: {
   data: T[];
   series: Array<ReportMonthSeries<Exclude<Extract<keyof T, string>, "month">>>;
   money?: boolean;
@@ -26,6 +38,8 @@ export function ReportMonthChart<T extends { month: string }>({ data, series, mo
   testId: string;
   /** Wrapper of the drawn chart; a report reads its svg for the print (chartSvgFromRef). */
   chartRef?: Ref<HTMLDivElement>;
+  /** Makes every bar clickable: the rows of that month (and series). */
+  onPointClick?: (point: ReportMonthPoint<Exclude<Extract<keyof T, string>, "month">>) => void;
 }) {
   const { t } = useTranslation("reports");
   if (data.length === 0) {
@@ -33,7 +47,7 @@ export function ReportMonthChart<T extends { month: string }>({ data, series, mo
   }
   const value = (n: number) => (money ? formatCurrency(n) : Number(n).toLocaleString("nl-NL"));
   return (
-    <div ref={chartRef} className="h-72 w-full" data-testid={testId}>
+    <div ref={chartRef} className={onPointClick ? "h-72 w-full [&_.recharts-bar-rectangle]:cursor-pointer" : "h-72 w-full"} data-testid={testId}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" />
@@ -42,7 +56,14 @@ export function ReportMonthChart<T extends { month: string }>({ data, series, mo
           <Tooltip labelFormatter={(m) => monthLabel(String(m))} formatter={(n: number, name: string) => [value(n), name]} />
           <Legend />
           {series.map((s) => (
-            <Bar key={s.key} dataKey={s.key} name={s.label} fill={s.color} stackId={stacked ? "stack" : undefined} />
+            <Bar
+              key={s.key}
+              dataKey={s.key}
+              name={s.label}
+              fill={s.color}
+              stackId={stacked ? "stack" : undefined}
+              onClick={onPointClick ? (entry: unknown) => { const point = monthPointFromBar(entry, s.key); if (point) onPointClick(point); } : undefined}
+            />
           ))}
         </BarChart>
       </ResponsiveContainer>

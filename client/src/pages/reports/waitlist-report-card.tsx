@@ -16,12 +16,12 @@ import { UserPermission } from "@shared/schema";
 import { ReportSection } from "@/components/reports/kit/report-section";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { chartSvgFromRef } from "@/lib/report-document-print";
-import { compactSections, textTablePrintSection } from "@/components/reports/kit/report-breakdown-table";
+import { DrillLineButton, compactSections, drillLineTestId, textTablePrintSection } from "@/components/reports/kit/report-breakdown-table";
 import { useReportRange } from "./report-filters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
-import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
+import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatDate, formatDateTime } from "@/lib/format-utils";
 import { csvDate, csvDateTime, csvNumber } from "@/lib/csv";
@@ -43,6 +43,13 @@ export function WaitlistReportCard(props: { from?: string; to?: string; vehicleI
   const allowed = allowedReports && allowedPortal;
   const [openTile, setOpenTile] = useState<WaitlistReportTile | null>(null);
   const [shownTile, setShownTile] = useState<WaitlistReportTile>("all");
+  // A tile alone, or narrowed to one breakdown line or one month.
+  const [narrow, setNarrow] = useState<{ drill?: ReportDrillTarget; month?: string }>({});
+  const open = (tile: WaitlistReportTile, by: { drill?: ReportDrillTarget; month?: string } = {}) => {
+    setShownTile(tile);
+    setNarrow(by);
+    setOpenTile(tile);
+  };
 
   // No vehicleId on purpose: the waitlist report ignores the vehicle filter.
   const params = useMemo<Record<string, string>>(
@@ -126,6 +133,7 @@ export function WaitlistReportCard(props: { from?: string; to?: string; vehicleI
   ];
   const count = (n: number) => n.toLocaleString("nl-NL");
   const byType = data?.byType ?? [];
+  const openType = (type: string | null) => open("all", { drill: { name: "type", key: type, label: type ?? unknownType } });
   const isEmpty = data !== undefined && WAITLIST_REPORT_TILES.every((id) => (data.tiles?.[id]?.count ?? 0) === 0);
 
   useReportPrint(allowed && data && !isEmpty ? compactSections([
@@ -159,7 +167,7 @@ export function WaitlistReportCard(props: { from?: string; to?: string; vehicleI
             <ReportTiles
               tiles={tiles}
               testIdPrefix="waitlist"
-              onOpen={(id) => { setShownTile(id); setOpenTile(id); }}
+              onOpen={(id) => open(id)}
             />
             {isEmpty ? (
               <p className="text-sm text-muted-foreground" data-testid="waitlist-empty">{t("portalReports.waitlist.empty")}</p>
@@ -170,7 +178,7 @@ export function WaitlistReportCard(props: { from?: string; to?: string; vehicleI
                 </p>
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium">{t("portalReports.waitlist.byMonth")}</h4>
-                  <ReportMonthChart data={data.byMonth ?? []} series={series} stacked testId="waitlist-month-chart" chartRef={monthChartRef} />
+                  <ReportMonthChart data={data.byMonth ?? []} series={series} stacked testId="waitlist-month-chart" chartRef={monthChartRef} onPointClick={(p) => open(p.series, { month: p.month })} />
                 </div>
                 <div className="space-y-2" data-testid="waitlist-by-type">
                   <h4 className="text-sm font-medium">{t("portalReports.waitlist.byType")}</h4>
@@ -190,8 +198,10 @@ export function WaitlistReportCard(props: { from?: string; to?: string; vehicleI
                         </TableHeader>
                         <TableBody>
                           {byType.map((row, i) => (
-                            <TableRow key={`${row.vehicleType ?? "null"}-${i}`} data-testid="waitlist-by-type-row">
-                              <TableCell className={row.vehicleType === null ? "italic text-muted-foreground" : undefined}>{row.vehicleType ?? unknownType}</TableCell>
+                            <TableRow key={`${row.vehicleType ?? "null"}-${i}`} data-testid="waitlist-by-type-row" className="cursor-pointer" onClick={() => openType(row.vehicleType)}>
+                              <TableCell className={row.vehicleType === null ? "italic text-muted-foreground" : undefined}>
+                                <DrillLineButton onClick={() => openType(row.vehicleType)} testId={drillLineTestId("waitlist-by-type", row.vehicleType)}>{row.vehicleType ?? unknownType}</DrillLineButton>
+                              </TableCell>
                               <TableCell className="text-right tabular-nums">{count(row.total)}</TableCell>
                               <TableCell className="text-right tabular-nums">{count(row.fulfilled)}</TableCell>
                               <TableCell className="text-right tabular-nums">{count(row.notFulfilled)}</TableCell>
@@ -217,6 +227,8 @@ export function WaitlistReportCard(props: { from?: string; to?: string; vehicleI
         endpoint={ENDPOINT}
         params={params}
         tile={shownTile}
+        drill={narrow.drill}
+        month={narrow.month}
         columns={columns}
         defaultSort={{ key: "createdAt", dir: "desc" }}
         rowKey={(r) => r.id}

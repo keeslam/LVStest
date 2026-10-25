@@ -23,7 +23,7 @@ import { useReportPeriod } from "./report-filters";
 import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportBreakdownTable } from "@/components/reports/kit/report-breakdown-table";
-import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
+import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatCurrency, formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
@@ -39,6 +39,13 @@ export function ExtraCostsReportCard(props: { from?: string; to?: string; vehicl
   const allowed = useHasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS);
   const [openTile, setOpenTile] = useState<ExtraCostsTile | null>(null);
   const [shownTile, setShownTile] = useState<ExtraCostsTile>("extraKm");
+  // A tile alone, or narrowed to one breakdown line or one month.
+  const [narrow, setNarrow] = useState<{ drill?: ReportDrillTarget; month?: string }>({});
+  const open = (tile: ExtraCostsTile, by: { drill?: ReportDrillTarget; month?: string } = {}) => {
+    setShownTile(tile);
+    setNarrow(by);
+    setOpenTile(tile);
+  };
 
   const params = useMemo<Record<string, string>>(
     () => ({ from, to, ...(vehicleId && vehicleId !== "all" ? { vehicleId } : {}) }),
@@ -104,14 +111,14 @@ export function ExtraCostsReportCard(props: { from?: string; to?: string; vehicl
             <ReportTiles
               tiles={tiles}
               testIdPrefix="extra-costs"
-              onOpen={(id) => { setShownTile(id); setOpenTile(id); }}
+              onOpen={(id) => open(id)}
             />
             <p className="text-sm text-muted-foreground" data-testid="extra-costs-total-km">
               {t("moneyReports.extraCosts.totalExtraKm", { km: (data.totalExtraKm ?? 0).toLocaleString("nl-NL") })}
             </p>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("moneyReports.extraCosts.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth ?? []} series={series} money stacked testId="extra-costs-month-chart" chartRef={monthChartRef} />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} money stacked testId="extra-costs-month-chart" chartRef={monthChartRef} onPointClick={(p) => open(p.series === "fuelCost" ? "fuel" : "extraKm", { month: p.month })} />
             </div>
             <div className="grid gap-6 lg:grid-cols-2">
               <ReportBreakdownTable title={t("moneyReports.extraCosts.byCustomer")} rows={data.byCustomer ?? []} nullLabel={t("moneyReports.extraCosts.noCustomer")} money testId="extra-costs-by-customer" />
@@ -127,6 +134,8 @@ export function ExtraCostsReportCard(props: { from?: string; to?: string; vehicl
         endpoint={ENDPOINT}
         params={params}
         tile={shownTile}
+        drill={narrow.drill}
+        month={narrow.month}
         columns={columns}
         defaultSort={{ key: "startDate", dir: "desc" }}
         rowKey={(r) => r.reservationId}

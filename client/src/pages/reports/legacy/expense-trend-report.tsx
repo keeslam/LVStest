@@ -4,6 +4,7 @@
  * says "Altijd de laatste 3 maanden.").
  * Rights: report right + MANAGE_EXPENSES (it reads /api/expenses).
  */
+import type { KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { ReportSection } from "@/components/reports/kit/report-section";
 import { Progress } from "@/components/ui/progress";
@@ -13,6 +14,7 @@ import { formatCurrency, formatExpenseCategory } from "@/lib/format-utils";
 import type { MonthChange } from "../report-helpers";
 import { useReportBaseData } from "../report-base-data";
 import { ReportBaseStatus } from "./report-base-status";
+import { LegacyRowsDialog, drillTitleOf, useLegacyDrill } from "./drill-rows";
 
 export function ExpenseTrendReport() {
   const { t } = useTranslation("reports");
@@ -39,6 +41,20 @@ export function ExpenseTrendReport() {
     },
   ]);
 
+  const drill = useLegacyDrill();
+  // A month opens the costs of that month (with the category and vehicle filters, like its total).
+  const monthProps = (key: "currentMonth" | "previousMonth" | "twoMonthsAgo") => {
+    const month = expenseTrend[key];
+    const openMonth = () => drill.open({ title: drillTitleOf(t("reportsPage.operations.expenseTrendsTitle"), month.name), expenses: month.expenses });
+    return {
+      role: "button" as const,
+      tabIndex: 0,
+      onClick: openMonth,
+      onKeyDown: (e: KeyboardEvent<HTMLDivElement>) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMonth(); } },
+      "data-testid": `button-expense-trend-${key}`,
+    };
+  };
+
   const share = (total: number) => (expenseTrend.currentMonth.total === 0 ? 0 : (total / expenseTrend.currentMonth.total) * 100);
 
   return (
@@ -50,7 +66,7 @@ export function ExpenseTrendReport() {
         description={`${t("reportsPage.operations.expenseTrendsDesc")}${selectedCategory !== "all" ? ` · ${formatExpenseCategory(selectedCategory)}` : ""}`}
       >
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div className="space-y-2">
+            <div className="space-y-2 cursor-pointer rounded-md p-1 transition hover:bg-muted/50" {...monthProps("currentMonth")}>
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-medium">{expenseTrend.currentMonth.name}</h4>
@@ -63,7 +79,7 @@ export function ExpenseTrendReport() {
               <Progress value={100} className="h-2" />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 cursor-pointer rounded-md p-1 transition hover:bg-muted/50" {...monthProps("previousMonth")}>
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-medium">{expenseTrend.previousMonth.name}</h4>
@@ -76,7 +92,7 @@ export function ExpenseTrendReport() {
               <Progress value={share(expenseTrend.previousMonth.total)} className="h-2" />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 cursor-pointer rounded-md p-1 transition hover:bg-muted/50" {...monthProps("twoMonthsAgo")}>
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-medium">{expenseTrend.twoMonthsAgo.name}</h4>
@@ -87,6 +103,7 @@ export function ExpenseTrendReport() {
             </div>
           </div>
       </ReportSection>
+      <LegacyRowsDialog drill={drill.drill} onClose={drill.close} vehicles={base.vehicles} customers={base.customers} />
     </div>
   );
 }

@@ -15,18 +15,26 @@ import { UserPermission } from "@shared/schema";
 import { ReportSection } from "@/components/reports/kit/report-section";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { chartSvgFromRef } from "@/lib/report-document-print";
-import { compactSections, breakdownPrintSection, textTablePrintSection, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
+import { DrillLineButton, compactSections, breakdownPrintSection, drillLineTestId, textTablePrintSection, useBreakdownHeader } from "@/components/reports/kit/report-breakdown-table";
 import { useReportRange } from "./report-filters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ReportTiles, tilesPrintSection, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
 import { ReportBreakdownTable } from "@/components/reports/kit/report-breakdown-table";
-import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
+import { ReportDetailDialog, type ReportColumn, type ReportDrillTarget } from "@/components/reports/kit/report-detail-dialog";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatDateTime } from "@/lib/format-utils";
 import { csvDateTime, csvNumber } from "@/lib/csv";
 
 const ENDPOINT = "/api/reports/portal-requests";
+
+/** A month bar opens the tile its status belongs to; new and in progress are both "open". */
+const MONTH_SERIES_TILE: Record<"new" | "inProgress" | "done" | "rejected", PortalRequestReportTile> = {
+  new: "open",
+  inProgress: "open",
+  done: "done",
+  rejected: "rejected",
+};
 
 const TILE_TONE: Partial<Record<PortalRequestReportTile, ReportTile<PortalRequestReportTile>["tone"]>> = {
   open: "amber",
@@ -45,6 +53,13 @@ export function PortalRequestsReportCard(props: { from?: string; to?: string; ve
   const allowed = allowedReports && allowedPortal;
   const [openTile, setOpenTile] = useState<PortalRequestReportTile | null>(null);
   const [shownTile, setShownTile] = useState<PortalRequestReportTile>("all");
+  // A tile alone, or narrowed to one breakdown line or one month.
+  const [narrow, setNarrow] = useState<{ drill?: ReportDrillTarget; month?: string }>({});
+  const open = (tile: PortalRequestReportTile, by: { drill?: ReportDrillTarget; month?: string } = {}) => {
+    setShownTile(tile);
+    setNarrow(by);
+    setOpenTile(tile);
+  };
 
   // No vehicleId on purpose: the portal report ignores the vehicle filter.
   const params = useMemo<Record<string, string>>(
@@ -118,6 +133,7 @@ export function PortalRequestsReportCard(props: { from?: string; to?: string; ve
   ];
   const count = (n: number) => n.toLocaleString("nl-NL");
   const byType = data?.byType ?? [];
+  const openType = (type: string) => open("all", { drill: { name: "type", key: type, label: typeLabel(type) } });
 
   useReportPrint(allowed && data ? compactSections([
     tilesPrintSection(tiles),
@@ -148,14 +164,14 @@ export function PortalRequestsReportCard(props: { from?: string; to?: string; ve
             <ReportTiles
               tiles={tiles}
               testIdPrefix="portal-requests"
-              onOpen={(id) => { setShownTile(id); setOpenTile(id); }}
+              onOpen={(id) => open(id)}
             />
             <p className="text-sm" data-testid="portal-requests-median">
               {t("reports:portalReports.requests.median", { value: median(data.medianReplyHours) })}
             </p>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">{t("reports:portalReports.requests.byMonth")}</h4>
-              <ReportMonthChart data={data.byMonth ?? []} series={series} stacked testId="portal-requests-month-chart" chartRef={monthChartRef} />
+              <ReportMonthChart data={data.byMonth ?? []} series={series} stacked testId="portal-requests-month-chart" chartRef={monthChartRef} onPointClick={(p) => open(MONTH_SERIES_TILE[p.series], { month: p.month })} />
             </div>
             <div className="space-y-2" data-testid="portal-requests-by-type">
               <h4 className="text-sm font-medium">{t("reports:portalReports.requests.byType")}</h4>
@@ -175,8 +191,10 @@ export function PortalRequestsReportCard(props: { from?: string; to?: string; ve
                     </TableHeader>
                     <TableBody>
                       {byType.map((row) => (
-                        <TableRow key={row.type} data-testid="portal-requests-by-type-row">
-                          <TableCell>{typeLabel(row.type)}</TableCell>
+                        <TableRow key={row.type} data-testid="portal-requests-by-type-row" className="cursor-pointer" onClick={() => openType(row.type)}>
+                          <TableCell>
+                            <DrillLineButton onClick={() => openType(row.type)} testId={drillLineTestId("portal-requests-by-type", row.type)}>{typeLabel(row.type)}</DrillLineButton>
+                          </TableCell>
                           <TableCell className="text-right tabular-nums">{count(row.total)}</TableCell>
                           <TableCell className="text-right tabular-nums">{count(row.open)}</TableCell>
                           <TableCell className="text-right tabular-nums">{count(row.done)}</TableCell>
@@ -194,6 +212,7 @@ export function PortalRequestsReportCard(props: { from?: string; to?: string; ve
               nullLabel={t("reports:portalReports.requests.unknownHandler")}
               hideAmount
               testId="portal-requests-by-handler"
+              onOpen={(row) => open("all", { drill: { name: "handler", key: row.key, label: row.label ?? t("reports:portalReports.requests.unknownHandler") } })}
             />
           </>
         )}
@@ -205,6 +224,8 @@ export function PortalRequestsReportCard(props: { from?: string; to?: string; ve
         endpoint={ENDPOINT}
         params={params}
         tile={shownTile}
+        drill={narrow.drill}
+        month={narrow.month}
         columns={columns}
         defaultSort={shownTile === "stale" ? { key: "createdAt", dir: "asc" } : { key: "createdAt", dir: "desc" }}
         rowKey={(r) => r.id}

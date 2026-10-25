@@ -43,7 +43,7 @@ export function topChartTooltip(n: number, money: boolean, label: string): [stri
   return [money ? formatCurrency(n) : Number(n).toLocaleString("nl-NL"), label];
 }
 
-export function ReportTopChart({ rows, nullLabel, money, valueLabel, color, testId, chartRef }: {
+export function ReportTopChart({ rows, nullLabel, money, valueLabel, color, testId, chartRef, onPointClick }: {
   rows: ReportBreakdownRow[];
   nullLabel: string;
   money?: boolean;
@@ -53,6 +53,8 @@ export function ReportTopChart({ rows, nullLabel, money, valueLabel, color, test
   testId: string;
   /** Wrapper of the drawn chart; a report reads its svg for the print (chartSvgFromRef). */
   chartRef?: Ref<HTMLDivElement>;
+  /** Makes every bar clickable; gets the row of the clicked bar. */
+  onPointClick?: (row: ReportBreakdownRow) => void;
 }) {
   const { t } = useTranslation("reports");
   if (rows.length === 0) {
@@ -61,14 +63,18 @@ export function ReportTopChart({ rows, nullLabel, money, valueLabel, color, test
   const label = valueLabel ?? t("reportKit.amount");
   const data = topChartData(rows, nullLabel);
   return (
-    <div ref={chartRef} className="w-full" style={{ height: Math.max(160, 32 * data.length) }} data-testid={testId} data-value-label={label}>
+    <div ref={chartRef} className={onPointClick ? "w-full [&_.recharts-bar-rectangle]:cursor-pointer" : "w-full"} style={{ height: Math.max(160, 32 * data.length) }} data-testid={testId} data-value-label={label}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" horizontal={false} />
           <XAxis type="number" tickFormatter={(n: number) => topChartTick(n, !!money)} allowDecimals={money} tick={{ fontSize: 12 }} />
           <YAxis type="category" dataKey="name" width={130} interval={0} tickFormatter={topChartName} tick={{ fontSize: 12 }} />
           <Tooltip formatter={(n: number) => topChartTooltip(n, !!money, label)} />
-          <Bar dataKey="amount" fill={color} />
+          <Bar
+            dataKey="amount"
+            fill={color}
+            onClick={onPointClick ? (_entry: unknown, index: number) => { const row = rows[index]; if (row) onPointClick(row); } : undefined}
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>

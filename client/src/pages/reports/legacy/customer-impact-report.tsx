@@ -15,6 +15,7 @@ import { useReportBaseData, type CustomerStatsRow } from "../report-base-data";
 import { useReportFilters } from "../report-filters";
 import { ReportBaseStatus } from "./report-base-status";
 import { tablePrintSection } from "./table-print";
+import { LegacyRowsDialog, drillTitleOf, useLegacyDrill } from "./drill-rows";
 
 export function CustomerImpactReport() {
   const { t } = useTranslation("reports");
@@ -23,6 +24,13 @@ export function CustomerImpactReport() {
   const [view, setView] = useState<ReportTableView<CustomerStatsRow> | null>(null);
   const rows = useMemo(() => base.customerReservationStats.filter((c) => c.reservationCount > 0), [base.customerReservationStats]);
   const avg = base.avgExpensePerVehicle;
+  const drill = useLegacyDrill();
+  // A customer: the period's reservations and the costs counted for them (relatedExpenses).
+  const openCustomer = (c: CustomerStatsRow) => drill.open({
+    title: drillTitleOf(t("reportsPage.customersTab.impactTitle"), c.name),
+    reservations: base.filteredReservations.filter((r) => r.customerId === c.id),
+    expenses: c.relatedExpenses,
+  });
 
   const columns = useMemo<ReportTableColumn<CustomerStatsRow>[]>(() => {
     const impact = (c: CustomerStatsRow): { text: string; className: string } | null => {
@@ -67,8 +75,10 @@ export function CustomerImpactReport() {
             testId="customer-impact-table"
             resetKey={`${from}|${to}|${vehicleId}|${category}`}
             onView={setView}
+            onRowClick={openCustomer}
           />
         </ReportSection>
+      <LegacyRowsDialog drill={drill.drill} onClose={drill.close} vehicles={base.vehicles} customers={base.customers} />
     </div>
   );
 }
