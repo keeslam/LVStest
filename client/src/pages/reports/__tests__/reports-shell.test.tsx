@@ -120,7 +120,9 @@ describe("reports shell - admin", () => {
     expect(screen.queryByTestId("card-maintenance-costs")).toBeNull();
     await user.click(screen.getByTestId("button-open-report-builder"));
     expect(await screen.findByTestId("stub-report-builder")).toBeInTheDocument();
-    await user.click(screen.getByTestId("button-close-report-builder"));
+    // One close button only: the dialog's own (no second X next to the title).
+    expect(within(screen.getByRole("dialog")).getAllByRole("button", { name: /sluiten|close/i })).toHaveLength(1);
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /sluiten|close/i }));
     await user.click(screen.getByTestId("button-open-maintenance-costs"));
     expect(await screen.findByTestId("stub-maintenance-costs")).toBeInTheDocument();
   });

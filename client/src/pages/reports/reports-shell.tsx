@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Building2, Calculator, Car, DollarSign, FileText, LayoutDashboard, Loader2, MessageSquare, TrendingUp, User, X,
+  Building2, Calculator, Car, DollarSign, FileText, LayoutDashboard, Loader2, MessageSquare, TrendingUp, User,
   type LucideIcon,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -142,12 +142,7 @@ function ReportsShellInner() {
       <Dialog open={reportBuilderOpen} onOpenChange={setBuilderOpen}>
         <DialogContent className="max-w-[95vw] w-full h-[95vh] max-h-[95vh] p-0">
           <DialogHeader className="px-6 py-4 border-b">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-2xl">{t("reportBuilderPage.pageTitle")}</DialogTitle>
-              <Button variant="ghost" size="icon" onClick={() => setBuilderOpen(false)} data-testid="button-close-report-builder">
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            <DialogTitle className="text-2xl">{t("reportBuilderPage.pageTitle")}</DialogTitle>
           </DialogHeader>
           <div className="overflow-auto h-full">
             <ReportBuilderPage key={builderEditId ?? "new"} editReportId={builderEditId} />
@@ -158,12 +153,7 @@ function ReportsShellInner() {
       <Dialog open={maintenanceCostsOpen} onOpenChange={setMaintenanceCostsOpen}>
         <DialogContent className="max-w-[95vw] w-full h-[95vh] max-h-[95vh] p-0">
           <DialogHeader className="px-6 py-4 border-b">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-2xl">{t("maintenanceCostsPage.pageTitle")}</DialogTitle>
-              <Button variant="ghost" size="icon" onClick={() => setMaintenanceCostsOpen(false)} data-testid="button-close-maintenance-costs">
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            <DialogTitle className="text-2xl">{t("maintenanceCostsPage.pageTitle")}</DialogTitle>
           </DialogHeader>
           <div className="overflow-auto h-full">
             <MaintenanceCostsPage />

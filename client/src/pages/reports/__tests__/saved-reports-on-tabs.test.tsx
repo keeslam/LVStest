@@ -231,7 +231,7 @@ describe("saved builder reports on their tab", () => {
     await user.click(await screen.findByRole("option", { name: "Kantoor" }));
     await user.click(screen.getByTestId("button-confirm-save"));
     await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
-    await user.click(screen.getByTestId("button-close-report-builder"));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /sluiten|close/i }));
     await waitFor(() => expect(window.location.search).toContain("tab=office"));
     expect(window.location.search).toContain("report=saved-7");
     await waitFor(() => expect(screen.getByTestId("report-pane-title")).toHaveTextContent("Bekeuringen per maand"));
@@ -245,7 +245,7 @@ describe("saved builder reports on their tab", () => {
     await user.click(await screen.findByTestId("button-delete-report-7"));
     await user.click(await screen.findByTestId("confirm-delete-saved-report"));
     await waitFor(() => expect(calls.some((c) => c.method === "DELETE")).toBe(true));
-    await user.click(screen.getByTestId("button-close-report-builder"));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /sluiten|close/i }));
     await waitFor(() => expect(screen.queryByTestId("report-nav-item-saved-7")).toBeNull());
     await waitFor(() => expect(screen.queryByTestId("report-pane-saved-7")).toBeNull());
   });
