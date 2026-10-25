@@ -197,7 +197,9 @@
         "pickupMileage": "Pickup Mileage",
         "returnMileage": "Return Mileage",
         "deliveryRequired": "Delivery Required",
-        "deliveryFee": "Delivery Fee"
+        "deliveryFee": "Delivery Fee",
+        "type": "Reservation Type",
+        "totalPrice": "Total Amount"
       },
       "expenses": {
         "id": "ID",
@@ -213,7 +215,8 @@
         "lastName": "Last Name",
         "email": "Email",
         "phone": "Phone",
-        "isPrimary": "Is Primary Driver"
+        "isPrimary": "Is Primary Driver",
+        "isPrimaryDriver": "Is Primary Driver"
       },
       "fines": {
         "id": "ID",
@@ -419,7 +422,9 @@
       "label": "Totals row",
       "none": "None",
       "total": "Total",
-      "totalPage": "Total (this page)"
+      "totalPage": "Total (this page)",
+      "totalTruncated": "Total (first 1000 rows)",
+      "truncatedNote": "First 1000 rows — the total is not complete."
     }
   },
   "financialTab": {

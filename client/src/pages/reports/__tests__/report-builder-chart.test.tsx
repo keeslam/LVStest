@@ -12,9 +12,9 @@ const month = [{ table: "fines", field: "offenceAt", period: "month" as const }]
 
 describe("builderChartData", () => {
   it("punten en reeksen uit het resultaat", () => {
-    const d = builderChartData(t, [{ offenceAt: "2019-02", totalAmount: "80.00" }, { offenceAt: null, totalAmount: "x" }], cols, month)!;
-    expect(d.points).toEqual([{ __cat: formatDateNl("2019-02-01T12:00:00", "MMM yyyy"), totalAmount: 80 }, { __cat: "-", totalAmount: 0 }]);
-    expect(d.series).toEqual([{ key: "totalAmount", label: "Totaalbedrag (Som)" }]);
+    const d = builderChartData(t, [{ offenceAt: "2019-02", "totalAmount.SUM": "80.00" }, { offenceAt: null, "totalAmount.SUM": "x" }], cols, month)!;
+    expect(d.points).toEqual([{ __cat: formatDateNl("2019-02-01T12:00:00", "MMM yyyy"), totalAmount__SUM: 80 }, { __cat: "-", totalAmount__SUM: 0 }]);
+    expect(d.series).toEqual([{ key: "totalAmount__SUM", label: "Totaalbedrag (Som)" }]);
     expect(d.truncated).toBe(false);
   });
 
@@ -44,8 +44,8 @@ describe("pieSlices", () => {
 describe("a series on a field called name", () => {
   it("keeps the category apart from the series", () => {
     const columns = [{ table: "customers", field: "city", label: "c" }, { table: "customers", field: "name", label: "n", aggregation: "COUNT" as const }];
-    const d = builderChartData(t, [{ city: "Breda", name: "4" }, { city: "Ede", name: "2" }], columns, [{ table: "customers", field: "city" }])!;
-    expect(d.points).toEqual([{ __cat: "Breda", name: 4 }, { __cat: "Ede", name: 2 }]);
-    expect(pieSlices(d.points, "name", "Overig")).toEqual([{ name: "Breda", value: 4 }, { name: "Ede", value: 2 }]);
+    const d = builderChartData(t, [{ city: "Breda", "name.COUNT": "4" }, { city: "Ede", "name.COUNT": "2" }], columns, [{ table: "customers", field: "city" }])!;
+    expect(d.points).toEqual([{ __cat: "Breda", name__COUNT: 4 }, { __cat: "Ede", name__COUNT: 2 }]);
+    expect(pieSlices(d.points, "name__COUNT", "Overig")).toEqual([{ name: "Breda", value: 4 }, { name: "Ede", value: 2 }]);
   });
 });

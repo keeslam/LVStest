@@ -458,8 +458,8 @@ describe("fix round 1", () => {
     await user.click(screen.getByTestId(`button-add-calc-${id}`));
     await user.click(screen.getByTestId("button-run-report"));
     await screen.findByTestId("dialog-report-results");
-    await user.click(screen.getByTestId("button-print-report"));
-    const html = (await screen.findByTestId("iframe-report-preview")).getAttribute("srcdoc") ?? "";
+    await user.click(screen.getByTestId("button-report-print"));
+    const html = (await screen.findByTestId("print-preview-frame")).getAttribute("srcdoc") ?? "";
     expect(html).toContain("<th>Incl. btw</th>");
     expect(html).toMatch(/<td>€\s121,00<\/td>/);
   });
@@ -501,7 +501,7 @@ describe("output of calculated columns", () => {
     expect(calcDisplayNumber("money", 0.25)).toBe(0.25);
     expect(csvCell(t, col("p"), "0.25")).toBe("25,00");
     expect(csvHeader(t, [col("p"), col("a")])).toEqual(["Marge (%)", "Incl. btw"]);
-    const chart = builderChartData(t, [{ category: "Olie", "calc.p": "0.25" }],
+    const chart = builderChartData(t, [{ category: "Olie", "calc.p.AVG": "0.25" }],
       [{ table: "expenses", field: "category", label: "" }, col("p", "AVG") as any],
       [{ table: "expenses", field: "category" }])!;
     expect(chart.points[0][chart.series[0].key]).toBe(25);

@@ -39,7 +39,7 @@ export function builderChartData(
   // A linked column is "vehicle.x" in the rows, a calculated one "calc.x"; the chart key has no dot (a dot reads as a path).
   const series = calcColumns
     .map((c) => ({
-      key: resultKey(c).replace(".", "__"),
+      key: resultKey(c).replace(/\./g, "__"),
       label: `${columnLabel(t, c)} (${aggregationLabel(t, c.aggregation!)})${isPercentColumn(c) ? " (%)" : ""}`,
     }));
   const points = rows.slice(0, BUILDER_CHART_MAX_GROUPS).map((row) => {

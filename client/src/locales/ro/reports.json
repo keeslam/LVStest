@@ -203,7 +203,9 @@
         "pickupMileage": "Kilometraj la preluare",
         "returnMileage": "Kilometraj la returnare",
         "deliveryRequired": "Livrare necesară",
-        "deliveryFee": "Costuri de livrare"
+        "deliveryFee": "Costuri de livrare",
+        "type": "Tip de rezervare",
+        "totalPrice": "Suma totală"
       },
       "expenses": {
         "id": "ID",
@@ -219,7 +221,8 @@
         "lastName": "Nume de familie",
         "email": "E-mail",
         "phone": "Telefon",
-        "isPrimary": "Șofer principal"
+        "isPrimary": "Șofer principal",
+        "isPrimaryDriver": "Șofer principal"
       },
       "fines": {
         "id": "ID",
@@ -427,7 +430,9 @@
       "label": "Rând de totaluri",
       "none": "Niciunul",
       "total": "Total",
-      "totalPage": "Total (această pagină)"
+      "totalPage": "Total (această pagină)",
+      "totalTruncated": "Total (primele 1000 de rânduri)",
+      "truncatedNote": "Primele 1000 de rânduri — totalul nu este complet."
     }
   },
   "financialTab": {

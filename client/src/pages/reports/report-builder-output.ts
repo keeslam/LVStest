@@ -31,11 +31,26 @@ export function linkedFieldLabel(t: TFunction, via: string | undefined, table: s
 
 /**
  * The key a column, filter or group has in the result rows: "calc.<id>" for a calculated field,
- * "vehicle.brand" through a link, else the plain field.
+ * "vehicle.brand" through a link, else the plain field. An aggregated column ends in its
+ * aggregation ("amount.SUM"), so a Som and a Gemiddelde of one field are two results.
  */
-export function resultKey(entry: { via?: string; field: string; calc?: string }): string {
-  if (entry.calc) return `calc.${entry.calc}`;
-  return entry.via ? `${entry.via}.${entry.field}` : entry.field;
+export function resultKey(entry: { via?: string; field: string; calc?: string; aggregation?: string }): string {
+  const base = entry.calc ? `calc.${entry.calc}` : entry.via ? `${entry.via}.${entry.field}` : entry.field;
+  return entry.aggregation ? `${base}.${entry.aggregation.toUpperCase()}` : base;
+}
+
+/** What /api/reports/execute answers: the rows and whether the list was cut at the row limit. */
+export interface ExecuteResult {
+  rows: Record<string, unknown>[];
+  truncated: boolean;
+}
+
+/** Reads the answer of a run; a plain list (an older answer) counts as complete. */
+export function unpackExecuteResult(body: unknown): ExecuteResult {
+  if (Array.isArray(body)) return { rows: body, truncated: false };
+  const b = body as { rows?: unknown; truncated?: unknown } | null;
+  if (b && typeof b === "object" && Array.isArray(b.rows)) return { rows: b.rows, truncated: b.truncated === true };
+  return { rows: [], truncated: false };
 }
 
 export function aggregationLabel(t: TFunction, agg: string): string {
@@ -128,6 +143,17 @@ function calcDisplayCell(column: OutputColumn, value: unknown): string {
 /** Money-like number fields keep two decimals even when the value happens to be whole. */
 const MONEY_FIELD = /price|rate|amount|fee|discount/i;
 
+/** A plain number field that holds an amount of money (prices, rates, amounts, fees, costs). */
+const MONEY_DISPLAY = /price|Rate$|amount|fee|cost/i;
+/** An id is a label, not a quantity: no thousands separator. */
+const isIdField = (field: string) => field === "id" || /Id$/.test(field);
+
+/** A transport status in words ("Gepland"); other values stay as they are. */
+function transportStatus(t: TFunction, column: OutputColumn, value: unknown): string | null {
+  if (column.table !== "vehicle_transports" || column.field !== "status" || column.aggregation) return null;
+  return String(t(`moneyReports.transport.statuses.${String(value)}`, { defaultValue: String(value) }));
+}
+
 function isNumeric(column: OutputColumn): boolean {
   return !!column.aggregation || getField(column.table, column.field)?.type === "number";
 }
@@ -138,6 +164,8 @@ export function csvCell(t: TFunction, column: OutputColumn, value: unknown): str
   if (column.calc) return calcCsvCell(column, value);
   const type = getField(column.table, column.field)?.type;
   if (column.field === "licensePlate") return formatLicensePlate(String(value));
+  const status = transportStatus(t, column, value);
+  if (status !== null) return status;
   if (type === "boolean" && !column.aggregation) return String(t(isTrueValue(value as any) || value === 1 ? "common:actions.yes" : "common:actions.no"));
   if (type === "date" && !column.aggregation) {
     if (MONTH_VALUE.test(String(value))) return `${String(value).slice(5, 7)}-${String(value).slice(0, 4)}`;
@@ -158,10 +186,17 @@ export function displayCell(t: TFunction, column: OutputColumn, value: unknown):
   if (column.calc) return calcDisplayCell(column, value);
   const type = getField(column.table, column.field)?.type;
   if (column.field === "licensePlate") return formatLicensePlate(String(value));
+  const status = transportStatus(t, column, value);
+  if (status !== null) return status;
   if (type === "boolean" && !column.aggregation) return String(t(isTrueValue(value as any) || value === 1 ? "common:actions.yes" : "common:actions.no"));
   if (type === "date" && !column.aggregation) {
     if (MONTH_VALUE.test(String(value))) return formatDateNl(`${value}-01T12:00:00`, "MMM yyyy");
     return formatDate(String(value));
+  }
+  if (type === "number" && !column.aggregation) {
+    const n = Number(value);
+    if (!Number.isFinite(n) || isIdField(column.field)) return String(value);
+    return MONEY_DISPLAY.test(column.field) ? formatCurrency(n) : n.toLocaleString("nl-NL", { maximumFractionDigits: 2 });
   }
   if (column.aggregation) {
     // A calculation comes back as a long decimal string: show it like the CSV, with Dutch separators.
@@ -174,8 +209,13 @@ export function displayCell(t: TFunction, column: OutputColumn, value: unknown):
   return String(value);
 }
 
+/** The heading of one column as the table shows it: "Bedrag (Som)" for an aggregated column. */
+export function headerLabel(t: TFunction, column: OutputColumn): string {
+  return columnLabel(t, column) + (column.aggregation ? ` (${aggregationLabel(t, column.aggregation)})` : "");
+}
+
 export function outputHeader(t: TFunction, columns: OutputColumn[]): string[] {
-  return columns.map((c) => columnLabel(t, c));
+  return columns.map((c) => headerLabel(t, c));
 }
 
 /** The CSV header: a percent column (not counted) says "(%)", as its cells carry no % sign. */
@@ -280,7 +320,7 @@ export function reportFileSubject(name: string): string {
  * dialog (HtmlPreviewDialog), which renders it in a sandboxed frame without
  * scripts; every value is escaped.
  */
-export function buildReportTableHtml(options: { title: string; subtitle: string; header: string[]; rows: string[][]; totals?: string[] | null }): string {
+export function buildReportTableHtml(options: { title: string; subtitle: string; header: string[]; rows: string[][]; totals?: string[] | null; note?: string }): string {
   return `<!doctype html><html><head>
       <meta charset="utf-8">
       <title>${escapeHtml(options.title)}</title>
@@ -293,7 +333,7 @@ export function buildReportTableHtml(options: { title: string; subtitle: string;
         th { background: #f2f2f2; }
       </style></head><body>
       <h1>${escapeHtml(options.title)}</h1>
-      <div class="meta">${escapeHtml(options.subtitle)}</div>
+      <div class="meta">${escapeHtml(options.subtitle)}</div>${options.note ? `<div class="meta">${escapeHtml(options.note)}</div>` : ""}
       <table>
         <thead><tr>${options.header.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr></thead>
         <tbody>${options.rows.map((r) => `<tr>${r.map((c) => `<td>${escapeHtml(c)}</td>`).join("")}</tr>`).join("")}</tbody>${options.totals ? `<tfoot><tr>${options.totals.map((c) => `<td>${escapeHtml(c)}</td>`).join("")}</tr></tfoot>` : ""}

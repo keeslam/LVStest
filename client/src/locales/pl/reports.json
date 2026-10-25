@@ -209,7 +209,9 @@
         "pickupMileage": "Przebieg przy odbiorze",
         "returnMileage": "Przebieg przy zwrocie",
         "deliveryRequired": "Wymagana dostawa",
-        "deliveryFee": "Koszty dostawy"
+        "deliveryFee": "Koszty dostawy",
+        "type": "Typ rezerwacji",
+        "totalPrice": "Kwota całkowita"
       },
       "expenses": {
         "id": "ID",
@@ -225,7 +227,8 @@
         "lastName": "Nazwisko",
         "email": "E-mail",
         "phone": "Telefon",
-        "isPrimary": "Główny kierowca"
+        "isPrimary": "Główny kierowca",
+        "isPrimaryDriver": "Główny kierowca"
       },
       "fines": {
         "id": "ID",
@@ -435,7 +438,9 @@
       "label": "Wiersz sum",
       "none": "Brak",
       "total": "Razem",
-      "totalPage": "Razem (ta strona)"
+      "totalPage": "Razem (ta strona)",
+      "totalTruncated": "Razem (pierwsze 1000 wierszy)",
+      "truncatedNote": "Pierwsze 1000 wierszy — suma nie jest pełna."
     }
   },
   "financialTab": {

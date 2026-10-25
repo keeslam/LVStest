@@ -1,6 +1,8 @@
 import { describeApiError } from "@/lib/api-error";
-import { HtmlPreviewDialog } from "@/components/documents/html-preview-dialog";
-import { useEffect, useState } from "react";
+import { PrintButtonInner, ReportPrintProvider, useReportPrint, type PrintSection } from "@/components/reports/kit/report-print";
+import { chartSvgFromRef } from "@/lib/report-document-print";
+import { ReportFiltersProvider, useOptionalReportFilters } from "@/pages/reports/report-filters";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +26,7 @@ import { downloadCsv } from "@/lib/csv";
 import { ReportBuilderChart } from "@/pages/reports/report-builder-chart";
 import { formatDateTime } from "@/lib/format-utils";
 import {
-  sourceLabel, fieldLabel, linkedFieldLabel, resultKey, operatorLabel, aggregationLabel, outputHeader, csvCell, displayCell, buildReportTableHtml, reportFileSubject,
+  sourceLabel, fieldLabel, linkedFieldLabel, resultKey, operatorLabel, aggregationLabel, outputHeader, headerLabel, unpackExecuteResult, csvCell, displayCell, reportFileSubject,
   withCalcInfo, columnLabel, calcErrorText, csvHeader, calcDisplayNumber, cleanTotals, totalChoicesFor, totalsRow, type TotalKind,
 } from "@/pages/reports/report-builder-output";
 import { CalculatedFieldDialog, calcRefsOf, isNumericCalc, numericUsersOf, parseDutchNumber, dutchNumberText } from "@/pages/reports/calculated-field-dialog";
@@ -88,6 +90,14 @@ function pickableFieldsOf(user: ReportSourceUser | null | undefined, selected: s
   return [...own, ...linked];
 }
 
+/**
+ * What a calculated field may use: the fields of the main source and of its links. A second ticked
+ * source is not part of a row of the main source, so the server would refuse its fields.
+ */
+export function calcPickableFields(user: ReportSourceUser | null | undefined, selected: string[]): PickableField[] {
+  return pickableFieldsOf(user, selected.slice(0, 1));
+}
+
 type Entry = { via?: string; table: string; field: string; calc?: string };
 const sameField = (a: Entry, b: Entry) =>
   a.table === b.table && a.field === b.field && (a.via ?? "") === (b.via ?? "") && (a.calc ?? "") === (b.calc ?? "");
@@ -101,12 +111,17 @@ function nextCalcId(calcs: CalculatedField[]): string {
   return `calc${n}`;
 }
 
-/** Calculations a column may get: a text calculated field can only be counted (Aantal). */
-function aggregationsFor(col: ReportColumn, calcs: CalculatedField[]): AggregationFunction[] {
+/**
+ * Calculations a column may get: a text calculated field can only be counted (Aantal), and a percent
+ * has no Som (a ratio does not add up): Gemiddelde, Kleinste, Grootste and the counts.
+ */
+export function aggregationsFor(col: ReportColumn, calcs: CalculatedField[]): AggregationFunction[] {
   if (col.calc) {
-    return isNumericCalc(calcs.find((c) => c.id === col.calc))
-      ? ['SUM', 'AVG', 'MIN', 'MAX', 'COUNT', 'COUNT_DISTINCT']
-      : ['COUNT'];
+    const calc = calcs.find((c) => c.id === col.calc);
+    if (!isNumericCalc(calc)) return ['COUNT'];
+    return calc?.type === 'percent'
+      ? ['AVG', 'MIN', 'MAX', 'COUNT', 'COUNT_DISTINCT']
+      : ['SUM', 'AVG', 'MIN', 'MAX', 'COUNT', 'COUNT_DISTINCT'];
   }
   return getField(col.table, col.field)?.aggregatable
     ? ['SUM', 'AVG', 'MIN', 'MAX', 'COUNT', 'COUNT_DISTINCT']
@@ -176,6 +191,8 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
   const [totals, setTotals] = useState<Record<string, TotalKind>>({});
   const [resultTotals, setResultTotals] = useState<Record<string, TotalKind> | undefined>(undefined);
   const [reportResults, setReportResults] = useState<any[]>([]);
+  // Whether the last run was cut at the row limit.
+  const [resultTruncated, setResultTruncated] = useState(false);
   // The columns and name of the report that was last run. A saved report is run without opening
   // it in the builder, so the result must not borrow the builder's own (possibly empty) columns.
   const [resultColumns, setResultColumns] = useState<ReportColumn[]>([]);
@@ -227,6 +244,19 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
   };
 
   const setColumnAggregation = (index: number, aggregation: AggregationFunction | undefined) => {
+    // The result key ends in the aggregation: a chosen total moves along when it still fits the column.
+    const old = withCalcInfo(columns, calculatedFields)[index];
+    if (old) {
+      const { aggregation: _a, ...plain } = old;
+      const next = aggregation ? { ...plain, aggregation } : plain;
+      const kind = totals[resultKey(old)];
+      if (kind) {
+        setTotals(prev => {
+          const { [resultKey(old)]: _gone, ...rest } = prev;
+          return totalChoicesFor(next).includes(kind) ? { ...rest, [resultKey(next)]: kind } : rest;
+        });
+      }
+    }
     setColumns(prev => prev.map((col, i) => {
       if (i !== index) return col;
       const { aggregation: _old, ...rest } = col;
@@ -237,7 +267,8 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
   const groupFields = pickableFieldsOf(user, selectedDataSources);
   const linkedGroups = linkedGroupsOf(user, selectedDataSources[0]);
   // Calculated fields that point at a field no longer offered: flagged, and not offered until changed.
-  const brokenCalcs = brokenCalcIds(calculatedFields, groupFields);
+  const calcFields = calcPickableFields(user, selectedDataSources);
+  const brokenCalcs = brokenCalcIds(calculatedFields, calcFields);
   const offeredCalcs = calculatedFields.filter(c => !brokenCalcs.has(c.id));
   const brokenCalcStop = (): boolean => {
     const first = calculatedFields.find(c => brokenCalcs.has(c.id));
@@ -328,7 +359,9 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
       // A changed kind can make a calculation or filter on it unfit: those are dropped.
       const numeric = isNumericCalc(calc);
       setColumns(prev => prev.map(col => {
-        if (col.calc !== calc.id || !col.aggregation || numeric || col.aggregation === 'COUNT') return col;
+        if (col.calc !== calc.id || !col.aggregation) return col;
+        if (numeric && !(calc.type === 'percent' && col.aggregation === 'SUM')) return col;
+        if (!numeric && col.aggregation === 'COUNT') return col;
         const { aggregation: _old, ...rest } = col;
         return rest;
       }));
@@ -371,10 +404,11 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
   const runReportMutation = useMutation({
     mutationFn: async (config: ReportConfiguration) => {
       const res = await apiRequest('POST', '/api/reports/execute', config);
-      return await res.json();
+      return unpackExecuteResult(await res.json());
     },
     onSuccess: (data, config) => {
-      setReportResults(data);
+      setReportResults(data.rows);
+      setResultTruncated(data.truncated);
       setResultColumns(config.columns);
       setResultName(config.name);
       setResultGroupBy(config.groupBy ?? []);
@@ -383,7 +417,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
       setShowResultsDialog(true);
       toast({
         title: t('reportBuilderPage.toasts.reportExecutedTitle'),
-        description: t('reportBuilderPage.toasts.reportExecutedDescription', { count: data.length }),
+        description: t('reportBuilderPage.toasts.reportExecutedDescription', { count: data.rows.length }),
       });
     },
     onError: (error: any, config: ReportConfiguration) => {
@@ -761,7 +795,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
                       withCalcInfo(columns, calculatedFields).map((col, idx) => (
                         <div key={idx} className="flex items-center justify-between p-2 bg-secondary rounded">
                           <span className="text-sm">
-                            {columnLabel(t, col)} {col.aggregation && `(${aggregationLabel(t, col.aggregation)})`}
+                            {headerLabel(t, col)}
                           </span>
                           <div className="flex items-center gap-2">
                           {!isGroupColumn(col) && (
@@ -955,7 +989,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
       {calcDialog && (
         <CalculatedFieldDialog
           initial={calcDialog.editing}
-          fields={groupFields}
+          fields={calcFields}
           earlier={calcDialog.editing
             ? calculatedFields.slice(0, Math.max(0, calculatedFields.findIndex(c => c.id === calcDialog.editing!.id)))
             : calculatedFields}
@@ -973,6 +1007,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
         reportName={resultName}
         groupBy={resultGroupBy}
         totals={resultTotals}
+        truncated={resultTruncated}
       />
     </div>
   );
@@ -1257,6 +1292,12 @@ function SavedReportsTab({
   );
 }
 
+/** Tells the print dialog what the results hold. */
+function PrintRegistrar({ sections }: { sections: PrintSection[] | null }) {
+  useReportPrint(sections);
+  return null;
+}
+
 function ReportResultsDialog({
   open,
   onOpenChange,
@@ -1265,6 +1306,7 @@ function ReportResultsDialog({
   reportName,
   groupBy,
   totals,
+  truncated = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -1273,14 +1315,17 @@ function ReportResultsDialog({
   reportName: string;
   groupBy: ReportGrouping[];
   totals?: Record<string, TotalKind>;
+  truncated?: boolean;
 }) {
   const { t } = useTranslation("reports");
-  // Over every result row; empty cells are skipped.
-  const totalCells = totalsRow(t, results, columns, totals, t('reportBuilderPage.totals.total'));
+  // Over every result row; empty cells are skipped. A list cut at the row limit says so.
+  const totalLabel = t(truncated ? 'reportBuilderPage.totals.totalTruncated' : 'reportBuilderPage.totals.total');
+  const truncatedNote = truncated ? t('reportBuilderPage.totals.truncatedNote') : null;
+  const totalCells = totalsRow(t, results, columns, totals, totalLabel);
   const header = outputHeader(t, columns);
   const canOutput = results.length > 0 && columns.length > 0;
-  // The print preview, same dialog as the overview reports and the PDFs.
-  const [printPreview, setPrintPreview] = useState<{ title: string; html: string } | null>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
+  const hasFilters = useOptionalReportFilters() !== null;
 
   // A-14-1: the same writer as every other CSV in the application (Dutch decimals and dates, dated file name, "file made" toast).
   const exportCsv = () => {
@@ -1289,42 +1334,48 @@ function ReportResultsDialog({
       csvHeader(t, columns, header),
       (() => {
         const body = results.map((row) => columns.map((col) => csvCell(t, col, row[resultKey(col)])));
-        const last = totalsRow(t, results, columns, totals, t('reportBuilderPage.totals.total'), true);
-        return last ? [...body, last] : body;
+        const last = totalsRow(t, results, columns, totals, totalLabel, true);
+        const lines = last ? [...body, last] : body;
+        return truncatedNote ? [...lines, [truncatedNote]] : lines;
       })(),
     );
   };
 
-  const printResults = () => {
-    const title = reportName || t('reportBuilderPage.untitledReport');
-    setPrintPreview({
-      title,
-      html: buildReportTableHtml({
-        title,
-        subtitle: t('reportBuilderPage.printSubtitle', { date: formatDateTime(Date.now()), count: results.length }),
-        header,
-        rows: results.map((row) => columns.map((col) => displayCell(t, col, row[resultKey(col)]))),
-        totals: totalCells,
-      }),
-    });
-  };
+  // Afdrukken: the print dialog of the reports (no tiles; the chart when grouped; the table with its totals).
+  const printTitle = reportName || t('reportBuilderPage.untitledReport');
+  const printRows = results.map((row) => columns.map((col) => displayCell(t, col, row[resultKey(col)])));
+  const printSections: PrintSection[] | null = canOutput ? [
+    ...(truncatedNote ? [{ kind: 'note' as const, text: truncatedNote }] : []),
+    ...(groupBy.length > 0 ? [{ kind: 'chart' as const, getSvg: () => chartSvgFromRef(chartRef) }] : []),
+    {
+      kind: 'table' as const, id: 'report-builder-results', header,
+      allRows: () => ({ rows: printRows, truncated: false }),
+      pageRows: printRows,
+      totals: totalCells ?? undefined,
+      pageTotals: totalCells ?? undefined,
+    },
+  ] : null;
+  const printButton = (
+    <ReportPrintProvider ignored={{ period: true, vehicle: true }}>
+      <PrintRegistrar sections={printSections} />
+      <PrintButtonInner title={printTitle} />
+    </ReportPrintProvider>
+  );
 
   return (
     <>
-    <HtmlPreviewDialog
-      open={printPreview !== null}
-      onOpenChange={(isOpen) => { if (!isOpen) setPrintPreview(null); }}
-      html={printPreview?.html ?? null}
-      title={printPreview?.title ?? ''}
-      reportName={printPreview?.title ?? ''}
-    />
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[80vh] overflow-auto" data-testid="dialog-report-results">
         <DialogHeader>
           <DialogTitle>{t('reportBuilderPage.reportResultsTitle')}</DialogTitle>
           <DialogDescription>{t('reportBuilderPage.foundResultsCount', { count: results.length })}</DialogDescription>
         </DialogHeader>
-        <ReportBuilderChart rows={results} columns={columns} groupBy={groupBy} />
+        {truncatedNote && (
+          <p className="text-sm text-muted-foreground" data-testid="report-truncated-note">{truncatedNote}</p>
+        )}
+        <div ref={chartRef}>
+          <ReportBuilderChart rows={results} columns={columns} groupBy={groupBy} />
+        </div>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -1363,10 +1414,7 @@ function ReportResultsDialog({
             <Download className="h-4 w-4 mr-2" />
             {t('reportBuilderPage.exportCsvButton')}
           </Button>
-          <Button variant="outline" onClick={printResults} disabled={!canOutput} data-testid="button-print-report">
-            <Printer className="h-4 w-4 mr-2" />
-            {t('reportBuilderPage.printButton')}
-          </Button>
+          {hasFilters ? printButton : <ReportFiltersProvider>{printButton}</ReportFiltersProvider>}
           <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-close-results">
             {t('reportBuilderPage.closeButton')}
           </Button>

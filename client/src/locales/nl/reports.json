@@ -197,7 +197,9 @@
         "pickupMileage": "Kilometerstand bij ophalen",
         "returnMileage": "Kilometerstand bij inleveren",
         "deliveryRequired": "Bezorging nodig",
-        "deliveryFee": "Bezorgkosten"
+        "deliveryFee": "Bezorgkosten",
+        "type": "Reserveringstype",
+        "totalPrice": "Totaalbedrag"
       },
       "expenses": {
         "id": "ID",
@@ -213,7 +215,8 @@
         "lastName": "Achternaam",
         "email": "E-mail",
         "phone": "Telefoon",
-        "isPrimary": "Hoofdchauffeur"
+        "isPrimary": "Hoofdchauffeur",
+        "isPrimaryDriver": "Hoofdchauffeur"
       },
       "fines": {
         "id": "ID",
@@ -419,7 +422,9 @@
       "label": "Totaalregel",
       "none": "Geen",
       "total": "Totaal",
-      "totalPage": "Totaal (deze pagina)"
+      "totalPage": "Totaal (deze pagina)",
+      "totalTruncated": "Totaal (eerste 1000 regels)",
+      "truncatedNote": "Eerste 1000 regels — het totaal is niet volledig."
     }
   },
   "financialTab": {

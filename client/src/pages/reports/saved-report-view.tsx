@@ -26,7 +26,7 @@ import { downloadCsv } from "@/lib/csv";
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { ReportBuilderChart } from "./report-builder-chart";
 import {
-  aggregationLabel, calcErrorText, columnLabel, csvCell, csvHeader, displayCell, reportFileSubject, resultKey, totalsRow, withCalcInfo, type OutputColumn,
+  aggregationLabel, calcErrorText, columnLabel, csvCell, csvHeader, displayCell, headerLabel, reportFileSubject, resultKey, totalsRow, unpackExecuteResult, withCalcInfo, type ExecuteResult, type OutputColumn,
 } from "./report-builder-output";
 import { isAllDataRange, useReportFilters } from "./report-filters";
 import { tablePrintSection } from "./legacy/table-print";
@@ -129,15 +129,17 @@ export function SavedReportView({ report }: { report: SavedReport }) {
 
   // Keyed on the configuration and the scope: a change in the filter bar or an edit runs it again.
   const runConfig = useMemo(() => withLinkIds(config), [config]);
-  const { data, isLoading, error } = useQuery<Record<string, unknown>[]>({
+  const { data, isLoading, error } = useQuery<ExecuteResult>({
     queryKey: ["/api/reports/execute", runConfig, scope],
     queryFn: async () => {
       const res = await apiRequest("POST", "/api/reports/execute", { ...runConfig, scope });
-      return await res.json();
+      return unpackExecuteResult(await res.json());
     },
   });
 
-  const rows = useMemo<Row[]>(() => (Array.isArray(data) ? data : []).map((r, i) => ({ ...r, __row: i })), [data]);
+  // A list cut at the row limit says so: its totals are not complete.
+  const truncated = data?.truncated === true;
+  const rows = useMemo<Row[]>(() => (data?.rows ?? []).map((r, i) => ({ ...r, __row: i })), [data]);
   // Calculated columns carry their field's name and kind (money, percent, number, text).
   const columns = useMemo(() => withCalcInfo(config.columns, config.calculatedFields), [config]);
   const groupBy = config.groupBy ?? [];
@@ -147,7 +149,7 @@ export function SavedReportView({ report }: { report: SavedReport }) {
     const text = (r: Row) => displayCell(tt, col, r[key]);
     return {
       id: `${i}-${col.calc ? `calc.${col.calc}` : `${col.via ? `${col.via}:` : ""}${col.table}.${col.field}`}${col.aggregation ? `.${col.aggregation}` : ""}`,
-      label: columnLabel(tt, col) + (col.aggregation ? ` (${aggregationLabel(tt, col.aggregation)})` : ""),
+      label: headerLabel(tt, col),
       cell: (r: Row) => {
         const link = linkOf(col, r);
         return link ? <EntityLink kind={link.kind} id={link.id} label={text(r)} /> : text(r);
@@ -167,7 +169,8 @@ export function SavedReportView({ report }: { report: SavedReport }) {
   }), [columns, tt]);
 
   // The totals row: over every row of the table (search included), or over the page / ticked rows on paper.
-  const totalLabel = t("reportBuilderPage.totals.total");
+  const totalLabel = t(truncated ? "reportBuilderPage.totals.totalTruncated" : "reportBuilderPage.totals.total");
+  const truncatedNote = truncated ? t("reportBuilderPage.totals.truncatedNote") : null;
   const rowTotals = (list: Row[], label: string, csv = false) => totalsRow(tt, list, columns, config.totals, label, csv);
   const byColumnId = (cells: string[] | null): Record<string, string> | undefined =>
     cells ? Object.fromEntries(tableColumns.map((c, i) => [c.id, cells[i] ?? ""])) : undefined;
@@ -177,13 +180,15 @@ export function SavedReportView({ report }: { report: SavedReport }) {
   const exportCsv = () => {
     const body = allRows.map((r) => columns.map((col) => csvCell(tt, col, r[resultKey(col)])));
     const last = rowTotals(allRows, totalLabel, true);
-    downloadCsv(reportFileSubject(report.name), csvHeader(tt, columns, tableColumns.map((c) => c.label)), last ? [...body, last] : body);
+    const lines = last ? [...body, last] : body;
+    downloadCsv(reportFileSubject(report.name), csvHeader(tt, columns, tableColumns.map((c) => c.label)), truncatedNote ? [...lines, [truncatedNote]] : lines);
   };
 
   const notes: string[] = [];
   if (!hasPeriod) notes.push(t("reportsPage.shell.notes.periodNotForReport"));
   if (!hasVehicle) notes.push(t("reportsPage.shell.notes.vehicleNotForReport"));
   if (compare !== "none") notes.push(t("reportsPage.shell.notes.compareNotForReport"));
+  if (truncatedNote) notes.push(truncatedNote);
 
   const sections: PrintSection[] = [
     ...notes.map((text): PrintSection => ({ kind: "note", text })),
@@ -222,6 +227,9 @@ export function SavedReportView({ report }: { report: SavedReport }) {
           {t("reportKit.csv")}
         </Button>
       </div>
+      {truncatedNote && (
+        <p className="text-sm text-muted-foreground" data-testid="report-truncated-note">{truncatedNote}</p>
+      )}
       {isLoading ? (
         <p className="text-sm text-muted-foreground" data-testid="saved-report-loading">{t("reportKit.loading")}</p>
       ) : error ? (

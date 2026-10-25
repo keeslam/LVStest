@@ -12,7 +12,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { UserRole } from "@shared/schema";
 import i18n from "@/i18n";
 import { getQueryFn } from "@/lib/queryClient";
-import { capturePrints } from "./p7a-harness";
+import { printPreviewBody } from "./p7a-harness";
 
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: 1, username: "tester", role: UserRole.ADMIN, permissions: [], hidePrices: false }, isLoading: false }),
@@ -129,18 +129,15 @@ describe("report builder output (A-14-1)", () => {
 
   it("prints the result with the same header and cells", async () => {
     installFetch(rows);
-    const { printed, restore } = capturePrints();
     const user = userEvent.setup();
     renderBuilder();
     await runWithColumns(user);
-    await user.click(screen.getByTestId("button-print-report"));
-    await waitFor(() => expect(printed.length).toBe(1), { timeout: 4000 });
-    expect(printed[0]).toContain("<th>Kenteken</th>");
-    expect(printed[0]).toContain("AB-123-C");
-    expect(printed[0]).toContain("9 okt. 2026");
-    expect(printed[0]).not.toContain("<script");
-    expect(printed[0]).toContain("=CMD()");
-    restore();
+    const printed = await printPreviewBody(user);
+    expect(printed).toContain("<th>Kenteken</th>");
+    expect(printed).toContain("AB-123-C");
+    expect(printed).toContain("9 okt. 2026");
+    expect(printed).not.toContain("<script");
+    expect(printed).toContain("=CMD()");
   });
 
   it("gives the export and print buttons only when there is a result to export", async () => {
@@ -149,7 +146,7 @@ describe("report builder output (A-14-1)", () => {
     renderBuilder();
     await runWithColumns(user);
     expect(screen.getByTestId("button-export-report-csv")).toBeDisabled();
-    expect(screen.getByTestId("button-print-report")).toBeDisabled();
+    expect(screen.queryByTestId("button-report-print")).toBeNull();
   });
 });
 

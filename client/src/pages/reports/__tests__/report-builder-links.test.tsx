@@ -216,7 +216,7 @@ describe("chart of a linked grouping", () => {
     const t = ((k: string, o?: any) => o?.defaultValue ?? k) as any;
     const data = builderChartData(
       t,
-      [{ "vehicle.brand": "Toyota", "id": "3" }],
+      [{ "vehicle.brand": "Toyota", "id.COUNT": "3" }],
       [
         { table: "vehicles", field: "brand", via: "vehicle", label: "Brand" },
         { table: "fines", field: "id", label: "ID", aggregation: "COUNT" },
@@ -224,21 +224,21 @@ describe("chart of a linked grouping", () => {
       [{ table: "vehicles", field: "brand", via: "vehicle" }],
     );
     expect(data?.points[0].__cat).toBe("Toyota");
-    expect(data?.points[0].id).toBe(3);
+    expect(data?.points[0].id__COUNT).toBe(3);
   });
 
   it("charts a calculation on a linked field", () => {
     const t = ((k: string, o?: any) => o?.defaultValue ?? k) as any;
     const data = builderChartData(
       t,
-      [{ "vehicle.brand": "Toyota", "vehicle.currentMileage": "10" }],
+      [{ "vehicle.brand": "Toyota", "vehicle.currentMileage.SUM": "10" }],
       [
         { table: "vehicles", field: "brand", via: "vehicle", label: "Brand" },
         { table: "vehicles", field: "currentMileage", via: "vehicle", label: "km", aggregation: "SUM" },
       ],
       [{ table: "vehicles", field: "brand", via: "vehicle" }],
     );
-    expect(data?.series[0].key).toBe("vehicle__currentMileage");
-    expect(data?.points[0]["vehicle__currentMileage"]).toBe(10);
+    expect(data?.series[0].key).toBe("vehicle__currentMileage__SUM");
+    expect(data?.points[0]["vehicle__currentMileage__SUM"]).toBe(10);
   });
 });

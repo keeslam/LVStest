@@ -137,7 +137,7 @@ describe("fields, grouping and calculations", () => {
 
 describe("month values", () => {
   it("shows the month in the table and writes mm-jjjj in the CSV", async () => {
-    installFetch([{ offenceAt: "2019-02", totalAmount: "80.00" }]);
+    installFetch([{ offenceAt: "2019-02", "totalAmount.SUM": "80.00" }]);
     const user = userEvent.setup();
     renderBuilder();
     await user.click(screen.getByTestId("checkbox-datasource-vehicles"));

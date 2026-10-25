@@ -203,7 +203,9 @@
         "pickupMileage": "Chilometraggio al ritiro",
         "returnMileage": "Chilometraggio alla restituzione",
         "deliveryRequired": "Consegna necessaria",
-        "deliveryFee": "Costi di consegna"
+        "deliveryFee": "Costi di consegna",
+        "type": "Tipo di prenotazione",
+        "totalPrice": "Importo totale"
       },
       "expenses": {
         "id": "ID",
@@ -219,7 +221,8 @@
         "lastName": "Cognome",
         "email": "E-mail",
         "phone": "Telefono",
-        "isPrimary": "Conducente principale"
+        "isPrimary": "Conducente principale",
+        "isPrimaryDriver": "Conducente principale"
       },
       "fines": {
         "id": "ID",
@@ -427,7 +430,9 @@
       "label": "Riga dei totali",
       "none": "Nessuno",
       "total": "Totale",
-      "totalPage": "Totale (questa pagina)"
+      "totalPage": "Totale (questa pagina)",
+      "totalTruncated": "Totale (prime 1000 righe)",
+      "truncatedNote": "Prime 1000 righe — il totale non è completo."
     }
   },
   "financialTab": {
