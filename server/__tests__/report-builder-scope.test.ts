@@ -221,4 +221,27 @@ describe("report builder scope and update", () => {
     const res = await admin.put("/api/reports/saved/999999999").send(base());
     expect(res.status).toBe(404);
   });
+
+  it("DELETE op een onbekend id geeft 404", async () => {
+    const res = await admin.delete("/api/reports/saved/999999999");
+    expect(res.status).toBe(404);
+  });
+
+  it("DELETE zonder bronrecht geeft 403 en laat het rapport staan", async () => {
+    const created = await admin.post("/api/reports/saved").send(base({ name: "boetes-del" }));
+    savedIds.push(created.body.id);
+    const manager = await agentFor(["view_reports", "manage_reports"]);
+    const res = await manager.delete(`/api/reports/saved/${created.body.id}`);
+    expect(res.status).toBe(403);
+    const rows = await db.select().from(savedReports).where(eq(savedReports.id, created.body.id));
+    expect(rows).toHaveLength(1);
+  });
+
+  it("DELETE met bronrecht verwijdert het rapport", async () => {
+    const created = await admin.post("/api/reports/saved").send(base({ name: "boetes-del2" }));
+    const res = await admin.delete(`/api/reports/saved/${created.body.id}`);
+    expect(res.status).toBe(200);
+    const rows = await db.select().from(savedReports).where(eq(savedReports.id, created.body.id));
+    expect(rows).toHaveLength(0);
+  });
 });

@@ -244,7 +244,12 @@ export function registerReportRoutes(app: Express): void {
   // Delete a saved report
   app.delete("/api/reports/saved/:id", hasPermission(UserPermission.MANAGE_REPORTS), async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(req.params.id, 10);
+      if (Number.isNaN(id)) return res.status(404).json({ message: "Report not found" });
+      const existing = await storage.getSavedReport(id);
+      if (!existing) return res.status(404).json({ message: "Report not found" });
+      const denied = deniedReportSource(req.user, existing.configuration?.dataSources ?? [existing.dataSource]);
+      if (denied) return res.status(403).json(sourceDeniedBody(denied));
       await storage.deleteSavedReport(id);
       res.json({ success: true });
     } catch (error) {
