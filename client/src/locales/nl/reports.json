@@ -640,8 +640,10 @@
       "presets": {
         "thisMonth": "Deze maand",
         "lastMonth": "Vorige maand",
+        "nextMonth": "Volgende maand",
         "thisQuarter": "Dit kwartaal",
         "thisYear": "Dit jaar",
+        "all": "Alle gegevens",
         "custom": "Zelf kiezen"
       },
       "from": "Van",

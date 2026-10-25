@@ -104,6 +104,20 @@ describe("Voertuigbenutting (merged)", () => {
   });
 });
 
+describe("APK-keuring overzicht", () => {
+  it("finds a vehicle by plate typed without dashes", async () => {
+    setup();
+    const user = userEvent.setup();
+    renderWithClient(<ReportsPage />);
+    await openReport(user, "vehicles", "apk-overview");
+    const table = await screen.findByTestId("apk-overview-table");
+    await waitFor(() => expect(within(table).getAllByTestId(/^apk-overview-table-row-/)).toHaveLength(10));
+    await user.type(within(table).getByTestId("apk-overview-table-search"), "aa17bb");
+    await waitFor(() => expect(within(table).getAllByTestId(/^apk-overview-table-row-/)).toHaveLength(1));
+    expect(within(table).getByTestId("apk-overview-table-row-17")).toBeInTheDocument();
+  });
+});
+
 describe("Kosten", () => {
   it("lists Kosten per categorie, Kostentrends and Kosten in deze periode; the trend keeps its testid and says it ignores the period", async () => {
     setup();

@@ -640,8 +640,10 @@
       "presets": {
         "thisMonth": "This month",
         "lastMonth": "Last month",
+        "nextMonth": "Next month",
         "thisQuarter": "This quarter",
         "thisYear": "This year",
+        "all": "All data",
         "custom": "Custom"
       },
       "from": "From",

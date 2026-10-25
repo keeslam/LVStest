@@ -55,7 +55,12 @@ export function ReportTable<R>({ rows, columns, rowKey, searchPlaceholder, defau
 
   const view = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const filtered = q ? rows.filter((r) => columns.some((c) => c.text(r).toLowerCase().includes(q))) : rows;
+    // A plate typed without dashes still matches ("ab123c" finds "AB-123-C"): compare the
+    // letters and digits alone as well.
+    const bare = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+    const qBare = bare(q);
+    const matches = (text: string) => text.toLowerCase().includes(q) || (qBare !== "" && bare(text).includes(qBare));
+    const filtered = q ? rows.filter((r) => columns.some((c) => matches(c.text(r)))) : rows;
     const value = columns.find((c) => c.id === sort.key)?.sortValue;
     if (!value) return filtered;
     return stableSort(filtered, (a, b) => compareValues(value(a), value(b)), sort.dir);

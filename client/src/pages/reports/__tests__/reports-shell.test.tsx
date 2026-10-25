@@ -90,9 +90,16 @@ describe("reports shell - admin", () => {
     expect(await screen.findByTestId("report-period-label")).toHaveTextContent("1-10-2026 t/m 31-10-2026");
     await user.click(screen.getByTestId("select-report-preset"));
     const options = await screen.findAllByRole("option");
-    expect(options.map((o) => o.textContent)).toEqual(["Deze maand", "Vorige maand", "Dit kwartaal", "Dit jaar", "Zelf kiezen"]);
+    expect(options.map((o) => o.textContent)).toEqual(["Deze maand", "Vorige maand", "Volgende maand", "Dit kwartaal", "Dit jaar", "Alle gegevens", "Zelf kiezen"]);
     await user.click(screen.getByRole("option", { name: "Vorige maand" }));
     await waitFor(() => expect(screen.getByTestId("report-period-label")).toHaveTextContent("1-9-2026 t/m 30-9-2026"));
+    await user.click(screen.getByTestId("select-report-preset"));
+    await user.click(await screen.findByRole("option", { name: "Volgende maand" }));
+    await waitFor(() => expect(screen.getByTestId("report-period-label")).toHaveTextContent("1-11-2026 t/m 30-11-2026"));
+    await user.click(screen.getByTestId("select-report-preset"));
+    await user.click(await screen.findByRole("option", { name: "Alle gegevens" }));
+    await waitFor(() => expect(screen.getByTestId("report-period-label")).toHaveTextContent("Alle gegevens"));
+    expect(screen.getByTestId("report-period-label").textContent).not.toMatch(/2000|2050/);
   });
 
   it("Zelf kiezen shows two date fields", async () => {

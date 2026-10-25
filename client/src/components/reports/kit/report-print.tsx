@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { releaseIframeFocus } from "@/lib/release-iframe-focus";
 import { reportClientAction } from "@/lib/audit-events";
 import { COMPANY_NAME_KEY, companyNameFromSetting } from "@shared/company-name";
-import { useReportFilters } from "@/pages/reports/report-filters";
+import { isAllDataRange, useReportFilters } from "@/pages/reports/report-filters";
 import { reportDocumentHtml, type PrintSection, type ResolvedPrintSection } from "@/lib/report-document-print";
 
 export type { PrintSection } from "@/lib/report-document-print";
@@ -155,7 +155,9 @@ function PrintBody({ title }: { title: string }) {
     return reportDocumentHtml({
       company,
       title,
-      period: t("reportsPage.shell.periodLabel", { from: dutchDate(filters.from), to: dutchDate(filters.to) }),
+      period: isAllDataRange(filters.from, filters.to)
+        ? t("reportsPage.common.allData")
+        : t("reportsPage.shell.periodLabel", { from: dutchDate(filters.from), to: dutchDate(filters.to) }),
       filters: filterLines,
       sections: resolved,
       landscape,

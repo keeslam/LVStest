@@ -31,6 +31,10 @@ describe("presetRange", () => {
     expect(presetRange("thisMonth", "2028-02-10")).toEqual({ from: "2028-02-01", to: "2028-02-29" });
     expect(presetRange("thisQuarter", "2026-05-31")).toEqual({ from: "2026-04-01", to: "2026-06-30" });
     expect(presetRange("lastMonth", "2026-01-15")).toEqual({ from: "2025-12-01", to: "2025-12-31" });
+    // Task 5 fix round 1: the old presets Volgende maand and Alle gegevens are back.
+    expect(presetRange("nextMonth", "2026-10-25")).toEqual({ from: "2026-11-01", to: "2026-11-30" });
+    expect(presetRange("nextMonth", "2026-12-05")).toEqual({ from: "2027-01-01", to: "2027-01-31" });
+    expect(presetRange("all", "2026-10-25")).toEqual({ from: "2000-01-01", to: "2050-12-31" });
   });
 });
 

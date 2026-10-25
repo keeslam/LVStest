@@ -9,9 +9,9 @@ import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searcha
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatExpenseCategory, formatLicensePlate } from "@/lib/format-utils";
 import { expenseFetchWindow, presentCategories } from "./report-helpers";
-import { useReportFilters, type ReportPreset } from "./report-filters";
+import { isAllDataRange, useReportFilters, type ReportPreset } from "./report-filters";
 
-const PRESETS: ReportPreset[] = ["thisMonth", "lastMonth", "thisQuarter", "thisYear", "custom"];
+const PRESETS: ReportPreset[] = ["thisMonth", "lastMonth", "nextMonth", "thisQuarter", "thisYear", "all", "custom"];
 
 /** "2026-10-01" -> "1-10-2026" */
 function shortDate(ymd: string): string {
@@ -118,7 +118,9 @@ export function ReportFilterBar({ showCategory, onOpenReportBuilder, onOpenMaint
         )}
 
         <p className="pb-2 text-sm text-muted-foreground" data-testid="report-period-label">
-          {t("reportsPage.shell.periodLabel", { from: shortDate(filters.from), to: shortDate(filters.to) })}
+          {isAllDataRange(filters.from, filters.to)
+            ? t("reportsPage.common.allData")
+            : t("reportsPage.shell.periodLabel", { from: shortDate(filters.from), to: shortDate(filters.to) })}
         </p>
 
         <div className="w-56 space-y-1">

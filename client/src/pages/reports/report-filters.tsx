@@ -1,7 +1,15 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { officeToday } from "@/lib/office-date";
 
-export type ReportPreset = "thisMonth" | "lastMonth" | "thisQuarter" | "thisYear" | "custom";
+export type ReportPreset = "thisMonth" | "lastMonth" | "nextMonth" | "thisQuarter" | "thisYear" | "all" | "custom";
+
+/** "Alle gegevens": the old wide range, past and future. */
+export const ALL_DATA_RANGE = { from: "2000-01-01", to: "2050-12-31" } as const;
+
+/** True for the "Alle gegevens" range; the period is then named, not written as 2000 - 2050. */
+export function isAllDataRange(from: string, to: string): boolean {
+  return from <= ALL_DATA_RANGE.from && to >= ALL_DATA_RANGE.to;
+}
 
 export interface ReportFilters {
   from: string;
@@ -28,6 +36,11 @@ export function presetRange(preset: Exclude<ReportPreset, "custom">, today: stri
       const m = month === 1 ? 12 : month - 1;
       return { from: iso(y, m, 1), to: iso(y, m, lastDay(y, m)) };
     }
+    case "nextMonth": {
+      const y = month === 12 ? year + 1 : year;
+      const m = month === 12 ? 1 : month + 1;
+      return { from: iso(y, m, 1), to: iso(y, m, lastDay(y, m)) };
+    }
     case "thisQuarter": {
       const startMonth = Math.floor((month - 1) / 3) * 3 + 1;
       const endMonth = startMonth + 2;
@@ -35,6 +48,8 @@ export function presetRange(preset: Exclude<ReportPreset, "custom">, today: stri
     }
     case "thisYear":
       return { from: iso(year, 1, 1), to: iso(year, 12, 31) };
+    case "all":
+      return { ...ALL_DATA_RANGE };
   }
 }
 

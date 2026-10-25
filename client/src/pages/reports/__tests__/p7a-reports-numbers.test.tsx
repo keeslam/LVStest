@@ -73,17 +73,31 @@ describe("/reports print documents (A-14-8)", () => {
   });
 });
 
-describe("/reports basis line for 'Alle gegevens' (final wave A, item 9)", () => {
-  it("says 'Alle gegevens', not the 2000 - 2050 the range is made of", async () => {
+describe("/reports print header for 'Alle gegevens' (final wave A, item 9)", () => {
+  it("says 'Alle gegevens' on the APK print, not the 2000 - 2050 the preset is made of", async () => {
     installFetch({ vehicles: fleet, expenses: [] });
     const user = userEvent.setup();
     renderWithClient(<ReportsPage />);
-    // Task 5: the old print header is gone (every report prints the period of the filter bar);
-    // the basis line above the averages keeps the rule.
+    await user.click(await screen.findByTestId("select-report-preset"));
+    await user.click(await screen.findByRole("option", { name: "Alle gegevens" }));
+    await openReport(user, "vehicles", "apk-overview");
+    const printed = await printPreviewBody(user);
+    expect(printed).toContain("Alle gegevens");
+    expect(printed).not.toMatch(/2000|2050/);
+  });
+
+  it("does the same for a range typed by hand that equals it, and on the basis line", async () => {
+    installFetch({ vehicles: fleet, expenses: [] });
+    const user = userEvent.setup();
+    renderWithClient(<ReportsPage />);
     await chooseRange(user, "2000-01-01", "2050-12-31");
     const caption = await screen.findByTestId("reports-basis-caption");
     await waitFor(() => expect(caption).toHaveTextContent("Alle gegevens"));
     expect(caption.textContent).not.toMatch(/2000|2050/);
+    await openReport(user, "vehicles", "apk-overview");
+    const printed = await printPreviewBody(user);
+    expect(printed).toContain("Alle gegevens");
+    expect(printed).not.toMatch(/2000|2050/);
   });
 });
 

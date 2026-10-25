@@ -664,8 +664,10 @@
       "presets": {
         "thisMonth": "Ten miesiąc",
         "lastMonth": "Poprzedni miesiąc",
+        "nextMonth": "Następny miesiąc",
         "thisQuarter": "Ten kwartał",
         "thisYear": "Ten rok",
+        "all": "Wszystkie dane",
         "custom": "Wybierz"
       },
       "from": "Od",

@@ -652,8 +652,10 @@
       "presets": {
         "thisMonth": "Este mês",
         "lastMonth": "Mês anterior",
+        "nextMonth": "Próximo mês",
         "thisQuarter": "Este trimestre",
         "thisYear": "Este ano",
+        "all": "Todos os dados",
         "custom": "Escolher"
       },
       "from": "De",

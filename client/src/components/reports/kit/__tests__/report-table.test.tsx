@@ -31,6 +31,14 @@ describe("ReportTable", () => {
     expect(rowEls()).toHaveLength(3);
   });
 
+  it("finds a plate typed without dashes (XK07A finds XK-07-A)", async () => {
+    const user = userEvent.setup();
+    render(<ReportTable {...props} />);
+    await user.type(screen.getByTestId("rt-search"), "xk07a");
+    expect(rowEls()).toHaveLength(1);
+    expect(screen.getByTestId("rt-row-7")).toBeInTheDocument();
+  });
+
   it("offers page sizes 10, 25 and 50", () => {
     render(<ReportTable {...props} />);
     const options = within(screen.getByTestId("rt-page-size")).getAllByRole("option").map((o) => o.textContent);

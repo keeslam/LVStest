@@ -652,8 +652,10 @@
       "presets": {
         "thisMonth": "Luna aceasta",
         "lastMonth": "Luna trecută",
+        "nextMonth": "Luna viitoare",
         "thisQuarter": "Trimestrul acesta",
         "thisYear": "Anul acesta",
+        "all": "Toate datele",
         "custom": "Alege"
       },
       "from": "De la",
