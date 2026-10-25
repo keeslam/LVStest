@@ -29,6 +29,7 @@ import { transportBillingReport } from "../services/reports/transport-billing-re
 import { occupancyReport } from "../services/reports/occupancy-report";
 import { maintenanceOutlookReport } from "../services/reports/maintenance-outlook-report";
 import { fleetMileageReport } from "../services/reports/fleet-mileage-report";
+import { customerValueReport } from "../services/reports/customer-value-report";
 
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -56,6 +57,8 @@ export function registerReportRoutes(app: Express): void {
   mountReport(app, "/api/reports/fines", moneyReportGuards, finesReport);
   mountReport(app, "/api/reports/extra-costs", moneyReportGuards, extraCostsReport);
   mountReport(app, "/api/reports/transport-billing", moneyReportGuards, transportBillingReport);
+  // Rapporten fase 4: customer value is a money report too - only the report right, no customer right.
+  mountReport(app, "/api/reports/customer-value", moneyReportGuards, customerValueReport);
 
   // Rapporten fase 3: the fleet reports on Rapporten > Voertuigen need the report right and the source right.
   const reportRight = hasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS);
