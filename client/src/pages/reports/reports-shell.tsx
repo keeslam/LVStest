@@ -15,7 +15,7 @@ import { ReportNav } from "./report-nav";
 import { ReportPane } from "./report-pane";
 import { REPORTS, visibleReports, visibleTabs, type ReportTabId } from "./report-registry";
 import { useReportAccess } from "./use-report-access";
-import { useReportSelection } from "./use-report-selection";
+import { ReportSelectionContext, useReportSelection } from "./use-report-selection";
 
 const TAB_ICONS: Record<ReportTabId, LucideIcon> = {
   overview: LayoutDashboard,
@@ -42,7 +42,8 @@ function ReportsShellInner() {
   const { t } = useTranslation("reports");
   const access = useReportAccess();
 
-  const { tab, reportId, ready, select } = useReportSelection(access);
+  const selection = useReportSelection(access);
+  const { tab, reportId, ready, select } = selection;
   const tabs = visibleTabs(access);
   const inTab = visibleReports(access).filter((r) => r.tab === tab);
   const active = REPORTS.find((r) => r.id === reportId && r.tab === tab);
@@ -50,7 +51,11 @@ function ReportsShellInner() {
   const [reportBuilderOpen, setReportBuilderOpen] = useState(false);
   const [maintenanceCostsOpen, setMaintenanceCostsOpen] = useState(false);
 
+  // Overzicht is one item: no list, the tiles get the whole width.
+  const showList = tab !== "overview";
+
   return (
+    <ReportSelectionContext.Provider value={selection}>
     <div className="container mx-auto space-y-4 pb-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">{t("reportsPage.header.title")}</h1>
@@ -77,10 +82,15 @@ function ReportsShellInner() {
         </TabsList>
       </Tabs>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-[240px_minmax(0,1fr)]">
-        <aside>
-          <ReportNav tab={tab} reports={inTab} selectedId={reportId} onSelect={(id) => select(tab, id)} />
-        </aside>
+      <div
+        className={showList ? "grid grid-cols-1 gap-6 md:grid-cols-[240px_minmax(0,1fr)]" : "grid grid-cols-1 gap-6"}
+        data-testid="reports-layout"
+      >
+        {showList && (
+          <aside>
+            <ReportNav tab={tab} reports={inTab} selectedId={reportId} onSelect={(id) => select(tab, id)} />
+          </aside>
+        )}
         {active ? (
           <ReportPane key={active.id} def={active} />
         ) : !ready ? (
@@ -125,5 +135,6 @@ function ReportsShellInner() {
         </DialogContent>
       </Dialog>
     </div>
+    </ReportSelectionContext.Provider>
   );
 }

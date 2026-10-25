@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef } from "react";
 import { useSearch } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
@@ -77,7 +77,14 @@ export function useReportSelection(access: ReportAccess, reports: ReportDef[] = 
     const next = new URLSearchParams(window.location.search);
     next.set("tab", nextTab);
     if (id) next.set("report", id); else next.delete("report");
-    window.history.replaceState(window.history.state, "", `${window.location.pathname}?${next.toString()}${window.location.hash}`);
+    const target = `${window.location.pathname}?${next.toString()}${window.location.hash}`;
+    // A real change of tab or report is a step in the history (the Back button returns to it);
+    // choosing what is already shown does not add one.
+    if (target === `${window.location.pathname}${window.location.search}${window.location.hash}`) {
+      window.history.replaceState(window.history.state, "", target);
+    } else {
+      window.history.pushState(window.history.state, "", target);
+    }
     if (!id || !nextReport || current[nextTab] === id) return;
     written.current = { ...written.current, [nextTab]: id };
     if (isReady) put({ ...server, ...written.current });
@@ -85,4 +92,16 @@ export function useReportSelection(access: ReportAccess, reports: ReportDef[] = 
   }, [put]);
 
   return { tab, reportId, ready, select };
+}
+
+/** The shell's selection, shared so that nothing else keeps a second copy of the remembered choices. */
+export type ReportSelection = ReturnType<typeof useReportSelection>;
+
+export const ReportSelectionContext = createContext<ReportSelection | null>(null);
+
+/** The selection of the surrounding reports shell. */
+export function useSharedReportSelection(): ReportSelection {
+  const selection = useContext(ReportSelectionContext);
+  if (!selection) throw new Error("useSharedReportSelection needs the reports shell");
+  return selection;
 }

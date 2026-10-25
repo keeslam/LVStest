@@ -26,7 +26,11 @@ interface ReportFilterBarProps {
   onOpenMaintenanceCosts(): void;
 }
 
-/** The filter bar above every report; it stays in view while scrolling (the page scrolls the window). */
+/**
+ * The filter bar above every report; from md it stays in view while scrolling (the page scrolls the window).
+ * On a phone it would cover too much of the screen, so it scrolls along. Its z-index stays under the
+ * mobile menu backdrop (z-20 in MainLayout).
+ */
 export function ReportFilterBar({ showCategory, onOpenReportBuilder, onOpenMaintenanceCosts }: ReportFilterBarProps) {
   const { t } = useTranslation("reports");
   const filters = useReportFilters();
@@ -71,7 +75,7 @@ export function ReportFilterBar({ showCategory, onOpenReportBuilder, onOpenMaint
   return (
     <div
       data-testid="report-filter-bar"
-      className="sticky top-0 z-20 rounded-md border-b bg-gray-50/95 py-3 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80"
+      className="z-10 rounded-md border-b md:sticky md:top-0 bg-gray-50/95 py-3 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80"
     >
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1">

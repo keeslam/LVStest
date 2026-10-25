@@ -206,6 +206,8 @@ describe("reports shell - narrow screen", () => {
       dispatchEvent: () => false,
     })) as unknown as typeof window.matchMedia;
     renderPage();
+    // Overzicht has no list; the tabs with several reports do.
+    await userEvent.setup().click(await screen.findByTestId("tab-report-vehicles"));
     expect(await screen.findByTestId("select-report-nav")).toBeVisible();
     expect(screen.queryByTestId("report-nav")).toBeNull();
   });

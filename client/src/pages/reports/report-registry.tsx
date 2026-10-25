@@ -10,7 +10,7 @@ import { FiscalReportTab } from "@/components/fiscal/fiscal-report-tab";
 import { useReportFilters } from "./report-filters";
 import { OverviewReport, OVERVIEW_TILE_REPORT } from "./overview-report";
 import { useReportAccess } from "./use-report-access";
-import { useReportSelection } from "./use-report-selection";
+import { useSharedReportSelection } from "./use-report-selection";
 import { ApkOverviewBadge, DeliveriesBadge, FinesBadge, InvoiceInboxItemsBadge, MaintenanceOutlookBadge, PortalRequestsBadge } from "./report-badges";
 import { FinesReportCard } from "./fines-report-card";
 import { ExtraCostsReportCard } from "./extra-costs-report-card";
@@ -58,11 +58,15 @@ export interface ReportDef {
   visible(ctx: ReportAccess): boolean;
   Component: ComponentType;
   /** Small number in the list; may render null. */
-  badge?: ComponentType;
+  badge?: ComponentType<{ inline?: boolean }>;
   /** The report uses the category filter. */
   usesCategory?: boolean;
   /** A short line under the title, e.g. which filters do not apply. */
   noteKey?: string;
+  /** The period of the filter bar does not apply; the print says so instead of naming a period. */
+  ignoresPeriod?: boolean;
+  /** The vehicle of the filter bar does not apply; the print leaves the vehicle line out. */
+  ignoresVehicle?: boolean;
 }
 
 // ---- Rights, the same rules the cards and the old tabs used ----
@@ -130,7 +134,7 @@ function MileageHistoryReport() {
 /** Overzicht: the key numbers; each tile opens its report. Shown when at least one tile is. */
 function OverviewPane() {
   const access = useReportAccess();
-  const { select } = useReportSelection(access);
+  const { select } = useSharedReportSelection();
   const visible = visibleReports(access);
   const shown = new Set(visible.map((r) => r.id));
   return (
@@ -154,7 +158,7 @@ export const REPORTS: ReportDef[] = [
   // Kosten (all three read /api/expenses)
   { id: "expenses-by-category", tab: "expenses", titleKey: "reportsPage.operations.expensesByCategoryTitle", usesCategory: true,
     visible: (c) => reports(c) && expenses(c), Component: ExpensesByCategoryReport },
-  { id: "expense-trend", tab: "expenses", titleKey: "reportsPage.operations.expenseTrendsTitle", usesCategory: true,
+  { id: "expense-trend", tab: "expenses", titleKey: "reportsPage.operations.expenseTrendsTitle", usesCategory: true, ignoresPeriod: true,
     noteKey: "reportsPage.shell.notes.lastThreeMonths",
     visible: (c) => reports(c) && expenses(c), Component: ExpenseTrendReport },
   { id: "expenses-in-period", tab: "expenses", titleKey: "reportsPage.reports.expensesInPeriod", usesCategory: true,
@@ -165,13 +169,13 @@ export const REPORTS: ReportDef[] = [
   { id: "maintenance-cost-by-vehicle", tab: "vehicles", titleKey: "reportsPage.vehiclesTab.maintenanceCostsTitle", usesCategory: true,
     visible: (c) => reports(c) && vehicles(c) && expenses(c), Component: MaintenanceCostByVehicleReport },
   { id: "apk-overview", tab: "vehicles", titleKey: "reportsPage.vehiclesTab.apkOverviewTitle",
-    visible: (c) => reports(c) && vehicles(c), Component: ApkOverviewReport, badge: ApkOverviewBadge },
+    visible: (c) => reports(c) && vehicles(c), Component: ApkOverviewReport, badge: ApkOverviewBadge, ignoresPeriod: true, ignoresVehicle: true },
   { id: "warranty", tab: "vehicles", titleKey: "reportsPage.vehiclesTab.warrantyOverviewTitle",
-    visible: (c) => reports(c) && vehicles(c), Component: WarrantyReport },
+    visible: (c) => reports(c) && vehicles(c), Component: WarrantyReport, ignoresPeriod: true, ignoresVehicle: true },
   { id: "occupancy", tab: "vehicles", titleKey: "fleetReports.occupancy.title",
     visible: (c) => reports(c) && vehicles(c) && reservations(c), Component: OccupancyReportCard },
   { id: "maintenance-outlook", tab: "vehicles", titleKey: "fleetReports.outlook.title",
-    visible: (c) => reports(c) && vehicles(c), Component: MaintenanceOutlookCard, badge: MaintenanceOutlookBadge },
+    visible: (c) => reports(c) && vehicles(c), Component: MaintenanceOutlookCard, badge: MaintenanceOutlookBadge, ignoresPeriod: true },
   { id: "workshop-downtime", tab: "vehicles", titleKey: "reportsPage.downtime.title",
     visible: (c) => reports(c) && vehicles(c), Component: WorkshopDowntimeCard },
   { id: "fleet-mileage", tab: "vehicles", titleKey: "fleetReports.mileage.title",
@@ -190,7 +194,7 @@ export const REPORTS: ReportDef[] = [
     visible: reports, Component: CustomerValueReportCard },
   // Transporten (the period and vehicle of the filter bar do not apply; the pane says so)
   { id: "transports", tab: "transports", titleKey: "reportsPage.transportsTab.cardTitle",
-    noteKey: "reportsPage.shell.notes.periodVehicleIgnored",
+    noteKey: "reportsPage.shell.notes.periodVehicleIgnored", ignoresPeriod: true, ignoresVehicle: true,
     visible: (c) => reports(c) && transports(c), Component: TransportsReport },
   // Financieel (money reports: the report right only)
   { id: "vehicle-financials", tab: "financial", titleKey: "financialTab.table.title",

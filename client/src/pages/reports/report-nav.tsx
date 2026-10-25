@@ -43,7 +43,10 @@ export function ReportNav({ tab, reports, selectedId, onSelect }: ReportNavProps
         </SelectTrigger>
         <SelectContent>
           {reports.map((r) => (
-            <SelectItem key={r.id} value={r.id}>{t(r.titleKey)}</SelectItem>
+            <SelectItem key={r.id} value={r.id}>
+              {t(r.titleKey)}
+              {r.badge && <>{" "}<r.badge inline /></>}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>
