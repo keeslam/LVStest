@@ -14,12 +14,29 @@ import { QUICK_ACTIONS_KEY, isValidQuickActionsValue } from "../../shared/quick-
 import { STAFF_SIGNATURE_KEY, isValidStaffSignature } from "../../shared/staff-signature";
 import type { RouteDeps } from "./deps";
 
+const MAX_SETTING_BYTES = 20000;
+const isStringList = (v: unknown, max: number): v is string[] =>
+  Array.isArray(v) && v.length <= max && v.every((x) => typeof x === "string" && x.length <= 100);
+const isPlainObject = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
+const smallEnough = (v: unknown) => JSON.stringify(v).length <= MAX_SETTING_BYTES;
+
+/** Reports page: the last report per tab, { tab: reportId }. */
+const isValidReportsLastSelected = (v: unknown): boolean =>
+  isPlainObject(v) && smallEnough(v) && Object.entries(v).every(([k, x]) => k.length <= 100 && typeof x === "string" && x.length <= 100);
+
+/** Reports page: the shown columns per report, { reportId: { hidden: string[], extra: string[] } }. */
+const isValidReportColumns = (v: unknown): boolean =>
+  isPlainObject(v) && smallEnough(v) && Object.entries(v).every(([k, c]) =>
+    k.length <= 100 && isPlainObject(c) && isStringList(c.hidden, 100) && isStringList(c.extra, 100));
+
 /** The keys a user may keep for themselves, each with its own check. */
 const USER_SETTING_RULES: Record<string, (value: unknown) => boolean> = {
   [DASHBOARD_TILES_KEY]: isValidDashboardTilesValue,
   [QUICK_ACTIONS_KEY]: isValidQuickActionsValue,
   // Kees 2026-10-21: your own signature for the contracts you make (no standard).
   [STAFF_SIGNATURE_KEY]: isValidStaffSignature,
+  reports_last_selected: isValidReportsLastSelected,
+  report_columns: isValidReportColumns,
 };
 
 export function registerUserSettingRoutes(app: Express, deps: RouteDeps): void {
