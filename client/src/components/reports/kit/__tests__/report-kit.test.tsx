@@ -382,4 +382,9 @@ describe("report kit", () => {
     render(<ReportTopChart rows={[{ key: 1, label: "A", count: 2, amount: 750 }]} nullLabel="-" money color="#000" testId="b" />);
     expect(screen.getByTestId("b")).toHaveAttribute("data-value-label", "Bedrag");
   });
+
+  it("ReportMonthChart tekent in jsdom (vaste maat uit de setup)", () => {
+    render(<ReportMonthChart data={[{ month: "2019-01", a: 1 }]} series={[{ key: "a", label: "A", color: "#000" }]} testId="m" />);
+    expect(screen.getByTestId("m").querySelector("svg.recharts-surface")).not.toBeNull();
+  });
 });

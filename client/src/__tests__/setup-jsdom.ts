@@ -21,6 +21,23 @@ afterEach(() => {
   cleanup();
 });
 
+// recharts' ResponsiveContainer measures its parent, and jsdom has no layout: width and height are 0,
+// the chart draws nothing and logs "width(0) and height(0)". Give it a fixed size so the real charts
+// draw in tests. A test file with its own vi.mock("recharts") takes precedence over this one.
+vi.mock("recharts", async (importOriginal) => {
+  const React = await import("react");
+  const original = await importOriginal<typeof import("recharts")>();
+  return {
+    ...original,
+    ResponsiveContainer: ({ children }: { children: React.ReactElement }) =>
+      React.createElement(
+        "div",
+        { style: { width: 800, height: 400 } },
+        React.cloneElement(children, { width: 800, height: 400 }),
+      ),
+  };
+});
+
 if (!window.matchMedia) {
   Object.defineProperty(window, "matchMedia", {
     writable: true,

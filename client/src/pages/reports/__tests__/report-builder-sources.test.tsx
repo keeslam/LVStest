@@ -151,7 +151,7 @@ describe("month values", () => {
     await user.click(await screen.findByRole("option", { name: "Som" }));
     await user.click(screen.getByTestId("button-run-report"));
     const dialog = await screen.findByTestId("dialog-report-results");
-    expect(within(dialog).getByText(formatDateNl("2019-02-01T12:00:00", "MMM yyyy"))).toBeInTheDocument();
+    expect(within(within(dialog).getByRole("table")).getByText(formatDateNl("2019-02-01T12:00:00", "MMM yyyy"))).toBeInTheDocument();
     await user.click(within(dialog).getByText("Exporteren naar CSV"));
     expect(downloadCsv).toHaveBeenCalledTimes(1);
     expect((downloadCsv.mock.calls[0] as any[])[2]).toEqual([["02-2019", "80,00"]]);

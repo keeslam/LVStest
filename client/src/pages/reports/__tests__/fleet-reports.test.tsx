@@ -375,7 +375,7 @@ describe("Kilometerstanden vloot - kaart (alleen admin)", () => {
     expect(screen.getByTestId("fleet-mileage-month-chart")).toBeInTheDocument();
     await user.click(screen.getByTestId("button-fleet-mileage-tile-driven"));
     expect(await screen.findByRole("columnheader", { name: "jan. 2026" })).toBeInTheDocument();
-    expect(await screen.findByText("600")).toBeInTheDocument();
+    expect(await screen.findByRole("cell", { name: "600" })).toBeInTheDocument();
     await user.click(await screen.findByTestId("button-fleet-mileage-csv"));
     await waitFor(() => expect(downloadCsv).toHaveBeenCalled());
     const [subject, header, rows] = downloadCsv.mock.calls[0] as [string, string[], unknown[][]];
