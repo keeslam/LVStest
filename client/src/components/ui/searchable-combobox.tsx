@@ -82,12 +82,17 @@ export function SearchableCombobox({
     if (!searchQuery) return options;
     
     const query = searchQuery.toLowerCase();
+    // A plate typed without its dashes or spaces ("ab123c") finds "AB-123-C": compare without them too.
+    const squash = (text: string) => text.toLowerCase().replace(/[s-]+/g, "");
+    const squashed = squash(searchQuery);
+    const matches = (text: string | undefined) =>
+      !!text && (text.toLowerCase().includes(query) || (squashed !== "" && squash(text).includes(squashed)));
     return options.filter(
       (option) =>
-        option.label.toLowerCase().includes(query) ||
-        option.value.toLowerCase().includes(query) ||
-        option.description?.toLowerCase().includes(query) ||
-        option.tags?.some(tag => tag?.toLowerCase().includes(query))
+        matches(option.label) ||
+        matches(option.value) ||
+        matches(option.description) ||
+        option.tags?.some(tag => matches(tag))
     );
   }, [options, searchQuery]);
 

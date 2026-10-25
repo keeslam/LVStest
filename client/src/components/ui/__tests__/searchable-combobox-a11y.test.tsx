@@ -157,3 +157,21 @@ describe("SearchableCombobox, mouse", () => {
     expect(onChange).toHaveBeenCalledWith("3");
   });
 });
+
+describe("SearchableCombobox, search without dashes", () => {
+  it("finds a plate typed without its dashes or spaces, and still plain text", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    const listbox = await openList(user);
+    const search = screen.getByRole("combobox", { name: "Zoek voertuig" });
+    const labels = () => within(listbox).queryAllByRole("option").map((o) => (o.getAttribute("aria-label") ?? "").split(",")[0]);
+    await user.type(search, "ab123c");
+    await waitFor(() => expect(labels()).toEqual(["AB-123-C"]));
+    await user.clear(search);
+    await user.type(search, "xy-987");
+    await waitFor(() => expect(labels()).toEqual(["XY-987-Z"]));
+    await user.clear(search);
+    await user.type(search, "ford");
+    await waitFor(() => expect(labels()).toEqual(["XY-987-Z"]));
+  });
+});
