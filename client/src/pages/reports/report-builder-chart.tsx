@@ -17,10 +17,13 @@ export const BUILDER_PIE_MAX_SLICES = 10;
 export const BUILDER_CHART_COLORS = ["#3b82f6", "#16a34a", "#f59e0b", "#dc2626", "#8b5cf6", "#0ea5e9", "#9ca3af"];
 
 export interface BuilderChartData {
-  points: Array<{ name: string } & Record<string, number | string>>;
+  points: Array<{ __cat: string } & Record<string, number | string>>;
   series: Array<{ key: string; label: string }>;
   truncated: boolean;
 }
+
+/** The category lives under a reserved key: a series may sit on a field that is itself called name. */
+const CATEGORY = "__cat";
 
 /** The chart data of a grouped result; null when the result was not grouped. */
 export function builderChartData(
@@ -36,8 +39,8 @@ export function builderChartData(
     .filter((c) => !!c.aggregation)
     .map((c) => ({ key: c.field, label: `${fieldLabel(t, c.table, c.field, c.label)} (${aggregationLabel(t, c.aggregation!)})` }));
   const points = rows.slice(0, BUILDER_CHART_MAX_GROUPS).map((row) => {
-    const point: { name: string } & Record<string, number | string> = {
-      name: groupColumns.map((c) => displayCell(t, c, row[c.field])).join(" · "),
+    const point: { __cat: string } & Record<string, number | string> = {
+      [CATEGORY]: groupColumns.map((c) => displayCell(t, c, row[c.field])).join(" · "),
     };
     for (const s of series) {
       const n = Number(row[s.key]);
@@ -51,7 +54,7 @@ export function builderChartData(
 /** Pie slices: only positive values, the ten largest, the rest as one "other" slice. */
 export function pieSlices(points: BuilderChartData["points"], key: string, otherLabel: string): Array<{ name: string; value: number }> {
   const positive = points
-    .map((p) => ({ name: p.name, value: Number(p[key]) }))
+    .map((p) => ({ name: p.__cat, value: Number(p[key]) }))
     .filter((p) => Number.isFinite(p.value) && p.value > 0)
     .sort((a, b) => b.value - a.value);
   const top = positive.slice(0, BUILDER_PIE_MAX_SLICES);
@@ -115,7 +118,7 @@ export function ReportBuilderChart({ rows, columns, groupBy }: {
           ) : type === "line" ? (
             <LineChart data={data.points} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
+              <XAxis dataKey={CATEGORY} />
               <YAxis tickFormatter={valueText} width={60} />
               <Tooltip formatter={(n: number, name: string) => [valueText(n), name]} />
               <Legend />
@@ -124,7 +127,7 @@ export function ReportBuilderChart({ rows, columns, groupBy }: {
           ) : (
             <BarChart data={data.points} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
+              <XAxis dataKey={CATEGORY} />
               <YAxis tickFormatter={valueText} width={60} />
               <Tooltip formatter={(n: number, name: string) => [valueText(n), name]} />
               <Legend />

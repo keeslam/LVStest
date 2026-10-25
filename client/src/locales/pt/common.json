@@ -395,6 +395,11 @@
     "timeout": "O servidor não respondeu a tempo. Verifique a ligação e tente novamente.",
     "network": "Sem ligação ao servidor. Verifique a ligação à Internet e tente novamente.",
     "codes": {
+      "REPORT_COLUMN_NOT_GROUPED": "Uma coluna deste relatório não está no agrupamento. Escolha um cálculo para ela ou agrupe por ela.",
+      "REPORT_PERIOD_NOT_DATE": "Agrupar por mês só funciona num campo de data.",
+      "REPORT_PERIOD_UNKNOWN": "Este tipo de agrupamento não é possível. Escolha por mês ou sem agrupar.",
+      "REPORT_FIELD_REMOVED": "Um campo deste relatório já não existe. Remova-o do relatório.",
+      "REPORT_COLUMN_DUPLICATE": "Uma coluna aparece duas vezes no relatório. Remova a coluna duplicada.",
       "CURRENT_PASSWORD_INCORRECT": "A palavra-passe atual não está correta.",
       "PASSWORD_TOO_WEAK": "A palavra-passe não cumpre a regra: mínimo de 10 caracteres, com maiúscula, minúscula e algarismo.",
       "USE_CHANGE_PASSWORD": "A sua própria palavra-passe altera-se no seu perfil, em Alterar palavra-passe.",

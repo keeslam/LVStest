@@ -77,6 +77,7 @@
       "reportExecutedDescription_other": "S-au găsit {{count}} de rezultate",
       "executeErrorTitle": "Eroare la executarea raportului",
       "executeErrorDescription": "Executarea raportului a eșuat",
+      "columnNotGrouped": "Coloana {{column}} nu este în grupare. Alege un calcul pentru ea sau grupează după ea.",
       "reportSavedTitle": "Raport salvat cu succes",
       "reportSavedDescription": "Configurația raportului dumneavoastră a fost salvată",
       "saveErrorTitle": "Eroare la salvarea raportului",

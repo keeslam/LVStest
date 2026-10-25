@@ -74,6 +74,7 @@
       "reportExecutedDescription_other": "Found {{count}} results",
       "executeErrorTitle": "Error executing report",
       "executeErrorDescription": "Failed to run report",
+      "columnNotGrouped": "The column {{column}} is not in the grouping. Pick a calculation for it or group on it.",
       "reportSavedTitle": "Report saved successfully",
       "reportSavedDescription": "Your report configuration has been saved",
       "saveErrorTitle": "Error saving report",

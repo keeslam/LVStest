@@ -395,6 +395,11 @@
     "timeout": "El servidor no ha respondido a tiempo. Compruebe la conexión e inténtelo de nuevo.",
     "network": "No hay conexión con el servidor. Compruebe su conexión a internet e inténtelo de nuevo.",
     "codes": {
+      "REPORT_COLUMN_NOT_GROUPED": "Una columna de este informe no está en la agrupación. Elige un cálculo para ella o agrupa por ella.",
+      "REPORT_PERIOD_NOT_DATE": "Agrupar por mes solo funciona con un campo de fecha.",
+      "REPORT_PERIOD_UNKNOWN": "Este tipo de agrupación no es posible. Elige por mes o sin agrupar.",
+      "REPORT_FIELD_REMOVED": "Un campo de este informe ya no existe. Quítalo del informe.",
+      "REPORT_COLUMN_DUPLICATE": "Una columna aparece dos veces en el informe. Quita la columna duplicada.",
       "CURRENT_PASSWORD_INCORRECT": "La contraseña actual no es correcta.",
       "PASSWORD_TOO_WEAK": "La contraseña no cumple la regla: mínimo 10 caracteres, con mayúscula, minúscula y número.",
       "USE_CHANGE_PASSWORD": "Su propia contraseña se cambia desde su perfil, en Cambiar contraseña.",

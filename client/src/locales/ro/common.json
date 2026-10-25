@@ -395,6 +395,11 @@
     "timeout": "Serverul nu a răspuns la timp. Verificați conexiunea și încercați din nou.",
     "network": "Nu există conexiune la server. Verificați conexiunea la internet și încercați din nou.",
     "codes": {
+      "REPORT_COLUMN_NOT_GROUPED": "O coloană din acest raport nu este în grupare. Alege un calcul pentru ea sau grupează după ea.",
+      "REPORT_PERIOD_NOT_DATE": "Gruparea pe lună funcționează doar pe un câmp de dată.",
+      "REPORT_PERIOD_UNKNOWN": "Acest fel de grupare nu este posibil. Alege pe lună sau fără grupare.",
+      "REPORT_FIELD_REMOVED": "Un câmp din acest raport nu mai există. Elimină-l din raport.",
+      "REPORT_COLUMN_DUPLICATE": "O coloană apare de două ori în raport. Elimină coloana dublă.",
       "CURRENT_PASSWORD_INCORRECT": "Parola actuală nu este corectă.",
       "PASSWORD_TOO_WEAK": "Parola nu respectă regula: minimum 10 caractere, cu literă mare, literă mică și cifră.",
       "USE_CHANGE_PASSWORD": "Propria parolă o schimbați din profilul dumneavoastră, la Schimbă parola.",

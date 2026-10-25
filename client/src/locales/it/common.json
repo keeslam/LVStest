@@ -395,6 +395,11 @@
     "timeout": "Il server non ha risposto in tempo. Verifichi la connessione e riprovi.",
     "network": "Nessuna connessione al server. Verifichi la connessione a Internet e riprovi.",
     "codes": {
+      "REPORT_COLUMN_NOT_GROUPED": "Una colonna di questo rapporto non è nel raggruppamento. Scegli un calcolo per essa o raggruppa per essa.",
+      "REPORT_PERIOD_NOT_DATE": "Raggruppare per mese è possibile solo su un campo data.",
+      "REPORT_PERIOD_UNKNOWN": "Questo tipo di raggruppamento non è possibile. Scegli per mese o nessun raggruppamento.",
+      "REPORT_FIELD_REMOVED": "Un campo di questo rapporto non esiste più. Rimuovilo dal rapporto.",
+      "REPORT_COLUMN_DUPLICATE": "Una colonna compare due volte nel rapporto. Rimuovi la colonna doppia.",
       "CURRENT_PASSWORD_INCORRECT": "La password attuale non è corretta.",
       "PASSWORD_TOO_WEAK": "La password non rispetta la regola: almeno 10 caratteri, con una lettera maiuscola, una minuscola e un numero.",
       "USE_CHANGE_PASSWORD": "La propria password si modifica dal profilo, alla voce Modificare la password.",

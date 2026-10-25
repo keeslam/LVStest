@@ -399,6 +399,11 @@
     "timeout": "Serwer nie odpowiedział na czas. Sprawdź połączenie i spróbuj ponownie.",
     "network": "Brak połączenia z serwerem. Sprawdź połączenie z internetem i spróbuj ponownie.",
     "codes": {
+      "REPORT_COLUMN_NOT_GROUPED": "Kolumna w tym raporcie nie jest w grupowaniu. Wybierz dla niej obliczenie albo zgrupuj po niej.",
+      "REPORT_PERIOD_NOT_DATE": "Grupowanie według miesiąca działa tylko na polu daty.",
+      "REPORT_PERIOD_UNKNOWN": "Takie grupowanie nie jest możliwe. Wybierz według miesiąca albo bez grupowania.",
+      "REPORT_FIELD_REMOVED": "Pole w tym raporcie już nie istnieje. Usuń je z raportu.",
+      "REPORT_COLUMN_DUPLICATE": "Kolumna występuje w raporcie dwa razy. Usuń zduplikowaną kolumnę.",
       "CURRENT_PASSWORD_INCORRECT": "Obecne hasło jest nieprawidłowe.",
       "PASSWORD_TOO_WEAK": "Hasło nie spełnia wymagań: co najmniej 10 znaków, w tym wielka litera, mała litera i cyfra.",
       "USE_CHANGE_PASSWORD": "Własne hasło zmienia się w profilu, w opcji Zmień hasło.",

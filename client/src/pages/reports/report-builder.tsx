@@ -79,7 +79,8 @@ export default function ReportBuilder() {
 
   const addColumnMutation = useMutation({
     mutationFn: async (column: ReportColumn) => {
-      setColumns(prev => [...prev, column]);
+      // The same plain column twice cannot be grouped: a second click adds nothing.
+      setColumns(prev => prev.some(c => !c.aggregation && c.table === column.table && c.field === column.field) ? prev : [...prev, column]);
     },
   });
 
@@ -174,9 +175,16 @@ export default function ReportBuilder() {
       });
     },
     onError: (error: any) => {
+      // The server names the column that is missing from the grouping ("fines.status").
+      const dot = error?.code === 'REPORT_COLUMN_NOT_GROUPED' && typeof error.field === 'string' ? error.field.indexOf('.') : -1;
+      const description = dot > 0
+        ? t('reportBuilderPage.toasts.columnNotGrouped', {
+            column: fieldLabel(t, error.field.slice(0, dot), error.field.slice(dot + 1), getField(error.field.slice(0, dot), error.field.slice(dot + 1))?.label),
+          })
+        : describeApiError(error, undefined, t('reportBuilderPage.toasts.executeErrorDescription'));
       toast({
         title: t('reportBuilderPage.toasts.executeErrorTitle'),
-        description: describeApiError(error, undefined, t('reportBuilderPage.toasts.executeErrorDescription')),
+        description,
         variant: "destructive",
       });
     },
@@ -222,8 +230,8 @@ export default function ReportBuilder() {
     setLoadingReport(report.id);
     setSelectedDataSources(report.configuration.dataSources);
     setColumns(report.configuration.columns);
-    setFilters(report.configuration.filters);
-    setGroupBy(report.configuration.groupBy);
+    setFilters(report.configuration.filters ?? []);
+    setGroupBy(report.configuration.groupBy ?? []);
     setActiveTab('builder');
     setTimeout(() => setLoadingReport(null), 500);
   };
@@ -739,7 +747,7 @@ function SavedReportsTab({
                 )}
                 <div className="flex gap-2 mt-2">
                   <Badge variant="outline">{t('reportBuilderPage.columnsCount', { count: report.configuration.columns.length })}</Badge>
-                  <Badge variant="outline">{t('reportBuilderPage.filtersCount', { count: report.configuration.filters.length })}</Badge>
+                  <Badge variant="outline">{t('reportBuilderPage.filtersCount', { count: (report.configuration.filters ?? []).length })}</Badge>
                   <Badge variant="outline">{report.configuration.dataSources.map((id) => sourceLabel(t, id)).join(', ')}</Badge>
                 </div>
               </div>

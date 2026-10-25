@@ -80,6 +80,7 @@
       "reportExecutedDescription_other": "Znaleziono {{count}} wyniku",
       "executeErrorTitle": "Błąd podczas wykonywania raportu",
       "executeErrorDescription": "Nie udało się wykonać raportu",
+      "columnNotGrouped": "Kolumna {{column}} nie jest w grupowaniu. Wybierz dla niej obliczenie albo zgrupuj po niej.",
       "reportSavedTitle": "Raport pomyślnie zapisany",
       "reportSavedDescription": "Konfiguracja raportu została zapisana",
       "saveErrorTitle": "Błąd podczas zapisywania raportu",

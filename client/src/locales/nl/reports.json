@@ -74,6 +74,7 @@
       "reportExecutedDescription_other": "{{count}} resultaten gevonden",
       "executeErrorTitle": "Fout bij uitvoeren rapport",
       "executeErrorDescription": "Uitvoeren van rapport mislukt",
+      "columnNotGrouped": "De kolom {{column}} staat niet in de groepering. Kies er een berekening bij of groepeer erop.",
       "reportSavedTitle": "Rapport succesvol opgeslagen",
       "reportSavedDescription": "Je rapportconfiguratie is opgeslagen",
       "saveErrorTitle": "Fout bij opslaan rapport",

@@ -76,6 +76,14 @@ export function displayCell(t: TFunction, column: OutputColumn, value: unknown):
     if (MONTH_VALUE.test(String(value))) return formatDateNl(`${value}-01T12:00:00`, "MMM yyyy");
     return formatDate(String(value));
   }
+  if (column.aggregation) {
+    // A calculation comes back as a long decimal string: show it like the CSV, with Dutch separators.
+    const n = Number(value);
+    if (!Number.isFinite(n)) return String(value);
+    const whole = Number.isInteger(n) && !MONEY_FIELD.test(column.field) && column.aggregation !== "AVG";
+    const digits = whole ? 0 : 2;
+    return n.toLocaleString("nl-NL", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  }
   return String(value);
 }
 

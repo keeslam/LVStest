@@ -391,6 +391,11 @@
     "timeout": "De server antwoordde niet op tijd. Controleer de verbinding en probeer het opnieuw.",
     "network": "Geen verbinding met de server. Controleer je internetverbinding en probeer het opnieuw.",
     "codes": {
+      "REPORT_COLUMN_NOT_GROUPED": "Een kolom in dit rapport staat niet in de groepering. Kies er een berekening bij of groepeer erop.",
+      "REPORT_PERIOD_NOT_DATE": "Groeperen per maand kan alleen op een datumveld.",
+      "REPORT_PERIOD_UNKNOWN": "Dit soort groeperen kan niet. Kies per maand of niet groeperen.",
+      "REPORT_FIELD_REMOVED": "Een veld in dit rapport bestaat niet meer. Verwijder het uit het rapport.",
+      "REPORT_COLUMN_DUPLICATE": "Een kolom staat twee keer in het rapport. Haal de dubbele kolom weg.",
       "CURRENT_PASSWORD_INCORRECT": "Het huidige wachtwoord klopt niet.",
       "PASSWORD_TOO_WEAK": "Het wachtwoord voldoet niet aan de regel: minimaal 10 tekens, met hoofdletter, kleine letter en cijfer.",
       "USE_CHANGE_PASSWORD": "Je eigen wachtwoord wijzig je via je profiel, onder Wachtwoord wijzigen.",

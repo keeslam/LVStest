@@ -13,7 +13,7 @@ const month = [{ table: "fines", field: "offenceAt", period: "month" as const }]
 describe("builderChartData", () => {
   it("punten en reeksen uit het resultaat", () => {
     const d = builderChartData(t, [{ offenceAt: "2019-02", totalAmount: "80.00" }, { offenceAt: null, totalAmount: "x" }], cols, month)!;
-    expect(d.points).toEqual([{ name: formatDateNl("2019-02-01T12:00:00", "MMM yyyy"), totalAmount: 80 }, { name: "-", totalAmount: 0 }]);
+    expect(d.points).toEqual([{ __cat: formatDateNl("2019-02-01T12:00:00", "MMM yyyy"), totalAmount: 80 }, { __cat: "-", totalAmount: 0 }]);
     expect(d.series).toEqual([{ key: "totalAmount", label: "Totaalbedrag (Som)" }]);
     expect(d.truncated).toBe(false);
   });
@@ -33,10 +33,19 @@ describe("builderChartData", () => {
 
 describe("pieSlices", () => {
   it("taart: tien grootste plus Overig, alleen positief", () => {
-    const points = [...Array.from({ length: 12 }, (_, i) => ({ name: `g${i}`, v: 12 - i })), { name: "nul", v: 0 }, { name: "min", v: -4 }];
+    const points = [...Array.from({ length: 12 }, (_, i) => ({ __cat: `g${i}`, v: 12 - i })), { __cat: "nul", v: 0 }, { __cat: "min", v: -4 }];
     const slices = pieSlices(points, "v", "Overig");
     expect(slices).toHaveLength(11);
     expect(slices[0]).toEqual({ name: "g0", value: 12 });
     expect(slices[10]).toEqual({ name: "Overig", value: 3 });
+  });
+});
+
+describe("a series on a field called name", () => {
+  it("keeps the category apart from the series", () => {
+    const columns = [{ table: "customers", field: "city", label: "c" }, { table: "customers", field: "name", label: "n", aggregation: "COUNT" as const }];
+    const d = builderChartData(t, [{ city: "Breda", name: "4" }, { city: "Ede", name: "2" }], columns, [{ table: "customers", field: "city" }])!;
+    expect(d.points).toEqual([{ __cat: "Breda", name: 4 }, { __cat: "Ede", name: 2 }]);
+    expect(pieSlices(d.points, "name", "Overig")).toEqual([{ name: "Breda", value: 4 }, { name: "Ede", value: 2 }]);
   });
 });

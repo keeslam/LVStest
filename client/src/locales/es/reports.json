@@ -77,6 +77,7 @@
       "reportExecutedDescription_other": "Se han encontrado {{count}} resultados",
       "executeErrorTitle": "Error al ejecutar el informe",
       "executeErrorDescription": "No se pudo ejecutar el informe",
+      "columnNotGrouped": "La columna {{column}} no está en la agrupación. Elige un cálculo para ella o agrupa por ella.",
       "reportSavedTitle": "Informe guardado correctamente",
       "reportSavedDescription": "La configuración de su informe se ha guardado",
       "saveErrorTitle": "Error al guardar el informe",

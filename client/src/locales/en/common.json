@@ -391,6 +391,11 @@
     "timeout": "The server did not answer in time. Check the connection and try again.",
     "network": "No connection to the server. Check your internet connection and try again.",
     "codes": {
+      "REPORT_COLUMN_NOT_GROUPED": "A column in this report is not in the grouping. Pick a calculation for it or group on it.",
+      "REPORT_PERIOD_NOT_DATE": "Grouping per month only works on a date field.",
+      "REPORT_PERIOD_UNKNOWN": "This kind of grouping is not possible. Choose per month or no grouping.",
+      "REPORT_FIELD_REMOVED": "A field in this report no longer exists. Remove it from the report.",
+      "REPORT_COLUMN_DUPLICATE": "A column appears twice in the report. Remove the duplicate column.",
       "CURRENT_PASSWORD_INCORRECT": "The current password is incorrect.",
       "PASSWORD_TOO_WEAK": "The password does not meet the rule: at least 10 characters, with an uppercase letter, a lowercase letter and a number.",
       "USE_CHANGE_PASSWORD": "Change your own password from your profile, under Change password.",

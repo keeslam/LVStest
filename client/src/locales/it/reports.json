@@ -77,6 +77,7 @@
       "reportExecutedDescription_other": "{{count}} risultati trovati",
       "executeErrorTitle": "Errore durante l'esecuzione del rapporto",
       "executeErrorDescription": "Esecuzione del rapporto non riuscita",
+      "columnNotGrouped": "La colonna {{column}} non è nel raggruppamento. Scegli un calcolo per essa o raggruppa per essa.",
       "reportSavedTitle": "Rapporto salvato correttamente",
       "reportSavedDescription": "La configurazione del Suo rapporto è stata salvata",
       "saveErrorTitle": "Errore durante il salvataggio del rapporto",
