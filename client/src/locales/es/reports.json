@@ -139,6 +139,18 @@
     "foundResultsCount_other": "Se han encontrado {{count}} resultados",
     "noResultsFound": "No se han encontrado resultados",
     "closeButton": "Cerrar",
+    "links": {
+      "vehicle": "Vehículo",
+      "customer": "Cliente",
+      "reservation": "Reserva",
+      "driver": "Conductor"
+    },
+    "linkedGroup": {
+      "vehicle": "Vinculado: Vehículo",
+      "customer": "Vinculado: Cliente",
+      "reservation": "Vinculado: Reserva",
+      "driver": "Vinculado: Conductor"
+    },
     "sources": {
       "vehicles": "Vehículos",
       "customers": "Clientes",

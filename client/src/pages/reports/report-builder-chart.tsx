@@ -8,7 +8,7 @@ import type { TFunction } from "i18next";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { ReportColumn, ReportGrouping } from "@shared/report-builder-config";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { aggregationLabel, displayCell, fieldLabel } from "@/pages/reports/report-builder-output";
+import { aggregationLabel, displayCell, linkedFieldLabel, resultKey } from "@/pages/reports/report-builder-output";
 
 export type BuilderChartType = "bar" | "line" | "pie";
 
@@ -33,17 +33,18 @@ export function builderChartData(
   groupBy: ReportGrouping[],
 ): BuilderChartData | null {
   if (groupBy.length === 0) return null;
-  const groupColumns = groupBy.map((g) => columns.find((c) => c.table === g.table && c.field === g.field && !c.aggregation)
-    ?? { table: g.table, field: g.field, label: g.field });
-  const series = columns
-    .filter((c) => !!c.aggregation)
-    .map((c) => ({ key: c.field, label: `${fieldLabel(t, c.table, c.field, c.label)} (${aggregationLabel(t, c.aggregation!)})` }));
+  const groupColumns = groupBy.map((g) => columns.find((c) => c.table === g.table && c.field === g.field && (c.via ?? "") === (g.via ?? "") && !c.aggregation)
+    ?? { table: g.table, field: g.field, via: g.via, label: g.field });
+  const calcColumns = columns.filter((c) => !!c.aggregation);
+  // A linked column is "vehicle.x" in the rows; the chart key has no dot (a dot reads as a path).
+  const series = calcColumns
+    .map((c) => ({ key: resultKey(c).replace(".", "__"), label: `${linkedFieldLabel(t, c.via, c.table, c.field, c.label)} (${aggregationLabel(t, c.aggregation!)})` }));
   const points = rows.slice(0, BUILDER_CHART_MAX_GROUPS).map((row) => {
     const point: { __cat: string } & Record<string, number | string> = {
-      [CATEGORY]: groupColumns.map((c) => displayCell(t, c, row[c.field])).join(" · "),
+      [CATEGORY]: groupColumns.map((c) => displayCell(t, c, row[resultKey(c)])).join(" · "),
     };
-    for (const s of series) {
-      const n = Number(row[s.key]);
+    for (const [i, s] of series.entries()) {
+      const n = Number(row[resultKey(calcColumns[i])]);
       point[s.key] = Number.isFinite(n) ? n : 0;
     }
     return point;

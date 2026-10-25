@@ -24,12 +24,16 @@ import { downloadCsv } from "@/lib/csv";
 import { ReportBuilderChart } from "@/pages/reports/report-builder-chart";
 import { formatDateTime } from "@/lib/format-utils";
 import {
-  sourceLabel, fieldLabel, operatorLabel, aggregationLabel, outputHeader, csvCell, displayCell, buildReportTableHtml, reportFileSubject,
+  sourceLabel, fieldLabel, linkedFieldLabel, resultKey, operatorLabel, aggregationLabel, outputHeader, csvCell, displayCell, buildReportTableHtml, reportFileSubject,
 } from "@/pages/reports/report-builder-output";
 import {
   DATA_SOURCES,
   canUseReportSource,
+  canUseReportField,
   getDataSource,
+  type DataSourceField,
+  type ReportSourceLink,
+  type ReportSourceUser,
   SAVED_REPORT_TABS,
   type SavedReportTab,
   type ReportConfiguration, 
@@ -49,6 +53,37 @@ interface SavedReport {
   createdBy: string;
   createdAt: string;
 }
+
+/** A field to pick: of a ticked source itself, or (via) of the row a link of the main source points at. */
+interface PickableField {
+  via?: string;
+  field: DataSourceField;
+}
+
+const pickKey = (via: string | undefined, table: string, name: string) => (via ? `${via}:${table}.${name}` : `${table}.${name}`);
+
+/** The links of the main source whose target the user may use, with the fields of the target they may use. */
+function linkedGroupsOf(user: ReportSourceUser | null | undefined, mainId: string | undefined): Array<{ link: ReportSourceLink; fields: DataSourceField[] }> {
+  const links = getDataSource(mainId ?? "")?.links ?? [];
+  return links.flatMap((link) => {
+    const target = getDataSource(link.target);
+    if (!target || !canUseReportSource(user, target)) return [];
+    const fields = target.fields.filter((f) => canUseReportField(user, target, f));
+    return fields.length > 0 ? [{ link, fields }] : [];
+  });
+}
+
+/** Every field a grouping or filter can use: the ticked sources' own, then the linked ones of the main source. */
+function pickableFieldsOf(user: ReportSourceUser | null | undefined, selected: string[]): PickableField[] {
+  const own = DATA_SOURCES
+    .filter((ds) => selected.includes(ds.id) && canUseReportSource(user, ds))
+    .flatMap((ds) => ds.fields.filter((f) => canUseReportField(user, ds, f)).map((field) => ({ field })));
+  const linked = linkedGroupsOf(user, selected[0]).flatMap((g) => g.fields.map((field) => ({ via: g.link.name, field })));
+  return [...own, ...linked];
+}
+
+const sameField = (a: { via?: string; table: string; field: string }, b: { via?: string; table: string; field: string }) =>
+  a.table === b.table && a.field === b.field && (a.via ?? "") === (b.via ?? "");
 
 const GROUP_NONE = "__none";
 const NO_TAB = "__no_tab";
@@ -95,7 +130,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
   const addColumnMutation = useMutation({
     mutationFn: async (column: ReportColumn) => {
       // The same plain column twice cannot be grouped: a second click adds nothing.
-      setColumns(prev => prev.some(c => !c.aggregation && c.table === column.table && c.field === column.field) ? prev : [...prev, column]);
+      setColumns(prev => prev.some(c => !c.aggregation && sameField(c, column)) ? prev : [...prev, column]);
     },
   });
 
@@ -104,18 +139,23 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
     const removed = columns[index];
     const rest = columns.filter((_, i) => i !== index);
     setColumns(rest);
-    if (removed && !removed.aggregation && !rest.some(c => !c.aggregation && c.table === removed.table && c.field === removed.field)) {
-      setGroupBy(prev => prev.filter(g => !(g.table === removed.table && g.field === removed.field)));
+    if (removed && !removed.aggregation && !rest.some(c => !c.aggregation && sameField(c, removed))) {
+      setGroupBy(prev => prev.filter(g => !sameField(g, removed)));
     }
   };
 
   // Unticking a source takes its columns and its group along.
   const untickSource = (id: string) => {
     const table = DATA_SOURCES.find(ds => ds.id === id)?.table;
-    setSelectedDataSources(prev => prev.filter(x => x !== id));
+    const next = selectedDataSources.filter(x => x !== id);
+    setSelectedDataSources(next);
     if (!table) return;
-    setColumns(prev => prev.filter(c => c.table !== table));
-    setGroupBy(prev => prev.filter(g => g.table !== table));
+    // Another main source has other links: what was picked through the old links goes too.
+    const mainChanged = next[0] !== selectedDataSources[0];
+    const gone = (e: { via?: string; table: string }) => (e.via ? mainChanged : e.table === table);
+    setColumns(prev => prev.filter(c => !gone(c)));
+    setGroupBy(prev => prev.filter(g => !gone(g)));
+    if (mainChanged) setFilters(prev => prev.filter(f => !f.via));
   };
 
   const setColumnAggregation = (index: number, aggregation: AggregationFunction | undefined) => {
@@ -126,9 +166,8 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
     }));
   };
 
-  const groupFields = offeredSources
-    .filter(ds => selectedDataSources.includes(ds.id))
-    .flatMap(ds => ds.fields);
+  const groupFields = pickableFieldsOf(user, selectedDataSources);
+  const linkedGroups = linkedGroupsOf(user, selectedDataSources[0]);
 
   // One group field. Picking it adds its column when missing and drops a calculation on it.
   const changeGroup = (value: string) => {
@@ -136,15 +175,14 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
       setGroupBy([]);
       return;
     }
-    const dot = value.indexOf('.');
-    const table = value.slice(0, dot);
-    const name = value.slice(dot + 1);
-    const field = groupFields.find(f => f.table === table && f.name === name);
-    if (!field) return;
-    setGroupBy([{ table, field: name }]);
+    const picked = groupFields.find(f => pickKey(f.via, f.field.table, f.field.name) === value);
+    if (!picked) return;
+    const { via, field: def } = picked;
+    const target = { table: def.table, field: def.name, ...(via ? { via } : {}) };
+    setGroupBy([target]);
     setColumns(prev => {
-      const at = prev.findIndex(c => c.table === table && c.field === name);
-      if (at === -1) return [...prev, { field: name, table, label: field.label }];
+      const at = prev.findIndex(c => sameField(c, target));
+      if (at === -1) return [...prev, { ...target, label: def.label }];
       return prev.map((c, i) => {
         if (i !== at) return c;
         const { aggregation: _old, ...rest } = c;
@@ -161,7 +199,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
   };
 
   const isGroupColumn = (col: ReportColumn) =>
-    !col.aggregation && groupBy.some(g => g.table === col.table && g.field === col.field);
+    !col.aggregation && groupBy.some(g => sameField(g, col));
 
   const addFilterMutation = useMutation({
     mutationFn: async (filter: ReportFilter) => {
@@ -291,7 +329,8 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
   }, [editReportId, savedReports, openedEditId]);
 
   // The period field is a date field of the main (first ticked) source.
-  const periodFieldOptions = (getDataSource(selectedDataSources[0] ?? '')?.fields ?? []).filter((f) => f.type === 'date');
+  const mainSource = getDataSource(selectedDataSources[0] ?? '');
+  const periodFieldOptions = (mainSource?.fields ?? []).filter((f) => f.type === 'date' && canUseReportField(user, mainSource!, f));
   const savedPeriodField = periodFieldOptions.some((f) => f.name === savePeriodField) ? savePeriodField : NO_PERIOD_FIELD;
 
   const handleRunReport = () => {
@@ -403,7 +442,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
                     </div>
                     {selectedDataSources.includes(source.id) && (
                       <div className="ml-6 space-y-1">
-                        {source.fields.map(field => (
+                        {source.fields.filter(field => canUseReportField(user, source, field)).map(field => (
                           <button
                             key={field.name}
                             onClick={() => addColumnMutation.mutate({
@@ -419,6 +458,28 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
                         ))}
                       </div>
                     )}
+                  </div>
+                ))}
+                {linkedGroups.map(({ link, fields }) => (
+                  <div key={link.name} className="space-y-2" data-testid={`linked-group-${link.name}`}>
+                    <span className="font-medium">{t(`reportBuilderPage.linkedGroup.${link.name}`)}</span>
+                    <div className="ml-6 space-y-1">
+                      {fields.map(field => (
+                        <button
+                          key={field.name}
+                          onClick={() => addColumnMutation.mutate({
+                            field: field.name,
+                            table: field.table,
+                            via: link.name,
+                            label: field.label,
+                          })}
+                          className="text-sm text-muted-foreground hover:text-foreground block w-full text-left py-1"
+                          data-testid={`button-add-field-${link.name}.${field.name}`}
+                        >
+                          + {fieldLabel(t, field.table, field.name, field.label)}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </CardContent>
@@ -470,7 +531,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
                       columns.map((col, idx) => (
                         <div key={idx} className="flex items-center justify-between p-2 bg-secondary rounded">
                           <span className="text-sm">
-                            {fieldLabel(t, col.table, col.field, col.label)} {col.aggregation && `(${aggregationLabel(t, col.aggregation)})`}
+                            {linkedFieldLabel(t, col.via, col.table, col.field, col.label)} {col.aggregation && `(${aggregationLabel(t, col.aggregation)})`}
                           </span>
                           <div className="flex items-center gap-2">
                           {!isGroupColumn(col) && (
@@ -512,7 +573,7 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
                   <Label>{t('reportBuilderPage.groupBy.label')}</Label>
                   <div className="flex items-center gap-4 mt-2">
                     <Select
-                      value={groupBy[0] ? `${groupBy[0].table}.${groupBy[0].field}` : GROUP_NONE}
+                      value={groupBy[0] ? pickKey(groupBy[0].via, groupBy[0].table, groupBy[0].field) : GROUP_NONE}
                       onValueChange={changeGroup}
                     >
                       <SelectTrigger className="w-[260px]" data-testid="select-report-group-by">
@@ -520,9 +581,9 @@ export default function ReportBuilder({ editReportId }: { editReportId?: number 
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value={GROUP_NONE}>{t('reportBuilderPage.groupBy.none')}</SelectItem>
-                        {groupFields.map(field => (
-                          <SelectItem key={`${field.table}.${field.name}`} value={`${field.table}.${field.name}`}>
-                            {fieldLabel(t, field.table, field.name, field.label)}
+                        {groupFields.map(({ via, field }) => (
+                          <SelectItem key={pickKey(via, field.table, field.name)} value={pickKey(via, field.table, field.name)}>
+                            {linkedFieldLabel(t, via, field.table, field.name, field.label)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -670,9 +731,8 @@ function FilterBuilder({
   const [showAddFilter, setShowAddFilter] = useState(false);
   const [newFilter, setNewFilter] = useState<Partial<ReportFilter>>({});
 
-  const availableFields = DATA_SOURCES
-    .filter(ds => dataSources.includes(ds.id))
-    .flatMap(ds => ds.fields);
+  const { user } = useAuth();
+  const availableFields = pickableFieldsOf(user, dataSources);
 
   const selectedField = newFilter.field && newFilter.table 
     ? getField(newFilter.table, newFilter.field)
@@ -707,11 +767,11 @@ function FilterBuilder({
             <div>
               <Label>{t('reportBuilderPage.fieldLabel')}</Label>
               <Select
-                value={newFilter.field}
+                value={newFilter.field ? pickKey(newFilter.via, newFilter.table!, newFilter.field) : undefined}
                 onValueChange={(value) => {
-                  const field = availableFields.find(f => f.name === value);
-                  if (field) {
-                    setNewFilter({ field: value, table: field.table });
+                  const picked = availableFields.find(f => pickKey(f.via, f.field.table, f.field.name) === value);
+                  if (picked) {
+                    setNewFilter({ field: picked.field.name, table: picked.field.table, ...(picked.via ? { via: picked.via } : {}) });
                   }
                 }}
               >
@@ -719,9 +779,9 @@ function FilterBuilder({
                   <SelectValue placeholder={t('reportBuilderPage.selectFieldPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableFields.map(field => (
-                    <SelectItem key={`${field.table}-${field.name}`} value={field.name}>
-                      {fieldLabel(t, field.table, field.name, field.label)}
+                  {availableFields.map(({ via, field }) => (
+                    <SelectItem key={pickKey(via, field.table, field.name)} value={pickKey(via, field.table, field.name)}>
+                      {linkedFieldLabel(t, via, field.table, field.name, field.label)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -776,7 +836,7 @@ function FilterBuilder({
           filters.map((filter, idx) => (
             <div key={idx} className="flex items-center justify-between p-2 bg-secondary rounded">
               <span className="text-sm">
-                {fieldLabel(t, filter.table, filter.field, getField(filter.table, filter.field)?.label)} {operatorLabel(t, filter.operator)} {filter.value}
+                {linkedFieldLabel(t, filter.via, filter.table, filter.field, getField(filter.table, filter.field)?.label)} {operatorLabel(t, filter.operator)} {filter.value}
               </span>
               <Button
                 variant="ghost"
@@ -942,7 +1002,7 @@ function ReportResultsDialog({
     downloadCsv(
       reportFileSubject(reportName || t('reportBuilderPage.untitledReport')),
       header,
-      results.map((row) => columns.map((col) => csvCell(t, col, row[col.field]))),
+      results.map((row) => columns.map((col) => csvCell(t, col, row[resultKey(col)]))),
     );
   };
 
@@ -954,7 +1014,7 @@ function ReportResultsDialog({
         title,
         subtitle: t('reportBuilderPage.printSubtitle', { date: formatDateTime(Date.now()), count: results.length }),
         header,
-        rows: results.map((row) => columns.map((col) => displayCell(t, col, row[col.field]))),
+        rows: results.map((row) => columns.map((col) => displayCell(t, col, row[resultKey(col)]))),
       }),
     });
   };
@@ -995,7 +1055,7 @@ function ReportResultsDialog({
                 results.map((row, rowIdx) => (
                   <TableRow key={rowIdx}>
                     {columns.map((col, colIdx) => (
-                      <TableCell key={colIdx}>{displayCell(t, col, row[col.field])}</TableCell>
+                      <TableCell key={colIdx}>{displayCell(t, col, row[resultKey(col)])}</TableCell>
                     ))}
                   </TableRow>
                 ))

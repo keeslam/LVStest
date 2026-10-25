@@ -133,6 +133,18 @@
     "foundResultsCount_other": "{{count}} resultaten gevonden",
     "noResultsFound": "Geen resultaten gevonden",
     "closeButton": "Sluiten",
+    "links": {
+      "vehicle": "Voertuig",
+      "customer": "Klant",
+      "reservation": "Reservering",
+      "driver": "Bestuurder"
+    },
+    "linkedGroup": {
+      "vehicle": "Gekoppeld: Voertuig",
+      "customer": "Gekoppeld: Klant",
+      "reservation": "Gekoppeld: Reservering",
+      "driver": "Gekoppeld: Bestuurder"
+    },
     "sources": {
       "vehicles": "Voertuigen",
       "customers": "Klanten",

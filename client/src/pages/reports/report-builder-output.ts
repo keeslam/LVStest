@@ -22,6 +22,17 @@ export function fieldLabel(t: TFunction, table: string, name: string, fallback?:
   return String(t(`reportBuilderPage.fields.${table}.${name}`, { defaultValue: fallback ?? name }));
 }
 
+/** "Voertuig · Merk": a field read through a link carries the name of the link in front. */
+export function linkedFieldLabel(t: TFunction, via: string | undefined, table: string, name: string, fallback?: string): string {
+  const base = fieldLabel(t, table, name, fallback);
+  return via ? `${String(t(`reportBuilderPage.links.${via}`, { defaultValue: via }))} · ${base}` : base;
+}
+
+/** The key a column, filter or group has in the result rows: "vehicle.brand" through a link, else the plain field. */
+export function resultKey(entry: { via?: string; field: string }): string {
+  return entry.via ? `${entry.via}.${entry.field}` : entry.field;
+}
+
 export function aggregationLabel(t: TFunction, agg: string): string {
   return String(t(`reportBuilderPage.aggregation.${agg}`, { defaultValue: agg }));
 }
@@ -36,6 +47,7 @@ export function operatorLabel(t: TFunction, operator: FilterOperator | string): 
 export interface OutputColumn {
   field: string;
   table: string;
+  via?: string;
   label: string;
   aggregation?: string;
 }
@@ -88,7 +100,7 @@ export function displayCell(t: TFunction, column: OutputColumn, value: unknown):
 }
 
 export function outputHeader(t: TFunction, columns: OutputColumn[]): string[] {
-  return columns.map((c) => fieldLabel(t, c.table, c.field, c.label));
+  return columns.map((c) => linkedFieldLabel(t, c.via, c.table, c.field, c.label));
 }
 
 /** "Toyota-lijst" -> "toyota-lijst"; accents and symbols folded so the file name is safe. */

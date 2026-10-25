@@ -139,6 +139,18 @@
     "foundResultsCount_other": "S-au găsit {{count}} de rezultate",
     "noResultsFound": "Nu s-au găsit rezultate",
     "closeButton": "Închideți",
+    "links": {
+      "vehicle": "Vehicul",
+      "customer": "Client",
+      "reservation": "Rezervare",
+      "driver": "Șofer"
+    },
+    "linkedGroup": {
+      "vehicle": "Asociat: Vehicul",
+      "customer": "Asociat: Client",
+      "reservation": "Asociat: Rezervare",
+      "driver": "Asociat: Șofer"
+    },
     "sources": {
       "vehicles": "Vehicule",
       "customers": "Clienți",

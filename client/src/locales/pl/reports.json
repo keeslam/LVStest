@@ -145,6 +145,18 @@
     "foundResultsCount_other": "Znaleziono {{count}} wyniku",
     "noResultsFound": "Nie znaleziono wyników",
     "closeButton": "Zamknij",
+    "links": {
+      "vehicle": "Pojazd",
+      "customer": "Klient",
+      "reservation": "Rezerwacja",
+      "driver": "Kierowca"
+    },
+    "linkedGroup": {
+      "vehicle": "Powiązane: Pojazd",
+      "customer": "Powiązane: Klient",
+      "reservation": "Powiązane: Rezerwacja",
+      "driver": "Powiązane: Kierowca"
+    },
     "sources": {
       "vehicles": "Pojazdy",
       "customers": "Klienci",

@@ -133,6 +133,18 @@
     "foundResultsCount_other": "Found {{count}} results",
     "noResultsFound": "No results found",
     "closeButton": "Close",
+    "links": {
+      "vehicle": "Vehicle",
+      "customer": "Customer",
+      "reservation": "Reservation",
+      "driver": "Driver"
+    },
+    "linkedGroup": {
+      "vehicle": "Linked: Vehicle",
+      "customer": "Linked: Customer",
+      "reservation": "Linked: Reservation",
+      "driver": "Linked: Driver"
+    },
     "sources": {
       "vehicles": "Vehicles",
       "customers": "Customers",

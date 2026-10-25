@@ -10,7 +10,7 @@ import type { TFunction } from "i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Settings } from "lucide-react";
 import {
-  canUseReportSource, getDataSource, getField,
+  canUseReportSource, getDataSource, getField, getReportLink,
   type ReportColumn, type ReportConfiguration, type ReportScope,
 } from "@shared/report-builder-config";
 import { UserPermission } from "@shared/schema";
@@ -25,7 +25,7 @@ import { describeApiError } from "@/lib/api-error";
 import { downloadCsv } from "@/lib/csv";
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { ReportBuilderChart } from "./report-builder-chart";
-import { aggregationLabel, csvCell, displayCell, fieldLabel, reportFileSubject } from "./report-builder-output";
+import { aggregationLabel, csvCell, displayCell, linkedFieldLabel, reportFileSubject, resultKey } from "./report-builder-output";
 import { isAllDataRange, useReportFilters } from "./report-filters";
 import { tablePrintSection } from "./legacy/table-print";
 
@@ -47,6 +47,13 @@ type Row = Record<string, unknown> & { __row: number };
 function linkOf(column: ReportColumn, row: Row): { kind: EntityKind; id: number } | null {
   if (column.aggregation) return null;
   const num = (v: unknown) => (typeof v === "number" ? v : typeof v === "string" && /^\d+$/.test(v) ? Number(v) : null);
+  if (column.via) {
+    // A field of the linked vehicle or customer links to it through the id the run also fetched (see withLinkIds).
+    const kind = LINK_ID_FIELDS[column.via];
+    if (!kind || !kind.fields.includes(column.field)) return null;
+    const id = num(row[`${column.via}.id`]);
+    return id == null ? null : { kind: kind.kind, id };
+  }
   if (column.field === "customerId") {
     const id = num(row[column.field]);
     return id == null ? null : { kind: "customer", id };
@@ -61,6 +68,29 @@ function linkOf(column: ReportColumn, row: Row): { kind: EntityKind; id: number 
     return id == null ? null : { kind: "vehicle", id };
   }
   return null;
+}
+
+/** Linked columns that open the vehicle or customer, and so need its id in the result. */
+const LINK_ID_FIELDS: Record<string, { kind: EntityKind; fields: string[] }> = {
+  vehicle: { kind: "vehicle", fields: ["licensePlate", "id"] },
+  customer: { kind: "customer", fields: ["name", "id"] },
+};
+
+/**
+ * The configuration to run: a plain list (no grouping, no calculation) with a linked plate or customer name
+ * also fetches the linked row's id, hidden, so the cell can link. A grouped report cannot take an extra column.
+ */
+function withLinkIds(config: ReportConfiguration): ReportConfiguration {
+  if ((config.groupBy ?? []).length > 0 || config.columns.some((c) => c.aggregation)) return config;
+  const extra: ReportColumn[] = [];
+  for (const [via, kind] of Object.entries(LINK_ID_FIELDS)) {
+    const needs = config.columns.some((c) => c.via === via && kind.fields.includes(c.field));
+    const has = config.columns.some((c) => c.via === via && c.field === "id");
+    const target = getReportLink(config.dataSources[0], via)?.target;
+    const table = target ? getDataSource(target)?.table : undefined;
+    if (needs && !has && table) extra.push({ table, field: "id", via, label: "ID" });
+  }
+  return extra.length > 0 ? { ...config, columns: [...config.columns, ...extra] } : config;
 }
 
 function numericSort(column: ReportColumn): boolean {
@@ -95,10 +125,11 @@ export function SavedReportView({ report }: { report: SavedReport }) {
   });
 
   // Keyed on the configuration and the scope: a change in the filter bar or an edit runs it again.
+  const runConfig = useMemo(() => withLinkIds(config), [config]);
   const { data, isLoading, error } = useQuery<Record<string, unknown>[]>({
-    queryKey: ["/api/reports/execute", config, scope],
+    queryKey: ["/api/reports/execute", runConfig, scope],
     queryFn: async () => {
-      const res = await apiRequest("POST", "/api/reports/execute", { ...config, scope });
+      const res = await apiRequest("POST", "/api/reports/execute", { ...runConfig, scope });
       return await res.json();
     },
   });
@@ -108,17 +139,18 @@ export function SavedReportView({ report }: { report: SavedReport }) {
   const groupBy = config.groupBy ?? [];
 
   const tableColumns = useMemo<ReportTableColumn<Row>[]>(() => columns.map((col, i) => {
-    const text = (r: Row) => displayCell(tt, col, r[col.field]);
+    const key = resultKey(col);
+    const text = (r: Row) => displayCell(tt, col, r[key]);
     return {
-      id: `${i}-${col.table}.${col.field}${col.aggregation ? `.${col.aggregation}` : ""}`,
-      label: fieldLabel(tt, col.table, col.field, col.label) + (col.aggregation ? ` (${aggregationLabel(tt, col.aggregation)})` : ""),
+      id: `${i}-${col.via ? `${col.via}:` : ""}${col.table}.${col.field}${col.aggregation ? `.${col.aggregation}` : ""}`,
+      label: linkedFieldLabel(tt, col.via, col.table, col.field, col.label) + (col.aggregation ? ` (${aggregationLabel(tt, col.aggregation)})` : ""),
       cell: (r: Row) => {
         const link = linkOf(col, r);
         return link ? <EntityLink kind={link.kind} id={link.id} label={text(r)} /> : text(r);
       },
       text,
       sortValue: (r: Row) => {
-        const v = r[col.field];
+        const v = r[key];
         if (v === null || v === undefined || v === "") return null;
         if (numericSort(col)) {
           const n = Number(v);
@@ -132,7 +164,7 @@ export function SavedReportView({ report }: { report: SavedReport }) {
 
   const exportCsv = () => {
     const shown = view?.all ?? rows;
-    downloadCsv(reportFileSubject(report.name), tableColumns.map((c) => c.label), shown.map((r) => columns.map((col) => csvCell(tt, col, r[col.field]))));
+    downloadCsv(reportFileSubject(report.name), tableColumns.map((c) => c.label), shown.map((r) => columns.map((col) => csvCell(tt, col, r[resultKey(col)]))));
   };
 
   const notes: string[] = [];
