@@ -18,7 +18,14 @@ import { ReportTiles } from "@/components/reports/kit/report-tiles";
 import { ReportDetailDialog, type ReportColumn } from "@/components/reports/kit/report-detail-dialog";
 import { ReportBreakdownTable } from "@/components/reports/kit/report-breakdown-table";
 import { ReportMonthChart } from "@/components/reports/kit/report-month-chart";
-import { ReportTopChart, topChartData } from "@/components/reports/kit/report-top-chart";
+import {
+  ReportTopChart,
+  TOP_CHART_NAME_MAX,
+  topChartData,
+  topChartName,
+  topChartTick,
+  topChartTooltip,
+} from "@/components/reports/kit/report-top-chart";
 import { reportTableHtml } from "@/lib/report-table-print";
 
 function json(body: unknown, status = 200) {
@@ -344,5 +351,35 @@ describe("report kit", () => {
     render(<ReportTopChart rows={[{ key: 1, label: "A", count: 2, amount: 750 }]} nullLabel="Zonder klant" money color="#000" testId="y" />);
     expect(screen.getByTestId("y")).toBeInTheDocument();
     expect(screen.queryByTestId("y-empty")).not.toBeInTheDocument();
+  });
+
+  it("topChartName: lange naam afgekapt met ..., korte naam blijft", () => {
+    expect(topChartName("Bouwbedrijf Van der Heijden en Zonen BV")).toBe("Bouwbedrijf Van d…");
+    expect(topChartName("Bouwbedrijf Van der Heijden en Zonen BV")).toHaveLength(TOP_CHART_NAME_MAX);
+    expect(topChartName("Jansen BV")).toBe("Jansen BV");
+    expect(topChartName("a".repeat(TOP_CHART_NAME_MAX))).toBe("a".repeat(TOP_CHART_NAME_MAX));
+  });
+
+  it("topChartTick: compacte bedragen en aantallen", () => {
+    const plain = (s: string) => s.replace(/\s/g, " ");
+    expect(plain(topChartTick(12500, true))).toBe("€ 12,5K");
+    expect(plain(topChartTick(1250000, true))).toBe("€ 1,3 mln.");
+    expect(plain(topChartTick(750, true))).toBe("€ 750");
+    expect(topChartTick(12500, false)).toBe("12,5K");
+  });
+
+  it("topChartTooltip: volledig bedrag met het label", () => {
+    const plain = (s: string) => s.replace(/\s/g, " ");
+    const [value, label] = topChartTooltip(1234.5, true, "Kosten");
+    expect([plain(value), label]).toEqual(["€ 1.234,50", "Kosten"]);
+    expect(topChartTooltip(7, false, "Bedrag")).toEqual(["7", "Bedrag"]);
+  });
+
+  it("ReportTopChart: valueLabel komt in de tooltip, zonder valueLabel 'Bedrag'", () => {
+    // recharts does not draw in jsdom (no size); the chart exposes its tooltip label for checks.
+    render(<ReportTopChart rows={[{ key: 1, label: "A", count: 2, amount: 750 }]} nullLabel="-" money valueLabel="Kosten" color="#000" testId="k" />);
+    expect(screen.getByTestId("k")).toHaveAttribute("data-value-label", "Kosten");
+    render(<ReportTopChart rows={[{ key: 1, label: "A", count: 2, amount: 750 }]} nullLabel="-" money color="#000" testId="b" />);
+    expect(screen.getByTestId("b")).toHaveAttribute("data-value-label", "Bedrag");
   });
 });

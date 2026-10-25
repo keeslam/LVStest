@@ -117,11 +117,11 @@ export function CustomerValueReportCard({ from, to, vehicleId }: { from?: string
             <div className="grid gap-6 lg:grid-cols-2">
               <div className="space-y-2">
                 <h4 className="text-sm font-medium">{t("customerReports.value.topRevenue")}</h4>
-                <ReportTopChart rows={data.topRevenue ?? []} nullLabel={noCustomer} money color="#16a34a" testId="customer-value-top-revenue" />
+                <ReportTopChart rows={data.topRevenue ?? []} nullLabel={noCustomer} money valueLabel={t("customerReports.value.columns.revenue")} color="#16a34a" testId="customer-value-top-revenue" />
               </div>
               <div className="space-y-2">
                 <h4 className="text-sm font-medium">{t("customerReports.value.topCosts")}</h4>
-                <ReportTopChart rows={data.topCosts ?? []} nullLabel={noCustomer} money color="#dc2626" testId="customer-value-top-costs" />
+                <ReportTopChart rows={data.topCosts ?? []} nullLabel={noCustomer} money valueLabel={t("customerReports.value.columns.costs")} color="#dc2626" testId="customer-value-top-costs" />
               </div>
             </div>
           </>

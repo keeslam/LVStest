@@ -83,6 +83,8 @@ describe("Klanten - klantwaarde", () => {
     expect(screen.getByTestId("customer-value-tile-late-value").textContent).toBe("1");
     expect(screen.getByTestId("customer-value-top-revenue")).toBeInTheDocument();
     expect(screen.getByTestId("customer-value-top-costs")).toBeInTheDocument();
+    expect(screen.getByTestId("customer-value-top-costs")).toHaveAttribute("data-value-label", "Kosten");
+    expect(screen.getByTestId("customer-value-top-revenue")).toHaveAttribute("data-value-label", "Omzet");
   });
 
   it("zonder rapportrecht geen kaart en geen verzoek", async () => {
