@@ -82,3 +82,17 @@ Kees wil filteren op merk en type en daar informatie uit halen.
   Tekst: "Deze auto is al een jaar duidelijk duurder dan andere <type>'s. Misschien tijd om vervanging te overwegen."
 - Kleine fouten die meegaan: het oordeel vergelijkt altijd met de hele vloot (ook bij filteren); km-tabel toont "–" i.p.v.
   "€ 0,000" en de kolom Onbekende km toont geen bedrag als tarief.
+
+## Aanvulling: meer keuzes in het afdrukvenster (Kees, 2026-10-26)
+
+Geldt voor het afdrukvenster van alle rapporten en de onderhoudsanalyse (de gedeelde kit).
+- **Regels kiezen:** per tabel naast Alle regels / Deze pagina / Aangevinkte een keuze **Zelf kiezen** met een lijst vinkjes
+  (eerste kolommen als omschrijving), zoekveld (kenteken ook zonder streepjes), **Alles aan**, **Alles uit**, teller "x van y gekozen".
+  Vinkjes uit de tabel op het scherm staan dan al aan.
+- **Kolommen kiezen:** per tabel vinkjes welke kolommen op papier komen (standaard de kolommen op het scherm).
+- **Onderdelen per stuk:** elk onderdeel (tegels, elke grafiek, elke tabel) apart aan/uit, de volgorde aanpassen (omhoog/omlaag)
+  en **Elk onderdeel op een nieuwe pagina**.
+- **Opmaak en kop:** eigen titel, notitie bovenaan, lettergrootte (Klein / Normaal / Groot), filterregels tonen of verbergen,
+  sorteren op een kolom (op/aflopend) vóór het afdrukken. Liggend blijft.
+- Het voorbeeld toont altijd precies wat geprint wordt; de keuzes worden per rapport onthouden zolang het venster open is
+  (niet per gebruiker opgeslagen). Totalen gelden voor de gekozen regels ("Totaal (gekozen regels)").

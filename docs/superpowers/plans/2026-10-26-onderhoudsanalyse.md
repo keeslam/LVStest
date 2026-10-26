@@ -100,3 +100,13 @@
 - Server: `GET /api/reports/maintenance-analysis/profile?brand=&model=` (+ gewone filters) ⇒ `{ vehicles, avgAgeYears, avgKm?, perVehicleMonth, fleetPerVehicleMonth, byCategory, topRepairs: [{ label, count, amount }], byYear: [{ year, perVehicleMonth, vehicles }], kmBands?, best: [...3], worst: [...3], suppliers, interval: { months, km?, vehicles, outliers: [{ vehicleId, plate, months, km? }] }, replaceHints: [{ vehicleId, plate, ratio12, ratio6 }] }`; km-velden alleen beheerder. `brands`-oordeel tegen de hele vloot (filters op merk/type/leverancier/vehicle tellen niet mee voor het vergelijkingsgemiddelde). Km-tabel: geen tarief bij 0 km of onbekende km (null). Tests met handberekende waarden.
 - Client: **Merken en typen**: merk gekozen ⇒ typen van dat merk (grafiek/tabel/km-tabel per type), klik op type ⇒ zet het typefilter; merk + type ⇒ profielkaart met de onderdelen hierboven (doorklik naar kostenregels; kenteken ⇒ dossiervenster; Afdrukken/CSV), hint-teksten in 7 talen.
 - Commit `feat(onderhoud): brand and type profile with service interval and replacement hint`.
+
+### Task 7: Meer keuzes in het afdrukvenster (kit, alle rapporten)
+
+**Spec:** sectie "Aanvulling: meer keuzes in het afdrukvenster".
+
+- `client/src/lib/report-document-print.ts`: opties `{ order: sectionIds, sectionOn, pageBreakEach, title?, note?, fontSize: "small"|"normal"|"large", showFilters, perTable: { [id]: { rows: "all"|"page"|"selected"|"pick", picked: rowKeys[], columns: colIds[], sort?: { col, dir } } } }`.
+- `PrintSection` table krijgt `columnIds: string[]` en `rowKeys: string[]` (stabiele sleutel per regel, bv. kenteken/id) zodat kiezen en kolommen werken; bestaande producenten (rapportkit-kaarten, legacy-rapporten, bouwer, saved view, onderhoudsanalyse, km-historie) leveren die mee — waar een producent ze niet levert valt het venster terug op index-sleutels en kolomkoppen.
+- `report-print.tsx` dialoog: secties met vinkje + omhoog/omlaag; per tabel uitklapbaar blok: Regels (incl. **Zelf kiezen** lijst met zoeken/alles aan/uit/teller), Kolommen (vinkjes), Sorteren; algemeen: titel, notitie, lettergrootte, filterregels, nieuwe pagina per onderdeel, Liggend. Totaal over gekozen regels met label "Totaal (gekozen regels)". 7 talen.
+- Tests: kiezen van 2 van 11 regels ⇒ srcDoc bevat precies die 2 (en totaal over die 2); kolom uit ⇒ niet in srcDoc; volgorde omdraaien ⇒ volgorde in srcDoc; nieuwe pagina ⇒ `page-break-before`; titel/notitie ge-escaped; lettergrootte class; sorteren aflopend op Totaal; zoeken op kenteken zonder streepjes in de keuzelijst.
+- Commit `feat(rapporten): choose rows, columns, sections and layout when printing`.
