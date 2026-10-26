@@ -67,3 +67,18 @@ elkaar vergelijken, binnen een merk per type (model), en eerlijk rekening houden
 - Styling binnen het bestaande design system; hergebruik van de rapportkit (ReportTable, print, drill, quick view,
   vergelijken, Kolommen).
 - Leverancierswaarde uit het postvak: de geparste leveranciersnaam van de factuur, anders de afzender.
+
+## Aanvulling na test door Kees (2026-10-26): merk/type-profiel
+
+Kees wil filteren op merk en type en daar informatie uit halen.
+- Merk gekozen (filter of klik) ⇒ **Merken en typen** toont de typen van dat merk (grafiek, tabel, km-klassentabel per type).
+- Merk + type gekozen ⇒ **profiel** van dat type: aantal auto's, gemiddelde leeftijd en km (km alleen beheerder), kosten per auto per
+  maand t.o.v. de hele vloot, kosten per categorie, meest voorkomende reparaties (omschrijving/categorie, aantal, bedrag),
+  kosten per bouwjaar, per km-klasse (beheerder), beste en slechtste auto (per auto per maand), leveranciers.
+- **Onderhoudsinterval**: gemiddelde maanden (en km, beheerder) tussen twee onderhoudsbeurten (categorie Onderhoud) per type,
+  en de auto's die er duidelijk van afwijken (≥ 50 % korter interval dan het typegemiddelde).
+- **Advies vervangen** (hint, geen besluit): een auto krijgt de hint als hij in de laatste 12 maanden ≥ 50 % duurder per maand
+  was dan zijn type (beheerder: per km in dezelfde km-klasse) én in de laatste 6 maanden ook, met minstens 3 vergelijkbare auto's.
+  Tekst: "Deze auto is al een jaar duidelijk duurder dan andere <type>'s. Misschien tijd om vervanging te overwegen."
+- Kleine fouten die meegaan: het oordeel vergelijkt altijd met de hele vloot (ook bij filteren); km-tabel toont "–" i.p.v.
+  "€ 0,000" en de kolom Onbekende km toont geen bedrag als tarief.

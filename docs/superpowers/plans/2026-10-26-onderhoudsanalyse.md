@@ -92,3 +92,11 @@
 ## Controller rulings
 
 (leeg)
+
+### Task 6: Merk/type-profiel (aanvulling na test)
+
+**Spec:** sectie "Aanvulling na test door Kees" in de spec.
+
+- Server: `GET /api/reports/maintenance-analysis/profile?brand=&model=` (+ gewone filters) ⇒ `{ vehicles, avgAgeYears, avgKm?, perVehicleMonth, fleetPerVehicleMonth, byCategory, topRepairs: [{ label, count, amount }], byYear: [{ year, perVehicleMonth, vehicles }], kmBands?, best: [...3], worst: [...3], suppliers, interval: { months, km?, vehicles, outliers: [{ vehicleId, plate, months, km? }] }, replaceHints: [{ vehicleId, plate, ratio12, ratio6 }] }`; km-velden alleen beheerder. `brands`-oordeel tegen de hele vloot (filters op merk/type/leverancier/vehicle tellen niet mee voor het vergelijkingsgemiddelde). Km-tabel: geen tarief bij 0 km of onbekende km (null). Tests met handberekende waarden.
+- Client: **Merken en typen**: merk gekozen ⇒ typen van dat merk (grafiek/tabel/km-tabel per type), klik op type ⇒ zet het typefilter; merk + type ⇒ profielkaart met de onderdelen hierboven (doorklik naar kostenregels; kenteken ⇒ dossiervenster; Afdrukken/CSV), hint-teksten in 7 talen.
+- Commit `feat(onderhoud): brand and type profile with service interval and replacement hint`.
