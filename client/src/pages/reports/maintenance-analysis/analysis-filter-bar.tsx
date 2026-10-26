@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatExpenseCategory } from "@/lib/format-utils";
 import { isAllDataRange, useReportFilters, type ReportCompare, type ReportPreset } from "../report-filters";
-import { ANALYSIS_ENDPOINT, NO_EXTRA_FILTERS, useAnalysis } from "./analysis-context";
+import { ANALYSIS_ENDPOINT, NO_EXTRA_FILTERS, brandText, nameKey, typeText, useAnalysis } from "./analysis-context";
 
 const PRESETS: ReportPreset[] = ["thisMonth", "lastMonth", "thisQuarter", "thisYear", "all", "custom"];
 const COMPARES: ReportCompare[] = ["none", "previous", "lastYear"];
@@ -38,21 +38,28 @@ export function AnalysisFilterBar() {
   // The choices: what the period has, independent of the other filters of the window.
   const { data: brandData } = useQuery<MaintenanceBrands>({ queryKey: [`${ANALYSIS_ENDPOINT}/brands`, period] });
   const { data: supplierData } = useQuery<MaintenanceSuppliers>({ queryKey: [`${ANALYSIS_ENDPOINT}/suppliers`, period] });
+  // A brand or type without a name (null) is "Onbekend" with value "__null"; never an empty value.
   const brandOptions = useMemo(() => {
-    const list = (Array.isArray(brandData?.brands) ? brandData.brands : []).map((b) => b.brand);
+    const list = (Array.isArray(brandData?.brands) ? brandData.brands : []).map((b) => nameKey(b.brand));
     if (extra.brand && !list.includes(extra.brand)) list.push(extra.brand);
-    return [...new Set(list)].sort((a, b) => a.localeCompare(b, "nl"));
-  }, [brandData, extra.brand]);
+    return [...new Set(list)]
+      .map((value) => ({ value, label: value === REPORT_DRILL_NULL_KEY ? brandText(t, null) : value }))
+      .sort((a, b) => a.label.localeCompare(b.label, "nl"));
+  }, [brandData, extra.brand, t]);
   const modelOptions = useMemo(() => {
     const models = Array.isArray(brandData?.models) ? brandData.models : [];
-    const list = models.filter((m) => !extra.brand || m.brand === extra.brand).map((m) => m.model);
+    const list = models.filter((m) => !extra.brand || nameKey(m.brand) === extra.brand).map((m) => nameKey(m.model));
     if (extra.model && !list.includes(extra.model)) list.push(extra.model);
-    return [...new Set(list)].sort((a, b) => a.localeCompare(b, "nl"));
-  }, [brandData, extra.brand, extra.model]);
+    return [...new Set(list)]
+      .map((value) => ({ value, label: value === REPORT_DRILL_NULL_KEY ? typeText(t, null, null) : value }))
+      .sort((a, b) => a.label.localeCompare(b.label, "nl"));
+  }, [brandData, extra.brand, extra.model, t]);
   const supplierOptions = useMemo(() => {
     const list = (Array.isArray(supplierData?.suppliers) ? supplierData.suppliers : [])
       .map((s) => ({ value: s.key ?? REPORT_DRILL_NULL_KEY, label: s.key === null ? t("maintenanceAnalysis.unknownSupplier") : s.supplier }));
-    if (extra.supplier && !list.some((s) => s.value === extra.supplier)) list.push({ value: extra.supplier, label: extra.supplier });
+    if (extra.supplier && !list.some((s) => s.value === extra.supplier)) {
+      list.push({ value: extra.supplier, label: extra.supplier === REPORT_DRILL_NULL_KEY ? t("maintenanceAnalysis.unknownSupplier") : extra.supplier });
+    }
     return list;
   }, [supplierData, extra.supplier, t]);
 
@@ -112,11 +119,11 @@ export function AnalysisFilterBar() {
 
         <FilterSelect label={k("brand")} testId="select-ma-brand" value={extra.brand || ALL}
           onChange={(v) => setExtra({ brand: pick(v), model: "" })} allLabel={k("allBrands")}
-          options={brandOptions.map((b) => ({ value: b, label: b }))} />
+          options={brandOptions} />
 
         <FilterSelect label={k("model")} testId="select-ma-model" value={extra.model || ALL}
           onChange={(v) => setExtra({ model: pick(v) })} allLabel={k("allModels")}
-          options={modelOptions.map((m) => ({ value: m, label: m }))} />
+          options={modelOptions} />
 
         <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground">{k("year")}</label>
@@ -164,7 +171,8 @@ function FilterSelect({ label, testId, value, onChange, allLabel, options }: {
         <SelectTrigger className="w-44 bg-white" aria-label={label} data-testid={testId}><SelectValue /></SelectTrigger>
         <SelectContent>
           <SelectItem value={ALL}>{allLabel}</SelectItem>
-          {options.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+          {/* Radix throws on an empty value: such an option is left out, never rendered. */}
+          {options.filter((o) => o.value !== "").map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
         </SelectContent>
       </Select>
     </div>

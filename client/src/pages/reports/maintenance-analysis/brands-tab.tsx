@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import {
-  KM_BAND_KEYS, RATING_GOOD_FACTOR,
+  KM_BAND_KEYS, MAINTENANCE_NULL_KEY, RATING_GOOD_FACTOR,
   type KmBand, type MaintenanceBrands, type MaintenanceGroupLine, type MaintenanceKmBandLine, type MaintenanceOverview,
 } from "@shared/maintenance-analysis";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ import { compactSections, DrillLineButton } from "@/components/reports/kit/repor
 import { useReportPrint, type PrintSection } from "@/components/reports/kit/report-print";
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { tablePrintSection } from "../legacy/table-print";
-import { ANALYSIS_ENDPOINT, countText, useAnalysis, useAnalysisParams, useComparedAnalysisParams, useMoneyText } from "./analysis-context";
+import { ANALYSIS_ENDPOINT, brandText, countText, nameKey, typeText, useAnalysis, useAnalysisParams, useComparedAnalysisParams, useMoneyText } from "./analysis-context";
 import { AnalysisChart, type AnalysisMetric } from "./analysis-chart";
 import { useAnalysisDrill } from "./analysis-rows";
 import { AnalysisPanel } from "./analysis-panel";
@@ -28,6 +28,21 @@ import { AnalysisCsvButton } from "./analysis-csv";
 type BrandLine = MaintenanceBrands["brands"][number];
 type ModelLine = MaintenanceBrands["models"][number];
 type Rating = "excellent" | "good" | "average" | "insufficient";
+/** A km band, or MAINTENANCE_NULL_KEY for "Onbekende km". */
+type KmCellKey = KmBand | typeof MAINTENANCE_NULL_KEY;
+interface KmRow {
+  id: string;
+  level: MaintenanceKmBandLine["level"];
+  brand: string | null;
+  model: string | null;
+  name: string;
+  cells: Partial<Record<KmCellKey, MaintenanceKmBandLine>>;
+}
+
+// Stable empty lists: a fresh [] on every render would rerun each memo that depends on it.
+const NO_BRANDS: BrandLine[] = [];
+const NO_MODELS: ModelLine[] = [];
+const NO_KM_LINES: MaintenanceKmBandLine[] = [];
 
 /** The rating of a group against the average per car per month of the whole selection. */
 export function ratingOf(line: MaintenanceGroupLine, overall: number | null | undefined): Rating {
@@ -62,17 +77,19 @@ export function BrandsTab() {
   const { data: overview } = useQuery<MaintenanceOverview>({ queryKey: [`${ANALYSIS_ENDPOINT}/overview`, overviewParams] });
   const overall = overview?.tiles?.perVehicleMonth ?? null;
 
-  const brands = data?.brands ?? [];
-  const brand = selected && brands.some((b) => b.brand === selected) ? selected : null;
-  const models = useMemo(() => (data?.models ?? []).filter((m) => m.brand === brand), [data, brand]);
+  const brands = data?.brands ?? NO_BRANDS;
+  // A brand is known by its key: the name, or "__null" for a brand without a name ("Onbekend").
+  const brand = selected && brands.some((b) => nameKey(b.brand) === selected) ? selected : null;
+  const brandLabel = brand === null ? "" : brandText(t, brand === MAINTENANCE_NULL_KEY ? null : brand);
+  const models = useMemo(() => (data?.models ?? NO_MODELS).filter((m) => nameKey(m.brand) === brand), [data, brand]);
   const rowsTitle = k("rows.title");
 
   const metrics: AnalysisMetric[] = isAdmin ? ["amount", "perVehicleMonth", "perKm", "count"] : ["amount", "perVehicleMonth", "count"];
   const points = useMemo(() => brands.map((b) => ({
-    key: b.brand,
-    label: b.brand,
+    key: nameKey(b.brand),
+    label: brandText(t, b.brand),
     values: { amount: b.total, perVehicleMonth: b.perVehicleMonth, perKm: b.perKm ?? null, count: b.count },
-  })), [brands]);
+  })), [brands, t]);
 
   const groupColumns = useMemo(() => {
     const c = (key: string) => t(`maintenanceAnalysis.columns.${key}`);
@@ -97,48 +114,56 @@ export function BrandsTab() {
 
   const brandColumns = useMemo<ReportTableColumn<BrandLine>[]>(() => [
     {
-      id: "brand", label: t("maintenanceAnalysis.columns.brand"),
+      id: "brand", label: t("maintenanceAnalysis.columns.brand"), interactive: true,
       cell: (r) => (
-        <DrillLineButton testId={`ma-brands-row-${r.brand}`} onClick={() => setSelected((cur) => (cur === r.brand ? null : r.brand))}
-          className={r.brand === brand ? "font-semibold text-primary" : "text-primary"}>
-          {r.brand}
+        <DrillLineButton testId={`ma-brands-row-${nameKey(r.brand)}`} onClick={() => setSelected((cur) => (cur === nameKey(r.brand) ? null : nameKey(r.brand)))}
+          className={nameKey(r.brand) === brand ? "font-semibold text-primary" : "text-primary"}>
+          {brandText(t, r.brand)}
         </DrillLineButton>
       ),
-      text: (r) => r.brand, sortValue: (r) => r.brand,
+      text: (r) => brandText(t, r.brand), sortValue: (r) => brandText(t, r.brand),
     },
     ...(groupColumns as ReportTableColumn<BrandLine>[]),
   ], [t, groupColumns, brand]);
 
   const modelColumns = useMemo<ReportTableColumn<ModelLine>[]>(() => [
-    { id: "model", label: t("maintenanceAnalysis.columns.model"), cell: (r) => r.model, text: (r) => r.model, sortValue: (r) => r.model },
+    { id: "model", label: t("maintenanceAnalysis.columns.model"), cell: (r) => typeText(t, r.brand, r.model), text: (r) => typeText(t, r.brand, r.model), sortValue: (r) => typeText(t, r.brand, r.model) },
     ...(groupColumns as ReportTableColumn<ModelLine>[]),
   ], [t, groupColumns]);
 
-  // The km-band matrix: the brands, or the types of the chosen brand.
+  // The km-band matrix: the brands, or the types of the chosen brand. "Onbekende km" (band null)
+  // holds the costs without a km reading, so a row adds up to the total of its brand or type.
   const kmRows = useMemo(() => {
-    const lines = (data?.kmBands ?? []).filter((l) => (brand ? l.brand === brand && l.model !== null : l.model === null));
-    const byRow = new Map<string, { brand: string; model: string | null; cells: Partial<Record<KmBand, MaintenanceKmBandLine>> }>();
+    const lines = (data?.kmBands ?? NO_KM_LINES).filter((l) => (brand ? l.level === "model" && nameKey(l.brand) === brand : l.level === "brand"));
+    const byRow = new Map<string, KmRow>();
     for (const l of lines) {
-      const id = `${l.brand}|${l.model ?? ""}`;
-      const row = byRow.get(id) ?? { brand: l.brand, model: l.model, cells: {} };
-      row.cells[l.band] = l;
+      const id = l.level === "model" ? `${nameKey(l.brand)}-${nameKey(l.model)}` : nameKey(l.brand);
+      const name = l.level === "model" ? typeText(t, l.brand, l.model) : brandText(t, l.brand);
+      const row = byRow.get(id) ?? { id, level: l.level, brand: l.brand, model: l.model, name, cells: {} };
+      row.cells[l.band ?? MAINTENANCE_NULL_KEY] = l;
       byRow.set(id, row);
     }
-    return [...byRow.values()].sort((a, b) => (a.model ?? a.brand).localeCompare(b.model ?? b.brand, "nl"));
-  }, [data, brand]);
+    return [...byRow.values()].sort((a, b) => a.name.localeCompare(b.name, "nl"));
+  }, [data, brand, t]);
+  const kmColumns = useMemo<Array<{ key: KmCellKey; label: string }>>(() => [
+    ...KM_BAND_KEYS.map((b) => ({ key: b as KmCellKey, label: b as string })),
+    ...(kmRows.some((r) => r.cells[MAINTENANCE_NULL_KEY]) ? [{ key: MAINTENANCE_NULL_KEY as KmCellKey, label: t("maintenanceAnalysis.unknownKm") }] : []),
+  ], [kmRows, t]);
+  // A band shows the cost per km; "Onbekende km" has no km, so it shows the amount.
+  const kmCellText = (key: KmCellKey, cell: MaintenanceKmBandLine) => (key === MAINTENANCE_NULL_KEY ? money(cell.amount) : money(cell.perKm, true));
   const showKm = isAdmin && Array.isArray(data?.kmBands);
 
   const kmSection: PrintSection | null = showKm ? {
     kind: "table",
     id: "ma-kmbands",
     title: k("brands.kmBandsTitle"),
-    header: [brand ? t("maintenanceAnalysis.columns.model") : t("maintenanceAnalysis.columns.brand"), ...KM_BAND_KEYS],
-    allRows: () => ({ rows: kmRows.map((r) => [r.model ?? r.brand, ...KM_BAND_KEYS.map((b) => (r.cells[b] ? money(r.cells[b]!.perKm, true) : ""))]), truncated: false }),
+    header: [brand ? t("maintenanceAnalysis.columns.model") : t("maintenanceAnalysis.columns.brand"), ...kmColumns.map((c) => c.label)],
+    allRows: () => ({ rows: kmRows.map((r) => [r.name, ...kmColumns.map((c) => (r.cells[c.key] ? kmCellText(c.key, r.cells[c.key]!) : ""))]), truncated: false }),
   } : null;
   useReportPrint(data ? compactSections([
     { kind: "chart", title: k("brands.chartTitle"), getSvg: () => chartSvgFromRef(chartRef) },
     tablePrintSection({ id: "ma-brands", title: k("brands.brandsTitle"), columns: brandColumns, rows: brands, view: brandView }),
-    brand ? tablePrintSection({ id: "ma-models", title: k("brands.modelsTitle", { brand }), columns: modelColumns, rows: models, view: modelView }) : null,
+    brand ? tablePrintSection({ id: "ma-models", title: k("brands.modelsTitle", { brand: brandLabel }), columns: modelColumns, rows: models, view: modelView }) : null,
     kmSection,
   ]) : null);
 
@@ -155,7 +180,7 @@ export function BrandsTab() {
           defaultKind="bar"
           testId="ma-brand-chart"
           chartRef={chartRef}
-          onPointClick={(key) => drill({ title: `${rowsTitle} · ${key}`, drill: "brand", key })}
+          onPointClick={(key) => drill({ title: `${rowsTitle} · ${brandText(t, key === MAINTENANCE_NULL_KEY ? null : key)}`, drill: "brand", key })}
         />
       </AnalysisPanel>
 
@@ -163,7 +188,7 @@ export function BrandsTab() {
         <ReportTable
           rows={brands}
           columns={brandColumns}
-          rowKey={(r) => r.brand}
+          rowKey={(r) => nameKey(r.brand)}
           defaultSort={{ id: "total", dir: "desc" }}
           testId="ma-brands-table"
           onView={setBrandView}
@@ -172,7 +197,7 @@ export function BrandsTab() {
       </AnalysisPanel>
 
       {brand && (
-        <AnalysisPanel title={k("brands.modelsTitle", { brand })} description={k("brands.modelsDesc")} testId="ma-models">
+        <AnalysisPanel title={k("brands.modelsTitle", { brand: brandLabel })} description={k("brands.modelsDesc")} testId="ma-models">
           <div className="flex justify-end">
             <Button variant="ghost" size="sm" onClick={() => setSelected(null)} data-testid="button-ma-models-close">
               <X className="mr-1 h-4 w-4" aria-hidden="true" />{k("brands.closeModels")}
@@ -186,7 +211,7 @@ export function BrandsTab() {
             testId="ma-models-table"
             onView={setModelView}
             toolbar={<AnalysisCsvButton columns={modelColumns} rows={models} view={modelView} name="onderhoud-typen" testId="button-ma-models-csv" />}
-            onRowClick={(r) => drill({ title: `${rowsTitle} · ${r.brand} ${r.model}`, drill: "model", key: r.key })}
+            onRowClick={(r) => drill({ title: `${rowsTitle} · ${brandText(t, r.brand)} ${typeText(t, r.brand, r.model)}`, drill: "model", key: r.key })}
           />
         </AnalysisPanel>
       )}
@@ -201,17 +226,17 @@ export function BrandsTab() {
                 <thead>
                   <tr className="border-b">
                     <th className="p-2 text-left">{brand ? t("maintenanceAnalysis.columns.model") : t("maintenanceAnalysis.columns.brand")}</th>
-                    {KM_BAND_KEYS.map((band) => <th key={band} className="p-2 text-right">{band}</th>)}
+                    {kmColumns.map((c) => <th key={c.key} className="p-2 text-right">{c.label}</th>)}
                   </tr>
                 </thead>
                 <tbody>
                   {kmRows.map((row) => (
-                    <tr key={`${row.brand}|${row.model ?? ""}`} className="border-b">
-                      <td className="p-2 font-medium">{row.model ?? row.brand}</td>
-                      {KM_BAND_KEYS.map((band) => {
+                    <tr key={row.id} className="border-b">
+                      <td className="p-2 font-medium">{row.name}</td>
+                      {kmColumns.map(({ key: band, label: bandLabel }) => {
                         const cell = row.cells[band];
                         if (!cell) return <td key={band} className="p-2 text-right text-muted-foreground">–</td>;
-                        const name = row.model ? `${row.brand} ${row.model}` : row.brand;
+                        const name = row.level === "model" ? `${brandText(t, row.brand)} ${row.name}` : row.name;
                         return (
                           <td key={band} className="p-2 text-right">
                             <button
@@ -219,14 +244,14 @@ export function BrandsTab() {
                               className="text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               title={k("brands.kmCellTitle", { amount: money(cell.amount), km: countText(cell.km), vehicles: countText(cell.vehicles) })}
                               onClick={() => drill({
-                                title: `${rowsTitle} · ${name} · ${band}`,
+                                title: `${rowsTitle} · ${name} · ${bandLabel}`,
                                 drill: "kmBand",
                                 key: band,
-                                extra: { brand: row.brand, ...(row.model ? { model: row.model } : {}) },
+                                extra: { brand: nameKey(row.brand), ...(row.level === "model" ? { model: nameKey(row.model) } : {}) },
                               })}
-                              data-testid={`ma-kmband-${row.model ? `${row.brand}-${row.model}` : row.brand}-${band}`}
+                              data-testid={`ma-kmband-${row.id}-${band}`}
                             >
-                              {money(cell.perKm, true)}
+                              {kmCellText(band, cell)}
                             </button>
                           </td>
                         );

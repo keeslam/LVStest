@@ -8,7 +8,7 @@ import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { FORECAST_MONTHS, modelWithoutBrand, type MaintenanceTrends } from "@shared/maintenance-analysis";
+import { FORECAST_MONTHS, type MaintenanceTrends } from "@shared/maintenance-analysis";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
 import { compactSections } from "@/components/reports/kit/report-breakdown-table";
@@ -18,13 +18,14 @@ import { chartSvgFromRef } from "@/lib/report-document-print";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
 import { tablePrintSection } from "../legacy/table-print";
-import { ANALYSIS_ENDPOINT, useAnalysis, useComparedAnalysisParams, useMoneyText } from "./analysis-context";
+import { ANALYSIS_ENDPOINT, brandText, noRows, typeText, useAnalysis, useComparedAnalysisParams, useMoneyText } from "./analysis-context";
 import { useAnalysisDrill } from "./analysis-rows";
 import { AnalysisPanel } from "./analysis-panel";
 import { AnalysisCsvButton } from "./analysis-csv";
 import { CHART_COLORS } from "./analysis-chart";
 
 interface MonthRow { month: string; amount?: number; previous?: number; forecast?: number }
+type ForecastMonth = NonNullable<MaintenanceTrends["forecast"]>[number];
 type ForecastVehicle = NonNullable<MaintenanceTrends["forecastVehicles"]>[number];
 
 export const monthLabel = (month: string) => formatDateNl(`${month}-01T12:00:00`, "MMM yyyy");
@@ -44,9 +45,10 @@ export function TrendsTab() {
   const { data, isLoading, isError, error, refetch } = useQuery<MaintenanceTrends>({ queryKey: [`${ANALYSIS_ENDPOINT}/trends`, params] });
 
   const hasPrevious = !!data?.months.some((m) => m.previous !== undefined);
-  const forecast = isAdmin ? data?.forecast ?? [] : [];
+  // Never a fresh [] per render: rows depends on it, and a new rows array loops through onView.
+  const forecast = useMemo(() => (isAdmin && data?.forecast ? data.forecast : noRows<ForecastMonth>()), [isAdmin, data]);
   const rows = useMemo<MonthRow[]>(() => {
-    const out: MonthRow[] = (data?.months ?? []).map((m) => ({ month: m.month, amount: m.amount, ...(m.previous !== undefined ? { previous: m.previous } : {}) }));
+    const out: MonthRow[] = (data?.months ?? noRows<MaintenanceTrends["months"][number]>()).map((m) => ({ month: m.month, amount: m.amount, ...(m.previous !== undefined ? { previous: m.previous } : {}) }));
     for (const f of forecast) {
       const existing = out.find((r) => r.month === f.month);
       if (existing) existing.forecast = f.amount;
@@ -54,7 +56,7 @@ export function TrendsTab() {
     }
     return out.sort((a, b) => (a.month < b.month ? -1 : a.month > b.month ? 1 : 0));
   }, [data, forecast]);
-  const forecastVehicles = isAdmin ? data?.forecastVehicles ?? [] : [];
+  const forecastVehicles = useMemo(() => (isAdmin && data?.forecastVehicles ? data.forecastVehicles : noRows<ForecastVehicle>()), [isAdmin, data]);
 
   const columns = useMemo<ReportTableColumn<MonthRow>[]>(() => {
     const c = (key: string) => t(`maintenanceAnalysis.columns.${key}`);
@@ -71,11 +73,11 @@ export function TrendsTab() {
   const forecastColumns = useMemo<ReportTableColumn<ForecastVehicle>[]>(() => {
     const c = (key: string) => t(`maintenanceAnalysis.columns.${key}`);
     const plate = (r: ForecastVehicle) => formatLicensePlate(r.licensePlate);
-    const type = (r: ForecastVehicle) => modelWithoutBrand(r.brand, r.model);
+    const type = (r: ForecastVehicle) => typeText(t, r.brand, r.model);
     const kmDay = (r: ForecastVehicle) => r.kmPerDay.toLocaleString("nl-NL", { maximumFractionDigits: 1 });
     return [
-      { id: "plate", label: c("licensePlate"), cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={plate(r)} />, text: plate, sortValue: (r) => r.licensePlate },
-      { id: "brand", label: c("brand"), cell: (r) => r.brand, text: (r) => r.brand, sortValue: (r) => r.brand },
+      { id: "plate", label: c("licensePlate"), interactive: true, cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={plate(r)} />, text: plate, sortValue: (r) => r.licensePlate },
+      { id: "brand", label: c("brand"), cell: (r) => brandText(t, r.brand), text: (r) => brandText(t, r.brand), sortValue: (r) => brandText(t, r.brand) },
       { id: "model", label: c("model"), cell: type, text: type, sortValue: type },
       { id: "kmBand", label: c("kmBand"), cell: (r) => r.band, text: (r) => r.band, sortValue: (r) => r.band },
       { id: "kmPerDay", label: c("kmPerDay"), cell: kmDay, text: kmDay, sortValue: (r) => r.kmPerDay, align: "right" },

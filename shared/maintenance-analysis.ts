@@ -7,6 +7,7 @@
  * server leaves those fields out for everyone else and refuses a km-band filter or drill.
  */
 import type { ExpenseCategory } from "./expense-categories";
+import { REPORT_DRILL_NULL_KEY } from "./report-kit";
 
 /** The km bands, exactly these labels. A boundary belongs to the higher band: 50.000 is `50–100.000`. */
 export const KM_BANDS = [
@@ -88,9 +89,15 @@ export const FORECAST_MONTHS = 3;
 export const MAINTENANCE_ANALYSIS_DRILLS = ["category", "brand", "model", "supplier", "vehicle", "month", "kmBand"] as const;
 export type MaintenanceAnalysisDrill = (typeof MAINTENANCE_ANALYSIS_DRILLS)[number];
 
-/** The key of a model line and of `drill=model`: brand and brand-free model, joined by " | ". */
-export function modelGroupKey(brand: string, model: string): string {
-  return `${brand} | ${model}`;
+/** The filter and drill value of an unknown brand, model, supplier or km band. */
+export const MAINTENANCE_NULL_KEY = REPORT_DRILL_NULL_KEY;
+
+/**
+ * The key of a model line and of `drill=model`: brand and brand-free model, joined by " | ".
+ * An empty or null brand or model is MAINTENANCE_NULL_KEY (shown as "Onbekend").
+ */
+export function modelGroupKey(brand: string | null, model: string | null): string {
+  return `${brand || MAINTENANCE_NULL_KEY} | ${model || MAINTENANCE_NULL_KEY}`;
 }
 
 export interface MaintenanceTiles {
@@ -107,7 +114,7 @@ export interface MaintenanceOverview {
   tiles: MaintenanceTiles;
   previous?: MaintenanceTiles & { from: string; to: string };
   byCategory: Array<{ key: ExpenseCategory; label: string; amount: number; count: number }>;
-  topVehicles: Array<{ vehicleId: number; licensePlate: string; brand: string; model: string; total: number; count: number }>;
+  topVehicles: Array<{ vehicleId: number; licensePlate: string; brand: string | null; model: string | null; total: number; count: number }>;
 }
 
 export interface MaintenanceGroupLine {
@@ -125,10 +132,14 @@ export interface MaintenanceGroupLine {
 }
 
 export interface MaintenanceKmBandLine {
-  brand: string;
-  /** null = the brand as a whole. */
+  /** "brand" = the brand as a whole (model null), "model" = one type of it. */
+  level: "brand" | "model";
+  /** null = no brand ("Onbekend"). */
+  brand: string | null;
+  /** null on a brand line, or a type without a name ("Onbekend"). */
   model: string | null;
-  band: KmBand;
+  /** null = "Onbekende km": costs without a km reading on their day (km 0, perKm null). */
+  band: KmBand | null;
   amount: number;
   km: number;
   perKm: number | null;
@@ -139,8 +150,10 @@ export interface MaintenanceKmBandLine {
 export interface MaintenanceBrands {
   from: string;
   to: string;
-  brands: Array<MaintenanceGroupLine & { brand: string }>;
-  models: Array<MaintenanceGroupLine & { brand: string; model: string; key: string }>;
+  /** brand null = no brand ("Onbekend"; filter and drill with MAINTENANCE_NULL_KEY). */
+  brands: Array<MaintenanceGroupLine & { brand: string | null }>;
+  /** model null = a type without a name ("Onbekend"). */
+  models: Array<MaintenanceGroupLine & { brand: string | null; model: string | null; key: string }>;
   /** Admin only. */
   kmBands?: MaintenanceKmBandLine[];
 }
@@ -148,8 +161,8 @@ export interface MaintenanceBrands {
 export interface MaintenanceVehicleLine {
   vehicleId: number;
   licensePlate: string;
-  brand: string;
-  model: string;
+  brand: string | null;
+  model: string | null;
   year: number | null;
   /** Admin only: the band of the last valid reading on or before the end of the period. */
   kmBand?: KmBand | null;
@@ -166,7 +179,7 @@ export interface MaintenanceSuppliers {
   to: string;
   /** `key` null = "Onbekend"; send REPORT_DRILL_NULL_KEY as filter or drill key for it. */
   suppliers: Array<{ key: string | null; supplier: string; total: number; count: number; avg: number }>;
-  downtime: Array<{ vehicleId: number; plate: string; brand: string; model: string; visits: number; days: number }>;
+  downtime: Array<{ vehicleId: number; plate: string; brand: string | null; model: string | null; visits: number; days: number }>;
   topRepairs: MaintenanceCostRow[];
 }
 
@@ -177,16 +190,19 @@ export interface MaintenanceTrends {
   /** Admin only: the next FORECAST_MONTHS months. */
   forecast?: Array<{ month: string; amount: number }>;
   /** Admin only: the forecast per vehicle (FORECAST_DAYS × km per day × cost per km of model + band). */
-  forecastVehicles?: Array<{ vehicleId: number; licensePlate: string; brand: string; model: string; band: KmBand; kmPerDay: number; perKm: number; amount: number }>;
+  forecastVehicles?: Array<{ vehicleId: number; licensePlate: string; brand: string | null; model: string | null; band: KmBand; kmPerDay: number; perKm: number; amount: number }>;
 }
 
 export type MaintenanceSignal =
-  | { kind: "aboveGroup"; vehicleId: number; licensePlate: string; brand: string; model: string;
+  | { kind: "aboveGroup"; vehicleId: number; licensePlate: string; brand: string | null; model: string | null;
       basis: "month" | "km"; band?: KmBand; value: number; average: number; percent: number; comparables: number }
-  | { kind: "rising"; vehicleId: number; licensePlate: string; brand: string; model: string;
-      months: Array<{ month: string; amount: number }> }
-  | { kind: "repeated"; vehicleId: number; licensePlate: string; brand: string; model: string;
-      category: string; categoryLabel: string; firstDate: string; secondDate: string; days: number; expenseIds: number[] };
+  /** drillFrom/drillTo: the months the signal looked at (they may lie partly before the period). */
+  | { kind: "rising"; vehicleId: number; licensePlate: string; brand: string | null; model: string | null;
+      months: Array<{ month: string; amount: number }>; drillFrom: string; drillTo: string }
+  /** drillFrom/drillTo: the day of the first and of the second line. */
+  | { kind: "repeated"; vehicleId: number; licensePlate: string; brand: string | null; model: string | null;
+      category: string; categoryLabel: string; firstDate: string; secondDate: string; days: number; expenseIds: number[];
+      drillFrom: string; drillTo: string };
 
 export interface MaintenanceSignals {
   from: string;
@@ -199,8 +215,8 @@ export interface MaintenanceCostRow {
   date: string;
   vehicleId: number;
   licensePlate: string;
-  brand: string;
-  model: string;
+  brand: string | null;
+  model: string | null;
   category: string;
   categoryLabel: string;
   supplier: string;

@@ -127,8 +127,9 @@ export function parseMaintenanceQuery(query: Record<string, unknown>, today: str
       to: parsed.filter.to,
       compare,
       category,
-      brand: given(query.brand) ? query.brand.trim().toUpperCase() : null,
-      model: given(query.model) ? query.model.trim().replace(/\s+/g, " ").toUpperCase() : null,
+      // "__null" (Onbekend) is the vehicle without a brand or model name.
+      brand: given(query.brand) ? (query.brand === REPORT_DRILL_NULL_KEY ? "" : query.brand.trim().toUpperCase()) : null,
+      model: given(query.model) ? (query.model === REPORT_DRILL_NULL_KEY ? "" : query.model.trim().replace(/\s+/g, " ").toUpperCase()) : null,
       yearFrom,
       yearTo,
       kmBand,
@@ -438,16 +439,34 @@ interface Scope {
   costs: CostCtx[];
 }
 
-/** Vehicles that match the filter and are owned in the period, or carry a matching cost in it. */
+/**
+ * Vehicles that match the filter and are owned in the period, or carry a matching cost in it.
+ * With a km-band filter only the vehicles with a cost or with km driven in that band count.
+ */
 function scopeOf(data: MaintenanceData, q: MaintenanceQuery, period: Period, ignore: Ignore = {}): Scope {
   const costs = data.costs.filter((c) => {
     const v = data.vehicles.get(c.vehicleId)!;
     return vehicleMatches(v, q, ignore) && costMatches(c, q, period, ignore);
   });
   const withCost = new Set(costs.map((c) => c.vehicleId));
+  const band = ignore.kmBand ? null : q.kmBand;
   const vehicles = [...data.vehicles.values()].filter((v) =>
-    vehicleMatches(v, q, ignore) && (withCost.has(v.id) || ownedMonths(v, period, data.today) > 0));
+    vehicleMatches(v, q, ignore) && (withCost.has(v.id) || (ownedMonths(v, period, data.today) > 0
+      && (band === null || kmInPeriod(data, v, period, band) > 0))));
   return { data, q, period, vehicles, costs };
+}
+
+/** An empty brand or model goes out as null ("Onbekend" on screen). */
+const orNull = (s: string): string | null => (s === "" ? null : s);
+
+/** The vehicle fields every line carries: id, plate, brand and model (null when empty). */
+const vehicleFields = (v: VehicleCtx) => ({ vehicleId: v.id, licensePlate: v.plate, brand: orNull(v.brand), model: orNull(v.model) });
+
+/** A drill key "BRAND | MODEL" in the form modelGroupKey gives: parts upper-cased, "__null" kept. */
+function normalModelKey(key: string): string {
+  const [brand = "", model = ""] = key.split(" | ");
+  const part = (s: string) => (s.trim() === REPORT_DRILL_NULL_KEY ? "" : s.trim().replace(/\s+/g, " ").toUpperCase());
+  return modelGroupKey(part(brand), part(model));
 }
 
 function sumAmount(costs: CostCtx[]): number {
@@ -505,7 +524,7 @@ export function overviewPart(data: MaintenanceData, q: MaintenanceQuery): Mainte
   const topVehicles = [...byVehicle.entries()]
     .map(([vehicleId, costs]) => {
       const v = data.vehicles.get(vehicleId)!;
-      return { vehicleId, licensePlate: v.plate, brand: v.brand, model: v.model, total: round2(sumAmount(costs)), count: costs.length };
+      return { ...vehicleFields(v), total: round2(sumAmount(costs)), count: costs.length };
     })
     .sort((a, b) => b.total - a.total || a.licensePlate.localeCompare(b.licensePlate))
     .slice(0, 10);
@@ -529,18 +548,19 @@ export function brandsPart(data: MaintenanceData, q: MaintenanceQuery): Maintena
   const costsByVehicle = groupBy(scope.costs, (c) => c.vehicleId);
   const costsOf = (vs: VehicleCtx[]) => vs.flatMap((v) => costsByVehicle.get(v.id) ?? []);
   const brands = [...vehiclesByBrand.entries()]
-    .map(([brand, vs]) => ({ brand, ...groupLine(scope, vs, costsOf(vs)) }))
-    .sort((a, b) => b.total - a.total || a.brand.localeCompare(b.brand));
+    .map(([brand, vs]) => ({ brand: orNull(brand), ...groupLine(scope, vs, costsOf(vs)) }))
+    .sort((a, b) => b.total - a.total || (a.brand ?? "").localeCompare(b.brand ?? ""));
   const vehiclesByModel = groupBy(scope.vehicles, (v) => modelGroupKey(v.brand, v.modelKey));
   const models = [...vehiclesByModel.values()]
-    .map((vs) => ({ brand: vs[0].brand, model: vs[0].model, key: modelGroupKey(vs[0].brand, vs[0].modelKey), ...groupLine(scope, vs, costsOf(vs)) }))
+    .map((vs) => ({ brand: orNull(vs[0].brand), model: orNull(vs[0].model), key: modelGroupKey(vs[0].brand, vs[0].modelKey), ...groupLine(scope, vs, costsOf(vs)) }))
     .sort((a, b) => b.total - a.total || a.key.localeCompare(b.key));
   const result: MaintenanceBrands = { from: q.from, to: q.to, brands, models };
   if (data.isAdmin) {
     const bandRows: MaintenanceKmBandLine[] = [];
     const kmOf = new Map(scope.vehicles.map((v) => [v.id, kmBands(data, v, q)] as const));
-    const bandLines = (brand: string, model: string | null, vs: VehicleCtx[]) => {
+    const bandLines = (level: MaintenanceKmBandLine["level"], brand: string, model: string | null, vs: VehicleCtx[]) => {
       const costs = costsOf(vs);
+      const head = { level, brand: orNull(brand), model: model === null ? null : orNull(model) };
       for (const band of KM_BAND_KEYS) {
         if (q.kmBand !== null && band !== q.kmBand) continue;
         const inBand = costs.filter((c) => c.band === band);
@@ -553,11 +573,16 @@ export function brandsPart(data: MaintenanceData, q: MaintenanceQuery): Maintena
           km += k;
         }
         if (km <= 0 && inBand.length === 0) continue;
-        bandRows.push({ brand, model, band, amount: round2(amount), km: Math.round(km), perKm: ratio(amount, km, round4), vehicles: ids.size, count: inBand.length });
+        bandRows.push({ ...head, band, amount: round2(amount), km: Math.round(km), perKm: ratio(amount, km, round4), vehicles: ids.size, count: inBand.length });
+      }
+      // "Onbekende km": costs without a km reading on their day, so the row adds up to the group total.
+      const unknown = q.kmBand === null ? costs.filter((c) => c.band === null) : [];
+      if (unknown.length > 0) {
+        bandRows.push({ ...head, band: null, amount: round2(sumAmount(unknown)), km: 0, perKm: null, vehicles: new Set(unknown.map((c) => c.vehicleId)).size, count: unknown.length });
       }
     };
-    for (const [brand, vs] of vehiclesByBrand) bandLines(brand, null, vs);
-    for (const vs of vehiclesByModel.values()) bandLines(vs[0].brand, vs[0].model, vs);
+    for (const [brand, vs] of vehiclesByBrand) bandLines("brand", brand, null, vs);
+    for (const vs of vehiclesByModel.values()) bandLines("model", vs[0].brand, vs[0].model, vs);
     result.kmBands = bandRows;
   }
   return result;
@@ -571,10 +596,7 @@ export function vehiclesPart(data: MaintenanceData, q: MaintenanceQuery): { from
     const costs = costsByVehicle.get(v.id) ?? [];
     const total = sumAmount(costs);
     const line: MaintenanceVehicleLine = {
-      vehicleId: v.id,
-      licensePlate: v.plate,
-      brand: v.brand,
-      model: v.model,
+      ...vehicleFields(v),
       year: v.year,
       total: round2(total),
       perMonth: ratio(total, ownedMonths(v, q, data.today)),
@@ -597,10 +619,7 @@ function costRow(data: MaintenanceData, c: CostCtx): MaintenanceCostRow {
   const row: MaintenanceCostRow = {
     id: c.id,
     date: c.date,
-    vehicleId: c.vehicleId,
-    licensePlate: v.plate,
-    brand: v.brand,
-    model: v.model,
+    ...vehicleFields(v),
     category: c.category,
     categoryLabel: categoryLabel(c.category),
     supplier: c.supplierKey === null ? UNKNOWN_SUPPLIER_LABEL : data.supplierNames.get(c.supplierKey) ?? c.supplierKey,
@@ -644,7 +663,7 @@ export async function suppliersPart(data: MaintenanceData, q: MaintenanceQuery):
     q.from,
     q.to,
     data.today,
-  ).map((r) => ({ vehicleId: r.vehicleId, plate: r.licensePlate, brand: r.brand, model: r.model, visits: r.visits, days: r.days }));
+  ).map((r) => ({ vehicleId: r.vehicleId, plate: r.licensePlate, brand: orNull(r.brand ?? ""), model: orNull(r.model ?? ""), visits: r.visits, days: r.days }));
 
   const topRepairs = [...scope.costs]
     .sort((a, b) => b.amount - a.amount || b.day - a.day || b.id - a.id)
@@ -724,7 +743,7 @@ export function trendsPart(data: MaintenanceData, q: MaintenanceQuery): Maintena
       const rate = rates.get(`${modelGroupKey(v.brand, v.modelKey)}#${band}`);
       if (rate === undefined || rate === null) continue;
       forecastVehicles.push({
-        vehicleId: v.id, licensePlate: v.plate, brand: v.brand, model: v.model, band,
+        ...vehicleFields(v), band,
         kmPerDay: pace.kmPerDay, perKm: round4(rate), amount: round2(FORECAST_DAYS * pace.kmPerDay * rate),
       });
     }
@@ -746,7 +765,7 @@ function lastFullMonth(day: string): string {
 export function signalsPart(data: MaintenanceData, q: MaintenanceQuery): MaintenanceSignals {
   const scope = scopeOf(data, q, q);
   const signals: MaintenanceSignal[] = [];
-  const base = (v: VehicleCtx) => ({ vehicleId: v.id, licensePlate: v.plate, brand: v.brand, model: v.model });
+  const base = vehicleFields;
 
   // 1. Above the group: same brand + model (admin: per km in the vehicle's band), at least 3 others.
   const peers = scopeOf(data, q, q, { vehicle: true, supplier: true, kmBand: true });
@@ -795,7 +814,10 @@ export function signalsPart(data: MaintenanceData, q: MaintenanceQuery): Mainten
     const costs = allByVehicle.get(v.id) ?? [];
     const amounts = window.map((month) => sumAmount(costs.filter((c) => c.date.startsWith(month))));
     if (amounts.every((a, i) => i === 0 || a > amounts[i - 1])) {
-      signals.push({ kind: "rising", ...base(v), months: window.map((month, i) => ({ month, amount: round2(amounts[i]) })) });
+      signals.push({
+        kind: "rising", ...base(v), months: window.map((month, i) => ({ month, amount: round2(amounts[i]) })),
+        drillFrom: `${window[0]}-01`, drillTo: ymdOf(dayOf(`${nextMonth(window[window.length - 1], 1)}-01`) - 1),
+      });
     }
   }
 
@@ -812,6 +834,7 @@ export function signalsPart(data: MaintenanceData, q: MaintenanceQuery): Mainten
         signals.push({
           kind: "repeated", ...base(v), category, categoryLabel: categoryLabel(category),
           firstDate: found[0].date, secondDate: found[1].date, days: found[1].day - found[0].day, expenseIds: [found[0].id, found[1].id],
+          drillFrom: found[0].date, drillTo: found[1].date,
         });
       }
     }
@@ -830,8 +853,16 @@ export function rowsPart(data: MaintenanceData, q: MaintenanceQuery, query: Reco
     const vehicleOf = (c: CostCtx) => data.vehicles.get(c.vehicleId)!;
     switch (drill) {
       case "category": costs = costs.filter((c) => c.category === key); break;
-      case "brand": costs = costs.filter((c) => vehicleOf(c).brand === key.trim().toUpperCase()); break;
-      case "model": costs = costs.filter((c) => modelGroupKey(vehicleOf(c).brand, vehicleOf(c).modelKey) === key.trim().toUpperCase()); break;
+      case "brand": {
+        const wanted = key === REPORT_DRILL_NULL_KEY ? "" : key.trim().toUpperCase();
+        costs = costs.filter((c) => vehicleOf(c).brand === wanted);
+        break;
+      }
+      case "model": {
+        const wanted = normalModelKey(key);
+        costs = costs.filter((c) => modelGroupKey(vehicleOf(c).brand, vehicleOf(c).modelKey) === wanted);
+        break;
+      }
       case "supplier": {
         const wanted = key === REPORT_DRILL_NULL_KEY ? null : supplierKey(key);
         costs = costs.filter((c) => c.supplierKey === wanted);
@@ -839,7 +870,8 @@ export function rowsPart(data: MaintenanceData, q: MaintenanceQuery, query: Reco
       }
       case "vehicle": costs = costs.filter((c) => String(c.vehicleId) === key); break;
       case "month": costs = costs.filter((c) => c.date.slice(0, 7) === key); break;
-      case "kmBand": costs = costs.filter((c) => c.band === key); break;
+      // "__null" = Onbekende km: the lines without a km reading on their day.
+      case "kmBand": costs = costs.filter((c) => c.band === (key === REPORT_DRILL_NULL_KEY ? null : key)); break;
     }
   }
   const rows = costs.map((c) => costRow(data, c));

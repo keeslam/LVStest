@@ -7,7 +7,9 @@
  * sends, so the tabs, the drill-down and the print all read the same filter.
  */
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import type { TFunction } from "i18next";
 import { UserRole } from "@shared/schema";
+import { MAINTENANCE_NULL_KEY, modelWithoutBrand } from "@shared/maintenance-analysis";
 import { useAuth } from "@/hooks/use-auth";
 import { useHidePrices } from "@/components/ui/price";
 import { formatCurrency } from "@/lib/format-utils";
@@ -68,6 +70,8 @@ export function useAnalysisParams(): Record<string, string> {
     if (extra.model) p.model = extra.model;
     if (YEAR.test(extra.yearFrom)) p.yearFrom = extra.yearFrom;
     if (YEAR.test(extra.yearTo)) p.yearTo = extra.yearTo;
+    // Van after tot (2022 – 2019) means 2019 – 2022: swapped, so the server never answers 400.
+    if (p.yearFrom && p.yearTo && Number(p.yearFrom) > Number(p.yearTo)) [p.yearFrom, p.yearTo] = [p.yearTo, p.yearFrom];
     if (isAdmin && extra.kmBand) p.kmBand = extra.kmBand;
     if (extra.supplier) p.supplier = extra.supplier;
     return p;
@@ -97,3 +101,23 @@ export function useMoneyText(): (n: number | null | undefined, perKm?: boolean) 
 }
 
 export const countText = (n: number | null | undefined) => (n === null || n === undefined ? "–" : n.toLocaleString("nl-NL"));
+
+/** A brand as text: null or empty (a car without a brand, or removed without snapshot) is "Onbekend". */
+export const brandText = (t: TFunction, brand: string | null | undefined): string => brand || t("maintenanceAnalysis.unknownBrand");
+
+/** The type without the brand in front; null or empty is "Onbekend". */
+export const typeText = (t: TFunction, brand: string | null | undefined, model: string | null | undefined): string =>
+  modelWithoutBrand(brand, model) || t("maintenanceAnalysis.unknownModel");
+
+/** The filter / drill value of a brand or type: null or empty is MAINTENANCE_NULL_KEY ("__null"). */
+export const nameKey = (name: string | null | undefined): string => name || MAINTENANCE_NULL_KEY;
+
+const SHARED_EMPTY: unknown[] = [];
+/**
+ * One shared empty list for "no data yet": `data?.x ?? []` makes a new array on every render,
+ * which reruns every memo that depends on it and can loop through a table's onView (setState).
+ * Never mutate the result.
+ */
+export function noRows<T>(): T[] {
+  return SHARED_EMPTY as T[];
+}

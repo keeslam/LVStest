@@ -12,6 +12,9 @@
   "maintenanceAnalysis": {
     "scopeNote": "Numără doar costurile de întreținere: {{categories}}.",
     "unknownSupplier": "Necunoscut",
+    "unknownBrand": "Necunoscută",
+    "unknownModel": "Necunoscut",
+    "unknownKm": "Km necunoscuți",
     "tabs": {
       "overview": "Prezentare",
       "brands": "Mărci și tipuri",

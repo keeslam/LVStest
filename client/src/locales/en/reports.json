@@ -12,6 +12,9 @@
   "maintenanceAnalysis": {
     "scopeNote": "Counts maintenance costs only: {{categories}}.",
     "unknownSupplier": "Unknown",
+    "unknownBrand": "Unknown",
+    "unknownModel": "Unknown",
+    "unknownKm": "Unknown km",
     "tabs": {
       "overview": "Overview",
       "brands": "Brands and types",

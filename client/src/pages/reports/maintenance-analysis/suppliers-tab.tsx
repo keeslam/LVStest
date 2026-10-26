@@ -7,7 +7,7 @@ import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { REPORT_DRILL_NULL_KEY } from "@shared/report-kit";
-import { modelWithoutBrand, type MaintenanceCostRow, type MaintenanceSuppliers } from "@shared/maintenance-analysis";
+import type { MaintenanceCostRow, MaintenanceSuppliers } from "@shared/maintenance-analysis";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
 import { compactSections } from "@/components/reports/kit/report-breakdown-table";
@@ -17,7 +17,7 @@ import { chartSvgFromRef } from "@/lib/report-document-print";
 import { formatExpenseCategory, formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
 import { tablePrintSection } from "../legacy/table-print";
-import { ANALYSIS_ENDPOINT, countText, useAnalysisParams, useMoneyText } from "./analysis-context";
+import { ANALYSIS_ENDPOINT, brandText, countText, noRows, typeText, useAnalysisParams, useMoneyText } from "./analysis-context";
 import { AnalysisChart } from "./analysis-chart";
 import { useAnalysisDrill } from "./analysis-rows";
 import { AnalysisPanel } from "./analysis-panel";
@@ -41,9 +41,9 @@ export function SuppliersTab() {
   const { data, isLoading, isError, error, refetch } = useQuery<MaintenanceSuppliers>({ queryKey: [`${ANALYSIS_ENDPOINT}/suppliers`, params] });
 
   const name = (s: SupplierLine) => (s.key === null ? k("unknownSupplier") : s.supplier);
-  const suppliers = data?.suppliers ?? [];
-  const downtime = data?.downtime ?? [];
-  const repairs = data?.topRepairs ?? [];
+  const suppliers = data?.suppliers ?? noRows<SupplierLine>();
+  const downtime = data?.downtime ?? noRows<DowntimeLine>();
+  const repairs = data?.topRepairs ?? noRows<MaintenanceCostRow>();
   const rowsTitle = k("rows.title");
   const openSupplier = (key: string, label: string) => drill({ title: `${rowsTitle} · ${label}`, drill: "supplier", key });
 
@@ -61,10 +61,10 @@ export function SuppliersTab() {
   const downtimeColumns = useMemo<ReportTableColumn<DowntimeLine>[]>(() => {
     const c = (key: string) => t(`maintenanceAnalysis.columns.${key}`);
     const plate = (r: DowntimeLine) => formatLicensePlate(r.plate);
-    const type = (r: DowntimeLine) => modelWithoutBrand(r.brand, r.model);
+    const type = (r: DowntimeLine) => typeText(t, r.brand, r.model);
     return [
-      { id: "plate", label: c("licensePlate"), cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={plate(r)} />, text: plate, sortValue: (r) => r.plate },
-      { id: "brand", label: c("brand"), cell: (r) => r.brand, text: (r) => r.brand, sortValue: (r) => r.brand },
+      { id: "plate", label: c("licensePlate"), interactive: true, cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={plate(r)} />, text: plate, sortValue: (r) => r.plate },
+      { id: "brand", label: c("brand"), cell: (r) => brandText(t, r.brand), text: (r) => brandText(t, r.brand), sortValue: (r) => brandText(t, r.brand) },
       { id: "model", label: c("model"), cell: type, text: type, sortValue: type },
       { id: "visits", label: c("visits"), cell: (r) => countText(r.visits), text: (r) => countText(r.visits), sortValue: (r) => r.visits, align: "right" },
       { id: "days", label: c("days"), cell: (r) => countText(r.days), text: (r) => countText(r.days), sortValue: (r) => r.days, align: "right" },
@@ -79,7 +79,7 @@ export function SuppliersTab() {
     const supplier = (r: MaintenanceCostRow) => (r.supplierKey === null ? t("maintenanceAnalysis.unknownSupplier") : r.supplier);
     return [
       { id: "date", label: c("date"), cell: date, text: date, sortValue: (r) => r.date },
-      { id: "plate", label: c("licensePlate"), cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={plate(r)} />, text: plate, sortValue: (r) => r.licensePlate },
+      { id: "plate", label: c("licensePlate"), interactive: true, cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={plate(r)} />, text: plate, sortValue: (r) => r.licensePlate },
       { id: "category", label: c("category"), cell: category, text: category, sortValue: category },
       { id: "supplier", label: c("supplier"), cell: supplier, text: supplier, sortValue: supplier },
       { id: "description", label: c("description"), cell: (r) => r.description ?? "", text: (r) => r.description ?? "" },

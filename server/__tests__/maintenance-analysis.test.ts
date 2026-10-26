@@ -134,8 +134,8 @@ describe("maintenance analysis endpoints", () => {
     expect(doblo).toMatchObject({ key: `${FIAT} | DOBLO`, vehicles: 4, vehiclesWithCosts: 4, count: 4, total: 1300, rated: true });
     const ducato = res.body.kmBands.filter((b: any) => b.model === "DUCATO");
     expect(ducato).toEqual([
-      { brand: FIAT, model: "DUCATO", band: "0–50.000", amount: 100, km: 10000, perKm: 0.01, vehicles: 1, count: 1 },
-      { brand: FIAT, model: "DUCATO", band: "50–100.000", amount: 600, km: 30000, perKm: 0.02, vehicles: 1, count: 1 },
+      { level: "model", brand: FIAT, model: "DUCATO", band: "0–50.000", amount: 100, km: 10000, perKm: 0.01, vehicles: 1, count: 1 },
+      { level: "model", brand: FIAT, model: "DUCATO", band: "50–100.000", amount: 600, km: 30000, perKm: 0.02, vehicles: 1, count: 1 },
     ]);
   });
 
@@ -193,6 +193,18 @@ describe("maintenance analysis endpoints", () => {
     // A period that ends mid-September: September is not full yet, so the window is May..August.
     const mid = (await staff.get(`${BASE}/signals`).query({ from: P.from, to: "2026-09-15", brand: FORD })).body.signals.filter((s: any) => s.kind === "rising");
     expect(mid.map((s: any) => s.months.map((m: any) => m.month))).toEqual([["2026-05", "2026-06", "2026-07", "2026-08"]]);
+  });
+
+  it("signals carry the dates they looked at; a vehicle drill over them opens exactly those lines", async () => {
+    const signals = (await staff.get(`${BASE}/signals`).query({ ...P, brand: FORD })).body.signals;
+    const rising = signals.find((s: any) => s.kind === "rising" && s.vehicleId === ids.T2);
+    expect(rising).toMatchObject({ drillFrom: "2026-06-01", drillTo: "2026-09-30" });
+    const risingRows = (await staff.get(`${BASE}/rows`).query({ ...P, brand: FORD, from: rising.drillFrom, to: rising.drillTo, drill: "vehicle", key: String(ids.T2) })).body;
+    expect([risingRows.total, risingRows.amount]).toEqual([4, 100]);
+    const repeated = signals.find((s: any) => s.kind === "repeated" && s.vehicleId === ids.T1);
+    expect(repeated).toMatchObject({ drillFrom: "2026-05-01", drillTo: "2026-07-15" });
+    const repeatedRows = (await staff.get(`${BASE}/rows`).query({ ...P, brand: FORD, from: repeated.drillFrom, to: repeated.drillTo, category: "tires", drill: "vehicle", key: String(ids.T1) })).body;
+    expect(repeatedRows.rows.map((r: any) => r.id).sort()).toEqual([...repeated.expenseIds].sort());
   });
 
   it("suppliers: one group for three spellings, its most used name; drill supplier gives exactly count lines", async () => {
@@ -287,8 +299,8 @@ describe("maintenance analysis endpoints", () => {
     const lines = (await admin.get(`${BASE}/brands`).query({ ...P, brand: FIAT })).body.kmBands;
     expect(lines.length).toBeGreaterThan(0);
     for (const line of lines) {
-      const query: Record<string, string> = { ...P, brand: line.brand, drill: "kmBand", key: line.band };
-      if (line.model !== null) query.model = line.model;
+      const query: Record<string, string> = { ...P, brand: line.brand ?? "__null", drill: "kmBand", key: line.band ?? "__null" };
+      if (line.level === "model") query.model = line.model ?? "__null";
       const rows = (await admin.get(`${BASE}/rows`).query(query)).body;
       expect([rows.total, rows.amount], `${line.model} ${line.band}`).toEqual([line.count, line.amount]);
     }
@@ -380,5 +392,107 @@ describe("maintenance analysis: removed vehicles and months owned", () => {
     expect(line.vehicleId).toBe(weekly);
     expect(line.perMonth).toBe(r2(100 / months(7))); // about EUR 434.82, not EUR 100
     expect((await staff.get(`${BASE}/overview`).query(week)).body.tiles.perVehicleMonth).toBe(r2(100 / months(7)));
+  });
+});
+
+describe("maintenance analysis: final fixes", () => {
+  const EMPTY = "FIXTMAEMPTY";
+  const FIX = "FIXTMAFIX";
+  let admin: TestAgent;
+  let staff: TestAgent;
+  const orphanExpenseIds: number[] = [];
+  let noModel: number;
+  let orphan: number;
+  const fix: Record<string, number> = {};
+  const vehicleIds: number[] = [];
+
+  beforeAll(async () => {
+    admin = await agentFor("admin");
+    staff = await agentFor([UserPermission.VIEW_REPORTS]);
+    // A vehicle with an empty model, and a removed vehicle without a recycle-bin snapshot (no brand, no model).
+    noModel = (await createFixtureVehicle({ brand: EMPTY, model: "", dateIn: "2025-01-01" })).id;
+    await db.insert(expenses).values({ vehicleId: noModel, category: "maintenance", amount: "77.00", date: "2026-02-02", description: "FIXT-ma" });
+    const gone = await createFixtureVehicle({ brand: EMPTY, model: "GONE", dateIn: "2025-01-01" });
+    orphan = gone.id;
+    const inserted = await db.insert(expenses).values({ vehicleId: orphan, category: "brakes", amount: "55.00", date: "2026-02-03", description: "FIXT-ma-orphan" }).returning();
+    orphanExpenseIds.push(...inserted.map((e) => e.id));
+    await db.delete(vehicles).where(inArray(vehicles.id, [orphan]));
+
+    // FIX: A1 has km readings in 50–100.000 and a cost there; A2 has a cost without any km reading; A3 nothing.
+    for (const name of ["A1", "A2", "A3"]) {
+      fix[name] = (await createFixtureVehicle({ brand: FIX, model: "VAN", dateIn: "2025-01-01" })).id;
+      vehicleIds.push(fix[name]);
+    }
+    await db.insert(vehicleMileageReadings).values([
+      { vehicleId: fix.A1, mileage: 60000, recordedAt: new Date("2026-01-01T11:00:00Z"), source: "manual" },
+      { vehicleId: fix.A1, mileage: 70000, recordedAt: new Date("2026-06-01T10:00:00Z"), source: "manual" },
+    ] as any);
+    await db.insert(expenses).values([
+      { vehicleId: fix.A1, category: "maintenance", amount: "300.00", date: "2026-03-01", description: "FIXT-ma" },
+      { vehicleId: fix.A2, category: "tires", amount: "400.00", date: "2026-03-02", description: "FIXT-ma" },
+    ]);
+  });
+
+  afterAll(async () => {
+    await db.delete(expenses).where(inArray(expenses.id, orphanExpenseIds));
+    await db.delete(vehicleMileageReadings).where(inArray(vehicleMileageReadings.vehicleId, vehicleIds));
+    await cleanupFixtures();
+    await cleanupFixtureUsers();
+  });
+
+  it("an empty model is null, filter and drill on __null match the counted lines", async () => {
+    const brands = (await staff.get(`${BASE}/brands`).query({ ...P, brand: EMPTY })).body;
+    const unknown = brands.models.find((m: any) => m.model === null);
+    expect(unknown).toMatchObject({ brand: EMPTY, key: `${EMPTY} | __null`, count: 1, total: 77 });
+    expect(brands.models.every((m: any) => m.model !== "")).toBe(true);
+    const drilled = (await staff.get(`${BASE}/rows`).query({ ...P, brand: EMPTY, drill: "model", key: unknown.key })).body;
+    expect([drilled.total, drilled.amount]).toEqual([1, 77]);
+    const filtered = (await staff.get(`${BASE}/overview`).query({ ...P, brand: EMPTY, model: "__null" })).body;
+    expect(filtered.tiles).toMatchObject({ count: 1, total: 77 });
+    const line = (await staff.get(`${BASE}/vehicles`).query({ ...P, vehicleId: String(noModel) })).body.vehicles[0];
+    expect(line).toMatchObject({ brand: EMPTY, model: null });
+  });
+
+  it("a removed vehicle without snapshot has brand and model null; brand __null filters and drills to it", async () => {
+    const line = (await staff.get(`${BASE}/vehicles`).query({ ...P, vehicleId: String(orphan) })).body.vehicles[0];
+    expect(line).toMatchObject({ brand: null, model: null, total: 55 });
+    const brands = (await staff.get(`${BASE}/brands`).query({ ...P, brand: "__null" })).body;
+    expect(brands.brands).toHaveLength(1);
+    expect(brands.brands[0].brand).toBeNull();
+    const b = brands.brands[0];
+    const drilled = (await staff.get(`${BASE}/rows`).query({ ...P, drill: "brand", key: "__null" })).body;
+    expect([drilled.total, drilled.amount]).toEqual([b.count, b.total]);
+    expect(drilled.rows.some((r: any) => r.vehicleId === orphan)).toBe(true);
+    const filtered = (await staff.get(`${BASE}/overview`).query({ ...P, brand: "__null" })).body;
+    expect([filtered.tiles.count, filtered.tiles.total]).toEqual([b.count, b.total]);
+    // Every brand and model in the unfiltered answer is null or a real name, never "".
+    const all = (await staff.get(`${BASE}/brands`).query(P)).body;
+    expect(all.brands.some((x: any) => x.brand === "")).toBe(false);
+    expect(all.models.some((x: any) => x.brand === "" || x.model === "")).toBe(false);
+  });
+
+  it("km-band matrix: an Onbekende km column (band null) so a brand row adds up to the brand total", async () => {
+    const res = (await admin.get(`${BASE}/brands`).query({ ...P, brand: FIX })).body;
+    const brandLines = res.kmBands.filter((l: any) => l.level === "brand");
+    const unknown = brandLines.find((l: any) => l.band === null);
+    expect(unknown).toMatchObject({ brand: FIX, model: null, band: null, amount: 400, count: 1, km: 0, perKm: null, vehicles: 1 });
+    const sum = brandLines.reduce((n: number, l: any) => n + l.amount, 0);
+    expect(sum).toBe(res.brands[0].total);
+    expect(res.kmBands.filter((l: any) => l.level === "model").reduce((n: number, l: any) => n + l.amount, 0)).toBe(700);
+    const rows = (await admin.get(`${BASE}/rows`).query({ ...P, brand: FIX, drill: "kmBand", key: "__null" })).body;
+    expect([rows.total, rows.amount]).toEqual([1, 400]);
+    // With a km-band filter there is no unknown column.
+    const banded = (await admin.get(`${BASE}/brands`).query({ ...P, brand: FIX, kmBand: "50–100.000" })).body;
+    expect(banded.kmBands.some((l: any) => l.band === null)).toBe(false);
+  });
+
+  it("a km-band filter narrows the vehicle list and the brand's vehicle count to cars with costs or km in that band", async () => {
+    const q = { ...P, brand: FIX, kmBand: "50–100.000" };
+    const list = (await admin.get(`${BASE}/vehicles`).query(q)).body.vehicles;
+    expect(list.map((v: any) => v.vehicleId)).toEqual([fix.A1]);
+    const brands = (await admin.get(`${BASE}/brands`).query(q)).body;
+    expect(brands.brands[0]).toMatchObject({ brand: FIX, vehicles: 1, vehiclesWithCosts: 1, total: 300 });
+    // Without the filter all three count.
+    expect((await admin.get(`${BASE}/brands`).query({ ...P, brand: FIX })).body.brands[0].vehicles).toBe(3);
   });
 });

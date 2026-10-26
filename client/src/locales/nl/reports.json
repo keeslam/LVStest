@@ -12,6 +12,9 @@
   "maintenanceAnalysis": {
     "scopeNote": "Telt alleen onderhoudskosten: {{categories}}.",
     "unknownSupplier": "Onbekend",
+    "unknownBrand": "Onbekend",
+    "unknownModel": "Onbekend",
+    "unknownKm": "Onbekende km",
     "tabs": {
       "overview": "Overzicht",
       "brands": "Merken en typen",

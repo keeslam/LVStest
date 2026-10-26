@@ -6,7 +6,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { modelWithoutBrand, type MaintenanceOverview } from "@shared/maintenance-analysis";
+import type { MaintenanceOverview } from "@shared/maintenance-analysis";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { ReportTiles, tilesPrintSection, useCompareTile, type ReportTile } from "@/components/reports/kit/report-tiles";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
@@ -16,7 +16,7 @@ import { EntityLink } from "@/components/reports/entity-link";
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { formatExpenseCategory, formatLicensePlate } from "@/lib/format-utils";
 import { tablePrintSection } from "../legacy/table-print";
-import { ANALYSIS_ENDPOINT, countText, useAnalysis, useComparedAnalysisParams, useMoneyText } from "./analysis-context";
+import { ANALYSIS_ENDPOINT, brandText, countText, noRows, typeText, useAnalysis, useComparedAnalysisParams, useMoneyText } from "./analysis-context";
 import { AnalysisChart } from "./analysis-chart";
 import { useAnalysisDrill } from "./analysis-rows";
 import { AnalysisPanel } from "./analysis-panel";
@@ -56,7 +56,7 @@ export function OverviewTab() {
     );
   });
 
-  const categoryPoints = useMemo(() => (data?.byCategory ?? []).map((c) => ({
+  const categoryPoints = useMemo(() => (data?.byCategory ?? noRows<MaintenanceOverview["byCategory"][number]>()).map((c) => ({
     key: c.key,
     label: formatExpenseCategory(c.key) || c.label,
     values: { amount: c.amount, count: c.count },
@@ -65,16 +65,16 @@ export function OverviewTab() {
   const columns = useMemo<ReportTableColumn<TopVehicle>[]>(() => {
     const c = (key: string) => t(`maintenanceAnalysis.columns.${key}`);
     const plate = (r: TopVehicle) => formatLicensePlate(r.licensePlate);
-    const type = (r: TopVehicle) => modelWithoutBrand(r.brand, r.model);
+    const type = (r: TopVehicle) => typeText(t, r.brand, r.model);
     return [
-      { id: "plate", label: c("licensePlate"), cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={plate(r)} />, text: plate, sortValue: (r) => r.licensePlate },
-      { id: "brand", label: c("brand"), cell: (r) => r.brand, text: (r) => r.brand, sortValue: (r) => r.brand },
+      { id: "plate", label: c("licensePlate"), interactive: true, cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={plate(r)} />, text: plate, sortValue: (r) => r.licensePlate },
+      { id: "brand", label: c("brand"), cell: (r) => brandText(t, r.brand), text: (r) => brandText(t, r.brand), sortValue: (r) => brandText(t, r.brand) },
       { id: "model", label: c("model"), cell: type, text: type, sortValue: type },
       { id: "count", label: c("count"), cell: (r) => countText(r.count), text: (r) => countText(r.count), sortValue: (r) => r.count, align: "right" },
       { id: "total", label: c("total"), cell: (r) => money(r.total), text: (r) => money(r.total), sortValue: (r) => r.total, align: "right" },
     ];
   }, [t, money]);
-  const topVehicles = data?.topVehicles ?? [];
+  const topVehicles = data?.topVehicles ?? noRows<TopVehicle>();
 
   useReportPrint(data ? compactSections([
     tilesPrintSection(tiles),

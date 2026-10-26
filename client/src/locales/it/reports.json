@@ -12,6 +12,9 @@
   "maintenanceAnalysis": {
     "scopeNote": "Conta solo i costi di manutenzione: {{categories}}.",
     "unknownSupplier": "Sconosciuto",
+    "unknownBrand": "Sconosciuta",
+    "unknownModel": "Sconosciuto",
+    "unknownKm": "Km sconosciuti",
     "tabs": {
       "overview": "Panoramica",
       "brands": "Marche e tipi",

@@ -9,14 +9,13 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import type { MaintenanceAnalysisDrill, MaintenanceCostRow, MaintenanceRows } from "@shared/maintenance-analysis";
-import { modelWithoutBrand } from "@shared/maintenance-analysis";
 import { ReportRowsDialog } from "@/components/reports/kit/report-rows-dialog";
 import type { ReportTableColumn } from "@/components/reports/kit/report-table";
 import type { ReportLinks } from "@/components/reports/kit/report-extra-columns";
 import { EntityLink } from "@/components/reports/entity-link";
 import { formatExpenseCategory, formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
-import { ANALYSIS_ENDPOINT, useAnalysis, useAnalysisParams, useMoneyText } from "./analysis-context";
+import { ANALYSIS_ENDPOINT, brandText, noRows, typeText, useAnalysis, useAnalysisParams, useMoneyText } from "./analysis-context";
 
 export interface AnalysisDrill {
   title: string;
@@ -63,13 +62,13 @@ function AnalysisRowsDialog({ drill, onClose }: { drill: AnalysisDrill; onClose:
   const columns = useMemo<ReportTableColumn<MaintenanceCostRow>[]>(() => {
     const c = (key: string) => t(`maintenanceAnalysis.columns.${key}`);
     const plate = (r: MaintenanceCostRow) => formatLicensePlate(r.licensePlate);
-    const type = (r: MaintenanceCostRow) => modelWithoutBrand(r.brand, r.model);
+    const type = (r: MaintenanceCostRow) => typeText(t, r.brand, r.model);
     const category = (r: MaintenanceCostRow) => formatExpenseCategory(r.category) || r.categoryLabel;
     const date = (r: MaintenanceCostRow) => formatDateNl(`${r.date}T12:00:00`, "dd-MM-yyyy");
     const list: ReportTableColumn<MaintenanceCostRow>[] = [
       { id: "date", label: c("date"), cell: date, text: date, sortValue: (r) => r.date },
-      { id: "plate", label: c("licensePlate"), cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={plate(r)} />, text: plate, sortValue: (r) => r.licensePlate },
-      { id: "brand", label: c("brand"), cell: (r) => r.brand, text: (r) => r.brand, sortValue: (r) => r.brand },
+      { id: "plate", label: c("licensePlate"), interactive: true, cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={plate(r)} />, text: plate, sortValue: (r) => r.licensePlate },
+      { id: "brand", label: c("brand"), cell: (r) => brandText(t, r.brand), text: (r) => brandText(t, r.brand), sortValue: (r) => brandText(t, r.brand) },
       { id: "model", label: c("model"), cell: type, text: type, sortValue: type },
       { id: "category", label: c("category"), cell: category, text: category, sortValue: category },
       { id: "supplier", label: c("supplier"), cell: (r) => r.supplier, text: (r) => r.supplier, sortValue: (r) => r.supplier },
@@ -95,7 +94,7 @@ function AnalysisRowsDialog({ drill, onClose }: { drill: AnalysisDrill; onClose:
       onOpenChange={(o) => { if (!o) onClose(); }}
       title={drill.title}
       description={description}
-      rows={data?.rows ?? []}
+      rows={data?.rows ?? noRows<MaintenanceCostRow>()}
       columns={columns}
       rowKey={(r) => r.id}
       csvName={k("rows.csv")}

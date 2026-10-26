@@ -6,7 +6,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { modelWithoutBrand, type MaintenanceVehicleLine } from "@shared/maintenance-analysis";
+import type { MaintenanceVehicleLine } from "@shared/maintenance-analysis";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
 import { useReportPrint } from "@/components/reports/kit/report-print";
@@ -16,7 +16,7 @@ import { EntityLink } from "@/components/reports/entity-link";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
 import { tablePrintSection } from "../legacy/table-print";
-import { ANALYSIS_ENDPOINT, countText, useAnalysis, useAnalysisParams, useMoneyText } from "./analysis-context";
+import { ANALYSIS_ENDPOINT, brandText, countText, noRows, typeText, useAnalysis, useAnalysisParams, useMoneyText } from "./analysis-context";
 import { useAnalysisDrill } from "./analysis-rows";
 import { AnalysisPanel } from "./analysis-panel";
 import { AnalysisCsvButton } from "./analysis-csv";
@@ -35,17 +35,17 @@ export function VehiclesTab() {
   const { data, isLoading, isError, error, refetch } = useQuery<{ from: string; to: string; vehicles: MaintenanceVehicleLine[] }>({
     queryKey: [`${ANALYSIS_ENDPOINT}/vehicles`, params],
   });
-  const rows = data?.vehicles ?? [];
+  const rows = data?.vehicles ?? noRows<MaintenanceVehicleLine>();
 
   const baseColumns = useMemo<ReportTableColumn<MaintenanceVehicleLine>[]>(() => {
     const c = (key: string) => t(`maintenanceAnalysis.columns.${key}`);
     const plate = (r: MaintenanceVehicleLine) => formatLicensePlate(r.licensePlate);
-    const type = (r: MaintenanceVehicleLine) => modelWithoutBrand(r.brand, r.model);
+    const type = (r: MaintenanceVehicleLine) => typeText(t, r.brand, r.model);
     const year = (r: MaintenanceVehicleLine) => (r.year == null ? "" : String(r.year));
     const last = (r: MaintenanceVehicleLine) => (r.lastDate ? formatDateNl(`${r.lastDate}T12:00:00`, "dd-MM-yyyy") : "");
     const list: ReportTableColumn<MaintenanceVehicleLine>[] = [
-      { id: "plate", label: c("licensePlate"), cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={plate(r)} />, text: plate, sortValue: (r) => r.licensePlate },
-      { id: "brand", label: c("brand"), cell: (r) => r.brand, text: (r) => r.brand, sortValue: (r) => r.brand },
+      { id: "plate", label: c("licensePlate"), interactive: true, cell: (r) => <EntityLink kind="vehicle" id={r.vehicleId} label={plate(r)} />, text: plate, sortValue: (r) => r.licensePlate },
+      { id: "brand", label: c("brand"), cell: (r) => brandText(t, r.brand), text: (r) => brandText(t, r.brand), sortValue: (r) => brandText(t, r.brand) },
       { id: "model", label: c("model"), cell: type, text: type, sortValue: type },
       { id: "year", label: c("year"), cell: year, text: year, sortValue: (r) => r.year ?? null, align: "right" },
     ];

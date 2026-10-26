@@ -60,8 +60,8 @@ const brands = (admin: boolean) => ({
   ],
   ...(admin ? {
     kmBands: [
-      { brand: "FIAT", model: null, band: "50–100.000", amount: 400, km: 10_000, perKm: 0.04, vehicles: 3, count: 5 },
-      { brand: "FIAT", model: "DUCATO", band: "50–100.000", amount: 400, km: 10_000, perKm: 0.04, vehicles: 3, count: 5 },
+      { level: "brand", brand: "FIAT", model: null, band: "50–100.000", amount: 400, km: 10_000, perKm: 0.04, vehicles: 3, count: 5 },
+      { level: "model", brand: "FIAT", model: "DUCATO", band: "50–100.000", amount: 400, km: 10_000, perKm: 0.04, vehicles: 3, count: 5 },
     ],
   } : {}),
 });
