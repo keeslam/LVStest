@@ -87,8 +87,30 @@ export const SIGNAL_REPEAT_DAYS = 90;
 export const FORECAST_DAYS = 90;
 export const FORECAST_MONTHS = 3;
 
+/** Advies vervangen: at least this factor of the type (1.5 = 50 % above), over both windows below. */
+export const REPLACE_HINT_FACTOR = 1.5;
+/** ... with at least this many comparable other cars of the type (admin: with km in the same band). */
+export const REPLACE_HINT_MIN_COMPARABLES = 3;
+/** The two windows (months, ending at the period end or today) the hint looks at: a year, and the last half year. */
+export const REPLACE_HINT_MONTHS = [12, 6] as const;
+/** Onderhoudsinterval: a car stands out when its interval is at most this factor of the type average (≥ 50 % shorter). */
+export const INTERVAL_OUTLIER_FACTOR = 0.5;
+/** How many best and worst cars the profile shows. */
+export const PROFILE_BEST_WORST = 3;
+/** How many repairs the profile lists. */
+export const PROFILE_TOP_REPAIRS = 10;
+
+/**
+ * The drill key of a repair group: "<category>|<description key>", the description lower-cased with
+ * the spaces collapsed, MAINTENANCE_NULL_KEY when the line has no description.
+ */
+export function repairKey(category: string, description: string | null | undefined): string {
+  const text = (description ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+  return `${category}|${text || REPORT_DRILL_NULL_KEY}`;
+}
+
 /** The breakdowns /rows accepts as `drill`. */
-export const MAINTENANCE_ANALYSIS_DRILLS = ["category", "brand", "model", "supplier", "vehicle", "month", "kmBand"] as const;
+export const MAINTENANCE_ANALYSIS_DRILLS = ["category", "brand", "model", "supplier", "vehicle", "month", "kmBand", "repair"] as const;
 export type MaintenanceAnalysisDrill = (typeof MAINTENANCE_ANALYSIS_DRILLS)[number];
 
 /** The filter and drill value of an unknown brand, model, supplier or km band. */
@@ -158,6 +180,66 @@ export interface MaintenanceBrands {
   models: Array<MaintenanceGroupLine & { brand: string | null; model: string | null; key: string }>;
   /** Admin only. */
   kmBands?: MaintenanceKmBandLine[];
+  /**
+   * The yardstick of the rating: per car per month of the whole fleet (the period, category, build year
+   * and km band count; brand, type, supplier and car do not), so filtering never changes a rating.
+   */
+  fleetPerVehicleMonth: number | null;
+}
+
+/** One car in the profile's best and worst lists (per car per month over the period). */
+export interface MaintenanceProfileCar {
+  vehicleId: number;
+  plate: string;
+  perMonth: number | null;
+  total: number;
+  count: number;
+}
+
+/** Profile of one brand + type (GET /profile?brand=&model=). Km fields are admin only. */
+export interface MaintenanceProfile {
+  from: string;
+  to: string;
+  brand: string | null;
+  model: string | null;
+  /** Cars of the type owned in the period. */
+  vehicles: number;
+  /** Average age in years on the period end (cars without a build date left out); null when none. */
+  avgAgeYears: number | null;
+  /** Admin only: average km reading on the period end (cars without a reading left out). */
+  avgKm?: number | null;
+  perVehicleMonth: number | null;
+  /** The whole fleet, as MaintenanceBrands.fleetPerVehicleMonth. */
+  fleetPerVehicleMonth: number | null;
+  byCategory: Array<{ key: ExpenseCategory; label: string; amount: number; count: number }>;
+  /**
+   * The most frequent repairs: same category + description (case and spaces ignored). `label` is the
+   * most used spelling, or the category name when there is no description. `key` is the drill key.
+   */
+  topRepairs: Array<{ key: string; label: string; category: string; description: string | null; count: number; amount: number }>;
+  /** Per build year, oldest first; year null (unknown) last. */
+  byYear: Array<{ year: number | null; perVehicleMonth: number | null; vehicles: number }>;
+  /** Admin only: the km-band lines of the type (as MaintenanceBrands.kmBands, level "model"). */
+  kmBands?: MaintenanceKmBandLine[];
+  best: MaintenanceProfileCar[];
+  worst: MaintenanceProfileCar[];
+  suppliers: MaintenanceSuppliers["suppliers"];
+  /**
+   * Months (and, admin, km) between two Onderhoud visits (category maintenance, one visit per day) in the
+   * period: the mean of each car's average. `vehicles` = cars with at least two visits. A car stands out
+   * with an interval of at most INTERVAL_OUTLIER_FACTOR × the type average.
+   */
+  interval: {
+    months: number | null;
+    km?: number | null;
+    vehicles: number;
+    outliers: Array<{ vehicleId: number; plate: string; months: number; km?: number | null }>;
+  };
+  /**
+   * Advies vervangen (a hint, no decision): the car costs at least REPLACE_HINT_FACTOR × its type, per
+   * month (admin: per km in the same km band), over the last 12 and over the last 6 months.
+   */
+  replaceHints: Array<{ vehicleId: number; plate: string; ratio12: number; ratio6: number }>;
 }
 
 export interface MaintenanceVehicleLine {

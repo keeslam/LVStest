@@ -75,7 +75,9 @@
       "closeModels": "Close types",
       "kmBandsTitle": "Cost per km per km band",
       "kmBandsDesc": "Admins only. Click a cell for the cost lines.",
-      "kmCellTitle": "{{amount}} over {{km}} km, {{vehicles}} cars"
+      "kmCellTitle": "{{amount}} over {{km}} km, {{vehicles}} cars",
+      "chartTypesTitle": "Costs per type of {{brand}}",
+      "typesDesc": "Click a type to pick it as a filter and see its profile. Click the row for the cost lines."
     },
     "columns": {
       "licensePlate": "Licence plate",
@@ -104,7 +106,12 @@
       "month": "Month",
       "kmPerDay": "Km per day",
       "signal": "Signal",
-      "reason": "Reason"
+      "reason": "Reason",
+      "repair": "Repair",
+      "months": "Months",
+      "kmDriven": "Km driven",
+      "ratio12": "12 months",
+      "ratio6": "6 months"
     },
     "rating": {
       "excellent": "Excellent",
@@ -154,6 +161,35 @@
         "rising": "Costs higher than the month before for {{months}} months in a row: {{list}}.",
         "repeated": "{{category}} twice within {{days}} days (on {{first}} and {{second}})."
       }
+    },
+    "unknownYear": "Unknown",
+    "profile": {
+      "title": "Profile of {{name}}",
+      "desc": "What this type costs and which cars stand out. Click a row for the cost lines.",
+      "vehicles": "Cars",
+      "age": "Average age",
+      "ageValue": "{{years}} years",
+      "km": "Average odometer",
+      "perVehicleMonth": "Per car per month",
+      "fleet": "Whole fleet per car per month",
+      "categoriesTitle": "Costs per category",
+      "repairsTitle": "Most common repairs",
+      "yearsTitle": "Costs per build year",
+      "kmBandsTitle": "Costs per km band",
+      "bestTitle": "Cheapest cars",
+      "worstTitle": "Most expensive cars",
+      "suppliersTitle": "Suppliers",
+      "intervalTitle": "Service interval",
+      "intervalText": "On average {{months}} months between two services ({{vehicles}} cars).",
+      "intervalKm": "On average {{km}} km between two services.",
+      "intervalNone": "Too few services yet to work out an interval.",
+      "outliersTitle": "Cars with a much shorter interval",
+      "outliersNone": "No car stands out.",
+      "hintsTitle": "Replacement advice",
+      "hintNote": "This is a hint, not a decision.",
+      "hintText": "This car has been clearly more expensive than other {{type}}s for a year. Maybe time to consider replacing it.",
+      "hintRatio": "{{ratio12}} times as expensive as the others over 12 months, {{ratio6}} times over 6 months.",
+      "hintNone": "No car is clearly more expensive than the rest of this type."
     }
   },
   "reportBuilderPage": {

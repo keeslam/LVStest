@@ -75,7 +75,9 @@
       "closeModels": "Chiudi tipi",
       "kmBandsTitle": "Costo per km per fascia km",
       "kmBandsDesc": "Solo per amministratori. Clicca su una casella per le voci di costo.",
-      "kmCellTitle": "{{amount}} su {{km}} km, {{vehicles}} auto"
+      "kmCellTitle": "{{amount}} su {{km}} km, {{vehicles}} auto",
+      "chartTypesTitle": "Costi per modello di {{brand}}",
+      "typesDesc": "Clicca su un modello per sceglierlo come filtro e vederne il profilo. Clicca sulla riga per le righe di costo."
     },
     "columns": {
       "licensePlate": "Targa",
@@ -104,7 +106,12 @@
       "month": "Mese",
       "kmPerDay": "Km al giorno",
       "signal": "Segnale",
-      "reason": "Motivo"
+      "reason": "Motivo",
+      "repair": "Riparazione",
+      "months": "Mesi",
+      "kmDriven": "Km percorsi",
+      "ratio12": "12 mesi",
+      "ratio6": "6 mesi"
     },
     "rating": {
       "excellent": "Ottimo",
@@ -154,6 +161,35 @@
         "rising": "Costi più alti del mese precedente per {{months}} mesi di fila: {{list}}.",
         "repeated": "{{category}} due volte in {{days}} giorni (il {{first}} e il {{second}})."
       }
+    },
+    "unknownYear": "Sconosciuto",
+    "profile": {
+      "title": "Profilo di {{name}}",
+      "desc": "Quanto costa questo modello e quali veicoli spiccano. Clicca su una riga per le righe di costo.",
+      "vehicles": "Veicoli",
+      "age": "Età media",
+      "ageValue": "{{years}} anni",
+      "km": "Chilometraggio medio",
+      "perVehicleMonth": "Per veicolo al mese",
+      "fleet": "Tutta la flotta per veicolo al mese",
+      "categoriesTitle": "Costi per categoria",
+      "repairsTitle": "Riparazioni più frequenti",
+      "yearsTitle": "Costi per anno di costruzione",
+      "kmBandsTitle": "Costi per fascia di km",
+      "bestTitle": "Veicoli più economici",
+      "worstTitle": "Veicoli più costosi",
+      "suppliersTitle": "Fornitori",
+      "intervalTitle": "Intervallo di manutenzione",
+      "intervalText": "In media {{months}} mesi tra due manutenzioni ({{vehicles}} veicoli).",
+      "intervalKm": "In media {{km}} km tra due manutenzioni.",
+      "intervalNone": "Ancora troppe poche manutenzioni per calcolare un intervallo.",
+      "outliersTitle": "Veicoli con un intervallo molto più breve",
+      "outliersNone": "Nessun veicolo si discosta chiaramente.",
+      "hintsTitle": "Consiglio di sostituzione",
+      "hintNote": "È un suggerimento, non una decisione.",
+      "hintText": "Questo veicolo da un anno costa chiaramente più degli altri {{type}}. Forse è il momento di pensare a sostituirlo.",
+      "hintRatio": "{{ratio12}} volte più costoso degli altri in 12 mesi, {{ratio6}} volte in 6 mesi.",
+      "hintNone": "Nessun veicolo è chiaramente più costoso degli altri di questo modello."
     }
   },
   "reportBuilderPage": {

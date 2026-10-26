@@ -75,7 +75,9 @@
       "closeModels": "Închide tipurile",
       "kmBandsTitle": "Cost pe km pe interval km",
       "kmBandsDesc": "Doar pentru administratori. Faceți clic pe o căsuță pentru pozițiile de cost.",
-      "kmCellTitle": "{{amount}} pe {{km}} km, {{vehicles}} mașini"
+      "kmCellTitle": "{{amount}} pe {{km}} km, {{vehicles}} mașini",
+      "chartTypesTitle": "Costuri pe model pentru {{brand}}",
+      "typesDesc": "Faceți clic pe un model ca să-l alegeți ca filtru și să vedeți profilul. Faceți clic pe rând pentru liniile de cost."
     },
     "columns": {
       "licensePlate": "Număr de înmatriculare",
@@ -104,7 +106,12 @@
       "month": "Luna",
       "kmPerDay": "Km pe zi",
       "signal": "Semnal",
-      "reason": "Motiv"
+      "reason": "Motiv",
+      "repair": "Reparație",
+      "months": "Luni",
+      "kmDriven": "Km parcurși",
+      "ratio12": "12 luni",
+      "ratio6": "6 luni"
     },
     "rating": {
       "excellent": "Excelent",
@@ -154,6 +161,35 @@
         "rising": "Costuri mai mari decât luna anterioară timp de {{months}} luni la rând: {{list}}.",
         "repeated": "{{category}} de două ori în {{days}} zile (pe {{first}} și {{second}})."
       }
+    },
+    "unknownYear": "Necunoscut",
+    "profile": {
+      "title": "Profilul {{name}}",
+      "desc": "Cât costă acest model și ce mașini ies în evidență. Faceți clic pe un rând pentru liniile de cost.",
+      "vehicles": "Mașini",
+      "age": "Vârsta medie",
+      "ageValue": "{{years}} ani",
+      "km": "Kilometraj mediu",
+      "perVehicleMonth": "Pe mașină pe lună",
+      "fleet": "Toată flota pe mașină pe lună",
+      "categoriesTitle": "Costuri pe categorie",
+      "repairsTitle": "Cele mai frecvente reparații",
+      "yearsTitle": "Costuri pe an de fabricație",
+      "kmBandsTitle": "Costuri pe interval de km",
+      "bestTitle": "Cele mai ieftine mașini",
+      "worstTitle": "Cele mai scumpe mașini",
+      "suppliersTitle": "Furnizori",
+      "intervalTitle": "Interval de întreținere",
+      "intervalText": "În medie {{months}} luni între două revizii ({{vehicles}} mașini).",
+      "intervalKm": "În medie {{km}} km între două revizii.",
+      "intervalNone": "Încă prea puține revizii pentru a calcula un interval.",
+      "outliersTitle": "Mașini cu un interval mult mai scurt",
+      "outliersNone": "Nicio mașină nu se abate clar.",
+      "hintsTitle": "Sfat de înlocuire",
+      "hintNote": "Este o sugestie, nu o decizie.",
+      "hintText": "Această mașină este de un an clar mai scumpă decât alte {{type}}. Poate e timpul să vă gândiți la înlocuire.",
+      "hintRatio": "De {{ratio12}} ori mai scumpă decât celelalte în 12 luni, de {{ratio6}} ori în 6 luni.",
+      "hintNone": "Nicio mașină nu este clar mai scumpă decât restul acestui model."
     }
   },
   "reportBuilderPage": {

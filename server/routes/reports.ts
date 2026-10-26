@@ -99,7 +99,7 @@ function deniedReportBody(user: Express.User | undefined, config: any, dataSourc
 }
 import type { Express } from "express";
 import {
-  parseMaintenanceQuery, loadMaintenanceData, overviewPart, brandsPart, vehiclesPart, suppliersPart, trendsPart, signalsPart, rowsPart,
+  parseMaintenanceQuery, loadMaintenanceData, overviewPart, brandsPart, vehiclesPart, suppliersPart, trendsPart, signalsPart, rowsPart, profilePart,
   type MaintenanceData, type MaintenanceQuery,
 } from "../services/maintenance-analysis";
 import { officeTimeZone } from "../services/office-time";
@@ -208,6 +208,11 @@ export function registerReportRoutes(app: Express): void {
   }
   analysisRoute("rows", async (data, q, query) => {
     const result = rowsPart(data, q, query);
+    return result.ok ? { status: 200, body: result.body } : { status: result.status, body: result.body };
+  });
+  // The profile of one brand + type (both needed, else 400); km fields admin only.
+  analysisRoute("profile", async (data, q) => {
+    const result = profilePart(data, q);
     return result.ok ? { status: 200, body: result.body } : { status: result.status, body: result.body };
   });
 

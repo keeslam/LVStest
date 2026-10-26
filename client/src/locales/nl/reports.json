@@ -75,7 +75,9 @@
       "closeModels": "Typen sluiten",
       "kmBandsTitle": "Kosten per km per km-klasse",
       "kmBandsDesc": "Alleen voor beheerders. Klik op een vak voor de kostenregels.",
-      "kmCellTitle": "{{amount}} over {{km}} km, {{vehicles}} auto's"
+      "kmCellTitle": "{{amount}} over {{km}} km, {{vehicles}} auto's",
+      "chartTypesTitle": "Kosten per type van {{brand}}",
+      "typesDesc": "Klik op een type om het als filter te kiezen en het profiel te zien. Klik op de regel voor de kostenregels."
     },
     "columns": {
       "licensePlate": "Kenteken",
@@ -104,7 +106,12 @@
       "month": "Maand",
       "kmPerDay": "Km per dag",
       "signal": "Signaal",
-      "reason": "Reden"
+      "reason": "Reden",
+      "repair": "Reparatie",
+      "months": "Maanden",
+      "kmDriven": "Gereden km",
+      "ratio12": "12 maanden",
+      "ratio6": "6 maanden"
     },
     "rating": {
       "excellent": "Uitstekend",
@@ -154,6 +161,35 @@
         "rising": "Kosten {{months}} maanden op rij hoger dan de maand ervoor: {{list}}.",
         "repeated": "{{category}} 2 keer binnen {{days}} dagen (op {{first}} en {{second}})."
       }
+    },
+    "unknownYear": "Onbekend",
+    "profile": {
+      "title": "Profiel van {{name}}",
+      "desc": "Wat dit type kost en welke auto's opvallen. Klik op een regel voor de kostenregels.",
+      "vehicles": "Auto's",
+      "age": "Gemiddelde leeftijd",
+      "ageValue": "{{years}} jaar",
+      "km": "Gemiddelde km-stand",
+      "perVehicleMonth": "Per auto per maand",
+      "fleet": "Hele vloot per auto per maand",
+      "categoriesTitle": "Kosten per categorie",
+      "repairsTitle": "Meest voorkomende reparaties",
+      "yearsTitle": "Kosten per bouwjaar",
+      "kmBandsTitle": "Kosten per km-klasse",
+      "bestTitle": "Goedkoopste auto's",
+      "worstTitle": "Duurste auto's",
+      "suppliersTitle": "Leveranciers",
+      "intervalTitle": "Onderhoudsinterval",
+      "intervalText": "Gemiddeld {{months}} maanden tussen twee onderhoudsbeurten ({{vehicles}} auto's).",
+      "intervalKm": "Gemiddeld {{km}} km tussen twee beurten.",
+      "intervalNone": "Nog te weinig onderhoudsbeurten om een interval te berekenen.",
+      "outliersTitle": "Auto's met een veel korter interval",
+      "outliersNone": "Geen auto wijkt duidelijk af.",
+      "hintsTitle": "Advies vervangen",
+      "hintNote": "Dit is een hint, geen besluit.",
+      "hintText": "Deze auto is al een jaar duidelijk duurder dan andere {{type}}'s. Misschien tijd om vervanging te overwegen.",
+      "hintRatio": "{{ratio12}} keer zo duur als de andere over 12 maanden, {{ratio6}} keer over 6 maanden.",
+      "hintNone": "Geen auto is duidelijk duurder dan de rest van dit type."
     }
   },
   "reportBuilderPage": {

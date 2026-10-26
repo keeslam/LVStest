@@ -564,3 +564,152 @@ describe("fix round 2: a short stay is no 'above the group' signal", () => {
     expect(await signalIds(staff)).toContain(idOf.DATED);
   });
 });
+
+describe("task 6: brand and type profile", () => {
+  const PRO = "FIXTMAPRO";
+  let admin: TestAgent;
+  let staff: TestAgent;
+  const v: Record<string, number> = {};
+  const vehicleIds: number[] = [];
+  const months = (days: number) => days / (365.25 / 12);
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  const r1 = (n: number) => Math.round(n * 10) / 10;
+  const M = months(273); // 1 Jan .. 30 Sep 2026, every car owned all of it
+  const Q = { ...P, brand: PRO, model: "VAN" };
+
+  beforeAll(async () => {
+    admin = await agentFor("admin");
+    staff = await agentFor([UserPermission.VIEW_REPORTS]);
+    const make = async (name: string, model: string, productionDate: string | null) => {
+      const row = await createFixtureVehicle({ brand: PRO, model, dateIn: "2025-01-01", productionDate });
+      v[name] = row.id; vehicleIds.push(row.id);
+    };
+    await make("V1", `${PRO} VAN`, "2018-01-01");
+    await make("V2", "VAN", "2018-07-01");
+    await make("V3", "VAN", "2020-03-01");
+    await make("V4", "VAN", "2020-03-01");
+    await make("V5", "VAN", null);
+    await make("B1", "BUS", null);
+    await db.insert(vehicleMileageReadings).values([
+      { vehicleId: v.V1, mileage: 10000, recordedAt: new Date("2026-01-10T11:00:00Z"), source: "manual" },
+      { vehicleId: v.V1, mileage: 15000, recordedAt: new Date("2026-03-10T11:00:00Z"), source: "manual" },
+      { vehicleId: v.V1, mileage: 20000, recordedAt: new Date("2026-05-10T10:00:00Z"), source: "manual" },
+      { vehicleId: v.V1, mileage: 26000, recordedAt: new Date("2026-07-10T10:00:00Z"), source: "manual" },
+      { vehicleId: v.V2, mileage: 30000, recordedAt: new Date("2026-02-01T11:00:00Z"), source: "manual" },
+      { vehicleId: v.V2, mileage: 50000, recordedAt: new Date("2026-08-01T10:00:00Z"), source: "manual" },
+    ] as any);
+    const c = (vehicleId: number, category: string, amount: string, date: string, description: string | null, supplier: string | null = null) =>
+      ({ vehicleId, category, amount, date, description, supplier });
+    await db.insert(expenses).values([
+      c(v.V1, "maintenance", "200.00", "2026-01-10", "Grote beurt", "Garage A"),
+      c(v.V1, "maintenance", "200.00", "2026-03-10", "grote beurt ", "Garage A"),
+      c(v.V1, "maintenance", "200.00", "2026-05-10", "Grote beurt", "Garage A"),
+      c(v.V1, "maintenance", "200.00", "2026-07-10", "Grote  beurt", "Garage A"),
+      c(v.V2, "maintenance", "100.00", "2026-02-01", "Kleine beurt"),
+      c(v.V2, "maintenance", "100.00", "2026-08-01", "Kleine beurt"),
+      c(v.V3, "maintenance", "100.00", "2026-02-01", "Grote beurt"),
+      c(v.V3, "brakes", "300.00", "2026-03-01", null),
+      c(v.V3, "maintenance", "100.00", "2026-08-02", "Grote beurt"),
+      c(v.V4, "maintenance", "50.00", "2026-05-01", "Kleine beurt"),
+      c(v.B1, "maintenance", "100.00", "2026-05-01", "Beurt"),
+    ]);
+  });
+
+  afterAll(async () => {
+    await db.delete(vehicleMileageReadings).where(inArray(vehicleMileageReadings.vehicleId, vehicleIds));
+    await cleanupFixtures();
+    await cleanupFixtureUsers();
+  });
+
+  it("the brand rating compares with the whole fleet, never with the filtered selection", async () => {
+    const fleet = (await staff.get(`${BASE}/overview`).query(P)).body.tiles.perVehicleMonth;
+    const filtered = (await staff.get(`${BASE}/brands`).query({ ...P, brand: PRO })).body;
+    expect(filtered.fleetPerVehicleMonth).toBe(fleet);
+    const bySupplier = (await staff.get(`${BASE}/brands`).query({ ...P, brand: PRO, model: "VAN", supplier: "Garage A" })).body;
+    expect(bySupplier.fleetPerVehicleMonth).toBe(fleet);
+    // The types of the chosen brand are there to switch to.
+    expect(filtered.models.map((m: any) => m.model).sort()).toEqual(["BUS", "VAN"]);
+  });
+
+  it("brand and type are both needed", async () => {
+    expect((await staff.get(`${BASE}/profile`).query({ ...P, brand: PRO })).status).toBe(400);
+    expect((await staff.get(`${BASE}/profile`).query(P)).status).toBe(400);
+  });
+
+  it("profile: cars, age, per car per month against the fleet, categories, repairs, build years, best and worst, suppliers", async () => {
+    const res = await staff.get(`${BASE}/profile`).query(Q);
+    expect(res.status).toBe(200);
+    const p = res.body;
+    expect(p.vehicles).toBe(5);
+    // Age on 30 Sep 2026: 3194, 3013, 2404 and 2404 days; V5 has no build date.
+    expect(p.avgAgeYears).toBe(r1((3194 + 3013 + 2404 + 2404) / 4 / 365.25));
+    expect(p.perVehicleMonth).toBe(r2(1550 / (5 * M)));
+    expect(p.fleetPerVehicleMonth).toBe((await staff.get(`${BASE}/overview`).query(P)).body.tiles.perVehicleMonth);
+    expect(p).not.toHaveProperty("avgKm");
+    expect(p).not.toHaveProperty("kmBands");
+    expect(p.interval).not.toHaveProperty("km");
+    expect(p.byCategory).toEqual([
+      { key: "maintenance", label: "Onderhoud", amount: 1250, count: 9 },
+      { key: "tires", label: "Banden", amount: 0, count: 0 },
+      { key: "brakes", label: "Remmen", amount: 300, count: 1 },
+    ]);
+    expect(p.topRepairs).toEqual([
+      expect.objectContaining({ label: "Grote beurt", category: "maintenance", count: 6, amount: 1000 }),
+      expect.objectContaining({ label: "Kleine beurt", category: "maintenance", count: 3, amount: 250 }),
+      expect.objectContaining({ label: "Remmen", category: "brakes", description: null, count: 1, amount: 300 }),
+    ]);
+    expect(p.byYear).toEqual([
+      { year: 2018, perVehicleMonth: r2(1000 / (2 * M)), vehicles: 2 },
+      { year: 2020, perVehicleMonth: r2(550 / (2 * M)), vehicles: 2 },
+      { year: null, perVehicleMonth: 0, vehicles: 1 },
+    ]);
+    expect(p.best.map((b: any) => [b.vehicleId, b.perMonth])).toEqual([[v.V5, 0], [v.V4, r2(50 / M)], [v.V2, r2(200 / M)]]);
+    expect(p.worst.map((b: any) => [b.vehicleId, b.perMonth])).toEqual([[v.V1, r2(800 / M)], [v.V3, r2(500 / M)]]);
+    // The plate as everywhere else in the analysis (formatLicensePlate).
+    const list = (await staff.get(`${BASE}/vehicles`).query({ ...P, vehicleId: String(v.V5) })).body.vehicles;
+    expect(p.best[0].plate).toBe(list[0].licensePlate);
+    expect(p.suppliers).toEqual([
+      { key: "garage a", supplier: "Garage A", total: 800, count: 4, avg: 200 },
+      { key: null, supplier: "Onbekend", total: 750, count: 6, avg: 125 }, // V2 2 + V3 3 + V4 1 lines
+    ]);
+  });
+
+  it("a repair line opens exactly its cost lines", async () => {
+    const p = (await staff.get(`${BASE}/profile`).query(Q)).body;
+    for (const r of p.topRepairs) {
+      const rows = (await staff.get(`${BASE}/rows`).query({ ...Q, drill: "repair", key: r.key })).body;
+      expect([rows.total, rows.amount], r.label).toEqual([r.count, r.amount]);
+    }
+  });
+
+  it("service interval: average months between two Onderhoud visits per car; a car at half the type average or less stands out", async () => {
+    const p = (await staff.get(`${BASE}/profile`).query(Q)).body;
+    // V1: 59, 61, 61 days (avg 60.33); V2: 181; V3: 182. Type average = mean of the cars.
+    const typeDays = (181 / 3 + 181 + 182) / 3;
+    expect(p.interval.months).toBe(r1(months(typeDays)));
+    expect(p.interval.vehicles).toBe(3);
+    expect(p.interval.outliers).toEqual([expect.objectContaining({ vehicleId: v.V1, months: r1(months(181 / 3)) })]);
+  });
+
+  it("admin: average km, km per interval, and the km bands with no rate where there are no km", async () => {
+    const p = (await admin.get(`${BASE}/profile`).query(Q)).body;
+    expect(p.avgKm).toBe(38000);
+    // V1: 5.000, 5.000, 6.000 km between visits; V2: 20.000.
+    expect(p.interval.km).toBe(Math.round((16000 / 3 + 20000) / 2));
+    expect(p.interval.outliers[0].km).toBe(Math.round(16000 / 3));
+    expect(p.kmBands).toEqual(expect.arrayContaining([
+      expect.objectContaining({ band: "0–50.000", amount: 900, km: 36000, perKm: 0.025 }),
+      expect.objectContaining({ band: "50–100.000", amount: 100, km: 0, perKm: null }),
+      expect.objectContaining({ band: null, amount: 550, perKm: null }),
+    ]));
+  });
+
+  it("replacement hint: 50 % above the type over 12 and over 6 months, with at least 3 other cars", async () => {
+    const p = (await staff.get(`${BASE}/profile`).query(Q)).body;
+    // 12 months (Oct 2025 .. Sep 2026): V1 800 against (200 + 500 + 50 + 0) / 4; 6 months: 400 against (100 + 100 + 50 + 0) / 4.
+    // V3 is 1.9 times the others over 12 months but cheaper over the last 6, so no hint.
+    expect(p.replaceHints).toEqual([{ vehicleId: v.V1, plate: expect.any(String), ratio12: r2(800 / 187.5), ratio6: r2(400 / 62.5) }]);
+    // Admin compares per km in the same km band: V1 has only V2 with km in its band, too few.
+    expect((await admin.get(`${BASE}/profile`).query(Q)).body.replaceHints).toEqual([]);
+  });
+});

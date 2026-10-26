@@ -3,6 +3,10 @@
  * rating (only with enough lines and cars, as before), a click on a brand shows its types, and for
  * an admin the cost per km per km band (brands, or the types of the chosen brand). A bar, a type or
  * a km-band cell opens the cost lines behind it.
+ *
+ * Task 6 (Kees, 2026-10-26): a brand in the window filter switches the tab to the types of that brand
+ * (chart, table, km table); a click on a type name sets the type filter, and brand + type show the
+ * profile card. The rating always compares with the whole fleet; a km cell without a rate shows "–".
  */
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,7 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import {
   KM_BAND_KEYS, MAINTENANCE_NULL_KEY, RATING_GOOD_FACTOR,
-  type KmBand, type MaintenanceBrands, type MaintenanceGroupLine, type MaintenanceKmBandLine, type MaintenanceOverview,
+  type KmBand, type MaintenanceBrands, type MaintenanceGroupLine, type MaintenanceKmBandLine, type MaintenanceProfile,
 } from "@shared/maintenance-analysis";
 import { Button } from "@/components/ui/button";
 import { QueryErrorState } from "@/components/ui/query-error-state";
@@ -19,7 +23,8 @@ import { compactSections, DrillLineButton } from "@/components/reports/kit/repor
 import { useReportPrint, type PrintSection } from "@/components/reports/kit/report-print";
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { tablePrintSection } from "../legacy/table-print";
-import { ANALYSIS_ENDPOINT, brandText, countText, nameKey, typeText, useAnalysis, useAnalysisParams, useComparedAnalysisParams, useMoneyText } from "./analysis-context";
+import { ANALYSIS_ENDPOINT, brandText, countText, nameKey, typeText, useAnalysis, useAnalysisParams, useMoneyText } from "./analysis-context";
+import { ProfileCard, rateText, useProfilePrintSections } from "./profile-card";
 import { AnalysisChart, type AnalysisMetric } from "./analysis-chart";
 import { useAnalysisDrill } from "./analysis-rows";
 import { AnalysisPanel } from "./analysis-panel";
@@ -44,7 +49,7 @@ const NO_BRANDS: BrandLine[] = [];
 const NO_MODELS: ModelLine[] = [];
 const NO_KM_LINES: MaintenanceKmBandLine[] = [];
 
-/** The rating of a group against the average per car per month of the whole selection. */
+/** The rating of a group against the average per car per month of the whole fleet (MaintenanceBrands.fleetPerVehicleMonth). */
 export function ratingOf(line: MaintenanceGroupLine, overall: number | null | undefined): Rating {
   if (!line.rated || line.perVehicleMonth == null || overall == null || overall <= 0) return "insufficient";
   if (line.perVehicleMonth < overall) return "excellent";
@@ -63,8 +68,7 @@ export function BrandsTab() {
   const { t } = useTranslation("reports");
   const k = (key: string, opts?: Record<string, unknown>) => t(`maintenanceAnalysis.${key}`, opts);
   const params = useAnalysisParams();
-  const { params: overviewParams } = useComparedAnalysisParams();
-  const { isAdmin } = useAnalysis();
+  const { isAdmin, extra, setExtra } = useAnalysis();
   const money = useMoneyText();
   const drill = useAnalysisDrill();
   const chartRef = useRef<HTMLDivElement>(null);
@@ -73,23 +77,44 @@ export function BrandsTab() {
   const [modelView, setModelView] = useState<ReportTableView<ModelLine> | null>(null);
 
   const { data, isLoading, isError, error, refetch } = useQuery<MaintenanceBrands>({ queryKey: [`${ANALYSIS_ENDPOINT}/brands`, params] });
-  // The average of the whole selection, the yardstick of the rating (same request as Overzicht).
-  const { data: overview } = useQuery<MaintenanceOverview>({ queryKey: [`${ANALYSIS_ENDPOINT}/overview`, overviewParams] });
-  const overall = overview?.tiles?.perVehicleMonth ?? null;
+  // The yardstick of the rating: the whole fleet, so a brand or type filter never changes a rating.
+  const overall = data?.fleetPerVehicleMonth ?? null;
+  // Brand + type in the filter: the profile of that type.
+  const profileOn = extra.brand !== "" && extra.model !== "";
+  const { data: profile } = useQuery<MaintenanceProfile>({ queryKey: [`${ANALYSIS_ENDPOINT}/profile`, params], enabled: profileOn });
+  const profileSections = useProfilePrintSections(profileOn ? profile : undefined);
 
   const brands = data?.brands ?? NO_BRANDS;
   // A brand is known by its key: the name, or "__null" for a brand without a name ("Onbekend").
-  const brand = selected && brands.some((b) => nameKey(b.brand) === selected) ? selected : null;
+  // A brand in the filter wins: then the tab is about the types of that brand.
+  const filterBrand = extra.brand !== "" ? extra.brand : null;
+  const brand = filterBrand ?? (selected && brands.some((b) => nameKey(b.brand) === selected) ? selected : null);
   const brandLabel = brand === null ? "" : brandText(t, brand === MAINTENANCE_NULL_KEY ? null : brand);
   const models = useMemo(() => (data?.models ?? NO_MODELS).filter((m) => nameKey(m.brand) === brand), [data, brand]);
   const rowsTitle = k("rows.title");
 
   const metrics: AnalysisMetric[] = isAdmin ? ["amount", "perVehicleMonth", "perKm", "count"] : ["amount", "perVehicleMonth", "count"];
-  const points = useMemo(() => brands.map((b) => ({
-    key: nameKey(b.brand),
-    label: brandText(t, b.brand),
-    values: { amount: b.total, perVehicleMonth: b.perVehicleMonth, perKm: b.perKm ?? null, count: b.count },
-  })), [brands, t]);
+  // The chart: the brands, or the types of the chosen brand.
+  const points = useMemo(() => (brand
+    ? models.map((m) => ({
+      key: m.key,
+      label: typeText(t, m.brand, m.model),
+      values: { amount: m.total, perVehicleMonth: m.perVehicleMonth, perKm: m.perKm ?? null, count: m.count },
+    }))
+    : brands.map((b) => ({
+      key: nameKey(b.brand),
+      label: brandText(t, b.brand),
+      values: { amount: b.total, perVehicleMonth: b.perVehicleMonth, perKm: b.perKm ?? null, count: b.count },
+    }))), [brand, models, brands, t]);
+  const chartTitle = brand ? k("brands.chartTypesTitle", { brand: brandLabel }) : k("brands.chartTitle");
+  const openPoint = (key: string) => {
+    if (brand) {
+      const m = models.find((x) => x.key === key);
+      drill({ title: `${rowsTitle} · ${brandLabel} ${m ? typeText(t, m.brand, m.model) : ""}`.trim(), drill: "model", key });
+    } else {
+      drill({ title: `${rowsTitle} · ${brandText(t, key === MAINTENANCE_NULL_KEY ? null : key)}`, drill: "brand", key });
+    }
+  };
 
   const groupColumns = useMemo(() => {
     const c = (key: string) => t(`maintenanceAnalysis.columns.${key}`);
@@ -126,10 +151,20 @@ export function BrandsTab() {
     ...(groupColumns as ReportTableColumn<BrandLine>[]),
   ], [t, groupColumns, brand]);
 
+  // A click on the type name picks brand + type as the window filter (and so shows the profile).
   const modelColumns = useMemo<ReportTableColumn<ModelLine>[]>(() => [
-    { id: "model", label: t("maintenanceAnalysis.columns.model"), cell: (r) => typeText(t, r.brand, r.model), text: (r) => typeText(t, r.brand, r.model), sortValue: (r) => typeText(t, r.brand, r.model) },
+    {
+      id: "model", label: t("maintenanceAnalysis.columns.model"), interactive: true,
+      cell: (r) => (
+        <DrillLineButton testId={`ma-models-type-${r.key}`} onClick={() => setExtra({ brand: nameKey(r.brand), model: nameKey(r.model) })}
+          className={nameKey(r.model) === extra.model ? "font-semibold text-primary" : "text-primary"}>
+          {typeText(t, r.brand, r.model)}
+        </DrillLineButton>
+      ),
+      text: (r) => typeText(t, r.brand, r.model), sortValue: (r) => typeText(t, r.brand, r.model),
+    },
     ...(groupColumns as ReportTableColumn<ModelLine>[]),
-  ], [t, groupColumns]);
+  ], [t, groupColumns, setExtra, extra.model]);
 
   // The km-band matrix: the brands, or the types of the chosen brand. "Onbekende km" (band null)
   // holds the costs without a km reading, so a row adds up to the total of its brand or type.
@@ -149,8 +184,8 @@ export function BrandsTab() {
     ...KM_BAND_KEYS.map((b) => ({ key: b as KmCellKey, label: b as string })),
     ...(kmRows.some((r) => r.cells[MAINTENANCE_NULL_KEY]) ? [{ key: MAINTENANCE_NULL_KEY as KmCellKey, label: t("maintenanceAnalysis.unknownKm") }] : []),
   ], [kmRows, t]);
-  // A band shows the cost per km; "Onbekende km" has no km, so it shows the amount.
-  const kmCellText = (key: KmCellKey, cell: MaintenanceKmBandLine) => (key === MAINTENANCE_NULL_KEY ? money(cell.amount) : money(cell.perKm, true));
+  // A band shows the cost per km; no rate (no km, a rate of € 0,000, or "Onbekende km") is "–", never an amount.
+  const kmCellText = (key: KmCellKey, cell: MaintenanceKmBandLine) => (key === MAINTENANCE_NULL_KEY ? "–" : rateText(money, cell.perKm));
   const showKm = isAdmin && Array.isArray(data?.kmBands);
 
   const kmSection: PrintSection | null = showKm ? {
@@ -161,10 +196,11 @@ export function BrandsTab() {
     allRows: () => ({ rows: kmRows.map((r) => [r.name, ...kmColumns.map((c) => (r.cells[c.key] ? kmCellText(c.key, r.cells[c.key]!) : ""))]), truncated: false }),
   } : null;
   useReportPrint(data ? compactSections([
-    { kind: "chart", title: k("brands.chartTitle"), getSvg: () => chartSvgFromRef(chartRef) },
-    tablePrintSection({ id: "ma-brands", title: k("brands.brandsTitle"), columns: brandColumns, rows: brands, view: brandView }),
+    { kind: "chart", title: chartTitle, getSvg: () => chartSvgFromRef(chartRef) },
+    filterBrand ? null : tablePrintSection({ id: "ma-brands", title: k("brands.brandsTitle"), columns: brandColumns, rows: brands, view: brandView }),
     brand ? tablePrintSection({ id: "ma-models", title: k("brands.modelsTitle", { brand: brandLabel }), columns: modelColumns, rows: models, view: modelView }) : null,
     kmSection,
+    ...profileSections,
   ]) : null);
 
   if (isLoading) return <p className="text-sm text-muted-foreground">{t("reportKit.loading")}</p>;
@@ -172,7 +208,9 @@ export function BrandsTab() {
 
   return (
     <div className="space-y-4">
-      <AnalysisPanel title={k("brands.chartTitle")} description={k("overview.clickHint")}>
+      {profileOn && profile && <ProfileCard profile={profile} />}
+
+      <AnalysisPanel title={chartTitle} description={k("overview.clickHint")}>
         <AnalysisChart
           points={points}
           metrics={metrics}
@@ -180,29 +218,33 @@ export function BrandsTab() {
           defaultKind="bar"
           testId="ma-brand-chart"
           chartRef={chartRef}
-          onPointClick={(key) => drill({ title: `${rowsTitle} · ${brandText(t, key === MAINTENANCE_NULL_KEY ? null : key)}`, drill: "brand", key })}
+          onPointClick={openPoint}
         />
       </AnalysisPanel>
 
-      <AnalysisPanel title={k("brands.brandsTitle")} description={k("brands.brandsDesc")}>
-        <ReportTable
-          rows={brands}
-          columns={brandColumns}
-          rowKey={(r) => nameKey(r.brand)}
-          defaultSort={{ id: "total", dir: "desc" }}
-          testId="ma-brands-table"
-          onView={setBrandView}
-          toolbar={<AnalysisCsvButton columns={brandColumns} rows={brands} view={brandView} name="onderhoud-merken" testId="button-ma-brands-csv" />}
-        />
-      </AnalysisPanel>
+      {!filterBrand && (
+        <AnalysisPanel title={k("brands.brandsTitle")} description={k("brands.brandsDesc")}>
+          <ReportTable
+            rows={brands}
+            columns={brandColumns}
+            rowKey={(r) => nameKey(r.brand)}
+            defaultSort={{ id: "total", dir: "desc" }}
+            testId="ma-brands-table"
+            onView={setBrandView}
+            toolbar={<AnalysisCsvButton columns={brandColumns} rows={brands} view={brandView} name="onderhoud-merken" testId="button-ma-brands-csv" />}
+          />
+        </AnalysisPanel>
+      )}
 
       {brand && (
-        <AnalysisPanel title={k("brands.modelsTitle", { brand: brandLabel })} description={k("brands.modelsDesc")} testId="ma-models">
-          <div className="flex justify-end">
-            <Button variant="ghost" size="sm" onClick={() => setSelected(null)} data-testid="button-ma-models-close">
-              <X className="mr-1 h-4 w-4" aria-hidden="true" />{k("brands.closeModels")}
-            </Button>
-          </div>
+        <AnalysisPanel title={k("brands.modelsTitle", { brand: brandLabel })} description={k("brands.typesDesc")} testId="ma-models">
+          {!filterBrand && (
+            <div className="flex justify-end">
+              <Button variant="ghost" size="sm" onClick={() => setSelected(null)} data-testid="button-ma-models-close">
+                <X className="mr-1 h-4 w-4" aria-hidden="true" />{k("brands.closeModels")}
+              </Button>
+            </div>
+          )}
           <ReportTable
             rows={models}
             columns={modelColumns}

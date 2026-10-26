@@ -75,7 +75,9 @@
       "closeModels": "Zamknij typy",
       "kmBandsTitle": "Koszt na km według przedziału km",
       "kmBandsDesc": "Tylko dla administratorów. Kliknij pole, aby zobaczyć pozycje kosztów.",
-      "kmCellTitle": "{{amount}} na {{km}} km, auta: {{vehicles}}"
+      "kmCellTitle": "{{amount}} na {{km}} km, auta: {{vehicles}}",
+      "chartTypesTitle": "Koszty według modelu {{brand}}",
+      "typesDesc": "Kliknij model, aby wybrać go jako filtr i zobaczyć profil. Kliknij wiersz, aby zobaczyć pozycje kosztów."
     },
     "columns": {
       "licensePlate": "Numer rejestracyjny",
@@ -104,7 +106,12 @@
       "month": "Miesiąc",
       "kmPerDay": "Km dziennie",
       "signal": "Sygnał",
-      "reason": "Powód"
+      "reason": "Powód",
+      "repair": "Naprawa",
+      "months": "Miesiące",
+      "kmDriven": "Przejechane km",
+      "ratio12": "12 miesięcy",
+      "ratio6": "6 miesięcy"
     },
     "rating": {
       "excellent": "Doskonała",
@@ -154,6 +161,35 @@
         "rising": "Koszty wyższe niż w poprzednim miesiącu przez kolejne miesiące ({{months}}): {{list}}.",
         "repeated": "{{category}} dwa razy w ciągu {{days}} dni ({{first}} i {{second}})."
       }
+    },
+    "unknownYear": "Nieznany",
+    "profile": {
+      "title": "Profil {{name}}",
+      "desc": "Ile kosztuje ten model i które auta się wyróżniają. Kliknij wiersz, aby zobaczyć pozycje kosztów.",
+      "vehicles": "Auta",
+      "age": "Średni wiek",
+      "ageValue": "{{years}} lat",
+      "km": "Średni przebieg",
+      "perVehicleMonth": "Na auto na miesiąc",
+      "fleet": "Cała flota na auto na miesiąc",
+      "categoriesTitle": "Koszty według kategorii",
+      "repairsTitle": "Najczęstsze naprawy",
+      "yearsTitle": "Koszty według roku produkcji",
+      "kmBandsTitle": "Koszty według przedziału km",
+      "bestTitle": "Najtańsze auta",
+      "worstTitle": "Najdroższe auta",
+      "suppliersTitle": "Dostawcy",
+      "intervalTitle": "Odstęp między serwisami",
+      "intervalText": "Średnio {{months}} mies. między dwoma serwisami (aut: {{vehicles}}).",
+      "intervalKm": "Średnio {{km}} km między dwoma serwisami.",
+      "intervalNone": "Za mało serwisów, aby obliczyć odstęp.",
+      "outliersTitle": "Auta z dużo krótszym odstępem",
+      "outliersNone": "Żadne auto wyraźnie nie odbiega.",
+      "hintsTitle": "Porada: wymiana",
+      "hintNote": "To wskazówka, nie decyzja.",
+      "hintText": "To auto od roku jest wyraźnie droższe niż inne {{type}}. Może czas pomyśleć o wymianie.",
+      "hintRatio": "{{ratio12}} razy droższe od pozostałych w 12 miesiącach, {{ratio6}} razy w 6 miesiącach.",
+      "hintNone": "Żadne auto nie jest wyraźnie droższe od reszty tego modelu."
     }
   },
   "reportBuilderPage": {

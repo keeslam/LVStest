@@ -179,7 +179,8 @@ describe("3. Km-band matrix", () => {
     const matrix = await screen.findByTestId("ma-kmbands");
     expect(within(matrix).getByText("Onbekende km")).toBeInTheDocument();
     const cell = within(matrix).getByTestId("ma-kmband-FIAT-__null");
-    expect(cell).toHaveTextContent("100");
+    // Task 6: no km means no rate, so "–" (never the amount); the cell still opens its lines.
+    expect(cell).toHaveTextContent(/^–$/);
     await user.click(cell);
     await waitFor(() => expect(requested("rows", (p) => p.get("drill") === "kmBand" && p.get("key") === "__null" && p.get("brand") === "FIAT")).toBe(true));
     expect(within(matrix).getByTestId("ma-kmband-__null-__null")).toBeInTheDocument();
