@@ -49,7 +49,7 @@ export function vehicleExtras<R>(
   const of = (r: R) => { const id = vehicleId(r); return id == null ? undefined : vehiclesById.get(id); };
   const plate = (r: R) => { const v = of(r); return v?.licensePlate ? formatLicensePlate(v.licensePlate) : ""; };
   return [
-    { ...textColumn<R>("vehicle.licensePlate", t("reportKit.columns.plate"), plate), cell: (r) => (plate(r) ? createElement(EntityLink, { kind: "vehicle", id: vehicleId(r), label: plate(r) }) : "") },
+    { ...textColumn<R>("vehicle.licensePlate", t("reportKit.columns.plate"), plate), interactive: true, cell: (r) => (plate(r) ? createElement(EntityLink, { kind: "vehicle", id: vehicleId(r), label: plate(r) }) : "") },
     textColumn<R>("vehicle.brand", t("reportKit.columns.brand"), (r) => of(r)?.brand ?? ""),
     textColumn<R>("vehicle.model", t("reportKit.columns.model"), (r) => of(r)?.model ?? ""),
   ];
@@ -65,7 +65,7 @@ export function customerExtras<R>(
   if (!access.customers) return [];
   const name = (r: R) => { const id = customerId(r); return (id == null ? undefined : customersById.get(id)?.name) ?? ""; };
   return [
-    { ...textColumn<R>("customer.name", t("reportKit.columns.customerName"), name), cell: (r) => (name(r) ? createElement(EntityLink, { kind: "customer", id: customerId(r), label: name(r) }) : "") },
+    { ...textColumn<R>("customer.name", t("reportKit.columns.customerName"), name), interactive: true, cell: (r) => (name(r) ? createElement(EntityLink, { kind: "customer", id: customerId(r), label: name(r) }) : "") },
   ];
 }
 

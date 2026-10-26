@@ -165,4 +165,27 @@ describe("ReportTable onRowClick", () => {
     await user.click(button);
     expect(onRowClick).toHaveBeenCalledTimes(1);
   });
+
+  it("puts the open button in the first column without its own link: no button inside a button", async () => {
+    const onRowClick = vi.fn();
+    const user = userEvent.setup();
+    renderNode(
+      <ReportTable
+        rows={[{ id: 1, plate: "AB-123-C", name: "FIAT" }]}
+        columns={[
+          { id: "plate", label: "Kenteken", interactive: true, cell: (r) => <button type="button">{r.plate}</button>, text: (r) => r.plate },
+          { id: "name", label: "Merk", cell: (r) => r.name, text: (r) => r.name },
+        ]}
+        rowKey={(r) => r.id}
+        testId="t"
+        onRowClick={onRowClick}
+      />,
+    );
+    const row = screen.getByTestId("t-row-1");
+    expect(row.querySelector("button button")).toBeNull();
+    const open = within(row).getByTestId("t-open-1");
+    expect(open).toHaveTextContent("FIAT");
+    await user.click(open);
+    expect(onRowClick).toHaveBeenCalledTimes(1);
+  });
 });

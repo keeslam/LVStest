@@ -18,6 +18,11 @@ export interface ReportTableColumn<R> {
   text(r: R): string;
   sortValue?(r: R): string | number | null;
   align?: "left" | "right";
+  /**
+   * The cell holds its own button or link (EntityLink, DrillLineButton). The open button of a
+   * clickable row then goes in the first column without one: never a button inside a button.
+   */
+  interactive?: boolean;
 }
 
 export interface ReportTableView<R> { all: R[]; page: R[] }
@@ -99,6 +104,8 @@ export function ReportTable<R>({ rows, columns, rowKey, searchPlaceholder, defau
     onViewRef.current?.(lastSent.current);
   }, [view, pageRows]);
 
+  // The open button of a clickable row: the first column whose cell has no button or link of its own.
+  const openColumn = onRowClick ? columns.findIndex((c) => !c.interactive) : -1;
   const alignClass = (c: ReportTableColumn<R>) => (c.align === "right" ? "text-right" : undefined);
   const placeholder = searchPlaceholder ?? t("reportKit.tableSearch");
 
@@ -141,7 +148,7 @@ export function ReportTable<R>({ rows, columns, rowKey, searchPlaceholder, defau
                 >
                   {columns.map((c, i) => (
                     <TableCell key={c.id} className={alignClass(c)}>
-                      {onRowClick && i === 0 ? (
+                      {onRowClick && i === openColumn ? (
                         // The keyboard and screen-reader way in: a real button; the row click is for the mouse.
                         <button
                           type="button"
