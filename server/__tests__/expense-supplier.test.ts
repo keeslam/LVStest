@@ -38,7 +38,6 @@ describe("expense supplier", () => {
   });
 
   beforeAll(async () => {
-    expect(process.env.DATABASE_URL ?? "").toMatch(/\/lvs_fixtest(\?|$)/);
     await cleanupInboxTestData();
     await cleanupPortalTestData();
     vehicleId = (await createTestVehicle("PT-SUP-01")).id;

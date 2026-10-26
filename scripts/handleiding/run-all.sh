@@ -13,7 +13,10 @@ node scripts/handleiding/run.mjs --account=e2e-manager 08- 09-documenten-emailen
 node scripts/handleiding/run.mjs --account=e2e-manager-b 01-close 03-close 04-close 05-close 06-close 07-close 08-close 09-close 18-close
 node scripts/handleiding/run.mjs --account=e2e-admin-b 09-email-gps 10-gebruikersmenu 10-gebruikersbeheer 10-app-instellingen 10-backup 15-grijze 10-geweigerde
 # Nieuwe hoofdstukken. 20 vóór 16: hoofdstuk 16 plant de onderhoudsaanvraag in die 20 nog open nodig heeft.
-node scripts/handleiding/run.mjs --account=e2e-manager 19- 20-
+node scripts/handleiding/run.mjs --account=e2e-manager 19-kostenbeheer 19-kosten-registreren 19-ontvangen-facturen
+# 19-factuur-controleren vraagt het recht Instellingen beheren (knop Afzender vertrouwen): beheerder.
+node scripts/handleiding/run.mjs --account=e2e-admin-b 19-factuur-controleren
+node scripts/handleiding/run.mjs --account=e2e-manager 19-factuur-scannen 19-verwijderde-kostenposten 19-alle-kosten-leverancier 20-
 # 21 met een beheerder: de km-rapporten en het tabblad Km-historie zijn alleen voor de beheerder.
 # Onderhoudsanalyse: extra Transits/Sprinters, kosten met leverancier en km-standen (pas na 19 en 20).
 node scripts/handleiding/seed-extra.mjs --onderhoud | tail -1

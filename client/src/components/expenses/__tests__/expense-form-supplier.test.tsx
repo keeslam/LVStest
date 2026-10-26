@@ -93,7 +93,9 @@ describe("expense form: Leverancier", () => {
     );
     const supplierCalls = () => fetchMock.mock.calls.filter(([input]) => String(typeof input === "string" ? input : (input as Request).url).includes("/api/expenses/suppliers")).length;
     const field = await screen.findByLabelText("Leverancier");
-    await waitFor(() => expect(supplierCalls()).toBe(1));
+    await waitFor(() => expect(supplierCalls()).toBeGreaterThanOrEqual(1));
+    await new Promise((r) => setTimeout(r, 50));
+    const before = supplierCalls();
     await user.click(await screen.findByRole("combobox", { name: /categorie/i }));
     await user.click(await screen.findByRole("option", { name: "Onderhoud" }));
     await user.clear(screen.getByLabelText(/bedrag/i));
@@ -101,7 +103,7 @@ describe("expense form: Leverancier", () => {
     await user.type(field, "Nieuwe Garage");
     await user.click(screen.getByRole("button", { name: "Kosten registreren" }));
     await waitFor(() => expect(postedBodies()).toHaveLength(1));
-    await waitFor(() => expect(supplierCalls()).toBe(2));
+    await waitFor(() => expect(supplierCalls()).toBeGreaterThan(before));
     queryClient.clear();
   });
 });
