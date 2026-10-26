@@ -97,7 +97,7 @@ export function SuppliersTab() {
     { kind: "chart", title: k("suppliers.chartTitle"), getSvg: () => chartSvgFromRef(chartRef) },
     tablePrintSection({ id: "ma-suppliers", title: k("suppliers.title"), columns, rows: suppliers, view, rowKey: supplierId }),
     tablePrintSection({ id: "ma-downtime", title: k("suppliers.downtimeTitle"), columns: downtimeColumns, rows: downtime, view: downtimeView, rowKey: (r) => r.vehicleId }),
-    tablePrintSection({ id: "ma-top-repairs", title: k("suppliers.topRepairsTitle"), columns: repairColumns, rows: repairs, view: repairsView }),
+    tablePrintSection({ id: "ma-top-repairs", title: k("suppliers.topRepairsTitle"), columns: repairColumns, rows: repairs, view: repairsView, rowKey: (r) => r.id }),
   ]) : null);
 
   if (isLoading) return <p className="text-sm text-muted-foreground">{t("reportKit.loading")}</p>;

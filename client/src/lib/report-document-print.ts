@@ -166,6 +166,8 @@ export interface PrintTableChoice {
   picked: string[];
   /** Column ids that go on paper, in the order of the table. */
   columns: string[];
+  /** The column ids that existed when the columns were chosen; one that is not in here is new, so it comes on. */
+  knownColumns?: string[];
   sort?: { col: string; dir: "asc" | "desc" };
 }
 
@@ -263,7 +265,7 @@ export function defaultPrintOptions(sections: PreparedPrintSection[]): PrintOpti
   for (const s of sections) {
     if (s.kind !== "table") continue;
     const ticked = tickedRowKeys(s);
-    perTable[s.key] = { rows: "all", picked: ticked.length > 0 ? ticked : [...s.rowKeys], columns: [...s.columnIds] };
+    perTable[s.key] = { rows: "all", picked: ticked.length > 0 ? ticked : [...s.rowKeys], columns: [...s.columnIds], knownColumns: [...s.columnIds] };
   }
   return {
     order: sections.map((s) => s.key),
@@ -291,13 +293,17 @@ export function mergePrintOptions(defaults: PrintOptions, saved: PrintOptions | 
     if (s.kind !== "table" || !saved.perTable[s.key]) continue;
     const old = saved.perTable[s.key];
     const rowSet = new Set(s.rowKeys);
+    // What was switched off is remembered; a column that did not exist before is on.
+    const known = new Set(old.knownColumns ?? old.columns);
     const colSet = new Set(old.columns);
+    const columns = s.columnIds.filter((c) => colSet.has(c) || !known.has(c));
     const rows = (old.rows === "page" && !s.page) || (old.rows === "selected" && !s.selected?.length) ? "all" : old.rows;
     const picked = old.picked.filter((k) => rowSet.has(k));
     perTable[s.key] = {
       rows,
       picked: picked.length > 0 || old.picked.length === 0 ? picked : defaults.perTable[s.key].picked,
-      columns: s.columnIds.filter((c) => colSet.has(c)),
+      columns: columns.length > 0 ? columns : [...s.columnIds],
+      knownColumns: [...s.columnIds],
       sort: old.sort && s.columnIds.includes(old.sort.col) ? old.sort : undefined,
     };
   }
@@ -408,13 +414,19 @@ export function resolvePrintSections(sections: PreparedPrintSection[], options: 
     const chosen = new Set(choice.columns);
     const keep = s.columnIds.map((id, i) => (chosen.has(id) ? i : -1)).filter((i) => i >= 0);
     const pickCols = (row: string[]) => keep.map((i) => row[i] ?? "");
+    // The label of the totals row ("Totaal") moves to the first visible column when the first one is hidden.
+    const totalsRow = (row: string[]) => {
+      const cells = pickCols(row);
+      if (keep[0] !== 0 && (row[0] ?? "").trim() !== "" && cells[0].trim() === "") cells[0] = row[0];
+      return cells;
+    };
     out.push({
       kind: "table",
       title: s.title,
       header: pickCols(s.header),
       rows: rows.map(pickCols),
       truncated,
-      totals: totals ? pickCols(totals) : undefined,
+      totals: totals ? totalsRow(totals) : undefined,
     });
   }
   return out;

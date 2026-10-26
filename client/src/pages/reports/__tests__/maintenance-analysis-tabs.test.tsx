@@ -251,6 +251,23 @@ describe("Signalen", () => {
   });
 });
 
+describe("print choices across tabs", () => {
+  it("keeps the print choices of a tab while the window is open and another tab was shown", async () => {
+    const user = userEvent.setup();
+    renderWindow();
+    await openTab(user, "vehicles");
+    await user.click(await screen.findByTestId("button-report-print"));
+    await user.click(await screen.findByTestId("print-option-landscape"));
+    await waitFor(() => expect((screen.getByTestId("print-preview-frame").getAttribute("srcdoc") ?? "")).toContain("size: A4 landscape"));
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByTestId("print-preview-frame")).not.toBeInTheDocument());
+    await openTab(user, "trends");
+    await openTab(user, "vehicles");
+    await user.click(await screen.findByTestId("button-report-print"));
+    await waitFor(() => expect(screen.getByTestId("print-option-landscape")).toBeChecked());
+  });
+});
+
 describe("Afdrukken and CSV on every tab", () => {
   const cases: Array<{ tab: string; csv: string; print: string[] }> = [
     { tab: "overview", csv: "button-ma-top-vehicles-csv", print: ["Totale kosten", "AB-123-C"] },

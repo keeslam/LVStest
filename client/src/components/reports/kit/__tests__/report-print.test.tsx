@@ -86,9 +86,9 @@ describe("ReportPrintDialog", () => {
     await waitFor(() => expect(srcDoc()).not.toContain("ALL-1"));
     expect(srcDoc()).toContain("PAGE-1");
     await user.click(screen.getByTestId("print-option-table"));
-    expect(srcDoc()).not.toContain("<table");
+    await waitFor(() => expect(srcDoc()).not.toContain("<table"));
     await user.click(screen.getByTestId("print-option-landscape"));
-    expect(srcDoc()).toContain("size: A4 landscape");
+    await waitFor(() => expect(srcDoc()).toContain("size: A4 landscape"));
   });
 
   it("waits for rows that are fetched and shows a loading state meanwhile", async () => {
@@ -188,7 +188,7 @@ describe("ReportPrintDialog choices (Task 7)", () => {
     await user.click(screen.getByTestId("print-move-up-table-cars"));
     await waitFor(() => expect(srcDoc().indexOf("<table")).toBeLessThan(srcDoc().indexOf('class="tiles"')));
     await user.click(screen.getByTestId("print-option-pagebreak"));
-    expect(srcDoc()).toContain("page-break-before");
+    await waitFor(() => expect(srcDoc()).toContain("page-break-before"));
 
     // close and open again: the same choices
     await user.keyboard("{Escape}");
@@ -198,6 +198,45 @@ describe("ReportPrintDialog choices (Task 7)", () => {
     expect(srcDoc()).not.toContain("Merk 3");
     expect(srcDoc().indexOf("<table")).toBeLessThan(srcDoc().indexOf('class="tiles"'));
     expect(srcDoc()).toContain("page-break-before");
+  });
+
+  it("opens the choices of a table by itself when Zelf kiezen is chosen in the top select", async () => {
+    const user = userEvent.setup();
+    wrap(<><Report sections={[BIG]} /><Opener /></>);
+    await waitFor(() => expect(srcDoc()).toContain(plates[10]));
+    expect(screen.queryByTestId("print-pick-count-table-cars")).not.toBeInTheDocument();
+    await user.selectOptions(screen.getByTestId("print-option-rows"), "pick");
+    expect(await screen.findByTestId("print-pick-count-table-cars")).toHaveTextContent("1 van 11 gekozen");
+  });
+
+  it("rebuilds the preview only after a short pause, not on every click", async () => {
+    const user = userEvent.setup();
+    wrap(<><Report sections={[BIG]} /><Opener /></>);
+    await waitFor(() => expect(srcDoc()).toContain(plates[10]));
+    expect(srcDoc()).toContain("size: A4 portrait");
+    await user.click(screen.getByTestId("print-option-landscape"));
+    expect(srcDoc()).toContain("size: A4 portrait"); // still the old one right after the click
+    await waitFor(() => expect(srcDoc()).toContain("size: A4 landscape"));
+  });
+
+  it("keeps the choices in a provider that is given its own memory, also for a new provider", async () => {
+    const user = userEvent.setup();
+    const memory = new Map();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const tree = (
+      <QueryClientProvider client={client}>
+        <ReportFiltersProvider initial={{ from: "2026-10-01", to: "2026-10-31", preset: "custom" }}>
+          <ReportPrintProvider remembered={memory}><Report sections={[BIG]} /><Opener /></ReportPrintProvider>
+        </ReportFiltersProvider>
+      </QueryClientProvider>
+    );
+    const first = render(tree);
+    await waitFor(() => expect(srcDoc()).toContain(plates[10]));
+    await user.click(screen.getByTestId("print-option-landscape"));
+    await waitFor(() => expect(srcDoc()).toContain("size: A4 landscape"));
+    first.unmount();
+    render(tree);
+    await waitFor(() => expect(screen.getByTestId("print-option-landscape")).toBeChecked());
   });
 
   it("prints an own title, a note and the font size, and hides the filter lines on request", async () => {

@@ -54,7 +54,8 @@ export function useBreakdownHeader(): { name: string; count: string; amount: str
 /** A fixed table (already formatted text) as a print table. */
 export function textTablePrintSection(id: string, title: string | undefined, header: string[], rows: string[][]): PrintSection | null {
   if (rows.length === 0) return null;
-  return { kind: "table", id, title, header, allRows: () => ({ rows, truncated: false }) };
+  // The first cell names a row, so a pick in the print dialog follows the row when the order changes.
+  return { kind: "table", id, title, header, allRows: () => ({ rows, truncated: false, rowKeys: rows.map((r) => r[0] ?? "") }) };
 }
 
 /** The print sections of a kit card; null parts (no data) are left out. */

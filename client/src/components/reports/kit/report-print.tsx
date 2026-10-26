@@ -45,13 +45,16 @@ interface PrintRegistry {
   remembered: Map<string, PrintOptions>;
 }
 
+/** Wait this long after the last change of a choice before the preview is built again. */
+const PREVIEW_DELAY_MS = 250;
+
 const PrintContext = createContext<PrintRegistry | null>(null);
 
 /**
  * Keeps what the report in the pane registered. The sections live in a ref, so a report may pass a
  * new array on every render without causing a render; only "has something to print" is state.
  */
-export function ReportPrintProvider({ children, ignored }: { children?: ReactNode; ignored?: PrintIgnored }) {
+export function ReportPrintProvider({ children, ignored, remembered: outerMemory }: { children?: ReactNode; ignored?: PrintIgnored; remembered?: Map<string, PrintOptions> }) {
   const ref = useRef<PrintSection[] | null>(null);
   const [available, setAvailable] = useState(false);
   const register = useCallback((sections: PrintSection[] | null) => {
@@ -59,7 +62,9 @@ export function ReportPrintProvider({ children, ignored }: { children?: ReactNod
     setAvailable(sections !== null && sections.length > 0);
   }, []);
   const getSections = useCallback(() => ref.current, []);
-  const [remembered] = useState(() => new Map<string, PrintOptions>());
+  const [ownMemory] = useState(() => new Map<string, PrintOptions>());
+  // A window with tabs gives its own memory, so the choices outlive the provider of a tab that was left.
+  const remembered = outerMemory ?? ownMemory;
   const ignoredPeriod = ignored?.period;
   const ignoredVehicle = ignored?.vehicle;
   const periodNote = ignored?.periodNote;
@@ -123,6 +128,15 @@ function PrintBody({ title }: { title: string }) {
   const [options, setOptions] = useState<PrintOptions | null>(null);
   const [failed, setFailed] = useState(false);
   const [layoutOpen, setLayoutOpen] = useState(false);
+  // The preview is built from the choices as they were a moment ago, so a series of clicks builds it once.
+  const [shown, setShown] = useState<PrintOptions | null>(null);
+  useEffect(() => {
+    if (!options) return;
+    if (shown === null) { setShown(options); return; }
+    const id = setTimeout(() => setShown(options), PREVIEW_DELAY_MS);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options]);
 
   // Resolve what is fetched (a table's rows may come from an export) once, when the dialog opens.
   useEffect(() => {
@@ -177,7 +191,8 @@ function PrintBody({ title }: { title: string }) {
   }, [compared, filters.from, filters.to, filters.compare, filters.vehicleId, filters.category, ignored?.vehicle, ignored?.period, queryClient, t]);
 
   const html = useMemo(() => {
-    if (!prepared || !options) return null;
+    if (!prepared || !shown) return null;
+    const options = shown;
     return reportDocumentHtml({
       company,
       title: options.title?.trim() || title,
@@ -195,7 +210,7 @@ function PrintBody({ title }: { title: string }) {
       pageBreakEach: options.pageBreakEach,
       labels: { truncated: t("print.truncated"), printedOn: t("print.printedOn") },
     });
-  }, [prepared, options, company, title, filters.from, filters.to, filterLines, ignored?.period, ignored?.periodNote, printedAt, t]);
+  }, [prepared, shown, company, title, filters.from, filters.to, filterLines, ignored?.period, ignored?.periodNote, printedAt, t]);
 
   const handlePrint = () => {
     const frame = frameRef.current;
@@ -387,7 +402,7 @@ function PrintBody({ title }: { title: string }) {
       </div>
       </div>
       <DialogFooter className="sticky bottom-0 flex-shrink-0 border-t bg-background pt-3" data-testid="print-dialog-footer">
-        <Button onClick={handlePrint} disabled={!html} data-testid="button-print-confirm">
+        <Button onClick={handlePrint} disabled={!html || shown !== options} data-testid="button-print-confirm">
           <Printer className="mr-2 h-4 w-4" aria-hidden="true" />
           {t("reportsPage.shell.print")}
         </Button>
@@ -400,6 +415,8 @@ function PrintBody({ title }: { title: string }) {
 function TableChoices({ table, choice, onChange }: { table: PreparedPrintTable; choice: PrintTableChoice; onChange: (change: Partial<PrintTableChoice>) => void }) {
   const { t } = useTranslation("reports");
   const [open, setOpen] = useState(false);
+  // "Zelf kiezen" (also from the select above all tables) shows the pick list right away.
+  useEffect(() => { if (choice.rows === "pick") setOpen(true); }, [choice.rows]);
   const key = table.key;
   const chosen = new Set(choice.columns);
   const toggleColumn = (id: string, on: boolean) => onChange({ columns: table.columnIds.filter((c) => (c === id ? on : chosen.has(c))) });

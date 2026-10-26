@@ -3,7 +3,7 @@
  */
 import { describe, it, expect } from "vitest";
 import {
-  reportDocumentHtml, prepareTableSection, defaultPrintOptions, resolvePrintSections, rowMatchesSearch,
+  reportDocumentHtml, prepareTableSection, defaultPrintOptions, resolvePrintSections, rowMatchesSearch, mergePrintOptions,
   type PreparedPrintSection,
 } from "../report-document-print";
 
@@ -143,5 +143,31 @@ describe("print choices", () => {
     expect(rowMatchesSearch(["AB-12-CD", "Golf"], "ab12cd")).toBe(true);
     expect(rowMatchesSearch(["AB-12-CD", "Golf"], "AB-12")).toBe(true);
     expect(rowMatchesSearch(["AB-12-CD", "Golf"], "xy99")).toBe(false);
+  });
+
+  it("remembers the columns that were switched off, so a new column comes on and an old choice stays", () => {
+    const saved = defaultPrintOptions([table()]);
+    saved.perTable["table-t"].columns = ["plate", "total"]; // "name" off
+    const now = prepareTableSection("table-t", {
+      kind: "table", id: "t", title: "Auto's", header: ["Kenteken", "Omschrijving", "Totaal", "Nieuw"], columnIds: ["plate", "name", "total", "extra"],
+      allRows: () => ({ rows: [], truncated: false }),
+    }, { rows: eleven.map((r) => [...r, "x"]), truncated: false, rowKeys: eleven.map((_, i) => `v${i}`) });
+    const merged = mergePrintOptions(defaultPrintOptions([now]), saved, [now]);
+    expect(merged.perTable["table-t"].columns).toEqual(["plate", "total", "extra"]);
+  });
+
+  it("falls back to all columns when the earlier choice leaves none", () => {
+    const sections = [table()];
+    const saved = defaultPrintOptions(sections);
+    saved.perTable["table-t"].columns = ["gone"];
+    const merged = mergePrintOptions(defaultPrintOptions(sections), saved, sections);
+    expect(merged.perTable["table-t"].columns).toEqual(["plate", "name", "total"]);
+  });
+
+  it("puts the totals label in the first visible column when the first column is hidden", () => {
+    const html = doc([table()], (o) => { o.perTable["table-t"].columns = ["name", "total"]; });
+    expect(html).toMatch(/<tfoot><tr><td>Totaal<\/td><td>€\s66,00<\/td><\/tr><\/tfoot>/);
+    const picked = doc([table()], (o) => { o.perTable["table-t"] = { ...o.perTable["table-t"], columns: ["name", "total"], rows: "pick", picked: ["v2", "v5"] }; });
+    expect(picked).toContain("<td>Totaal (gekozen regels)</td>");
   });
 });

@@ -1344,12 +1344,17 @@ function ReportResultsDialog({
   // Afdrukken: the print dialog of the reports (no tiles; the chart when grouped; the table with its totals).
   const printTitle = reportName || t('reportBuilderPage.untitledReport');
   const printRows = results.map((row) => columns.map((col) => displayCell(t, col, row[resultKey(col)])));
+  // A row is known by the values of its plain (not added up) columns, so a pick follows the row.
+  const plainColumns = columns.filter((col) => !col.aggregation);
+  const printRowKeys = plainColumns.length > 0
+    ? results.map((row) => plainColumns.map((col) => String(row[resultKey(col)] ?? "")).join("|"))
+    : undefined;
   const printSections: PrintSection[] | null = canOutput ? [
     ...(truncatedNote ? [{ kind: 'note' as const, text: truncatedNote }] : []),
     ...(groupBy.length > 0 ? [{ kind: 'chart' as const, getSvg: () => chartSvgFromRef(chartRef) }] : []),
     {
       kind: 'table' as const, id: 'report-builder-results', header, columnIds: columns.map((col) => resultKey(col)),
-      allRows: () => ({ rows: printRows, truncated: false }),
+      allRows: () => ({ rows: printRows, truncated: false, rowKeys: printRowKeys }),
       pageRows: printRows,
       totals: totalCells ?? undefined,
       pageTotals: totalCells ?? undefined,

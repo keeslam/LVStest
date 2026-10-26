@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MAINTENANCE_EXPENSE_CATEGORIES } from "@shared/expense-categories";
 import { formatExpenseCategory } from "@/lib/format-utils";
 import { PrintButtonInner, ReportPrintProvider } from "@/components/reports/kit/report-print";
+import type { PrintOptions } from "@/lib/report-document-print";
 import { ReportFiltersProvider, presetRange } from "./report-filters";
 import { officeToday } from "@/lib/office-date";
 import { AnalysisProvider } from "./maintenance-analysis/analysis-context";
@@ -45,6 +46,8 @@ export default function MaintenanceCostsPage() {
 
 function MaintenanceAnalysisWindow() {
   const { t } = useTranslation("reports");
+  // The print choices of every tab live as long as this window, also while another tab is shown.
+  const [printMemory] = useState(() => new Map<string, PrintOptions>());
   const [tab, setTab] = useState<MaintenanceAnalysisTab>("overview");
   const categories = MAINTENANCE_EXPENSE_CATEGORIES.map((c) => formatExpenseCategory(c)).join(", ");
   const title = `${t("maintenanceCostsPage.pageTitle")} · ${t(`maintenanceAnalysis.tabs.${tab}`)}`;
@@ -64,7 +67,7 @@ function MaintenanceAnalysisWindow() {
         {MAINTENANCE_ANALYSIS_TABS.map((id) => (
           <TabsContent key={id} value={id} className="space-y-4" data-testid={`tab-content-ma-${id}`}>
             {/* Every tab registers its own print; Afdrukken prints the tab that is open. */}
-            <ReportPrintProvider>
+            <ReportPrintProvider remembered={printMemory}>
               <div className="flex justify-end">
                 <PrintButtonInner title={title} />
               </div>
