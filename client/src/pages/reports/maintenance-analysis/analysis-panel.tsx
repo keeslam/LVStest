@@ -9,7 +9,7 @@ export function AnalysisPanel({ title, description, children, testId }: {
   testId?: string;
 }) {
   return (
-    <Card data-testid={testId}>
+    <Card data-testid={testId} className="min-w-0">
       <CardHeader className="pb-2">
         <CardTitle className="text-base">{title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}

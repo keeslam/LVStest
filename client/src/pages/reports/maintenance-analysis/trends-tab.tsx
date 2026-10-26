@@ -24,13 +24,23 @@ import { AnalysisPanel } from "./analysis-panel";
 import { AnalysisCsvButton } from "./analysis-csv";
 import { CHART_COLORS } from "./analysis-chart";
 
-interface MonthRow { month: string; amount?: number; previous?: number; forecast?: number }
+export interface MonthRow { month: string; amount?: number; previous?: number; forecast?: number }
 type ForecastMonth = NonNullable<MaintenanceTrends["forecast"]>[number];
 type ForecastVehicle = NonNullable<MaintenanceTrends["forecastVehicles"]>[number];
 
 export const monthLabel = (month: string) => formatDateNl(`${month}-01T12:00:00`, "MMM yyyy");
 /** The forecast line's dashes. */
 export const FORECAST_DASH = "6 4";
+
+/**
+ * The chart's own rows: the dashed forecast starts on the last real month (at its amount), so the two
+ * lines join. The table keeps the plain rows, where that month has no forecast.
+ */
+export function chartRowsOf(rows: MonthRow[]): MonthRow[] {
+  const lastActual = rows.reduce((at, r, i) => (r.amount !== undefined ? i : at), -1);
+  if (lastActual < 0 || !rows.some((r) => r.forecast !== undefined)) return rows;
+  return rows.map((r, i) => (i === lastActual ? { ...r, forecast: r.amount } : r));
+}
 
 export function TrendsTab() {
   const { t } = useTranslation("reports");
@@ -56,6 +66,7 @@ export function TrendsTab() {
     }
     return out.sort((a, b) => (a.month < b.month ? -1 : a.month > b.month ? 1 : 0));
   }, [data, forecast]);
+  const chartRows = useMemo(() => chartRowsOf(rows), [rows]);
   const forecastVehicles = useMemo(() => (isAdmin && data?.forecastVehicles ? data.forecastVehicles : noRows<ForecastVehicle>()), [isAdmin, data]);
 
   const columns = useMemo<ReportTableColumn<MonthRow>[]>(() => {
@@ -108,7 +119,7 @@ export function TrendsTab() {
         ) : (
           <div ref={chartRef} className="h-72 w-full" data-testid="ma-trends-chart">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={rows} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+              <LineChart data={chartRows} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
                 onClick={(s: { activeTooltipIndex?: number } | null) => openMonth(s?.activeTooltipIndex === undefined ? undefined : rows[s.activeTooltipIndex])}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 12 }} />

@@ -26,6 +26,12 @@ export function pieLabel(label: string, percent: number | undefined): string {
   return `${label} ${Math.round((percent ?? 0) * 100)}%`;
 }
 
+/** Under a bar chart every name is shown (interval 0), slanted and shortened; the tooltip has the full name. */
+export const LABEL_AXIS = { interval: 0, angle: -35, textAnchor: "end" as const, height: 70, tick: { fontSize: 12 } };
+export function shortLabel(label: string, max = 18): string {
+  return label.length > max ? `${label.slice(0, max - 1).trimEnd()}…` : label;
+}
+
 /** A metric sums up to a whole only for amount and count: a pie of averages says nothing. */
 const PIE_METRICS: AnalysisMetric[] = ["amount", "count"];
 
@@ -107,7 +113,7 @@ export function AnalysisChart({ points, metrics, kinds, defaultKind, testId, cha
             ) : kind === "line" ? (
               <LineChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }} onClick={(s: { activeTooltipIndex?: number } | null) => click(s?.activeTooltipIndex)}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                <XAxis dataKey="label" {...LABEL_AXIS} tickFormatter={(l: string) => shortLabel(String(l))} />
                 <YAxis tickFormatter={(n: number) => format(n)} width={90} />
                 <Tooltip formatter={(n: number) => [format(n), t(`maintenanceAnalysis.chart.metrics.${shownMetric}`)]} />
                 <Line type="monotone" dataKey="value" stroke={CHART_COLORS[0]} strokeWidth={2} isAnimationActive={false} />
@@ -115,7 +121,7 @@ export function AnalysisChart({ points, metrics, kinds, defaultKind, testId, cha
             ) : (
               <BarChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                <XAxis dataKey="label" {...LABEL_AXIS} tickFormatter={(l: string) => shortLabel(String(l))} />
                 <YAxis tickFormatter={(n: number) => format(n)} width={90} />
                 <Tooltip formatter={(n: number) => [format(n), t(`maintenanceAnalysis.chart.metrics.${shownMetric}`)]} />
                 <Bar dataKey="value" fill={CHART_COLORS[0]} onClick={(_entry: unknown, index: number) => click(index)} />

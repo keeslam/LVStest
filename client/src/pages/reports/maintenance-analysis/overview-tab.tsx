@@ -111,7 +111,7 @@ export function OverviewTab() {
           />
         </AnalysisPanel>
         <AnalysisPanel title={k("overview.topVehicles")} description={k("overview.clickHint")}>
-          <div data-testid="ma-top-vehicles">
+          <div data-testid="ma-top-vehicles" className="overflow-x-auto">
             <ReportTable
               rows={topVehicles}
               columns={columns}

@@ -27,7 +27,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, Tag, FileText, FileCheck, Truck, Pencil, Trash2 } from "lucide-react";
+import { Building2, Calendar, Tag, FileText, FileCheck, Truck, Pencil, Trash2 } from "lucide-react";
 import { formatDate, formatLicensePlate, formatExpenseCategory } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { Expense, Vehicle } from "@shared/schema";
@@ -127,6 +127,7 @@ export function ExpenseDetailDialog({ expenseId, open, onOpenChange, hideVehicle
               amount: Number(expense.amount),
               date: expense.date,
               description: expense.description || "",
+              supplier: expense.supplier || "",
               receiptUrl: expense.receiptUrl || "",
             }}
             onSuccess={() => {
@@ -190,6 +191,14 @@ export function ExpenseDetailDialog({ expenseId, open, onOpenChange, hideVehicle
                     <p className="text-sm">
                       {expense.description || t('detailsPage.noDescriptionProvided')}
                     </p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('form.supplier')}</h3>
+                  <div className="flex items-start">
+                    <Building2 className="h-4 w-4 mr-2 mt-1 text-primary" />
+                    <p className="text-sm break-words" data-testid="detail-supplier">{expense.supplier || "—"}</p>
                   </div>
                 </div>
 

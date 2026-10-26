@@ -123,11 +123,11 @@ export function ExpenseRows({ rows, onDelete, testIdPrefix = "row-expense", show
 /** The column widths the rows above are laid out for; shared with the plain (unsorted) header. */
 export const EXPENSE_COLUMN_CLASSES = {
   date: "w-28",
-  plate: "w-48",
+  plate: "w-44",
   category: "w-32",
   description: "",
   supplier: "w-40",
-  amount: "w-36 whitespace-nowrap text-right",
+  amount: "w-32 whitespace-nowrap text-right",
   actions: "w-20",
 } as const;
 
@@ -194,7 +194,7 @@ export function ExpenseListTable({ filters, onDelete, testId = "expenses", initi
   return (
     <div className={cn("space-y-3", className)}>
       <div className="rounded-md border">
-        <Table className="min-w-[52rem] table-fixed">
+        <Table className="min-w-[64rem] table-fixed">
           <TableHeader className="sticky top-0 z-10 bg-background">
             <TableRow>
               {head("date", t("expenses:indexPage.dateColumnHeader"), EXPENSE_COLUMN_CLASSES.date)}
