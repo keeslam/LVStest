@@ -88,10 +88,12 @@ const profile = {
 const empty = { ...period, total: 0, amount: 0, rows: [] };
 
 let urls: string[] = [];
+let profileBody: unknown = profile;
 const json = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
 
 beforeEach(() => {
   urls = [];
+  profileBody = profile;
   role = UserRole.ADMIN;
   downloadCsv.mockClear();
   vi.stubGlobal("fetch", vi.fn(async (input: any) => {
@@ -100,7 +102,7 @@ beforeEach(() => {
     const path = url.split("?")[0];
     if (path.endsWith("/maintenance-analysis/overview")) return json(overview);
     if (path.endsWith("/maintenance-analysis/brands")) return json(brands);
-    if (path.endsWith("/maintenance-analysis/profile")) return json(profile);
+    if (path.endsWith("/maintenance-analysis/profile")) return json(profileBody);
     if (path.endsWith("/maintenance-analysis/vehicles")) return json({ ...period, vehicles: [] });
     if (path.endsWith("/maintenance-analysis/suppliers")) return json({ ...period, suppliers: [], downtime: [], topRepairs: [] });
     if (path.endsWith("/maintenance-analysis/trends")) return json({ ...period, months: [] });
@@ -213,6 +215,45 @@ describe("profile card", () => {
     // The plate opens the vehicle window (a link button), not the cost lines.
     expect(within(hint).getByRole("button", { name: "XY-999-Z" })).toBeInTheDocument();
     expect(within(card).getByTestId("ma-profile-repairs-table")).toHaveTextContent("Grote beurt");
+  });
+
+  it("says the interval is over the last 24 months", async () => {
+    const user = userEvent.setup();
+    const card = await openProfile(user);
+    expect(within(card).getByTestId("ma-profile-interval")).toHaveTextContent("over de laatste 24 maanden");
+  });
+
+  it("the hint panel has its own text colour and a dark-mode variant", async () => {
+    const user = userEvent.setup();
+    const card = await openProfile(user);
+    const cls = within(card).getByTestId("ma-profile-hints").className;
+    expect(cls).toMatch(/text-amber-950/);
+    expect(cls).toMatch(/dark:bg-/);
+    expect(cls).toMatch(/dark:text-/);
+  });
+
+  it("does not say \"andere Onbekend's\" when the type is unknown", async () => {
+    profileBody = { ...profile, model: null };
+    const user = userEvent.setup();
+    const card = await openProfile(user);
+    const hint = within(card).getByTestId("ma-profile-hint-12");
+    expect(hint).toHaveTextContent("andere auto's van dit type");
+    expect(hint.textContent).not.toMatch(/Onbekend/);
+  });
+
+  it("prints a profile table in the order it has on screen", async () => {
+    const user = userEvent.setup();
+    const card = await openProfile(user);
+    await user.click(within(card).getByTestId("ma-profile-categories-table-sort-amount"));
+    await user.click(screen.getByTestId("button-report-print"));
+    const frame = await screen.findByTestId("print-preview-frame", undefined, { timeout: 4000 });
+    await waitFor(() => {
+      const html = frame.getAttribute("srcdoc") ?? "";
+      const part = html.slice(html.indexOf("Kosten per categorie"));
+      expect(part.indexOf("Banden")).toBeGreaterThan(-1);
+      expect(part.indexOf("Banden")).toBeLessThan(part.indexOf("Remmen"));
+      expect(part.indexOf("Remmen")).toBeLessThan(part.indexOf("Onderhoud"));
+    });
   });
 
   it("a repair opens its cost lines; CSV exports a table", async () => {

@@ -691,6 +691,18 @@ describe("task 6: brand and type profile", () => {
     expect(p.interval.outliers).toEqual([expect.objectContaining({ vehicleId: v.V1, months: r1(months(181 / 3)) })]);
   });
 
+  it("the interval looks back 24 months and ignores the supplier and km-band filters, so a short period still shows it", async () => {
+    const whole = (await staff.get(`${BASE}/profile`).query(Q)).body.interval;
+    const short = (await staff.get(`${BASE}/profile`).query({ ...Q, from: "2026-09-01", to: "2026-09-30" })).body.interval;
+    expect(short.months).toBe(whole.months);
+    expect(short.vehicles).toBe(3);
+    const bySupplier = (await staff.get(`${BASE}/profile`).query({ ...Q, supplier: "Garage A" })).body.interval;
+    expect(bySupplier.months).toBe(whole.months);
+    expect(bySupplier.vehicles).toBe(3);
+    const byBand = (await admin.get(`${BASE}/profile`).query({ ...Q, kmBand: "50–100.000" })).body.interval;
+    expect(byBand.vehicles).toBe(3);
+  });
+
   it("admin: average km, km per interval, and the km bands with no rate where there are no km", async () => {
     const p = (await admin.get(`${BASE}/profile`).query(Q)).body;
     expect(p.avgKm).toBe(38000);
@@ -711,5 +723,26 @@ describe("task 6: brand and type profile", () => {
     expect(p.replaceHints).toEqual([{ vehicleId: v.V1, plate: expect.any(String), ratio12: r2(800 / 187.5), ratio6: r2(400 / 62.5) }]);
     // Admin compares per km in the same km band: V1 has only V2 with km in its band, too few.
     expect((await admin.get(`${BASE}/profile`).query(Q)).body.replaceHints).toEqual([]);
+  });
+
+  it("replacement hint, admin: under 5.000 own km in the band the per-month rule is used, like for staff", async () => {
+    const LOW = "FIXTMALOW";
+    const ids: number[] = [];
+    for (const n of [1, 2, 3, 4, 5]) {
+      const row = await createFixtureVehicle({ brand: LOW, model: "LOW", dateIn: "2025-01-01" });
+      ids.push(row.id); vehicleIds.push(row.id);
+    }
+    await db.insert(vehicleMileageReadings).values([
+      { vehicleId: ids[0], mileage: 1000, recordedAt: new Date("2026-02-01T11:00:00Z"), source: "manual" },
+      { vehicleId: ids[0], mileage: 2500, recordedAt: new Date("2026-09-01T11:00:00Z"), source: "manual" },
+    ] as any);
+    await db.insert(expenses).values([
+      { vehicleId: ids[0], category: "tires", amount: "600.00", date: "2026-08-01", description: null, supplier: null },
+      ...ids.slice(1).map((id) => ({ vehicleId: id, category: "tires", amount: "50.00", date: "2026-08-01", description: null, supplier: null })),
+    ]);
+    const q = { ...P, brand: LOW, model: "LOW" };
+    const expected = [{ vehicleId: ids[0], plate: expect.any(String), ratio12: 12, ratio6: 12 }];
+    expect((await staff.get(`${BASE}/profile`).query(q)).body.replaceHints).toEqual(expected);
+    expect((await admin.get(`${BASE}/profile`).query(q)).body.replaceHints).toEqual(expected);
   });
 });

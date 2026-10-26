@@ -180,7 +180,7 @@
       "worstTitle": "Najdroższe auta",
       "suppliersTitle": "Dostawcy",
       "intervalTitle": "Odstęp między serwisami",
-      "intervalText": "Średnio {{months}} mies. między dwoma serwisami (aut: {{vehicles}}).",
+      "intervalText": "Średnio {{months}} mies. między dwoma serwisami (aut: {{vehicles}}), w ostatnich {{lookback}} mies.",
       "intervalKm": "Średnio {{km}} km między dwoma serwisami.",
       "intervalNone": "Za mało serwisów, aby obliczyć odstęp.",
       "outliersTitle": "Auta z dużo krótszym odstępem",
@@ -188,6 +188,8 @@
       "hintsTitle": "Porada: wymiana",
       "hintNote": "To wskazówka, nie decyzja.",
       "hintText": "To auto od roku jest wyraźnie droższe niż inne {{type}}. Może czas pomyśleć o wymianie.",
+
+      "hintTextUnknown": "To auto od roku jest wyraźnie droższe niż inne auta tego typu. Może czas pomyśleć o wymianie.",
       "hintRatio": "{{ratio12}} razy droższe od pozostałych w 12 miesiącach, {{ratio6}} razy w 6 miesiącach.",
       "hintNone": "Żadne auto nie jest wyraźnie droższe od reszty tego modelu."
     }

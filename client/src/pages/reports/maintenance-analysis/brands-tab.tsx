@@ -24,7 +24,7 @@ import { useReportPrint, type PrintSection } from "@/components/reports/kit/repo
 import { chartSvgFromRef } from "@/lib/report-document-print";
 import { tablePrintSection } from "../legacy/table-print";
 import { ANALYSIS_ENDPOINT, brandText, countText, nameKey, typeText, useAnalysis, useAnalysisParams, useMoneyText } from "./analysis-context";
-import { ProfileCard, rateText, useProfilePrintSections } from "./profile-card";
+import { ProfileCard, rateText, useProfilePrintSections, useProfileViews } from "./profile-card";
 import { AnalysisChart, type AnalysisMetric } from "./analysis-chart";
 import { useAnalysisDrill } from "./analysis-rows";
 import { AnalysisPanel } from "./analysis-panel";
@@ -82,7 +82,8 @@ export function BrandsTab() {
   // Brand + type in the filter: the profile of that type.
   const profileOn = extra.brand !== "" && extra.model !== "";
   const { data: profile } = useQuery<MaintenanceProfile>({ queryKey: [`${ANALYSIS_ENDPOINT}/profile`, params], enabled: profileOn });
-  const profileSections = useProfilePrintSections(profileOn ? profile : undefined);
+  const { views: profileViews, onView: onProfileView } = useProfileViews();
+  const profileSections = useProfilePrintSections(profileOn ? profile : undefined, profileViews);
 
   const brands = data?.brands ?? NO_BRANDS;
   // A brand is known by its key: the name, or "__null" for a brand without a name ("Onbekend").
@@ -209,7 +210,7 @@ export function BrandsTab() {
 
   return (
     <div className="space-y-4">
-      {profileOn && profile && <ProfileCard profile={profile} />}
+      {profileOn && profile && <ProfileCard profile={profile} onView={onProfileView} />}
 
       <AnalysisPanel title={chartTitle} description={k("overview.clickHint")}>
         <AnalysisChart

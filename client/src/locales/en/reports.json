@@ -180,7 +180,7 @@
       "worstTitle": "Most expensive cars",
       "suppliersTitle": "Suppliers",
       "intervalTitle": "Service interval",
-      "intervalText": "On average {{months}} months between two services ({{vehicles}} cars).",
+      "intervalText": "On average {{months}} months between two services ({{vehicles}} cars), over the last {{lookback}} months.",
       "intervalKm": "On average {{km}} km between two services.",
       "intervalNone": "Too few services yet to work out an interval.",
       "outliersTitle": "Cars with a much shorter interval",
@@ -188,6 +188,8 @@
       "hintsTitle": "Replacement advice",
       "hintNote": "This is a hint, not a decision.",
       "hintText": "This car has been clearly more expensive than other {{type}}s for a year. Maybe time to consider replacing it.",
+
+      "hintTextUnknown": "This car has been clearly more expensive than other cars of this type for a year. Maybe time to consider replacing it.",
       "hintRatio": "{{ratio12}} times as expensive as the others over 12 months, {{ratio6}} times over 6 months.",
       "hintNone": "No car is clearly more expensive than the rest of this type."
     }

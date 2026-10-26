@@ -180,7 +180,7 @@
       "worstTitle": "Veicoli più costosi",
       "suppliersTitle": "Fornitori",
       "intervalTitle": "Intervallo di manutenzione",
-      "intervalText": "In media {{months}} mesi tra due manutenzioni ({{vehicles}} veicoli).",
+      "intervalText": "In media {{months}} mesi tra due manutenzioni ({{vehicles}} veicoli), negli ultimi {{lookback}} mesi.",
       "intervalKm": "In media {{km}} km tra due manutenzioni.",
       "intervalNone": "Ancora troppe poche manutenzioni per calcolare un intervallo.",
       "outliersTitle": "Veicoli con un intervallo molto più breve",
@@ -188,6 +188,8 @@
       "hintsTitle": "Consiglio di sostituzione",
       "hintNote": "È un suggerimento, non una decisione.",
       "hintText": "Questo veicolo da un anno costa chiaramente più degli altri {{type}}. Forse è il momento di pensare a sostituirlo.",
+
+      "hintTextUnknown": "Questo veicolo da un anno costa chiaramente più degli altri veicoli di questo tipo. Forse è il momento di pensare a sostituirlo.",
       "hintRatio": "{{ratio12}} volte più costoso degli altri in 12 mesi, {{ratio6}} volte in 6 mesi.",
       "hintNone": "Nessun veicolo è chiaramente più costoso degli altri di questo modello."
     }

@@ -6,12 +6,12 @@
  * A row opens its cost lines; a plate opens the vehicle window. Each table has CSV; the tables
  * are printed with the tab (profilePrintSections, called by BrandsTab).
  */
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { Lightbulb } from "lucide-react";
-import { MAINTENANCE_NULL_KEY, type MaintenanceKmBandLine, type MaintenanceProfile, type MaintenanceProfileCar } from "@shared/maintenance-analysis";
-import { ReportTable, type ReportTableColumn } from "@/components/reports/kit/report-table";
+import { INTERVAL_LOOKBACK_MONTHS, MAINTENANCE_NULL_KEY, modelWithoutBrand, type MaintenanceKmBandLine, type MaintenanceProfile, type MaintenanceProfileCar } from "@shared/maintenance-analysis";
+import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
 import type { PrintSection } from "@/components/reports/kit/report-print";
 import { EntityLink } from "@/components/reports/entity-link";
 import { formatExpenseCategory } from "@/lib/format-utils";
@@ -149,20 +149,31 @@ function useProfileTables(profile: MaintenanceProfile | undefined): ProfileTable
   }, [profile, t, isAdmin, money]);
 }
 
-/** The text of the replacement hint for a car of this type. */
+/** The text of the replacement hint for a car of this type; with an unknown type it says "this type". */
 function hintText(t: TFunction, profile: MaintenanceProfile): string {
-  return t("maintenanceAnalysis.profile.hintText", { type: typeText(t, profile.brand, profile.model) });
+  const type = modelWithoutBrand(profile.brand, profile.model);
+  return type ? t("maintenanceAnalysis.profile.hintText", { type }) : t("maintenanceAnalysis.profile.hintTextUnknown");
+}
+
+/** The views (search, sort, page) of the profile tables on screen, by table id; the print follows them. */
+export type ProfileViews = Record<string, ReportTableView<any>>;
+
+/** Keeps the views of the profile tables; `onView` goes to the ProfileCard, `views` to the print sections. */
+export function useProfileViews(): { views: ProfileViews; onView: (id: string, view: ReportTableView<any>) => void } {
+  const [views, setViews] = useState<ProfileViews>({});
+  const onView = useCallback((id: string, view: ReportTableView<any>) => setViews((v) => (v[id] === view ? v : { ...v, [id]: view })), []);
+  return { views, onView };
 }
 
 /** The profile tables for Afdrukken (with the hints as a table), in screen order. */
-export function useProfilePrintSections(profile: MaintenanceProfile | undefined): PrintSection[] {
+export function useProfilePrintSections(profile: MaintenanceProfile | undefined, views: ProfileViews = {}): PrintSection[] {
   const { t } = useTranslation("reports");
   const tables = useProfileTables(profile);
   return useMemo(() => {
     if (!profile) return [];
     const p = (key: string, opts?: Record<string, unknown>) => t(`maintenanceAnalysis.profile.${key}`, opts);
     const name = typeText(t, profile.brand, profile.model);
-    const sections: PrintSection[] = tables.map((tb) => tablePrintSection({ id: `ma-profile-${tb.id}`, title: `${p("title", { name })} · ${tb.title}`, columns: tb.columns, rows: tb.rows, view: null, rowKey: tb.rowKey }));
+    const sections: PrintSection[] = tables.map((tb) => tablePrintSection({ id: `ma-profile-${tb.id}`, title: `${p("title", { name })} · ${tb.title}`, columns: tb.columns, rows: tb.rows, view: views[tb.id] ?? null, rowKey: tb.rowKey }));
     if (profile.replaceHints.length > 0) {
       const columns: ReportTableColumn<MaintenanceProfile["replaceHints"][number]>[] = [
         { id: "plate", label: t("maintenanceAnalysis.columns.licensePlate"), cell: (r) => r.plate, text: (r) => r.plate },
@@ -173,10 +184,10 @@ export function useProfilePrintSections(profile: MaintenanceProfile | undefined)
       sections.push(tablePrintSection({ id: "ma-profile-hints", title: `${p("title", { name })} · ${p("hintsTitle")}`, columns, rows: profile.replaceHints, view: null, rowKey: (r) => r.vehicleId }));
     }
     return sections;
-  }, [profile, tables, t]);
+  }, [profile, tables, t, views]);
 }
 
-export function ProfileCard({ profile }: { profile: MaintenanceProfile }) {
+export function ProfileCard({ profile, onView }: { profile: MaintenanceProfile; onView?: (id: string, view: ReportTableView<any>) => void }) {
   const { t } = useTranslation("reports");
   const p = (key: string, opts?: Record<string, unknown>) => t(`maintenanceAnalysis.profile.${key}`, opts);
   const { isAdmin } = useAnalysis();
@@ -204,6 +215,7 @@ export function ProfileCard({ profile }: { profile: MaintenanceProfile }) {
           columns={tb.columns}
           rowKey={tb.rowKey}
           testId={`ma-profile-${tb.id}-table`}
+          onView={onView ? (view) => onView(tb.id, view) : undefined}
           toolbar={<AnalysisCsvButton columns={tb.columns} rows={tb.rows} view={null} name={tb.csv} testId={`button-ma-profile-${tb.id}-csv`} />}
           onRowClick={open ? (r) => { const d = open(r); if (d) drill(d); } : undefined}
         />
@@ -222,20 +234,20 @@ export function ProfileCard({ profile }: { profile: MaintenanceProfile }) {
         {figure("ma-profile-fleet", p("fleet"), money(profile.fleetPerVehicleMonth))}
       </div>
 
-      <div className="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3" data-testid="ma-profile-hints">
+      <div className="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-950 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100" data-testid="ma-profile-hints">
         <p className="flex items-center gap-1 text-sm font-medium"><Lightbulb className="h-4 w-4" aria-hidden="true" />{p("hintsTitle")}</p>
         {profile.replaceHints.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{p("hintNone")}</p>
+          <p className="text-sm text-amber-900 dark:text-amber-200">{p("hintNone")}</p>
         ) : (
           <>
             {profile.replaceHints.map((h) => (
               <div key={h.vehicleId} className="text-sm" data-testid={`ma-profile-hint-${h.vehicleId}`}>
                 <span className="font-medium"><EntityLink kind="vehicle" id={h.vehicleId} label={h.plate} /></span>{" "}
                 {hintText(t, profile)}{" "}
-                <span className="text-muted-foreground">{p("hintRatio", { ratio12: ratioText(h.ratio12), ratio6: ratioText(h.ratio6) })}</span>
+                <span className="text-amber-900 dark:text-amber-200">{p("hintRatio", { ratio12: ratioText(h.ratio12), ratio6: ratioText(h.ratio6) })}</span>
               </div>
             ))}
-            <p className="text-xs text-muted-foreground">{p("hintNote")}</p>
+            <p className="text-xs text-amber-900 dark:text-amber-200">{p("hintNote")}</p>
           </>
         )}
       </div>
@@ -246,7 +258,7 @@ export function ProfileCard({ profile }: { profile: MaintenanceProfile }) {
           <p className="text-sm text-muted-foreground">{p("intervalNone")}</p>
         ) : (
           <p className="text-sm">
-            {p("intervalText", { months: oneDecimal(interval.months), vehicles: countText(interval.vehicles) })}
+            {p("intervalText", { months: oneDecimal(interval.months), vehicles: countText(interval.vehicles), lookback: INTERVAL_LOOKBACK_MONTHS })}
             {isAdmin && interval.km != null && <> {p("intervalKm", { km: countText(interval.km) })}</>}
           </p>
         )}

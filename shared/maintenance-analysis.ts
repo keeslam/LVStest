@@ -93,6 +93,10 @@ export const REPLACE_HINT_FACTOR = 1.5;
 export const REPLACE_HINT_MIN_COMPARABLES = 3;
 /** The two windows (months, ending at the period end or today) the hint looks at: a year, and the last half year. */
 export const REPLACE_HINT_MONTHS = [12, 6] as const;
+/** An admin is compared per km only with at least this many own km in the band; below it the per-month rule is used. */
+export const REPLACE_HINT_MIN_KM = 5000;
+/** Onderhoudsinterval: the visits of the last this many months (ending at the period end or today) are used, not only the period. */
+export const INTERVAL_LOOKBACK_MONTHS = 24;
 /** Onderhoudsinterval: a car stands out when its interval is at most this factor of the type average (≥ 50 % shorter). */
 export const INTERVAL_OUTLIER_FACTOR = 0.5;
 /** How many best and worst cars the profile shows. */

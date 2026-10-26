@@ -33,7 +33,7 @@ import {
   UNKNOWN_SUPPLIER_LABEL, MAINTENANCE_CATEGORY_LABELS, MIN_EXPENSES_FOR_RATING, MIN_VEHICLES_FOR_RATING,
   SIGNAL_ABOVE_GROUP_FACTOR, SIGNAL_MIN_COMPARABLES, SIGNAL_MIN_OWNED_MONTHS, SIGNAL_RISING_MONTHS, SIGNAL_REPEAT_DAYS,
   FORECAST_DAYS, FORECAST_MONTHS, MAINTENANCE_ANALYSIS_DRILLS,
-  REPLACE_HINT_FACTOR, REPLACE_HINT_MIN_COMPARABLES, REPLACE_HINT_MONTHS, INTERVAL_OUTLIER_FACTOR, PROFILE_BEST_WORST, PROFILE_TOP_REPAIRS, repairKey,
+  REPLACE_HINT_FACTOR, REPLACE_HINT_MIN_COMPARABLES, REPLACE_HINT_MIN_KM, INTERVAL_LOOKBACK_MONTHS, REPLACE_HINT_MONTHS, INTERVAL_OUTLIER_FACTOR, PROFILE_BEST_WORST, PROFILE_TOP_REPAIRS, repairKey,
   type KmBand, type MaintenanceAnalysisDrill, type MaintenanceTiles, type MaintenanceOverview,
   type MaintenanceBrands, type MaintenanceGroupLine, type MaintenanceKmBandLine, type MaintenanceVehicleLine,
   type MaintenanceSuppliers, type MaintenanceTrends, type MaintenanceSignal, type MaintenanceSignals,
@@ -906,10 +906,13 @@ const carOf = (v: VehicleCtx) => ({ vehicleId: v.id, plate: v.plate });
  */
 function intervalOf(scope: Scope): MaintenanceProfile["interval"] {
   const { data, q } = scope;
-  const visits = scopeOf(data, { ...q, category: "maintenance" }, q).costs;
-  const byVehicle = groupBy(visits, (c) => c.vehicleId);
+  // The last INTERVAL_LOOKBACK_MONTHS months, whatever the period; supplier and km band do not narrow the type.
+  const end = q.to < data.today ? q.to : data.today;
+  const lookback = { from: ymdOf(dayOf(monthsBefore(end, INTERVAL_LOOKBACK_MONTHS)) + 1), to: end };
+  const peers = scopeOf(data, { ...q, category: "maintenance" }, lookback, { vehicle: true, supplier: true, kmBand: true });
+  const byVehicle = groupBy(peers.costs, (c) => c.vehicleId);
   const cars: Array<{ v: VehicleCtx; days: number; km: number | null }> = [];
-  for (const v of scope.vehicles) {
+  for (const v of peers.vehicles) {
     const days = [...new Set((byVehicle.get(v.id) ?? []).map((c) => c.day))].sort((a, b) => a - b);
     if (days.length < 2) continue;
     const gaps: number[] = [];
@@ -955,14 +958,14 @@ function replaceHintsOf(scope: Scope): MaintenanceProfile["replaceHints"] {
   const ratioIn = (v: VehicleCtx, w: (typeof windows)[number]): number | null => {
     const own = w.costs.get(v.id) ?? [];
     const others = w.peers.vehicles.filter((o) => o.id !== v.id);
-    if (data.isAdmin) {
-      const km = kmAtDay(v.readings, endDay);
-      if (km === null) return null;
-      const band = kmBandOf(km);
-      const kmOf = (o: VehicleCtx) => kmBands(data, o, w.period).get(band) ?? 0;
+    const km = data.isAdmin ? kmAtDay(v.readings, endDay) : null;
+    const band = km === null ? null : kmBandOf(km);
+    const kmOf = (o: VehicleCtx) => (band === null ? 0 : kmBands(data, o, w.period).get(band) ?? 0);
+    // Per km only with enough own km in the band; with little km the per-month rule below is fairer.
+    if (band !== null && kmOf(v) >= REPLACE_HINT_MIN_KM) {
       const ownKm = kmOf(v);
       const comparable = others.filter((o) => kmOf(o) > 0);
-      if (ownKm <= 0 || comparable.length < REPLACE_HINT_MIN_COMPARABLES) return null;
+      if (comparable.length < REPLACE_HINT_MIN_COMPARABLES) return null;
       const average = comparable.reduce((n, o) => n + sumAmount((w.costs.get(o.id) ?? []).filter((c) => c.band === band)), 0)
         / comparable.reduce((n, o) => n + kmOf(o), 0);
       return average > 0 ? (sumAmount(own.filter((c) => c.band === band)) / ownKm) / average : null;

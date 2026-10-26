@@ -180,7 +180,7 @@
       "worstTitle": "Cele mai scumpe mașini",
       "suppliersTitle": "Furnizori",
       "intervalTitle": "Interval de întreținere",
-      "intervalText": "În medie {{months}} luni între două revizii ({{vehicles}} mașini).",
+      "intervalText": "În medie {{months}} luni între două revizii ({{vehicles}} mașini), în ultimele {{lookback}} luni.",
       "intervalKm": "În medie {{km}} km între două revizii.",
       "intervalNone": "Încă prea puține revizii pentru a calcula un interval.",
       "outliersTitle": "Mașini cu un interval mult mai scurt",
@@ -188,6 +188,8 @@
       "hintsTitle": "Sfat de înlocuire",
       "hintNote": "Este o sugestie, nu o decizie.",
       "hintText": "Această mașină este de un an clar mai scumpă decât alte {{type}}. Poate e timpul să vă gândiți la înlocuire.",
+
+      "hintTextUnknown": "Această mașină este de un an clar mai scumpă decât alte mașini de acest tip. Poate e timpul să vă gândiți la înlocuire.",
       "hintRatio": "De {{ratio12}} ori mai scumpă decât celelalte în 12 luni, de {{ratio6}} ori în 6 luni.",
       "hintNone": "Nicio mașină nu este clar mai scumpă decât restul acestui model."
     }

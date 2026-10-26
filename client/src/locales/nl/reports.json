@@ -180,7 +180,7 @@
       "worstTitle": "Duurste auto's",
       "suppliersTitle": "Leveranciers",
       "intervalTitle": "Onderhoudsinterval",
-      "intervalText": "Gemiddeld {{months}} maanden tussen twee onderhoudsbeurten ({{vehicles}} auto's).",
+      "intervalText": "Gemiddeld {{months}} maanden tussen twee onderhoudsbeurten ({{vehicles}} auto's), over de laatste {{lookback}} maanden.",
       "intervalKm": "Gemiddeld {{km}} km tussen twee beurten.",
       "intervalNone": "Nog te weinig onderhoudsbeurten om een interval te berekenen.",
       "outliersTitle": "Auto's met een veel korter interval",
@@ -188,6 +188,8 @@
       "hintsTitle": "Advies vervangen",
       "hintNote": "Dit is een hint, geen besluit.",
       "hintText": "Deze auto is al een jaar duidelijk duurder dan andere {{type}}'s. Misschien tijd om vervanging te overwegen.",
+
+      "hintTextUnknown": "Deze auto is al een jaar duidelijk duurder dan andere auto's van dit type. Misschien tijd om vervanging te overwegen.",
       "hintRatio": "{{ratio12}} keer zo duur als de andere over 12 maanden, {{ratio6}} keer over 6 maanden.",
       "hintNone": "Geen auto is duidelijk duurder dan de rest van dit type."
     }
