@@ -105,14 +105,25 @@ Rechts boven de lijst kies je hoe je de kosten ziet.
    *Zo ziet een categorie eruit, hier **Banden**. Klik op de regel. Daarna zie je de nieuwste
    kostenposten van die categorie.*
 10. Wil je alles in één tabel? Klik op **Alle kosten**. Je ziet nu de kolommen **Datum**,
-    **Voertuig**, **Categorie**, **Omschrijving** en **Bedrag (excl. btw)**. Klik op een kolomkop om
-    te sorteren. Onderaan kies je de pagina en het aantal regels per pagina.
+    **Voertuig**, **Categorie**, **Leverancier**, **Omschrijving** en **Bedrag (excl. btw)**. Klik op
+    een kolomkop om te sorteren. Onderaan kies je de pagina en het aantal regels per pagina.
 
     ![De knop Alle kosten, van dichtbij](afbeeldingen/19-kosten-per-categorie-k2.png)
     *Zo ziet de knop **Alle kosten** eruit. Klik erop. Daarna zie je alle kosten in één tabel.*
 
     ![Het Kostenoverzicht met Per categorie (1), Alle kosten (2) en de categorie Banden (3)](afbeeldingen/19-kosten-per-categorie.png)
     *De twee weergaven: 1 **Per categorie**, 2 **Alle kosten**, 3 de categorie **Banden**.*
+
+    ![Alle kosten met de kolom Leverancier (1) en een ingevulde leverancier (2)](afbeeldingen/19-alle-kosten-leverancier.png)
+    *De tabel **Alle kosten**: 1 de kolom **Leverancier**, 2 een leverancier die je zelf typte. Een
+    streepje betekent: geen leverancier. Een factuur uit het postvak vult de leverancier zelf in, hier
+    *Garage Visser*.*
+
+    ![De kolom Leverancier, van dichtbij](afbeeldingen/19-alle-kosten-leverancier-k1.png)
+    *Zo ziet de kolom **Leverancier** eruit. Klik op de kop om op leverancier te sorteren.*
+
+    ![Een leverancier in de tabel, van dichtbij](afbeeldingen/19-alle-kosten-leverancier-k2.png)
+    *Zo ziet een leverancier in de tabel eruit.*
 
 ### Een kostenpost openen
 
@@ -160,23 +171,30 @@ Zo leg je zelf een kostenpost vast. Bijvoorbeeld een bon van de wasstraat of een
 
    ![Het veld Omschrijving, van dichtbij](afbeeldingen/19-kosten-registreren-k5.png)
    *Zo ziet het veld **Omschrijving** eruit. Typ in een paar woorden wat er is gedaan.*
-7. Wil je de bon bewaren? Klik bij **Bon** op **Bestand uploaden**. Kies het bestand of sleep het in
+7. Typ bij **Leverancier** bij wie je het hebt laten doen of gekocht. Bijvoorbeeld "Garage Visser".
+   Heb je die naam al eerder gebruikt? Dan zie je hem als keuze onder het veld. Klik erop. Zo staat
+   dezelfde garage altijd op dezelfde manier geschreven. Dat is belangrijk voor de onderhoudsanalyse
+   (hoofdstuk 21.9): daar zie je per leverancier wat het kost. Weet je het niet? Laat het veld leeg.
+
+   ![Het veld Leverancier, van dichtbij](afbeeldingen/19-kosten-registreren-k6.png)
+   *Zo ziet het veld **Leverancier** eruit. Typ de naam of kies een eerder gebruikte naam.*
+8. Wil je de bon bewaren? Klik bij **Bon** op **Bestand uploaden**. Kies het bestand of sleep het in
    het vak. Dat mag een PDF, PNG, JPG of GIF zijn, tot 25 MB. Staat de bon online? Gebruik dan het
    tabblad **URL** en plak de link.
 
-   ![Het tabblad Bestand uploaden bij Bon, van dichtbij](afbeeldingen/19-kosten-registreren-k6.png)
+   ![Het tabblad Bestand uploaden bij Bon, van dichtbij](afbeeldingen/19-kosten-registreren-k7.png)
    *Zo ziet **Bestand uploaden** eruit. Klik erop. Daarna kies je het bestand van de bon.*
-8. Klik op **Kosten registreren**. Je ziet nu de melding *Kosten succesvol geregistreerd*. De
+9. Klik op **Kosten registreren**. Je ziet nu de melding *Kosten succesvol geregistreerd*. De
    kostenpost staat meteen in het **Kostenoverzicht**.
 
-   ![De knop Kosten registreren onderaan het venster, van dichtbij](afbeeldingen/19-kosten-registreren-k7.png)
+   ![De knop Kosten registreren onderaan het venster, van dichtbij](afbeeldingen/19-kosten-registreren-k8.png)
    *Zo ziet de knop **Kosten registreren** onderaan het venster eruit. Klik erop. Daarna is de
    kostenpost opgeslagen.*
 
-   ![Het venster Nieuwe kosten toevoegen met de velden (1 t/m 6) en de knop Kosten registreren (7)](afbeeldingen/19-kosten-registreren.png)
+   ![Het venster Nieuwe kosten toevoegen met de velden (1 t/m 7) en de knop Kosten registreren (8)](afbeeldingen/19-kosten-registreren.png)
    *Het venster **Nieuwe kosten toevoegen**: 1 **Voertuig**, 2 **Categorie**, 3 **Bedrag (€, excl.
-   btw)**, 4 **Datum**, 5 **Omschrijving**, 6 **Bestand uploaden** bij **Bon**, 7 **Kosten
-   registreren**.*
+   btw)**, 4 **Datum**, 5 **Omschrijving**, 6 **Leverancier**, 7 **Bestand uploaden** bij **Bon**,
+   8 **Kosten registreren**.*
 
    ![De melding Kosten succesvol geregistreerd (1)](afbeeldingen/19-kosten-geregistreerd.png)
    *1 de melding **Kosten succesvol geregistreerd**. Eronder staat: De kosten zijn toegevoegd aan het
@@ -336,7 +354,9 @@ je op **Boeken**.
    adres voortaan zelf, als alles klopt.*
 8. Alles goed? Klik op **Boeken**. Je ziet nu bijvoorbeeld *1 kostenregel(s) geboekt*. De factuur
    staat daarna onder **Geboekt**. De kostenposten staan meteen in het **Kostenoverzicht**. De
-   factuur hangt als bon aan elke kostenpost. **Boeken** blijft grijs zolang er geen voertuig is
+   factuur hangt als bon aan elke kostenpost. De naam bij **Leverancier** komt bij elke kostenpost
+   in de kolom **Leverancier**. Verbeter hem dus hier als hij niet klopt. Dat geldt ook voor facturen
+   die de app zelf boekt, en voor facturen die al eerder uit het postvak zijn geboekt. **Boeken** blijft grijs zolang er geen voertuig is
    gekozen, de datum niet klopt of er geen regel met een vinkje is. Ook elke gekozen regel moet een
    omschrijving en een bedrag hebben.
 
@@ -509,6 +529,7 @@ recht? Vraag het aan de beheerder. Meer over rechten staat in
 | Een maand of jaar in één klik | **Deze maand**, **Vorige maand** of **Dit jaar** |
 | De kosten naar Excel | **Kosten** → **Exporteren (CSV)** |
 | Alle kosten in één tabel | **Kosten** → **Alle kosten** |
+| De leverancier van een kostenpost vastleggen | **Kosten registreren** of **Kosten bewerken** → **Leverancier** (bij facturen uit het postvak gaat dat vanzelf) |
 | Eén kostenpost bekijken of aanpassen | Het oogje op de regel → **Kosten bewerken** |
 | Facturen uit de mail zien | **Kosten** → **Ontvangen facturen** |
 | De mail meteen ophalen | **Ontvangen facturen** → **Nu ophalen** |

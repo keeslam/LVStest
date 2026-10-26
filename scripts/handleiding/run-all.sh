@@ -15,6 +15,9 @@ node scripts/handleiding/run.mjs --account=e2e-admin-b 09-email-gps 10-gebruiker
 # Nieuwe hoofdstukken. 20 vóór 16: hoofdstuk 16 plant de onderhoudsaanvraag in die 20 nog open nodig heeft.
 node scripts/handleiding/run.mjs --account=e2e-manager 19- 20-
 # 21 met een beheerder: de km-rapporten en het tabblad Km-historie zijn alleen voor de beheerder.
+# Onderhoudsanalyse: extra Transits/Sprinters, kosten met leverancier en km-standen (pas na 19 en 20).
+node scripts/handleiding/seed-extra.mjs --onderhoud | tail -1
 node scripts/handleiding/run.mjs --account=e2e-admin-b 21-
+node scripts/handleiding/run.mjs --account=e2e-manager 21-ma-medewerker
 node scripts/handleiding/run.mjs --account=e2e-manager-b 16-
 echo "RUN KLAAR"; ls docs/gebruikershandleiding/afbeeldingen | wc -l

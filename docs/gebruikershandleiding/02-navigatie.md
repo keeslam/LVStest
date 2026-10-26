@@ -443,8 +443,10 @@ afdrukvoorbeeld. Alles over dit scherm staat in [hoofdstuk 21](21-rapporten.md).
   naar iets? Dan staat er *nieuw* en geen percentage.
 
 **Analyse onderhoudskosten.** Klik op **Onderhoudsanalyse**. Deze analyse telt alleen de kosten die
-echt onderhoud zijn: **Onderhoud**, **Banden** en **Remmen**. **Kosten per km** staat alleen bij
-**Alle tijd**. Zie hoofdstuk 21, paragraaf 21.9.
+echt onderhoud zijn: **Onderhoud**, **Banden** en **Remmen**. Je vergelijkt merken en typen, ziet
+welke auto's en leveranciers het duurst zijn en krijgt **Signalen** bij auto's die aandacht vragen.
+Alles met kilometers (**Per km**, **Km-klasse**, de verwachting) is alleen voor de beheerder. Zie
+hoofdstuk 21, paragraaf 21.9.
 
 **De rapportbouwer.** Klik op **Rapportbouwer**. Je kiest een bron, velden (ook van de gekoppelde
 auto of klant), filters, groepen en zelf berekende velden. Met **Opslaan** zet je het rapport op

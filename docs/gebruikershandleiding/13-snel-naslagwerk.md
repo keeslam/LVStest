@@ -271,7 +271,9 @@ Uitleg met plaatjes: [hoofdstuk 21](21-rapporten.md).
 | Een eigen rapport maken | Filterbalk → **Rapportbouwer** → bron → velden → **Rapport uitvoeren** |
 | Een eigen rapport op een tabblad zetten | **Rapportbouwer** → **Opslaan** → **Tabblad** → **Rapport opslaan** |
 | Een opgeslagen rapport verwijderen | **Rapportbouwer** → **Opgeslagen rapporten** → het prullenbakje → **Verwijderen** |
-| De onderhoudskosten bekijken | Filterbalk → **Onderhoudsanalyse** (telt alleen **Onderhoud**, **Banden** en **Remmen**; kosten per km alleen bij **Alle tijd**) |
+| De onderhoudskosten bekijken | Filterbalk → **Onderhoudsanalyse** (telt alleen **Onderhoud**, **Banden** en **Remmen**) → een tabblad; klik op een getal voor de kostenregels |
+| Merken, typen en km-klassen vergelijken | **Onderhoudsanalyse** → **Merken en typen** (km-klassen alleen de beheerder) |
+| Auto's die aandacht vragen | **Onderhoudsanalyse** → **Signalen** |
 
 Zie hoofdstuk 2, paragraaf 2.8.
 

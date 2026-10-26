@@ -63,6 +63,7 @@ export const steps = [
       await page.getByRole("option", { name: /Schoonmaak/ }).first().click();
       await form.getByRole("spinbutton", { name: /Bedrag/ }).fill("39.50");
       await form.getByRole("textbox", { name: "Omschrijving" }).fill("Binnenkant laten reinigen na verhuur");
+      await form.getByLabel("Leverancier", { exact: true }).fill("Wasstraat De Spoel");
       await shot(page, "19-kosten-registreren", {
         clip: form,
         marks: [
@@ -71,6 +72,7 @@ export const steps = [
           form.getByRole("spinbutton", { name: /Bedrag/ }),
           form.getByRole("textbox", { name: "Datum", exact: true }),
           form.getByRole("textbox", { name: "Omschrijving" }),
+          form.getByLabel("Leverancier", { exact: true }),
           { locator: form.getByRole("tab", { name: "Bestand uploaden" }), text: "Bon toevoegen" },
           form.getByRole("button", { name: "Kosten registreren" }),
         ],
@@ -117,7 +119,7 @@ export const steps = [
       await shot(page, "19-factuur-controleren", {
         clip: review,
         marks: [
-          review.getByRole("textbox", { name: "Leverancier" }),
+          { locator: review.getByLabel("Leverancier", { exact: true }), text: "Leverancier" },
           { locator: review.getByRole("button", { name: /^Voertuig/ }), text: "Voertuig" },
           { locator: review.getByRole("checkbox", { name: /Alles selecteren/ }), text: "Regels" },
           review.getByRole("button", { name: "Afzender vertrouwen" }),
@@ -159,6 +161,25 @@ export const steps = [
       await bin.waitFor();
       await settle(page);
       await shot(page, "19-verwijderde-kostenposten", { clip: bin });
+    },
+  },
+  {
+    // Onderhoudsanalyse: de kolom Leverancier in Alle kosten. Na 19-kosten-registreren en
+    // 19-factuur-controleren, zodat er een getypte en een uit het postvak gevulde leverancier staan.
+    name: "19-alle-kosten-leverancier",
+    async run(page) {
+      await page.setViewportSize({ width: 1280, height: 1100 });
+      await goto(page, "/expenses");
+      await closeDialogs(page);
+      await page.getByRole("button", { name: "Alle kosten" }).click();
+      await settle(page);
+      const header = page.getByRole("columnheader", { name: /Leverancier/ }).first();
+      await header.waitFor();
+      const filled = page.locator('[data-testid^="cell-supplier-"]').filter({ hasText: /\w/ }).first();
+      await shot(page, "19-alle-kosten-leverancier", {
+        marks: [{ locator: header, text: "Leverancier" }, { locator: filled, text: "leverancier" }],
+      });
+      await page.setViewportSize({ width: 1280, height: 900 });
     },
   },
 ];

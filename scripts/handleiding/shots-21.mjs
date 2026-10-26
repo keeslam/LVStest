@@ -55,6 +55,24 @@ const REPORTS = [
   ["office", "invoice-inbox-runs"], ["office", "invoice-inbox-items"], ["office", "deliveries"], ["office", "damage-checks"],
 ];
 
+/** Opent het venster Analyse onderhoudskosten (knop Onderhoudsanalyse) op het tabblad Overzicht. */
+async function openAnalysis(page) {
+  await page.setViewportSize({ width: 1280, height: 1800 });
+  await openReports(page, "?tab=vehicles");
+  await tid(page, "button-open-maintenance-costs").click();
+  const w = tid(page, "maintenance-analysis-window");
+  await w.waitFor();
+  await tid(page, "button-ma-tile-total").waitFor();
+  await settle(page);
+  await page.waitForTimeout(800);
+  return w;
+}
+
+/** De rand van het venster Analyse onderhoudskosten: vast in beeld, dus de markeringen schuiven niet. */
+async function windowBox(page) {
+  return page.locator('div[role="dialog"]').filter({ has: page.getByTestId("maintenance-analysis-window") }).last().boundingBox();
+}
+
 /** Verwijdert het oefenrapport van een vorige run, zodat er maar één is. */
 async function removeSavedReport(page) {
   const saved = await api(page, "GET", "/api/reports/saved");
@@ -637,19 +655,193 @@ export const steps = [
       await closeDialogs(page);
     },
   },
+  // Onderhoudsanalyse (21.9). Zaai eerst met `node scripts/handleiding/seed-extra.mjs --onderhoud`.
+  // Met een beheerder; 21-ma-medewerker met e2e-manager (zonder km).
   {
-    name: "21-onderhoudsanalyse",
+    name: "21-ma-venster",
     async run(page) {
-      await page.setViewportSize({ width: 1280, height: 1000 });
-      await openReports(page, "?tab=vehicles");
-      await tid(page, "button-open-maintenance-costs").click();
-      const dlg = page.locator('div[role="dialog"]').last();
-      await dlg.waitFor();
-      await settle(page);
-      await page.waitForTimeout(800);
-      await shot(page, "21-onderhoudsanalyse", { clip: dlg });
+      const w = await openAnalysis(page);
+      await shot(page, "21-ma-venster", {
+        clip: w,
+        marks: [
+          { locator: tid(page, "select-ma-preset"), text: "Periode" },
+          { locator: tid(page, "select-ma-compare"), text: "Vergelijk met" },
+          { locator: tid(page, "select-ma-category"), text: "Categorie" },
+          { locator: tid(page, "select-ma-brand"), text: "Merk" },
+          { locator: tid(page, "select-ma-model"), text: "Type" },
+          { locator: tid(page, "input-ma-year-from").locator("xpath=.."), text: "Bouwjaar" },
+          { locator: tid(page, "select-ma-kmband"), text: "Km-klasse" },
+          { locator: tid(page, "select-ma-supplier"), text: "Leverancier" },
+          { locator: w.getByRole("tablist").first(), text: "tabbladen" },
+          { locator: tid(page, "tab-content-ma-overview").getByTestId("button-report-print"), text: "Afdrukken" },
+        ],
+      });
     },
   },
+  {
+    name: "21-ma-overzicht",
+    async run(page) {
+      await openAnalysis(page);
+      const content = tid(page, "tab-content-ma-overview");
+      await shot(page, "21-ma-overzicht", {
+        clip: content,
+        marks: [
+          { locator: tid(page, "button-ma-tile-perKm"), text: "Per km" },
+          { locator: tid(page, "ma-category-chart-metric"), text: "Wat" },
+          { locator: tid(page, "ma-category-chart-kind"), text: "Hoe" },
+          { locator: tid(page, "ma-category-chart").locator(".recharts-pie-sector").first(), text: "taartstuk" },
+          { locator: tid(page, "button-ma-top-vehicles-csv"), text: "CSV" },
+        ],
+      });
+      // Een klik op een taartstuk: de kostenregels erachter.
+      await tid(page, "ma-category-chart").locator(".recharts-pie-sector").first().click();
+      const rows = tid(page, "dialog-ma-rows");
+      await rows.waitFor();
+      await settle(page);
+      await page.waitForTimeout(500);
+      await shot(page, "21-ma-regels", {
+        clip: rows,
+        marks: [
+          { locator: rows.locator('[data-testid^="link-entity-vehicle-"]').first(), text: "kenteken" },
+          { locator: rows.locator('[data-testid$="-csv"]').first(), text: "CSV" },
+          { locator: rows.locator('[data-testid$="-print"]').first(), text: "Afdrukken" },
+        ],
+      });
+    },
+  },
+  {
+    name: "21-ma-merken",
+    async run(page) {
+      await openAnalysis(page);
+      await tid(page, "tab-ma-brands").click();
+      await tid(page, "ma-brands-table").waitFor();
+      await settle(page);
+      await page.waitForTimeout(600);
+      const content = tid(page, "tab-content-ma-brands");
+      const ford = content.locator('[data-testid^="ma-brands-row-"]').filter({ hasText: /^ford$/i }).first();
+      await page.mouse.move(5, 5);
+      await shot(page, "21-ma-merken", {
+        box: await windowBox(page),
+        marks: [
+          { locator: tid(page, "ma-brand-chart-metric"), text: "Wat" },
+          { locator: tid(page, "ma-brand-chart").locator(".recharts-bar-rectangle").first(), text: "staaf" },
+          { locator: ford, text: "Ford" },
+        ],
+      });
+      await ford.click();
+      const models = tid(page, "ma-models");
+      await models.waitFor();
+      await settle(page);
+      await page.waitForTimeout(500);
+      await shot(page, "21-ma-typen", {
+        clip: models,
+        marks: [
+          { locator: models.locator('[data-testid^="ma-models-table-row-"]').first(), text: "type" },
+          { locator: tid(page, "button-ma-models-close"), text: "Typen sluiten" },
+        ],
+      });
+      const km = tid(page, "ma-kmbands");
+      await km.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(300);
+      await shot(page, "21-ma-kmklassen", {
+        clip: km,
+        marks: [
+          { locator: km.locator('[data-testid$="-0–50.000"]').first(), text: "nieuw: 0–50.000 km" },
+          { locator: km.locator('[data-testid$="-200.000+"]').first(), text: "oud: 200.000+ km" },
+        ],
+      });
+      // Terug naar alle merken: de km-klassen per merk.
+      await tid(page, "button-ma-models-close").click();
+      await page.waitForTimeout(500);
+      await km.scrollIntoViewIfNeeded();
+      await shot(page, "21-ma-kmklassen-merken", { clip: km, closeups: false });
+    },
+  },
+  {
+    name: "21-ma-voertuigen",
+    async run(page) {
+      await openAnalysis(page);
+      await tid(page, "tab-ma-vehicles").click();
+      await tid(page, "ma-vehicles-table").waitFor();
+      await settle(page);
+      const content = tid(page, "tab-content-ma-vehicles");
+      await shot(page, "21-ma-voertuigen", {
+        clip: content,
+        marks: [
+          { locator: tid(page, "ma-vehicles-table-search"), text: "Zoeken" },
+          { locator: content.getByTestId("button-report-columns"), text: "Kolommen" },
+          { locator: tid(page, "button-ma-vehicles-csv"), text: "CSV" },
+          { locator: content.locator('[data-testid*="-sort-"]').first(), text: "kolomkop" },
+        ],
+      });
+    },
+  },
+  {
+    name: "21-ma-leveranciers",
+    async run(page) {
+      await openAnalysis(page);
+      await tid(page, "tab-ma-suppliers").click();
+      await tid(page, "ma-suppliers-table").waitFor();
+      await settle(page);
+      await page.waitForTimeout(600);
+      const content = tid(page, "tab-content-ma-suppliers");
+      await page.mouse.move(5, 5);
+      await shot(page, "21-ma-leveranciers", {
+        box: await windowBox(page),
+        marks: [
+          { locator: tid(page, "ma-supplier-chart").locator(".recharts-bar-rectangle").first(), text: "staaf" },
+          { locator: content.locator('[data-testid^="ma-suppliers-table-row-"]').filter({ hasText: "Onbekend" }).first(), text: "Onbekend" },
+        ],
+      });
+    },
+  },
+  {
+    name: "21-ma-trends",
+    async run(page) {
+      await openAnalysis(page);
+      await tid(page, "tab-ma-trends").click();
+      await tid(page, "ma-trends-chart").waitFor();
+      await settle(page);
+      await page.waitForTimeout(800);
+      const content = tid(page, "tab-content-ma-trends");
+      await page.mouse.move(5, 5);
+      await shot(page, "21-ma-trends", { clip: tid(page, "ma-trends-chart").locator("xpath=ancestor::div[contains(@class,'rounded-lg')][1]"), closeups: false });
+      void content;
+      const forecast = tid(page, "ma-forecast-table");
+      await forecast.scrollIntoViewIfNeeded();
+      await shot(page, "21-ma-verwachting", {
+        clip: forecast,
+        marks: [{ locator: forecast.locator('[data-testid^="ma-forecast-table-row-"]').first(), text: "verwachting per auto" }],
+      });
+    },
+  },
+  {
+    name: "21-ma-signalen",
+    async run(page) {
+      await openAnalysis(page);
+      await tid(page, "tab-ma-signals").click();
+      await tid(page, "ma-signals-table").waitFor();
+      await settle(page);
+      const content = tid(page, "tab-content-ma-signals");
+      const row = (re) => content.locator('[data-testid^="ma-signals-table-row-"]').filter({ hasText: re }).first();
+      await shot(page, "21-ma-signalen", {
+        clip: content,
+        marks: [
+          { locator: row(/Duurder dan de groep/), text: "Duurder dan de groep" },
+          { locator: row(/Stijgende kosten/), text: "Stijgende kosten" },
+          { locator: row(/Herhaalde reparatie/), text: "Herhaalde reparatie" },
+        ],
+      });
+    },
+  },
+  {
+    name: "21-ma-medewerker",
+    async run(page) {
+      const w = await openAnalysis(page);
+      await shot(page, "21-ma-medewerker", { clip: w, marks: [{ locator: tid(page, "ma-filter-bar"), text: "geen Km-klasse" }], closeups: false });
+    },
+  },
+
   {
     name: "21-km-historie",
     async run(page) {

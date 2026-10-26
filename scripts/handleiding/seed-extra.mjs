@@ -134,8 +134,94 @@ try {
     await add(jansen.id, "maintenance", jansenRes?.id ?? null, { issue: "Het lampje van de motorstoring brandt sinds vanochtend.", mileage: 62300, urgent: false, needsReplacement: true, preferredDate: insideRental(jansenRes) }, "Graag een afspraak voor de werkplaats, liefst met een vervangende bus.", 80);
     console.log("  3 portaalaanvragen toegevoegd");
   }
+
+  // 4. Onderhoudsanalyse (hoofdstuk 21.9), alleen met --onderhoud: extra Transits en Sprinters,
+  //    onderhoudskosten met een leverancier en maandelijkse km-standen in verschillende km-klassen.
+  //    Apart aan te zetten, omdat de extra auto's anders de foto's van andere hoofdstukken veranderen.
+  if (process.argv.includes("--onderhoud")) await seedMaintenanceAnalysis(page, db, vehicles);
 } finally {
   await db.end();
   await browser.close();
 }
 console.log("Klaar.");
+
+/**
+ * Onderhoudsanalyse: vijf Ford Transits in vier km-klassen (een nieuwe met 12.000 km tot een oude met
+ * 200.000 km), vijf Mercedes Sprinters waarvan vier in de klasse 100–150.000 (één daarvan veel duurder,
+ * dus een signaal), kosten per maand in 2026 bij vijf leveranciers, één auto met stijgende kosten en één
+ * met twee keer remmen binnen 90 dagen.
+ */
+async function seedMaintenanceAnalysis(page, db, existing) {
+  const year = new Date().getFullYear();
+  const day = (month, d = 10) => `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  const FORD = "Ford Dealer Spijkenisse";
+  const MB = "Mercedes-Benz Rotterdam";
+  const VISSER = "Garage Visser";
+  const BANDEN = "Bandenland Rotterdam";
+  const REMMEN = "Remmenspecialist Zuid";
+  const fleet = [
+    { plate: "31-FTR-1", brand: "Ford", model: "Transit", built: `${year - 1}-03-01`, startKm: 12_000, pace: 2_400, costs: [
+      [3, "maintenance", 185, FORD, "Eerste beurt"], [9, "maintenance", 95, VISSER, "Ruitenwissers en controle"]] },
+    { plate: "56-TRN-7", brand: "Ford", model: "Transit", startKm: null, pace: 2_100, costs: [
+      [2, "maintenance", 240, FORD, "Kleine beurt"], [6, "tires", 520, BANDEN, "Vier banden"], [9, "maintenance", 310, FORD, "Grote beurt"]] },
+    { plate: "33-FTR-3", brand: "Ford", model: "Transit", built: "2018-05-01", startKm: 120_000, pace: 2_800, costs: [
+      [1, "maintenance", 420, VISSER, "Grote beurt"], [4, "brakes", 380, REMMEN, "Remblokken en schijven voor"],
+      [6, "maintenance", 120, VISSER, "Olie bijvullen en controle"], [7, "tires", 260, BANDEN, "Twee banden"],
+      [8, "maintenance", 410, VISSER, "Grote beurt"], [9, "brakes", 520, REMMEN, "Remschijven rondom"]] },
+    { plate: "34-FTR-4", brand: "Ford", model: "Transit", built: "2015-02-01", startKm: 200_000, pace: 2_600, costs: [
+      [1, "maintenance", 690, VISSER, "Koppeling"], [2, "brakes", 410, REMMEN, "Remmen achter"],
+      [4, "maintenance", 980, VISSER, "Turbo vervangen"], [5, "brakes", 360, REMMEN, "Remmen achter opnieuw"],
+      [6, "maintenance", 1250, VISSER, "Versnellingsbak revisie"]] },
+    { plate: "35-FTR-5", brand: "Ford", model: "Transit", built: "2021-09-01", startKm: 64_000, pace: 2_500, costs: [
+      [3, "maintenance", 260, FORD, "Kleine beurt"], [8, "tires", 480, BANDEN, "Vier banden"]] },
+    { plate: "41-MBS-1", brand: "Mercedes-Benz", model: "Sprinter", built: "2020-04-01", startKm: 104_000, pace: 3_000, costs: [
+      [2, "maintenance", 380, MB, "Grote beurt"], [6, "tires", 600, BANDEN, "Vier banden"], [9, "brakes", 340, REMMEN, "Remblokken voor"]] },
+    { plate: "42-MBS-2", brand: "Mercedes-Benz", model: "Sprinter", built: "2019-06-01", startKm: 112_000, pace: 3_000, costs: [
+      [3, "maintenance", 410, MB, "Grote beurt"], [7, "brakes", 300, REMMEN, "Remblokken achter"]] },
+    { plate: "43-MBS-3", brand: "Mercedes-Benz", model: "Sprinter", built: "2019-11-01", startKm: 108_000, pace: 3_200, costs: [
+      [1, "maintenance", 395, MB, "Grote beurt"], [5, "tires", 580, BANDEN, "Vier banden"], [10, "maintenance", 150, VISSER, "Lampen en controle"]] },
+    { plate: "44-MBS-4", brand: "Mercedes-Benz", model: "Sprinter", built: "2019-02-01", startKm: 110_000, pace: 3_100, costs: [
+      [1, "maintenance", 950, MB, "Injectoren"], [3, "maintenance", 1400, MB, "AdBlue-systeem"], [5, "brakes", 620, REMMEN, "Remschijven rondom"],
+      [7, "maintenance", 1100, MB, "Turbo"], [9, "tires", 640, BANDEN, "Vier banden"]] },
+  ];
+
+  const { rows: done } = await db.query("select count(*)::int as n from expenses where description = 'Versnellingsbak revisie'");
+  if (done[0].n > 0) { console.log("  onderhoudsanalyse al gezaaid"); return; }
+
+  let list = existing;
+  for (const v of fleet) {
+    if (list.some((x) => x.licensePlate === v.plate)) continue;
+    const endKm = v.startKm + v.pace * 9;
+    await api(page, "POST", "/api/vehicles", {
+      licensePlate: v.plate, brand: v.brand, model: v.model, vehicleType: "Van", fuel: "diesel", currentMileage: endKm,
+      productionDate: v.built, apkDate: ymd(200), availabilityStatus: "available", registeredTo: "opnaam", company: "Auto Lease LAM",
+    });
+  }
+  list = await api(page, "GET", "/api/vehicles");
+
+  let readings = 0;
+  let costs = 0;
+  for (const v of fleet) {
+    const vehicle = list.find((x) => x.licensePlate === v.plate);
+    if (!vehicle) throw new Error(`Voertuig ${v.plate} niet gevonden`);
+    // Een bestaande auto eindigt op zijn huidige km-stand.
+    const startKm = v.startKm ?? Math.max(0, Number(vehicle.currentMileage ?? 0) - v.pace * 9);
+    for (let m = 1; m <= 10; m += 1) {
+      await db.query(
+        `insert into vehicle_mileage_readings (vehicle_id, mileage, recorded_at, source, actor_name)
+         values ($1, $2, $3::timestamptz, 'manual', 'Handleiding')`,
+        [vehicle.id, startKm + v.pace * (m - 1), `${day(m, 5)}T09:00:00+02:00`],
+      );
+      readings += 1;
+    }
+    for (const [month, category, amount, supplier, description] of v.costs) {
+      await db.query(
+        `insert into expenses (vehicle_id, category, amount, date, description, supplier, created_by)
+         values ($1, $2, $3, $4, $5, $6, 'Handleiding')`,
+        [vehicle.id, category, amount, day(month), description, supplier],
+      );
+      costs += 1;
+    }
+  }
+  console.log(`  onderhoudsanalyse: ${fleet.length} auto's, ${readings} km-standen, ${costs} kostenposten`);
+}

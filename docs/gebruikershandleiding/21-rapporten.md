@@ -1250,31 +1250,310 @@ elk rapport staat hoeveel kolommen en filters het heeft, welke bron, en op welk 
 
 ## 21.9 De analyse van onderhoudskosten
 
-Hier zie je wat het onderhoud van de vloot kost. Je ziet ook welke auto's en merken het duurst zijn.
+Hier zie je wat het onderhoud van de vloot kost. Je vergelijkt merken met elkaar, en binnen een merk
+de typen. Je ziet welke auto's, leveranciers en maanden het duurst zijn. En de app wijst auto's aan
+die aandacht vragen.
 
-1. Klik in de filterbalk op **Onderhoudsanalyse**. Daarna zie je het venster **Analyse
-   onderhoudskosten**.
+De analyse telt alleen echte onderhoudskosten: **Onderhoud**, **Banden** en **Remmen**. Schade,
+brandstof, tol en parkeren tellen niet mee. Dat staat ook bovenaan het venster.
 
-   ![Het venster Analyse onderhoudskosten](afbeeldingen/21-onderhoudsanalyse.png)
-   *Het venster **Analyse onderhoudskosten**. Rechtsboven staan **Alle tijd** en **Alle merken**.
-   Daaronder de tellers en de tabbladen **Overzicht**, **Merkvergelijking**, **Voertuigdetails**
-   en **Trends**.*
+### Het venster openen
 
-2. Kies rechtsboven de periode: **Alle tijd**, **Afgelopen jaar**, **Afgelopen 6 maanden**,
-   **Afgelopen 3 maanden** of **Afgelopen maand**. Deze keuze staat los van de filterbalk.
-3. Kies ernaast eventueel één merk. Standaard staat er **Alle merken**.
-4. Lees de tellers, zoals **Totale kosten**, **Gem. per voertuig** en **Kosten per km**.
-5. Klik op een tabblad voor meer: **Overzicht**, **Merkvergelijking**, **Voertuigdetails** of
-   **Trends**.
-6. Klik rechtsboven op het kruisje. Daarna ben je terug op het scherm **Rapporten**.
+1. Klik op het scherm **Rapporten** in de filterbalk op **Onderhoudsanalyse**. Daarna zie je het
+   venster **Analyse onderhoudskosten**. Het tabblad **Overzicht** staat open. De periode is **Dit
+   jaar**.
 
-Wat je moet weten:
+   ![Het venster Analyse onderhoudskosten met de filters en de tabbladen](afbeeldingen/21-ma-venster.png)
+   *Het venster **Analyse onderhoudskosten**: 1 **Periode**, 2 **Vergelijk met**, 3 **Categorie**,
+   4 **Merk**, 5 **Type**, 6 **Bouwjaar**, 7 **Km-klasse**, 8 **Leverancier**, 9 de tabbladen,
+   10 **Afdrukken**.*
 
-- De analyse telt alleen echte onderhoudskosten: **Onderhoud**, **Banden** en **Remmen**. Schade,
-  brandstof, tol en parkeren tellen niet mee.
-- **Kosten per km** zie je alleen bij **Alle tijd**. Bij een andere periode staat er *alleen bij
-  Alle tijd: de kilometerstand is een totaal*.
-- Een merk krijgt pas een beoordeling bij minstens drie kostenregels en twee auto's.
+### De filters
+
+Bovenin staan de filters. Ze gelden voor elk tabblad van het venster. Ze staan los van de filterbalk
+van het scherm **Rapporten**.
+
+2. Kies bij **Periode** over welke tijd het gaat: **Deze maand**, **Vorige maand**, **Dit kwartaal**,
+   **Dit jaar**, **Alle gegevens** of **Zelf kiezen**.
+
+   ![Periode, van dichtbij](afbeeldingen/21-ma-venster-k1.png)
+   *Zo ziet **Periode** eruit.*
+
+3. Wil je zien of het beter of slechter gaat? Kies bij **Vergelijk met** **Vorige periode** of
+   **Zelfde periode vorig jaar**. Dat werkt zoals in 21.6.
+
+   ![Vergelijk met, van dichtbij](afbeeldingen/21-ma-venster-k2.png)
+   *Zo ziet **Vergelijk met** eruit.*
+
+4. Wil je maar één soort kosten? Kies bij **Categorie** **Onderhoud**, **Banden** of **Remmen**.
+
+   ![Categorie, van dichtbij](afbeeldingen/21-ma-venster-k3.png)
+   *Zo ziet **Categorie** eruit. Standaard staat er **Alle categorieën**.*
+
+5. Kies bij **Merk** één merk, en daarna bij **Type** één type van dat merk, bijvoorbeeld
+   **TRANSIT**.
+
+   ![Merk, van dichtbij](afbeeldingen/21-ma-venster-k4.png)
+   *Zo ziet **Merk** eruit. Standaard staat er **Alle merken**.*
+
+   ![Type, van dichtbij](afbeeldingen/21-ma-venster-k5.png)
+   *Zo ziet **Type** eruit. Je ziet alleen de typen van het gekozen merk.*
+
+6. Wil je alleen oudere of nieuwere auto's? Typ bij **Bouwjaar** een jaar bij *van* en of *tot*.
+
+   ![Bouwjaar, van dichtbij](afbeeldingen/21-ma-venster-k6.png)
+   *Zo ziet **Bouwjaar** eruit. Typ bijvoorbeeld 2018 bij van.*
+
+7. Alleen de beheerder: kies bij **Km-klasse** hoeveel kilometer de auto had toen de kosten werden
+   gemaakt. Wat een km-klasse is, staat hieronder bij **Merken en typen**.
+
+   ![Km-klasse, van dichtbij](afbeeldingen/21-ma-venster-k7.png)
+   *Zo ziet **Km-klasse** eruit. Standaard staat er **Alle km-klassen**.*
+
+8. Kies bij **Leverancier** één garage of winkel. Kosten zonder leverancier staan bij **Onbekend**.
+
+   ![Leverancier, van dichtbij](afbeeldingen/21-ma-venster-k8.png)
+   *Zo ziet **Leverancier** eruit. Standaard staat er **Alle leveranciers**.*
+
+Heb je een filter gekozen? Dan staat er ook **Filters wissen**. Daarmee zet je alles terug.
+
+![De tabbladen, van dichtbij](afbeeldingen/21-ma-venster-k9.png)
+*Zo zien de tabbladen eruit: **Overzicht**, **Merken en typen**, **Voertuigen**, **Leveranciers**,
+**Trends** en **Signalen**.*
+
+![Afdrukken, van dichtbij](afbeeldingen/21-ma-venster-k10.png)
+*Zo ziet **Afdrukken** eruit. Elk tabblad heeft deze knop. Je krijgt het afdrukvoorbeeld van 21.7 met
+het tabblad dat open staat.*
+
+### Overzicht
+
+Bovenaan staan vier getallen: **Totale kosten**, **Per auto per maand**, **Kostenposten** en (alleen
+de beheerder) **Per km**. Daaronder **Kosten per categorie** en **Duurste auto's**.
+
+![Het tabblad Overzicht](afbeeldingen/21-ma-overzicht.png)
+*Het tabblad **Overzicht**: 1 **Per km**, 2 de keuze wat de grafiek toont, 3 de keuze hoe, 4 een
+taartstuk, 5 **CSV**.*
+
+![Per km, van dichtbij](afbeeldingen/21-ma-overzicht-k1.png)
+*Zo ziet de tegel **Per km** eruit. Die ziet alleen de beheerder.*
+
+Boven elke grafiek staan twee keuzes:
+
+- Wat de grafiek toont: **Bedrag**, **Per auto per maand**, **Per km** (beheerder) of **Aantal**.
+
+  ![Wat de grafiek toont, van dichtbij](afbeeldingen/21-ma-overzicht-k2.png)
+  *Zo ziet deze keuze eruit. Hier staat **Bedrag**.*
+
+- Hoe de grafiek eruit ziet: **Staaf**, **Lijn** of **Taart**. Een taart kan alleen bij **Bedrag** en
+  **Aantal**.
+
+  ![Hoe de grafiek eruit ziet, van dichtbij](afbeeldingen/21-ma-overzicht-k3.png)
+  *Zo ziet deze keuze eruit. Hier staat **Taart**.*
+
+**Klikken voor de kostenregels.** Bijna alles in dit venster is klikbaar: een taartstuk, een staaf,
+een merk, een type, een auto, een leverancier, een maand, een tegel en een vak in de km-tabel.
+
+9. Klik bijvoorbeeld op het taartstuk **Onderhoud**. Daarna zie je het venster **Kostenregels ·
+   Onderhoud** met alle kostenposten erachter. Bovenaan staat hoeveel regels het zijn en wat ze
+   samen kosten.
+
+   ![Een taartstuk, van dichtbij](afbeeldingen/21-ma-overzicht-k4.png)
+   *Zo ziet een taartstuk eruit. Klik erop.*
+
+   ![Het venster Kostenregels · Onderhoud](afbeeldingen/21-ma-regels.png)
+   *Het venster **Kostenregels**: 1 een kenteken, 2 **CSV**, 3 **Afdrukken**.*
+
+   In dit venster kun je zoeken, sorteren en bladeren, en met **Kolommen** kolommen kiezen (21.4).
+   De beheerder ziet ook de **Km-stand** van de auto op die dag.
+
+   ![Een kenteken, van dichtbij](afbeeldingen/21-ma-regels-k1.png)
+   *Zo ziet een kenteken eruit. Klik erop voor het venster met de gegevens van de auto (21.5).*
+
+   ![CSV, van dichtbij](afbeeldingen/21-ma-regels-k2.png)
+   *Zo ziet **CSV** eruit.*
+
+   ![Afdrukken, van dichtbij](afbeeldingen/21-ma-regels-k3.png)
+   *Zo ziet **Afdrukken** eruit.*
+
+![CSV bij Duurste auto's, van dichtbij](afbeeldingen/21-ma-overzicht-k5.png)
+*Zo ziet **CSV** eruit. Elke tabel in dit venster heeft deze knop.*
+
+### Merken en typen
+
+Hier vergelijk je merken met elkaar. Klik op een merk. Dan zie je de typen van dat merk.
+
+![Het tabblad Merken en typen](afbeeldingen/21-ma-merken.png)
+*Het tabblad **Merken en typen**: 1 wat de grafiek toont, 2 een staaf, 3 het merk **FORD**.*
+
+![Wat de grafiek toont, van dichtbij](afbeeldingen/21-ma-merken-k1.png)
+*Zo ziet de keuze eruit. Kies bijvoorbeeld **Per auto per maand**. Dan telt een merk met veel auto's
+niet zwaarder.*
+
+![Een staaf, van dichtbij](afbeeldingen/21-ma-merken-k2.png)
+*Zo ziet een staaf eruit. Klik erop voor de kostenregels van dat merk.*
+
+In de tabel **Merken** staan per merk: **Auto's**, **Met kosten**, **Posten**, **Totaal**, **Per auto
+per maand**, **Per km** (beheerder) en **Oordeel**. Het oordeel is **Uitstekend**, **Goed** of
+**Gemiddeld**. Heeft een merk te weinig auto's of kostenposten? Dan staat er **Onvoldoende gegevens**.
+Dat is zo bij minder dan drie kostenregels of minder dan twee auto's.
+
+10. Klik in de tabel op een merk, bijvoorbeeld **FORD**. Daarna staat eronder **Typen van FORD**.
+
+    ![Het merk FORD, van dichtbij](afbeeldingen/21-ma-merken-k3.png)
+    *Zo ziet een merk in de tabel eruit. Klik erop.*
+
+    ![Typen van FORD](afbeeldingen/21-ma-typen.png)
+    *De typen van een merk: 1 een type, 2 **Typen sluiten**.*
+
+11. Klik op een type voor de kostenregels van dat type. Met **Typen sluiten** zie je weer alle merken.
+
+    ![Een type, van dichtbij](afbeeldingen/21-ma-typen-k1.png)
+    *Zo ziet een type eruit. Klik erop.*
+
+    ![Typen sluiten, van dichtbij](afbeeldingen/21-ma-typen-k2.png)
+    *Zo ziet **Typen sluiten** eruit.*
+
+**Km-klassen (alleen de beheerder).** Een auto met 200.000 km heeft meer onderhoud dan een nieuwe met
+20.000 km die voor de eerste beurt komt. Het is dus niet eerlijk om ze zomaar te vergelijken.
+Daarom kijkt de app bij elke kostenpost hoeveel kilometer de auto toen had. Dat haalt de app uit de
+km-historie (21.10): de laatste goede km-stand op of vóór de dag van de kosten. Zo komt elke
+kostenpost in een km-klasse:
+
+| Km-klasse | Auto's met |
+|---|---|
+| 0–50.000 | bijna nieuwe auto's |
+| 50–100.000 | |
+| 100–150.000 | |
+| 150–200.000 | |
+| 200.000+ | oude auto's met veel kilometers |
+
+Onder de tabellen staat **Kosten per km per km-klasse**. Per merk (of, na een klik op een merk, per
+type) zie je wat een kilometer onderhoud kost in elke klasse.
+
+![De km-klassen van de Transit](afbeeldingen/21-ma-kmklassen.png)
+*De km-klassen van de **TRANSIT**: 1 een nieuwe Transit (0–50.000 km) kost € 0,018 per km, 2 een oude
+Transit (200.000+ km) kost € 0,158 per km. Bijna negen keer zoveel.*
+
+![Een vak bij 0–50.000, van dichtbij](afbeeldingen/21-ma-kmklassen-k1.png)
+*Zo ziet een vak eruit. Klik erop voor de kostenregels van die auto's in die klasse.*
+
+![Een vak bij 200.000+, van dichtbij](afbeeldingen/21-ma-kmklassen-k2.png)
+*Zo ziet het vak bij 200.000+ km eruit.*
+
+![De km-klassen per merk](afbeeldingen/21-ma-kmklassen-merken.png)
+*Zonder gekozen merk: de km-klassen per merk. Een streepje betekent: geen auto's van dat merk in die
+klasse. **Onbekende km** zijn kosten van een auto zonder km-stand in de km-historie.*
+
+Wat je eraan hebt: vergelijk een Transit met 200.000 km alleen met andere Transits met zoveel
+kilometers. Is die duurder? Dan is er echt iets aan de hand. Dat doet de app ook zelf bij
+**Signalen**.
+
+### Voertuigen
+
+Een tabel met alle auto's: **Merk**, **Type**, **Bouwjaar**, **Km-klasse** (beheerder), **Posten**,
+**Totaal**, **Per maand**, **Per km** (beheerder) en **Laatste kosten**.
+
+![Het tabblad Voertuigen](afbeeldingen/21-ma-voertuigen.png)
+*Het tabblad **Voertuigen**: 1 **Zoeken**, 2 **Kolommen**, 3 **CSV**, 4 een kolomkop.*
+
+12. Zoek een auto met **Zoeken**. Een kenteken mag zonder streepjes.
+
+    ![Zoeken, van dichtbij](afbeeldingen/21-ma-voertuigen-k1.png)
+    *Zo ziet **Zoeken** eruit.*
+
+13. Klik op een kolomkop om te sorteren. Met **Kolommen** kies je welke kolommen je ziet.
+
+    ![Kolommen, van dichtbij](afbeeldingen/21-ma-voertuigen-k2.png)
+    *Zo ziet **Kolommen** eruit.*
+
+    ![Een kolomkop, van dichtbij](afbeeldingen/21-ma-voertuigen-k4.png)
+    *Zo ziet een kolomkop eruit.*
+
+14. Klik op een regel voor de kostenregels van die auto. **CSV** geeft de hele tabel.
+
+    ![CSV, van dichtbij](afbeeldingen/21-ma-voertuigen-k3.png)
+    *Zo ziet **CSV** eruit.*
+
+### Leveranciers
+
+Wat elke garage of winkel kostte: **Posten**, **Totaal** en **Gemiddeld per post**. Daaronder
+**Stilstand in de werkplaats** (werkplaatsbezoeken en dagen stil per auto) en **Grootste reparaties**.
+
+![Het tabblad Leveranciers](afbeeldingen/21-ma-leveranciers.png)
+*Het tabblad **Leveranciers**: 1 een staaf, 2 de regel **Onbekend**.*
+
+![Een staaf, van dichtbij](afbeeldingen/21-ma-leveranciers-k1.png)
+*Zo ziet een staaf eruit. Klik erop voor de kostenregels van die leverancier.*
+
+![De regel Onbekend, van dichtbij](afbeeldingen/21-ma-leveranciers-k2.png)
+*Zo ziet de regel **Onbekend** eruit. Dat zijn kosten zonder leverancier. Vul de leverancier in bij
+die kostenpost (hoofdstuk 19) om dit kleiner te maken.*
+
+De leverancier komt uit het veld **Leverancier** van een kostenpost. Bij facturen uit het
+factuurpostvak vult de app dat zelf in (hoofdstuk 19).
+
+### Trends
+
+**Kosten per maand**, als lijn, met daaronder een tabel per maand. Klik op een maand voor de
+kostenregels. Heb je **Vergelijk met** gekozen? Dan staat de oude periode er als tweede lijn bij.
+
+![Het tabblad Trends met de verwachting](afbeeldingen/21-ma-trends.png)
+*Het tabblad **Trends** (beheerder). De gele stippellijn rechts is de verwachting.*
+
+**Verwachting (alleen de beheerder).** De app schat wat het onderhoud de komende 3 maanden kost. Per
+auto rekent de app zo: hoeveel kilometer de auto per dag rijdt (uit de km-historie) × wat een
+kilometer kost voor hetzelfde type in dezelfde km-klasse × het aantal dagen. Dat telt de app op voor
+de hele vloot. Onder de grafiek staat **Verwachting per auto**.
+
+![Verwachting per auto](afbeeldingen/21-ma-verwachting.png)
+*De tabel **Verwachting per auto**: 1 de auto met de hoogste verwachting.*
+
+![Een regel van de verwachting, van dichtbij](afbeeldingen/21-ma-verwachting-k1.png)
+*Zo ziet een regel eruit: **Km-klasse**, **Km per dag**, **Per km** en **Verwachting (3 mnd)**.*
+
+Een verwachting is een schatting. Een auto zonder genoeg km-standen staat er niet in.
+
+### Signalen
+
+Auto's die aandacht vragen. Elk signaal zegt in gewone woorden waarom. Klik op een regel voor de
+kostenregels erachter.
+
+![Het tabblad Signalen](afbeeldingen/21-ma-signalen.png)
+*Het tabblad **Signalen**: 1 **Duurder dan de groep**, 2 **Stijgende kosten**, 3 **Herhaalde
+reparatie**.*
+
+Er zijn drie soorten:
+
+- **Duurder dan de groep**: de auto kost minstens 50% meer dan het gemiddelde van andere auto's van
+  hetzelfde merk en type. Er moeten minstens 3 andere auto's zijn om mee te vergelijken. De beheerder
+  vergelijkt per km in dezelfde km-klasse; een medewerker per maand.
+
+  ![Duurder dan de groep, van dichtbij](afbeeldingen/21-ma-signalen-k1.png)
+  *Zo ziet dit signaal eruit, met de reden erbij.*
+
+- **Stijgende kosten**: de kosten waren 3 maanden op rij hoger dan de maand ervoor.
+
+  ![Stijgende kosten, van dichtbij](afbeeldingen/21-ma-signalen-k2.png)
+  *Zo ziet dit signaal eruit, met de bedragen per maand.*
+
+- **Herhaalde reparatie**: dezelfde soort kosten twee keer binnen 90 dagen. Bijvoorbeeld twee keer
+  remmen.
+
+  ![Herhaalde reparatie, van dichtbij](afbeeldingen/21-ma-signalen-k3.png)
+  *Zo ziet dit signaal eruit, met de twee datums.*
+
+### Wat een medewerker ziet
+
+Alles met kilometers is alleen voor de beheerder. Een medewerker met het rapportenrecht ziet het
+venster zonder **Km-klasse**, zonder **Per km**, zonder de km-tabel bij **Merken en typen**, zonder
+**Km-stand** in de kostenregels en zonder de verwachting. Hij vergelijkt merken en typen per maand
+en per auto.
+
+![Het venster voor een medewerker](afbeeldingen/21-ma-medewerker.png)
+*Het venster voor een medewerker: 1 de filters, zonder **Km-klasse**. Bij **Overzicht** staan drie
+getallen in plaats van vier.*
+
+Klik rechtsboven op het kruisje. Daarna ben je terug op het scherm **Rapporten**.
 
 ---
 
@@ -1340,7 +1619,7 @@ mee. Met **Weer geldig maken** zet je hem terug.
 | **Ophaalrondes** | Ook **Kosten beheren** of **Instellingen beheren** |
 | **Binnengekomen facturen** | Ook **Kosten beheren** |
 | **Schadechecks** | Ook **Schadecontroles bekijken** of **Schadecontroles beheren** |
-| **Kilometerstanden vloot**, **Km-historie per voertuig**, de bron **Km-historie**, km-velden en het tabblad **Km-historie** bij een voertuig | Alleen de beheerder |
+| **Kilometerstanden vloot**, **Km-historie per voertuig**, de bron **Km-historie**, km-velden, het tabblad **Km-historie** bij een voertuig, en in de onderhoudsanalyse **Per km**, **Km-klasse** en de verwachting | Alleen de beheerder |
 | Een eigen rapport op een tabblad | Iedereen met het rapportvinkje en het vinkje voor de bron van dat rapport |
 
 Wat je moet weten:
@@ -1386,5 +1665,9 @@ Meer over vinkjes staat in [hoofdstuk 15](15-rollen-en-rechten.md).
 | Mijn rapport op een tabblad | **Opslaan** → **Tabblad** → **Periodeveld** → **Rapport opslaan** |
 | Mijn rapport aanpassen | Op het tabblad **Bewerken** → **Opslaan** of **Opslaan als nieuw** |
 | Een opgeslagen rapport draaien | **Rapportbouwer** → **Opgeslagen rapporten** → **Uitvoeren** |
-| De onderhoudskosten bekijken | **Onderhoudsanalyse** |
+| De onderhoudskosten bekijken | **Onderhoudsanalyse** → een tabblad; klik op een getal voor de kostenregels |
+| Merken en typen vergelijken | **Onderhoudsanalyse** → **Merken en typen** → klik op een merk |
+| Eerlijk vergelijken op kilometers (beheerder) | **Merken en typen** → **Kosten per km per km-klasse** |
+| Auto's die aandacht vragen | **Onderhoudsanalyse** → **Signalen** |
+| Wat het onderhoud gaat kosten (beheerder) | **Onderhoudsanalyse** → **Trends** → **Verwachting per auto** |
 | De km-historie van een auto (beheerder) | Voertuig openen → tabblad **Km-historie** |
