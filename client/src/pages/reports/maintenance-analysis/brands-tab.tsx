@@ -128,7 +128,7 @@ export function BrandsTab() {
       { id: "perVehicleMonth", label: c("perVehicleMonth"), cell: (r) => money(r.perVehicleMonth), text: (r) => money(r.perVehicleMonth), sortValue: (r) => r.perVehicleMonth, align: "right" },
     ];
     if (isAdmin) {
-      list.push({ id: "perKm", label: c("perKm"), cell: (r) => money(r.perKm, true), text: (r) => money(r.perKm, true), sortValue: (r) => r.perKm ?? null, align: "right" });
+      list.push({ id: "perKm", label: c("perKm"), cell: (r) => rateText(money, r.perKm), text: (r) => rateText(money, r.perKm), sortValue: (r) => r.perKm || null, align: "right" });
     }
     list.push({
       id: "rating", label: c("rating"),

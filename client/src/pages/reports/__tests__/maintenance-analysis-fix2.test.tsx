@@ -80,7 +80,8 @@ describe("2. Alle kosten table with Leverancier", () => {
     const row = await screen.findByTestId("row-expense-7");
     const table = row.closest("table")!;
     const minRem = Number(/min-w-\[(\d+)rem\]/.exec(table.className)?.[1] ?? 0);
-    expect(minRem).toBeGreaterThanOrEqual(64);
+    // Rapport-polish 1: narrower on purpose (fixed column widths add up to 41rem), the summary stacks below 2xl.
+    expect(minRem).toBeGreaterThanOrEqual(42);
     const supplier = screen.getByTestId("cell-supplier-7");
     expect(supplier.querySelector("span")).toHaveClass("truncate");
     expect(supplier.querySelector("span")).toHaveAttribute("title", "Garage Jansen Autoservice");

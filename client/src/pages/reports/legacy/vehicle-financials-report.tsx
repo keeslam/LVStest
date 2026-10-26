@@ -120,7 +120,8 @@ export function VehicleFinancialsReport() {
           <span className="ml-2 text-xs text-gray-500">{marginPct(r)}</span>
         </>
       ),
-      text: (r) => `${formatCurrency(r.margin)} ${marginPct(r)}`,
+      // Print, search and sort: the amount only, so the total adds up (the percentage is on screen).
+      text: (r) => formatCurrency(r.margin),
     },
   ], [t]);
   // Kolommen: hide/show columns (per user). The rows are the records themselves: no extra fields.
@@ -137,7 +138,7 @@ export function VehicleFinancialsReport() {
     perDay: perDayText(tot),
     dailyPrice: "",
     expenses: formatCurrency(tot.expenses),
-    margin: `${formatCurrency(tot.margin)} ${marginPct(tot)}`,
+    margin: formatCurrency(tot.margin),
   } : undefined;
 
   const exportCsv = () => {

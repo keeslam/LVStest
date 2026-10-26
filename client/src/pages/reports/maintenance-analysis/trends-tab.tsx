@@ -57,16 +57,23 @@ export function TrendsTab() {
   const hasPrevious = !!data?.months.some((m) => m.previous !== undefined);
   // Never a fresh [] per render: rows depends on it, and a new rows array loops through onView.
   const forecast = useMemo(() => (isAdmin && data?.forecast ? data.forecast : noRows<ForecastMonth>()), [isAdmin, data]);
-  const rows = useMemo<MonthRow[]>(() => {
-    const out: MonthRow[] = (data?.months ?? noRows<MaintenanceTrends["months"][number]>()).map((m) => ({ month: m.month, amount: m.amount, ...(m.previous !== undefined ? { previous: m.previous } : {}) }));
-    for (const f of forecast) {
+  // The table lists only real months; the forecast months go in a table of their own.
+  const rows = useMemo<MonthRow[]>(
+    () => (data?.months ?? noRows<MaintenanceTrends["months"][number]>()).map((m) => ({ month: m.month, amount: m.amount, ...(m.previous !== undefined ? { previous: m.previous } : {}) })),
+    [data],
+  );
+  const forecastRows = useMemo<MonthRow[]>(() => forecast.map((f) => ({ month: f.month, forecast: f.amount })), [forecast]);
+  // The chart draws both: the real months and, after them, the forecast months.
+  const chartRows = useMemo(() => {
+    const out = rows.map((r) => ({ ...r }));
+    for (const f of forecastRows) {
       const existing = out.find((r) => r.month === f.month);
-      if (existing) existing.forecast = f.amount;
-      else out.push({ month: f.month, forecast: f.amount });
+      if (existing) existing.forecast = f.forecast;
+      else out.push({ ...f });
     }
-    return out.sort((a, b) => (a.month < b.month ? -1 : a.month > b.month ? 1 : 0));
-  }, [data, forecast]);
-  const chartRows = useMemo(() => chartRowsOf(rows), [rows]);
+    out.sort((x, y) => (x.month < y.month ? -1 : x.month > y.month ? 1 : 0));
+    return chartRowsOf(out);
+  }, [rows, forecastRows]);
   const forecastVehicles = useMemo(() => (isAdmin && data?.forecastVehicles ? data.forecastVehicles : noRows<ForecastVehicle>()), [isAdmin, data]);
 
   const columns = useMemo<ReportTableColumn<MonthRow>[]>(() => {
@@ -77,9 +84,16 @@ export function TrendsTab() {
       { id: "amount", label: c("amount"), cell: (r) => amount(r.amount), text: (r) => amount(r.amount), sortValue: (r) => r.amount ?? null, align: "right" },
     ];
     if (hasPrevious) list.push({ id: "previous", label: t("maintenanceAnalysis.trends.previous"), cell: (r) => amount(r.previous), text: (r) => amount(r.previous), sortValue: (r) => r.previous ?? null, align: "right" });
-    if (forecast.length > 0) list.push({ id: "forecast", label: t("maintenanceAnalysis.trends.forecast"), cell: (r) => amount(r.forecast), text: (r) => amount(r.forecast), sortValue: (r) => r.forecast ?? null, align: "right" });
     return list;
-  }, [t, money, hasPrevious, forecast.length]);
+  }, [t, money, hasPrevious]);
+
+  const forecastMonthColumns = useMemo<ReportTableColumn<MonthRow>[]>(() => {
+    const c = (key: string) => t(`maintenanceAnalysis.columns.${key}`);
+    return [
+      { id: "month", label: c("month"), cell: (r) => monthLabel(r.month), text: (r) => monthLabel(r.month), sortValue: (r) => r.month },
+      { id: "forecast", label: t("maintenanceAnalysis.trends.forecast"), cell: (r) => money(r.forecast), text: (r) => money(r.forecast), sortValue: (r) => r.forecast ?? null, align: "right" },
+    ];
+  }, [t, money]);
 
   const forecastColumns = useMemo<ReportTableColumn<ForecastVehicle>[]>(() => {
     const c = (key: string) => t(`maintenanceAnalysis.columns.${key}`);
@@ -100,6 +114,7 @@ export function TrendsTab() {
   useReportPrint(data ? compactSections([
     { kind: "chart", title: k("trends.chartTitle"), getSvg: () => chartSvgFromRef(chartRef) },
     tablePrintSection({ id: "ma-trends", title: k("trends.chartTitle"), columns, rows, view, rowKey: (r) => r.month }),
+    forecastRows.length > 0 ? tablePrintSection({ id: "ma-forecast-months", title: k("trends.forecastMonthsTitle"), columns: forecastMonthColumns, rows: forecastRows, view: null, rowKey: (r) => r.month }) : null,
     forecastVehicles.length > 0 ? tablePrintSection({ id: "ma-forecast", title: k("trends.forecastTitle"), columns: forecastColumns, rows: forecastVehicles, view: forecastView, rowKey: (r) => r.vehicleId }) : null,
   ]) : null);
 
@@ -148,6 +163,17 @@ export function TrendsTab() {
           onRowClick={(r) => openMonth(r)}
         />
       </AnalysisPanel>
+      {forecastRows.length > 0 && (
+        <AnalysisPanel title={k("trends.forecastMonthsTitle")} description={k("trends.forecastMonthsDesc")}>
+          <ReportTable
+            rows={forecastRows}
+            columns={forecastMonthColumns}
+            rowKey={(r) => r.month}
+            defaultSort={{ id: "month", dir: "asc" }}
+            testId="ma-forecast-months-table"
+          />
+        </AnalysisPanel>
+      )}
       {forecastVehicles.length > 0 && (
         <AnalysisPanel title={k("trends.forecastTitle")} description={k("trends.forecastDesc", { months: FORECAST_MONTHS })}>
           <ReportTable

@@ -143,6 +143,8 @@
       "forecast": "Estimare",
       "forecastAmount": "Estimare ({{months}} luni)",
       "forecastTitle": "Estimare pe mașină",
+      "forecastMonthsTitle": "Estimare pe lună",
+      "forecastMonthsDesc": "Costurile estimate pentru lunile următoare. Doar pentru administratori.",
       "forecastDesc": "Pentru următoarele {{months}} luni: km pe zi × cost pe km al aceluiași tip în același interval km. Doar pentru administratori.",
       "forecastHint": "Linia punctată este estimarea. Faceți clic pe o lună pentru pozițiile de cost."
     },

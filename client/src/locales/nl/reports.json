@@ -143,6 +143,8 @@
       "forecast": "Verwachting",
       "forecastAmount": "Verwachting ({{months}} mnd)",
       "forecastTitle": "Verwachting per auto",
+      "forecastMonthsTitle": "Verwachting per maand",
+      "forecastMonthsDesc": "De verwachte kosten voor de komende maanden. Alleen voor beheerders.",
       "forecastDesc": "Voor de komende {{months}} maanden: km per dag × kosten per km van hetzelfde type in dezelfde km-klasse. Alleen voor beheerders.",
       "forecastHint": "De stippellijn is de verwachting. Klik op een maand voor de kostenregels."
     },

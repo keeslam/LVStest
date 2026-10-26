@@ -143,6 +143,8 @@
       "forecast": "Previsión",
       "forecastAmount": "Previsión ({{months}} meses)",
       "forecastTitle": "Previsión por coche",
+      "forecastMonthsTitle": "Previsión por mes",
+      "forecastMonthsDesc": "Los costes previstos para los próximos meses. Solo para administradores.",
       "forecastDesc": "Para los próximos {{months}} meses: km al día × coste por km del mismo tipo en el mismo tramo de km. Solo para administradores.",
       "forecastHint": "La línea discontinua es la previsión. Haga clic en un mes para ver sus líneas de coste."
     },

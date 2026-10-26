@@ -359,3 +359,19 @@ describe("filters, periods and export", () => {
     expect(rows[0]).toEqual(["28-12-2026", "AA-003-B", "Brandstof", "Post 84", "126,00"]);
   });
 });
+
+describe("Alle kosten op 1280px (rapport-polish 1)", () => {
+  it("stacks the Kostensamenvatting under the table below 2xl and the table needs no wide minimum, so Bedrag stays in view", async () => {
+    const user = userEvent.setup();
+    const { container } = renderPage();
+    await user.click(await screen.findByTestId("button-view-table"));
+    await screen.findByTestId("expenses-rows-shown");
+    const layout = screen.getByTestId("expenses-layout");
+    expect(layout.className).toContain("2xl:grid-cols-4");
+    expect(layout.className).not.toMatch(/(^|\s)(md|lg|xl):grid-cols-4/);
+    expect(screen.getByTestId("expenses-table-card").className).toContain("2xl:col-span-3");
+    const tableEl = container.querySelector("table")!;
+    expect(tableEl.className).not.toContain("min-w-[64rem]");
+    expect(container.querySelector("td.max-w-0")).not.toBeNull();
+  });
+});

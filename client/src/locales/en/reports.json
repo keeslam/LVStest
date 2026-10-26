@@ -143,6 +143,8 @@
       "forecast": "Forecast",
       "forecastAmount": "Forecast ({{months}} mo)",
       "forecastTitle": "Forecast per car",
+      "forecastMonthsTitle": "Forecast per month",
+      "forecastMonthsDesc": "The expected costs for the coming months. Administrators only.",
       "forecastDesc": "For the next {{months}} months: km per day × cost per km of the same type in the same km band. Admins only.",
       "forecastHint": "The dashed line is the forecast. Click a month for its cost lines."
     },

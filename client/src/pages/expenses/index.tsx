@@ -216,8 +216,9 @@ export default function ExpensesIndex() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="md:col-span-3">
+      {/* Below 2xl the summary sits under the table, so the table has the full width (Bedrag in view at 1280px). */}
+      <div className="grid grid-cols-1 2xl:grid-cols-4 gap-6" data-testid="expenses-layout">
+        <Card className="2xl:col-span-3" data-testid="expenses-table-card">
           <CardHeader>
             <CardTitle>{t('indexPage.tableTitle')}</CardTitle>
             <CardDescription>

@@ -143,6 +143,8 @@
       "forecast": "Prognoza",
       "forecastAmount": "Prognoza ({{months}} mies.)",
       "forecastTitle": "Prognoza na auto",
+      "forecastMonthsTitle": "Prognoza na miesiąc",
+      "forecastMonthsDesc": "Przewidywane koszty na najbliższe miesiące. Tylko dla administratorów.",
       "forecastDesc": "Na najbliższe miesiące ({{months}}): km dziennie × koszt na km tego samego typu w tym samym przedziale km. Tylko dla administratorów.",
       "forecastHint": "Linia przerywana to prognoza. Kliknij miesiąc, aby zobaczyć pozycje kosztów."
     },
