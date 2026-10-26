@@ -128,10 +128,16 @@ Rechts boven de lijst kies je hoe je de kosten ziet.
 ### Een kostenpost openen
 
 11. Elke regel heeft rechts twee knopjes. Klik op het oogje. Je ziet nu het venster
-    **Kostendetails**. Daar staan de datum, de categorie, het bedrag, het voertuig, de omschrijving
-    en de bon. Onderaan zie je wie de kostenpost heeft gemaakt of veranderd.
+    **Kostendetails**. Daar staan de datum, de categorie, het bedrag, het voertuig, de omschrijving,
+    de **Leverancier** en de bon. Onderaan zie je wie de kostenpost heeft gemaakt of veranderd.
 12. Klopt er iets niet? Klik op **Kosten bewerken**. Pas het aan en klik op **Kosten bijwerken**.
     Je ziet dan *Kosten succesvol bijgewerkt*.
+
+    ![Het venster Kostendetails met de leverancier (1)](afbeeldingen/19-kostendetails-leverancier.png)
+    *Het venster **Kostendetails**: 1 **Leverancier**. Zonder leverancier staat er een streepje.*
+
+    ![De leverancier in Kostendetails, van dichtbij](afbeeldingen/19-kostendetails-leverancier-k1.png)
+    *Zo ziet **Leverancier** in **Kostendetails** eruit.*
 
 Het rode prullenbakje naast het oogje is voor verwijderen. Dat staat in 19.7.
 

@@ -179,6 +179,13 @@ export const steps = [
       await shot(page, "19-alle-kosten-leverancier", {
         marks: [{ locator: header, text: "Leverancier" }, { locator: filled, text: "leverancier" }],
       });
+      // Kostendetails toont de leverancier.
+      await filled.click();
+      const details = page.locator('div[role="dialog"]').filter({ has: page.getByTestId("detail-supplier") }).last();
+      await details.waitFor();
+      await settle(page);
+      await shot(page, "19-kostendetails-leverancier", { clip: details, marks: [{ locator: page.getByTestId("detail-supplier").locator("xpath=.."), text: "Leverancier" }] });
+      await closeDialogs(page);
       await page.setViewportSize({ width: 1280, height: 900 });
     },
   },

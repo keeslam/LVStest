@@ -662,32 +662,35 @@ voorbeeld is precies wat er op papier komt.
    staat het voorbeeld op A4.
 
    ![Het afdrukvoorbeeld met de keuzes links en het voorbeeld rechts](afbeeldingen/21-afdrukvoorbeeld.png)
-   *Het afdrukvoorbeeld van **Voertuigbenutting**: 1 **Tegels**, 2 **Grafiek**, 3 **Tabel**,
-   4 de keuze voor de regels, 5 **Liggend**, 6 **Afdrukken**.*
+   *Het afdrukvoorbeeld van **Voertuigbenutting**: 1 **Tegels**, 2 de grafiek, 3 **Tabel**,
+   4 **Regels**, 5 **Liggend**, 6 **Afdrukken**.*
 
-4. Kies wat er mee moet. Alles staat standaard aan. Het voorbeeld verandert meteen mee.
+4. Kies onder **Onderdelen** wat er mee moet. Elk onderdeel (de tegels, elke grafiek, elke tabel)
+   heeft een eigen vinkje. Alles staat standaard aan. Het voorbeeld verandert meteen mee.
 
    - **Tegels**: de vakjes met de getallen.
 
      ![Tegels, van dichtbij](afbeeldingen/21-afdrukvoorbeeld-k1.png)
      *Zo ziet het vinkje **Tegels** eruit.*
 
-   - **Grafiek**: de grafiek, zoals je hem op het scherm ziet.
+   - De grafiek, zoals je hem op het scherm ziet. Het onderdeel heet zoals de grafiek.
 
-     ![Grafiek, van dichtbij](afbeeldingen/21-afdrukvoorbeeld-k2.png)
-     *Zo ziet het vinkje **Grafiek** eruit.*
+     ![Het vinkje van de grafiek, van dichtbij](afbeeldingen/21-afdrukvoorbeeld-k2.png)
+     *Zo ziet het vinkje van de grafiek eruit.*
 
    - **Tabel**: de tabel met de regels.
 
      ![Tabel, van dichtbij](afbeeldingen/21-afdrukvoorbeeld-k3.png)
      *Zo ziet het vinkje **Tabel** eruit.*
 
-   - Onder **Tabel** kies je welke regels: **Alle regels**, **Alleen deze pagina** (de pagina die je
-     op het scherm ziet, met je zoekterm en sortering) of **Alleen aangevinkte** (alleen bij een
-     lijst met vinkjes).
+   - Met de pijltjes naast een onderdeel zet je het hoger of lager op het papier.
+   - Bij **Regels** kies je welke regels: **Alle regels**, **Alleen deze pagina** (de pagina die je
+     op het scherm ziet, met je zoekterm en sortering), **Alleen aangevinkte** (alleen bij een
+     lijst met vinkjes) of **Zelf kiezen** (zie het voorbeeld hieronder). Heeft het rapport meer
+     tabellen? Dan kies je het per tabel bij **Meer keuzes**.
 
-     ![De keuze voor de regels, van dichtbij](afbeeldingen/21-afdrukvoorbeeld-k4.png)
-     *Zo ziet de keuze voor de regels eruit. Standaard staat er **Alle regels**.*
+     ![Regels, van dichtbij](afbeeldingen/21-afdrukvoorbeeld-k4.png)
+     *Zo ziet **Regels** eruit. Standaard staat er **Alle regels**.*
 
    - **Liggend**: het papier ligt dwars. Handig bij een brede tabel.
 
@@ -696,6 +699,11 @@ voorbeeld is precies wat er op papier komt.
 
      ![Het afdrukvoorbeeld liggend](afbeeldingen/21-afdrukvoorbeeld-liggend.png)
      *Hetzelfde voorbeeld met **Liggend** aan.*
+
+   - **Elk onderdeel op een nieuwe pagina**: de tegels, de grafiek en de tabel krijgen elk een
+     eigen blad.
+   - **Opmaak en kop**: een eigen **Titel**, een **Notitie bovenaan**, de **Lettergrootte** (**Klein**,
+     **Normaal** of **Groot**) en **Filterregels tonen** (de regels met de gekozen auto of categorie).
 
 5. Kijk het voorbeeld na. Bovenaan staan de naam van het bedrijf, de naam van het rapport en de
    periode. Gekozen auto of categorie staan eronder. Onderaan elke pagina staat *Gedrukt op* met de
@@ -706,7 +714,95 @@ voorbeeld is precies wat er op papier komt.
    ![De knop Afdrukken in het voorbeeld, van dichtbij](afbeeldingen/21-afdrukvoorbeeld-k6.png)
    *Zo ziet de knop **Afdrukken** eruit. Klik erop. Daarna opent het afdrukvenster.*
 
-Wil je niet afdrukken? Klik rechtsboven op het kruisje. Daarna ben je terug bij het rapport.
+Wil je niet afdrukken? Klik rechtsboven op het kruisje. Daarna ben je terug bij het rapport. Je
+keuzes blijven bewaard zolang het rapport open staat.
+
+![Alle keuzes in het afdrukvenster](afbeeldingen/21-print-opties.png)
+*Alle keuzes links in het afdrukvenster: 1 **Onderdelen**, 2 een pijltje omlaag, 3 **Meer keuzes**
+bij een tabel, 4 **Regels**, 5 **Liggend**, 6 **Elk onderdeel op een nieuwe pagina**, 7 **Opmaak en
+kop**, 8 **Afdrukken**.*
+
+![Een pijltje omlaag, van dichtbij](afbeeldingen/21-print-opties-k2.png)
+*Zo ziet een pijltje omlaag eruit. Klik erop. Daarna komt dit onderdeel een plek lager.*
+
+![Meer keuzes, van dichtbij](afbeeldingen/21-print-opties-k3.png)
+*Zo ziet **Meer keuzes** eruit. Klik erop voor de regels, kolommen en sortering van deze tabel.*
+
+![Elk onderdeel op een nieuwe pagina, van dichtbij](afbeeldingen/21-print-opties-k6.png)
+*Zo ziet **Elk onderdeel op een nieuwe pagina** eruit.*
+
+![Opmaak en kop, van dichtbij](afbeeldingen/21-print-opties-k7.png)
+*Zo ziet **Opmaak en kop** eruit. Klik erop om het open te klappen.*
+
+### Voorbeeld: vier auto's vergelijken
+
+Je wilt de vier Sprinters naast elkaar op papier, de duurste bovenaan, met een eigen titel. Zo doe
+je dat.
+
+1. Open **Financieel** → **Kosten en opbrengst per voertuig**. Kies bij **Periode** **Dit jaar**.
+   Klik op **Afdrukken**.
+2. Haal onder **Onderdelen** de vinkjes bij **Tegels** en bij de grafiek weg. Alleen de tabel blijft.
+3. Klik bij **Tabel** op **Meer keuzes**. Kies bij **Regels** **Zelf kiezen**. Daarna zie je een
+   lijst met alle auto's, elk met een vinkje.
+4. Klik op **Alles uit**. Typ in **Zoeken** *MBS*. Een kenteken mag zonder streepjes. Klik op
+   **Alles aan**. Daarna staan de vier Sprinters aan. De teller zegt *4 van 18 gekozen*. Je kunt ook
+   zelf losse vinkjes aan- of uitzetten.
+
+   ![Zelf kiezen met de vier Sprinters](afbeeldingen/21-print-zelf-kiezen.png)
+   *Zelf kiezen: 1 **Zelf kiezen**, 2 **Zoeken**, 3 **Alles aan**, 4 **Alles uit**, 5 de teller. Rechts
+   staan alleen de vier gekozen auto's, met **Totaal (gekozen regels)**.*
+
+   ![Zelf kiezen, van dichtbij](afbeeldingen/21-print-zelf-kiezen-k1.png)
+   *Zo ziet **Zelf kiezen** eruit.*
+
+   ![Zoeken, van dichtbij](afbeeldingen/21-print-zelf-kiezen-k2.png)
+   *Zo ziet **Zoeken** eruit. Typ een stuk van het kenteken of de naam.*
+
+   ![Alles aan, van dichtbij](afbeeldingen/21-print-zelf-kiezen-k3.png)
+   *Zo ziet **Alles aan** eruit. Het zet alle regels aan die je met **Zoeken** ziet.*
+
+   ![Alles uit, van dichtbij](afbeeldingen/21-print-zelf-kiezen-k4.png)
+   *Zo ziet **Alles uit** eruit.*
+
+   ![De teller, van dichtbij](afbeeldingen/21-print-zelf-kiezen-k5.png)
+   *Zo ziet de teller eruit: hoeveel regels je gekozen hebt.*
+
+5. Haal onder **Kolommen** de vinkjes weg bij wat je niet nodig hebt, bijvoorbeeld **Huurdagen**,
+   **Per huurdag** en **Dagprijs**. Kies bij **Sorteren** **Kosten** en **Aflopend**. Daarna staat
+   de duurste Sprinter bovenaan.
+
+   ![Kolommen en Sorteren](afbeeldingen/21-print-kolommen.png)
+   *1 **Kolommen**, 2 **Sorteren**.*
+
+   ![Kolommen, van dichtbij](afbeeldingen/21-print-kolommen-k1.png)
+   *Zo zien de **Kolommen** eruit. Eén kolom moet aan blijven.*
+
+   ![Sorteren, van dichtbij](afbeeldingen/21-print-kolommen-k2.png)
+   *Zo ziet **Sorteren** eruit.*
+
+6. Klik op **Opmaak en kop**. Typ bij **Titel** *Vier Sprinters vergeleken*. Typ bij **Notitie
+   bovenaan** waarom je het afdrukt. Kies bij **Lettergrootte** **Groot**.
+
+   ![Opmaak en kop](afbeeldingen/21-print-opmaak.png)
+   *Opmaak en kop: 1 **Titel**, 2 **Notitie bovenaan**, 3 **Lettergrootte**, 4 **Filterregels tonen**.*
+
+   ![Titel, van dichtbij](afbeeldingen/21-print-opmaak-k1.png)
+   *Zo ziet **Titel** eruit. Leeg betekent: de naam van het rapport.*
+
+   ![Notitie bovenaan, van dichtbij](afbeeldingen/21-print-opmaak-k2.png)
+   *Zo ziet **Notitie bovenaan** eruit.*
+
+   ![Lettergrootte, van dichtbij](afbeeldingen/21-print-opmaak-k3.png)
+   *Zo ziet **Lettergrootte** eruit.*
+
+   ![Filterregels tonen, van dichtbij](afbeeldingen/21-print-opmaak-k4.png)
+   *Zo ziet **Filterregels tonen** eruit.*
+
+7. Kijk het voorbeeld na. De totaalregel heet nu **Totaal (gekozen regels)**: het telt alleen de
+   vier gekozen auto's. Klik op **Afdrukken**.
+
+   ![Het voorbeeld met vier Sprinters](afbeeldingen/21-print-resultaat.png)
+   *Het resultaat: de titel, de notitie, vier Sprinters van duur naar goedkoop en het totaal.*
 
 **Alleen aangevinkte regels.** In **Transporten** → **Voertuigtransporten** staat voor elke regel
 een vinkje.
@@ -1394,8 +1490,9 @@ niet zwaarder.*
 
 In de tabel **Merken** staan per merk: **Auto's**, **Met kosten**, **Posten**, **Totaal**, **Per auto
 per maand**, **Per km** (beheerder) en **Oordeel**. Het oordeel is **Uitstekend**, **Goed** of
-**Gemiddeld**. Heeft een merk te weinig auto's of kostenposten? Dan staat er **Onvoldoende gegevens**.
-Dat is zo bij minder dan drie kostenregels of minder dan twee auto's.
+**Gemiddeld**. Het vergelijkt altijd met de hele vloot, ook als je filtert. Heeft een merk te weinig
+auto's of kostenposten? Dan staat er **Onvoldoende gegevens**. Dat is zo bij minder dan drie
+kostenregels of minder dan twee auto's.
 
 10. Klik in de tabel op een merk, bijvoorbeeld **FORD**. Daarna staat eronder **Typen van FORD**.
 
@@ -1428,7 +1525,8 @@ kostenpost in een km-klasse:
 | 200.000+ | oude auto's met veel kilometers |
 
 Onder de tabellen staat **Kosten per km per km-klasse**. Per merk (of, na een klik op een merk, per
-type) zie je wat een kilometer onderhoud kost in elke klasse.
+type) zie je wat een kilometer onderhoud kost in elke klasse. Een streepje betekent: geen auto's in
+die klasse, of nog geen bedrag per km.
 
 ![De km-klassen van de Transit](afbeeldingen/21-ma-kmklassen.png)
 *De km-klassen van de **TRANSIT**: 1 een nieuwe Transit (0–50.000 km) kost € 0,018 per km, 2 een oude
@@ -1447,6 +1545,79 @@ klasse. **Onbekende km** zijn kosten van een auto zonder km-stand in de km-histo
 Wat je eraan hebt: vergelijk een Transit met 200.000 km alleen met andere Transits met zoveel
 kilometers. Is die duurder? Dan is er echt iets aan de hand. Dat doet de app ook zelf bij
 **Signalen**.
+
+**Typen van één merk vergelijken.** Kies bovenin bij **Merk** een merk, bijvoorbeeld **FORD**. Daarna
+toont **Merken en typen** alleen de typen van dat merk: de grafiek **Kosten per type van FORD**, de
+tabel **Typen van FORD** en de km-klassen per type.
+
+![Merk FORD gekozen: de typen van Ford](afbeeldingen/21-ma-merk-filter.png)
+*Merk **FORD**: 1 het filter **Merk**, 2 een type in de grafiek, 3 een type in de tabel.*
+
+![Het filter Merk, van dichtbij](afbeeldingen/21-ma-merk-filter-k1.png)
+*Zo ziet **Merk** eruit met **FORD** gekozen.*
+
+![Een type in de grafiek, van dichtbij](afbeeldingen/21-ma-merk-filter-k2.png)
+*Zo ziet een type in de grafiek eruit. Klik erop voor de kostenregels.*
+
+![Een type in de tabel, van dichtbij](afbeeldingen/21-ma-merk-filter-k3.png)
+*Zo ziet een type in de tabel eruit. Klik erop. Daarna staat het als **Type** in het filter en zie
+je het profiel.*
+
+Voorbeeld: de Transit kost **€ 184,59** per auto per maand, de Transit Custom **€ 74,76**. Kies bij
+**Wat** **Per auto per maand**. Dan telt een type met meer auto's niet zwaarder.
+
+### Het profiel van één type
+
+1. Kies bovenin bij **Merk** én bij **Type**, bijvoorbeeld **MERCEDES-BENZ** en **SPRINTER**. Daarna
+    staat bovenaan **Merken en typen** het **Profiel van SPRINTER**.
+
+    ![Het profiel van de Sprinter](afbeeldingen/21-ma-profiel.png)
+    *Het profiel: 1 het filter **Type**, 2 wat dit type kost per auto per maand, 3 wat de hele vloot
+    kost, 4 **Advies vervangen**, 5 **Onderhoudsinterval**, 6 de auto's met een veel korter
+    interval.*
+
+    ![Het filter Type, van dichtbij](afbeeldingen/21-ma-profiel-k1.png)
+    *Zo ziet **Type** eruit met **SPRINTER** gekozen.*
+
+Bovenaan staan **Auto's**, **Gemiddelde leeftijd**, **Gemiddelde km-stand** (beheerder), **Per auto
+per maand** van dit type en **Hele vloot per auto per maand**. Zo zie je meteen of dit type duurder
+is dan gemiddeld.
+
+![Per auto per maand van dit type, van dichtbij](afbeeldingen/21-ma-profiel-k2.png)
+*Zo ziet **Per auto per maand** van dit type eruit.*
+
+![Hele vloot per auto per maand, van dichtbij](afbeeldingen/21-ma-profiel-k3.png)
+*Zo ziet **Hele vloot per auto per maand** eruit. Vergelijk het met het getal ernaast.*
+
+**Advies vervangen.** Een auto krijgt dit advies als hij het afgelopen jaar en ook het afgelopen half
+jaar minstens 50% duurder was dan de andere auto's van hetzelfde type. Er moeten minstens 3 andere
+auto's zijn om mee te vergelijken. De beheerder vergelijkt per km in dezelfde km-klasse. Je ziet
+hoeveel keer zo duur hij was, over 12 en over 6 maanden. Het is een hint, geen besluit.
+
+![Advies vervangen, van dichtbij](afbeeldingen/21-ma-profiel-k4.png)
+*Zo ziet **Advies vervangen** eruit: *44-MBS-4 Deze auto is al een jaar duidelijk duurder dan andere
+SPRINTER's. Misschien tijd om vervanging te overwegen.* Klik op het kenteken voor de auto.*
+
+**Onderhoudsinterval.** Hoeveel maanden er gemiddeld tussen twee onderhoudsbeurten zitten, over de
+laatste 24 maanden. De beheerder ziet ook de kilometers ertussen. Daaronder staan de auto's met een
+veel korter interval: minstens de helft korter dan het gemiddelde van het type. Die komen dus
+vaker naar de werkplaats.
+
+![Onderhoudsinterval, van dichtbij](afbeeldingen/21-ma-profiel-k5.png)
+*Zo ziet **Onderhoudsinterval** eruit.*
+
+![Auto's met een veel korter interval, van dichtbij](afbeeldingen/21-ma-profiel-k6.png)
+*Zo ziet de tabel **Auto's met een veel korter interval** eruit.*
+
+Daaronder staan kleine tabellen: **Kosten per categorie**, **Meest voorkomende reparaties**, **Kosten
+per bouwjaar**, **Kosten per km-klasse** (beheerder), **Goedkoopste auto's**, **Duurste auto's** en
+**Leveranciers**. Klik op een regel voor de kostenregels. Elke tabel heeft **CSV**. Met **Afdrukken**
+komt het profiel mee op papier.
+
+![De tabellen van het profiel](afbeeldingen/21-ma-profiel-tabellen.png)
+*De tabellen van het profiel.*
+
+Klik bovenin op **Filters wissen**. Daarna zie je weer alle merken.
 
 ### Voertuigen
 
@@ -1498,7 +1669,8 @@ factuurpostvak vult de app dat zelf in (hoofdstuk 19).
 kostenregels. Heb je **Vergelijk met** gekozen? Dan staat de oude periode er als tweede lijn bij.
 
 ![Het tabblad Trends met de verwachting](afbeeldingen/21-ma-trends.png)
-*Het tabblad **Trends** (beheerder). De gele stippellijn rechts is de verwachting.*
+*Het tabblad **Trends** (beheerder). De gele stippellijn rechts is de verwachting. Maanden die nog
+moeten komen, staan er niet als € 0 in: de lijn gaat over in de verwachting.*
 
 **Verwachting (alleen de beheerder).** De app schat wat het onderhoud de komende 3 maanden kost. Per
 auto rekent de app zo: hoeveel kilometer de auto per dag rijdt (uit de km-historie) × wat een

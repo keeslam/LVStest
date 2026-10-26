@@ -835,6 +835,138 @@ export const steps = [
     },
   },
   {
+    // Merk en type als filter: de typen van een merk en het profiel van één type.
+    name: "21-ma-profiel",
+    async run(page) {
+      await openAnalysis(page);
+      await tid(page, "tab-ma-brands").click();
+      await tid(page, "ma-brands-table").waitFor();
+      await choose(page, "select-ma-brand", "FORD");
+      await settle(page);
+      await page.waitForTimeout(800);
+      await page.mouse.move(5, 5);
+      await shot(page, "21-ma-merk-filter", {
+        box: await windowBox(page),
+        marks: [
+          { locator: tid(page, "select-ma-brand"), text: "Merk: FORD" },
+          { locator: tid(page, "ma-brand-chart").locator(".recharts-bar-rectangle").first(), text: "een type" },
+          { locator: page.locator('[data-testid^="ma-models-type-"]').first(), text: "type als filter" },
+        ],
+      });
+      await choose(page, "select-ma-brand", "MERCEDES-BENZ");
+      await choose(page, "select-ma-model", "SPRINTER");
+      const profile = tid(page, "ma-profile");
+      await profile.waitFor();
+      await settle(page);
+      await page.waitForTimeout(800);
+      await profile.evaluate((el) => el.scrollIntoView({ block: "start" }));
+      await page.waitForTimeout(300);
+      await shot(page, "21-ma-profiel", {
+        box: await windowBox(page),
+        marks: [
+          { locator: tid(page, "select-ma-model"), text: "Type: SPRINTER" },
+          { locator: tid(page, "ma-profile-per-month"), text: "dit type" },
+          { locator: tid(page, "ma-profile-fleet"), text: "hele vloot" },
+          { locator: tid(page, "ma-profile-hints"), text: "Advies vervangen" },
+          { locator: tid(page, "ma-profile-interval"), text: "Onderhoudsinterval" },
+          { locator: tid(page, "ma-profile-outliers-table"), text: "veel korter interval" },
+        ],
+      });
+      const grid = page.locator('[data-testid="ma-profile-categories-table"]');
+      await grid.evaluate((el) => el.scrollIntoView({ block: "start" }));
+      await page.waitForTimeout(300);
+      await shot(page, "21-ma-profiel-tabellen", { box: await windowBox(page), closeups: false });
+    },
+  },
+  {
+    // Afdrukken: vier auto's vergelijken met Zelf kiezen, Kolommen, Sorteren en Opmaak en kop.
+    name: "21-print-vergelijken",
+    async run(page) {
+      await page.setViewportSize({ width: 1280, height: 1100 });
+      await openReport(page, "financial", "vehicle-financials");
+      await choose(page, "select-report-preset", "Dit jaar");
+      await settle(page);
+      await tid(page, "button-report-print").click();
+      const dlg = tid(page, "dialog-report-print");
+      await dlg.waitFor();
+      await tid(page, "print-preview-frame").waitFor();
+      await page.waitForTimeout(800);
+      const box = async () => dlg.boundingBox();
+      await shot(page, "21-print-opties", {
+        box: await box(),
+        marks: [
+          { locator: tid(page, "print-sections"), text: "Onderdelen" },
+          { locator: dlg.locator('[data-testid^="print-move-down-"]').first(), text: "omlaag" },
+          { locator: dlg.locator('[data-testid^="print-more-"]').first(), text: "Meer keuzes" },
+          { locator: tid(page, "print-option-rows"), text: "Regels" },
+          { locator: tid(page, "print-option-landscape").locator("xpath=.."), text: "Liggend" },
+          { locator: tid(page, "print-option-pagebreak").locator("xpath=.."), text: "nieuwe pagina" },
+          { locator: tid(page, "print-layout-toggle"), text: "Opmaak en kop" },
+          { locator: tid(page, "button-print-confirm"), text: "Afdrukken" },
+        ],
+      });
+      // Alleen de tabel: tegels en grafiek uit.
+      await tid(page, "print-option-tiles").uncheck();
+      await tid(page, "print-option-chart").uncheck();
+      // Zelf kiezen: de vier Sprinters van de vloot.
+      await dlg.locator('[data-testid^="print-more-"]').first().click();
+      const rows = dlg.locator('[data-testid^="print-rows-"]').first();
+      await rows.selectOption("pick");
+      await page.waitForTimeout(400);
+      await dlg.locator('[data-testid^="print-pick-none-"]').first().click();
+      await dlg.locator('[data-testid^="print-pick-search-"]').first().fill("MBS");
+      await page.waitForTimeout(400);
+      await dlg.locator('[data-testid^="print-pick-all-"]').first().click();
+      await page.waitForTimeout(800);
+      await shot(page, "21-print-zelf-kiezen", {
+        box: await box(),
+        marks: [
+          { locator: rows, text: "Zelf kiezen" },
+          { locator: dlg.locator('[data-testid^="print-pick-search-"]').first(), text: "Zoeken" },
+          { locator: dlg.locator('[data-testid^="print-pick-all-"]').first(), text: "Alles aan" },
+          { locator: dlg.locator('[data-testid^="print-pick-none-"]').first(), text: "Alles uit" },
+          { locator: dlg.locator('[data-testid^="print-pick-count-"]').first(), text: "teller" },
+        ],
+      });
+      // Kolommen: zonder Huurdagen, Per huurdag en Dagprijs; sorteren op Kosten, aflopend.
+      for (const id of ["rentalDays", "perDay", "dailyPrice"]) {
+        const box = dlg.locator(`[data-testid^="print-column-"][data-testid$="-${id}"]`).first();
+        if (await box.isVisible().catch(() => false)) await box.uncheck();
+      }
+      const sort = dlg.locator('select[data-testid^="print-sort-"]:not([data-testid^="print-sort-dir-"])').first();
+      await sort.selectOption({ label: "Kosten" });
+      await dlg.locator('[data-testid^="print-sort-dir-"]').first().selectOption("desc");
+      await page.waitForTimeout(800);
+      await dlg.locator('[data-testid^="print-column-"]').first().scrollIntoViewIfNeeded();
+      await shot(page, "21-print-kolommen", {
+        box: await box(),
+        marks: [
+          { locator: dlg.locator('[data-testid^="print-column-"]').first().locator("xpath=ancestor::fieldset[1]"), text: "Kolommen" },
+          { locator: sort.locator("xpath=.."), text: "Sorteren" },
+        ],
+      });
+      // Opmaak en kop.
+      await tid(page, "print-layout-toggle").click();
+      await tid(page, "print-option-title").fill("Vier Sprinters vergeleken");
+      await tid(page, "print-option-note").fill("Welke Sprinter kost het meest? Voor het overleg met de werkplaats.");
+      await tid(page, "print-option-fontsize").selectOption("large");
+      await page.waitForTimeout(1000);
+      await tid(page, "print-option-fontsize").scrollIntoViewIfNeeded();
+      await shot(page, "21-print-opmaak", {
+        box: await box(),
+        marks: [
+          { locator: tid(page, "print-option-title"), text: "Titel" },
+          { locator: tid(page, "print-option-note"), text: "Notitie bovenaan" },
+          { locator: tid(page, "print-option-fontsize"), text: "Lettergrootte" },
+          { locator: tid(page, "print-option-filters").locator("xpath=.."), text: "Filterregels tonen" },
+        ],
+      });
+      const frame = tid(page, "print-preview-frame");
+      await frame.scrollIntoViewIfNeeded();
+      await shot(page, "21-print-resultaat", { box: await box(), closeups: false });
+    },
+  },
+  {
     name: "21-ma-medewerker",
     async run(page) {
       const w = await openAnalysis(page);

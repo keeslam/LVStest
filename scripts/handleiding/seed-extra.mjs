@@ -147,7 +147,7 @@ console.log("Klaar.");
 
 /**
  * Onderhoudsanalyse: vijf Ford Transits in vier km-klassen (een nieuwe met 12.000 km tot een oude met
- * 200.000 km), vijf Mercedes Sprinters waarvan vier in de klasse 100–150.000 (één daarvan veel duurder,
+ * 200.000 km), drie Ford Transit Customs, vijf Mercedes Sprinters waarvan vier in de klasse 100–150.000 (één daarvan veel duurder,
  * dus een signaal), kosten per maand in 2026 bij vijf leveranciers, één auto met stijgende kosten en één
  * met twee keer remmen binnen 90 dagen.
  */
@@ -174,6 +174,13 @@ async function seedMaintenanceAnalysis(page, db, existing) {
       [6, "maintenance", 1250, VISSER, "Versnellingsbak revisie"]] },
     { plate: "35-FTR-5", brand: "Ford", model: "Transit", built: "2021-09-01", startKm: 64_000, pace: 2_500, costs: [
       [3, "maintenance", 260, FORD, "Kleine beurt"], [8, "tires", 480, BANDEN, "Vier banden"]] },
+    // Een tweede type van Ford, zodat het merkfilter twee typen toont: drie zuinige Transit Customs.
+    { plate: "51-FTC-1", brand: "Ford", model: "Transit Custom", built: "2022-04-01", startKm: 52_000, pace: 2_200, costs: [
+      [2, "maintenance", 210, FORD, "Kleine beurt"], [8, "maintenance", 230, FORD, "Kleine beurt"]] },
+    { plate: "52-FTC-2", brand: "Ford", model: "Transit Custom", built: "2022-09-01", startKm: 58_000, pace: 2_000, costs: [
+      [4, "maintenance", 220, FORD, "Kleine beurt"], [7, "tires", 430, BANDEN, "Vier banden"]] },
+    { plate: "53-FTC-3", brand: "Ford", model: "Transit Custom", built: "2023-01-01", startKm: 41_000, pace: 2_300, costs: [
+      [5, "maintenance", 195, FORD, "Eerste grote beurt"], [9, "brakes", 260, REMMEN, "Remblokken voor"]] },
     { plate: "41-MBS-1", brand: "Mercedes-Benz", model: "Sprinter", built: "2020-04-01", startKm: 104_000, pace: 3_000, costs: [
       [2, "maintenance", 380, MB, "Grote beurt"], [6, "tires", 600, BANDEN, "Vier banden"], [9, "brakes", 340, REMMEN, "Remblokken voor"]] },
     { plate: "42-MBS-2", brand: "Mercedes-Benz", model: "Sprinter", built: "2019-06-01", startKm: 112_000, pace: 3_000, costs: [
@@ -185,8 +192,6 @@ async function seedMaintenanceAnalysis(page, db, existing) {
       [7, "maintenance", 1100, MB, "Turbo"], [9, "tires", 640, BANDEN, "Vier banden"]] },
   ];
 
-  const { rows: done } = await db.query("select count(*)::int as n from expenses where description = 'Versnellingsbak revisie'");
-  if (done[0].n > 0) { console.log("  onderhoudsanalyse al gezaaid"); return; }
 
   let list = existing;
   for (const v of fleet) {
@@ -204,6 +209,9 @@ async function seedMaintenanceAnalysis(page, db, existing) {
   for (const v of fleet) {
     const vehicle = list.find((x) => x.licensePlate === v.plate);
     if (!vehicle) throw new Error(`Voertuig ${v.plate} niet gevonden`);
+    // Al gezaaid (een eerdere run): deze auto overslaan.
+    const { rows: had } = await db.query("select count(*)::int as n from expenses where vehicle_id = $1 and created_by = 'Handleiding'", [vehicle.id]);
+    if (had[0].n > 0) continue;
     // Een bestaande auto eindigt op zijn huidige km-stand.
     const startKm = v.startKm ?? Math.max(0, Number(vehicle.currentMileage ?? 0) - v.pace * 9);
     for (let m = 1; m <= 10; m += 1) {
