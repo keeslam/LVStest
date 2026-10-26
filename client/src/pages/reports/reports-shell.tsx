@@ -140,22 +140,24 @@ function ReportsShellInner() {
       </div>
 
       <Dialog open={reportBuilderOpen} onOpenChange={setBuilderOpen}>
-        <DialogContent className="max-w-[95vw] w-full h-[95vh] max-h-[95vh] p-0">
+        <DialogContent className="flex max-w-[95vw] w-full h-[95vh] max-h-[95vh] flex-col gap-0 p-0">
           <DialogHeader className="px-6 py-4 border-b">
             <DialogTitle className="text-2xl">{t("reportBuilderPage.pageTitle")}</DialogTitle>
           </DialogHeader>
-          <div className="overflow-auto h-full">
+          {/* A flex column: the body takes the rest of the height and scrolls to its very bottom. */}
+          <div className="min-h-0 flex-1 overflow-auto">
             <ReportBuilderPage key={builderEditId ?? "new"} editReportId={builderEditId} />
           </div>
         </DialogContent>
       </Dialog>
 
       <Dialog open={maintenanceCostsOpen} onOpenChange={setMaintenanceCostsOpen}>
-        <DialogContent className="max-w-[95vw] w-full h-[95vh] max-h-[95vh] p-0">
+        <DialogContent className="flex max-w-[95vw] w-full h-[95vh] max-h-[95vh] flex-col gap-0 p-0">
           <DialogHeader className="px-6 py-4 border-b">
             <DialogTitle className="text-2xl">{t("maintenanceCostsPage.pageTitle")}</DialogTitle>
           </DialogHeader>
-          <div className="overflow-auto h-full">
+          {/* A flex column: the body takes the rest of the height and scrolls to its very bottom. */}
+          <div className="min-h-0 flex-1 overflow-auto">
             <MaintenanceCostsPage />
           </div>
         </DialogContent>

@@ -127,6 +127,20 @@ describe("reports shell - admin", () => {
     expect(await screen.findByTestId("stub-maintenance-costs")).toBeInTheDocument();
   });
 
+  it("the maintenance window scrolls to its bottom: a flex column with a growing, scrolling body", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByTestId("button-open-maintenance-costs"));
+    const stub = await screen.findByTestId("stub-maintenance-costs");
+    const body = stub.parentElement!;
+    expect(body.className).toEqual(expect.stringContaining("min-h-0"));
+    expect(body.className.split(/\s+/)).toEqual(expect.arrayContaining(["min-h-0", "flex-1", "overflow-auto"]));
+    expect(body.className.split(/\s+/)).not.toContain("h-full");
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.className.split(/\s+/)).toEqual(expect.arrayContaining(["flex", "flex-col"]));
+    expect(dialog.className.split(/\s+/)).not.toContain("grid");
+  });
+
   it("shows the category filter only for a report that uses it", async () => {
     const user = userEvent.setup();
     window.history.replaceState(null, "", "/reports?tab=expenses");

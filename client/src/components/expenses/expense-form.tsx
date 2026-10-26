@@ -318,6 +318,8 @@ export function ExpenseForm({
         id: result?.id,
         vehicleId: expenseVehicleId || vehicleId 
       });
+      // A new supplier name is a suggestion the next time (Leverancier field).
+      invalidateByPrefix("/api/expenses/suppliers");
       
       // Show success message
       toast({

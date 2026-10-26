@@ -10,7 +10,7 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
-import { getQueryFn } from "@/lib/queryClient";
+import { getQueryFn, queryClient } from "@/lib/queryClient";
 import { UserPermission, UserRole } from "@shared/schema";
 import { GlobalDialogProvider } from "@/contexts/GlobalDialogContext";
 
@@ -78,5 +78,30 @@ describe("expense form: Leverancier", () => {
 
     await waitFor(() => expect(postedBodies()).toHaveLength(1));
     expect(postedBodies()[0]).toMatchObject({ vehicleId: 7, category: "maintenance", amount: 40, supplier: "Garage Jansen" });
+  });
+
+  it("after saving, the supplier list is fetched again so a new name is suggested next time", async () => {
+    const user = userEvent.setup();
+    queryClient.clear();
+    const { hook } = memoryLocation({ path: "/expenses", record: true });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <GlobalDialogProvider>
+          <Router hook={hook}><ExpenseForm preselectedVehicleId={7} onSuccess={() => {}} /></Router>
+        </GlobalDialogProvider>
+      </QueryClientProvider>,
+    );
+    const supplierCalls = () => fetchMock.mock.calls.filter(([input]) => String(typeof input === "string" ? input : (input as Request).url).includes("/api/expenses/suppliers")).length;
+    const field = await screen.findByLabelText("Leverancier");
+    await waitFor(() => expect(supplierCalls()).toBe(1));
+    await user.click(await screen.findByRole("combobox", { name: /categorie/i }));
+    await user.click(await screen.findByRole("option", { name: "Onderhoud" }));
+    await user.clear(screen.getByLabelText(/bedrag/i));
+    await user.type(screen.getByLabelText(/bedrag/i), "40");
+    await user.type(field, "Nieuwe Garage");
+    await user.click(screen.getByRole("button", { name: "Kosten registreren" }));
+    await waitFor(() => expect(postedBodies()).toHaveLength(1));
+    await waitFor(() => expect(supplierCalls()).toBe(2));
+    queryClient.clear();
   });
 });
