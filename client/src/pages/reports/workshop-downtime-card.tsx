@@ -15,6 +15,7 @@ import { ReportTable, type ReportTableColumn, type ReportTableView } from "@/com
 import { EntityLink } from "@/components/reports/entity-link";
 import { useReportPrint } from "@/components/reports/kit/report-print";
 import { compactSections, textTablePrintSection } from "@/components/reports/kit/report-breakdown-table";
+import { printRowKeys } from "@/lib/report-document-print";
 import { useOptionalReportFilters } from "./report-filters";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -64,7 +65,8 @@ export function WorkshopDowntimeCard({ dateRange }: { dateRange?: DateRange }) {
       id: "downtime-rows",
       title: t("reportsPage.downtime.title"),
       header: columns.map((c) => c.label),
-      allRows: () => ({ rows: (view?.all ?? rows).map((r) => columns.map((c) => c.text(r))), truncated: false }),
+      columnIds: columns.map((c) => c.id),
+      allRows: () => ({ rows: (view?.all ?? rows).map((r) => columns.map((c) => c.text(r))), truncated: false, rowKeys: printRowKeys(view?.all ?? rows, (r) => r.vehicleId) }),
       pageRows: view ? view.page.map((r) => columns.map((c) => c.text(r))) : undefined,
     },
     textTablePrintSection(

@@ -62,7 +62,7 @@ export function VehiclesTab() {
   const extras = useReportExtraColumns(COLUMNS_ID, LINKS);
   const { columns, menu } = useReportColumns(COLUMNS_ID, baseColumns, extras);
 
-  useReportPrint(data ? [tablePrintSection({ id: "ma-vehicles", title: k("vehicles.title"), columns, rows, view })] : null);
+  useReportPrint(data ? [tablePrintSection({ id: "ma-vehicles", title: k("vehicles.title"), columns, rows, view, rowKey: (r) => r.vehicleId })] : null);
 
   if (isLoading) return <p className="text-sm text-muted-foreground">{t("reportKit.loading")}</p>;
   if (isError || !data) return <QueryErrorState error={error} onRetry={() => { void refetch(); }} />;

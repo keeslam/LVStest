@@ -194,7 +194,7 @@ export function SavedReportView({ report }: { report: SavedReport }) {
     ...notes.map((text): PrintSection => ({ kind: "note", text })),
     ...(groupBy.length > 0 ? [{ kind: "chart" as const, getSvg: () => chartSvgFromRef(chartRef) }] : []),
     tablePrintSection({
-      id: `saved-report-${report.id}`, columns: tableColumns, rows, view,
+      id: `saved-report-${report.id}`, columns: tableColumns, rows, view, rowKey: (r) => r.__row,
       totals: screenTotals,
       pageTotals: view ? byColumnId(rowTotals(view.page, t("reportBuilderPage.totals.totalPage"))) : undefined,
     }),

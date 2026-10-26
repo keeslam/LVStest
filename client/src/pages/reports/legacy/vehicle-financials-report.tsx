@@ -177,7 +177,7 @@ export function VehicleFinancialsReport() {
   useReportPrint([
     tilesPrintSection([tileRevenue, tileExpenses, tileMargin]),
     { kind: "chart", title: t("financialTab.chart.title"), getSvg: () => chartSvgFromRef(chartRef) },
-    tablePrintSection({ id: "vehicle-financials", columns, rows: activeRows, view, totals }),
+    tablePrintSection({ id: "vehicle-financials", columns, rows: activeRows, view, totals, rowKey: (r) => r.vehicleId }),
   ]);
 
   return (

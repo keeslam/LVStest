@@ -1348,7 +1348,7 @@ function ReportResultsDialog({
     ...(truncatedNote ? [{ kind: 'note' as const, text: truncatedNote }] : []),
     ...(groupBy.length > 0 ? [{ kind: 'chart' as const, getSvg: () => chartSvgFromRef(chartRef) }] : []),
     {
-      kind: 'table' as const, id: 'report-builder-results', header,
+      kind: 'table' as const, id: 'report-builder-results', header, columnIds: columns.map((col) => resultKey(col)),
       allRows: () => ({ rows: printRows, truncated: false }),
       pageRows: printRows,
       totals: totalCells ?? undefined,

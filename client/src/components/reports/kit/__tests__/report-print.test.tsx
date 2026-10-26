@@ -122,6 +122,100 @@ describe("ReportPrintDialog", () => {
   });
 });
 
+describe("ReportPrintDialog choices (Task 7)", () => {
+  const plates = Array.from({ length: 11 }, (_, i) => `AB-${String(i).padStart(2, "0")}-CD`);
+  const BIG: PrintSection = {
+    kind: "table",
+    id: "cars",
+    title: "Auto's",
+    header: ["Kenteken", "Merk", "Totaal"],
+    columnIds: ["plate", "brand", "total"],
+    allRows: () => ({ rows: plates.map((p, i) => [p, `Merk ${i}`, `€ ${i + 1},00`]), truncated: false, rowKeys: plates }),
+    selectedRows: [[plates[4], "Merk 4", "€ 5,00"]],
+    selectedRowKeys: [plates[4]],
+    totals: ["Totaal", "", "€ 66,00"],
+  };
+  const TILES: PrintSection = { kind: "tiles", tiles: [{ label: "Kosten", value: "€ 66,00" }] };
+  const tbody = () => srcDoc().slice(srcDoc().indexOf("<tbody>"), srcDoc().indexOf("</tbody>"));
+
+  it("prints exactly the 2 rows picked of 11, with the total over those 2", async () => {
+    const user = userEvent.setup();
+    wrap(<><Report sections={[BIG]} /><Opener /></>);
+    await waitFor(() => expect(srcDoc()).toContain(plates[10]));
+    await user.click(screen.getByTestId("print-more-table-cars"));
+    await user.selectOptions(screen.getByTestId("print-rows-table-cars"), "pick");
+    // the row ticked on screen is already on
+    expect(screen.getByTestId(`print-pick-table-cars-${plates[4]}`)).toBeChecked();
+    expect(screen.getByTestId("print-pick-count-table-cars")).toHaveTextContent("1 van 11 gekozen");
+    await user.click(screen.getByTestId("print-pick-none-table-cars"));
+    expect(screen.getByTestId("print-pick-count-table-cars")).toHaveTextContent("0 van 11 gekozen");
+    await user.click(screen.getByTestId(`print-pick-table-cars-${plates[2]}`));
+    await user.click(screen.getByTestId(`print-pick-table-cars-${plates[7]}`));
+    await waitFor(() => expect(tbody().match(/<tr>/g)).toHaveLength(2));
+    expect(tbody()).toContain(plates[2]);
+    expect(tbody()).toContain(plates[7]);
+    expect(srcDoc()).toMatch(/<td>Totaal \(gekozen regels\)<\/td><td><\/td><td>€\s11,00<\/td>/);
+    await user.click(screen.getByTestId("print-pick-all-table-cars"));
+    expect(screen.getByTestId("print-pick-count-table-cars")).toHaveTextContent("11 van 11 gekozen");
+  });
+
+  it("finds a plate in the pick list without dashes", async () => {
+    const user = userEvent.setup();
+    wrap(<><Report sections={[BIG]} /><Opener /></>);
+    await waitFor(() => expect(srcDoc()).toContain(plates[10]));
+    await user.click(screen.getByTestId("print-more-table-cars"));
+    await user.selectOptions(screen.getByTestId("print-rows-table-cars"), "pick");
+    await user.type(screen.getByTestId("print-pick-search-table-cars"), "ab03cd");
+    expect(screen.getByTestId(`print-pick-table-cars-${plates[3]}`)).toBeInTheDocument();
+    expect(screen.queryByTestId(`print-pick-table-cars-${plates[4]}`)).not.toBeInTheDocument();
+  });
+
+  it("leaves out a column, sorts descending and moves a section, and keeps the choices when opened again", async () => {
+    const user = userEvent.setup();
+    function Toggle() {
+      const [open, setOpen] = useState(true);
+      return <><button data-testid="toggle" onClick={() => setOpen((o) => !o)} /><ReportPrintDialog open={open} onOpenChange={setOpen} title="R" /></>;
+    }
+    wrap(<><Report sections={[TILES, BIG]} /><Toggle /></>);
+    await waitFor(() => expect(srcDoc()).toContain(plates[10]));
+    expect(srcDoc().indexOf('class="tiles"')).toBeLessThan(srcDoc().indexOf("<table"));
+    await user.click(screen.getByTestId("print-more-table-cars"));
+    await user.click(screen.getByTestId("print-column-table-cars-brand"));
+    await waitFor(() => expect(srcDoc()).not.toContain("Merk 3"));
+    await user.selectOptions(screen.getByTestId("print-sort-table-cars"), "total");
+    await user.selectOptions(screen.getByTestId("print-sort-dir-table-cars"), "desc");
+    await waitFor(() => expect(tbody().indexOf(plates[10])).toBeLessThan(tbody().indexOf(plates[1])));
+    await user.click(screen.getByTestId("print-move-up-table-cars"));
+    await waitFor(() => expect(srcDoc().indexOf("<table")).toBeLessThan(srcDoc().indexOf('class="tiles"')));
+    await user.click(screen.getByTestId("print-option-pagebreak"));
+    expect(srcDoc()).toContain("page-break-before");
+
+    // close and open again: the same choices
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByTestId("print-preview-frame")).not.toBeInTheDocument());
+    await user.click(screen.getByTestId("toggle"));
+    await waitFor(() => expect(srcDoc()).toContain(plates[10]));
+    expect(srcDoc()).not.toContain("Merk 3");
+    expect(srcDoc().indexOf("<table")).toBeLessThan(srcDoc().indexOf('class="tiles"'));
+    expect(srcDoc()).toContain("page-break-before");
+  });
+
+  it("prints an own title, a note and the font size, and hides the filter lines on request", async () => {
+    const user = userEvent.setup();
+    wrap(<><Report sections={[BIG]} /><Opener title="Kosten" /></>, { category: "Personenauto" });
+    await waitFor(() => expect(srcDoc()).toContain("Personenauto"));
+    await user.click(screen.getByTestId("print-layout-toggle"));
+    await user.type(screen.getByTestId("print-option-title"), "Mijn <lijst>");
+    await user.type(screen.getByTestId("print-option-note"), "Voor Kees");
+    await user.selectOptions(screen.getByTestId("print-option-fontsize"), "small");
+    await user.click(screen.getByTestId("print-option-filters"));
+    await waitFor(() => expect(srcDoc()).toContain("Mijn &lt;lijst&gt;"));
+    expect(srcDoc()).toContain("Voor Kees");
+    expect(srcDoc()).toContain('<body class="font-small">');
+    expect(srcDoc()).not.toContain("Personenauto");
+  });
+});
+
 describe("useReportPrint", () => {
   it("does not loop when a report passes a fresh array on every render", () => {
     let renders = 0;

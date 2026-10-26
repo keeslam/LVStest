@@ -76,7 +76,7 @@ export function SignalsTab() {
     ];
   }, [t, money]);
 
-  useReportPrint(data ? [tablePrintSection({ id: "ma-signals", title: k("signals.title"), columns, rows: signals, view })] : null);
+  useReportPrint(data ? [tablePrintSection({ id: "ma-signals", title: k("signals.title"), columns, rows: signals, view, rowKey: signalKey })] : null);
 
   if (isLoading) return <p className="text-sm text-muted-foreground">{t("reportKit.loading")}</p>;
   if (isError || !data) return <QueryErrorState error={error} onRetry={() => { void refetch(); }} />;

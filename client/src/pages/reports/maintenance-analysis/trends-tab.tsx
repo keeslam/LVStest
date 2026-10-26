@@ -99,8 +99,8 @@ export function TrendsTab() {
 
   useReportPrint(data ? compactSections([
     { kind: "chart", title: k("trends.chartTitle"), getSvg: () => chartSvgFromRef(chartRef) },
-    tablePrintSection({ id: "ma-trends", title: k("trends.chartTitle"), columns, rows, view }),
-    forecastVehicles.length > 0 ? tablePrintSection({ id: "ma-forecast", title: k("trends.forecastTitle"), columns: forecastColumns, rows: forecastVehicles, view: forecastView }) : null,
+    tablePrintSection({ id: "ma-trends", title: k("trends.chartTitle"), columns, rows, view, rowKey: (r) => r.month }),
+    forecastVehicles.length > 0 ? tablePrintSection({ id: "ma-forecast", title: k("trends.forecastTitle"), columns: forecastColumns, rows: forecastVehicles, view: forecastView, rowKey: (r) => r.vehicleId }) : null,
   ]) : null);
 
   if (isLoading) return <p className="text-sm text-muted-foreground">{t("reportKit.loading")}</p>;

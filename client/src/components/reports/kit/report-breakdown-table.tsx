@@ -34,11 +34,13 @@ export function breakdownPrintSection(opts: {
     id,
     title,
     header: hideAmount ? [header.name, header.count] : [header.name, header.count, header.amount],
+    columnIds: hideAmount ? ["name", "count"] : ["name", "count", "amount"],
     allRows: () => ({
       rows: rows.map((r) => (hideAmount
         ? [r.label ?? nullLabel, r.count.toLocaleString("nl-NL")]
         : [r.label ?? nullLabel, r.count.toLocaleString("nl-NL"), amount(r.amount)])),
       truncated: false,
+      rowKeys: rows.map((r) => String(r.key ?? "null")),
     }),
   };
 }

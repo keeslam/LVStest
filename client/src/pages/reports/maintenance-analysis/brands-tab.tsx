@@ -193,12 +193,13 @@ export function BrandsTab() {
     id: "ma-kmbands",
     title: k("brands.kmBandsTitle"),
     header: [brand ? t("maintenanceAnalysis.columns.model") : t("maintenanceAnalysis.columns.brand"), ...kmColumns.map((c) => c.label)],
-    allRows: () => ({ rows: kmRows.map((r) => [r.name, ...kmColumns.map((c) => (r.cells[c.key] ? kmCellText(c.key, r.cells[c.key]!) : ""))]), truncated: false }),
+    columnIds: ["name", ...kmColumns.map((c) => String(c.key))],
+    allRows: () => ({ rows: kmRows.map((r) => [r.name, ...kmColumns.map((c) => (r.cells[c.key] ? kmCellText(c.key, r.cells[c.key]!) : ""))]), truncated: false, rowKeys: kmRows.map((r) => r.name) }),
   } : null;
   useReportPrint(data ? compactSections([
     { kind: "chart", title: chartTitle, getSvg: () => chartSvgFromRef(chartRef) },
-    filterBrand ? null : tablePrintSection({ id: "ma-brands", title: k("brands.brandsTitle"), columns: brandColumns, rows: brands, view: brandView }),
-    brand ? tablePrintSection({ id: "ma-models", title: k("brands.modelsTitle", { brand: brandLabel }), columns: modelColumns, rows: models, view: modelView }) : null,
+    filterBrand ? null : tablePrintSection({ id: "ma-brands", title: k("brands.brandsTitle"), columns: brandColumns, rows: brands, view: brandView, rowKey: (r) => nameKey(r.brand) }),
+    brand ? tablePrintSection({ id: "ma-models", title: k("brands.modelsTitle", { brand: brandLabel }), columns: modelColumns, rows: models, view: modelView, rowKey: (r) => r.key }) : null,
     kmSection,
     ...profileSections,
   ]) : null);

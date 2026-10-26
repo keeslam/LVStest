@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { downloadCsv } from "@/lib/csv";
 import { ReportTable, reportTableCsv, type ReportTableColumn, type ReportTableView } from "@/components/reports/kit/report-table";
 import { ReportPrintDialog, ReportPrintProvider, useReportPrint, type PrintSection } from "@/components/reports/kit/report-print";
+import { printRowKeys } from "@/lib/report-document-print";
 import { useReportColumns } from "./use-report-columns";
 import { useReportExtraColumns, type ReportLinks } from "./report-extra-columns";
 
@@ -100,12 +101,14 @@ function RowsBody({ title, parts, testId }: { title: string; parts: AnyReportRow
     const columns: ReportTableColumn<unknown>[] = chosen[i] ?? part.columns;
     const text = (list: unknown[]) => list.map((r) => columns.map((c) => c.text(r)));
     const view = views[i];
+    const all = view?.all ?? part.rows;
     return {
       kind: "table",
       id: `${testId}${suffix(i)}`,
       title: part.title,
       header: columns.map((c) => c.label),
-      allRows: () => ({ rows: text(view?.all ?? part.rows), truncated: false }),
+      columnIds: columns.map((c) => c.id),
+      allRows: () => ({ rows: text(all), truncated: false, rowKeys: printRowKeys(all, part.rowKey ?? idKey) }),
       pageRows: view ? text(view.page) : undefined,
     };
   }), [parts, views, chosen, testId]);

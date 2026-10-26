@@ -77,7 +77,7 @@ export function ExpensesByCategoryReport() {
   useReportPrint([
     tilesPrintSection(canViewVehicles ? [tileTotal, tileAvg] : [tileTotal]),
     { kind: "chart", title: t("reportsPage.operations.expensesByCategoryTitle"), getSvg: () => chartSvgFromRef(chartRef) },
-    tablePrintSection({ id: "expenses-by-category", columns, rows, view, totals: rows.length > 0 ? totals : undefined }),
+    tablePrintSection({ id: "expenses-by-category", columns, rows, view, rowKey: (r) => r.category, totals: rows.length > 0 ? totals : undefined }),
   ]);
 
   return (

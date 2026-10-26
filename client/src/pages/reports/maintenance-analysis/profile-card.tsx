@@ -162,7 +162,7 @@ export function useProfilePrintSections(profile: MaintenanceProfile | undefined)
     if (!profile) return [];
     const p = (key: string, opts?: Record<string, unknown>) => t(`maintenanceAnalysis.profile.${key}`, opts);
     const name = typeText(t, profile.brand, profile.model);
-    const sections: PrintSection[] = tables.map((tb) => tablePrintSection({ id: `ma-profile-${tb.id}`, title: `${p("title", { name })} · ${tb.title}`, columns: tb.columns, rows: tb.rows, view: null }));
+    const sections: PrintSection[] = tables.map((tb) => tablePrintSection({ id: `ma-profile-${tb.id}`, title: `${p("title", { name })} · ${tb.title}`, columns: tb.columns, rows: tb.rows, view: null, rowKey: tb.rowKey }));
     if (profile.replaceHints.length > 0) {
       const columns: ReportTableColumn<MaintenanceProfile["replaceHints"][number]>[] = [
         { id: "plate", label: t("maintenanceAnalysis.columns.licensePlate"), cell: (r) => r.plate, text: (r) => r.plate },
@@ -170,7 +170,7 @@ export function useProfilePrintSections(profile: MaintenanceProfile | undefined)
         { id: "ratio6", label: t("maintenanceAnalysis.columns.ratio6"), cell: (r) => ratioText(r.ratio6), text: (r) => ratioText(r.ratio6) },
         { id: "hint", label: p("hintsTitle"), cell: () => hintText(t, profile), text: () => hintText(t, profile) },
       ];
-      sections.push(tablePrintSection({ id: "ma-profile-hints", title: `${p("title", { name })} · ${p("hintsTitle")}`, columns, rows: profile.replaceHints, view: null }));
+      sections.push(tablePrintSection({ id: "ma-profile-hints", title: `${p("title", { name })} · ${p("hintsTitle")}`, columns, rows: profile.replaceHints, view: null, rowKey: (r) => r.vehicleId }));
     }
     return sections;
   }, [profile, tables, t]);

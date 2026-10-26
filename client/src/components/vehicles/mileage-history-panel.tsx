@@ -134,6 +134,7 @@ export function MileageHistoryPanel({ vehicleId, defaultFrom, defaultTo }: {
         kind: "table" as const,
         id: "mileage-readings",
         header: [labels.date, labels.mileage, labels.driven, labels.source, labels.actor, labels.warning],
+        columnIds: ["recordedAt", "mileage", "driven", "source", "actor", "warning"],
         allRows: () => ({
           rows: data.rows.map((r) => [
             formatDateTimeNl(r.recordedAt),
@@ -144,6 +145,7 @@ export function MileageHistoryPanel({ vehicleId, defaultFrom, defaultTo }: {
             warningText(r),
           ]),
           truncated: false,
+          rowKeys: data.rows.map((r) => String(r.id)),
         }),
       },
     ] : []),

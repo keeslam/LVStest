@@ -2,7 +2,10 @@
  * Rapporten herontwerp deel 1, Task 4 - the one print document of a report.
  */
 import { describe, it, expect } from "vitest";
-import { reportDocumentHtml } from "../report-document-print";
+import {
+  reportDocumentHtml, prepareTableSection, defaultPrintOptions, resolvePrintSections, rowMatchesSearch,
+  type PreparedPrintSection,
+} from "../report-document-print";
 
 const base = { company: "Autolease Lam", title: "Bekeuringen", period: "1-10-2026 t/m 31-10-2026", filters: [] as string[], landscape: false, printedAt: "25-10-2026 10:00" };
 
@@ -54,5 +57,91 @@ describe("reportDocumentHtml", () => {
     expect(html).toContain("<svg id=\"c\"></svg>");
     expect(html).toContain("&lt;t&gt;");
     expect(html).toContain("&lt;n&gt;");
+  });
+});
+
+/** Task 7 (onderhoudsanalyse): more choices in the print dialog. */
+describe("print choices", () => {
+  const eleven = Array.from({ length: 11 }, (_, i) => [`AB-${String(i).padStart(2, "0")}-CD`, `Auto ${i}`, `€ ${i + 1},00`]);
+  const table = (): PreparedPrintSection => prepareTableSection("table-t", {
+    kind: "table", id: "t", title: "Auto's", header: ["Kenteken", "Omschrijving", "Totaal"], columnIds: ["plate", "name", "total"],
+    allRows: () => ({ rows: eleven, truncated: false }),
+    totals: ["Totaal", "", "€ 66,00"],
+  }, { rows: eleven, truncated: false, rowKeys: eleven.map((_, i) => `v${i}`) });
+  const tiles: PreparedPrintSection = { key: "tiles-0", kind: "tiles", resolved: { kind: "tiles", tiles: [{ label: "Tegel", value: "1" }] } };
+  const labels = { pickedTotal: "Totaal (gekozen regels)" };
+  const doc = (sections: PreparedPrintSection[], change: (o: ReturnType<typeof defaultPrintOptions>) => void = () => {}) => {
+    const options = defaultPrintOptions(sections);
+    change(options);
+    return reportDocumentHtml({
+      ...base, title: options.title || base.title, note: options.note, fontSize: options.fontSize, pageBreakEach: options.pageBreakEach,
+      sections: resolvePrintSections(sections, options, labels),
+    });
+  };
+  const body = (html: string) => html.slice(html.indexOf("<tbody>"), html.indexOf("</tbody>"));
+
+  it("prints every row, every column, every section with the plain defaults", () => {
+    const html = doc([tiles, table()]);
+    expect(body(html).match(/<tr>/g)).toHaveLength(11);
+    expect(html).toContain("<td>€ 66,00</td>");
+    expect(html).not.toContain("page-break-before");
+    expect(html).toContain('<body class="font-normal">');
+  });
+
+  it("prints exactly the 2 picked rows of 11 with the total over those 2", () => {
+    const html = doc([table()], (o) => { o.perTable["table-t"] = { ...o.perTable["table-t"], rows: "pick", picked: ["v2", "v5"] }; });
+    expect(body(html).match(/<tr>/g)).toHaveLength(2);
+    expect(html).toContain("AB-02-CD");
+    expect(html).toContain("AB-05-CD");
+    expect(html).not.toContain("AB-03-CD");
+    expect(html).toMatch(/<tfoot><tr><td>Totaal \(gekozen regels\)<\/td><td><\/td><td>€\s9,00<\/td><\/tr><\/tfoot>/);
+  });
+
+  it("leaves out a column that is switched off, also in the totals", () => {
+    const html = doc([table()], (o) => { o.perTable["table-t"].columns = ["plate", "total"]; });
+    expect(html).not.toContain("Omschrijving");
+    expect(html).not.toContain("Auto 3");
+    expect(html).toContain("<th>Kenteken</th><th>Totaal</th>");
+  });
+
+  it("follows the chosen order of the sections and leaves out a section that is off", () => {
+    const html = doc([tiles, table()], (o) => { o.order = [...o.order].reverse(); });
+    expect(html.indexOf("<table")).toBeLessThan(html.indexOf('class="tiles"'));
+    const off = doc([tiles, table()], (o) => { o.sectionOn["tiles-0"] = false; });
+    expect(off).not.toContain('class="tiles"');
+  });
+
+  it("starts every section on a new page when asked", () => {
+    const html = doc([tiles, table()], (o) => { o.pageBreakEach = true; });
+    expect(html).toContain("page-break-before");
+    expect(html.match(/class="page-part"/g)).toHaveLength(1);
+  });
+
+  it("escapes an own title and a note, and sets the font size class", () => {
+    const html = doc([table()], (o) => { o.title = "<b>Mijn titel</b>"; o.note = "<i>let op</i>"; o.fontSize = "large"; });
+    expect(html).toContain("&lt;b&gt;Mijn titel&lt;/b&gt;");
+    expect(html).toContain("&lt;i&gt;let op&lt;/i&gt;");
+    expect(html).not.toContain("<b>Mijn titel</b>");
+    expect(html).toContain('<body class="font-large">');
+  });
+
+  it("sorts descending on Totaal as amounts, not as text", () => {
+    const html = doc([table()], (o) => { o.perTable["table-t"].sort = { col: "total", dir: "desc" }; });
+    const b = body(html);
+    expect(b.indexOf("AB-10-CD")).toBeLessThan(b.indexOf("AB-09-CD"));
+    expect(b.indexOf("AB-09-CD")).toBeLessThan(b.indexOf("AB-01-CD"));
+    expect(b.indexOf("AB-01-CD")).toBeLessThan(b.indexOf("AB-00-CD"));
+  });
+
+  it("falls back to row numbers and column headings when a producer gives no keys", () => {
+    const plain = prepareTableSection("table-x", { kind: "table", id: "x", header: ["A", "B"], allRows: () => ({ rows: [["1", "2"]], truncated: false }) }, { rows: [["1", "2"]], truncated: false });
+    expect(plain.kind === "table" && plain.rowKeys).toEqual(["0"]);
+    expect(plain.kind === "table" && plain.columnIds).toEqual(["A", "B"]);
+  });
+
+  it("finds a plate in the pick list without its dashes", () => {
+    expect(rowMatchesSearch(["AB-12-CD", "Golf"], "ab12cd")).toBe(true);
+    expect(rowMatchesSearch(["AB-12-CD", "Golf"], "AB-12")).toBe(true);
+    expect(rowMatchesSearch(["AB-12-CD", "Golf"], "xy99")).toBe(false);
   });
 });

@@ -79,7 +79,7 @@ export function OverviewTab() {
   useReportPrint(data ? compactSections([
     tilesPrintSection(tiles),
     { kind: "chart", title: k("overview.byCategory"), getSvg: () => chartSvgFromRef(chartRef) },
-    tablePrintSection({ id: "ma-top-vehicles", title: k("overview.topVehicles"), columns, rows: topVehicles, view }),
+    tablePrintSection({ id: "ma-top-vehicles", title: k("overview.topVehicles"), columns, rows: topVehicles, view, rowKey: (r) => r.vehicleId }),
   ]) : null);
 
   if (isLoading) return <p className="text-sm text-muted-foreground" data-testid="ma-overview-loading">{t("reportKit.loading")}</p>;
