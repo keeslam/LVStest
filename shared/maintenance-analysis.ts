@@ -77,6 +77,8 @@ export const RATING_GOOD_FACTOR = 1.2;
 export const SIGNAL_ABOVE_GROUP_FACTOR = 1.5;
 /** ... and only with at least this many comparable other vehicles (same brand and model; admin: same km band). */
 export const SIGNAL_MIN_COMPARABLES = 3;
+/** Signal "boven groep": the car must have been owned at least this many months inside the period (no tiny-ownership rates). */
+export const SIGNAL_MIN_OWNED_MONTHS = 2;
 /** Signal "stijgend": each of the last this many full months higher than the month before. */
 export const SIGNAL_RISING_MONTHS = 3;
 /** Signal "herhaald": the same category again within this many days. */

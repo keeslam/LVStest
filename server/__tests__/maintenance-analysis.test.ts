@@ -251,6 +251,17 @@ describe("maintenance analysis endpoints", () => {
     expect(sum).toBeCloseTo(f.amount, 1);
   });
 
+  it("trends: months after the current month are left out, so the forecast follows the last real month", async () => {
+    const now = new Date();
+    const key = (offset: number) => { const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + offset, 1)); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`; };
+    const res = await admin.get(`${BASE}/trends`).query({ from: `${key(-3)}-01`, to: `${key(8)}-28`, brand: FIAT, compareFrom: `${key(-15)}-01`, compareTo: `${key(-4)}-28` });
+    expect(res.status).toBe(200);
+    const months: string[] = res.body.months.map((m: any) => m.month);
+    expect(months).toEqual([key(-3), key(-2), key(-1), key(0)]);
+    expect(res.body.months.every((m: any) => m.previous !== undefined)).toBe(true);
+    expect(res.body.forecast.map((m: any) => m.month)).toEqual([key(1), key(2), key(3)]);
+  });
+
   it("invalid input is a 400", async () => {
     expect((await admin.get(`${BASE}/overview`).query({ from: "2026-02-30", to: P.to })).status).toBe(400);
     expect((await admin.get(`${BASE}/overview`).query({ ...P, category: "fuel" })).status).toBe(400);
@@ -494,5 +505,62 @@ describe("maintenance analysis: final fixes", () => {
     expect(brands.brands[0]).toMatchObject({ brand: FIX, vehicles: 1, vehiclesWithCosts: 1, total: 300 });
     // Without the filter all three count.
     expect((await admin.get(`${BASE}/brands`).query({ ...P, brand: FIX })).body.brands[0].vehicles).toBe(3);
+  });
+});
+
+describe("fix round 2: a short stay is no 'above the group' signal", () => {
+  const BRAND = "FIXTMASHORT";
+  let admin: TestAgent;
+  let staff: TestAgent;
+  const vehicleIds: number[] = [];
+  const idOf: Record<string, number> = {};
+  const day = (offset: number) => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
+
+  beforeAll(async () => {
+    admin = await agentFor("admin");
+    staff = await agentFor([UserPermission.VIEW_REPORTS]);
+    const make = async (name: string, over: Partial<typeof vehicles.$inferInsert>) => {
+      const v = await createFixtureVehicle({ brand: BRAND, model: "VAN", ...over });
+      idOf[name] = v.id; vehicleIds.push(v.id);
+      return v.id;
+    };
+    const peers = [];
+    for (let i = 0; i < 4; i++) peers.push(await make(`P${i}`, { dateIn: "2025-01-01" }));
+    const dated = await make("DATED", { dateIn: day(-10) });
+    // No dateIn at all: created just now (createdAt = today) with costs from three weeks ago.
+    const undated = await make("UNDATED", {});
+    for (const id of [...peers, dated, undated]) {
+      await db.insert(vehicleMileageReadings).values([
+        { vehicleId: id, mileage: 10000, recordedAt: new Date(Date.now() - 200 * 86_400_000), source: "manual" },
+        { vehicleId: id, mileage: 20000, recordedAt: new Date(Date.now() - 5 * 86_400_000), source: "manual" },
+      ] as any);
+    }
+    const cost = (vehicleId: number, amount: string, date: string) => ({ vehicleId, category: "maintenance", amount, date, supplier: null, description: "FIXT-ma" });
+    await db.insert(expenses).values([
+      ...peers.map((id) => cost(id, "100.00", day(-60))),
+      cost(dated, "300.00", day(-9)), cost(dated, "160.00", day(-8)),
+      cost(undated, "300.00", day(-21)), cost(undated, "160.00", day(-20)),
+    ]);
+  });
+  afterAll(async () => {
+    await db.delete(vehicleMileageReadings).where(inArray(vehicleMileageReadings.vehicleId, vehicleIds));
+    await cleanupFixtures();
+    await cleanupFixtureUsers();
+  });
+
+  const signalIds = async (agent: TestAgent) => {
+    const res = await agent.get(`${BASE}/signals`).query({ from: "2026-01-01", to: day(0), brand: BRAND });
+    expect(res.status).toBe(200);
+    return res.body.signals.filter((s: any) => s.kind === "aboveGroup").map((s: any) => s.vehicleId);
+  };
+
+  it("a car in the fleet for ten days, or one with no in-fleet date and two recent costs, is not flagged", async () => {
+    expect(await signalIds(staff)).toEqual([]);
+    expect(await signalIds(admin)).toEqual([]);
+  });
+
+  it("the same costs on a car owned for months are flagged (control)", async () => {
+    await db.update(vehicles).set({ dateIn: "2025-06-01" }).where(inArray(vehicles.id, [idOf.DATED]));
+    expect(await signalIds(staff)).toContain(idOf.DATED);
   });
 });

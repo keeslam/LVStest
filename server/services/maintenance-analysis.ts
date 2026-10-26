@@ -7,7 +7,8 @@
  * once and works in memory. All parts share one filter (parseMaintenanceQuery) and one rule set:
  *
  * - per vehicle per month = amount ÷ months owned inside the period (owned from dateIn, else the
- *   creation day, or the first cost if that is earlier; until outOfFleetDate or today);
+ *   first cost, or the first cost if that is earlier; never from the creation day, which is only
+ *   the day the car was typed in; until outOfFleetDate or today);
  * - a cost's km is the last valid reading on or before its day (km history, voided readings left
  *   out, a decrease or a jump skipped like kmPerDayFromReadings); its band is kmBandOf(km);
  * - km driven in a band = the distance between consecutive valid readings, the part inside the
@@ -30,7 +31,7 @@ import { REPORT_DRILL_NULL_KEY } from "../../shared/report-kit";
 import {
   KM_BANDS, KM_BAND_KEYS, kmBandOf, modelWithoutBrand, supplierKey, modelGroupKey,
   UNKNOWN_SUPPLIER_LABEL, MAINTENANCE_CATEGORY_LABELS, MIN_EXPENSES_FOR_RATING, MIN_VEHICLES_FOR_RATING,
-  SIGNAL_ABOVE_GROUP_FACTOR, SIGNAL_MIN_COMPARABLES, SIGNAL_RISING_MONTHS, SIGNAL_REPEAT_DAYS,
+  SIGNAL_ABOVE_GROUP_FACTOR, SIGNAL_MIN_COMPARABLES, SIGNAL_MIN_OWNED_MONTHS, SIGNAL_RISING_MONTHS, SIGNAL_REPEAT_DAYS,
   FORECAST_DAYS, FORECAST_MONTHS, MAINTENANCE_ANALYSIS_DRILLS,
   type KmBand, type MaintenanceAnalysisDrill, type MaintenanceTiles, type MaintenanceOverview,
   type MaintenanceBrands, type MaintenanceGroupLine, type MaintenanceKmBandLine, type MaintenanceVehicleLine,
@@ -295,16 +296,14 @@ export async function loadMaintenanceData(isAdmin: boolean, now: Date = new Date
 
   const vehicleMap = new Map<number, VehicleCtx>();
   /**
-   * Ownership: from dateIn (else the creation day), earlier when a cost is earlier; until the
+   * Ownership: from dateIn (else the first cost; the creation day is only when the car was typed in), earlier when a cost is earlier; until the
    * out-of-fleet day, the removal day or today, later when a cost comes after it (a bill after the sale).
    */
   const addVehicle = (v: VehicleSnapshot, removedDay: number | null) => {
-    const createdAt = v.createdAt ? new Date(v.createdAt) : null;
-    const created = createdAt && !Number.isNaN(createdAt.getTime()) ? dateInZone(createdAt, zone) : null;
     const dateIn = typeof v.dateIn === "string" && isRealDate(v.dateIn.slice(0, 10)) ? v.dateIn.slice(0, 10) : null;
     const first = firstCost.get(v.id);
     const last = lastCost.get(v.id);
-    let ownedFrom = dateIn ? dayOf(dateIn) : created ? dayOf(created) : first ?? todayDay;
+    let ownedFrom = dateIn ? dayOf(dateIn) : first ?? todayDay;
     if (first !== undefined && first < ownedFrom) ownedFrom = first;
     const out = typeof v.outOfFleetDate === "string" && isRealDate(v.outOfFleetDate.slice(0, 10)) ? dayOf(v.outOfFleetDate) : null;
     const end = Math.min(out ?? todayDay, removedDay ?? todayDay, todayDay);
@@ -402,6 +401,15 @@ function costMatches(c: CostCtx, q: MaintenanceQuery, period: Period, ignore: Ig
  * owned at all in it counts at least 1 month (a 2-day owner with one bill is not EUR 750 a month),
  * but never more than the period itself, so a one-week period stays a monthly rate.
  */
+/** The months actually owned inside the period (no minimum of one month), 0 when not owned at all. */
+function ownedMonthsExact(v: VehicleCtx, period: Period, today: string): number {
+  const periodFrom = dayOf(period.from);
+  const periodTo = dayOf(period.to < today ? period.to : today);
+  const from = Math.max(v.ownedFrom, periodFrom);
+  const to = Math.min(v.ownedTo, periodTo);
+  return to < from ? 0 : (to - from + 1) / DAYS_PER_MONTH;
+}
+
 function ownedMonths(v: VehicleCtx, period: Period, today: string): number {
   const periodFrom = dayOf(period.from);
   const periodTo = dayOf(period.to < today ? period.to : today);
@@ -724,7 +732,11 @@ export function trendsPart(data: MaintenanceData, q: MaintenanceQuery): Maintena
     return out;
   };
   const current = sumByMonth(scope.costs);
-  const months: MaintenanceTrends["months"] = monthsOf(q).map((month) => ({ month, amount: round2(current.get(month) ?? 0) }));
+  // Months after the current office month have no costs yet: leave them out (they would read as EUR 0
+  // and drop the line before the forecast). The comparison follows the same months by position.
+  const thisMonth = data.today.slice(0, 7);
+  const monthList = monthsOf(q);
+  const months: MaintenanceTrends["months"] = monthList.filter((month) => month <= thisMonth).map((month) => ({ month, amount: round2(current.get(month) ?? 0) }));
   if (q.compare) {
     const previous = sumByMonth(scopeOf(data, q, q.compare).costs);
     const previousMonths = monthsOf(q.compare);
@@ -749,7 +761,6 @@ export function trendsPart(data: MaintenanceData, q: MaintenanceQuery): Maintena
     }
     forecastVehicles.sort((a, b) => b.amount - a.amount || a.licensePlate.localeCompare(b.licensePlate));
     const total = forecastVehicles.reduce((n, f) => n + f.amount, 0);
-    const thisMonth = data.today.slice(0, 7);
     result.forecast = Array.from({ length: FORECAST_MONTHS }, (_, i) => ({ month: nextMonth(thisMonth, i + 1), amount: round2(total / FORECAST_MONTHS) }));
     result.forecastVehicles = forecastVehicles;
   }
@@ -776,6 +787,8 @@ export function signalsPart(data: MaintenanceData, q: MaintenanceQuery): Mainten
   for (const v of scope.vehicles) {
     const group = (peersByModel.get(modelGroupKey(v.brand, v.modelKey)) ?? []).filter((o) => o.id !== v.id);
     const own = peerCosts.get(v.id) ?? [];
+    // A car owned for less than two months in the period is too new for a rate comparison.
+    if (ownedMonthsExact(v, q, data.today) < SIGNAL_MIN_OWNED_MONTHS) continue;
     if (data.isAdmin) {
       const km = kmAtDay(v.readings, toDay);
       if (km === null) continue;
