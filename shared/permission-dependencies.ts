@@ -70,6 +70,8 @@ export const PERMISSION_DEPENDENCIES: Record<string, PermissionDependency> = {
   [P.MANAGE_DOCUMENTS]: { required: NONE, optional: [P.VIEW_VEHICLES] },
   // Templates are edited from the documents screen.
   [P.MANAGE_PDF_TEMPLATES]: { required: [P.VIEW_DOCUMENTS], optional: NONE },
+  // Lease quotes have a screen of their own and read their own data; the right stands alone.
+  [P.MANAGE_LEASE_QUOTES]: { required: NONE, optional: NONE },
 
   [P.VIEW_DAMAGE_CHECKS]: { required: NONE, optional: [P.VIEW_RESERVATIONS] },
   [P.MANAGE_DAMAGE_CHECKS]: { required: NONE, optional: [P.VIEW_RESERVATIONS] },

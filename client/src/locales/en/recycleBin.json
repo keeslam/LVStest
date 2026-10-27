@@ -112,6 +112,16 @@
       "noun_one": "expense",
       "noun_other": "expenses",
       "purgeNote": "The expense disappears for good, together with the receipt. A receipt that is also the attachment of a mailbox invoice stays."
+    },
+    "lease_quote": {
+      "openButton": "Deleted lease quotes",
+      "title": "Deleted lease quotes",
+      "description": "A deleted lease quote is kept here with its variants and attachments and can be restored.",
+      "empty": "No deleted lease quotes.",
+      "badge": "Lease quote",
+      "noun_one": "lease quote",
+      "noun_other": "lease quotes",
+      "purgeNote": "The lease quote disappears for good, together with its attachments."
     }
   },
   "purge": {

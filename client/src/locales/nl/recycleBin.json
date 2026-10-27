@@ -112,6 +112,16 @@
       "noun_one": "kostenpost",
       "noun_other": "kostenposten",
       "purgeNote": "De kostenpost verdwijnt voorgoed, samen met de bon. Een bon die ook de bijlage van een factuur in het postvak is, blijft staan."
+    },
+    "lease_quote": {
+      "openButton": "Verwijderde lease offertes",
+      "title": "Verwijderde lease offertes",
+      "description": "Een verwijderde lease offerte wordt hier bewaard met zijn varianten en bijlagen en kan worden teruggezet.",
+      "empty": "Geen verwijderde lease offertes.",
+      "badge": "Lease offerte",
+      "noun_one": "lease offerte",
+      "noun_other": "lease offertes",
+      "purgeNote": "De lease offerte verdwijnt voorgoed, samen met zijn bijlagen."
     }
   },
   "purge": {

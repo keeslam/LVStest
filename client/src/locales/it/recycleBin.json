@@ -120,6 +120,17 @@
       "noun_many": "spese",
       "noun_other": "spese",
       "purgeNote": "La spesa scompare definitivamente, insieme alla ricevuta. Una ricevuta che è anche l'allegato di una fattura nella casella di posta resta."
+    },
+    "lease_quote": {
+      "openButton": "Offerte di leasing eliminate",
+      "title": "Offerte di leasing eliminate",
+      "description": "Un'offerta di leasing eliminata viene conservata qui con le sue varianti e i suoi allegati e può essere ripristinata.",
+      "empty": "Nessuna offerta di leasing eliminata.",
+      "badge": "Offerta di leasing",
+      "noun_one": "offerta di leasing",
+      "noun_many": "offerte di leasing",
+      "noun_other": "offerte di leasing",
+      "purgeNote": "L'offerta di leasing scompare definitivamente, insieme ai suoi allegati."
     }
   },
   "purge": {

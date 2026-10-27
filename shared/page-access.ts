@@ -45,6 +45,7 @@ export const PAGE_ACCESS: readonly PageAccess[] = [
   { path: "/maintenance", anyOf: [P.MANAGE_MAINTENANCE] },
   { path: "/expenses", anyOf: [P.MANAGE_EXPENSES] },
   { path: "/documents", anyOf: [P.VIEW_DOCUMENTS, P.MANAGE_DOCUMENTS] },
+  { path: "/lease-quotes", anyOf: [P.MANAGE_LEASE_QUOTES] },
   // B-29: everyone who may see reservations OR vehicles gets the menu item.
   { path: "/delivery", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS, P.VIEW_VEHICLES, P.MANAGE_VEHICLES] },
   // B-29a: opening the screen accepts "meldingen beheren" OR "e-mailsjablonen

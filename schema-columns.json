@@ -3862,6 +3862,554 @@
     ]
   },
   {
+    "name": "lease_quote_files",
+    "columns": [
+      {
+        "name": "id",
+        "type": "serial",
+        "notNull": true,
+        "primary": true,
+        "default": null
+      },
+      {
+        "name": "quote_id",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "kind",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "file_name",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "file_path",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "file_size",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "content_type",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": "now()"
+      },
+      {
+        "name": "created_by",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      }
+    ]
+  },
+  {
+    "name": "lease_quote_settings",
+    "columns": [
+      {
+        "name": "id",
+        "type": "serial",
+        "notNull": true,
+        "primary": true,
+        "default": null
+      },
+      {
+        "name": "interest_rate_percent",
+        "type": "numeric(6, 3)",
+        "notNull": false,
+        "primary": false,
+        "default": "'9'"
+      },
+      {
+        "name": "margin_per_month",
+        "type": "numeric(10, 2)",
+        "notNull": false,
+        "primary": false,
+        "default": "'0'"
+      },
+      {
+        "name": "rob_per_year",
+        "type": "numeric(10, 2)",
+        "notNull": false,
+        "primary": false,
+        "default": "'275'"
+      },
+      {
+        "name": "other_costs_per_year",
+        "type": "numeric(10, 2)",
+        "notNull": false,
+        "primary": false,
+        "default": "'350'"
+      },
+      {
+        "name": "excess_km_price",
+        "type": "numeric(8, 4)",
+        "notNull": false,
+        "primary": false,
+        "default": "'0'"
+      },
+      {
+        "name": "shortfall_km_price",
+        "type": "numeric(8, 4)",
+        "notNull": false,
+        "primary": false,
+        "default": "'0'"
+      },
+      {
+        "name": "validity_days",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": "30"
+      },
+      {
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": "now()"
+      },
+      {
+        "name": "updated_by",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      }
+    ]
+  },
+  {
+    "name": "lease_quote_template_backgrounds",
+    "columns": [
+      {
+        "name": "id",
+        "type": "serial",
+        "notNull": true,
+        "primary": true,
+        "default": null
+      },
+      {
+        "name": "template_id",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "name",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "background_path",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "preview_path",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": "now()"
+      }
+    ]
+  },
+  {
+    "name": "lease_quote_templates",
+    "columns": [
+      {
+        "name": "id",
+        "type": "serial",
+        "notNull": true,
+        "primary": true,
+        "default": null
+      },
+      {
+        "name": "name",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "is_default",
+        "type": "boolean",
+        "notNull": false,
+        "primary": false,
+        "default": "false"
+      },
+      {
+        "name": "background_path",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "background_preview_path",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "template_preview_path",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": "now()"
+      },
+      {
+        "name": "fields",
+        "type": "jsonb",
+        "notNull": false,
+        "primary": false,
+        "default": "'[]'::jsonb"
+      }
+    ]
+  },
+  {
+    "name": "lease_quote_variants",
+    "columns": [
+      {
+        "name": "id",
+        "type": "serial",
+        "notNull": true,
+        "primary": true,
+        "default": null
+      },
+      {
+        "name": "quote_id",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "position",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": "0"
+      },
+      {
+        "name": "term_months",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "km_per_year",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "residual_value",
+        "type": "numeric(12, 2)",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "is_chosen",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "false"
+      },
+      {
+        "name": "total_per_month",
+        "type": "numeric(12, 2)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      }
+    ]
+  },
+  {
+    "name": "lease_quotes",
+    "columns": [
+      {
+        "name": "id",
+        "type": "serial",
+        "notNull": true,
+        "primary": true,
+        "default": null
+      },
+      {
+        "name": "quote_number",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": "'concept'"
+      },
+      {
+        "name": "quote_date",
+        "type": "date",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "valid_until",
+        "type": "date",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "customer_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "prospect_name",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "prospect_company",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "prospect_email",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "prospect_phone",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "vehicle_make",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "vehicle_model",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "vehicle_trim",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "license_plate",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "dealer_name",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "delivery_time",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "vehicle_notes",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "purchase_price",
+        "type": "numeric(12, 2)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "price_breakdown",
+        "type": "jsonb",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "interest_rate_percent",
+        "type": "numeric(6, 3)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "rob_per_year",
+        "type": "numeric(10, 2)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "other_costs_per_year",
+        "type": "numeric(10, 2)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "insurance_per_month",
+        "type": "numeric(10, 2)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "road_tax_per_month",
+        "type": "numeric(10, 2)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "margin_per_month",
+        "type": "numeric(10, 2)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "excess_km_price",
+        "type": "numeric(8, 4)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "shortfall_km_price",
+        "type": "numeric(8, 4)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "internal_notes",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": "now()"
+      },
+      {
+        "name": "created_by",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "updated_by",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      }
+    ]
+  },
+  {
     "name": "login_attempts",
     "columns": [
       {

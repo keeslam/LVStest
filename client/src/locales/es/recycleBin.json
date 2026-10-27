@@ -120,6 +120,17 @@
       "noun_other": "gastos",
       "noun_many": "gastos",
       "purgeNote": "El gasto desaparece de forma definitiva, junto con el justificante. Un justificante que también es el adjunto de una factura del buzón se conserva."
+    },
+    "lease_quote": {
+      "openButton": "Ofertas de leasing eliminadas",
+      "title": "Ofertas de leasing eliminadas",
+      "description": "Una oferta de leasing eliminada se guarda aquí con sus variantes y archivos adjuntos y puede restaurarse.",
+      "empty": "No hay ofertas de leasing eliminadas.",
+      "badge": "Oferta de leasing",
+      "noun_one": "oferta de leasing",
+      "noun_other": "ofertas de leasing",
+      "noun_many": "ofertas de leasing",
+      "purgeNote": "La oferta de leasing desaparece para siempre, junto con sus archivos adjuntos."
     }
   },
   "purge": {

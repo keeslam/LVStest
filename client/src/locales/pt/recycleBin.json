@@ -120,6 +120,17 @@
       "noun_many": "despesas",
       "noun_other": "despesas",
       "purgeNote": "A despesa desaparece definitivamente, juntamente com o recibo. Um recibo que seja também o anexo de uma fatura da caixa de correio mantém-se."
+    },
+    "lease_quote": {
+      "openButton": "Propostas de leasing eliminadas",
+      "title": "Propostas de leasing eliminadas",
+      "description": "Uma proposta de leasing eliminada é guardada aqui com as suas variantes e anexos e pode ser restaurada.",
+      "empty": "Sem propostas de leasing eliminadas.",
+      "badge": "Proposta de leasing",
+      "noun_one": "proposta de leasing",
+      "noun_many": "propostas de leasing",
+      "noun_other": "propostas de leasing",
+      "purgeNote": "A proposta de leasing desaparece para sempre, juntamente com os seus anexos."
     }
   },
   "purge": {

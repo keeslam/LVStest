@@ -57,6 +57,7 @@ const ALL_ROWS: Row[] = [
   row({ id: 8, entityType: "driver", label: "Chauffeur Piet Pieters — Jansen Verhuur BV", relatedCounts: { "reservations.driver_id": 2 } }),
   row({ id: 10, entityType: "driver", label: "Chauffeur Oud — Jansen Verhuur BV", restoredAt: "2026-09-05T10:00:00.000Z", restoredBy: "anna" }),
   row({ id: 9, entityType: "expense", label: "Kostenpost #12 — AB-123-C fuel € 45,50 2026-10-01", relatedCounts: { invoice_inbox_items: 1 } }),
+  row({ id: 11, entityType: "lease_quote", label: "Lease offerte LO-2026-0001" }),
 ];
 
 let requestedUrls: string[];
@@ -124,6 +125,7 @@ const KIND_FACTS: Record<DeletedRecordKind, { title: string; empty: string; badg
   fine: { title: "Verwijderde bekeuringen", empty: "Geen verwijderde bekeuringen.", badge: "Boete", rowId: 6, label: "Boete AB-123-C" },
   driver: { title: "Verwijderde chauffeurs", empty: "Geen verwijderde chauffeurs.", badge: "Chauffeur", rowId: 8, label: "Chauffeur Piet Pieters" },
   expense: { title: "Verwijderde kostenposten", empty: "Geen verwijderde kostenposten.", badge: "Kostenpost", rowId: 9, label: "Kostenpost #12" },
+  lease_quote: { title: "Verwijderde lease offertes", empty: "Geen verwijderde lease offertes.", badge: "Lease offerte", rowId: 11, label: "Lease offerte LO-2026-0001" },
 };
 
 describe("RecycleBinDialog - one dialog, one kind per screen", () => {

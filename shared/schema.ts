@@ -116,6 +116,9 @@ export const UserPermission = {
   VIEW_DOCUMENTS: 'view_documents',
   MANAGE_DOCUMENTS: 'manage_documents',
   MANAGE_PDF_TEMPLATES: 'manage_pdf_templates',
+
+  // Lease quotes (offertes for lease cars; own screen, files and template tab)
+  MANAGE_LEASE_QUOTES: 'manage_lease_quotes',
   
   // Damage Checks
   MANAGE_DAMAGE_CHECKS: 'manage_damage_checks',
@@ -1669,6 +1672,126 @@ export const insertTransportReportTemplateBackgroundSchema = createInsertSchema(
 export type TransportReportTemplateBackground = typeof transportReportTemplateBackgrounds.$inferSelect;
 export type InsertTransportReportTemplateBackground = z.infer<typeof insertTransportReportTemplateBackgroundSchema>;
 
+// Lease quotes ("Lease offertes"). All amounts excl. btw. Settings are copied into a
+// quote when it is created, so later changes to the settings never alter old quotes.
+export const leaseQuoteSettings = pgTable("lease_quote_settings", {
+  id: serial("id").primaryKey(),
+  interestRatePercent: numeric("interest_rate_percent", { precision: 6, scale: 3 }).default("9"),
+  marginPerMonth: numeric("margin_per_month", { precision: 10, scale: 2 }).default("0"),
+  robPerYear: numeric("rob_per_year", { precision: 10, scale: 2 }).default("275"),
+  otherCostsPerYear: numeric("other_costs_per_year", { precision: 10, scale: 2 }).default("350"),
+  excessKmPrice: numeric("excess_km_price", { precision: 8, scale: 4 }).default("0"),
+  shortfallKmPrice: numeric("shortfall_km_price", { precision: 8, scale: 4 }).default("0"),
+  validityDays: integer("validity_days").default(30),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  updatedBy: text("updated_by"),
+});
+
+export type LeaseQuoteSettings = typeof leaseQuoteSettings.$inferSelect;
+
+export const leaseQuotes = pgTable("lease_quotes", {
+  id: serial("id").primaryKey(),
+  quoteNumber: text("quote_number").notNull().unique(),
+  status: text("status").default("concept"),
+  quoteDate: date("quote_date").notNull(),
+  validUntil: date("valid_until").notNull(),
+  customerId: integer("customer_id").references(() => customers.id),
+  prospectName: text("prospect_name"),
+  prospectCompany: text("prospect_company"),
+  prospectEmail: text("prospect_email"),
+  prospectPhone: text("prospect_phone"),
+  vehicleMake: text("vehicle_make"),
+  vehicleModel: text("vehicle_model"),
+  vehicleTrim: text("vehicle_trim"),
+  licensePlate: text("license_plate"),
+  dealerName: text("dealer_name"),
+  deliveryTime: text("delivery_time"),
+  vehicleNotes: text("vehicle_notes"),
+  purchasePrice: numeric("purchase_price", { precision: 12, scale: 2 }),
+  priceBreakdown: jsonb("price_breakdown").$type<{
+    catalogPrice?: number | null; options?: number | null; discount?: number | null; bpm?: number | null;
+    deliveryCosts?: number | null; totalExclVat?: number | null; totalInclVat?: number | null;
+  } | null>(),
+  interestRatePercent: numeric("interest_rate_percent", { precision: 6, scale: 3 }),
+  robPerYear: numeric("rob_per_year", { precision: 10, scale: 2 }),
+  otherCostsPerYear: numeric("other_costs_per_year", { precision: 10, scale: 2 }),
+  insurancePerMonth: numeric("insurance_per_month", { precision: 10, scale: 2 }),
+  roadTaxPerMonth: numeric("road_tax_per_month", { precision: 10, scale: 2 }),
+  marginPerMonth: numeric("margin_per_month", { precision: 10, scale: 2 }),
+  excessKmPrice: numeric("excess_km_price", { precision: 8, scale: 4 }),
+  shortfallKmPrice: numeric("shortfall_km_price", { precision: 8, scale: 4 }),
+  internalNotes: text("internal_notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  createdBy: text("created_by"),
+  updatedBy: text("updated_by"),
+});
+
+export type LeaseQuote = typeof leaseQuotes.$inferSelect;
+
+export const leaseQuoteVariants = pgTable("lease_quote_variants", {
+  id: serial("id").primaryKey(),
+  quoteId: integer("quote_id").notNull().references(() => leaseQuotes.id, { onDelete: 'cascade' }),
+  position: integer("position").notNull().default(0),
+  termMonths: integer("term_months").notNull(),
+  kmPerYear: integer("km_per_year").notNull(),
+  residualValue: numeric("residual_value", { precision: 12, scale: 2 }).notNull(),
+  isChosen: boolean("is_chosen").notNull().default(false),
+  // Server-calculated and rounded to cents; the client's own total is never trusted.
+  totalPerMonth: numeric("total_per_month", { precision: 12, scale: 2 }),
+});
+
+export type LeaseQuoteVariant = typeof leaseQuoteVariants.$inferSelect;
+
+export const leaseQuoteFiles = pgTable("lease_quote_files", {
+  id: serial("id").primaryKey(),
+  quoteId: integer("quote_id").notNull().references(() => leaseQuotes.id, { onDelete: 'cascade' }),
+  kind: text("kind").notNull(), // 'dealer' | 'generated'
+  fileName: text("file_name").notNull(),
+  filePath: text("file_path").notNull(), // relative to the uploads folder
+  fileSize: integer("file_size"),
+  contentType: text("content_type"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  createdBy: text("created_by"),
+});
+
+export type LeaseQuoteFile = typeof leaseQuoteFiles.$inferSelect;
+
+// Customer PDF template of a lease quote: same model as transportReportTemplates above.
+export const leaseQuoteTemplates = pgTable("lease_quote_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  isDefault: boolean("is_default").default(false),
+  backgroundPath: text("background_path"),
+  backgroundPreviewPath: text("background_preview_path"),
+  templatePreviewPath: text("template_preview_path"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  fields: jsonb("fields").default([])
+});
+
+export const insertLeaseQuoteTemplateSchema = createInsertSchema(leaseQuoteTemplates)
+  .omit({ id: true })
+  .extend({ name: templateNameField });
+
+export type LeaseQuoteTemplate = typeof leaseQuoteTemplates.$inferSelect;
+export type InsertLeaseQuoteTemplate = z.infer<typeof insertLeaseQuoteTemplateSchema>;
+
+export const leaseQuoteTemplateBackgrounds = pgTable("lease_quote_template_backgrounds", {
+  id: serial("id").primaryKey(),
+  templateId: integer("template_id").notNull().references(() => leaseQuoteTemplates.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(),
+  backgroundPath: text("background_path").notNull(),
+  previewPath: text("preview_path").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const insertLeaseQuoteTemplateBackgroundSchema = createInsertSchema(leaseQuoteTemplateBackgrounds)
+  .omit({ id: true, createdAt: true });
+
+export type LeaseQuoteTemplateBackground = typeof leaseQuoteTemplateBackgrounds.$inferSelect;
+export type InsertLeaseQuoteTemplateBackground = z.infer<typeof insertLeaseQuoteTemplateBackgroundSchema>;
+
 // Barcode label templates — same clone-per-domain template-editor pattern as
 // transportReportTemplates above (see that comment), adapted for key-label
 // stickers: a small mm-sized canvas instead of A4, no background library, and
@@ -2557,6 +2680,8 @@ export const DELETED_RECORD_KINDS = [
   "vehicle", "customer", "reservation", "maintenance_block", "transport", "fine",
   // Sub-project D (B-41 D8): a driver and an expense each have a bin of their own.
   "driver", "expense",
+  // Lease quotes: a deleted quote waits in its own bin.
+  "lease_quote",
 ] as const;
 export type DeletedRecordKind = (typeof DELETED_RECORD_KINDS)[number];
 

@@ -1786,6 +1786,358 @@ async function runMigrations() {
       console.log('✅ Transport report templates already exist, skipping seed');
     }
 
+    // Lease quotes ("Lease offertes"): settings, quotes, variants, files and the customer PDF template.
+    // Additive only; every table is created with createTableIfNotExists.
+    await createTableIfNotExists(
+      'lease_quote_settings',
+      `CREATE TABLE lease_quote_settings (
+        id SERIAL PRIMARY KEY,
+        interest_rate_percent NUMERIC(6,3) DEFAULT 9,
+        margin_per_month NUMERIC(10,2) DEFAULT 0,
+        rob_per_year NUMERIC(10,2) DEFAULT 275,
+        other_costs_per_year NUMERIC(10,2) DEFAULT 350,
+        excess_km_price NUMERIC(8,4) DEFAULT 0,
+        shortfall_km_price NUMERIC(8,4) DEFAULT 0,
+        validity_days INTEGER DEFAULT 30,
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_by TEXT
+      )`
+    );
+    const existingLeaseQuoteSettings = await db.execute(sql`SELECT id FROM lease_quote_settings LIMIT 1`);
+    if (existingLeaseQuoteSettings.rows.length === 0) {
+      await db.execute(sql`INSERT INTO lease_quote_settings DEFAULT VALUES`);
+      console.log('✅ Default lease quote settings seeded');
+    }
+
+    await createTableIfNotExists(
+      'lease_quotes',
+      `CREATE TABLE lease_quotes (
+        id SERIAL PRIMARY KEY,
+        quote_number TEXT NOT NULL,
+        status TEXT DEFAULT 'concept',
+        quote_date DATE NOT NULL,
+        valid_until DATE NOT NULL,
+        customer_id INTEGER REFERENCES customers(id),
+        prospect_name TEXT,
+        prospect_company TEXT,
+        prospect_email TEXT,
+        prospect_phone TEXT,
+        vehicle_make TEXT,
+        vehicle_model TEXT,
+        vehicle_trim TEXT,
+        license_plate TEXT,
+        dealer_name TEXT,
+        delivery_time TEXT,
+        vehicle_notes TEXT,
+        purchase_price NUMERIC(12,2),
+        price_breakdown JSONB,
+        interest_rate_percent NUMERIC(6,3),
+        rob_per_year NUMERIC(10,2),
+        other_costs_per_year NUMERIC(10,2),
+        insurance_per_month NUMERIC(10,2),
+        road_tax_per_month NUMERIC(10,2),
+        margin_per_month NUMERIC(10,2),
+        excess_km_price NUMERIC(8,4),
+        shortfall_km_price NUMERIC(8,4),
+        internal_notes TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        created_by TEXT,
+        updated_by TEXT
+      )`
+    );
+    await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS lease_quotes_quote_number_unique ON lease_quotes (quote_number)`);
+
+    await createTableIfNotExists(
+      'lease_quote_variants',
+      `CREATE TABLE lease_quote_variants (
+        id SERIAL PRIMARY KEY,
+        quote_id INTEGER NOT NULL REFERENCES lease_quotes(id) ON DELETE CASCADE,
+        position INTEGER NOT NULL DEFAULT 0,
+        term_months INTEGER NOT NULL,
+        km_per_year INTEGER NOT NULL,
+        residual_value NUMERIC(12,2) NOT NULL,
+        is_chosen BOOLEAN NOT NULL DEFAULT false,
+        total_per_month NUMERIC(12,2)
+      )`
+    );
+
+    await createTableIfNotExists(
+      'lease_quote_files',
+      `CREATE TABLE lease_quote_files (
+        id SERIAL PRIMARY KEY,
+        quote_id INTEGER NOT NULL REFERENCES lease_quotes(id) ON DELETE CASCADE,
+        kind TEXT NOT NULL,
+        file_name TEXT NOT NULL,
+        file_path TEXT NOT NULL,
+        file_size INTEGER,
+        content_type TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        created_by TEXT
+      )`
+    );
+
+    await createTableIfNotExists(
+      'lease_quote_templates',
+      `CREATE TABLE lease_quote_templates (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        is_default BOOLEAN DEFAULT false,
+        background_path TEXT,
+        background_preview_path TEXT,
+        template_preview_path TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        fields JSONB DEFAULT '[]'
+      )`
+    );
+
+    await createTableIfNotExists(
+      'lease_quote_template_backgrounds',
+      `CREATE TABLE lease_quote_template_backgrounds (
+        id SERIAL PRIMARY KEY,
+        template_id INTEGER NOT NULL REFERENCES lease_quote_templates(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        background_path TEXT NOT NULL,
+        preview_path TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`
+    );
+
+    // Default customer PDF template, only when no lease quote template exists yet (A4, 595x842).
+    const existingLeaseQuoteTemplates = await db.execute(sql`SELECT id FROM lease_quote_templates LIMIT 1`);
+    if (existingLeaseQuoteTemplates.rows.length === 0) {
+      const defaultLeaseQuoteFields = [
+        {
+          "id": "field-offertenummer",
+          "name": "Offertenummer",
+          "x": 50,
+          "y": 60,
+          "fontSize": 20,
+          "isBold": true,
+          "source": "quoteNumber",
+          "textAlign": "left",
+          "locked": false
+        },
+        {
+          "id": "field-offertedatum",
+          "name": "Offertedatum",
+          "x": 50,
+          "y": 90,
+          "fontSize": 11,
+          "isBold": false,
+          "source": "quoteDate",
+          "textAlign": "left",
+          "locked": false
+        },
+        {
+          "id": "field-geldigtot",
+          "name": "Geldig tot",
+          "x": 300,
+          "y": 90,
+          "fontSize": 11,
+          "isBold": false,
+          "source": "validUntil",
+          "textAlign": "left",
+          "locked": false
+        },
+        {
+          "id": "field-klantnaam",
+          "name": "Klant",
+          "x": 50,
+          "y": 150,
+          "fontSize": 13,
+          "isBold": true,
+          "source": "customerName",
+          "textAlign": "left",
+          "locked": false
+        },
+        {
+          "id": "field-contact",
+          "name": "Contactpersoon",
+          "x": 50,
+          "y": 170,
+          "fontSize": 11,
+          "isBold": false,
+          "source": "customerContact",
+          "textAlign": "left",
+          "locked": false
+        },
+        {
+          "id": "field-adres",
+          "name": "Adres",
+          "x": 50,
+          "y": 188,
+          "fontSize": 11,
+          "isBold": false,
+          "source": "customerAddress",
+          "textAlign": "left",
+          "locked": false
+        },
+        {
+          "id": "field-postcode",
+          "name": "Postcode",
+          "x": 50,
+          "y": 206,
+          "fontSize": 11,
+          "isBold": false,
+          "source": "customerPostalCode",
+          "textAlign": "left",
+          "locked": false
+        },
+        {
+          "id": "field-plaats",
+          "name": "Plaats",
+          "x": 130,
+          "y": 206,
+          "fontSize": 11,
+          "isBold": false,
+          "source": "customerCity",
+          "textAlign": "left",
+          "locked": false
+        },
+        {
+          "id": "field-email",
+          "name": "E-mail",
+          "x": 50,
+          "y": 224,
+          "fontSize": 11,
+          "isBold": false,
+          "source": "customerEmail",
+          "textAlign": "left",
+          "locked": false
+        },
+        {
+          "id": "field-merk",
+          "name": "Merk",
+          "x": 50,
+          "y": 290,
+          "fontSize": 14,
+          "isBold": true,
+          "source": "vehicleMake",
+          "textAlign": "left",
+          "locked": false
+        },
+        {
+          "id": "field-model",
+          "name": "Model",
+          "x": 150,
+          "y": 290,
+          "fontSize": 14,
+          "isBold": true,
+          "source": "vehicleModel",
+          "textAlign": "left",
+          "locked": false
+        },
+        {
+          "id": "field-uitvoering",
+          "name": "Uitvoering",
+          "x": 50,
+          "y": 312,
+          "fontSize": 11,
+          "isBold": false,
+          "source": "vehicleTrim",
+          "textAlign": "left",
+          "locked": false
+        },
+        {
+          "id": "field-kenteken",
+          "name": "Kenteken",
+          "x": 50,
+          "y": 332,
+          "fontSize": 11,
+          "isBold": false,
+          "source": "licensePlate",
+          "textAlign": "left",
+          "locked": false
+        },
+        {
+          "id": "field-levertijd",
+          "name": "Levertijd",
+          "x": 50,
+          "y": 352,
+          "fontSize": 11,
+          "isBold": false,
+          "source": "deliveryTime",
+          "textAlign": "left",
+          "locked": false
+        },
+        {
+          "id": "field-looptijd",
+          "name": "Looptijd (maanden)",
+          "x": 50,
+          "y": 420,
+          "fontSize": 12,
+          "isBold": false,
+          "source": "termMonths",
+          "textAlign": "left",
+          "locked": false
+        },
+        {
+          "id": "field-km",
+          "name": "Kilometers per jaar",
+          "x": 50,
+          "y": 442,
+          "fontSize": 12,
+          "isBold": false,
+          "source": "kmPerYear",
+          "textAlign": "left",
+          "locked": false
+        },
+        {
+          "id": "field-prijs",
+          "name": "Leaseprijs per maand excl. btw",
+          "x": 50,
+          "y": 480,
+          "fontSize": 18,
+          "isBold": true,
+          "source": "monthlyPriceExclVat",
+          "textAlign": "left",
+          "locked": false
+        },
+        {
+          "id": "field-meerkm",
+          "name": "Meerkilometerprijs",
+          "x": 50,
+          "y": 530,
+          "fontSize": 11,
+          "isBold": false,
+          "source": "excessKmPrice",
+          "textAlign": "left",
+          "locked": false
+        },
+        {
+          "id": "field-minderkm",
+          "name": "Minderkilometerprijs",
+          "x": 50,
+          "y": 550,
+          "fontSize": 11,
+          "isBold": false,
+          "source": "shortfallKmPrice",
+          "textAlign": "left",
+          "locked": false
+        },
+        {
+          "id": "field-handtekening",
+          "name": "Handtekening verhuurder",
+          "x": 50,
+          "y": 700,
+          "fontSize": 11,
+          "isBold": false,
+          "source": "signatureLandlord",
+          "textAlign": "left",
+          "locked": false,
+          "width": 170,
+          "height": 55
+        }
+      ];
+      await db.execute(sql`
+        INSERT INTO lease_quote_templates (name, is_default, fields)
+        VALUES ('Standaard lease offerte', true, ${JSON.stringify(defaultLeaseQuoteFields)}::jsonb)
+      `);
+      console.log('✅ Default lease quote template seeded');
+    }
+
     // Barcode label templates (Documents page "Barcodelabels" tab). Same
     // drag-position-fields model as the transport report templates above, but
     // the canvas is a small mm-sized sticker instead of A4, so x/y are in mm
