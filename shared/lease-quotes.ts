@@ -98,3 +98,30 @@ export const leaseQuotePayloadSchema = z.object({
 });
 
 export type LeaseQuotePayload = z.infer<typeof leaseQuotePayloadSchema>;
+
+/** What the AI read from a dealer quote; every field may be missing. All amounts in euro. */
+export interface ParsedDealerQuote {
+  dealerName: string | null;
+  make: string | null;
+  model: string | null;
+  trim: string | null;
+  catalogPrice: number | null;
+  options: number | null;
+  discount: number | null;
+  bpm: number | null;
+  deliveryCosts: number | null;
+  totalExclVat: number | null;
+  totalInclVat: number | null;
+  deliveryTime: string | null;
+  quoteDate: string | null;
+  validUntil: string | null;
+}
+
+/**
+ * Purchase price to suggest after a scan: the total excl. VAT (assumed to include BPM and
+ * delivery costs). With only an incl. VAT total no amount is suggested, the user decides.
+ */
+export function suggestedPurchasePrice(p: ParsedDealerQuote): { amount: number | null; onlyInclVat: boolean } {
+  if (p.totalExclVat != null) return { amount: p.totalExclVat, onlyInclVat: false };
+  return { amount: null, onlyInclVat: p.totalInclVat != null };
+}

@@ -1,11 +1,21 @@
 import type { Express, Request, Response } from "express";
+import fs from "fs";
+import path from "path";
+import multer from "multer";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+import { db } from "../db";
+import { sanitizeUploadedFields } from "../middleware/security/sanitization";
+import { createSecureMulterFilter, sanitizeFilename, validateAfterUpload } from "../utils/security/fileUploadSecurity";
+import { assertWithinUploads, getUploadsDir } from "../../shared/paths";
+import { leaseQuoteFiles, leaseQuotes } from "../../shared/schema";
+import { scanDealerQuote } from "../utils/dealer-quote-scanner";
 import { hasPermission } from "../middleware/permissions.js";
 import { UserPermission } from "../../shared/schema";
-import { LEASE_QUOTE_STATUSES, leaseQuotePayloadSchema } from "../../shared/lease-quotes";
+import { LEASE_QUOTE_STATUSES, leaseQuotePayloadSchema, suggestedPurchasePrice } from "../../shared/lease-quotes";
 import {
   copyLeaseQuote, createLeaseQuote, deleteLeaseQuote, getLeaseQuote, getLeaseQuoteSettings, listLeaseQuotes,
-  updateLeaseQuote, updateLeaseQuoteSettings,
+  quoteFilesFolder, updateLeaseQuote, updateLeaseQuoteSettings,
 } from "../services/lease-quotes";
 import type { RouteDeps } from "./deps";
 
@@ -33,6 +43,45 @@ function badRequest(res: Response, error: z.ZodError) {
 }
 
 const actorName = (req: Request) => req.user?.username ?? null;
+
+class QuoteNotFoundError extends Error {}
+
+async function quoteExists(id: number): Promise<boolean> {
+  const [row] = await db.select({ id: leaseQuotes.id }).from(leaseQuotes).where(eq(leaseQuotes.id, id));
+  return !!row;
+}
+
+/** A file row only counts when it belongs to the quote in the URL. */
+async function findQuoteFile(quoteId: number, fileId: number) {
+  const [row] = await db.select().from(leaseQuoteFiles).where(and(eq(leaseQuoteFiles.id, fileId), eq(leaseQuoteFiles.quoteId, quoteId)));
+  return row ?? null;
+}
+
+function fileIds(req: Request, res: Response): { id: number; fileId: number } | null {
+  const id = idParam(req, res); if (id === null) return null;
+  const fileId = parseInt(req.params.fileId, 10);
+  if (!Number.isInteger(fileId) || fileId < 1) { res.status(400).json({ message: "Invalid id" }); return null; }
+  return { id, fileId };
+}
+
+// Dealer quotes: PDF or photo, 10 MB, stored below uploads/lease-quotes/<id>/ (the quote must exist first).
+const dealerUpload = sanitizeUploadedFields(multer({
+  storage: multer.diskStorage({
+    destination: (req, _file, cb) => {
+      const id = parseInt(req.params.id, 10);
+      if (!Number.isInteger(id) || id < 1) return cb(new QuoteNotFoundError(), "");
+      quoteExists(id).then((found) => {
+        if (!found) return cb(new QuoteNotFoundError(), "");
+        const dir = path.join(getUploadsDir(), quoteFilesFolder(id));
+        fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+      }, (e) => cb(e, ""));
+    },
+    filename: (_req, file, cb) => cb(null, `dealer_${Date.now()}${path.extname(sanitizeFilename(file.originalname))}`),
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: createSecureMulterFilter("document"),
+}));
 
 export function registerLeaseQuoteRoutes(app: Express, _deps?: RouteDeps) {
   // /settings is registered before /:id so it is never read as an id.
@@ -106,5 +155,79 @@ export function registerLeaseQuoteRoutes(app: Express, _deps?: RouteDeps) {
     const deleted = await deleteLeaseQuote(id, { username: actorName(req), userId: req.user?.id ?? null });
     if (!deleted) return res.status(404).json({ message: "Lease quote not found" });
     res.json({ ok: true, quoteNumber: deleted.quoteNumber });
+  });
+
+  // ---- Files: dealer quotes (uploaded) and generated customer PDFs -------------------
+  app.post("/api/lease-quotes/:id/files", canManage, (req, res, next) => {
+    dealerUpload.single("file")(req, res, (err?: unknown) => {
+      if (err instanceof QuoteNotFoundError) return res.status(404).json({ message: "Lease quote not found" });
+      if (err) return next(err);
+      next();
+    });
+  }, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    try {
+      const check = await validateAfterUpload(req.file.path, req.file.originalname, req.file.mimetype, "document");
+      if (!check.valid) {
+        fs.rmSync(req.file.path, { force: true });
+        return res.status(400).json({ message: check.error ?? "Invalid file", code: "LEASE_FILE_INVALID" });
+      }
+      const [row] = await db.insert(leaseQuoteFiles).values({
+        quoteId: id,
+        kind: "dealer",
+        fileName: sanitizeFilename(req.file.originalname),
+        filePath: `${quoteFilesFolder(id)}/${req.file.filename}`,
+        fileSize: req.file.size,
+        contentType: req.file.mimetype,
+        createdBy: actorName(req),
+      }).returning();
+      res.status(201).json(row);
+    } catch (e) {
+      fs.rmSync(req.file.path, { force: true });
+      console.error("Lease quote file could not be stored:", e);
+      res.status(500).json({ message: "The file could not be stored", code: "LEASE_FILE_FAILED" });
+    }
+  });
+
+  // Reads a dealer quote with the AI. Only proposes values; the quote is never changed here.
+  app.post("/api/lease-quotes/:id/files/:fileId/scan", canManage, async (req, res) => {
+    const ids = fileIds(req, res); if (ids === null) return;
+    const file = await findQuoteFile(ids.id, ids.fileId);
+    if (!file) return res.status(404).json({ message: "File not found" });
+    try {
+      const abs = assertWithinUploads(path.join(getUploadsDir(), file.filePath), "lease quote file");
+      const parsed = await scanDealerQuote(abs, file.contentType ?? "application/pdf");
+      res.json({ parsed, suggestion: suggestedPurchasePrice(parsed) });
+    } catch (e) {
+      // The scanner's text (key names, provider errors) stays in the log.
+      console.error("Dealer quote scan failed:", e instanceof Error ? e.message : e);
+      res.status(502).json({ message: "The quote could not be read", code: "LEASE_SCAN_FAILED" });
+    }
+  });
+
+  app.get("/api/lease-quotes/:id/files/:fileId", canManage, async (req, res) => {
+    const ids = fileIds(req, res); if (ids === null) return;
+    const file = await findQuoteFile(ids.id, ids.fileId);
+    if (!file) return res.status(404).json({ message: "File not found" });
+    let abs: string;
+    try { abs = assertWithinUploads(path.join(getUploadsDir(), file.filePath), "lease quote file"); }
+    catch { return res.status(404).json({ message: "File not found" }); }
+    if (!fs.existsSync(abs)) return res.status(404).json({ message: "File not found" });
+    res.setHeader("Content-Type", file.contentType || "application/octet-stream");
+    res.setHeader("Content-Disposition", `inline; filename="${sanitizeFilename(file.fileName)}"`);
+    fs.createReadStream(abs).pipe(res);
+  });
+
+  // Generated PDFs are a record of what the customer received; only dealer files can be removed.
+  app.delete("/api/lease-quotes/:id/files/:fileId", canManage, async (req, res) => {
+    const ids = fileIds(req, res); if (ids === null) return;
+    const file = await findQuoteFile(ids.id, ids.fileId);
+    if (!file) return res.status(404).json({ message: "File not found" });
+    if (file.kind !== "dealer") return res.status(409).json({ message: "A generated PDF cannot be deleted", code: "LEASE_FILE_GENERATED" });
+    await db.delete(leaseQuoteFiles).where(eq(leaseQuoteFiles.id, file.id));
+    try { fs.rmSync(assertWithinUploads(path.join(getUploadsDir(), file.filePath), "lease quote file"), { force: true }); }
+    catch (e) { console.warn("Lease quote file left on disk:", e instanceof Error ? e.message : e); }
+    res.json({ ok: true });
   });
 }
