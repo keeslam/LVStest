@@ -30,6 +30,8 @@ import {
   vehicleWaitlist,
   deletedRecords, type DeletedRecord, fines,
   leaseQuotes, leaseQuoteVariants, leaseQuoteFiles,
+  leaseQuoteTemplates, type LeaseQuoteTemplate, type InsertLeaseQuoteTemplate,
+  leaseQuoteTemplateBackgrounds, type LeaseQuoteTemplateBackground, type InsertLeaseQuoteTemplateBackground,
   vehicleMileageReadings,
   reservationDriverAssignments, type ReservationDriverAssignment,
   auditLogs, type AuditLog
@@ -4881,6 +4883,84 @@ export class DatabaseStorage implements IStorage {
     const background = await this.getTransportReportTemplateBackground(backgroundId);
     if (!background) return undefined;
     return await this.updateTransportReportTemplate(templateId, {
+      backgroundPath: background.backgroundPath,
+      backgroundPreviewPath: background.previewPath,
+    });
+  }
+
+  // Lease quote template methods: a mirror of the transport report ones above.
+  async getAllLeaseQuoteTemplates(): Promise<LeaseQuoteTemplate[]> {
+    return await db.select().from(leaseQuoteTemplates).orderBy(desc(leaseQuoteTemplates.createdAt));
+  }
+
+  async getLeaseQuoteTemplate(id: number): Promise<LeaseQuoteTemplate | undefined> {
+    const [template] = await db.select().from(leaseQuoteTemplates).where(eq(leaseQuoteTemplates.id, id));
+    return template || undefined;
+  }
+
+  async getDefaultLeaseQuoteTemplate(): Promise<LeaseQuoteTemplate | undefined> {
+    const [defaultTemplate] = await db.select().from(leaseQuoteTemplates).where(eq(leaseQuoteTemplates.isDefault, true)).limit(1);
+    if (defaultTemplate) return defaultTemplate;
+    const [first] = await db.select().from(leaseQuoteTemplates).orderBy(leaseQuoteTemplates.id).limit(1);
+    return first || undefined;
+  }
+
+  async createLeaseQuoteTemplate(templateData: InsertLeaseQuoteTemplate): Promise<LeaseQuoteTemplate> {
+    if (templateData.isDefault) {
+      await db.update(leaseQuoteTemplates).set({ isDefault: false });
+    }
+    const [template] = await db.insert(leaseQuoteTemplates).values(templateData).returning();
+    return template;
+  }
+
+  async updateLeaseQuoteTemplate(id: number, templateData: Partial<InsertLeaseQuoteTemplate>): Promise<LeaseQuoteTemplate | undefined> {
+    if (templateData.isDefault) {
+      await db.update(leaseQuoteTemplates).set({ isDefault: false });
+    }
+    const [template] = await db
+      .update(leaseQuoteTemplates)
+      .set({ ...templateData, updatedAt: new Date() })
+      .where(eq(leaseQuoteTemplates.id, id))
+      .returning();
+    return template || undefined;
+  }
+
+  async deleteLeaseQuoteTemplate(id: number): Promise<boolean> {
+    const [deleted] = await db.delete(leaseQuoteTemplates).where(eq(leaseQuoteTemplates.id, id)).returning();
+    return !!deleted;
+  }
+
+  async getAllLeaseQuoteTemplateBackgrounds(): Promise<LeaseQuoteTemplateBackground[]> {
+    return await db.select().from(leaseQuoteTemplateBackgrounds).orderBy(desc(leaseQuoteTemplateBackgrounds.createdAt));
+  }
+
+  async getLeaseQuoteTemplateBackgrounds(templateId: number): Promise<LeaseQuoteTemplateBackground[]> {
+    return await db
+      .select()
+      .from(leaseQuoteTemplateBackgrounds)
+      .where(eq(leaseQuoteTemplateBackgrounds.templateId, templateId))
+      .orderBy(desc(leaseQuoteTemplateBackgrounds.createdAt));
+  }
+
+  async getLeaseQuoteTemplateBackground(id: number): Promise<LeaseQuoteTemplateBackground | undefined> {
+    const [background] = await db.select().from(leaseQuoteTemplateBackgrounds).where(eq(leaseQuoteTemplateBackgrounds.id, id));
+    return background || undefined;
+  }
+
+  async createLeaseQuoteTemplateBackground(backgroundData: InsertLeaseQuoteTemplateBackground): Promise<LeaseQuoteTemplateBackground> {
+    const [background] = await db.insert(leaseQuoteTemplateBackgrounds).values(backgroundData).returning();
+    return background;
+  }
+
+  async deleteLeaseQuoteTemplateBackground(id: number): Promise<boolean> {
+    const [deleted] = await db.delete(leaseQuoteTemplateBackgrounds).where(eq(leaseQuoteTemplateBackgrounds.id, id)).returning();
+    return !!deleted;
+  }
+
+  async selectLeaseQuoteTemplateBackground(templateId: number, backgroundId: number): Promise<LeaseQuoteTemplate | undefined> {
+    const background = await this.getLeaseQuoteTemplateBackground(backgroundId);
+    if (!background) return undefined;
+    return await this.updateLeaseQuoteTemplate(templateId, {
       backgroundPath: background.backgroundPath,
       backgroundPreviewPath: background.previewPath,
     });

@@ -54,6 +54,7 @@ const {
   invoiceInboxItems, auditLogs, customers, damageCheckTemplateBackgrounds, damageCheckTemplates, deletedRecords, deliveryTasks,
   documents, drivers, expenses, fines, fiscalAssessments, fiscalAuditEvents, fiscalReviewCases, interactiveDamageChecks,
   pdfTemplates, portalDocumentAcks, portalRequestAttachments, portalRequests, reservationDriverAssignments,
+  leaseQuoteTemplateBackgrounds, leaseQuoteTemplates,
   reservations, scanEvents, templateBackgrounds, transportReportTemplateBackgrounds, transportReportTemplates,
   vehicleDiagramTemplates, vehicleTransports, vehicleUsagePeriods, vehicles,
 } = schema;
@@ -149,6 +150,7 @@ afterAll(async () => {
   // Template rows of the file-column tests (their background rows cascade).
   await db.delete(pdfTemplates).where(like(pdfTemplates.name, `${ROW_PREFIX}%`));
   await db.delete(transportReportTemplates).where(like(transportReportTemplates.name, `${ROW_PREFIX}%`));
+  await db.delete(leaseQuoteTemplates).where(like(leaseQuoteTemplates.name, `${ROW_PREFIX}%`));
   await db.delete(damageCheckTemplates).where(like(damageCheckTemplates.name, `${ROW_PREFIX}%`));
   await db.delete(vehicleDiagramTemplates).where(like(vehicleDiagramTemplates.make, `${ROW_PREFIX}%`));
   await db.delete(fines).where(like(fines.licensePlate, `${FINE_PLATE}%`));
@@ -995,6 +997,7 @@ describe("C-07 fix round - template, background and backup columns also count as
   const nm = (label: string) => `${ROW_PREFIX}${unique(label)}`;
   const pdfParent = async () => (await db.insert(pdfTemplates).values({ name: nm("pdf") }).returning())[0].id;
   const transportParent = async () => (await db.insert(transportReportTemplates).values({ name: nm("trp") }).returning())[0].id;
+  const leaseParent = async () => (await db.insert(leaseQuoteTemplates).values({ name: nm("lqt") }).returning())[0].id;
   const damageParent = async () => (await db.insert(damageCheckTemplates).values({ name: nm("dmg") }).returning())[0].id;
 
   const cases: Array<[string, (stored: string) => Promise<unknown>]> = [
@@ -1008,6 +1011,11 @@ describe("C-07 fix round - template, background and backup columns also count as
     ["transport_report_templates.template_preview_path", (p) => db.insert(transportReportTemplates).values({ name: nm("trp"), templatePreviewPath: p })],
     ["transport_report_template_backgrounds.background_path", async (p) => db.insert(transportReportTemplateBackgrounds).values({ templateId: await transportParent(), name: nm("bg"), backgroundPath: p, previewPath: "x.png" })],
     ["transport_report_template_backgrounds.preview_path", async (p) => db.insert(transportReportTemplateBackgrounds).values({ templateId: await transportParent(), name: nm("bg"), backgroundPath: "x.pdf", previewPath: p })],
+    ["lease_quote_templates.background_path", (p) => db.insert(leaseQuoteTemplates).values({ name: nm("lqt"), backgroundPath: p })],
+    ["lease_quote_templates.background_preview_path", (p) => db.insert(leaseQuoteTemplates).values({ name: nm("lqt"), backgroundPreviewPath: p })],
+    ["lease_quote_templates.template_preview_path", (p) => db.insert(leaseQuoteTemplates).values({ name: nm("lqt"), templatePreviewPath: p })],
+    ["lease_quote_template_backgrounds.background_path", async (p) => db.insert(leaseQuoteTemplateBackgrounds).values({ templateId: await leaseParent(), name: nm("bg"), backgroundPath: p, previewPath: "x.png" })],
+    ["lease_quote_template_backgrounds.preview_path", async (p) => db.insert(leaseQuoteTemplateBackgrounds).values({ templateId: await leaseParent(), name: nm("bg"), backgroundPath: "x.pdf", previewPath: p })],
     ["damage_check_templates.background_path", (p) => db.insert(damageCheckTemplates).values({ name: nm("dmg"), backgroundPath: p })],
     ["damage_check_templates.background_preview_path", (p) => db.insert(damageCheckTemplates).values({ name: nm("dmg"), backgroundPreviewPath: p })],
     ["damage_check_templates.template_preview_path", (p) => db.insert(damageCheckTemplates).values({ name: nm("dmg"), templatePreviewPath: p })],

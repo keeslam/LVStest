@@ -58,6 +58,7 @@ import {
   expenses, fineImportFiles, fines, leaseQuoteFiles, fiscalAssessments, fiscalReviewCases, interactiveDamageChecks, invoiceInboxItems,
   pdfTemplates, portalDocumentAcks, portalRequestAttachments, reservationDriverAssignments, reservations, scanEvents,
   templateBackgrounds, transportReportTemplateBackgrounds, transportReportTemplates, vehicleDiagramTemplates,
+  leaseQuoteTemplateBackgrounds, leaseQuoteTemplates,
   vehicleUsagePeriods, vehicles,
   type DeletedRecord,
 } from "../../shared/schema";
@@ -188,11 +189,13 @@ const SNAPSHOT_FILE_COLUMNS: FileColumn[] = [
 const EXTRA_LIVE_COLUMNS: any[] = [
   invoiceInboxItems.attachmentPath, // a booked invoice's receipt is the inbox attachment
   fineImportFiles.rawPath,
-  // Template backgrounds and previews (rental contract / damage check / transport report).
+  // Template backgrounds and previews (rental contract / damage check / transport report / lease quote).
   pdfTemplates.backgroundPath, pdfTemplates.backgroundPreviewPath, pdfTemplates.templatePreviewPath,
   templateBackgrounds.backgroundPath, templateBackgrounds.previewPath,
   transportReportTemplates.backgroundPath, transportReportTemplates.backgroundPreviewPath, transportReportTemplates.templatePreviewPath,
   transportReportTemplateBackgrounds.backgroundPath, transportReportTemplateBackgrounds.previewPath,
+  leaseQuoteTemplates.backgroundPath, leaseQuoteTemplates.backgroundPreviewPath, leaseQuoteTemplates.templatePreviewPath,
+  leaseQuoteTemplateBackgrounds.backgroundPath, leaseQuoteTemplateBackgrounds.previewPath,
   damageCheckTemplates.backgroundPath, damageCheckTemplates.backgroundPreviewPath, damageCheckTemplates.templatePreviewPath,
   damageCheckTemplateBackgrounds.backgroundPath, damageCheckTemplateBackgrounds.previewPath,
   vehicleDiagramTemplates.diagramPath, // the legacy local path of a vehicle diagram

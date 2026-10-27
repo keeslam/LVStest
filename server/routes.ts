@@ -199,6 +199,7 @@ import { registerReportRoutes } from "./routes/reports";
 import { registerDamageCheckTemplateRoutes } from "./routes/damage-check-templates";
 import { registerVehicleDiagramTemplateRoutes } from "./routes/vehicle-diagram-templates";
 import { registerReportAndLabelTemplateRoutes } from "./routes/report-and-label-templates";
+import { registerLeaseQuoteTemplateRoutes } from "./routes/lease-quote-templates";
 import { onMaintenanceBlockChanged, onReplacementAssigned, onRentalVehicleChanged, plannedNoticeWasSent } from "./services/portal-maintenance-events";
 // besluiten B-06 (BUG-134): the other three events of the decision.
 import { onReservationChangedByStaff } from "./services/portal-reservation-events";
@@ -9782,6 +9783,7 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
   registerReportAndLabelTemplateRoutes(app, routeDeps);
+  registerLeaseQuoteTemplateRoutes(app, routeDeps);
 
   // Generate one PDF (one page per transport) and save it as a Document.
   // Single transport with a vehicle -> attached to that vehicle. Multiple

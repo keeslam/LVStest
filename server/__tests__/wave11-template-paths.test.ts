@@ -25,7 +25,7 @@ const { agentFor, cleanupFixtureUsers } = await import("./helpers/app");
 const { isSafeStoredPathValue } = await import("../middleware/stored-path-guard");
 const { db } = await import("../db");
 const {
-  pdfTemplates, damageCheckTemplates, transportReportTemplates, vehicleDiagramTemplates,
+  pdfTemplates, damageCheckTemplates, transportReportTemplates, leaseQuoteTemplates, vehicleDiagramTemplates,
 } = await import("../../shared/schema");
 const { eq, like } = await import("drizzle-orm");
 
@@ -116,6 +116,23 @@ describe("WAVE 11 / BUG-070 — a stored path from a request body", () => {
     expect(res.status).toBe(400);
 
     const [row] = await db.select().from(transportReportTemplates).where(eq(transportReportTemplates.id, id));
+    expect((row as any).backgroundPath ?? "").not.toContain("WAVE11-canary");
+  });
+
+  it("PATCH /api/lease-quote-templates/:id refuses one", async () => {
+    const create = await admin
+      .post("/api/lease-quote-templates")
+      .send({ name: `${NAME}-lease`, fields: [] });
+    expect([200, 201]).toContain(create.status);
+    const id = create.body.id as number;
+    created.push(() => db.delete(leaseQuoteTemplates).where(eq(leaseQuoteTemplates.id, id)));
+
+    const res = await admin
+      .patch(`/api/lease-quote-templates/${id}`)
+      .send({ backgroundPath: ESCAPE });
+    expect(res.status).toBe(400);
+
+    const [row] = await db.select().from(leaseQuoteTemplates).where(eq(leaseQuoteTemplates.id, id));
     expect((row as any).backgroundPath ?? "").not.toContain("WAVE11-canary");
   });
 

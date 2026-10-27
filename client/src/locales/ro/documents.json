@@ -206,6 +206,11 @@
     "sendEmailButton": "Trimiteți e-mailul",
     "contractTemplateEditorDialogDescription": "Creați și gestionați șabloane de contract cu plasarea câmpurilor prin tragere și plasare",
     "transportTemplateEditorDialogDescription": "Proiectați raportul pentru șofer — trageți câmpurile pe pagină, o pagină mare pentru fiecare transport",
+    "tabLeaseQuoteTemplates": "Oferte de leasing",
+    "leaseQuoteTemplateEditorTitle": "Editare șablon ofertă de leasing",
+    "leaseQuoteTemplateEditorDescription": "Gestionați PDF-ul pe care îl primește clientul cu o ofertă de leasing",
+    "openLeaseQuoteTemplateEditorIntro": "Deschideți editorul de șabloane pentru a proiecta șablonul ofertei de leasing: trageți câmpurile pe pagină.",
+    "leaseQuoteTemplateEditorDialogDescription": "Proiectați oferta de leasing: trageți câmpurile pe pagină, o pagină A4",
     "damageCheck": {
       "cardTitle": "Șabloane de verificare a daunelor",
       "cardDescription": "Gestionați câmpurile, structura și vocabularul listei de verificare folosite pentru a construi formularele de verificare a daunelor. PDF-urile finalizate ale verificărilor de daune se află în biblioteca de documente, filtrate după vehicul. Diagramele vehiculelor se gestionează mai jos.",
@@ -586,6 +591,34 @@
     },
     "createFirstTemplateDescription": "Începeți prin a crea un șablon de raport de transport",
     "backToDelivery": "Înapoi la livrare"
+  },
+  "leaseQuoteTemplateEditor": {
+    "templateNamePlaceholder": "ex. Ofertă de leasing standard",
+    "dataSourceOptions": {
+      "quoteNumber": "Număr ofertă",
+      "quoteDate": "Data ofertei",
+      "validUntil": "Valabilă până la",
+      "customerName": "Client (nume sau firmă)",
+      "customerContact": "Persoană de contact",
+      "customerAddress": "Adresa clientului",
+      "customerPostalCode": "Codul poștal al clientului",
+      "customerCity": "Localitatea clientului",
+      "customerEmail": "E-mailul clientului",
+      "vehicleMake": "Marcă",
+      "vehicleModel": "Model",
+      "vehicleTrim": "Versiune",
+      "licensePlate": "Număr de înmatriculare",
+      "deliveryTime": "Termen de livrare",
+      "termMonths": "Durată (luni)",
+      "kmPerYear": "Kilometri pe an",
+      "monthlyPriceExclVat": "Preț de leasing pe lună fără TVA",
+      "excessKmPrice": "Preț per kilometru în plus",
+      "shortfallKmPrice": "Preț per kilometru în minus",
+      "companyName": "Numele propriei firme",
+      "signatureLandlord": "Semnătura locatorului"
+    },
+    "createFirstTemplateDescription": "Începeți prin a crea un șablon de ofertă de leasing",
+    "backToDocuments": "Înapoi la documente"
   },
   "interactiveDamageCheck": {
     "toasts": {
