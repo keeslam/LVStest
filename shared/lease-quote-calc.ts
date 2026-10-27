@@ -73,11 +73,31 @@ export function calculateLeaseVariant(costs: LeaseCostInputs, variant: LeaseVari
   };
 }
 
-/** Parses Dutch-formatted amounts ("17.318,50", "€ 1.100", "9,5"). Returns null when no number is found. */
+/**
+ * Parses Dutch-formatted amounts ("17.318,50", "€ 1.100", "9,5"). Returns null when no number is found.
+ * Without a comma, dots are thousands separators only when every group after the first is exactly 3 digits
+ * and the first group is not "0"; a single other dot is a decimal point ("9.5", "0.25").
+ */
 export function parseDutchAmount(input: string): number | null {
   if (typeof input !== "string") return null;
   const cleaned = input.replace(/[€\s]/g, "");
   if (!/^-?[\d.,]+$/.test(cleaned) || !/\d/.test(cleaned)) return null;
-  const n = Number(cleaned.replace(/\./g, "").replace(",", "."));
-  return Number.isFinite(n) ? n : null;
+  const negative = cleaned.startsWith("-");
+  const body = negative ? cleaned.slice(1) : cleaned;
+  let normalized: string;
+  if (body.includes(",")) {
+    normalized = body.replace(/\./g, "").replace(",", ".");
+  } else if (!body.includes(".")) {
+    normalized = body;
+  } else {
+    const groups = body.split(".");
+    if (groups.some((g) => !/^\d+$/.test(g))) return null;
+    const thousands = groups[0] !== "0" && groups.slice(1).every((g) => g.length === 3);
+    if (thousands) normalized = groups.join("");
+    else if (groups.length === 2) normalized = body;
+    else return null;
+  }
+  const n = Number(normalized);
+  if (!Number.isFinite(n)) return null;
+  return negative ? -n : n;
 }

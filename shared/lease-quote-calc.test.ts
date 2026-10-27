@@ -58,5 +58,14 @@ describe("parseDutchAmount", () => {
     expect(parseDutchAmount("€ 1.100")).toBe(1100);
     expect(parseDutchAmount("")).toBeNull();
     expect(parseDutchAmount("abc")).toBeNull();
+    expect(parseDutchAmount("1.100")).toBe(1100);
+    expect(parseDutchAmount("1.234.567")).toBe(1234567);
+    expect(parseDutchAmount("9.5")).toBe(9.5);
+    expect(parseDutchAmount("0.25")).toBe(0.25);
+    expect(parseDutchAmount("12.50")).toBe(12.5);
+    expect(parseDutchAmount("0.250")).toBe(0.25);
+    expect(parseDutchAmount("1.2.3")).toBeNull();
+    expect(parseDutchAmount("1..2")).toBeNull();
+    expect(parseDutchAmount(".")).toBeNull();
   });
 });
