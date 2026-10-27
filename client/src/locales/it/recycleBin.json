@@ -30,7 +30,8 @@
     "RESERVATION_CONFLICT": "Questa prenotazione non può essere ripristinata: nel frattempo il veicolo è stato prenotato per quel periodo.",
     "DEBTOR_NUMBER_TAKEN": "Questo numero di debitore è già in uso presso il cliente {{name}}.",
     "DEBTOR_NUMBER_TAKEN_UNNAMED": "Un altro cliente utilizza già questo numero di debitore.",
-    "CUSTOMER_MISSING": "Il cliente di questo conducente non esiste più. Ripristini prima il cliente (Clienti, Clienti eliminati) e poi il conducente."
+    "CUSTOMER_MISSING": "Il cliente di questo conducente non esiste più. Ripristini prima il cliente (Clienti, Clienti eliminati) e poi il conducente.",
+    "QUOTE_NUMBER_TAKEN": "Il numero dell'offerta è nel frattempo stato assegnato a un'altra offerta, quindi il ripristino non è possibile."
   },
   "kinds": {
     "vehicle": {

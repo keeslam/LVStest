@@ -30,7 +30,8 @@
     "RESERVATION_CONFLICT": "Esta reserva não pode ser restaurada: entretanto, o veículo foi reservado para esse período.",
     "DEBTOR_NUMBER_TAKEN": "Este número de devedor já está em uso pelo cliente {{name}}.",
     "DEBTOR_NUMBER_TAKEN_UNNAMED": "Outro cliente já utiliza este número de devedor.",
-    "CUSTOMER_MISSING": "O cliente deste condutor já não existe. Restaure primeiro o cliente (Clientes, Clientes eliminados) e depois o condutor."
+    "CUSTOMER_MISSING": "O cliente deste condutor já não existe. Restaure primeiro o cliente (Clientes, Clientes eliminados) e depois o condutor.",
+    "QUOTE_NUMBER_TAKEN": "O número da proposta foi entretanto atribuído a outra proposta, pelo que não é possível restaurar."
   },
   "kinds": {
     "vehicle": {

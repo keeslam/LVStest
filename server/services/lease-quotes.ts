@@ -116,9 +116,15 @@ export function addDaysIso(iso: string, days: number): string {
 async function allocateQuoteNumber(tx: Tx, quoteDate: string): Promise<string> {
   const year = Number(quoteDate.slice(0, 4));
   await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('lease_quote_number'))`);
+  // Numbers only go up: deleted quotes waiting in the recycle bin still hold their number
+  // (it may be on a PDF already), so the unrestored snapshots count too.
+  const like = `LO-${year}-%`;
   const result = await tx.execute(sql`
-    SELECT COALESCE(MAX(substring(quote_number from '[0-9]+$')::int), 0) AS seq
-    FROM lease_quotes WHERE quote_number LIKE ${`LO-${year}-%`}
+    SELECT GREATEST(
+      COALESCE((SELECT MAX(substring(quote_number from '[0-9]+$')::int) FROM lease_quotes WHERE quote_number LIKE ${like}), 0),
+      COALESCE((SELECT MAX(substring(payload->'quote'->>'quoteNumber' from '[0-9]+$')::int) FROM deleted_records
+                WHERE entity_type = 'lease_quote' AND restored_at IS NULL AND payload->'quote'->>'quoteNumber' LIKE ${like}), 0)
+    ) AS seq
   `);
   const seq = Number((result.rows[0] as any)?.seq ?? 0);
   return formatQuoteNumber(year, seq + 1);
@@ -273,6 +279,7 @@ export const DEFAULT_VARIANT: VariantInput = { termMonths: 48, kmPerYear: 20000,
  */
 export async function createLeaseQuote(payload: Partial<LeaseQuotePayload>, actor: string | null): Promise<SerializedQuote> {
   const settings = serializeSettings(await getSettingsRow());
+  // The number is fixed here; moving quoteDate to another year later does not renumber the quote.
   const quoteDate = payload.quoteDate ?? isoToday();
   const variants = payload.variants?.length ? payload.variants : [DEFAULT_VARIANT];
   const id = await db.transaction(async (tx) => {
@@ -331,8 +338,9 @@ export async function copyLeaseQuote(id: number, withAttachments: boolean, actor
   const today = isoToday();
   const { row: src, variants } = parts;
   const copiedPaths: string[] = [];
+  let newId: number;
   try {
-    const newId = await db.transaction(async (tx) => {
+    newId = await db.transaction(async (tx) => {
       const quoteNumber = await allocateQuoteNumber(tx, today);
       const { id: _id, createdAt: _c, updatedAt: _u, ...fields } = src;
       const [row] = await tx.insert(leaseQuotes).values({
@@ -351,7 +359,10 @@ export async function copyLeaseQuote(id: number, withAttachments: boolean, actor
         const dealerFiles = parts.files.filter((f) => f.kind === "dealer");
         for (const file of dealerFiles) {
           const from = assertWithinUploads(path.join(getUploadsDir(), file.filePath), "lease quote file");
-          if (!fs.existsSync(from)) continue;
+          if (!fs.existsSync(from)) {
+            console.warn(`[lease-quotes] dealer file missing on disk, not copied: ${file.filePath} (quote ${id})`);
+            continue;
+          }
           const safeName = path.basename(file.fileName).replace(/[^\w.\- ]/g, "_") || "file";
           const relative = `${quoteFilesFolder(row.id)}/${Date.now()}-${file.id}-${safeName}`;
           const to = assertWithinUploads(path.join(getUploadsDir(), relative), "lease quote file");
@@ -366,12 +377,13 @@ export async function copyLeaseQuote(id: number, withAttachments: boolean, actor
       }
       return row.id;
     });
-    return getLeaseQuote(newId);
   } catch (error) {
     // The transaction rolled back; do not leave its copied files behind.
     for (const p of copiedPaths) fs.rmSync(p, { force: true });
     throw error;
   }
+  // Read after the try: a failing read must never delete files that committed rows point to.
+  return getLeaseQuote(newId);
 }
 
 /**

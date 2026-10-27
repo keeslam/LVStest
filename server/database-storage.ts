@@ -1309,11 +1309,6 @@ export class DatabaseStorage implements IStorage {
     const payload = record.payload as any;
     const quote = payload?.quote;
     if (!quote) return { restored: false, reason: 'empty_snapshot', record };
-    const [idTaken] = await db.select({ id: leaseQuotes.id }).from(leaseQuotes).where(eq(leaseQuotes.id, quote.id));
-    if (idTaken) return { restored: false, reason: 'id_taken', record };
-    // The quote number is unique; a number someone else holds now cannot come back.
-    const [numberTaken] = await db.select({ id: leaseQuotes.id }).from(leaseQuotes).where(eq(leaseQuotes.quoteNumber, quote.quoteNumber));
-    if (numberTaken) return { restored: false, reason: 'id_taken', record };
 
     // JSON turned timestamps into strings; `date` columns stay ISO strings.
     const revive = (table: any, row: any) => {
@@ -1331,6 +1326,12 @@ export class DatabaseStorage implements IStorage {
 
     try {
       await db.transaction(async (tx) => {
+        // Same lock as number allocation on create: a racing create gives a clean refusal, not a 500.
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('lease_quote_number'))`);
+        const [idTaken] = await tx.select({ id: leaseQuotes.id }).from(leaseQuotes).where(eq(leaseQuotes.id, quote.id));
+        if (idTaken) throw new RestoreAbort('id_taken');
+        const [numberTaken] = await tx.select({ id: leaseQuotes.id }).from(leaseQuotes).where(eq(leaseQuotes.quoteNumber, quote.quoteNumber));
+        if (numberTaken) throw new RestoreAbort('quote_number_taken');
         const [claimed] = await tx.update(deletedRecords)
           .set({ restoredAt: new Date(), restoredBy: actor?.username || null })
           .where(and(eq(deletedRecords.id, record.id), isNull(deletedRecords.restoredAt)))

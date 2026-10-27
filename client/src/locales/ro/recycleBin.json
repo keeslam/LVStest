@@ -30,7 +30,8 @@
     "RESERVATION_CONFLICT": "Această rezervare nu poate fi restaurată: între timp vehiculul a fost rezervat pentru acea perioadă.",
     "DEBTOR_NUMBER_TAKEN": "Acest număr de debitor este deja folosit de clientul {{name}}.",
     "DEBTOR_NUMBER_TAKEN_UNNAMED": "Un alt client folosește deja acest număr de debitor.",
-    "CUSTOMER_MISSING": "Clientul acestui șofer nu mai există. Restaurați mai întâi clientul (Clienți, Clienți șterși) și apoi șoferul."
+    "CUSTOMER_MISSING": "Clientul acestui șofer nu mai există. Restaurați mai întâi clientul (Clienți, Clienți șterși) și apoi șoferul.",
+    "QUOTE_NUMBER_TAKEN": "Numărul ofertei a fost între timp atribuit altei oferte, deci restaurarea nu este posibilă."
   },
   "kinds": {
     "vehicle": {

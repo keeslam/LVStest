@@ -219,6 +219,38 @@ describe("lease quotes API", () => {
     expect(back.body.variants.map((v: any) => v.id).sort()).toEqual(variantIds);
   });
 
+  it("numbers only go up: a deleted number is not reused and its restore succeeds", async () => {
+    const mk = async () => {
+      const q = await admin.post("/api/lease-quotes").send({});
+      await db.update(leaseQuotes).set({ prospectName: `${PREFIX}monotone` }).where(eq(leaseQuotes.id, q.body.id));
+      return q.body;
+    };
+    const seqOf = (n: string) => Number(n.split("-")[2]);
+    const latest = await mk();
+    expect((await admin.delete(`/api/lease-quotes/${latest.id}`)).status).toBe(200);
+    const next = await mk();
+    expect(seqOf(next.quoteNumber)).toBeGreaterThan(seqOf(latest.quoteNumber));
+    const [bin] = await db.select().from(deletedRecords)
+      .where(and(eq(deletedRecords.entityType, "lease_quote"), eq(deletedRecords.entityId, latest.id)));
+    const restore = await admin.post(`/api/deleted-records/${bin.id}/restore`).send({});
+    expect(restore.status).toBe(200);
+    expect((await admin.get(`/api/lease-quotes/${latest.id}`)).body.quoteNumber).toBe(latest.quoteNumber);
+  });
+
+  it("restore refuses with QUOTE_NUMBER_TAKEN when another quote holds the number", async () => {
+    const q = await admin.post("/api/lease-quotes").send({});
+    await db.update(leaseQuotes).set({ prospectName: `${PREFIX}taken` }).where(eq(leaseQuotes.id, q.body.id));
+    expect((await admin.delete(`/api/lease-quotes/${q.body.id}`)).status).toBe(200);
+    await db.insert(leaseQuotes).values({
+      quoteNumber: q.body.quoteNumber, quoteDate: q.body.quoteDate, validUntil: q.body.validUntil, prospectName: `${PREFIX}thief`,
+    });
+    const [bin] = await db.select().from(deletedRecords)
+      .where(and(eq(deletedRecords.entityType, "lease_quote"), eq(deletedRecords.entityId, q.body.id)));
+    const res = await admin.post(`/api/deleted-records/${bin.id}/restore`).send({});
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe("QUOTE_NUMBER_TAKEN");
+  });
+
   it("history lists the update", async () => {
     const q = await admin.post("/api/lease-quotes").send({});
     await db.update(leaseQuotes).set({ prospectName: `${PREFIX}history` }).where(eq(leaseQuotes.id, q.body.id));

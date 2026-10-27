@@ -30,7 +30,8 @@
     "RESERVATION_CONFLICT": "Tej rezerwacji nie można przywrócić: pojazd został w międzyczasie zarezerwowany na ten okres.",
     "DEBTOR_NUMBER_TAKEN": "Ten numer debitora jest już używany przez klienta {{name}}.",
     "DEBTOR_NUMBER_TAKEN_UNNAMED": "Inny klient już używa tego numeru debitora.",
-    "CUSTOMER_MISSING": "Klient tego kierowcy już nie istnieje. Najpierw przywróć klienta (Klienci, Usunięci klienci), a potem kierowcę."
+    "CUSTOMER_MISSING": "Klient tego kierowcy już nie istnieje. Najpierw przywróć klienta (Klienci, Usunięci klienci), a potem kierowcę.",
+    "QUOTE_NUMBER_TAKEN": "Numer oferty został w międzyczasie nadany innej ofercie, więc przywrócenie nie jest możliwe."
   },
   "kinds": {
     "vehicle": {
