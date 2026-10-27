@@ -2244,8 +2244,8 @@ const LeaseQuoteTemplateEditor = ({ onClose, onDirtyChange }: LeaseQuoteTemplate
           if (!file || !currentTemplate) return;
 
           // Validate file type
-          const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-          if (!allowedTypes.includes(file.type) && !file.name.toLowerCase().match(/\.(jpg|jpeg|png|pdf)$/)) {
+          const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+          if (!allowedTypes.includes(file.type) && !file.name.toLowerCase().match(/\.(jpg|jpeg|png)$/)) {
             toast({
               title: t('templateEditor.toasts.invalidFileTypeTitle'),
               description: t('templateEditor.toasts.invalidFileTypeDescription'),

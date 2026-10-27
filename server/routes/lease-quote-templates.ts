@@ -152,7 +152,7 @@ export function registerLeaseQuoteTemplateRoutes(app: Express, deps: RouteDeps):
     }
   });
 
-  // ==================== BARCODE LABEL TEMPLATE ROUTES ====================
+  // ==================== LEASE QUOTE TEMPLATE PREVIEW ====================
   app.get("/api/lease-quote-templates/:id/preview", perm, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);

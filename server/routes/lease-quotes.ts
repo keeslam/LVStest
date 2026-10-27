@@ -8,7 +8,7 @@ import { db } from "../db";
 import { sanitizeUploadedFields } from "../middleware/security/sanitization";
 import { createSecureMulterFilter, sanitizeFilename, validateAfterUpload } from "../utils/security/fileUploadSecurity";
 import { assertWithinUploads, getUploadsDir } from "../../shared/paths";
-import { leaseQuoteFiles, leaseQuotes } from "../../shared/schema";
+import { customers, leaseQuoteFiles, leaseQuotes } from "../../shared/schema";
 import { scanDealerQuote } from "../utils/dealer-quote-scanner";
 import { hasPermission } from "../middleware/permissions.js";
 import { UserPermission } from "../../shared/schema";
@@ -17,6 +17,12 @@ import {
   copyLeaseQuote, createLeaseQuote, deleteLeaseQuote, getLeaseQuote, getLeaseQuoteSettings, listLeaseQuotes,
   quoteFilesFolder, updateLeaseQuote, updateLeaseQuoteSettings,
 } from "../services/lease-quotes";
+import { storage } from "../storage";
+import { companyName } from "../services/company-name";
+import { officeTimeZone } from "../services/office-time";
+import { generateLeaseQuotePdf, prepareLeaseQuoteData } from "../utils/lease-quote-pdf";
+import { loadStaffSignaturePng } from "../utils/pdf-generator";
+import { currentRequestUserId } from "../services/request-user";
 import type { RouteDeps } from "./deps";
 
 const canManage = hasPermission(UserPermission.MANAGE_LEASE_QUOTES);
@@ -43,6 +49,14 @@ function badRequest(res: Response, error: z.ZodError) {
 }
 
 const actorName = (req: Request) => req.user?.username ?? null;
+
+/** "2026-10-27-2359" in office time, for the generated file name. */
+function fileStamp(now = new Date()): string {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-GB", {
+    timeZone: officeTimeZone(), year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).formatToParts(now).map((p) => [p.type, p.value]));
+  return `${parts.year}-${parts.month}-${parts.day}-${parts.hour}${parts.minute}`;
+}
 
 class QuoteNotFoundError extends Error {}
 
@@ -187,6 +201,42 @@ export function registerLeaseQuoteRoutes(app: Express, _deps?: RouteDeps) {
       fs.rmSync(req.file.path, { force: true });
       console.error("Lease quote file could not be stored:", e);
       res.status(500).json({ message: "The file could not be stored", code: "LEASE_FILE_FAILED" });
+    }
+  });
+
+  // Customer PDF: drawn with the default template, stored as a generated copy (a record of what the customer got).
+  app.post("/api/lease-quotes/:id/pdf", canManage, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const quote = await getLeaseQuote(id);
+    if (!quote) return res.status(404).json({ message: "Lease quote not found" });
+    const template = await storage.getDefaultLeaseQuoteTemplate();
+    if (!template) return res.status(409).json({ message: "There is no PDF template for lease quotes yet", code: "LEASE_NO_TEMPLATE" });
+    const chosen = quote.variants.find((v) => v.isChosen);
+    if (!chosen) return res.status(409).json({ message: "The quote has no chosen variant", code: "LEASE_NO_VARIANT" });
+    let abs = "";
+    try {
+      const customer = quote.customerId
+        ? (await db.select().from(customers).where(eq(customers.id, quote.customerId)))[0] ?? null
+        : null;
+      const data = prepareLeaseQuoteData(quote, chosen, customer, { companyName: companyName() });
+      // The landlord signature is the one of the staff member making this request (Profiel); none = box stays empty.
+      const landlordSignaturePng = await loadStaffSignaturePng(currentRequestUserId() ?? req.user?.id ?? null);
+      const pdf = await generateLeaseQuotePdf(data, template, { landlordSignaturePng });
+      const fileName = `${quote.quoteNumber}-${fileStamp()}.pdf`;
+      const stored = `generated_${Date.now()}_${Math.round(Math.random() * 1e6)}.pdf`;
+      const dir = path.join(getUploadsDir(), quoteFilesFolder(id));
+      fs.mkdirSync(dir, { recursive: true });
+      abs = assertWithinUploads(path.join(dir, stored), "lease quote file");
+      fs.writeFileSync(abs, pdf);
+      const [row] = await db.insert(leaseQuoteFiles).values({
+        quoteId: id, kind: "generated", fileName, filePath: `${quoteFilesFolder(id)}/${stored}`,
+        fileSize: pdf.length, contentType: "application/pdf", createdBy: actorName(req),
+      }).returning();
+      res.status(201).json(row);
+    } catch (e) {
+      if (abs) fs.rmSync(abs, { force: true });
+      console.error("Lease quote PDF could not be generated:", e);
+      res.status(500).json({ message: "The PDF could not be generated", code: "LEASE_PDF_FAILED" });
     }
   });
 
