@@ -12,7 +12,8 @@ const without = (...denied: string[]) => ALL.filter((permission) => !denied.incl
  */
 export const ROLE_PRESETS: Record<(typeof UserRole)[keyof typeof UserRole], string[]> = {
   admin: ALL,
-  manager: without(P.MANAGE_USERS, P.MANAGE_BACKUPS, P.MANAGE_SETTINGS),
+  // Lease offertes: standard only for beheerders (Kees), so a new manager does not get it.
+  manager: without(P.MANAGE_USERS, P.MANAGE_BACKUPS, P.MANAGE_SETTINGS, P.MANAGE_LEASE_QUOTES),
   user: [P.VIEW_DASHBOARD, P.VIEW_VEHICLES, P.VIEW_CUSTOMERS, P.MANAGE_CUSTOMERS, P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS,
     P.VIEW_DOCUMENTS, P.MANAGE_DOCUMENTS, P.VIEW_DAMAGE_CHECKS, P.MANAGE_DAMAGE_CHECKS, P.VIEW_FINES],
   cleaner: [P.VIEW_DASHBOARD, P.VIEW_VEHICLES, P.VIEW_RESERVATIONS],

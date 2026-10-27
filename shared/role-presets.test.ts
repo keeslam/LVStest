@@ -13,6 +13,13 @@ describe("role presets (B-65)", () => {
     }
     expect(presetRightsFor(UserRole.ADMIN)).toEqual(Object.values(UserPermission));
   });
+  it("gives Lease offertes to no preset but admin (Kees: standard only for beheerders)", () => {
+    for (const [role, rights] of Object.entries(ROLE_PRESETS)) {
+      if (role === UserRole.ADMIN) continue;
+      expect(rights, role).not.toContain(UserPermission.MANAGE_LEASE_QUOTES);
+      expect(presetRightsFor(role), role).not.toContain(UserPermission.MANAGE_LEASE_QUOTES);
+    }
+  });
   it("gives a cleaner only the three viewing rights and an unknown role nothing", () => {
     expect(presetRightsFor(UserRole.CLEANER)).toEqual([UserPermission.VIEW_DASHBOARD, UserPermission.VIEW_VEHICLES, UserPermission.VIEW_RESERVATIONS]);
     expect(presetRightsFor("onbekend")).toEqual([]);
