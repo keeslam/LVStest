@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { storage } from '../storage';
+import { getLeaseQuote } from '../services/lease-quotes';
 import { AuditLogger } from '../utils/security/auditLogger';
 
 /**
@@ -125,6 +126,12 @@ const TRACKED_RESOURCES: Record<string, {
     type: 'document',
     load: (id) => storage.getDocument(id),
     label: (row) => row?.fileName || row?.documentType || null,
+  },
+  // Lease offertes: history is read under resource type lease_quote (URL segment lease-quotes).
+  'lease-quotes': {
+    type: 'lease_quote',
+    load: (id) => getLeaseQuote(id),
+    label: (row) => row?.quoteNumber ? [row.quoteNumber, row.customerName || row.prospectCompany || row.prospectName].filter(Boolean).join(' · ') : null,
   },
   users: {
     type: 'user',

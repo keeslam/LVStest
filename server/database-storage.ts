@@ -29,6 +29,7 @@ import {
   vehicleTransports, type VehicleTransport, type InsertVehicleTransport,
   vehicleWaitlist,
   deletedRecords, type DeletedRecord, fines,
+  leaseQuotes, leaseQuoteVariants, leaseQuoteFiles,
   vehicleMileageReadings,
   reservationDriverAssignments, type ReservationDriverAssignment,
   auditLogs, type AuditLog
@@ -902,6 +903,7 @@ export class DatabaseStorage implements IStorage {
     if (!record) return { restored: false, reason: 'not_found' };
     if (record.restoredAt) return { restored: false, reason: 'already_restored', record };
     if (record.entityType === 'fine') return this.restoreDeletedFine(record, actor);
+    if (record.entityType === 'lease_quote') return this.restoreDeletedLeaseQuote(record, actor);
     // besluiten B-08 — a customer goes to the recycle bin like a vehicle, and
     // comes back the same way.
     if (record.entityType === 'customer') return this.restoreDeletedCustomer(record, actor);
@@ -1293,6 +1295,60 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
 
+    return { restored: true, record };
+  }
+
+  /**
+   * Puts a deleted lease quote back with its original id, together with its variants and file
+   * rows (original ids too). The file rows point at files that stay on disk until the bin row is purged.
+   */
+  private async restoreDeletedLeaseQuote(
+    record: DeletedRecord,
+    actor?: { username?: string | null }
+  ): Promise<{ restored: boolean; reason?: string; record?: DeletedRecord }> {
+    const payload = record.payload as any;
+    const quote = payload?.quote;
+    if (!quote) return { restored: false, reason: 'empty_snapshot', record };
+    const [idTaken] = await db.select({ id: leaseQuotes.id }).from(leaseQuotes).where(eq(leaseQuotes.id, quote.id));
+    if (idTaken) return { restored: false, reason: 'id_taken', record };
+    // The quote number is unique; a number someone else holds now cannot come back.
+    const [numberTaken] = await db.select({ id: leaseQuotes.id }).from(leaseQuotes).where(eq(leaseQuotes.quoteNumber, quote.quoteNumber));
+    if (numberTaken) return { restored: false, reason: 'id_taken', record };
+
+    // JSON turned timestamps into strings; `date` columns stay ISO strings.
+    const revive = (table: any, row: any) => {
+      const out: any = { ...row };
+      for (const [key, column] of Object.entries(getTableColumns(table)) as Array<[string, any]>) {
+        if (column?.dataType === 'date' && (typeof out[key] === 'string' || typeof out[key] === 'number')) out[key] = new Date(out[key]);
+      }
+      return out;
+    };
+    const revivedQuote = revive(leaseQuotes, quote);
+    // A customer that vanished in the meantime: keep the quote, drop the link.
+    if (revivedQuote.customerId && !(await db.select({ id: customers.id }).from(customers).where(eq(customers.id, revivedQuote.customerId)))[0]) {
+      revivedQuote.customerId = null;
+    }
+
+    try {
+      await db.transaction(async (tx) => {
+        const [claimed] = await tx.update(deletedRecords)
+          .set({ restoredAt: new Date(), restoredBy: actor?.username || null })
+          .where(and(eq(deletedRecords.id, record.id), isNull(deletedRecords.restoredAt)))
+          .returning();
+        if (!claimed) throw new RestoreAbort('already_restored');
+        await tx.insert(leaseQuotes).values(revivedQuote);
+        const variants = Array.isArray(payload.variants) ? payload.variants : [];
+        if (variants.length) await tx.insert(leaseQuoteVariants).values(variants.map((v: any) => revive(leaseQuoteVariants, v)));
+        const files = Array.isArray(payload.files) ? payload.files : [];
+        if (files.length) await tx.insert(leaseQuoteFiles).values(files.map((f: any) => revive(leaseQuoteFiles, f)));
+        for (const table of ['lease_quotes', 'lease_quote_variants', 'lease_quote_files']) {
+          await tx.execute(sql`SELECT setval(pg_get_serial_sequence(${sql.raw(`'${table}'`)}, 'id'), GREATEST((SELECT COALESCE(MAX(id), 1) FROM ${sql.identifier(table)}), 1))`);
+        }
+      });
+    } catch (error) {
+      if (error instanceof RestoreAbort) return { restored: false, reason: error.reason, record };
+      throw error;
+    }
     return { restored: true, record };
   }
 

@@ -177,6 +177,7 @@ import { registerAuditEventRoutes } from "./routes/audit-events";
 import { registerPortalAdminRoutes } from "./routes/portal-admin";
 import { registerFiscalRoutes } from "./routes/fiscal";
 import { registerFineRoutes } from "./routes/fines";
+import { registerLeaseQuoteRoutes } from "./routes/lease-quotes";
 import { registerPortalRequestRoutes } from "./routes/portal-requests";
 import { registerAddressLookupRoutes } from "./routes/address-lookup";
 import { registerTodayRoutes } from "./routes/today";
@@ -545,6 +546,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Fiscal mobility check (docs/fiscaal): configuration, assessments, review cases.
   registerFiscalRoutes(app, routeDeps);
   registerFineRoutes(app, routeDeps);
+  registerLeaseQuoteRoutes(app, routeDeps);
   registerPortalRequestRoutes(app, routeDeps);
   // Postcode + house number -> street and city (customer form and others).
   registerAddressLookupRoutes(app, routeDeps);

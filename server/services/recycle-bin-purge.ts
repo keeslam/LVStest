@@ -29,7 +29,8 @@
  *                            them into the snapshot); the bin row goes, and the files
  *                            named in the snapshot. The fiscal rows in the snapshot go
  *                            with it: counted in the audit row, `purged` on the trail
- *   vehicle, fine, transport the rows are already gone; the bin row goes, and the
+ *   vehicle, fine, transport, lease_quote
+ *                            the rows are already gone; the bin row goes, and the
  *                            files named in the snapshot
  *
  * FILES. A file is removed only AFTER the commit (a rolled-back purge must not cost
@@ -54,7 +55,7 @@ import { eq, inArray, or, sql } from "drizzle-orm";
 import { db } from "../db";
 import {
   backupSettings, damageCheckTemplateBackgrounds, damageCheckTemplates, deletedRecords, deliveryTasks, documents, drivers,
-  expenses, fineImportFiles, fines, fiscalAssessments, fiscalReviewCases, interactiveDamageChecks, invoiceInboxItems,
+  expenses, fineImportFiles, fines, leaseQuoteFiles, fiscalAssessments, fiscalReviewCases, interactiveDamageChecks, invoiceInboxItems,
   pdfTemplates, portalDocumentAcks, portalRequestAttachments, reservationDriverAssignments, reservations, scanEvents,
   templateBackgrounds, transportReportTemplateBackgrounds, transportReportTemplates, vehicleDiagramTemplates,
   vehicleUsagePeriods, vehicles,
@@ -171,6 +172,8 @@ const SNAPSHOT_FILE_COLUMNS: FileColumn[] = [
   { column: drivers.licenseFilePath, key: "licenseFilePath" },
   { column: portalRequestAttachments.filePath, key: "filePath" },
   { column: fines.letterFilePath, key: "letterFilePath" },
+  // A deleted lease quote's file rows are in its snapshot (payload.files[].filePath).
+  { column: leaseQuoteFiles.filePath, key: "filePath" },
   // Not written by any code today (the form sends ""), but a file column nonetheless.
   { column: vehicles.damageCheckAttachment, key: "damageCheckAttachment" },
 ];
