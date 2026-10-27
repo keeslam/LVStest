@@ -91,14 +91,14 @@ Alle bedragen excl. btw. Per variant:
 
 ### Menu en tabs
 
-Menu-item **Lease offertes** (pad `/lease-quotes`), zichtbaar met het nieuwe rolrecht. De pagina heeft drie tabs:
+Menu-item **Lease offertes** (pad `/lease-quotes`), zichtbaar met het nieuwe rolrecht. De pagina heeft twee tabs:
 
 - **Offertes** — de lijst.
 - **Instellingen** — voorinstellingen voor de berekening (besluit 1).
-- **Sjabloon** — de PDF-sjablooneditor voor de offerte.
 
-*(Mijn keuze: het sjabloon zit in de module zelf, niet tussen de sjablonen onder Documenten, zodat alles voor
-lease offertes op één plek staat en onder één rolrecht valt.)*
+**Het sjabloon zit bij Documenten** (besluit van Kees: alle editors bij elkaar), als extra tab naast Contract-,
+Transport-, Barcode- en Schadechecksjablonen. *(Mijn keuze: die tab valt onder hetzelfde recht als de andere
+sjabloontabs, `MANAGE_PDF_TEMPLATES`; de editor toont alleen voorbeeldgegevens, geen echte offertes.)*
 
 ### Offertelijst
 
@@ -195,7 +195,8 @@ Gevonden in de code (2026-10-27); de bouwer bevestigt het bij het plannen.
   (`TRACKED_RESOURCES`, `HISTORY_PERMISSIONS` server en client, `RecordHistoryResourceType`, labels).
 - **Offertenummer:** oplopend per jaar, bijv. `LO-2026-0001`. *(Mijn keuze.)*
 - **Kopiëren:** maakt een nieuwe offerte (nieuw nummer, status Concept, datum vandaag, nieuwe geldig tot) met
-  alle velden en varianten; bijlagen worden niet meegekopieerd. *(Mijn keuze.)*
+  alle velden en varianten. Bij kopiëren **vraagt de app of de bijlagen (dealerofferte) mee moeten** (besluit van
+  Kees); zo ja, dan krijgt de kopie eigen kopieën van de bestanden. Bewaarde klant-PDF's gaan nooit mee.
 - **Verwijderen:** via de bestaande prullenbak als dat past in het bestaande patroon; anders met bevestiging.
 - **Handleiding:** een hoofdstuk in de in-app handleiding, eenvoudig Nederlands met een plaatje bij elke stap
   (zoals Kees de handleiding wil).
