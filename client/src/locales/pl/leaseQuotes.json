@@ -1,0 +1,84 @@
+{
+  "title": "Oferty leasingowe",
+  "tabs": {
+    "quotes": "Oferty",
+    "settings": "Ustawienia"
+  },
+  "newQuote": "Nowa oferta",
+  "search": "Szukaj według klienta, samochodu, numeru rejestracyjnego lub numeru",
+  "allStatuses": "Wszystkie statusy",
+  "statusFilter": "Status",
+  "status": {
+    "concept": "Szkic",
+    "sent": "Wysłana",
+    "accepted": "Zaakceptowana",
+    "rejected": "Odrzucona",
+    "expired": "Wygasła"
+  },
+  "columns": {
+    "number": "Numer",
+    "date": "Data",
+    "customer": "Klient",
+    "vehicle": "Samochód",
+    "licensePlate": "Numer rejestracyjny",
+    "monthly": "Miesięcznie",
+    "status": "Status",
+    "validUntil": "Ważna do",
+    "actions": "Akcje"
+  },
+  "noCustomer": "Brak klienta",
+  "empty": "Nie ma jeszcze ofert. Utwórz nową ofertę.",
+  "noResults": "Nie znaleziono ofert.",
+  "loadFailed": "Nie udało się wczytać ofert.",
+  "actions": {
+    "open": "Otwórz",
+    "copy": "Kopiuj",
+    "pdf": "PDF",
+    "delete": "Usuń"
+  },
+  "create": {
+    "failed": "Nie udało się utworzyć oferty."
+  },
+  "copy": {
+    "question": "Skopiować także załączniki (oferta dealera)?",
+    "description": "Nowa oferta dostaje nowy numer i zaczyna jako szkic.",
+    "yes": "Tak",
+    "no": "Nie",
+    "cancel": "Anuluj",
+    "done": "Utworzono ofertę {{number}}.",
+    "failed": "Nie udało się skopiować oferty."
+  },
+  "delete": {
+    "title": "Usunąć ofertę?",
+    "description": "Oferta {{number}} trafia do kosza. Stamtąd możesz ją przywrócić.",
+    "confirm": "Usuń",
+    "cancel": "Anuluj",
+    "done": "Oferta {{number}} jest w koszu.",
+    "failed": "Nie udało się usunąć oferty."
+  },
+  "pdf": {
+    "done": "Utworzono PDF oferty {{number}}.",
+    "failed": "Nie udało się utworzyć PDF."
+  },
+  "editorPlaceholder": {
+    "title": "Oferta {{id}}",
+    "description": "Edytor ofert pojawi się wkrótce."
+  },
+  "settings": {
+    "intro": "Wartości domyślne do obliczania nowej oferty.",
+    "note": "Dotyczy nowych ofert; istniejące oferty zachowują własne wartości.",
+    "interestRatePercent": "Oprocentowanie (% rocznie)",
+    "marginPerMonth": "Marża miesięcznie (€)",
+    "robPerYear": "ROB rocznie (€)",
+    "otherCostsPerYear": "Inne koszty rocznie (€)",
+    "excessKmPrice": "Cena za nadwyżkę km (€ za km)",
+    "shortfallKmPrice": "Cena za niedobór km (€ za km)",
+    "validityDays": "Ważność (dni)",
+    "save": "Zapisz",
+    "saved": "Ustawienia zostały zapisane.",
+    "saveFailed": "Nie udało się zapisać ustawień.",
+    "loadFailed": "Nie udało się wczytać ustawień.",
+    "invalid": "Ta liczba jest nieprawidłowa: {{field}}.",
+    "invalidDays": "Ważność musi być całkowitą liczbą dni (minimum 1)."
+  }
+}

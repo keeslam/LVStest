@@ -1,0 +1,84 @@
+{
+  "title": "Lease quotes",
+  "tabs": {
+    "quotes": "Quotes",
+    "settings": "Settings"
+  },
+  "newQuote": "New quote",
+  "search": "Search by customer, car, license plate or number",
+  "allStatuses": "All statuses",
+  "statusFilter": "Status",
+  "status": {
+    "concept": "Draft",
+    "sent": "Sent",
+    "accepted": "Accepted",
+    "rejected": "Rejected",
+    "expired": "Expired"
+  },
+  "columns": {
+    "number": "Number",
+    "date": "Date",
+    "customer": "Customer",
+    "vehicle": "Car",
+    "licensePlate": "License plate",
+    "monthly": "Per month",
+    "status": "Status",
+    "validUntil": "Valid until",
+    "actions": "Actions"
+  },
+  "noCustomer": "No customer",
+  "empty": "No quotes yet. Create a new quote.",
+  "noResults": "No quotes found.",
+  "loadFailed": "The quotes could not be loaded.",
+  "actions": {
+    "open": "Open",
+    "copy": "Copy",
+    "pdf": "PDF",
+    "delete": "Delete"
+  },
+  "create": {
+    "failed": "The quote could not be created."
+  },
+  "copy": {
+    "question": "Copy the attachments (dealer quote) too?",
+    "description": "The new quote gets a new number and starts as a draft.",
+    "yes": "Yes",
+    "no": "No",
+    "cancel": "Cancel",
+    "done": "Quote {{number}} has been created.",
+    "failed": "The quote could not be copied."
+  },
+  "delete": {
+    "title": "Delete quote?",
+    "description": "Quote {{number}} goes to the recycle bin. You can restore it from there.",
+    "confirm": "Delete",
+    "cancel": "Cancel",
+    "done": "Quote {{number}} is in the recycle bin.",
+    "failed": "The quote could not be deleted."
+  },
+  "pdf": {
+    "done": "The PDF of quote {{number}} has been created.",
+    "failed": "The PDF could not be created."
+  },
+  "editorPlaceholder": {
+    "title": "Quote {{id}}",
+    "description": "The quote editor is coming."
+  },
+  "settings": {
+    "intro": "Defaults for the calculation of a new quote.",
+    "note": "Applies to new quotes; existing quotes keep their own values.",
+    "interestRatePercent": "Interest (% per year)",
+    "marginPerMonth": "Margin per month (€)",
+    "robPerYear": "ROB per year (€)",
+    "otherCostsPerYear": "Other costs per year (€)",
+    "excessKmPrice": "Excess kilometre price (€ per km)",
+    "shortfallKmPrice": "Shortfall kilometre price (€ per km)",
+    "validityDays": "Validity (days)",
+    "save": "Save",
+    "saved": "The settings have been saved.",
+    "saveFailed": "The settings could not be saved.",
+    "loadFailed": "The settings could not be loaded.",
+    "invalid": "This number is not valid: {{field}}.",
+    "invalidDays": "Validity must be a whole number of days (at least 1)."
+  }
+}

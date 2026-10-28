@@ -22,6 +22,7 @@ import barcodesNl from "./locales/nl/barcodes.json";
 import portalNl from "./locales/nl/portal.json";
 import fiscalNl from "./locales/nl/fiscal.json";
 import recycleBinNl from "./locales/nl/recycleBin.json";
+import leaseQuotesNl from "./locales/nl/leaseQuotes.json";
 
 import commonEn from "./locales/en/common.json";
 import navEn from "./locales/en/nav.json";
@@ -41,6 +42,7 @@ import barcodesEn from "./locales/en/barcodes.json";
 import portalEn from "./locales/en/portal.json";
 import fiscalEn from "./locales/en/fiscal.json";
 import recycleBinEn from "./locales/en/recycleBin.json";
+import leaseQuotesEn from "./locales/en/leaseQuotes.json";
 
 // Namespaces mirror the domains in the app so each locale file stays small
 // enough to review and edit without merge conflicts across pages.
@@ -105,6 +107,7 @@ i18n
         portal: portalNl,
         fiscal: fiscalNl,
         recycleBin: recycleBinNl,
+        leaseQuotes: leaseQuotesNl,
       },
       en: {
         common: commonEn,
@@ -125,6 +128,7 @@ i18n
         portal: portalEn,
         fiscal: fiscalEn,
         recycleBin: recycleBinEn,
+        leaseQuotes: leaseQuotesEn,
       },
     },
     // Only nl and en come from `resources`; the backend above fetches the rest.
@@ -140,7 +144,7 @@ i18n
     ns: [
       "common", "nav", "dashboard", "vehicles", "customers", "reservations",
       "expenses", "documents", "reports", "notifications", "settings",
-      "auth", "maintenance", "delivery", "barcodes", "portal", "fiscal", "recycleBin",
+      "auth", "maintenance", "delivery", "barcodes", "portal", "fiscal", "recycleBin", "leaseQuotes",
     ],
     interpolation: {
       escapeValue: false, // React already escapes output

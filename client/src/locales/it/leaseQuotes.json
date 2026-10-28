@@ -1,0 +1,84 @@
+{
+  "title": "Offerte di leasing",
+  "tabs": {
+    "quotes": "Offerte",
+    "settings": "Impostazioni"
+  },
+  "newQuote": "Nuova offerta",
+  "search": "Cerca per cliente, auto, targa o numero",
+  "allStatuses": "Tutti gli stati",
+  "statusFilter": "Stato",
+  "status": {
+    "concept": "Bozza",
+    "sent": "Inviata",
+    "accepted": "Accettata",
+    "rejected": "Rifiutata",
+    "expired": "Scaduta"
+  },
+  "columns": {
+    "number": "Numero",
+    "date": "Data",
+    "customer": "Cliente",
+    "vehicle": "Auto",
+    "licensePlate": "Targa",
+    "monthly": "Al mese",
+    "status": "Stato",
+    "validUntil": "Valida fino al",
+    "actions": "Azioni"
+  },
+  "noCustomer": "Nessun cliente",
+  "empty": "Ancora nessuna offerta. Crea una nuova offerta.",
+  "noResults": "Nessuna offerta trovata.",
+  "loadFailed": "Impossibile caricare le offerte.",
+  "actions": {
+    "open": "Apri",
+    "copy": "Copia",
+    "pdf": "PDF",
+    "delete": "Elimina"
+  },
+  "create": {
+    "failed": "Impossibile creare l'offerta."
+  },
+  "copy": {
+    "question": "Copiare anche gli allegati (offerta del concessionario)?",
+    "description": "La nuova offerta riceve un nuovo numero e parte come bozza.",
+    "yes": "Sì",
+    "no": "No",
+    "cancel": "Annulla",
+    "done": "L'offerta {{number}} è stata creata.",
+    "failed": "Impossibile copiare l'offerta."
+  },
+  "delete": {
+    "title": "Eliminare l'offerta?",
+    "description": "L'offerta {{number}} va nel cestino. Da lì puoi ripristinarla.",
+    "confirm": "Elimina",
+    "cancel": "Annulla",
+    "done": "L'offerta {{number}} è nel cestino.",
+    "failed": "Impossibile eliminare l'offerta."
+  },
+  "pdf": {
+    "done": "Il PDF dell'offerta {{number}} è stato creato.",
+    "failed": "Impossibile creare il PDF."
+  },
+  "editorPlaceholder": {
+    "title": "Offerta {{id}}",
+    "description": "L'editor delle offerte arriverà presto."
+  },
+  "settings": {
+    "intro": "Valori predefiniti per il calcolo di una nuova offerta.",
+    "note": "Vale per le nuove offerte; le offerte esistenti mantengono i propri valori.",
+    "interestRatePercent": "Interesse (% all'anno)",
+    "marginPerMonth": "Margine al mese (€)",
+    "robPerYear": "ROB all'anno (€)",
+    "otherCostsPerYear": "Altri costi all'anno (€)",
+    "excessKmPrice": "Prezzo per km in eccesso (€ per km)",
+    "shortfallKmPrice": "Prezzo per km in difetto (€ per km)",
+    "validityDays": "Validità (giorni)",
+    "save": "Salva",
+    "saved": "Le impostazioni sono state salvate.",
+    "saveFailed": "Impossibile salvare le impostazioni.",
+    "loadFailed": "Impossibile caricare le impostazioni.",
+    "invalid": "Questo numero non è valido: {{field}}.",
+    "invalidDays": "La validità deve essere un numero intero di giorni (minimo 1)."
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "title": "Oferte de leasing",
+  "tabs": {
+    "quotes": "Oferte",
+    "settings": "Setări"
+  },
+  "newQuote": "Ofertă nouă",
+  "search": "Caută după client, mașină, număr de înmatriculare sau număr",
+  "allStatuses": "Toate stările",
+  "statusFilter": "Stare",
+  "status": {
+    "concept": "Ciornă",
+    "sent": "Trimisă",
+    "accepted": "Acceptată",
+    "rejected": "Respinsă",
+    "expired": "Expirată"
+  },
+  "columns": {
+    "number": "Număr",
+    "date": "Data",
+    "customer": "Client",
+    "vehicle": "Mașină",
+    "licensePlate": "Nr. înmatriculare",
+    "monthly": "Pe lună",
+    "status": "Stare",
+    "validUntil": "Valabilă până la",
+    "actions": "Acțiuni"
+  },
+  "noCustomer": "Fără client",
+  "empty": "Încă nu există oferte. Creează o ofertă nouă.",
+  "noResults": "Nu s-au găsit oferte.",
+  "loadFailed": "Ofertele nu au putut fi încărcate.",
+  "actions": {
+    "open": "Deschide",
+    "copy": "Copiază",
+    "pdf": "PDF",
+    "delete": "Șterge"
+  },
+  "create": {
+    "failed": "Oferta nu a putut fi creată."
+  },
+  "copy": {
+    "question": "Copiezi și anexele (oferta dealerului)?",
+    "description": "Oferta nouă primește un număr nou și începe ca ciornă.",
+    "yes": "Da",
+    "no": "Nu",
+    "cancel": "Anulează",
+    "done": "Oferta {{number}} a fost creată.",
+    "failed": "Oferta nu a putut fi copiată."
+  },
+  "delete": {
+    "title": "Ștergi oferta?",
+    "description": "Oferta {{number}} merge în coșul de reciclare. De acolo o poți restaura.",
+    "confirm": "Șterge",
+    "cancel": "Anulează",
+    "done": "Oferta {{number}} este în coșul de reciclare.",
+    "failed": "Oferta nu a putut fi ștearsă."
+  },
+  "pdf": {
+    "done": "PDF-ul ofertei {{number}} a fost creat.",
+    "failed": "PDF-ul nu a putut fi creat."
+  },
+  "editorPlaceholder": {
+    "title": "Oferta {{id}}",
+    "description": "Editorul de oferte urmează."
+  },
+  "settings": {
+    "intro": "Valori implicite pentru calculul unei oferte noi.",
+    "note": "Se aplică ofertelor noi; ofertele existente își păstrează valorile proprii.",
+    "interestRatePercent": "Dobândă (% pe an)",
+    "marginPerMonth": "Marjă pe lună (€)",
+    "robPerYear": "ROB pe an (€)",
+    "otherCostsPerYear": "Alte costuri pe an (€)",
+    "excessKmPrice": "Preț pe km în plus (€ pe km)",
+    "shortfallKmPrice": "Preț pe km în minus (€ pe km)",
+    "validityDays": "Valabilitate (zile)",
+    "save": "Salvează",
+    "saved": "Setările au fost salvate.",
+    "saveFailed": "Setările nu au putut fi salvate.",
+    "loadFailed": "Setările nu au putut fi încărcate.",
+    "invalid": "Acest număr nu este valid: {{field}}.",
+    "invalidDays": "Valabilitatea trebuie să fie un număr întreg de zile (minim 1)."
+  }
+}

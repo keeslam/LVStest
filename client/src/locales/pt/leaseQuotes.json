@@ -1,0 +1,84 @@
+{
+  "title": "Propostas de leasing",
+  "tabs": {
+    "quotes": "Propostas",
+    "settings": "Definições"
+  },
+  "newQuote": "Nova proposta",
+  "search": "Pesquisar por cliente, carro, matrícula ou número",
+  "allStatuses": "Todos os estados",
+  "statusFilter": "Estado",
+  "status": {
+    "concept": "Rascunho",
+    "sent": "Enviada",
+    "accepted": "Aceite",
+    "rejected": "Recusada",
+    "expired": "Expirada"
+  },
+  "columns": {
+    "number": "Número",
+    "date": "Data",
+    "customer": "Cliente",
+    "vehicle": "Carro",
+    "licensePlate": "Matrícula",
+    "monthly": "Por mês",
+    "status": "Estado",
+    "validUntil": "Válida até",
+    "actions": "Ações"
+  },
+  "noCustomer": "Sem cliente",
+  "empty": "Ainda não há propostas. Crie uma nova proposta.",
+  "noResults": "Nenhuma proposta encontrada.",
+  "loadFailed": "Não foi possível carregar as propostas.",
+  "actions": {
+    "open": "Abrir",
+    "copy": "Copiar",
+    "pdf": "PDF",
+    "delete": "Eliminar"
+  },
+  "create": {
+    "failed": "Não foi possível criar a proposta."
+  },
+  "copy": {
+    "question": "Copiar também os anexos (proposta do concessionário)?",
+    "description": "A nova proposta recebe um número novo e começa como rascunho.",
+    "yes": "Sim",
+    "no": "Não",
+    "cancel": "Cancelar",
+    "done": "A proposta {{number}} foi criada.",
+    "failed": "Não foi possível copiar a proposta."
+  },
+  "delete": {
+    "title": "Eliminar a proposta?",
+    "description": "A proposta {{number}} vai para a reciclagem. Pode restaurá-la a partir de lá.",
+    "confirm": "Eliminar",
+    "cancel": "Cancelar",
+    "done": "A proposta {{number}} está na reciclagem.",
+    "failed": "Não foi possível eliminar a proposta."
+  },
+  "pdf": {
+    "done": "O PDF da proposta {{number}} foi criado.",
+    "failed": "Não foi possível criar o PDF."
+  },
+  "editorPlaceholder": {
+    "title": "Proposta {{id}}",
+    "description": "O editor de propostas vem a seguir."
+  },
+  "settings": {
+    "intro": "Valores predefinidos para o cálculo de uma proposta nova.",
+    "note": "Aplica-se a propostas novas; as propostas existentes mantêm os seus próprios valores.",
+    "interestRatePercent": "Juro (% por ano)",
+    "marginPerMonth": "Margem por mês (€)",
+    "robPerYear": "ROB por ano (€)",
+    "otherCostsPerYear": "Outros custos por ano (€)",
+    "excessKmPrice": "Preço por km a mais (€ por km)",
+    "shortfallKmPrice": "Preço por km a menos (€ por km)",
+    "validityDays": "Validade (dias)",
+    "save": "Guardar",
+    "saved": "As definições foram guardadas.",
+    "saveFailed": "Não foi possível guardar as definições.",
+    "loadFailed": "Não foi possível carregar as definições.",
+    "invalid": "Este número não é válido: {{field}}.",
+    "invalidDays": "A validade tem de ser um número inteiro de dias (mínimo 1)."
+  }
+}

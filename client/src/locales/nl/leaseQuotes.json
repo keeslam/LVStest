@@ -1,0 +1,84 @@
+{
+  "title": "Lease offertes",
+  "tabs": {
+    "quotes": "Offertes",
+    "settings": "Instellingen"
+  },
+  "newQuote": "Nieuwe offerte",
+  "search": "Zoek op klant, auto, kenteken of nummer",
+  "allStatuses": "Alle statussen",
+  "statusFilter": "Status",
+  "status": {
+    "concept": "Concept",
+    "sent": "Verstuurd",
+    "accepted": "Geaccepteerd",
+    "rejected": "Afgewezen",
+    "expired": "Verlopen"
+  },
+  "columns": {
+    "number": "Nummer",
+    "date": "Datum",
+    "customer": "Klant",
+    "vehicle": "Auto",
+    "licensePlate": "Kenteken",
+    "monthly": "Per maand",
+    "status": "Status",
+    "validUntil": "Geldig tot",
+    "actions": "Acties"
+  },
+  "noCustomer": "Geen klant",
+  "empty": "Nog geen offertes. Maak een nieuwe offerte aan.",
+  "noResults": "Geen offertes gevonden.",
+  "loadFailed": "De offertes konden niet worden geladen.",
+  "actions": {
+    "open": "Openen",
+    "copy": "Kopiëren",
+    "pdf": "PDF",
+    "delete": "Verwijderen"
+  },
+  "create": {
+    "failed": "De offerte kon niet worden aangemaakt."
+  },
+  "copy": {
+    "question": "Bijlagen (dealerofferte) ook kopiëren?",
+    "description": "De nieuwe offerte krijgt een nieuw nummer en start als concept.",
+    "yes": "Ja",
+    "no": "Nee",
+    "cancel": "Annuleren",
+    "done": "Offerte {{number}} is aangemaakt.",
+    "failed": "De offerte kon niet worden gekopieerd."
+  },
+  "delete": {
+    "title": "Offerte verwijderen?",
+    "description": "Offerte {{number}} gaat naar de prullenbak. Je kunt hem daar terugzetten.",
+    "confirm": "Verwijderen",
+    "cancel": "Annuleren",
+    "done": "Offerte {{number}} staat in de prullenbak.",
+    "failed": "De offerte kon niet worden verwijderd."
+  },
+  "pdf": {
+    "done": "De PDF van offerte {{number}} is gemaakt.",
+    "failed": "De PDF kon niet worden gemaakt."
+  },
+  "editorPlaceholder": {
+    "title": "Offerte {{id}}",
+    "description": "De offerte-editor volgt."
+  },
+  "settings": {
+    "intro": "Voorinstellingen voor de berekening van een nieuwe offerte.",
+    "note": "Geldt voor nieuwe offertes; bestaande offertes houden hun eigen waarden.",
+    "interestRatePercent": "Rente (% per jaar)",
+    "marginPerMonth": "Marge per maand (€)",
+    "robPerYear": "ROB per jaar (€)",
+    "otherCostsPerYear": "Overige kosten per jaar (€)",
+    "excessKmPrice": "Meerkilometerprijs (€ per km)",
+    "shortfallKmPrice": "Minderkilometerprijs (€ per km)",
+    "validityDays": "Geldigheid (dagen)",
+    "save": "Opslaan",
+    "saved": "De instellingen zijn opgeslagen.",
+    "saveFailed": "De instellingen konden niet worden opgeslagen.",
+    "loadFailed": "De instellingen konden niet worden geladen.",
+    "invalid": "Dit getal klopt niet: {{field}}.",
+    "invalidDays": "Geldigheid moet een heel aantal dagen zijn (minimaal 1)."
+  }
+}
