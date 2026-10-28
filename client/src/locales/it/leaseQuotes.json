@@ -210,7 +210,8 @@
     "pdfErrors": {
       "LEASE_NO_TEMPLATE": "Non esiste ancora un modello PDF per le offerte di leasing. Creane uno in Documenti.",
       "LEASE_NO_VARIANT": "Scegli prima quale variante va al cliente."
-    }
+    },
+    "chosenVariantRemoved": "Hai rimosso la variante che va al cliente. Ora la variante 1 va al cliente."
   },
   "scan": {
     "title": "Leggi offerta del concessionario",

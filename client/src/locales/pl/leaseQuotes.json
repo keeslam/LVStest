@@ -210,7 +210,8 @@
     "pdfErrors": {
       "LEASE_NO_TEMPLATE": "Nie ma jeszcze szablonu PDF dla ofert leasingowych. Utwórz go w Dokumentach.",
       "LEASE_NO_VARIANT": "Najpierw wybierz, który wariant trafi do klienta."
-    }
+    },
+    "chosenVariantRemoved": "Usunięto wariant przeznaczony dla klienta. Teraz dla klienta jest wariant 1."
   },
   "scan": {
     "title": "Odczytaj ofertę dealera",

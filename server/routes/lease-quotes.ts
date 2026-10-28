@@ -268,7 +268,18 @@ export function registerLeaseQuoteRoutes(app: Express, _deps?: RouteDeps) {
     if (!fs.existsSync(abs)) return res.status(404).json({ message: "File not found" });
     res.setHeader("Content-Type", file.contentType || "application/octet-stream");
     res.setHeader("Content-Disposition", `inline; filename="${sanitizeFilename(file.fileName)}"`);
-    fs.createReadStream(abs).pipe(res);
+    // A dealer upload is served inline: the browser must not sniff it into something executable.
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    const stream = fs.createReadStream(abs);
+    stream.on("error", (e) => {
+      console.error("Lease quote file could not be read:", e instanceof Error ? e.message : e);
+      if (!res.headersSent) {
+        res.removeHeader("Content-Disposition");
+        if ((e as NodeJS.ErrnoException).code === "ENOENT") res.status(404).json({ message: "File not found" });
+        else res.status(500).json({ message: "The file could not be read" });
+      } else res.destroy();
+    });
+    stream.pipe(res);
   });
 
   // Generated PDFs are a record of what the customer received; only dealer files can be removed.

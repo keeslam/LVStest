@@ -618,7 +618,10 @@
       "signatureLandlord": "Semnătura locatorului"
     },
     "createFirstTemplateDescription": "Începeți prin a crea un șablon de ofertă de leasing",
-    "backToDocuments": "Înapoi la documente"
+    "backToDocuments": "Înapoi la documente",
+    "captionLabel": "Text înaintea valorii",
+    "captionPlaceholder": "ex. Durată:",
+    "captionHelp": "Acest text este tipărit chiar înaintea valorii în PDF. Lăsați gol pentru a tipări doar valoarea."
   },
   "interactiveDamageCheck": {
     "toasts": {

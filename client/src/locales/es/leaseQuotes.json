@@ -210,7 +210,8 @@
     "pdfErrors": {
       "LEASE_NO_TEMPLATE": "Todavía no hay plantilla PDF para ofertas de leasing. Crea una en Documentos.",
       "LEASE_NO_VARIANT": "Elige primero qué variante va al cliente."
-    }
+    },
+    "chosenVariantRemoved": "Ha eliminado la variante que va al cliente. Ahora la variante 1 va al cliente."
   },
   "scan": {
     "title": "Leer oferta del concesionario",

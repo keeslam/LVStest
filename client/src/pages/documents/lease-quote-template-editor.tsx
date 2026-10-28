@@ -50,6 +50,8 @@ import { comparableTemplate } from "./comparable-template";
 interface TemplateField {
   id: string;
   name: string;
+  /** Caption printed in front of the value, e.g. "Looptijd:". Empty/absent = the bare value. */
+  label?: string;
   x: number;
   y: number;
   fontSize: number;
@@ -546,7 +548,7 @@ const LeaseQuoteTemplateEditor = ({ onClose, onDirtyChange }: LeaseQuoteTemplate
 
   // A-10-3: unsaved changes = the template on screen differs from the one the server last gave us.
   const savedVersion = currentTemplate ? templates.find((candidate) => candidate.id === currentTemplate.id) : undefined;
-  const isDirty = !!currentTemplate && !!savedVersion && comparableTemplate(currentTemplate) !== comparableTemplate(savedVersion);
+  const isDirty = !!currentTemplate && !!savedVersion && comparableTemplate(currentTemplate, { fieldKeys: ["label"] }) !== comparableTemplate(savedVersion, { fieldKeys: ["label"] });
   useEffect(() => {
     onDirtyChange?.(isDirty);
   }, [isDirty, onDirtyChange]);
@@ -1120,6 +1122,7 @@ const LeaseQuoteTemplateEditor = ({ onClose, onDirtyChange }: LeaseQuoteTemplate
       fields: currentTemplate.fields.map(field => ({
         id: field.id,
         name: field.name,
+        ...(field.label?.trim() ? { label: field.label.trim() } : {}),
         x: field.x,
         y: field.y,
         fontSize: field.fontSize,
@@ -1169,6 +1172,7 @@ const LeaseQuoteTemplateEditor = ({ onClose, onDirtyChange }: LeaseQuoteTemplate
       fields: currentTemplate.fields.map(field => ({
         id: field.id,
         name: field.name,
+        ...(field.label?.trim() ? { label: field.label.trim() } : {}),
         x: field.x,
         y: field.y,
         fontSize: field.fontSize,
@@ -1754,7 +1758,8 @@ const LeaseQuoteTemplateEditor = ({ onClose, onDirtyChange }: LeaseQuoteTemplate
                             onMouseDown={(e) => handleMouseDown(e, field)}
                           >
                             {field.locked && <Lock className="h-3 w-3 mr-1" />}
-                            {field.name}
+                            {field.label ? <span className="mr-1">{field.label}</span> : null}
+                            <span className={field.label ? 'italic text-gray-500' : undefined}>{field.name}</span>
                           </div>
                         ))}
                         
@@ -1806,6 +1811,25 @@ const LeaseQuoteTemplateEditor = ({ onClose, onDirtyChange }: LeaseQuoteTemplate
                             setCurrentTemplate({ ...currentTemplate, fields: updatedFields });
                           }}
                         />
+                      </div>
+                      <div>
+                        <Label htmlFor="field-caption">{t('leaseQuoteTemplateEditor.captionLabel')}</Label>
+                        <Input
+                          id="field-caption"
+                          data-testid="input-field-caption"
+                          maxLength={200}
+                          value={selectedField.label ?? ''}
+                          placeholder={t('leaseQuoteTemplateEditor.captionPlaceholder')}
+                          onChange={(e) => {
+                            if (!currentTemplate) return;
+                            const label = e.target.value || undefined;
+                            const updatedFields = currentTemplate.fields.map(f =>
+                              f.id === selectedField.id ? { ...f, label } : f
+                            );
+                            setCurrentTemplate({ ...currentTemplate, fields: updatedFields });
+                          }}
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">{t('leaseQuoteTemplateEditor.captionHelp')}</p>
                       </div>
                       <div>
                         <Label>{t('templateEditor.dataSourceLabel')}</Label>

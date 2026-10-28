@@ -610,7 +610,10 @@
       "signatureLandlord": "Handtekening verhuurder"
     },
     "createFirstTemplateDescription": "Begin met het aanmaken van een lease offertesjabloon",
-    "backToDocuments": "Terug naar documenten"
+    "backToDocuments": "Terug naar documenten",
+    "captionLabel": "Tekst voor de waarde",
+    "captionPlaceholder": "bijv. Looptijd:",
+    "captionHelp": "Deze tekst komt vlak voor de waarde op de PDF. Laat leeg om alleen de waarde te printen."
   },
   "interactiveDamageCheck": {
     "toasts": {

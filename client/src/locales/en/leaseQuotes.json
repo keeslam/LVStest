@@ -210,7 +210,8 @@
     "pdfErrors": {
       "LEASE_NO_TEMPLATE": "There is no PDF template for lease quotes yet. Make one under Documents.",
       "LEASE_NO_VARIANT": "First choose which variant goes to the customer."
-    }
+    },
+    "chosenVariantRemoved": "You removed the variant that goes to the customer. Variant 1 now goes to the customer."
   },
   "scan": {
     "title": "Read dealer quote",

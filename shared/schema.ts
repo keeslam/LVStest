@@ -1695,7 +1695,7 @@ export const leaseQuotes = pgTable("lease_quotes", {
   status: text("status").default("concept"),
   quoteDate: date("quote_date").notNull(),
   validUntil: date("valid_until").notNull(),
-  customerId: integer("customer_id").references(() => customers.id),
+  customerId: integer("customer_id").references(() => customers.id, { onDelete: "set null" }),
   prospectName: text("prospect_name"),
   prospectCompany: text("prospect_company"),
   prospectEmail: text("prospect_email"),

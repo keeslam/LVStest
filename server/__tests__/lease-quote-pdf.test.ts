@@ -35,8 +35,8 @@ describe("prepareLeaseQuoteData", () => {
   it("formats the Excel case in Dutch and leaks no cost build-up", () => {
     const data = prepareLeaseQuoteData(excelQuote, chosen, null, { companyName: "Lam Groep" });
     expect(data.monthlyPriceExclVat).toBe(`${EURO} 466,23`);
-    expect(data.kmPerYear).toBe("20.000");
-    expect(data.termMonths).toBe("48");
+    expect(data.kmPerYear).toBe("20.000 km");
+    expect(data.termMonths).toBe("48 maanden");
     expect(data.quoteDate).toBe("27-10-2026");
     expect(data.validUntil).toBe("26-11-2026");
     expect(data.excessKmPrice).toBe(`${EURO} 0,085 per km`);
@@ -54,6 +54,12 @@ describe("prepareLeaseQuoteData", () => {
     expect(plain.customerName).toBe("Piet Prospect");
     expect(plain.customerContact).toBe("");
     expect(plain.customerEmail).toBe("piet@example.nl");
+  });
+
+  it("a prospect with both company and name: company is the customer, the name the contact", () => {
+    const data = prepareLeaseQuoteData({ ...excelQuote, prospectCompany: "Prospect B.V." }, chosen, null, { companyName: "X" });
+    expect(data.customerName).toBe("Prospect B.V.");
+    expect(data.customerContact).toBe("Piet Prospect");
   });
 
   it("a linked customer gives display name, contact, street + number and postcode", () => {
@@ -89,6 +95,41 @@ describe("generateLeaseQuotePdf", () => {
     const text = (await extractPdfTextRows(tmp)).join("\n");
     expect(text).toContain("466,23");
     expect(text).not.toContain("129");
+  });
+});
+
+describe("field captions", () => {
+  const tmp = () => path.join(TEMP_UPLOADS, `caption-${Math.random().toString(36).slice(2)}.pdf`);
+
+  it("draws caption and value on one line; a field without caption stays bare; an empty value draws nothing", async () => {
+    const file = tmp();
+    const data = prepareLeaseQuoteData({ ...excelQuote, excessKmPrice: 0 }, chosen, null, { companyName: "Lam Groep" });
+    const captioned = [
+      { id: "a", name: "Prijs", label: "Leaseprijs per maand excl. btw:", x: 50, y: 100, fontSize: 14, isBold: true, source: "monthlyPriceExclVat" },
+      { id: "b", name: "Looptijd", label: "Looptijd:", x: 50, y: 200, fontSize: 12, isBold: false, source: "termMonths" },
+      { id: "c", name: "Plaats", x: 50, y: 300, fontSize: 12, isBold: false, source: "licensePlate" },
+      { id: "d", name: "Meer", label: "Meerkilometerprijs:", x: 50, y: 400, fontSize: 12, isBold: false, source: "excessKmPrice" },
+    ];
+    fs.writeFileSync(file, await generateLeaseQuotePdf(data, { name: "t", fields: captioned }));
+    const text = (await extractPdfTextRows(file)).join("\n");
+    expect(text).toContain("Leaseprijs per maand excl. btw: ");
+    expect(text).toMatch(/Leaseprijs per maand excl\. btw:\s*€ 466,23/);
+    expect(text).toMatch(/Looptijd:\s*48 maanden/);
+    expect(text).toContain("VB-123-X");
+    expect(text).not.toMatch(/:\s*VB-123-X/);
+    expect(text).not.toContain("Meerkilometerprijs");
+  });
+
+  it("the seeded default template prints captions with the values and still no cost build-up", async () => {
+    const [tpl] = await db.select().from(leaseQuoteTemplates).where(eq(leaseQuoteTemplates.isDefault, true)).limit(1);
+    expect(tpl).toBeDefined();
+    const data = prepareLeaseQuoteData(excelQuote, chosen, null, { companyName: "Lam Groep" });
+    const file = tmp();
+    fs.writeFileSync(file, await generateLeaseQuotePdf(data, tpl));
+    const text = (await extractPdfTextRows(file)).join("\n");
+    expect(text).toContain("Leaseprijs per maand excl. btw");
+    expect(text).toContain("466,23");
+    for (const secret of ["129,89", "152,46", "10.000", "17.318"]) expect(text).not.toContain(secret);
   });
 });
 

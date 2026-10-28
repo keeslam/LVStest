@@ -43,7 +43,7 @@ const TRACKED_READS: Array<{ pattern: RegExp; type: string; verb: string }> = [
   { pattern: /^\/api\/expenses\/inbox\/items\/(\d+)\/file$/, type: 'invoice-inbox-item', verb: 'view' },
   { pattern: /^\/api\/fines\/(\d+)\/letter$/, type: 'fine', verb: 'letter-view' },
   { pattern: /^\/api\/fines\/imports\/(\d+)\/file$/, type: 'fine-import', verb: 'view' },
-  { pattern: /^\/api\/lease-quotes\/(\d+)\/files\/\d+$/, type: 'lease-quote', verb: 'file-view' },
+  { pattern: /^\/api\/lease-quotes\/(\d+)\/files\/\d+$/, type: 'lease_quote', verb: 'file-view' },
   { pattern: /^\/api\/fiscal\/assessments\/(\d+)\/pdf$/, type: 'fiscal-assessment', verb: 'pdf' },
   { pattern: /^\/api\/fiscal\/reports\/monthly\.csv$/, type: 'fiscal-report', verb: 'export' },
   { pattern: /^\/api\/portal-requests\/(\d+)\/attachments\/\d+$/, type: 'portal-request', verb: 'attachment-view' },

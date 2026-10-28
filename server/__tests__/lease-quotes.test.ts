@@ -10,6 +10,7 @@ import { eq, like, and } from "drizzle-orm";
 import { db } from "../db";
 import { leaseQuotes, leaseQuoteFiles, leaseQuoteVariants, deletedRecords } from "../../shared/schema";
 import { getUploadsDir } from "../../shared/paths";
+import { createFixtureCustomer, cleanupFixtures } from "./helpers/fixtures";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 
 const PREFIX = "FIXT-lq-";
@@ -49,7 +50,30 @@ describe("lease quotes API", () => {
     for (const r of rows) dirsToRemove.push(path.join(getUploadsDir(), "lease-quotes", String(r.id)));
     await db.delete(leaseQuotes).where(like(leaseQuotes.prospectName, `${PREFIX}%`));
     for (const dir of dirsToRemove) fs.rmSync(dir, { recursive: true, force: true });
+    await cleanupFixtures();
     await cleanupFixtureUsers();
+  });
+
+  it("deleting a customer that has a quote works: the quote keeps existing unlinked, and a restore links it again", async () => {
+    const customer = await createFixtureCustomer("LeaseDel");
+    const q = await admin.post("/api/lease-quotes").send(excelPayload({ customerId: customer.id, prospectName: `${PREFIX}custdel` }));
+    expect(q.status).toBe(201);
+    expect(q.body.customerId).toBe(customer.id);
+
+    const del = await admin.delete(`/api/customers/${customer.id}`);
+    expect(del.status).toBe(204);
+    const after = await admin.get(`/api/lease-quotes/${q.body.id}`);
+    expect(after.status).toBe(200);
+    expect(after.body.customerId).toBeNull();
+
+    const [record] = await db.select().from(deletedRecords)
+      .where(and(eq(deletedRecords.entityType, "customer"), eq(deletedRecords.entityId, customer.id)));
+    expect(record).toBeDefined();
+    const restored = await admin.post(`/api/deleted-records/${record.id}/restore`).send({});
+    expect(restored.status).toBe(200);
+    const relinked = await admin.get(`/api/lease-quotes/${q.body.id}`);
+    expect(relinked.body.customerId).toBe(customer.id);
+    await db.delete(deletedRecords).where(and(eq(deletedRecords.entityType, "customer"), eq(deletedRecords.entityId, customer.id)));
   });
 
   it("a user without the right gets 403", async () => {

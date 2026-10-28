@@ -210,7 +210,8 @@
     "pdfErrors": {
       "LEASE_NO_TEMPLATE": "Er is nog geen PDF-sjabloon voor lease offertes. Maak er een bij Documenten.",
       "LEASE_NO_VARIANT": "Kies eerst welke variant naar de klant gaat."
-    }
+    },
+    "chosenVariantRemoved": "Je hebt de variant verwijderd die naar de klant ging. Variant 1 gaat nu naar de klant."
   },
   "scan": {
     "title": "Dealerofferte uitlezen",

@@ -249,8 +249,7 @@
         "key-audit": "Verificare dulap chei",
         "notification-dismissal": "Notificare ascunsă",
         "user-setting": "Setare proprie",
-        "lease_quote": "Ofertă de leasing",
-        "lease-quote": "Ofertă de leasing"
+        "lease_quote": "Ofertă de leasing"
       },
       "verbs": {
         "create": "creat",
@@ -359,10 +358,8 @@
         "lease_quote": {
           "copy": "Ofertă copiată într-o ofertă nouă",
           "pdf": "PDF creat pentru client",
-          "files": "Oferta dealerului încărcată, citită sau ștearsă"
-        },
-        "lease-quote": {
-          "file-view": "Atașament al ofertei vizualizat"
+          "files": "Oferta dealerului încărcată, citită sau ștearsă",
+          "file-view": "Atașamentul ofertei vizualizat"
         }
       }
     }

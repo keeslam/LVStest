@@ -626,7 +626,10 @@
       "signatureLandlord": "Podpis wynajmującego"
     },
     "createFirstTemplateDescription": "Zacznij od utworzenia szablonu oferty leasingowej",
-    "backToDocuments": "Wróć do dokumentów"
+    "backToDocuments": "Wróć do dokumentów",
+    "captionLabel": "Tekst przed wartością",
+    "captionPlaceholder": "np. Okres:",
+    "captionHelp": "Ten tekst jest drukowany tuż przed wartością w pliku PDF. Zostaw puste, aby wydrukować tylko wartość."
   },
   "interactiveDamageCheck": {
     "toasts": {

@@ -1817,7 +1817,7 @@ async function runMigrations() {
         status TEXT DEFAULT 'concept',
         quote_date DATE NOT NULL,
         valid_until DATE NOT NULL,
-        customer_id INTEGER REFERENCES customers(id),
+        customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
         prospect_name TEXT,
         prospect_company TEXT,
         prospect_email TEXT,
@@ -1911,6 +1911,7 @@ async function runMigrations() {
         {
           "id": "field-offertenummer",
           "name": "Offertenummer",
+          "label": "Offertenummer:",
           "x": 50,
           "y": 60,
           "fontSize": 20,
@@ -1922,6 +1923,7 @@ async function runMigrations() {
         {
           "id": "field-offertedatum",
           "name": "Offertedatum",
+          "label": "Datum:",
           "x": 50,
           "y": 90,
           "fontSize": 11,
@@ -1933,6 +1935,7 @@ async function runMigrations() {
         {
           "id": "field-geldigtot",
           "name": "Geldig tot",
+          "label": "Geldig tot:",
           "x": 300,
           "y": 90,
           "fontSize": 11,
@@ -1944,6 +1947,7 @@ async function runMigrations() {
         {
           "id": "field-klantnaam",
           "name": "Klant",
+          "label": "Klant:",
           "x": 50,
           "y": 150,
           "fontSize": 13,
@@ -1955,6 +1959,7 @@ async function runMigrations() {
         {
           "id": "field-contact",
           "name": "Contactpersoon",
+          "label": "Contactpersoon:",
           "x": 50,
           "y": 170,
           "fontSize": 11,
@@ -1999,6 +2004,7 @@ async function runMigrations() {
         {
           "id": "field-email",
           "name": "E-mail",
+          "label": "E-mail:",
           "x": 50,
           "y": 224,
           "fontSize": 11,
@@ -2010,6 +2016,7 @@ async function runMigrations() {
         {
           "id": "field-merk",
           "name": "Merk",
+          "label": "Merk:",
           "x": 50,
           "y": 290,
           "fontSize": 14,
@@ -2021,6 +2028,7 @@ async function runMigrations() {
         {
           "id": "field-model",
           "name": "Model",
+          "label": "Model:",
           "x": 150,
           "y": 290,
           "fontSize": 14,
@@ -2032,6 +2040,7 @@ async function runMigrations() {
         {
           "id": "field-uitvoering",
           "name": "Uitvoering",
+          "label": "Uitvoering:",
           "x": 50,
           "y": 312,
           "fontSize": 11,
@@ -2043,6 +2052,7 @@ async function runMigrations() {
         {
           "id": "field-kenteken",
           "name": "Kenteken",
+          "label": "Kenteken:",
           "x": 50,
           "y": 332,
           "fontSize": 11,
@@ -2054,6 +2064,7 @@ async function runMigrations() {
         {
           "id": "field-levertijd",
           "name": "Levertijd",
+          "label": "Levertijd:",
           "x": 50,
           "y": 352,
           "fontSize": 11,
@@ -2065,6 +2076,7 @@ async function runMigrations() {
         {
           "id": "field-looptijd",
           "name": "Looptijd (maanden)",
+          "label": "Looptijd:",
           "x": 50,
           "y": 420,
           "fontSize": 12,
@@ -2076,6 +2088,7 @@ async function runMigrations() {
         {
           "id": "field-km",
           "name": "Kilometers per jaar",
+          "label": "Kilometers per jaar:",
           "x": 50,
           "y": 442,
           "fontSize": 12,
@@ -2087,6 +2100,7 @@ async function runMigrations() {
         {
           "id": "field-prijs",
           "name": "Leaseprijs per maand excl. btw",
+          "label": "Leaseprijs per maand excl. btw:",
           "x": 50,
           "y": 480,
           "fontSize": 18,
@@ -2098,6 +2112,7 @@ async function runMigrations() {
         {
           "id": "field-meerkm",
           "name": "Meerkilometerprijs",
+          "label": "Meerkilometerprijs:",
           "x": 50,
           "y": 530,
           "fontSize": 11,
@@ -2109,6 +2124,7 @@ async function runMigrations() {
         {
           "id": "field-minderkm",
           "name": "Minderkilometerprijs",
+          "label": "Minderkilometerprijs:",
           "x": 50,
           "y": 550,
           "fontSize": 11,

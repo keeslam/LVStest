@@ -210,7 +210,8 @@
     "pdfErrors": {
       "LEASE_NO_TEMPLATE": "Nu există încă un șablon PDF pentru ofertele de leasing. Creează unul la Documente.",
       "LEASE_NO_VARIANT": "Alege mai întâi ce variantă merge la client."
-    }
+    },
+    "chosenVariantRemoved": "Ați șters varianta care merge la client. Acum varianta 1 merge la client."
   },
   "scan": {
     "title": "Citește oferta dealerului",

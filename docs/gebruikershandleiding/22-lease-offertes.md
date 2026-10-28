@@ -631,8 +631,13 @@ Er is **geen** veld voor de afschrijving, de rente, de marge, de ROB, de verzeke
 wegenbelasting, de overige kosten, de aanschafwaarde, de restwaarde of een andere variant. Dat is
 zo bedoeld: de klant mag de kostenopbouw niet zien.
 
-Het standaardsjabloon laat alleen de waarden zien, zonder woorden ervoor. Wil je er *Looptijd* of
-*Prijs per maand* bij hebben staan? Zet die tekst dan op je achtergrond.
+**Tekst voor de waarde.** Elk veld heeft rechts het vak **Tekst voor de waarde**. Wat je daar typt, komt
+vlak voor de waarde op de PDF te staan. Typ je bij het veld voor de looptijd bijvoorbeeld *Looptijd:*,
+dan staat er op de PDF *Looptijd: 48 maanden*. Laat je het vak leeg? Dan staat alleen de waarde op de
+PDF. Is de waarde zelf leeg, bijvoorbeeld een meerkilometerprijs die je niet hebt ingevuld? Dan komt
+ook de tekst er niet. Het standaardsjabloon heeft deze teksten al, zoals *Leaseprijs per maand excl.
+btw:*, *Looptijd:* en *Kilometers per jaar:*. Pas ze aan als je andere woorden wilt. In de editor staat
+de tekst voor de veldnaam, in grijze cursieve letters.
 
 Meer over sjablonen staat in hoofdstuk 8.
 

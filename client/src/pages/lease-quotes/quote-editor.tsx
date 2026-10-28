@@ -18,7 +18,8 @@ import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, fetchWithTimeout, getCsrfToken, invalidateByPrefix, throwIfResNotOk } from "@/lib/queryClient";
-import { describeApiError, parseApiError } from "@/lib/api-error";
+import { describeApiError } from "@/lib/api-error";
+import { describeLeasePdfError } from "./pdf-error";
 import { formatCurrency, formatDateTime } from "@/lib/format-utils";
 import { cn } from "@/lib/utils";
 import { CopyQuoteDialog } from "./copy-quote-dialog";
@@ -306,9 +307,7 @@ function EditorBody({ quoteId, setDirty: reportDirty, requestClose, onOpenQuote 
       }
     } catch (error) {
       tab?.close();
-      const code = parseApiError(error).code;
-      const known = code === "LEASE_NO_TEMPLATE" || code === "LEASE_NO_VARIANT" ? t(`editor.pdfErrors.${code}`) : describeApiError(error);
-      toast({ title: t("pdf.failed"), description: known, variant: "destructive" });
+      toast({ title: t("pdf.failed"), description: describeLeasePdfError(error, t), variant: "destructive" });
     }
   }
 
@@ -582,11 +581,15 @@ function EditorBody({ quoteId, setDirty: reportDirty, requestClose, onOpenQuote 
               return { ...f, variants: [...f.variants, { key: newVariantKey(), term: last?.term ?? "48", km: last?.km ?? formatAmountInput(20000), residual: "" }] };
             })}
             onDuplicate={(i) => update((f) => ({ ...f, variants: [...f.variants.slice(0, i + 1), { ...f.variants[i], key: newVariantKey() }, ...f.variants.slice(i + 1)], chosenIndex: f.chosenIndex > i ? f.chosenIndex + 1 : f.chosenIndex }))}
-            onRemove={(i) => update((f) => {
+            onRemove={(i) => {
+              // Removing the variant that goes to the customer silently moves "Naar de klant" to variant 1: say so.
+              if (form.variants.length > 1 && form.chosenIndex === i) toast({ title: t("editor.chosenVariantRemoved") });
+              update((f) => {
               if (f.variants.length <= 1) return f;
               const chosenIndex = f.chosenIndex === i ? 0 : f.chosenIndex > i ? f.chosenIndex - 1 : f.chosenIndex;
               return { ...f, variants: f.variants.filter((_, j) => j !== i), chosenIndex };
-            })}
+              });
+            }}
             onChoose={(i) => update((f) => ({ ...f, chosenIndex: i }))}
           />
         ), "section-lease-variants")}

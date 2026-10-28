@@ -249,8 +249,7 @@
         "key-audit": "Control del armario de llaves",
         "notification-dismissal": "Notificación descartada",
         "user-setting": "Ajuste propio",
-        "lease_quote": "Oferta de leasing",
-        "lease-quote": "Oferta de leasing"
+        "lease_quote": "Oferta de leasing"
       },
       "verbs": {
         "create": "creado",
@@ -359,9 +358,7 @@
         "lease_quote": {
           "copy": "Oferta copiada a una nueva oferta",
           "pdf": "PDF creado para el cliente",
-          "files": "Oferta del concesionario subida, leída o eliminada"
-        },
-        "lease-quote": {
+          "files": "Oferta del concesionario subida, leída o eliminada",
           "file-view": "Adjunto de la oferta visto"
         }
       }

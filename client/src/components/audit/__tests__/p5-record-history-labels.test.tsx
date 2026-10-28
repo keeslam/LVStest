@@ -66,7 +66,7 @@ const logs = [
   entry(31, "lease_quote.pdf"),
   entry(32, "lease_quote.files"),
   entry(33, "lease_quote.create"),
-  entry(34, "lease-quote.file-view"),
+  entry(34, "lease_quote.file-view"),
 ];
 
 beforeEach(() => {

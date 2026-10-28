@@ -249,8 +249,7 @@
         "key-audit": "Controlo do armário de chaves",
         "notification-dismissal": "Notificação dispensada",
         "user-setting": "Definição própria",
-        "lease_quote": "Proposta de leasing",
-        "lease-quote": "Proposta de leasing"
+        "lease_quote": "Proposta de leasing"
       },
       "verbs": {
         "create": "criação",
@@ -359,10 +358,8 @@
         "lease_quote": {
           "copy": "Proposta copiada para uma nova proposta",
           "pdf": "PDF criado para o cliente",
-          "files": "Proposta do concessionário carregada, lida ou eliminada"
-        },
-        "lease-quote": {
-          "file-view": "Anexo da proposta visualizado"
+          "files": "Proposta do concessionário carregada, lida ou eliminada",
+          "file-view": "Anexo da proposta visto"
         }
       }
     }

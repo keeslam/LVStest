@@ -618,7 +618,10 @@
       "signatureLandlord": "Assinatura do locador"
     },
     "createFirstTemplateDescription": "Comece por criar um modelo de proposta de leasing",
-    "backToDocuments": "Voltar aos documentos"
+    "backToDocuments": "Voltar aos documentos",
+    "captionLabel": "Texto antes do valor",
+    "captionPlaceholder": "p. ex. Duração:",
+    "captionHelp": "Este texto é impresso mesmo antes do valor no PDF. Deixe vazio para imprimir apenas o valor."
   },
   "interactiveDamageCheck": {
     "toasts": {

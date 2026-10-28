@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/format-utils";
 import { describeApiError } from "@/lib/api-error";
+import { describeLeasePdfError } from "./pdf-error";
 import { CopyQuoteDialog } from "./copy-quote-dialog";
 
 interface QuoteRow {
@@ -122,7 +123,7 @@ export function QuoteList({ onOpenQuote }: {
     },
     onError: (error, { tab }) => {
       tab?.close();
-      toast({ title: t("pdf.failed"), description: describeApiError(error), variant: "destructive" });
+      toast({ title: t("pdf.failed"), description: describeLeasePdfError(error, t), variant: "destructive" });
     },
   });
   const startPdf = (row: QuoteRow) => makePdf.mutate({ row, tab: window.open("about:blank", "_blank") });

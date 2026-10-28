@@ -124,6 +124,22 @@ describe("QuoteEditor variants", () => {
     expect(variants[1]).toMatchObject({ isChosen: true, residualValue: 5000 });
   });
 
+  it("removing a variant that does not go to the customer shows no such message", async () => {
+    renderEditor();
+    await userEvent.click(await screen.findByTestId("button-add-variant"));
+    await userEvent.click(screen.getByTestId("button-remove-variant-1"));
+    expect(screen.queryByText(/ging. Variant 1 gaat nu/)).toBeNull();
+  });
+
+  it("removing the chosen variant moves 'Naar de klant' to variant 1 and says so", async () => {
+    renderEditor();
+    await userEvent.click(await screen.findByTestId("button-add-variant"));
+    await userEvent.click(screen.getByTestId("button-choose-variant-1"));
+    await userEvent.click(screen.getByTestId("button-remove-variant-1"));
+    expect(await screen.findByText("Je hebt de variant verwijderd die naar de klant ging. Variant 1 gaat nu naar de klant.")).toBeInTheDocument();
+    expect(screen.getByTestId("button-choose-variant-0")).toHaveAttribute("aria-checked", "true");
+  });
+
   it("does not offer to remove the last variant", async () => {
     renderEditor();
     expect(await screen.findByTestId("button-remove-variant-0")).toBeDisabled();

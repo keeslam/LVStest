@@ -42,8 +42,7 @@ const SUB_ACTIONS: Record<string, readonly string[]> = {
   "interactive-damage-check": ["pdf"],
   "fiscal-assessment": ["pdf"],
   // Lease offertes: /api/lease-quotes/:id/copy, /pdf and /files[/:fileId[/scan]] (upload, read, delete).
-  lease_quote: ["copy", "pdf", "files"],
-  "lease-quote": ["file-view"],
+  lease_quote: ["copy", "pdf", "files", "file-view"],
   // Screens and dialogs the client reports (client/src/lib/audit-events.ts trackUi).
   screen: ["open"],
   dialog: ["open"],
@@ -56,8 +55,8 @@ const RESOURCES = [
   "reservation", "vehicle", "customer", "document", "expense", "transport", "fine", "driver", "maintenance", "blacklist",
   // The recycle bin writes `<entityType>.purge` with the entity type as it is stored, underscore and all.
   "maintenance_block",
-  // Lease offertes: writes are lease_quote (TRACKED_RESOURCES), file reads lease-quote (TRACKED_READS).
-  "lease_quote", "lease-quote",
+  // Lease offertes: writes and file reads are both lease_quote (TRACKED_RESOURCES, TRACKED_READS).
+  "lease_quote",
   // Routers that were mounted outside the audit middleware until 2026-10 and now show up in the log.
   "email-template", "email-log", "notification", "apk-date-change",
   "system",

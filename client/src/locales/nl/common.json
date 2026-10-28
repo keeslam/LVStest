@@ -245,8 +245,7 @@
         "key-audit": "Sleutelkastcontrole",
         "notification-dismissal": "Weggeklikte melding",
         "user-setting": "Eigen instelling",
-        "lease_quote": "Lease offerte",
-        "lease-quote": "Lease offerte"
+        "lease_quote": "Lease offerte"
       },
       "verbs": {
         "create": "aangemaakt",
@@ -355,9 +354,7 @@
         "lease_quote": {
           "copy": "Offerte gekopieerd naar een nieuwe offerte",
           "pdf": "PDF voor de klant gemaakt",
-          "files": "Dealerofferte geüpload, uitgelezen of verwijderd"
-        },
-        "lease-quote": {
+          "files": "Dealerofferte geüpload, uitgelezen of verwijderd",
           "file-view": "Bijlage van de offerte bekeken"
         }
       }

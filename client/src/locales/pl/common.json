@@ -253,8 +253,7 @@
         "key-audit": "Kontrola szafki na klucze",
         "notification-dismissal": "Ukryte powiadomienie",
         "user-setting": "Własne ustawienie",
-        "lease_quote": "Oferta leasingowa",
-        "lease-quote": "Oferta leasingowa"
+        "lease_quote": "Oferta leasingowa"
       },
       "verbs": {
         "create": "utworzono",
@@ -363,10 +362,8 @@
         "lease_quote": {
           "copy": "Oferta skopiowana do nowej oferty",
           "pdf": "Utworzono PDF dla klienta",
-          "files": "Oferta dealera przesłana, odczytana lub usunięta"
-        },
-        "lease-quote": {
-          "file-view": "Wyświetlono załącznik oferty"
+          "files": "Oferta dealera przesłana, odczytana lub usunięta",
+          "file-view": "Załącznik oferty wyświetlony"
         }
       }
     }

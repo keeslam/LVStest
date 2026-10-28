@@ -106,6 +106,27 @@ describe("lease quote files API", () => {
     expect(await db.select().from(leaseQuoteFiles).where(eq(leaseQuoteFiles.id, file.id))).toHaveLength(1);
   });
 
+  it("viewing a file shows up in the quote's own history as lease_quote.file-view", async () => {
+    const file = (await upload(quoteId)).body;
+    expect((await admin.get(`/api/lease-quotes/${quoteId}/files/${file.id}`)).status).toBe(200);
+    let actions: string[] = [];
+    for (let i = 0; i < 20; i++) {
+      const hist = await admin.get(`/api/audit-logs/resource/lease_quote/${quoteId}`);
+      expect(hist.status).toBe(200);
+      const list = Array.isArray(hist.body) ? hist.body : hist.body.logs ?? hist.body.rows ?? [];
+      actions = list.map((l: any) => l.action);
+      if (actions.includes("lease_quote.file-view")) break;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    expect(actions).toContain("lease_quote.file-view");
+  });
+
+  it("a file that vanished from disk answers 404 instead of crashing", async () => {
+    const file = (await upload(quoteId)).body;
+    fs.rmSync(path.join(getUploadsDir(), file.filePath), { force: true });
+    expect((await admin.get(`/api/lease-quotes/${quoteId}/files/${file.id}`)).status).toBe(404);
+  });
+
   it("streams the file inline and refuses a file id of another quote", async () => {
     const file = (await upload(quoteId)).body;
     const res = await admin.get(`/api/lease-quotes/${quoteId}/files/${file.id}`).buffer(true).parse((r, cb) => {
@@ -116,6 +137,7 @@ describe("lease quote files API", () => {
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toContain("application/pdf");
     expect(res.headers["content-disposition"]).toBe('inline; filename="offerte.pdf"');
+    expect(res.headers["x-content-type-options"]).toBe("nosniff");
     expect((res.body as Buffer).equals(PDF)).toBe(true);
     expect((await admin.get(`/api/lease-quotes/${otherId}/files/${file.id}`)).status).toBe(404);
     expect((await admin.post(`/api/lease-quotes/${otherId}/files/${file.id}/scan`)).status).toBe(404);

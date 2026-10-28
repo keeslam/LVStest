@@ -610,7 +610,10 @@
       "signatureLandlord": "Landlord signature"
     },
     "createFirstTemplateDescription": "Start by creating a lease quote template",
-    "backToDocuments": "Back to documents"
+    "backToDocuments": "Back to documents",
+    "captionLabel": "Text before the value",
+    "captionPlaceholder": "e.g. Term:",
+    "captionHelp": "This text is printed right before the value on the PDF. Leave empty to print only the value."
   },
   "interactiveDamageCheck": {
     "toasts": {

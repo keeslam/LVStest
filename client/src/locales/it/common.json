@@ -249,8 +249,7 @@
         "key-audit": "Controllo armadietto chiavi",
         "notification-dismissal": "Notifica nascosta",
         "user-setting": "Impostazione personale",
-        "lease_quote": "Offerta di leasing",
-        "lease-quote": "Offerta di leasing"
+        "lease_quote": "Offerta di leasing"
       },
       "verbs": {
         "create": "creazione",
@@ -359,9 +358,7 @@
         "lease_quote": {
           "copy": "Offerta copiata in una nuova offerta",
           "pdf": "PDF creato per il cliente",
-          "files": "Offerta del concessionario caricata, letta o eliminata"
-        },
-        "lease-quote": {
+          "files": "Offerta del concessionario caricata, letta o eliminata",
           "file-view": "Allegato dell'offerta visualizzato"
         }
       }

@@ -35,6 +35,7 @@ beforeEach(() => {
     if (url.pathname === "/api/lease-quotes/settings") {
       return json({ interestRatePercent: 9, marginPerMonth: 0, robPerYear: 275, otherCostsPerYear: 350, excessKmPrice: 0.1, shortfallKmPrice: 0.05, validityDays: 30 });
     }
+    if (url.pathname.endsWith("/pdf") && method === "POST") return json({ message: "No template", code: "LEASE_NO_TEMPLATE" }, 409);
     if (url.pathname.endsWith("/copy")) return json({ id: 3, quoteNumber: "LO-2026-0003" }, 201);
     if (method === "DELETE") return json({ ok: true, quoteNumber: "LO-2026-0001" });
     return json({});
@@ -45,6 +46,15 @@ function renderWith(ui: React.ReactElement) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, queryFn: getQueryFn({ on401: "throw" }) } } });
   return render(<QueryClientProvider client={client}>{ui}<Toaster /></QueryClientProvider>);
 }
+
+describe("QuoteList PDF errors", () => {
+  it("LEASE_NO_TEMPLATE shows the same Dutch sentence as the editor", async () => {
+    vi.spyOn(window, "open").mockReturnValue(null);
+    renderWith(<QuoteList onOpenQuote={() => {}} />);
+    await userEvent.click(await screen.findByTestId("button-pdf-lease-quote-1"));
+    expect(await screen.findByText("Er is nog geen PDF-sjabloon voor lease offertes. Maak er een bij Documenten.")).toBeInTheDocument();
+  });
+});
 
 describe("QuoteList", () => {
   it("shows the rows with Dutch amounts and the Verlopen badge from displayStatus", async () => {

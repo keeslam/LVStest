@@ -80,8 +80,13 @@ export async function drawLeaseQuoteTemplate(
 
       const raw = data[source] ?? "";
       if (raw === "") continue;
-      const value = sanitizeForWinAnsi(raw, `lease quote field "${source}"`);
-      if (value === "") continue;
+      const valueOnly = sanitizeForWinAnsi(raw, `lease quote field "${source}"`);
+      if (valueOnly === "") continue;
+      // An optional caption ("Looptijd:") is printed in front of the value, on the same line.
+      const caption = typeof field.label === "string"
+        ? sanitizeForWinAnsi(field.label.trim(), `lease quote caption "${source}"`)
+        : "";
+      const value = caption ? `${caption} ${valueOnly}` : valueOnly;
 
       const x = Number.isFinite(field.x) ? field.x : 0;
       const y = Number.isFinite(field.y) ? field.y : 0;
@@ -167,7 +172,8 @@ export function prepareLeaseQuoteData(
     quoteDate: dutchDate(quote.quoteDate),
     validUntil: dutchDate(quote.validUntil),
     customerName: customer ? (trim(customer.companyName) || trim(customer.name)) : (trim(quote.prospectCompany) || trim(quote.prospectName)),
-    customerContact: customer ? trim(customer.contactPerson) : "",
+    // A prospect with both a company and a name: the company is the customer, the name the contact.
+    customerContact: customer ? trim(customer.contactPerson) : (trim(quote.prospectCompany) ? trim(quote.prospectName) : ""),
     customerAddress: customer ? customerAddressLine(customer) : "",
     customerPostalCode: customer ? formatPostcode(customer.postalCode) : "",
     customerCity: customer ? trim(customer.city) : "",
@@ -177,8 +183,8 @@ export function prepareLeaseQuoteData(
     vehicleTrim: trim(quote.vehicleTrim),
     licensePlate: trim(quote.licensePlate),
     deliveryTime: trim(quote.deliveryTime),
-    termMonths: String(chosen.termMonths),
-    kmPerYear: dutchInteger(chosen.kmPerYear),
+    termMonths: `${chosen.termMonths} maanden`,
+    kmPerYear: `${dutchInteger(chosen.kmPerYear)} km`,
     monthlyPriceExclVat: chosen.totalPerMonth == null ? "" : euro(chosen.totalPerMonth),
     excessKmPrice: kmPrice(quote.excessKmPrice),
     shortfallKmPrice: kmPrice(quote.shortfallKmPrice),

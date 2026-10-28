@@ -245,8 +245,7 @@
         "key-audit": "Key-cabinet audit",
         "notification-dismissal": "Dismissed notification",
         "user-setting": "Own setting",
-        "lease_quote": "Lease quote",
-        "lease-quote": "Lease quote"
+        "lease_quote": "Lease quote"
       },
       "verbs": {
         "create": "created",
@@ -355,9 +354,7 @@
         "lease_quote": {
           "copy": "Quote copied to a new quote",
           "pdf": "PDF made for the customer",
-          "files": "Dealer quote uploaded, read or deleted"
-        },
-        "lease-quote": {
+          "files": "Dealer quote uploaded, read or deleted",
           "file-view": "Quote attachment viewed"
         }
       }

@@ -618,7 +618,10 @@
       "signatureLandlord": "Firma del arrendador"
     },
     "createFirstTemplateDescription": "Empiece creando una plantilla de oferta de leasing",
-    "backToDocuments": "Volver a documentos"
+    "backToDocuments": "Volver a documentos",
+    "captionLabel": "Texto antes del valor",
+    "captionPlaceholder": "p. ej. Duración:",
+    "captionHelp": "Este texto se imprime justo antes del valor en el PDF. Déjelo vacío para imprimir solo el valor."
   },
   "interactiveDamageCheck": {
     "toasts": {

@@ -53,6 +53,14 @@ describe("lease quote templates API", () => {
     for (const f of res.body.fields) expect(LEASE_QUOTE_TEMPLATE_SOURCES).toContain(f.source);
   });
 
+  it("a field caption (label) is accepted and round-trips", async () => {
+    const fields = [{ id: "f1", name: "Looptijd", label: "Looptijd:", x: 50, y: 100, fontSize: 12, isBold: false, source: "termMonths" }];
+    const patched = await admin.patch(`/api/lease-quote-templates/${templateId}`).send({ fields });
+    expect(patched.status).toBe(200);
+    const one = await admin.get(`/api/lease-quote-templates/${templateId}`);
+    expect(one.body.fields[0].label).toBe("Looptijd:");
+  });
+
   it("lists, reads, updates and deletes for MANAGE_PDF_TEMPLATES", async () => {
     const list = await admin.get("/api/lease-quote-templates");
     expect(list.status).toBe(200);
