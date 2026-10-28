@@ -54,6 +54,7 @@ beforeEach(() => {
     if (url.pathname === "/api/lease-quotes/7/files" && method === "POST") {
       return json({ id: 11, kind: "dealer", fileName: "dealer.pdf", fileSize: 1000, contentType: "application/pdf", createdAt: "2026-10-28T10:00:00.000Z", createdBy: "tester" }, 201);
     }
+    if (url.pathname === "/api/lease-quotes/7/pdf" && method === "POST") return json({ id: 12, kind: "generated", fileName: "LO-2026-0001-test.pdf" }, 201);
     if (url.pathname === "/api/lease-quotes/7/files/11/scan") return json(scanResponse.body, scanResponse.status);
     if (url.pathname === "/api/customers") return json([]);
     return json({});
@@ -242,6 +243,18 @@ describe("QuoteEditor variants", () => {
   it("does not offer to remove the last variant", async () => {
     renderEditor();
     expect(await screen.findByTestId("button-remove-variant-0")).toBeDisabled();
+  });
+});
+
+describe("QuoteEditor PDF", () => {
+  it("PDF maken shows the new PDF in the app preview window, not in a new tab", async () => {
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
+    renderEditor();
+    await userEvent.click(await screen.findByTestId("button-pdf-lease-quote"));
+    await waitFor(() => expect(document.getElementById("pdf-preview-iframe")).not.toBeNull());
+    const frame = document.getElementById("pdf-preview-iframe");
+    expect(frame).toHaveAttribute("src", "/api/lease-quotes/7/files/12");
+    expect(open).not.toHaveBeenCalled();
   });
 });
 

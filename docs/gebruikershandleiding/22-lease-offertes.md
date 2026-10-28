@@ -373,9 +373,9 @@ doen. Kies **Verwerpen** om ze kwijt te raken, of ga terug en klik op **Opslaan*
 ### De PDF voor de klant maken
 
 15. Klik onderaan op **PDF maken**. Zijn er wijzigingen? Dan slaat de app die eerst op. Daarna opent
-    de PDF in een nieuw tabblad van je browser. Linksonder staat de melding *De PDF van offerte … is
-    gemaakt.* Wordt het tabblad door je browser tegengehouden? Klik dan in de melding op **Bestand
-    openen**.
+    de PDF in een venster van de app, net als andere PDF's in de app. Daar kun je hem bekijken en
+    **Afdrukken**. Met **Sluiten** ga je terug naar de offerte. Linksonder staat de melding *De PDF van
+    offerte … is gemaakt.*
 
     Je kunt de PDF ook maken in de lijst, met de knop **PDF** achter de offerte (22.2).
 
@@ -681,5 +681,5 @@ Twee dingen om te weten:
 | *Vul bij elke variant een looptijd, km per jaar en restwaarde in om op te slaan.* | Vul de ontbrekende cijfers in, of verwijder de variant die je niet nodig hebt. |
 | *Er is nog geen PDF-sjabloon voor lease offertes. Maak er een bij Documenten.* | Maak of herstel het sjabloon onder **Documenten** → **Lease offertes** (22.11). |
 | *Kies eerst welke variant naar de klant gaat.* | Klik onder een variant op **Deze selecteren**. |
-| De PDF opent niet in een nieuw tabblad | Je browser hield het tabblad tegen. Klik in de melding op **Bestand openen**, of op **Openen** bij **Gemaakte PDF's voor de klant**. |
+| Het PDF-venster blijft leeg | Wacht een paar seconden. Blijft het leeg? Klik dan op **Downloaden** bij **Gemaakte PDF's voor de klant** en open het bestand zelf. |
 | De offerte is weg uit de lijst | Kijk bij **Verwijderde lease offertes**. Of de lijst staat op een filter: zet **Status** op **Alle statussen** en maak **Zoeken** leeg. |

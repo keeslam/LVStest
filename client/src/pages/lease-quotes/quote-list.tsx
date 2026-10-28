@@ -24,6 +24,7 @@ import { formatCurrency } from "@/lib/format-utils";
 import { describeApiError } from "@/lib/api-error";
 import { describeLeasePdfError } from "./pdf-error";
 import { CopyQuoteDialog } from "./copy-quote-dialog";
+import { useFilePreview } from "@/components/documents/use-file-preview";
 
 interface QuoteRow {
   id: number;
@@ -102,31 +103,22 @@ export function QuoteList({ onOpenQuote }: {
     },
   });
 
-  // The PDF is drawn on the server and stored as a copy. A tab is opened synchronously on the click
-  // (popup blockers), and pointed at the file once it exists.
+  // The PDF is drawn on the server, stored as a copy and shown in the app's own preview window.
+  const preview = useFilePreview();
   const makePdf = useMutation({
-    mutationFn: async ({ row }: { row: QuoteRow; tab: Window | null }) => {
+    mutationFn: async (row: QuoteRow) => {
       const res = await apiRequest("POST", `/api/lease-quotes/${row.id}/pdf`, {});
-      return { row, file: (await res.json()) as { id: number } };
+      return { row, file: (await res.json()) as { id: number; fileName?: string } };
     },
-    onSuccess: ({ row, file }, { tab }) => {
-      const url = `/api/lease-quotes/${row.id}/files/${file.id}`;
-      if (tab && !tab.closed) {
-        tab.location.href = url;
-        toast({ title: t("pdf.done", { number: row.quoteNumber }) });
-      } else {
-        toast({
-          title: t("pdf.done", { number: row.quoteNumber }),
-          description: <a href={url} target="_blank" rel="noopener" className="underline" data-testid="link-lease-quote-pdf">{t("pdf.open")}</a>,
-        });
-      }
+    onSuccess: ({ row, file }) => {
+      toast({ title: t("pdf.done", { number: row.quoteNumber }) });
+      preview.open(`/api/lease-quotes/${row.id}/files/${file.id}`, file.fileName ?? row.quoteNumber);
     },
-    onError: (error, { tab }) => {
-      tab?.close();
+    onError: (error) => {
       toast({ title: t("pdf.failed"), description: describeLeasePdfError(error, t), variant: "destructive" });
     },
   });
-  const startPdf = (row: QuoteRow) => makePdf.mutate({ row, tab: window.open("about:blank", "_blank") });
+  const startPdf = (row: QuoteRow) => makePdf.mutate(row);
   const onSort = (key: SortKey) => {
     setSort((cur) => nextSort(cur, key, (k) => (k === "quoteDate" || k === "validUntil" ? "desc" : "asc")));
     setPage(1);
@@ -235,6 +227,8 @@ export function QuoteList({ onOpenQuote }: {
         sizes={PAGE_SIZES}
         testId="lease-quotes"
       />
+
+      {preview.dialog}
 
       <CopyQuoteDialog
         quoteId={copyId}

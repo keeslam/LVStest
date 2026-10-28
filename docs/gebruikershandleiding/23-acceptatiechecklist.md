@@ -1300,7 +1300,7 @@ Gebruik verzonnen klanten en offertes. Het voorbeeld uit het hoofdstuk: aanschaf
 ### Opslaan, PDF en kopiëren
 
 - [ ] **Opslaan.** Klik op **Opslaan**. Verwacht: **De offerte is opgeslagen.** Klik op **Sluiten** na een wijziging zonder opslaan. Verwacht: een vraag met **Verwerpen**. (hfst 22.6)
-- [ ] **PDF maken.** Klik op **PDF maken**. Verwacht: de PDF opent in een nieuw tabblad en staat onder **Gemaakte PDF's voor de klant** met datum en naam. **Openen** en **Downloaden** werken. (hfst 22.6)
+- [ ] **PDF maken.** Klik op **PDF maken**. Verwacht: de PDF opent in een venster van de app (met **Sluiten** en **Afdrukken**) en staat onder **Gemaakte PDF's voor de klant** met datum en naam. **Openen** toont de PDF in hetzelfde venster; **Downloaden** werkt. (hfst 22.6)
 - [ ] **Wat op de PDF staat.** Open de PDF. Verwacht: het offertenummer, de datums, de klant, de auto, 48, 20.000, **€ 466,23** en de meer- en minderkilometerprijs. Er staat **niet** op: 152,46, 129,89, 22,92, 29,17, 97,80, 34, 17.318, 10.000 of een andere variant. (hfst 22.6)
 - [ ] **Kopiëren.** Klik op **Kopiëren**. Verwacht: **Bijlagen (dealerofferte) ook kopiëren?** met **Ja**, **Nee** en **Annuleren**. Kies **Nee**. Verwacht: een nieuwe offerte met een nieuw nummer, status **Concept**, alle varianten, en geen gemaakte PDF's. Kies bij een andere kopie **Ja**. Verwacht: de dealerbestanden staan er ook. (hfst 22.7)
 

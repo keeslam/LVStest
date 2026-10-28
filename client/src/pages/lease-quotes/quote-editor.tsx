@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Download, ExternalLink, FileText, History, Loader2, ScanText, Trash2, Upload } from "lucide-react";
+import { Copy, Download, Eye, FileText, History, Loader2, ScanText, Trash2, Upload } from "lucide-react";
 import { isEditWarningStatus, LEASE_QUOTE_STATUSES, type LeaseQuotePayload } from "@shared/lease-quotes";
 import { roundCents } from "@shared/lease-quote-calc";
 import { UserPermission, type Customer } from "@shared/schema";
@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useFilePreview } from "@/components/documents/use-file-preview";
 import { CustomerSearchPicker } from "@/components/customers/customer-search-picker";
 import { RecordHistoryDialog } from "@/components/audit/record-history-dialog";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
@@ -266,6 +267,7 @@ function EditorBody({ quoteId, setDirty: reportDirty, requestClose, onOpenQuote 
   const setText = (k: TextKey, v: string) => update((f) => ({ ...f, text: { ...f.text, [k]: v } }));
 
   const refreshQuote = () => queryClient.invalidateQueries({ queryKey: [url] });
+  const preview = useFilePreview();
 
   /* ---------------- save / pdf / copy ---------------- */
 
@@ -281,44 +283,33 @@ function EditorBody({ quoteId, setDirty: reportDirty, requestClose, onOpenQuote 
     reportDirty(false);
   }
 
-  async function makePdf(tab: Window | null) {
+  /** The new PDF opens in the app's own preview window, like PDFs elsewhere in the app. */
+  async function makePdf() {
     try {
-      const file = (await (await apiRequest("POST", `${url}/pdf`, {})).json()) as { id: number };
-      const fileUrl = `${url}/files/${file.id}`;
+      const file = (await (await apiRequest("POST", `${url}/pdf`, {})).json()) as { id: number; fileName?: string };
       void refreshQuote();
-      if (tab && !tab.closed) {
-        tab.location.href = fileUrl;
-        toast({ title: t("pdf.done", { number: quote?.quoteNumber ?? "" }) });
-      } else {
-        toast({
-          title: t("pdf.done", { number: quote?.quoteNumber ?? "" }),
-          description: <a href={fileUrl} target="_blank" rel="noopener" className="underline" data-testid="link-lease-quote-pdf">{t("pdf.open")}</a>,
-        });
-      }
+      toast({ title: t("pdf.done", { number: quote?.quoteNumber ?? "" }) });
+      preview.open(`${url}/files/${file.id}`, file.fileName ?? quote?.quoteNumber);
     } catch (error) {
-      tab?.close();
       toast({ title: t("pdf.failed"), description: describeLeasePdfError(error, t), variant: "destructive" });
     }
   }
 
-  /** Runs inside the click (button or "Ja"), so the PDF tab is opened before anything is awaited. */
   async function proceed(after: After, save: boolean, current: FormState | null = form) {
     if (!current) return;
-    const tab = after === "pdf" ? window.open("about:blank", "_blank") : null;
     setBusy(true);
     try {
       if (save) {
         try {
           await saveNow(current);
         } catch (error) {
-          tab?.close();
           toast({ title: t("editor.saveFailed"), description: describeApiError(error), variant: "destructive" });
           return;
         }
         if (after === "save") toast({ title: t("editor.saved") });
         if (after === "select") toast({ title: t("editor.variantSelected", { n: current.chosenIndex + 1 }) });
       }
-      if (after === "pdf") await makePdf(tab);
+      if (after === "pdf") await makePdf();
       if (after === "copy") setCopyOpen(true);
     } finally {
       setBusy(false);
@@ -428,8 +419,8 @@ function EditorBody({ quoteId, setDirty: reportDirty, requestClose, onOpenQuote 
           </p>
         </div>
         <div className="flex gap-1">
-          <Button asChild variant="ghost" size="icon" className="h-8 w-8" title={t("editor.files.open")}>
-            <a href={fileUrl} target="_blank" rel="noopener" aria-label={t("editor.files.open")} data-testid={`link-open-lease-file-${file.id}`}><ExternalLink className="h-4 w-4" /></a>
+          <Button type="button" variant="ghost" size="icon" className="h-8 w-8" title={t("editor.files.open")} aria-label={t("editor.files.open")} onClick={() => preview.open(fileUrl, file.fileName)} data-testid={`link-open-lease-file-${file.id}`}>
+            <Eye className="h-4 w-4" />
           </Button>
           <Button asChild variant="ghost" size="icon" className="h-8 w-8" title={t("editor.files.download")}>
             <a href={fileUrl} download={file.fileName} aria-label={t("editor.files.download")} data-testid={`link-download-lease-file-${file.id}`}><Download className="h-4 w-4" /></a>
@@ -663,6 +654,8 @@ function EditorBody({ quoteId, setDirty: reportDirty, requestClose, onOpenQuote 
         confirmTestId="button-confirm-delete-lease-file"
         onConfirm={() => { if (deleteFile) removeFile.mutate(deleteFile); setDeleteFile(null); }}
       />
+
+      {preview.dialog}
 
       <DealerScanDialog quoteId={quoteId} file={scanFile} onClose={() => setScanFile(null)} onApply={applyScan} />
 
