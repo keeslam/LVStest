@@ -59,6 +59,8 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
     officeToday()
   );
   const [pickupNotes, setPickupNotes] = useState("");
+  // Kees 2026-10-28: the eigen risico is shown before the contract is made, to confirm or change.
+  const [deductibleDraft, setDeductibleDraft] = useState<{ domestic: string; abroad: string } | null>(null);
   // besluiten B-16 (BUG-211) — the question the server asks when the rental has
   // not started yet, and the payload to send again once it is answered.
   const [earlyPickup, setEarlyPickup] = useState<{ startDate: string; today: string } | null>(null);
@@ -219,6 +221,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
         setFuelLevelPickup(reservation.vehicle?.currentFuelLevel || "Full");
         setPickupDate(officeToday());
         setPickupNotes("");
+        setDeductibleDraft(null);
         setIsDuplicateContract(false);
         setIsHighContractNumber(false);
         setOverridePassword("");
@@ -335,6 +338,24 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
     }
   }, [selectedVehicleId, selectedVehicle, isTBDSpare]);
 
+  const deductibleVehicleId = isTBDSpare ? selectedVehicleId : reservation.vehicleId;
+  const { data: proposedDeductible } = useQuery<{ group: "car" | "bus"; domestic: number; abroad: number }>({
+    queryKey: [`/api/reservations/${reservation.id}/deductible?vehicleId=${deductibleVehicleId ?? ""}`],
+    enabled: open && !!deductibleVehicleId,
+  });
+  const amountText = (n: number | undefined) => (n == null ? "" : String(n).replace(".", ","));
+  const deductibleValues = deductibleDraft ?? { domestic: amountText(proposedDeductible?.domestic), abroad: amountText(proposedDeductible?.abroad) };
+  const parseAmount = (text: string) => {
+    const n = Number(text.trim().replace(",", "."));
+    return text.trim() !== "" && Number.isFinite(n) && n >= 0 ? n : null;
+  };
+  /** The confirmed amounts for the pickup request; left out until the proposal has loaded. */
+  const deductiblePayload = () => {
+    const domestic = parseAmount(deductibleValues.domestic);
+    const abroad = parseAmount(deductibleValues.abroad);
+    return domestic !== null && abroad !== null ? { deductible: { domestic, abroad } } : {};
+  };
+
   const pickupMutation = useMutation({
     mutationFn: async (data: {
       contractNumber: string;
@@ -352,6 +373,8 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
       /** besluiten B-03 — set only by an administrator, and never without a reason. */
       forceWorkshopOverride?: boolean;
       forceWorkshopReason?: string;
+      /** Kees 2026-10-28 — the eigen risico confirmed in the dialog. */
+      deductible?: { domestic: number; abroad: number };
     }) => {
       // Kept so the B-16 question can send the very same pickup again, with the
       // answer attached, instead of asking the employee to fill it all in twice.
@@ -478,6 +501,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
         pickupNotes: pickupNotes || undefined,
         allowMileageDecrease: true,
         overridePassword: password,
+        ...deductiblePayload(),
       });
 
       setOverrideDialogOpen(false);
@@ -567,6 +591,12 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
       return;
     }
 
+    // Kees 2026-10-28: a changed eigen risico must be a valid amount before the contract is made.
+    if (deductibleDraft && (parseAmount(deductibleValues.domestic) === null || parseAmount(deductibleValues.abroad) === null)) {
+      toast({ variant: "destructive", title: t('pickupReturn.pickup.deductibleTitle'), description: t('pickupReturn.pickup.deductibleInvalid') });
+      return;
+    }
+
     // If TBD spare, assign vehicle first
     if (isTBDSpare && selectedVehicleId) {
       try {
@@ -599,6 +629,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
       pickupNotes: pickupNotes || undefined,
       overrideContractNumber: overrideDuplicate,
       ...(licenseExpired && licenseChecked ? { licenseChecked: true } : {}),
+      ...deductiblePayload(),
     });
   };
 
@@ -1197,6 +1228,37 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
                 </>
               )}
             </div>
+
+            {deductibleVehicleId && (
+              <div className="rounded-md border p-4 space-y-3" data-testid="pickup-deductible">
+                <div>
+                  <h3 className="font-medium">{t('pickupReturn.pickup.deductibleTitle')}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {proposedDeductible
+                      ? t('pickupReturn.pickup.deductibleHint', { group: t(`pickupReturn.pickup.deductibleGroup.${proposedDeductible.group}`) })
+                      : t('pickupReturn.pickup.deductibleLoading')}
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  {(["domestic", "abroad"] as const).map((field) => (
+                    <div key={field} className="space-y-1">
+                      <Label htmlFor={`pickupDeductible-${field}`}>{t(`pickupReturn.pickup.deductible${field === "domestic" ? "Domestic" : "Abroad"}`)}</Label>
+                      <Input
+                        id={`pickupDeductible-${field}`}
+                        inputMode="decimal"
+                        value={deductibleValues[field]}
+                        disabled={!proposedDeductible}
+                        onChange={(e) => setDeductibleDraft({ ...deductibleValues, [field]: e.target.value })}
+                        data-testid={`input-pickup-deductible-${field}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+                {deductibleDraft && (parseAmount(deductibleValues.domestic) === null || parseAmount(deductibleValues.abroad) === null) && (
+                  <p className="text-sm text-destructive">{t('pickupReturn.pickup.deductibleInvalid')}</p>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="pickupNotes">{t('pickupReturn.common.additionalNotesOptional')}</Label>

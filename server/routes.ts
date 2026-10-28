@@ -119,6 +119,7 @@ import { currentRenterReservation } from "./services/vehicle-notification-recipi
 import { ALREADY_OUT_OF_FLEET_CODE, NOT_OUT_OF_FLEET_CODE, OUT_OF_FLEET_BLOCKED_CODE, isOutOfFleet, parseOutOfFleetInput } from "../shared/out-of-fleet";
 import { assertDriverLicenseChecked, driverLicenseInfo, DriverLicenseExpiredError } from "./services/driver-license-check";
 import { parseReturnExtraCosts } from "../shared/km-allowance";
+import { pickupDeductibleFrom, resolveDeductibles } from "../shared/customer-deductibles";
 import { normalizeKmOverrides } from "./services/km-overrides";
 import { abortPlanningRefusal, loadReplacementsHangingOn } from "./services/abort-planning";
 import { recalculateTotalPrice } from "../shared/rental-pricing";
@@ -6080,6 +6081,23 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Pickup a reservation (enter mileage/fuel, generate contract)
+  // Kees 2026-10-28: the eigen risico the pickup dialog proposes, for the car being handed
+  // over (`vehicleId` when a spare is picked in the dialog). The employee confirms or changes it.
+  app.get("/api/reservations/:id/deductible", hasPermission(UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
+    try {
+      const reservationId = parseInt(req.params.id, 10);
+      const reservation = Number.isFinite(reservationId) ? await storage.getReservation(reservationId) : undefined;
+      if (!reservation) return res.status(404).json({ message: "Reservation not found" });
+      const vehicleId = req.query.vehicleId ? parseInt(String(req.query.vehicleId), 10) : reservation.vehicleId;
+      const vehicle = vehicleId ? await storage.getVehicle(vehicleId) : undefined;
+      const customer = reservation.customerId ? await storage.getCustomer(reservation.customerId) : undefined;
+      res.json(resolveDeductibles(await loadBusinessRules(), (customer as any)?.deductibles, vehicle?.vehicleType));
+    } catch (error) {
+      console.error("Error resolving the deductible:", error);
+      res.status(500).json({ message: "Error resolving the deductible" });
+    }
+  });
+
   app.post("/api/reservations/:id/pickup", hasPermission(UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
     try {
       const reservationId = parseInt(req.params.id);
@@ -6214,6 +6232,8 @@ export async function registerRoutes(app: Express): Promise<void> {
         workshopOverride: workshopOverrideFrom(req),
         // besluiten B-16 — only set once the question has been answered "ja".
         ...(shiftStartDateTo ? { shiftStartDateTo } : {}),
+        // Kees 2026-10-28: the eigen risico as confirmed in the dialog.
+        deductible: pickupDeductibleFrom(req.body?.deductible),
         actorName: req.user?.username ?? "systeem",
       });
 

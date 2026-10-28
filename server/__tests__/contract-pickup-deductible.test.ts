@@ -32,8 +32,9 @@ describe("contract pickup readings and deductible", () => {
     const saved = prepareContractData(reservation(), { eigenrisicoBinnenland: "750", eigenrisicoBuitenland: "1500" });
     expect(saved.deductibleDomestic).toMatch(/750,00/);
     expect(saved.deductibleAbroad).toMatch(/1\.500,00/);
-    expect(contractDeductibles(null).domestic).toMatch(/500,00/);
-    expect(contractDeductibles({ eigenrisicoBinnenland: "" }).abroad).toMatch(/1\.000,00/);
+    // Kees 2026-10-28: the car defaults are 750 / 1500.
+    expect(contractDeductibles(null).domestic).toMatch(/750,00/);
+    expect(contractDeductibles({ eigenrisicoBinnenland: "" }).abroad).toMatch(/1\.500,00/);
   });
 
   it("fills the fields the template editor has long offered", () => {

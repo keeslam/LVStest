@@ -511,8 +511,13 @@ brandstofniveau van het voertuig bij ophalen in. Er wordt automatisch een contra
 
    ![De knop Ophaal-schadecheck aanmaken, van dichtbij](afbeeldingen/05-ophaalproces-k4.png)
    *Zo ziet de knop **Ophaal-schadecheck aanmaken** eruit. Klik erop voor de digitale check.*
-7. Zet bijzonderheden in **Aanvullende notities (optioneel)**.
-8. Klik op **Ophalen voltooien & contract genereren**.
+7. Kijk naar het blok **Eigen risico**. Daar staat wat er op het contract komt, voor
+   **Binnenland (€)** en **Buitenland (€)**. Erboven staat of het om een auto of een bus gaat. Klopt
+   het? Laat het staan. Is het voor deze huur anders? Typ het goede bedrag. Dat bedrag komt op het
+   contract. Het geldt alleen voor deze huur. De klantkaart verandert niet. Maak je later het
+   contract opnieuw? Dan blijft dit bedrag erop staan.
+8. Zet bijzonderheden in **Aanvullende notities (optioneel)**.
+9. Klik op **Ophalen voltooien & contract genereren**.
 
    ![De blauwe knop Ophalen voltooien & contract genereren, van dichtbij](afbeeldingen/05-ophaalproces-k5.png)
    *Zo ziet de knop eruit. Hij staat rechtsonder in het venster.*

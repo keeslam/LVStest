@@ -358,14 +358,17 @@
   },
   "deductibles": {
     "title": "Udział własny",
-    "description": "Według rodzaju pojazdu, kraj i zagranica. Puste = kwota ogólna z ustawień. Umowa pokazuje kwotę dla rodzaju wynajętego auta.",
-    "type": "Rodzaj pojazdu",
+    "description": "Dwa rodzaje: samochód i bus. Które typy pojazdów są busem, wybierasz w Ustawienia aplikacji > Zasady firmy. Puste = kwota ogólna. Umowa pokazuje kwotę dla wynajętego pojazdu.",
+    "type": "Rodzaj",
     "domestic": "Kraj (€)",
     "abroad": "Zagranica (€)",
-    "general": "ogólna",
-    "otherRow": "Inne / bez rodzaju",
     "saved": "Udział własny zapisany",
     "saveFailed": "Zapis nie powiódł się",
-    "invalidAmount": "Podaj poprawną kwotę (lub zostaw puste)"
+    "invalidAmount": "Podaj poprawną kwotę (lub zostaw puste)",
+    "group": {
+      "car": "Samochód",
+      "bus": "Bus"
+    },
+    "generalAmount": "ogólna {{amount}}"
   }
 }

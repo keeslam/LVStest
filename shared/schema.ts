@@ -1049,6 +1049,9 @@ export const reservations = pgTable("reservations", {
   // Fuel Management
   fuelLevelPickup: text("fuel_level_pickup"), // Fuel level at pickup ('empty', '1/4', '1/2', '3/4', 'full')
   fuelLevelReturn: text("fuel_level_return"), // Fuel level at return
+  // Kees 2026-10-28: the eigen risico confirmed (or changed) in the pickup dialog; the contract prints it.
+  deductibleDomestic: numeric("deductible_domestic"),
+  deductibleAbroad: numeric("deductible_abroad"),
   fuelCost: numeric("fuel_cost"), // Calculated fuel cost
   fuelCardNumber: text("fuel_card_number"), // Associated fuel card
   fuelNotes: text("fuel_notes"), // Additional fuel-related notes

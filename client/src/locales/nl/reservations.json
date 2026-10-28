@@ -225,7 +225,17 @@
       "licenseCheckedLabel": "Rijbewijs gecontroleerd",
       "licenseUnknownNote": "Vervaldatum rijbewijs van {{name}} onbekend.",
       "licenseNotCheckedTitle": "Rijbewijs niet gecontroleerd",
-      "licenseNotCheckedDescription": "Het rijbewijs is verlopen. Vink 'Rijbewijs gecontroleerd' aan om door te gaan."
+      "licenseNotCheckedDescription": "Het rijbewijs is verlopen. Vink 'Rijbewijs gecontroleerd' aan om door te gaan.",
+      "deductibleTitle": "Eigen risico",
+      "deductibleHint": "Dit komt op het contract ({{group}}). Klopt het? Pas het aan als het voor deze huur anders is.",
+      "deductibleLoading": "Eigen risico wordt opgehaald…",
+      "deductibleDomestic": "Binnenland (€)",
+      "deductibleAbroad": "Buitenland (€)",
+      "deductibleInvalid": "Vul bij binnenland en buitenland een geldig bedrag in.",
+      "deductibleGroup": {
+        "car": "auto",
+        "bus": "bus"
+      }
     },
     "return": {
       "startReturnProcess": "Inleverproces starten",

@@ -225,7 +225,17 @@
       "licenseCheckedLabel": "Prawo jazdy sprawdzone",
       "licenseUnknownNote": "Data ważności prawa jazdy {{name}} nieznana.",
       "licenseNotCheckedTitle": "Prawo jazdy niesprawdzone",
-      "licenseNotCheckedDescription": "Prawo jazdy wygasło. Zaznacz „Prawo jazdy sprawdzone”, aby kontynuować."
+      "licenseNotCheckedDescription": "Prawo jazdy wygasło. Zaznacz „Prawo jazdy sprawdzone”, aby kontynuować.",
+      "deductibleTitle": "Udział własny",
+      "deductibleHint": "To trafi do umowy ({{group}}). Czy jest poprawne? Zmień, jeśli dla tego wynajmu jest inaczej.",
+      "deductibleLoading": "Wczytywanie udziału własnego…",
+      "deductibleDomestic": "Kraj (€)",
+      "deductibleAbroad": "Zagranica (€)",
+      "deductibleInvalid": "Wpisz poprawną kwotę dla kraju i zagranicy.",
+      "deductibleGroup": {
+        "car": "samochód",
+        "bus": "bus"
+      }
     },
     "return": {
       "startReturnProcess": "Rozpocznij proces zwrotu",

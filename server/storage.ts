@@ -176,6 +176,8 @@ export interface IStorage {
     pickupNotes?: string;
     allowMileageDecrease?: boolean;
     mileageDecreaseAuthorizedBy?: string;
+    /** Kees 2026-10-28: the eigen risico confirmed in the pickup dialog. */
+    deductible?: { domestic: number; abroad: number } | null;
     actorName?: string | null;
   }): Promise<Reservation | undefined>;
   returnReservation(reservationId: number, returnData: {

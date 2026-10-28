@@ -350,14 +350,17 @@
   },
   "deductibles": {
     "title": "Franquicia",
-    "description": "Por tipo de vehículo, nacional y extranjero. Vacío = el importe general de los ajustes. El contrato muestra el importe para el tipo del coche alquilado.",
-    "type": "Tipo de vehículo",
+    "description": "Dos tipos: coche y furgoneta/bus. Qué tipos de vehículo cuentan como bus se elige en Ajustes de la app > Reglas de negocio. Vacío = el importe general. El contrato muestra el importe del vehículo alquilado.",
+    "type": "Tipo",
     "domestic": "Nacional (€)",
     "abroad": "Extranjero (€)",
-    "general": "general",
-    "otherRow": "Otro / sin tipo",
     "saved": "Franquicia guardada",
     "saveFailed": "No se pudo guardar",
-    "invalidAmount": "Indique un importe válido (o déjelo vacío)"
+    "invalidAmount": "Indique un importe válido (o déjelo vacío)",
+    "group": {
+      "car": "Coche",
+      "bus": "Bus"
+    },
+    "generalAmount": "general {{amount}}"
   }
 }

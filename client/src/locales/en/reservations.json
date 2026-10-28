@@ -225,7 +225,17 @@
       "licenseCheckedLabel": "Driving licence checked",
       "licenseUnknownNote": "Expiry date of {{name}}'s driving licence unknown.",
       "licenseNotCheckedTitle": "Driving licence not checked",
-      "licenseNotCheckedDescription": "The driving licence has expired. Tick 'Driving licence checked' to continue."
+      "licenseNotCheckedDescription": "The driving licence has expired. Tick 'Driving licence checked' to continue.",
+      "deductibleTitle": "Deductible",
+      "deductibleHint": "This goes on the contract ({{group}}). Is it right? Change it if it is different for this rental.",
+      "deductibleLoading": "Loading the deductible…",
+      "deductibleDomestic": "Domestic (€)",
+      "deductibleAbroad": "Abroad (€)",
+      "deductibleInvalid": "Enter a valid amount for domestic and abroad.",
+      "deductibleGroup": {
+        "car": "car",
+        "bus": "bus"
+      }
     },
     "return": {
       "startReturnProcess": "Start Return Process",

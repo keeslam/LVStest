@@ -225,7 +225,17 @@
       "licenseCheckedLabel": "Permis de conducere verificat",
       "licenseUnknownNote": "Data expirării permisului lui {{name}} necunoscută.",
       "licenseNotCheckedTitle": "Permis de conducere neverificat",
-      "licenseNotCheckedDescription": "Permisul de conducere a expirat. Bifați „Permis de conducere verificat” pentru a continua."
+      "licenseNotCheckedDescription": "Permisul de conducere a expirat. Bifați „Permis de conducere verificat” pentru a continua.",
+      "deductibleTitle": "Franciză",
+      "deductibleHint": "Aceasta apare în contract ({{group}}). Este corect? Modific-o dacă e diferită pentru această închiriere.",
+      "deductibleLoading": "Se încarcă franciza…",
+      "deductibleDomestic": "Intern (€)",
+      "deductibleAbroad": "Străinătate (€)",
+      "deductibleInvalid": "Introdu o sumă validă pentru intern și străinătate.",
+      "deductibleGroup": {
+        "car": "autoturism",
+        "bus": "autobuz"
+      }
     },
     "return": {
       "startReturnProcess": "Începeți procesul de returnare",

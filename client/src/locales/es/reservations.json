@@ -225,7 +225,17 @@
       "licenseCheckedLabel": "Permiso de conducir comprobado",
       "licenseUnknownNote": "Fecha de caducidad del permiso de {{name}} desconocida.",
       "licenseNotCheckedTitle": "Permiso de conducir no comprobado",
-      "licenseNotCheckedDescription": "El permiso de conducir ha caducado. Marque 'Permiso de conducir comprobado' para continuar."
+      "licenseNotCheckedDescription": "El permiso de conducir ha caducado. Marque 'Permiso de conducir comprobado' para continuar.",
+      "deductibleTitle": "Franquicia",
+      "deductibleHint": "Esto aparece en el contrato ({{group}}). ¿Es correcto? Cámbialo si es distinto para este alquiler.",
+      "deductibleLoading": "Cargando la franquicia…",
+      "deductibleDomestic": "Nacional (€)",
+      "deductibleAbroad": "Extranjero (€)",
+      "deductibleInvalid": "Introduce un importe válido para nacional y extranjero.",
+      "deductibleGroup": {
+        "car": "coche",
+        "bus": "bus"
+      }
     },
     "return": {
       "startReturnProcess": "Iniciar el proceso de devolución",

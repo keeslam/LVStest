@@ -1,8 +1,9 @@
 /**
- * Kees, 2026-10-21 — eigen risico for this customer, per vehicle type, domestic and
- * abroad (shared/customer-deductibles.ts). An empty box uses the general amount from
- * App-instellingen > Bedrijfsregels; the contract prints the amount for the rented
- * car's type.
+ * Kees, 2026-10-21 — eigen risico for this customer, domestic and abroad
+ * (shared/customer-deductibles.ts). Kees, 2026-10-28: two rows only, car and bus; the
+ * types ticked as bus in App-instellingen > Bedrijfsregels are a bus. An empty box uses
+ * the general amount from Bedrijfsregels; the contract prints the amount for the rented
+ * car's group.
  */
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -14,14 +15,11 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { describeApiError } from "@/lib/api-error";
-import { formatVehicleType } from "@/lib/format-utils";
 import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { UserPermission } from "@shared/schema";
-import { KM_ALLOWANCE_OTHER, vehicleTypeKey } from "@shared/km-allowance";
-import type { CustomerDeductibles } from "@shared/customer-deductibles";
+import { DEDUCTIBLE_GROUPS, DEFAULT_GROUP_DEDUCTIBLES, busVehicleTypeKeys, customerGroupDeductibles, type CustomerDeductibles, type DeductibleGroup } from "@shared/customer-deductibles";
 
-const FORM_TYPES = ["Sedan", "SUV", "Van", "Hatchback", "Coupe", "Truck", "Stationwagen"];
 type Draft = Record<string, { domestic: string; abroad: string }>;
 
 const toText = (n: number | null | undefined) => (n == null ? "" : String(n).replace(".", ","));
@@ -36,34 +34,34 @@ export function CustomerDeductiblesCard({ customer }: { customer: { id: number; 
   const { t } = useTranslation(["customers", "common"]);
   const { toast } = useToast();
   const canEdit = useHasPermission(UserPermission.MANAGE_CUSTOMERS);
-  const { data: fleetTypes = [] } = useQuery<string[]>({ queryKey: ["/api/vehicles/types"] });
-  const saved = ((customer.deductibles as CustomerDeductibles | null)?.byType) ?? {};
+  const { data: rulesSetting } = useQuery<{ value?: Record<string, unknown> } | null>({ queryKey: ["/api/app-settings/key/business_rules"] });
+  const rules = rulesSetting?.value ?? {};
+  const saved = useMemo(() => customerGroupDeductibles(customer.deductibles, busVehicleTypeKeys(rules)), [customer.deductibles, rules]);
   const [draft, setDraft] = useState<Draft | null>(null);
 
-  const rows = useMemo(() => {
-    const labels = new Map<string, string>();
-    for (const type of [...FORM_TYPES, ...fleetTypes, ...Object.keys(saved)]) {
-      const key = vehicleTypeKey(type);
-      if (key !== KM_ALLOWANCE_OTHER && !labels.has(key)) labels.set(key, type);
-    }
-    const sorted = Array.from(labels.entries()).sort((a, b) => formatVehicleType(a[1]).localeCompare(formatVehicleType(b[1])));
-    return [...sorted.map(([key, label]) => ({ key, label: formatVehicleType(label) })), { key: KM_ALLOWANCE_OTHER, label: t("deductibles.otherRow") }];
-  }, [fleetTypes, saved, t]);
+  // The general amount per group, shown as the placeholder of an empty box.
+  const general = (group: DeductibleGroup, field: "domestic" | "abroad") => {
+    const stored = group === "bus"
+      ? (field === "domestic" ? rules.eigenrisicoBusBinnenland : rules.eigenrisicoBusBuitenland)
+      : (field === "domestic" ? rules.eigenrisicoBinnenland : rules.eigenrisicoBuitenland);
+    const text = stored === null || stored === undefined || String(stored).trim() === "" ? DEFAULT_GROUP_DEDUCTIBLES[group][field] : String(stored).trim();
+    return t("deductibles.generalAmount", { amount: text.replace(".", ",") });
+  };
 
-  const values: Draft = draft ?? Object.fromEntries(rows.map(({ key }) => [key, { domestic: toText(saved[key]?.domestic), abroad: toText(saved[key]?.abroad) }]));
-  const set = (key: string, field: "domestic" | "abroad", value: string) =>
-    setDraft({ ...values, [key]: { ...(values[key] ?? { domestic: "", abroad: "" }), [field]: value } });
+  const values: Draft = draft ?? Object.fromEntries(DEDUCTIBLE_GROUPS.map((key) => [key, { domestic: toText(saved[key].domestic), abroad: toText(saved[key].abroad) }]));
+  const set = (key: DeductibleGroup, field: "domestic" | "abroad", value: string) =>
+    setDraft({ ...values, [key]: { ...values[key], [field]: value } });
 
   const save = useMutation({
     mutationFn: async () => {
-      const byType: CustomerDeductibles["byType"] = {};
-      for (const [key, v] of Object.entries(values)) {
-        const domestic = toNumber(v.domestic);
-        const abroad = toNumber(v.abroad);
+      const byGroup: NonNullable<CustomerDeductibles["byGroup"]> = {};
+      for (const key of DEDUCTIBLE_GROUPS) {
+        const domestic = toNumber(values[key].domestic);
+        const abroad = toNumber(values[key].abroad);
         if (domestic === undefined || abroad === undefined) throw new Error(t("deductibles.invalidAmount"));
-        if (domestic !== null || abroad !== null) byType[key] = { domestic, abroad };
+        if (domestic !== null || abroad !== null) byGroup[key] = { domestic, abroad };
       }
-      await apiRequest("PUT", `/api/customers/${customer.id}/deductibles`, { deductibles: Object.keys(byType).length ? { byType } : null });
+      await apiRequest("PUT", `/api/customers/${customer.id}/deductibles`, { deductibles: Object.keys(byGroup).length ? { byGroup } : null });
     },
     onSuccess: () => {
       setDraft(null);
@@ -90,15 +88,15 @@ export function CustomerDeductiblesCard({ customer }: { customer: { id: number; 
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map(({ key, label }) => (
+              {DEDUCTIBLE_GROUPS.map((key) => (
                 <TableRow key={key}>
-                  <TableCell className="font-medium">{label}</TableCell>
+                  <TableCell className="font-medium">{t(`deductibles.group.${key}`)}</TableCell>
                   {(["domestic", "abroad"] as const).map((field) => (
                     <TableCell key={field}>
                       <Input
                         inputMode="decimal"
                         className="w-28"
-                        placeholder={t("deductibles.general")}
+                        placeholder={general(key, field)}
                         value={values[key]?.[field] ?? ""}
                         disabled={!canEdit}
                         onChange={(e) => set(key, field, e.target.value)}

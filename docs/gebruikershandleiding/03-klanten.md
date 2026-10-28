@@ -90,6 +90,24 @@ Wat niet is ingevuld, staat er als **Niet opgegeven**. Dat is geen fout. Het bet
 het veld leeg is. Vul het aan zodra je het weet. Wat leeg is op de klantkaart, blijft ook leeg op
 het contract (hoofdstuk 8).
 
+### Eigen risico van deze klant
+
+Op het tabblad **Persoonlijke gegevens** staat de kaart **Eigen risico**. Er zijn twee regels:
+**Auto** en **Bus**. Per regel staat een vak **Binnenland (€)** en een vak **Buitenland (€)**.
+
+- Laat je een vak leeg? Dan geldt het algemene bedrag. In het lege vak staat welk bedrag dat is.
+  Bijvoorbeeld *algemeen 750*.
+- Heeft deze klant een ander bedrag? Typ het in het vak. Klik op **Opslaan**.
+- Welke auto's een bus zijn, stel je in bij **App-instellingen** → **Bedrijfsregels** (hoofdstuk 10).
+- Het contract pakt zelf het bedrag van de goede regel. Huurt de klant een bus? Dan komt het
+  busbedrag op het contract. Anders het autobedrag.
+- Bij het ophalen zie je het bedrag nog een keer. Daar kun je het voor die ene huur aanpassen
+  (hoofdstuk 5).
+
+Stonden er bij een klant al bedragen per voertuigsoort? Die zijn niet weg. De app zet ze bij
+**Auto** of **Bus**. Hadden twee soorten in één regel een ander bedrag? Dan staat het hoogste bedrag
+er. Kijk het na en klik op **Opslaan**.
+
 ### Geblokkeerde voertuigen: een auto blokkeren voor deze klant
 
 Onderaan het tabblad **Persoonlijke gegevens** staat het blok **Geblokkeerde voertuigen**. Daarbij

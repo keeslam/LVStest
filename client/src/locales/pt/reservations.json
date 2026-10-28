@@ -225,7 +225,17 @@
       "licenseCheckedLabel": "Carta de condução verificada",
       "licenseUnknownNote": "Data de validade da carta de condução de {{name}} desconhecida.",
       "licenseNotCheckedTitle": "Carta de condução não verificada",
-      "licenseNotCheckedDescription": "A carta de condução caducou. Assinale 'Carta de condução verificada' para continuar."
+      "licenseNotCheckedDescription": "A carta de condução caducou. Assinale 'Carta de condução verificada' para continuar.",
+      "deductibleTitle": "Franquia",
+      "deductibleHint": "Isto vai para o contrato ({{group}}). Está correto? Altere se for diferente para este aluguer.",
+      "deductibleLoading": "A carregar a franquia…",
+      "deductibleDomestic": "Nacional (€)",
+      "deductibleAbroad": "Estrangeiro (€)",
+      "deductibleInvalid": "Introduza um valor válido para nacional e estrangeiro.",
+      "deductibleGroup": {
+        "car": "carro",
+        "bus": "autocarro"
+      }
     },
     "return": {
       "startReturnProcess": "Iniciar processo de devolução",

@@ -5293,6 +5293,20 @@
         "default": null
       },
       {
+        "name": "deductible_domestic",
+        "type": "numeric",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "deductible_abroad",
+        "type": "numeric",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
         "name": "fuel_cost",
         "type": "numeric",
         "notNull": false,

@@ -3229,6 +3229,8 @@ export class DatabaseStorage implements IStorage {
       shiftStartDateTo?: string;
       /** Who handed the car over; written to the km history (rapporten fase 1). */
       actorName?: string | null;
+      /** Kees 2026-10-28: the eigen risico confirmed in the pickup dialog. */
+      deductible?: { domestic: number; abroad: number } | null;
     }
   ): Promise<Reservation | undefined> {
     const reservation = await this.getReservation(reservationId);
@@ -3290,6 +3292,10 @@ export class DatabaseStorage implements IStorage {
           contractNumber: pickupData.contractNumber,
           pickupMileage: pickupData.pickupMileage,
           fuelLevelPickup: pickupData.fuelLevelPickup,
+          ...(pickupData.deductible ? {
+            deductibleDomestic: String(pickupData.deductible.domestic),
+            deductibleAbroad: String(pickupData.deductible.abroad),
+          } : {}),
           actualPickupDate: pickupDate,
           status: 'picked_up',
           // The vehicle's readings as they stand right now, from the row locked

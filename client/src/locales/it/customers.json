@@ -350,14 +350,17 @@
   },
   "deductibles": {
     "title": "Franchigia",
-    "description": "Per tipo di veicolo, nazionale ed estero. Vuoto = l'importo generale delle impostazioni. Il contratto mostra l'importo per il tipo dell'auto noleggiata.",
-    "type": "Tipo di veicolo",
+    "description": "Due tipi: auto e bus. Quali tipi di veicolo contano come bus si sceglie in Impostazioni app > Regole aziendali. Vuoto = l'importo generale. Il contratto mostra l'importo del veicolo noleggiato.",
+    "type": "Tipo",
     "domestic": "Nazionale (€)",
     "abroad": "Estero (€)",
-    "general": "generale",
-    "otherRow": "Altro / nessun tipo",
     "saved": "Franchigia salvata",
     "saveFailed": "Salvataggio non riuscito",
-    "invalidAmount": "Inserisci un importo valido (o lascia vuoto)"
+    "invalidAmount": "Inserisci un importo valido (o lascia vuoto)",
+    "group": {
+      "car": "Auto",
+      "bus": "Bus"
+    },
+    "generalAmount": "generale {{amount}}"
   }
 }

@@ -225,7 +225,17 @@
       "licenseCheckedLabel": "Patente controllata",
       "licenseUnknownNote": "Data di scadenza della patente di {{name}} sconosciuta.",
       "licenseNotCheckedTitle": "Patente non controllata",
-      "licenseNotCheckedDescription": "La patente è scaduta. Selezioni 'Patente controllata' per continuare."
+      "licenseNotCheckedDescription": "La patente è scaduta. Selezioni 'Patente controllata' per continuare.",
+      "deductibleTitle": "Franchigia",
+      "deductibleHint": "Questo va nel contratto ({{group}}). È corretto? Modificalo se è diverso per questo noleggio.",
+      "deductibleLoading": "Caricamento della franchigia…",
+      "deductibleDomestic": "Nazionale (€)",
+      "deductibleAbroad": "Estero (€)",
+      "deductibleInvalid": "Inserisci un importo valido per nazionale ed estero.",
+      "deductibleGroup": {
+        "car": "auto",
+        "bus": "bus"
+      }
     },
     "return": {
       "startReturnProcess": "Avvia procedura di riconsegna",

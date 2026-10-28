@@ -350,14 +350,17 @@
   },
   "deductibles": {
     "title": "Franquia",
-    "description": "Por tipo de veículo, nacional e estrangeiro. Vazio = o valor geral das definições. O contrato mostra o valor para o tipo do carro alugado.",
-    "type": "Tipo de veículo",
+    "description": "Dois tipos: carro e autocarro. Os tipos de veículo que contam como autocarro escolhem-se em Definições da app > Regras de negócio. Vazio = o valor geral. O contrato mostra o valor do veículo alugado.",
+    "type": "Tipo",
     "domestic": "Nacional (€)",
     "abroad": "Estrangeiro (€)",
-    "general": "geral",
-    "otherRow": "Outro / sem tipo",
     "saved": "Franquia guardada",
     "saveFailed": "Falha ao guardar",
-    "invalidAmount": "Indique um valor válido (ou deixe vazio)"
+    "invalidAmount": "Indique um valor válido (ou deixe vazio)",
+    "group": {
+      "car": "Carro",
+      "bus": "Autocarro"
+    },
+    "generalAmount": "geral {{amount}}"
   }
 }

@@ -900,6 +900,16 @@ Kees: de handtekening die de klant in het portaal op een schadecheck zet, moet i
 - **Tekent de klant niet op de tablet,** dan bewaart de PDF waar het vak staat, ook als het op pagina 2 of verder staat. Tekent de klant later in het portaal, dan komt de handtekening in dat vak. De bewijspagina blijft erbij, net als bij het contract (B-61).
 - **Bestaande schadechecks** zijn gemaakt voordat dit bestond. Daar staat de handtekening alleen op de bewijspagina.
 
+### B-67 — Eigen risico in twee soorten, en bevestigen bij ophalen (28-10-2026)
+
+Kees: de kaart Eigen risico bij de klant had een regel per voertuigsoort. Dat zijn te veel regels. Er zijn maar twee soorten eigen risico: auto (750 / 1500) en bus (1500 / 2500). Dit vervangt het deel "per voertuigsoort" van B-61.
+
+- **Twee soorten.** De klantkaart heeft twee regels, **Auto** en **Bus**. Elke regel heeft een bedrag voor binnenland en een voor buitenland. Laat je een vak leeg, dan geldt het algemene bedrag.
+- **Algemene bedragen in Bedrijfsregels.** Voor de auto zijn het de bestaande velden. Voor de bus komen er twee velden bij. Zolang er niets is opgeslagen, gelden auto 750 / 1500 en bus 1500 / 2500. Een bedrag dat al is opgeslagen blijft staan.
+- **Wat is een bus?** Kees koos om dat aan te vinken in Bedrijfsregels, onder "Welke voertuigsoorten zijn een bus?". Alle andere soorten zijn een auto. Ook aanhangwagens en be trucks vallen onder auto of bus, afhankelijk van het vinkje.
+- **Bedragen die er al stonden** worden overgenomen. Het bedrag van een soort gaat naar zijn groep. Hebben twee soorten in een groep een ander bedrag, dan geldt het hoogste. Pas als iemand de kaart opslaat, wordt het in de nieuwe vorm bewaard.
+- **Bevestigen bij ophalen** (Kees vroeg dit erbij). Het venster Ophaalproces starten toont het eigen risico voordat het contract wordt gemaakt. De medewerker laat het staan of past het aan. Het bevestigde bedrag wordt bij de reservering bewaard. Het contract drukt dat bedrag af, ook als het contract later opnieuw wordt gemaakt. De klantkaart verandert hierdoor niet.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - De vragen D1 t/m D20 en de fiscale prullenbak van B-40 zijn beantwoord in B-41 (11-10-2026); de bouw ervan staat sinds B-43 op de branch feat/besluiten-d (nog niet op main, nog niet uitgerold).
