@@ -179,18 +179,18 @@ export function VariantsTable({ variants, chosenIndex, purchasePrice, onChange, 
     ...COST_FIELDS.map((field) => ({ field, label: t(`editor.fields.${field}`), rule: "amount" as NumberRule })),
   ];
 
-  const labelCell = "sticky left-0 z-10 bg-background pr-3 py-1.5 text-left font-normal text-muted-foreground whitespace-nowrap";
-  const colCell = (i: number) => cn("px-2 py-1.5 text-right align-top min-w-[9.5rem]", i === chosenIndex && "bg-primary/5");
+  const labelCell = "sticky left-0 z-10 bg-background pl-3 pr-4 py-1.5 text-left font-normal text-muted-foreground whitespace-nowrap";
+  const colCell = (i: number) => cn("px-2 py-1.5 text-right align-top w-[9.5rem] min-w-[9.5rem]", i === chosenIndex && "bg-primary/5");
 
   return (
     <div className="space-y-2">
-      <div className="overflow-x-auto rounded-md border" data-testid="lease-variants-table">
-        <table className="w-max min-w-full text-sm">
+      <div className="w-fit max-w-full overflow-x-auto rounded-md border" data-testid="lease-variants-table">
+        <table className="w-max text-sm">
           <thead>
             <tr className="border-b">
               <th className={labelCell} />
               {variants.map((v, i) => (
-                <th key={v.key} className={cn(colCell(i), "font-medium")} scope="col">
+                <th key={v.key} className={cn(colCell(i), "font-medium whitespace-nowrap")} scope="col">
                   {t("editor.variants.column", { n: i + 1 })}
                   {i === chosenIndex && <span className="ml-2 rounded bg-primary px-1.5 py-0.5 text-xs text-primary-foreground">{t("editor.variants.chosen")}</span>}
                 </th>
