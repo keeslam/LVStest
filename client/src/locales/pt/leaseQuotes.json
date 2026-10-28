@@ -58,7 +58,8 @@
   },
   "pdf": {
     "done": "O PDF da proposta {{number}} foi criado.",
-    "failed": "Não foi possível criar o PDF."
+    "failed": "Não foi possível criar o PDF.",
+    "open": "Abrir o ficheiro"
   },
   "editorPlaceholder": {
     "title": "Proposta {{id}}",

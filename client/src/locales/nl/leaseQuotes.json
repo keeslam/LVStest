@@ -58,7 +58,8 @@
   },
   "pdf": {
     "done": "De PDF van offerte {{number}} is gemaakt.",
-    "failed": "De PDF kon niet worden gemaakt."
+    "failed": "De PDF kon niet worden gemaakt.",
+    "open": "Bestand openen"
   },
   "editorPlaceholder": {
     "title": "Offerte {{id}}",

@@ -2,7 +2,7 @@
 // All amounts are excl. btw. The routes in server/routes/lease-quotes.ts are thin wrappers.
 import fs from "fs";
 import path from "path";
-import { and, desc, eq, gte, inArray, lt, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lt, or, sql, type SQL } from "drizzle-orm";
 import { db } from "../db";
 import {
   customers, deletedRecords, leaseQuoteFiles, leaseQuoteSettings, leaseQuoteVariants, leaseQuotes,
@@ -203,7 +203,10 @@ export interface LeaseQuoteListRow {
 
 const normalizePlate = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, "");
 
-export async function listLeaseQuotes(opts: { search?: string; status?: string; page?: number; pageSize?: number }): Promise<{ rows: LeaseQuoteListRow[]; total: number }> {
+export const LEASE_QUOTE_SORT_KEYS = ["quoteNumber", "quoteDate", "customerName", "vehicle", "monthlyPrice", "status", "validUntil"] as const;
+export type LeaseQuoteSortKey = (typeof LEASE_QUOTE_SORT_KEYS)[number];
+
+export async function listLeaseQuotes(opts: { search?: string; status?: string; page?: number; pageSize?: number; sort?: string; dir?: string }): Promise<{ rows: LeaseQuoteListRow[]; total: number }> {
   const today = isoToday();
   const page = Math.max(1, Math.floor(opts.page ?? 1) || 1);
   const pageSize = Math.min(200, Math.max(1, Math.floor(opts.pageSize ?? 25) || 25));
@@ -240,14 +243,31 @@ export async function listLeaseQuotes(opts: { search?: string; status?: string; 
   const [{ count }] = await db.select({ count: sql<number>`count(*)::int` })
     .from(leaseQuotes).leftJoin(customers, eq(leaseQuotes.customerId, customers.id)).where(where);
 
+  const monthlyPriceSql = sql<string | null>`(select v.total_per_month from lease_quote_variants v where v.quote_id = ${leaseQuotes.id} and v.is_chosen order by v.position, v.id limit 1)`;
+  // Allowlisted sort; anything else falls back to newest first. The id is always the tiebreak so paging is stable.
+  const sortKey = (LEASE_QUOTE_SORT_KEYS as readonly string[]).includes(opts.sort ?? "") ? (opts.sort as LeaseQuoteSortKey) : null;
+  const dirFn = opts.dir === "asc" ? asc : desc;
+  const sortExpr: Record<LeaseQuoteSortKey, SQL> = {
+    quoteNumber: sql`${leaseQuotes.quoteNumber}`,
+    quoteDate: sql`${leaseQuotes.quoteDate}`,
+    customerName: sql`lower(coalesce(${customerDisplayName()}, ${leaseQuotes.prospectCompany}, ${leaseQuotes.prospectName}, ''))`,
+    vehicle: sql`lower(concat_ws(' ', ${leaseQuotes.vehicleMake}, ${leaseQuotes.vehicleModel}, ${leaseQuotes.vehicleTrim}))`,
+    monthlyPrice: sql`${monthlyPriceSql}`,
+    status: sql`${leaseQuotes.status}`,
+    validUntil: sql`${leaseQuotes.validUntil}`,
+  };
+  const orderBy: SQL[] = sortKey
+    ? [sortKey === "monthlyPrice" ? sql`${dirFn(sortExpr.monthlyPrice)} nulls last` : dirFn(sortExpr[sortKey]), desc(leaseQuotes.id)]
+    : [desc(leaseQuotes.quoteDate), desc(leaseQuotes.id)];
+
   const rows = await db.select({
     q: leaseQuotes,
     customerName: customerDisplayName(),
-    monthlyPrice: sql<string | null>`(select v.total_per_month from lease_quote_variants v where v.quote_id = ${leaseQuotes.id} and v.is_chosen order by v.position, v.id limit 1)`,
+    monthlyPrice: monthlyPriceSql,
   })
     .from(leaseQuotes).leftJoin(customers, eq(leaseQuotes.customerId, customers.id))
     .where(where)
-    .orderBy(desc(leaseQuotes.quoteDate), desc(leaseQuotes.id))
+    .orderBy(...orderBy)
     .limit(pageSize).offset((page - 1) * pageSize);
 
   return {

@@ -58,7 +58,8 @@
   },
   "pdf": {
     "done": "Se ha creado el PDF de la oferta {{number}}.",
-    "failed": "No se pudo crear el PDF."
+    "failed": "No se pudo crear el PDF.",
+    "open": "Abrir el archivo"
   },
   "editorPlaceholder": {
     "title": "Oferta {{id}}",

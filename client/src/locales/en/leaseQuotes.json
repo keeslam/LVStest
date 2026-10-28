@@ -58,7 +58,8 @@
   },
   "pdf": {
     "done": "The PDF of quote {{number}} has been created.",
-    "failed": "The PDF could not be created."
+    "failed": "The PDF could not be created.",
+    "open": "Open the file"
   },
   "editorPlaceholder": {
     "title": "Quote {{id}}",

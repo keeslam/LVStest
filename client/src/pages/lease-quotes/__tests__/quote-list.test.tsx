@@ -107,6 +107,18 @@ describe("QuoteList", () => {
   });
 });
 
+describe("QuoteList sorting", () => {
+  it("clicking a header sends sort and dir, flips on the second click and goes back to page 1", async () => {
+    renderWith(<QuoteList onOpenQuote={() => {}} />);
+    await screen.findByText("LO-2026-0001");
+    expect(calls.some((c) => c.path.includes("sort=quoteDate") && c.path.includes("dir=desc") && c.path.includes("page=1"))).toBe(true);
+    await userEvent.click(screen.getByTestId("sort-lease-quotes-monthlyPrice"));
+    await waitFor(() => expect(calls.some((c) => c.path.includes("sort=monthlyPrice") && c.path.includes("dir=asc") && c.path.includes("page=1"))).toBe(true));
+    await userEvent.click(screen.getByTestId("sort-lease-quotes-monthlyPrice"));
+    await waitFor(() => expect(calls.some((c) => c.path.includes("sort=monthlyPrice") && c.path.includes("dir=desc"))).toBe(true));
+  });
+});
+
 describe("QuoteSettings", () => {
   it("sends interestRatePercent 9.5 when 9,5 is typed", async () => {
     renderWith(<QuoteSettings />);

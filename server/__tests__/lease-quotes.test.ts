@@ -251,6 +251,25 @@ describe("lease quotes API", () => {
     expect(res.body.code).toBe("QUOTE_NUMBER_TAKEN");
   });
 
+  it("sorts by monthlyPrice asc/desc and falls back on an unknown sort", async () => {
+    const mk = async (name: string, purchasePrice: number) => {
+      const r = await admin.post("/api/lease-quotes").send(excelPayload({ prospectName: `${PREFIX}${name}`, purchasePrice }));
+      expect(r.status).toBe(201);
+    };
+    await mk("sort-a", 15000);
+    await mk("sort-b", 30000);
+    await mk("sort-c", 22000);
+    const prices = async (qs: string) => (await admin.get(`/api/lease-quotes?search=${PREFIX}sort-&${qs}`)).body.rows.map((r: any) => r.monthlyPrice);
+    const asc = await prices("sort=monthlyPrice&dir=asc");
+    const desc = await prices("sort=monthlyPrice&dir=desc");
+    expect(asc).toHaveLength(3);
+    expect(asc).toEqual([...asc].sort((a: number, b: number) => a - b));
+    expect(desc).toEqual([...asc].reverse());
+    const bad = await admin.get(`/api/lease-quotes?search=${PREFIX}sort-&sort=%3Bdrop%20table&dir=sideways`);
+    expect(bad.status).toBe(200);
+    expect(bad.body.rows).toHaveLength(3);
+  });
+
   it("history lists the update", async () => {
     const q = await admin.post("/api/lease-quotes").send({});
     await db.update(leaseQuotes).set({ prospectName: `${PREFIX}history` }).where(eq(leaseQuotes.id, q.body.id));

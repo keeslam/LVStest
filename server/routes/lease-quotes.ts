@@ -119,6 +119,8 @@ export function registerLeaseQuoteRoutes(app: Express, _deps?: RouteDeps) {
       status,
       page: req.query.page ? Number(req.query.page) : undefined,
       pageSize: req.query.pageSize ? Number(req.query.pageSize) : undefined,
+      sort: typeof req.query.sort === "string" ? req.query.sort : undefined,
+      dir: typeof req.query.dir === "string" ? req.query.dir : undefined,
     });
     res.json(result);
   });

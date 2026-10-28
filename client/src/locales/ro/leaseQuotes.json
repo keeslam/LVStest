@@ -58,7 +58,8 @@
   },
   "pdf": {
     "done": "PDF-ul ofertei {{number}} a fost creat.",
-    "failed": "PDF-ul nu a putut fi creat."
+    "failed": "PDF-ul nu a putut fi creat.",
+    "open": "Deschide fișierul"
   },
   "editorPlaceholder": {
     "title": "Oferta {{id}}",

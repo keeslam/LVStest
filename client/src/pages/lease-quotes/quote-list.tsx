@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TablePager } from "@/components/ui/table-pager";
+import { SortableHead, nextSort, type SortState } from "@/components/ui/sortable-head";
 import {
   AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -36,6 +37,7 @@ interface QuoteRow {
   monthlyPrice: number | null;
 }
 
+type SortKey = "quoteNumber" | "quoteDate" | "customerName" | "vehicle" | "monthlyPrice" | "status" | "validUntil";
 const ALL = "all";
 const PAGE_SIZES = [25, 50, 100] as const;
 
@@ -64,12 +66,14 @@ export function QuoteList({ onOpenQuote }: {
   const [status, setStatus] = useState(ALL);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(25);
+  // Newest first is also what the server does without a sort.
+  const [sort, setSort] = useState<SortState<SortKey>>({ key: "quoteDate", dir: "desc" });
   const [copyId, setCopyId] = useState<number | null>(null);
   const [deleteRow, setDeleteRow] = useState<QuoteRow | null>(null);
   const [binOpen, setBinOpen] = useState(false);
 
   const { data, isLoading, isError } = useQuery<{ rows: QuoteRow[]; total: number }>({
-    queryKey: ["/api/lease-quotes", { search: search || undefined, status: status === ALL ? undefined : status, page, pageSize }],
+    queryKey: ["/api/lease-quotes", { search: search || undefined, status: status === ALL ? undefined : status, page, pageSize, sort: sort.key, dir: sort.dir }],
   });
   const rows = data?.rows ?? [];
   const total = data?.total ?? 0;
@@ -97,18 +101,35 @@ export function QuoteList({ onOpenQuote }: {
     },
   });
 
-  // The PDF is drawn on the server and stored as a copy; the new file is opened right away.
+  // The PDF is drawn on the server and stored as a copy. A tab is opened synchronously on the click
+  // (popup blockers), and pointed at the file once it exists.
   const makePdf = useMutation({
-    mutationFn: async (row: QuoteRow) => {
+    mutationFn: async ({ row }: { row: QuoteRow; tab: Window | null }) => {
       const res = await apiRequest("POST", `/api/lease-quotes/${row.id}/pdf`, {});
       return { row, file: (await res.json()) as { id: number } };
     },
-    onSuccess: ({ row, file }) => {
-      toast({ title: t("pdf.done", { number: row.quoteNumber }) });
-      window.open(`/api/lease-quotes/${row.id}/files/${file.id}`, "_blank", "noopener");
+    onSuccess: ({ row, file }, { tab }) => {
+      const url = `/api/lease-quotes/${row.id}/files/${file.id}`;
+      if (tab && !tab.closed) {
+        tab.location.href = url;
+        toast({ title: t("pdf.done", { number: row.quoteNumber }) });
+      } else {
+        toast({
+          title: t("pdf.done", { number: row.quoteNumber }),
+          description: <a href={url} target="_blank" rel="noopener" className="underline" data-testid="link-lease-quote-pdf">{t("pdf.open")}</a>,
+        });
+      }
     },
-    onError: (error) => toast({ title: t("pdf.failed"), description: describeApiError(error), variant: "destructive" }),
+    onError: (error, { tab }) => {
+      tab?.close();
+      toast({ title: t("pdf.failed"), description: describeApiError(error), variant: "destructive" });
+    },
   });
+  const startPdf = (row: QuoteRow) => makePdf.mutate({ row, tab: window.open("about:blank", "_blank") });
+  const onSort = (key: SortKey) => {
+    setSort((cur) => nextSort(cur, key, (k) => (k === "quoteDate" || k === "validUntil" ? "desc" : "asc")));
+    setPage(1);
+  };
 
   return (
     <div className="space-y-4">
@@ -159,14 +180,14 @@ export function QuoteList({ onOpenQuote }: {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t("columns.number")}</TableHead>
-              <TableHead>{t("columns.date")}</TableHead>
-              <TableHead>{t("columns.customer")}</TableHead>
-              <TableHead>{t("columns.vehicle")}</TableHead>
+              <SortableHead label={t("columns.number")} sortKey="quoteNumber" sort={sort} onSort={onSort} testId="sort-lease-quotes-quoteNumber" />
+              <SortableHead label={t("columns.date")} sortKey="quoteDate" sort={sort} onSort={onSort} testId="sort-lease-quotes-quoteDate" />
+              <SortableHead label={t("columns.customer")} sortKey="customerName" sort={sort} onSort={onSort} testId="sort-lease-quotes-customerName" />
+              <SortableHead label={t("columns.vehicle")} sortKey="vehicle" sort={sort} onSort={onSort} testId="sort-lease-quotes-vehicle" />
               <TableHead>{t("columns.licensePlate")}</TableHead>
-              <TableHead className="text-right">{t("columns.monthly")}</TableHead>
-              <TableHead>{t("columns.status")}</TableHead>
-              <TableHead>{t("columns.validUntil")}</TableHead>
+              <SortableHead label={t("columns.monthly")} sortKey="monthlyPrice" sort={sort} onSort={onSort} testId="sort-lease-quotes-monthlyPrice" className="text-right" />
+              <SortableHead label={t("columns.status")} sortKey="status" sort={sort} onSort={onSort} testId="sort-lease-quotes-status" />
+              <SortableHead label={t("columns.validUntil")} sortKey="validUntil" sort={sort} onSort={onSort} testId="sort-lease-quotes-validUntil" />
               <TableHead className="text-right">{t("columns.actions")}</TableHead>
             </TableRow>
           </TableHeader>
@@ -190,7 +211,7 @@ export function QuoteList({ onOpenQuote }: {
                   <Button variant="ghost" size="icon" title={t("actions.copy")} aria-label={t("actions.copy")} onClick={() => setCopyId(row.id)} data-testid={`button-copy-lease-quote-${row.id}`}>
                     <Copy className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" title={t("actions.pdf")} aria-label={t("actions.pdf")} disabled={makePdf.isPending} onClick={() => makePdf.mutate(row)} data-testid={`button-pdf-lease-quote-${row.id}`}>
+                  <Button variant="ghost" size="icon" title={t("actions.pdf")} aria-label={t("actions.pdf")} disabled={makePdf.isPending} onClick={() => startPdf(row)} data-testid={`button-pdf-lease-quote-${row.id}`}>
                     <FileText className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="icon" title={t("actions.delete")} aria-label={t("actions.delete")} onClick={() => setDeleteRow(row)} data-testid={`button-delete-lease-quote-${row.id}`}>
