@@ -61,10 +61,6 @@
     "failed": "PDF-ul nu a putut fi creat.",
     "open": "Deschide fișierul"
   },
-  "editorPlaceholder": {
-    "title": "Oferta {{id}}",
-    "description": "Editorul de oferte urmează."
-  },
   "settings": {
     "intro": "Valori implicite pentru calculul unei oferte noi.",
     "note": "Se aplică ofertelor noi; ofertele existente își păstrează valorile proprii.",
@@ -81,5 +77,174 @@
     "loadFailed": "Setările nu au putut fi încărcate.",
     "invalid": "Acest număr nu este valid: {{field}}.",
     "invalidDays": "Valabilitatea trebuie să fie un număr întreg de zile (minim 1)."
+  },
+  "editor": {
+    "title": "Ofertă {{number}}",
+    "chosenTotal": "Pentru client: {{amount}} pe lună",
+    "description": "Toate sumele fără TVA. Prețul de leasing se recalculează în timp ce scrii.",
+    "loadFailed": "Oferta nu a putut fi încărcată.",
+    "sections": {
+      "customer": "1. Client",
+      "vehicle": "2. Mașină",
+      "purchase": "3. Achiziție",
+      "costs": "4. Costuri",
+      "variants": "5. Variante",
+      "quote": "6. Ofertă"
+    },
+    "customerMode": {
+      "customer": "Client existent",
+      "prospect": "Client potențial"
+    },
+    "customer": {
+      "search": "Caută un client",
+      "none": "Niciun client găsit",
+      "change": "Alt client",
+      "more": "{{shown}} din {{total}} afișați, scrie pentru a restrânge.",
+      "noAccess": "Nu ai voie să vezi lista de clienți. Completează datele la Client potențial."
+    },
+    "fields": {
+      "prospectName": "Nume",
+      "prospectCompany": "Firmă",
+      "prospectEmail": "E-mail",
+      "prospectPhone": "Telefon",
+      "vehicleMake": "Marcă",
+      "vehicleModel": "Model",
+      "vehicleTrim": "Versiune",
+      "licensePlate": "Număr de înmatriculare (dacă se știe)",
+      "dealerName": "Dealer",
+      "deliveryTime": "Termen de livrare",
+      "vehicleNotes": "Observații",
+      "purchasePrice": "Preț de achiziție fără TVA (incl. BPM și costuri de livrare)",
+      "interestRatePercent": "Dobândă (% pe an)",
+      "robPerYear": "Întreținere (ROB) pe an (€)",
+      "otherCostsPerYear": "Alte costuri pe an (€)",
+      "insurancePerMonth": "Asigurare pe lună (€)",
+      "roadTaxPerMonth": "Taxă de drum pe lună (€)",
+      "marginPerMonth": "Marjă pe lună (€)",
+      "excessKmPrice": "Preț km în plus (€ pe km)",
+      "shortfallKmPrice": "Preț km în minus (€ pe km)",
+      "status": "Stare",
+      "quoteDate": "Data ofertei",
+      "validUntil": "Valabilă până la",
+      "internalNotes": "Notă internă (nu pentru client)"
+    },
+    "breakdown": {
+      "title": "Structura prețului (pentru verificare)",
+      "hint": "Așa cum o indică dealerul. Prețul de achiziție de mai sus este cifra care contează.",
+      "catalogPrice": "Preț de catalog",
+      "options": "Opțiuni",
+      "discount": "Reducere",
+      "bpm": "BPM",
+      "deliveryCosts": "Costuri de livrare",
+      "totalExclVat": "Total fără TVA",
+      "totalInclVat": "Total cu TVA"
+    },
+    "variants": {
+      "column": "Varianta {{n}}",
+      "chosen": "Pentru client",
+      "term": "Durată (luni)",
+      "km": "Km pe an",
+      "residual": "Valoare reziduală (€)",
+      "depreciation": "Amortizare",
+      "interest": "Dobândă",
+      "rob": "Întreținere (ROB)",
+      "robTotal": "{{amount}} pe toată durata",
+      "insurance": "Asigurare",
+      "roadTax": "Taxă de drum",
+      "otherCosts": "Alte costuri",
+      "margin": "Marjă",
+      "total": "Total pe lună",
+      "costPerKm": "Cost pe km",
+      "add": "Adaugă variantă",
+      "duplicate": "Duplică varianta",
+      "remove": "Elimină varianta",
+      "choose": "Aceasta pentru client"
+    },
+    "warnings": {
+      "residual_above_purchase": "Valoarea reziduală este mai mare decât prețul de achiziție",
+      "term_missing": "Completează o durată",
+      "km_missing": "Completează km pe an pentru prețul pe km",
+      "residual_missing": "Completează o valoare reziduală"
+    },
+    "files": {
+      "dealerTitle": "Oferta (ofertele) dealerului",
+      "generatedTitle": "PDF-uri create pentru client",
+      "none": "Nu a fost încărcată încă nicio ofertă de la dealer.",
+      "noneGenerated": "Nu a fost creat încă niciun PDF.",
+      "upload": "Încarcă oferta dealerului",
+      "uploading": "Se încarcă…",
+      "by": "{{date}} de {{user}}",
+      "open": "Deschide",
+      "download": "Descarcă",
+      "scan": "Citește din nou",
+      "delete": "Șterge",
+      "deleteTitle": "Ștergi fișierul?",
+      "deleteDescription": "{{name}} va fi eliminat din această ofertă.",
+      "deleted": "Fișierul a fost șters.",
+      "deleteFailed": "Fișierul nu a putut fi șters.",
+      "tooLarge": "Fișierul este prea mare (maximum 10 MB).",
+      "wrongType": "Se poate încărca doar un PDF, PNG sau JPG.",
+      "uploadFailed": "Fișierul nu a putut fi încărcat."
+    },
+    "actions": {
+      "save": "Salvează",
+      "pdf": "Creează PDF",
+      "copy": "Copiază",
+      "history": "Istoric",
+      "close": "Închide"
+    },
+    "saved": "Oferta a fost salvată.",
+    "saveFailed": "Oferta nu a putut fi salvată.",
+    "blocked": {
+      "invalid": "Un număr nu este corect (chenar roșu). Corectează-l pentru a salva.",
+      "variants": "Completează la fiecare variantă durata, km pe an și valoarea reziduală pentru a salva.",
+      "dates": "Completează data ofertei și data de valabilitate pentru a salva."
+    },
+    "editWarning": {
+      "sent": "Această ofertă a fost deja trimisă. O modifici totuși?",
+      "accepted": "Această ofertă a fost deja acceptată. O modifici totuși?",
+      "description": "Clientul are deja această ofertă. Modificările tale se salvează în această ofertă.",
+      "yes": "Da, modifică",
+      "no": "Nu"
+    },
+    "pdfErrors": {
+      "LEASE_NO_TEMPLATE": "Nu există încă un șablon PDF pentru ofertele de leasing. Creează unul la Documente.",
+      "LEASE_NO_VARIANT": "Alege mai întâi ce variantă merge la client."
+    }
+  },
+  "scan": {
+    "title": "Citește oferta dealerului",
+    "description": "{{name}}: verifică ce a citit aplicația. Doar ce este bifat intră în ofertă când apeși Preia.",
+    "reading": "Se citește oferta…",
+    "failed": "Citirea nu a reușit. Fișierul a fost păstrat; completează datele singur.",
+    "onlyInclVat": "Dealerul indică doar o sumă cu TVA. Completează singur prețul de achiziție fără TVA.",
+    "field": "Dată",
+    "value": "Citit",
+    "take": "preia",
+    "notFound": "negăsit",
+    "apply": "Preia",
+    "cancel": "Anulează",
+    "close": "Închide",
+    "applied": "Datele sunt în ofertă. Nu uita să salvezi.",
+    "notesLine": "Oferta dealerului: {{parts}}",
+    "notesDate": "data {{date}}",
+    "notesValid": "valabilă până la {{date}}",
+    "fields": {
+      "purchasePrice": "Preț de achiziție fără TVA (propunere)",
+      "dealerName": "Dealer",
+      "make": "Marcă",
+      "model": "Model",
+      "trim": "Versiune",
+      "catalogPrice": "Preț de catalog",
+      "options": "Opțiuni",
+      "discount": "Reducere",
+      "bpm": "BPM",
+      "deliveryCosts": "Costuri de livrare",
+      "totalExclVat": "Total fără TVA",
+      "totalInclVat": "Total cu TVA",
+      "deliveryTime": "Termen de livrare",
+      "quoteDate": "Data ofertei dealerului (la Observații)",
+      "validUntil": "Oferta dealerului valabilă până la (la Observații)"
+    }
   }
 }

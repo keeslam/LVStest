@@ -25,7 +25,7 @@ import { auditActionLabel } from "@/lib/audit-action-label";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { UserPermission } from "@shared/schema";
 
-export type RecordHistoryResourceType = "reservation" | "vehicle" | "customer" | "expense" | "document" | "driver";
+export type RecordHistoryResourceType = "reservation" | "vehicle" | "customer" | "expense" | "document" | "driver" | "lease_quote";
 
 export interface RecordHistoryEntry {
   id: number;
@@ -79,6 +79,7 @@ const HISTORY_PERMISSIONS: Record<RecordHistoryResourceType, string[]> = {
   expense: [UserPermission.MANAGE_USERS, UserPermission.MANAGE_EXPENSES],
   document: [UserPermission.MANAGE_USERS, UserPermission.MANAGE_DOCUMENTS],
   driver: [UserPermission.MANAGE_USERS, UserPermission.MANAGE_CUSTOMERS],
+  lease_quote: [UserPermission.MANAGE_USERS, UserPermission.MANAGE_LEASE_QUOTES],
 };
 
 export function RecordHistory({ resourceType, resourceId, showHeading = true }: RecordHistoryProps) {
