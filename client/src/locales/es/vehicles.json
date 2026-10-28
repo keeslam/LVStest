@@ -951,7 +951,16 @@
     "extraKmPriceLabel": "Precio por km adicional (€)",
     "kmTypeDefault": "Vacío = valor del tipo de vehículo: {{km}} km por día, € {{price}} por km adicional.",
     "kmTypeDefaultNone": "Vacío = valor del tipo de vehículo (aún no configurado).",
-    "kmOverrideHint": "Rellénelo solo si este vehículo difiere de su tipo."
+    "kmOverrideHint": "Rellénelo solo si este vehículo difiere de su tipo.",
+    "deductibleGroupLabel": "Franquicia",
+    "deductibleGroupAuto": "Automático ({{group}})",
+    "deductibleGroupCar": "Coche",
+    "deductibleGroupBus": "Bus",
+    "deductibleGroupHint": "Automático sigue el tipo de vehículo. Elige Coche o Bus para fijarlo tú.",
+    "deductibleGroupName": {
+      "car": "coche",
+      "bus": "bus"
+    }
   },
   "remarksWarningDialog": {
     "titlePickup": "Observaciones del vehículo - Aviso de recogida",

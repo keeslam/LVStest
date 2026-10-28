@@ -946,7 +946,16 @@
     "extraKmPriceLabel": "Price per extra km (€)",
     "kmTypeDefault": "Empty = vehicle type default: {{km}} km per day, € {{price}} per extra km.",
     "kmTypeDefaultNone": "Empty = vehicle type default (not set yet).",
-    "kmOverrideHint": "Only fill in when this vehicle differs from its type."
+    "kmOverrideHint": "Only fill in when this vehicle differs from its type.",
+    "deductibleGroupLabel": "Deductible",
+    "deductibleGroupAuto": "Automatic ({{group}})",
+    "deductibleGroupCar": "Car",
+    "deductibleGroupBus": "Bus",
+    "deductibleGroupHint": "Automatic follows the vehicle type. Choose Car or Bus to set it yourself.",
+    "deductibleGroupName": {
+      "car": "car",
+      "bus": "bus"
+    }
   },
   "remarksWarningDialog": {
     "titlePickup": "Vehicle Remarks - Pickup Warning",

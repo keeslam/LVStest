@@ -358,7 +358,7 @@
   },
   "deductibles": {
     "title": "Udział własny",
-    "description": "Dwa rodzaje: samochód i bus. Które typy pojazdów są busem, wybierasz w Ustawienia aplikacji > Zasady firmy. Puste = kwota ogólna. Umowa pokazuje kwotę dla wynajętego pojazdu.",
+    "description": "Dwa rodzaje: samochód i bus. To, czy pojazd jest busem, ustawia się na jego karcie. Puste = kwota ogólna. Umowa pokazuje kwotę dla wynajętego pojazdu.",
     "type": "Rodzaj",
     "domestic": "Kraj (€)",
     "abroad": "Zagranica (€)",

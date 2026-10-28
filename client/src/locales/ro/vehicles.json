@@ -951,7 +951,16 @@
     "extraKmPriceLabel": "Preț pe km suplimentar (€)",
     "kmTypeDefault": "Gol = valoarea tipului de vehicul: {{km}} km pe zi, € {{price}} pe km suplimentar.",
     "kmTypeDefaultNone": "Gol = valoarea tipului de vehicul (încă nesetată).",
-    "kmOverrideHint": "Completați doar dacă acest vehicul diferă de tipul său."
+    "kmOverrideHint": "Completați doar dacă acest vehicul diferă de tipul său.",
+    "deductibleGroupLabel": "Franciză",
+    "deductibleGroupAuto": "Automat ({{group}})",
+    "deductibleGroupCar": "Autoturism",
+    "deductibleGroupBus": "Autobuz",
+    "deductibleGroupHint": "Automat urmează tipul vehiculului. Alege Autoturism sau Autobuz ca să-l setezi tu.",
+    "deductibleGroupName": {
+      "car": "autoturism",
+      "bus": "autobuz"
+    }
   },
   "remarksWarningDialog": {
     "titlePickup": "Observații despre vehicul - Avertisment la ridicare",

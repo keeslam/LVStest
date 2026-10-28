@@ -255,6 +255,8 @@ export const vehicles = pgTable("vehicles", {
   // Punt 1 (Kees, 2026-10-19): own free km per day and price per extra km; null = the vehicle type default.
   freeKmPerDay: integer("free_km_per_day"),
   extraKmPrice: numeric("extra_km_price"),
+  // Kees 2026-10-28: eigen risico group, "car" or "bus"; null = follows the vehicle type (shared/customer-deductibles.ts).
+  deductibleGroup: text("deductible_group"),
   dateIn: text("date_in"),
   dateOut: text("date_out"),
   // Punt 7 (Kees, 2026-10-20): out of the fleet instead of deleted; history and documents stay.
@@ -457,6 +459,8 @@ export const insertVehicleSchema = createInsertSchema(vehicles).omit({
 }).extend({
   // BUG-020 / BUG-058
   licensePlate: licensePlateSchema,
+  // Kees 2026-10-28: only the two eigen risico groups, or empty for automatic.
+  deductibleGroup: z.enum(["car", "bus"]).nullable().optional(),
   // BUG-041 — currentMileage already had a floor; its two siblings did not.
   currentMileage: mileageField,
   departureMileage: mileageField,

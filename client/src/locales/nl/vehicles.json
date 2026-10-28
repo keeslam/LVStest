@@ -946,7 +946,16 @@
     "extraKmPriceLabel": "Prijs per extra km (€)",
     "kmTypeDefault": "Leeg = standaard van de voertuigsoort: {{km}} km per dag, € {{price}} per extra km.",
     "kmTypeDefaultNone": "Leeg = standaard van de voertuigsoort (nog niet ingesteld).",
-    "kmOverrideHint": "Alleen invullen als deze auto afwijkt van zijn voertuigsoort."
+    "kmOverrideHint": "Alleen invullen als deze auto afwijkt van zijn voertuigsoort.",
+    "deductibleGroupLabel": "Eigen risico",
+    "deductibleGroupAuto": "Automatisch ({{group}})",
+    "deductibleGroupCar": "Auto",
+    "deductibleGroupBus": "Bus",
+    "deductibleGroupHint": "Automatisch kijkt naar de voertuigsoort. Kies Auto of Bus als het anders moet.",
+    "deductibleGroupName": {
+      "car": "auto",
+      "bus": "bus"
+    }
   },
   "remarksWarningDialog": {
     "titlePickup": "Voertuigopmerkingen - Ophaalwaarschuwing",

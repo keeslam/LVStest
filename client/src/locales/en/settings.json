@@ -396,10 +396,7 @@
       "eigenrisicoBusBinnenlandLabel": "Bus deductible domestic (€)",
       "eigenrisicoBusBinnenlandHint": "Deductible for a bus in the Netherlands",
       "eigenrisicoBusBuitenlandLabel": "Bus deductible abroad (€)",
-      "eigenrisicoBusBuitenlandHint": "Deductible for a bus abroad",
-      "busVehicleTypesLabel": "Which vehicle types are a bus?",
-      "busVehicleTypesHint": "Tick the types that count as a bus. All other types count as a car. This decides which deductible goes on the contract.",
-      "busVehicleTypesEmpty": "There are no vehicle types in the fleet yet."
+      "eigenrisicoBusBuitenlandHint": "Deductible for a bus abroad"
     },
     "notifications": {
       "reminderTimingTitle": "Reminder Timing",

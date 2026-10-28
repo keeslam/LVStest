@@ -350,7 +350,7 @@
   },
   "deductibles": {
     "title": "Franchigia",
-    "description": "Due tipi: auto e bus. Quali tipi di veicolo contano come bus si sceglie in Impostazioni app > Regole aziendali. Vuoto = l'importo generale. Il contratto mostra l'importo del veicolo noleggiato.",
+    "description": "Due tipi: auto e bus. Se un veicolo è un bus si indica nella sua scheda. Vuoto = l'importo generale. Il contratto mostra l'importo del veicolo noleggiato.",
     "type": "Tipo",
     "domestic": "Nazionale (€)",
     "abroad": "Estero (€)",

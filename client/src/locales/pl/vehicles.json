@@ -956,7 +956,16 @@
     "extraKmPriceLabel": "Cena za dodatkowy km (€)",
     "kmTypeDefault": "Puste = wartość typu pojazdu: {{km}} km na dzień, € {{price}} za dodatkowy km.",
     "kmTypeDefaultNone": "Puste = wartość typu pojazdu (jeszcze nieustawiona).",
-    "kmOverrideHint": "Wypełnij tylko, jeśli ten pojazd różni się od swojego typu."
+    "kmOverrideHint": "Wypełnij tylko, jeśli ten pojazd różni się od swojego typu.",
+    "deductibleGroupLabel": "Udział własny",
+    "deductibleGroupAuto": "Automatycznie ({{group}})",
+    "deductibleGroupCar": "Samochód",
+    "deductibleGroupBus": "Bus",
+    "deductibleGroupHint": "Automatycznie według typu pojazdu. Wybierz Samochód lub Bus, aby ustawić samodzielnie.",
+    "deductibleGroupName": {
+      "car": "samochód",
+      "bus": "bus"
+    }
   },
   "remarksWarningDialog": {
     "titlePickup": "Uwagi o pojeździe - ostrzeżenie przy odbiorze",

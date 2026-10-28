@@ -951,7 +951,16 @@
     "extraKmPriceLabel": "Prezzo per km in più (€)",
     "kmTypeDefault": "Vuoto = valore del tipo di veicolo: {{km}} km al giorno, € {{price}} per km in più.",
     "kmTypeDefaultNone": "Vuoto = valore del tipo di veicolo (non ancora impostato).",
-    "kmOverrideHint": "Compili solo se questo veicolo è diverso dal suo tipo."
+    "kmOverrideHint": "Compili solo se questo veicolo è diverso dal suo tipo.",
+    "deductibleGroupLabel": "Franchigia",
+    "deductibleGroupAuto": "Automatico ({{group}})",
+    "deductibleGroupCar": "Auto",
+    "deductibleGroupBus": "Bus",
+    "deductibleGroupHint": "Automatico segue il tipo di veicolo. Scegli Auto o Bus per impostarlo tu.",
+    "deductibleGroupName": {
+      "car": "auto",
+      "bus": "bus"
+    }
   },
   "remarksWarningDialog": {
     "titlePickup": "Osservazioni sul veicolo - Avviso di ritiro",

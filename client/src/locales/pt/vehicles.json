@@ -951,7 +951,16 @@
     "extraKmPriceLabel": "Preço por km extra (€)",
     "kmTypeDefault": "Vazio = valor do tipo de veículo: {{km}} km por dia, € {{price}} por km extra.",
     "kmTypeDefaultNone": "Vazio = valor do tipo de veículo (ainda não definido).",
-    "kmOverrideHint": "Preencha apenas se este veículo for diferente do seu tipo."
+    "kmOverrideHint": "Preencha apenas se este veículo for diferente do seu tipo.",
+    "deductibleGroupLabel": "Franquia",
+    "deductibleGroupAuto": "Automático ({{group}})",
+    "deductibleGroupCar": "Carro",
+    "deductibleGroupBus": "Autocarro",
+    "deductibleGroupHint": "Automático segue o tipo de veículo. Escolha Carro ou Autocarro para o definir.",
+    "deductibleGroupName": {
+      "car": "carro",
+      "bus": "autocarro"
+    }
   },
   "remarksWarningDialog": {
     "titlePickup": "Observações do veículo - Aviso de levantamento",

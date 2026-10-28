@@ -1,5 +1,6 @@
 import { notifyFileReady } from "@/lib/file-ready";
 import { maintenanceTypeKey, maintenanceTypeOf } from "@shared/maintenance-type";
+import { autoDeductibleGroup, isDeductibleGroup } from "@shared/customer-deductibles";
 import { v } from "@/lib/zod-i18n";
 import { describeApiError } from "@/lib/api-error";
 import { useState } from "react";
@@ -1537,6 +1538,16 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                   <div>
                     <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.basicInfo.vehicleType')}</h4>
                     <p className="text-base">{formatVehicleType(vehicle.vehicleType) || t('details.general.na')}</p>
+                  </div>
+
+                  {/* Kees 2026-10-28: which eigen risico the contract uses for this vehicle. */}
+                  <div data-testid="vehicle-deductible-group">
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('vehicleForm.deductibleGroupLabel')}</h4>
+                    <p className="text-base">
+                      {isDeductibleGroup(vehicle.deductibleGroup)
+                        ? t(vehicle.deductibleGroup === "bus" ? 'vehicleForm.deductibleGroupBus' : 'vehicleForm.deductibleGroupCar')
+                        : t('vehicleForm.deductibleGroupAuto', { group: t(`vehicleForm.deductibleGroupName.${autoDeductibleGroup(vehicle.vehicleType)}`) })}
+                    </p>
                   </div>
 
                   <div>

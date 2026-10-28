@@ -398,10 +398,7 @@
       "eigenrisicoBusBinnenlandLabel": "Franchigia bus nazionale (€)",
       "eigenrisicoBusBinnenlandHint": "Franchigia per un bus nei Paesi Bassi",
       "eigenrisicoBusBuitenlandLabel": "Franchigia bus estero (€)",
-      "eigenrisicoBusBuitenlandHint": "Franchigia per un bus all'estero",
-      "busVehicleTypesLabel": "Quali tipi di veicolo sono un bus?",
-      "busVehicleTypesHint": "Spunta i tipi che contano come bus. Tutti gli altri contano come auto. Questo decide quale franchigia va nel contratto.",
-      "busVehicleTypesEmpty": "Non ci sono ancora tipi di veicolo nella flotta."
+      "eigenrisicoBusBuitenlandHint": "Franchigia per un bus all'estero"
     },
     "notifications": {
       "reminderTimingTitle": "Tempistica dei promemoria",

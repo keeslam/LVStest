@@ -906,7 +906,9 @@ Kees: de kaart Eigen risico bij de klant had een regel per voertuigsoort. Dat zi
 
 - **Twee soorten.** De klantkaart heeft twee regels, **Auto** en **Bus**. Elke regel heeft een bedrag voor binnenland en een voor buitenland. Laat je een vak leeg, dan geldt het algemene bedrag.
 - **Algemene bedragen in Bedrijfsregels.** Voor de auto zijn het de bestaande velden. Voor de bus komen er twee velden bij. Zolang er niets is opgeslagen, gelden auto 750 / 1500 en bus 1500 / 2500. Een bedrag dat al is opgeslagen blijft staan.
-- **Wat is een bus?** Kees koos om dat aan te vinken in Bedrijfsregels, onder "Welke voertuigsoorten zijn een bus?". Alle andere soorten zijn een auto. Ook aanhangwagens en be trucks vallen onder auto of bus, afhankelijk van het vinkje.
+- **Wat is een bus?** Eerst waren dat vinkjes per soort in Bedrijfsregels. Kees vond dat niet goed werken en koos daarna (28-10): per auto op de voertuigkaart, bij **Eigen risico**. Daar staat standaard **Automatisch**. De app kiest dan zelf aan de hand van de voertuigsoort (die van de RDW of die is ingevuld).
+  - Een bus is: Van, Truck, alles met "bus", "bestel", "truck", "van" of "transporter" in de soort, en een soort met 8 of meer zitplaatsen ("8 sitter", "9 zitter").
+  - De rest is een auto. Ook "2 siter", Trailer en aanhangwagen. Klopt dat niet voor een auto? Kies dan op de voertuigkaart **Auto** of **Bus**.
 - **Bedragen die er al stonden** worden overgenomen. Het bedrag van een soort gaat naar zijn groep. Hebben twee soorten in een groep een ander bedrag, dan geldt het hoogste. Pas als iemand de kaart opslaat, wordt het in de nieuwe vorm bewaard.
 - **Bevestigen bij ophalen** (Kees vroeg dit erbij). Het venster Ophaalproces starten toont het eigen risico voordat het contract wordt gemaakt. De medewerker laat het staan of past het aan. Het bevestigde bedrag wordt bij de reservering bewaard. Het contract drukt dat bedrag af, ook als het contract later opnieuw wordt gemaakt. De klantkaart verandert hierdoor niet.
 

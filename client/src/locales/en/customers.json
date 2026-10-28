@@ -342,7 +342,7 @@
   },
   "deductibles": {
     "title": "Deductible",
-    "description": "Two kinds: car and bus. Which vehicle types count as a bus is set in App settings > Business rules. Empty = the general amount. The contract shows the amount for the rented vehicle.",
+    "description": "Two kinds: car and bus. Whether a vehicle is a bus is set on its vehicle card. Empty = the general amount. The contract shows the amount for the rented vehicle.",
     "type": "Kind",
     "domestic": "Domestic (€)",
     "abroad": "Abroad (€)",

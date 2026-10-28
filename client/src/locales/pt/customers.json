@@ -350,7 +350,7 @@
   },
   "deductibles": {
     "title": "Franquia",
-    "description": "Dois tipos: carro e autocarro. Os tipos de veículo que contam como autocarro escolhem-se em Definições da app > Regras de negócio. Vazio = o valor geral. O contrato mostra o valor do veículo alugado.",
+    "description": "Dois tipos: carro e autocarro. Se um veículo é autocarro indica-se na sua ficha. Vazio = o valor geral. O contrato mostra o valor do veículo alugado.",
     "type": "Tipo",
     "domestic": "Nacional (€)",
     "abroad": "Estrangeiro (€)",

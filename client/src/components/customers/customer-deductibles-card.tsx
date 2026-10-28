@@ -1,7 +1,7 @@
 /**
  * Kees, 2026-10-21 — eigen risico for this customer, domestic and abroad
- * (shared/customer-deductibles.ts). Kees, 2026-10-28: two rows only, car and bus; the
- * types ticked as bus in App-instellingen > Bedrijfsregels are a bus. An empty box uses
+ * (shared/customer-deductibles.ts). Kees, 2026-10-28: two rows only, car and bus; each
+ * vehicle card says which one it is. An empty box uses
  * the general amount from Bedrijfsregels; the contract prints the amount for the rented
  * car's group.
  */
@@ -18,7 +18,7 @@ import { describeApiError } from "@/lib/api-error";
 import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { UserPermission } from "@shared/schema";
-import { DEDUCTIBLE_GROUPS, DEFAULT_GROUP_DEDUCTIBLES, busVehicleTypeKeys, customerGroupDeductibles, type CustomerDeductibles, type DeductibleGroup } from "@shared/customer-deductibles";
+import { DEDUCTIBLE_GROUPS, DEFAULT_GROUP_DEDUCTIBLES, customerGroupDeductibles, type CustomerDeductibles, type DeductibleGroup } from "@shared/customer-deductibles";
 
 type Draft = Record<string, { domestic: string; abroad: string }>;
 
@@ -36,7 +36,7 @@ export function CustomerDeductiblesCard({ customer }: { customer: { id: number; 
   const canEdit = useHasPermission(UserPermission.MANAGE_CUSTOMERS);
   const { data: rulesSetting } = useQuery<{ value?: Record<string, unknown> } | null>({ queryKey: ["/api/app-settings/key/business_rules"] });
   const rules = rulesSetting?.value ?? {};
-  const saved = useMemo(() => customerGroupDeductibles(customer.deductibles, busVehicleTypeKeys(rules)), [customer.deductibles, rules]);
+  const saved = useMemo(() => customerGroupDeductibles(customer.deductibles), [customer.deductibles]);
   const [draft, setDraft] = useState<Draft | null>(null);
 
   // The general amount per group, shown as the placeholder of an empty box.

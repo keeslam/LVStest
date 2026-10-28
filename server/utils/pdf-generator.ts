@@ -7,7 +7,7 @@ import { BARCODE_SOURCE, DEFAULT_BARCODE_BOX, DEFAULT_SIGNATURE_BOX, SIGNATURE_L
 import { STAFF_SIGNATURE_KEY, isValidStaffSignature } from "../../shared/staff-signature";
 import { currentRequestUserId } from "../services/request-user";
 import { sampleSignaturePng } from "./sample-signature";
-import { resolveDeductibles } from "../../shared/customer-deductibles";
+import { resolveDeductibles, type DeductibleVehicle } from "../../shared/customer-deductibles";
 import { Reservation, PdfTemplate, VehicleTransport, TransportReportTemplate } from "../../shared/schema";
 // Only the contract *number* still uses date-fns (a yyyyMMdd stamp); every
 // human-readable date goes through ./dutch-format below (besluiten B-18).
@@ -529,16 +529,16 @@ export async function loadBusinessRules(): Promise<unknown> {
 /**
  * The deductible as Instellingen > Bedrijfsregels shows it: the stored amount, or the
  * form's own default when the rules were never saved. Kees 2026-10-28: two groups, car
- * (750 / 1500) and bus (1500 / 2500); the types ticked as bus in Bedrijfsregels are a bus.
+ * (750 / 1500) and bus (1500 / 2500); the vehicle card says which, else its type decides.
  */
 export function contractDeductibles(
   businessRules: unknown,
   customerDeductibles?: unknown,
-  vehicleType?: string | null,
+  vehicle?: DeductibleVehicle | string | null,
   confirmed?: { domestic?: unknown; abroad?: unknown },
 ): { domestic: string; abroad: string } {
   // Kees 2026-10-21: the customer's own amount for this vehicle's group wins; empty falls back.
-  const resolved = resolveDeductibles(businessRules, customerDeductibles, vehicleType);
+  const resolved = resolveDeductibles(businessRules, customerDeductibles, vehicle);
   // Kees 2026-10-28: the amount confirmed in the pickup dialog wins over both.
   const pick = (value: unknown, fallback: number) => {
     const n = value === null || value === undefined || value === "" ? NaN : Number(value);
@@ -609,7 +609,7 @@ export function prepareContractData(reservation: Reservation, businessRules: unk
     diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
   
-  const deductibles = contractDeductibles(businessRules, (customer as any).deductibles, (vehicle as any).vehicleType,
+  const deductibles = contractDeductibles(businessRules, (customer as any).deductibles, vehicle as DeductibleVehicle,
     { domestic: (reservation as any).deductibleDomestic, abroad: (reservation as any).deductibleAbroad });
   const businessTexts = contractBusinessTexts(businessRules);
 

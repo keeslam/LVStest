@@ -270,10 +270,8 @@ Vijf instellingen komen vaak terug:
 - **Eigen risico** (tabblad **Bedrijfsregels**). Er zijn twee soorten: auto en bus.
   - **Eigen risico auto binnenland (€)** en **Eigen risico auto buitenland (€)**. Standaard 750 en 1500.
   - **Eigen risico bus binnenland (€)** en **Eigen risico bus buitenland (€)**. Standaard 1500 en 2500.
-  - Onder **Welke voertuigsoorten zijn een bus?** staan alle soorten uit de vloot. Vink de soorten
-    aan die een bus zijn. Bijvoorbeeld *8 sitter* of *bestelauto*. Alle andere soorten tellen als auto.
   - Klik daarna op **Bedrijfsregels opslaan**.
-  - Komt er een nieuwe voertuigsoort bij? Die telt als auto. Is het een bus? Vink hem dan aan.
+  - Of een auto een bus is, staat op de voertuigkaart bij **Eigen risico** (hoofdstuk 4).
   - Een klant kan een eigen bedrag hebben (hoofdstuk 3). Dat gaat voor op dit algemene bedrag.
   - Stond hier al een bedrag opgeslagen, bijvoorbeeld 500? Dat blijft staan. Pas het zelf aan als het
     750 moet zijn.

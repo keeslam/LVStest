@@ -66,10 +66,11 @@ leest. Bovenaan staat wat er sinds 17 oktober is bijgekomen. Daaronder staat de 
 
 11. **Eigen risico heeft nog twee soorten: auto en bus.** Op de klantkaart staan nu twee regels in
     plaats van één regel per voertuigsoort. De algemene bedragen staan in **App-instellingen** →
-    **Bedrijfsregels**: auto 750 / 1500, bus 1500 / 2500. Daar vink je ook aan welke soorten een bus
-    zijn. Bij het ophalen zie je het eigen risico voordat het contract wordt gemaakt. Je kunt het daar
+    **Bedrijfsregels**: auto 750 / 1500, bus 1500 / 2500. Of een auto een bus is, staat op de
+    voertuigkaart. De app kiest dat zelf aan de hand van de voertuigsoort. Je kunt het per auto
+    veranderen. Bij het ophalen zie je het eigen risico voordat het contract wordt gemaakt. Je kunt het daar
     voor die ene huur aanpassen. Meer in [hoofdstuk 3, paragraaf 3.2](03-klanten.md),
-    [hoofdstuk 5](05-reserveringen.md) en [hoofdstuk 10](10-beheer.md).
+    [hoofdstuk 4](04-voertuigen.md), [hoofdstuk 5](05-reserveringen.md) en [hoofdstuk 10](10-beheer.md).
 
 ---
 

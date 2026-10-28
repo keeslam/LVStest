@@ -28,7 +28,7 @@ describe("contract texts and deductible", () => {
 
   it("uses the customer's amount for the car's type, the general amount otherwise", () => {
     const deductibles = { byType: { van: { domestic: 250, abroad: null } } };
-    const d = contractDeductibles({ eigenrisicoBinnenland: "500", eigenrisicoBuitenland: "1000" }, deductibles, "Van");
+    const d = contractDeductibles({ eigenrisicoBusBinnenland: "500", eigenrisicoBusBuitenland: "1000" }, deductibles, "Van"); // a Van is a bus
     expect(d.domestic).toMatch(/250,00/);
     expect(d.abroad).toMatch(/1\.000,00/);
     const data = prepareContractData(reservation({ deductibles }), { eigenrisicoBinnenland: "500" });

@@ -7611,6 +7611,13 @@
         "default": null
       },
       {
+        "name": "deductible_group",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
         "name": "date_in",
         "type": "text",
         "notNull": false,

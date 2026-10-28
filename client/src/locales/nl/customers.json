@@ -342,7 +342,7 @@
   },
   "deductibles": {
     "title": "Eigen risico",
-    "description": "Twee soorten: auto en bus. Welke voertuigsoort een bus is, kies je in App-instellingen > Bedrijfsregels. Leeg = het algemene bedrag. Het contract toont het bedrag voor de gehuurde auto.",
+    "description": "Twee soorten: auto en bus. Of een auto een bus is, staat op de voertuigkaart. Leeg = het algemene bedrag. Het contract toont het bedrag voor de gehuurde auto.",
     "type": "Soort",
     "domestic": "Binnenland (€)",
     "abroad": "Buitenland (€)",

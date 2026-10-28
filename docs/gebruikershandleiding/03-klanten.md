@@ -98,7 +98,7 @@ Op het tabblad **Persoonlijke gegevens** staat de kaart **Eigen risico**. Er zij
 - Laat je een vak leeg? Dan geldt het algemene bedrag. In het lege vak staat welk bedrag dat is.
   Bijvoorbeeld *algemeen 750*.
 - Heeft deze klant een ander bedrag? Typ het in het vak. Klik op **Opslaan**.
-- Welke auto's een bus zijn, stel je in bij **App-instellingen** → **Bedrijfsregels** (hoofdstuk 10).
+- Of een auto een bus is, staat op de voertuigkaart bij **Eigen risico** (hoofdstuk 4).
 - Het contract pakt zelf het bedrag van de goede regel. Huurt de klant een bus? Dan komt het
   busbedrag op het contract. Anders het autobedrag.
 - Bij het ophalen zie je het bedrag nog een keer. Daar kun je het voor die ene huur aanpassen

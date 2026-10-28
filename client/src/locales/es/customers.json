@@ -350,7 +350,7 @@
   },
   "deductibles": {
     "title": "Franquicia",
-    "description": "Dos tipos: coche y furgoneta/bus. Qué tipos de vehículo cuentan como bus se elige en Ajustes de la app > Reglas de negocio. Vacío = el importe general. El contrato muestra el importe del vehículo alquilado.",
+    "description": "Dos tipos: coche y bus. Si un vehículo es bus se indica en su ficha. Vacío = el importe general. El contrato muestra el importe del vehículo alquilado.",
     "type": "Tipo",
     "domestic": "Nacional (€)",
     "abroad": "Extranjero (€)",

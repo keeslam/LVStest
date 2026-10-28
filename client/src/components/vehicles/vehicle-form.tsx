@@ -9,6 +9,7 @@ import { z } from "zod";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { insertVehicleSchema } from "@shared/schema";
+import { autoDeductibleGroup } from "@shared/customer-deductibles";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -321,6 +322,7 @@ export function VehicleForm({
       dailyPrice: "",
       freeKmPerDay: "",
       extraKmPrice: "",
+      deductibleGroup: null,
       dateIn: "",
       dateOut: "",
       contractNumber: "",
@@ -2037,6 +2039,33 @@ export function VehicleForm({
                       </>
                     );
                   })()}
+
+                  {/* Kees 2026-10-28: eigen risico group; automatic follows the vehicle type. */}
+                  <FormField
+                    control={form.control}
+                    name="deductibleGroup"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('vehicleForm.deductibleGroupLabel')}</FormLabel>
+                        <Select value={field.value ?? "auto"} onValueChange={(value) => field.onChange(value === "auto" ? null : value)}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-vehicle-deductible-group">
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="auto">
+                              {t('vehicleForm.deductibleGroupAuto', { group: t(`vehicleForm.deductibleGroupName.${autoDeductibleGroup(form.watch("vehicleType"))}`) })}
+                            </SelectItem>
+                            <SelectItem value="car">{t('vehicleForm.deductibleGroupCar')}</SelectItem>
+                            <SelectItem value="bus">{t('vehicleForm.deductibleGroupBus')}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>{t('vehicleForm.deductibleGroupHint')}</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
                   <FormField
                     control={form.control}

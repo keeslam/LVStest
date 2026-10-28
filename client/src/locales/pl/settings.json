@@ -400,10 +400,7 @@
       "eigenrisicoBusBinnenlandLabel": "Udział własny bus kraj (€)",
       "eigenrisicoBusBinnenlandHint": "Udział własny dla busa w Holandii",
       "eigenrisicoBusBuitenlandLabel": "Udział własny bus zagranica (€)",
-      "eigenrisicoBusBuitenlandHint": "Udział własny dla busa za granicą",
-      "busVehicleTypesLabel": "Które typy pojazdów są busem?",
-      "busVehicleTypesHint": "Zaznacz typy, które liczą się jako bus. Wszystkie inne liczą się jako samochód. To decyduje, jaki udział własny trafia do umowy.",
-      "busVehicleTypesEmpty": "We flocie nie ma jeszcze typów pojazdów."
+      "eigenrisicoBusBuitenlandHint": "Udział własny dla busa za granicą"
     },
     "notifications": {
       "reminderTimingTitle": "Czas wysyłania przypomnień",

@@ -1,6 +1,6 @@
-import { formatDate, formatVehicleType } from "@/lib/format-utils";
+import { formatDate } from "@/lib/format-utils";
 import { describeApiError } from "@/lib/api-error";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +24,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -61,8 +60,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { calculateDutchHolidays } from "@shared/holidays";
 import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES } from "@shared/languages";
-import { DEFAULT_GROUP_DEDUCTIBLES, busVehicleTypeKeys } from "@shared/customer-deductibles";
-import { KM_ALLOWANCE_OTHER, vehicleTypeKey } from "@shared/km-allowance";
+import { DEFAULT_GROUP_DEDUCTIBLES } from "@shared/customer-deductibles";
 import { DOCUMENT_EMAIL_KINDS, withDocumentEmailDefaults, type DocumentEmailTemplates } from "@/lib/document-email-templates";
 
 interface EmailSetting {
@@ -155,7 +153,6 @@ export function SettingsPanel() {
   const [eigenrisicoBuitenland, setEigenrisicoBuitenland] = useState(DEFAULT_GROUP_DEDUCTIBLES.car.abroad);
   const [eigenrisicoBusBinnenland, setEigenrisicoBusBinnenland] = useState(DEFAULT_GROUP_DEDUCTIBLES.bus.domestic);
   const [eigenrisicoBusBuitenland, setEigenrisicoBusBuitenland] = useState(DEFAULT_GROUP_DEDUCTIBLES.bus.abroad);
-  const [busVehicleTypes, setBusVehicleTypes] = useState<string[]>([]);
   // Kees 2026-10-21: "Getekend te" and the contract's fixed damage line.
   const [signingPlace, setSigningPlace] = useState("Zuidland");
   const [damageNoteText, setDamageNoteText] = useState("Zie schadecheck");
@@ -252,16 +249,6 @@ export function SettingsPanel() {
     queryKey: ['/api/app-settings'],
   });
 
-  // Kees 2026-10-28: the fleet's vehicle types to tick as bus, plus any ticked type no car has any more.
-  const { data: fleetTypes = [] } = useQuery<string[]>({ queryKey: ["/api/vehicles/types"] });
-  const busTypeOptions = useMemo(() => {
-    const labels = new Map<string, string>();
-    for (const type of [...fleetTypes, ...busVehicleTypes]) {
-      const key = vehicleTypeKey(type);
-      if (key !== KM_ALLOWANCE_OTHER && !labels.has(key)) labels.set(key, formatVehicleType(type));
-    }
-    return Array.from(labels.entries()).map(([key, label]) => ({ key, label })).sort((a, b) => a.label.localeCompare(b.label));
-  }, [fleetTypes, busVehicleTypes]);
   
   // Fetch email settings
   const { data: emailSettings, isLoading: loadingEmail } = useQuery<EmailSetting[]>({
@@ -415,7 +402,6 @@ export function SettingsPanel() {
       setEigenrisicoBuitenland(businessRules.value.eigenrisicoBuitenland || DEFAULT_GROUP_DEDUCTIBLES.car.abroad);
       setEigenrisicoBusBinnenland(businessRules.value.eigenrisicoBusBinnenland || DEFAULT_GROUP_DEDUCTIBLES.bus.domestic);
       setEigenrisicoBusBuitenland(businessRules.value.eigenrisicoBusBuitenland || DEFAULT_GROUP_DEDUCTIBLES.bus.abroad);
-      setBusVehicleTypes(Array.from(busVehicleTypeKeys(businessRules.value)));
       setSigningPlace(businessRules.value.signingPlace || "Zuidland");
       setDamageNoteText(businessRules.value.damageNoteText || "Zie schadecheck");
     }
@@ -503,7 +489,6 @@ export function SettingsPanel() {
           eigenrisicoBuitenland,
           eigenrisicoBusBinnenland,
           eigenrisicoBusBuitenland,
-          busVehicleTypes,
           signingPlace,
           damageNoteText,
         }
@@ -1022,26 +1007,6 @@ export function SettingsPanel() {
                     data-testid="input-eigenrisico-bus-buitenland"
                   />
                   <p className="text-xs text-gray-500 mt-1">{t('settingsPage.business.eigenrisicoBusBuitenlandHint')}</p>
-                </div>
-                <div className="md:col-span-2" data-testid="bus-vehicle-types">
-                  <Label>{t('settingsPage.business.busVehicleTypesLabel')}</Label>
-                  <p className="text-xs text-gray-500 mt-1 mb-2">{t('settingsPage.business.busVehicleTypesHint')}</p>
-                  {busTypeOptions.length === 0 ? (
-                    <p className="text-sm text-gray-500">{t('settingsPage.business.busVehicleTypesEmpty')}</p>
-                  ) : (
-                    <div className="flex flex-wrap gap-x-6 gap-y-2">
-                      {busTypeOptions.map(({ key, label }) => (
-                        <label key={key} className="flex items-center gap-2 text-sm">
-                          <Checkbox
-                            checked={busVehicleTypes.includes(key)}
-                            onCheckedChange={(checked) => setBusVehicleTypes((list) => checked ? [...list.filter((k) => k !== key), key] : list.filter((k) => k !== key))}
-                            data-testid={`checkbox-bus-type-${key}`}
-                          />
-                          {label}
-                        </label>
-                      ))}
-                    </div>
-                  )}
                 </div>
                 <div>
                   <Label htmlFor="signingPlace">{t('settingsPage.business.signingPlaceLabel')}</Label>

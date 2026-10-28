@@ -346,6 +346,18 @@ zet, verschijnt bij het ophalen in een apart venster. De medewerker moet dat ven
 aan een bekende kras of een klemmende schuifdeur. Gebruik het niet voor kantoornotities. Die horen bij
 **Interne afspraken**.
 
+**Eigen risico: auto of bus.** Op de voertuigkaart staat bij **Basisinformatie** het veld
+**Eigen risico**. Dat zegt welk eigen risico op het contract komt: dat van een auto of dat van een bus.
+
+- Standaard staat er **Automatisch**. De app kijkt dan naar de voertuigsoort. Een Van, een truck, een
+  bestelauto of een bus is een bus. Een soort met 8 of meer zitplaatsen ook, zoals *8 sitter* of
+  *9 zitter*. Al het andere is een auto.
+- Tussen haakjes zie je wat de app gekozen heeft. Bijvoorbeeld *Automatisch (bus)*.
+- Klopt dat niet voor deze auto? Klik op **Bewerken**. Kies bij **Eigen risico** de optie **Auto** of
+  **Bus**. Klik op opslaan. Dan geldt jouw keuze, wat de voertuigsoort ook is.
+- De bedragen zelf staan in **App-instellingen** → **Bedrijfsregels** (hoofdstuk 10). Een klant kan
+  een eigen bedrag hebben (hoofdstuk 3).
+
 ---
 
 ## 4.6 De statussen en wat ze betekenen voor beschikbaarheid

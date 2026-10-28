@@ -350,7 +350,7 @@
   },
   "deductibles": {
     "title": "Franșiză",
-    "description": "Două tipuri: autoturism și autobuz. Ce tipuri de vehicule contează ca autobuz alegi în Setări aplicație > Reguli de business. Gol = suma generală. Contractul arată suma pentru vehiculul închiriat.",
+    "description": "Două tipuri: autoturism și autobuz. Dacă un vehicul este autobuz se setează pe fișa lui. Gol = suma generală. Contractul arată suma pentru vehiculul închiriat.",
     "type": "Tip",
     "domestic": "În țară (€)",
     "abroad": "În străinătate (€)",

@@ -29,7 +29,7 @@ describe("contract pickup readings and deductible", () => {
   });
 
   it("prints the deductible from the business rules, or the settings form's defaults", () => {
-    const saved = prepareContractData(reservation(), { eigenrisicoBinnenland: "750", eigenrisicoBuitenland: "1500" });
+    const saved = prepareContractData(reservation(), { eigenrisicoBusBinnenland: "750", eigenrisicoBusBuitenland: "1500" }); // a Bestelbus is a bus
     expect(saved.deductibleDomestic).toMatch(/750,00/);
     expect(saved.deductibleAbroad).toMatch(/1\.500,00/);
     // Kees 2026-10-28: the car defaults are 750 / 1500.

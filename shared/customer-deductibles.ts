@@ -1,12 +1,12 @@
 /**
  * Kees, 2026-10-21 — the deductible (eigen risico) per customer, domestic and abroad.
  *
- * Kees, 2026-10-28 — there are only two kinds of deductible: car ("auto") and bus. Which
- * vehicle types count as a bus is ticked in Bedrijfsregels (`busVehicleTypes`, type keys
- * as km-allowance uses them); every other type is a car. The general amounts live in
- * Bedrijfsregels too: car `eigenrisicoBinnenland` / `eigenrisicoBuitenland` (default
- * 750 / 1500), bus `eigenrisicoBusBinnenland` / `eigenrisicoBusBuitenland` (default
- * 1500 / 2500).
+ * Kees, 2026-10-28 — there are only two kinds of deductible: car ("auto") and bus. Each
+ * vehicle says which one it is on its card (`vehicles.deductible_group`, "car" / "bus");
+ * left empty, the group follows from the vehicle type (autoDeductibleGroup). The general
+ * amounts live in Bedrijfsregels: car `eigenrisicoBinnenland` / `eigenrisicoBuitenland`
+ * (default 750 / 1500), bus `eigenrisicoBusBinnenland` / `eigenrisicoBusBuitenland`
+ * (default 1500 / 2500).
  *
  * A customer's own amounts are stored as `{ byGroup: { car, bus } }`. Customers saved
  * before 2026-10-28 have `{ byType: { <type key>: { domestic, abroad } } }`; those are read
@@ -29,6 +29,12 @@ export interface CustomerDeductibles {
   byType?: Record<string, DeductiblePair>;
 }
 
+/** What the contract needs of the vehicle: its type, and the group set on its card. */
+export interface DeductibleVehicle {
+  vehicleType?: string | null;
+  deductibleGroup?: string | null;
+}
+
 /** The general amounts per group when Bedrijfsregels were never saved. */
 export const DEFAULT_GROUP_DEDUCTIBLES: Record<DeductibleGroup, { domestic: string; abroad: string }> = {
   car: { domestic: "750", abroad: "1500" },
@@ -48,7 +54,7 @@ export function isValidCustomerDeductibles(value: unknown): value is CustomerDed
   if (byGroup === undefined && byType === undefined) return false;
   if (byGroup !== undefined) {
     if (!isPlainObject(byGroup)) return false;
-    if (!Object.entries(byGroup).every(([key, pair]) => (DEDUCTIBLE_GROUPS as readonly string[]).includes(key) && pairOk(pair))) return false;
+    if (!Object.entries(byGroup).every(([key, pair]) => isDeductibleGroup(key) && pairOk(pair))) return false;
   }
   if (byType !== undefined) {
     if (!isPlainObject(byType)) return false;
@@ -59,14 +65,27 @@ export function isValidCustomerDeductibles(value: unknown): value is CustomerDed
   return true;
 }
 
-/** The vehicle type keys ticked as bus in Bedrijfsregels. */
-export function busVehicleTypeKeys(businessRules: unknown): Set<string> {
-  const list = isPlainObject(businessRules) ? businessRules.busVehicleTypes : undefined;
-  return new Set(Array.isArray(list) ? list.filter((t): t is string => typeof t === "string").map(vehicleTypeKey) : []);
+export function isDeductibleGroup(value: unknown): value is DeductibleGroup {
+  return typeof value === "string" && (DEDUCTIBLE_GROUPS as readonly string[]).includes(value);
 }
 
-export function deductibleGroupFor(vehicleType: string | null | undefined, busTypes: Set<string>): DeductibleGroup {
-  return busTypes.has(vehicleTypeKey(vehicleType)) ? "bus" : "car";
+/**
+ * The group a vehicle type falls in when its card does not say: a bus for a van, truck,
+ * bus or delivery vehicle ("Van", "bestelauto", "bestelbus", "be truck", "Transporter") and
+ * for a people carrier with eight or more seats ("8 sitter", "9 zitter"); a car otherwise.
+ */
+export function autoDeductibleGroup(vehicleType: string | null | undefined): DeductibleGroup {
+  const key = vehicleTypeKey(vehicleType);
+  if (/\b(van|truck|transporter)\b|bus\b|bestel/.test(key)) return "bus";
+  const seats = key.match(/(\d+)\s*-?\s*(zit|sit)/);
+  if (seats && Number(seats[1]) >= 8) return "bus";
+  return "car";
+}
+
+/** The vehicle's group: the one set on its card, else the one its type gives. */
+export function deductibleGroupFor(vehicle: DeductibleVehicle | string | null | undefined): DeductibleGroup {
+  const v = typeof vehicle === "string" || vehicle == null ? { vehicleType: vehicle ?? null } : vehicle;
+  return isDeductibleGroup(v.deductibleGroup) ? v.deductibleGroup : autoDeductibleGroup(v.vehicleType);
 }
 
 const num = (v: unknown) => (typeof v === "number" ? v : null);
@@ -75,7 +94,6 @@ const higher = (a: number | null, b: number | null) => (a === null ? b : b === n
 /** The customer's amounts per group, each null when not set; old per-type values folded in. */
 export function customerGroupDeductibles(
   deductibles: unknown,
-  busTypes: Set<string>,
 ): Record<DeductibleGroup, { domestic: number | null; abroad: number | null }> {
   const result = { car: { domestic: null, abroad: null }, bus: { domestic: null, abroad: null } } as
     Record<DeductibleGroup, { domestic: number | null; abroad: number | null }>;
@@ -88,22 +106,13 @@ export function customerGroupDeductibles(
     return result;
   }
   for (const [typeKey, pair] of Object.entries(deductibles.byType ?? {})) {
-    const group = deductibleGroupFor(typeKey, busTypes);
+    const group = autoDeductibleGroup(typeKey);
     result[group] = {
       domestic: higher(result[group].domestic, num(pair.domestic)),
       abroad: higher(result[group].abroad, num(pair.abroad)),
     };
   }
   return result;
-}
-
-/** The customer's amounts for this vehicle's group, each null when not set. */
-export function customerDeductibleFor(
-  deductibles: unknown,
-  vehicleType: string | null | undefined,
-  busTypes: Set<string> = new Set(),
-): { domestic: number | null; abroad: number | null } {
-  return customerGroupDeductibles(deductibles, busTypes)[deductibleGroupFor(vehicleType, busTypes)];
 }
 
 const generalAmount = (value: unknown, fallback: string): number => {
@@ -119,12 +128,11 @@ const generalAmount = (value: unknown, fallback: string): number => {
 export function resolveDeductibles(
   businessRules: unknown,
   customerDeductibles: unknown,
-  vehicleType: string | null | undefined,
+  vehicle: DeductibleVehicle | string | null | undefined,
 ): { group: DeductibleGroup; domestic: number; abroad: number } {
   const rules = isPlainObject(businessRules) ? businessRules : {};
-  const busTypes = busVehicleTypeKeys(rules);
-  const group = deductibleGroupFor(vehicleType, busTypes);
-  const own = customerDeductibleFor(customerDeductibles, vehicleType, busTypes);
+  const group = deductibleGroupFor(vehicle);
+  const own = customerGroupDeductibles(customerDeductibles)[group];
   const general = group === "bus"
     ? { domestic: rules.eigenrisicoBusBinnenland, abroad: rules.eigenrisicoBusBuitenland }
     : { domestic: rules.eigenrisicoBinnenland, abroad: rules.eigenrisicoBuitenland };

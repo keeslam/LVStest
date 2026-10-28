@@ -398,10 +398,7 @@
       "eigenrisicoBusBinnenlandLabel": "Franquia autocarro nacional (€)",
       "eigenrisicoBusBinnenlandHint": "Franquia para um autocarro nos Países Baixos",
       "eigenrisicoBusBuitenlandLabel": "Franquia autocarro estrangeiro (€)",
-      "eigenrisicoBusBuitenlandHint": "Franquia para um autocarro no estrangeiro",
-      "busVehicleTypesLabel": "Que tipos de veículo são um autocarro?",
-      "busVehicleTypesHint": "Marque os tipos que contam como autocarro. Os outros contam como carro. Isto decide que franquia vai no contrato.",
-      "busVehicleTypesEmpty": "Ainda não há tipos de veículo na frota."
+      "eigenrisicoBusBuitenlandHint": "Franquia para um autocarro no estrangeiro"
     },
     "notifications": {
       "reminderTimingTitle": "Momento dos lembretes",

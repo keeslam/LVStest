@@ -6081,7 +6081,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Pickup a reservation (enter mileage/fuel, generate contract)
-  // Kees 2026-10-28: the eigen risico the pickup dialog proposes, for the car being handed
+  // Kees 2026-10-28: the eigen risico the pickup dialog proposes, for the vehicle being handed
   // over (`vehicleId` when a spare is picked in the dialog). The employee confirms or changes it.
   app.get("/api/reservations/:id/deductible", hasPermission(UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
     try {
@@ -6091,7 +6091,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       const vehicleId = req.query.vehicleId ? parseInt(String(req.query.vehicleId), 10) : reservation.vehicleId;
       const vehicle = vehicleId ? await storage.getVehicle(vehicleId) : undefined;
       const customer = reservation.customerId ? await storage.getCustomer(reservation.customerId) : undefined;
-      res.json(resolveDeductibles(await loadBusinessRules(), (customer as any)?.deductibles, vehicle?.vehicleType));
+      res.json(resolveDeductibles(await loadBusinessRules(), (customer as any)?.deductibles, vehicle ?? null));
     } catch (error) {
       console.error("Error resolving the deductible:", error);
       res.status(500).json({ message: "Error resolving the deductible" });

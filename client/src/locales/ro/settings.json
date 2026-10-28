@@ -398,10 +398,7 @@
       "eigenrisicoBusBinnenlandLabel": "Franciză autobuz intern (€)",
       "eigenrisicoBusBinnenlandHint": "Franciza pentru un autobuz în Țările de Jos",
       "eigenrisicoBusBuitenlandLabel": "Franciză autobuz străinătate (€)",
-      "eigenrisicoBusBuitenlandHint": "Franciza pentru un autobuz în străinătate",
-      "busVehicleTypesLabel": "Ce tipuri de vehicule sunt autobuz?",
-      "busVehicleTypesHint": "Bifează tipurile care contează ca autobuz. Toate celelalte contează ca autoturism. Asta decide ce franciză apare în contract.",
-      "busVehicleTypesEmpty": "Încă nu există tipuri de vehicule în flotă."
+      "eigenrisicoBusBuitenlandHint": "Franciza pentru un autobuz în străinătate"
     },
     "notifications": {
       "reminderTimingTitle": "Momentul mementourilor",
