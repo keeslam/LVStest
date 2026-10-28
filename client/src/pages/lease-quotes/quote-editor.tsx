@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Download, ExternalLink, FileText, History, Loader2, ScanText, Trash2, Upload } from "lucide-react";
 import { isEditWarningStatus, LEASE_QUOTE_STATUSES, type LeaseQuotePayload } from "@shared/lease-quotes";
-import { roundCents, type LeaseCostInputs } from "@shared/lease-quote-calc";
+import { roundCents } from "@shared/lease-quote-calc";
 import { UserPermission, type Customer } from "@shared/schema";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ import { formatCurrency, formatDateTime } from "@/lib/format-utils";
 import { cn } from "@/lib/utils";
 import { CopyQuoteDialog } from "./copy-quote-dialog";
 import { DealerScanDialog, type ScanApplied } from "./dealer-scan-dialog";
-import { evaluateVariant, formatAmountInput, NumberInput, readNumber, VariantsTable, type NumberRule, type VariantDraft, type VariantField } from "./variants-table";
+import { COST_FIELDS, type CostField, evaluateVariant, formatAmountInput, NumberInput, readNumber, VariantsTable, type NumberRule, type VariantDraft, type VariantField } from "./variants-table";
 
 /* ------------------------------------------------------------------ *
  * The quote as the server sends it, and the form built from it
@@ -40,14 +40,9 @@ interface QuoteFile {
   createdBy: string | null;
 }
 
-const COST_KEYS = [
-  "interestRatePercent", "robPerYear", "otherCostsPerYear", "insurancePerMonth", "roadTaxPerMonth",
-  "marginPerMonth", "excessKmPrice", "shortfallKmPrice",
-] as const;
 const BREAKDOWN_KEYS = ["catalogPrice", "options", "discount", "bpm", "deliveryCosts", "totalExclVat", "totalInclVat"] as const;
 const PROSPECT_KEYS = ["prospectName", "prospectCompany", "prospectEmail", "prospectPhone"] as const;
 const VEHICLE_KEYS = ["vehicleMake", "vehicleModel", "vehicleTrim", "licensePlate", "dealerName", "deliveryTime"] as const;
-type CostKey = (typeof COST_KEYS)[number];
 type BreakdownKey = (typeof BREAKDOWN_KEYS)[number];
 type TextKey = (typeof PROSPECT_KEYS)[number] | (typeof VEHICLE_KEYS)[number] | "vehicleNotes" | "internalNotes";
 const TEXT_KEYS: readonly TextKey[] = [...PROSPECT_KEYS, ...VEHICLE_KEYS, "vehicleNotes", "internalNotes"];
@@ -62,7 +57,9 @@ export interface LeaseQuoteDetail {
   customerName: string | null;
   purchasePrice: number | null;
   priceBreakdown: Partial<Record<BreakdownKey, number | null>> | null;
-  variants: Array<{ id: number; position: number; termMonths: number; kmPerYear: number; residualValue: number; isChosen: boolean; totalPerMonth: number | null }>;
+  variants: Array<{
+    id: number; position: number; termMonths: number; kmPerYear: number; residualValue: number; isChosen: boolean; totalPerMonth: number | null;
+  } & Record<CostField, number | null>>;
   files: QuoteFile[];
   [key: string]: unknown;
 }
@@ -75,19 +72,23 @@ interface FormState {
   customerId: number | null;
   text: Record<TextKey, string>;
   purchasePrice: string;
-  costs: Record<CostKey, string>;
   breakdown: Record<BreakdownKey, string>;
   variants: VariantDraft[];
   chosenIndex: number;
 }
+
+const emptyCosts = () => Object.fromEntries(COST_FIELDS.map((k) => [k, ""])) as Record<CostField, string>;
 
 let variantKeySeq = 0;
 const newVariantKey = () => `v${++variantKeySeq}`;
 
 function formFromQuote(q: LeaseQuoteDetail): FormState {
   const variants = q.variants.length
-    ? q.variants.map((v) => ({ key: newVariantKey(), term: formatAmountInput(v.termMonths), km: formatAmountInput(v.kmPerYear), residual: formatAmountInput(v.residualValue) }))
-    : [{ key: newVariantKey(), term: "48", km: formatAmountInput(20000), residual: "" }];
+    ? q.variants.map((v) => ({
+      key: newVariantKey(), term: formatAmountInput(v.termMonths), km: formatAmountInput(v.kmPerYear), residual: formatAmountInput(v.residualValue),
+      ...(Object.fromEntries(COST_FIELDS.map((k) => [k, formatAmountInput(v[k])])) as Record<CostField, string>),
+    }))
+    : [{ key: newVariantKey(), term: "48", km: formatAmountInput(20000), residual: "", ...emptyCosts() }];
   const chosen = q.variants.findIndex((v) => v.isChosen);
   return {
     status: q.status,
@@ -97,7 +98,6 @@ function formFromQuote(q: LeaseQuoteDetail): FormState {
     customerId: q.customerId,
     text: Object.fromEntries(TEXT_KEYS.map((k) => [k, typeof q[k] === "string" ? (q[k] as string) : ""])) as Record<TextKey, string>,
     purchasePrice: formatAmountInput(q.purchasePrice),
-    costs: Object.fromEntries(COST_KEYS.map((k) => [k, formatAmountInput(q[k] as number | null)])) as Record<CostKey, string>,
     breakdown: Object.fromEntries(BREAKDOWN_KEYS.map((k) => [k, formatAmountInput(q.priceBreakdown?.[k] ?? null)])) as Record<BreakdownKey, string>,
     variants,
     chosenIndex: chosen >= 0 ? chosen : 0,
@@ -111,14 +111,14 @@ const BREAKDOWN_RULE: Record<BreakdownKey, NumberRule> = {
 type BlockReason = "invalid" | "variants" | "dates" | null;
 
 /** Why the form cannot be saved yet, in order of what to fix first; null when it can. */
-function blockReason(form: FormState, costsInputs: LeaseCostInputs): BlockReason {
+function blockReason(form: FormState): BlockReason {
+  const purchasePrice = readNumber(form.purchasePrice).value ?? 0;
   const numbersInvalid =
     readNumber(form.purchasePrice).invalid ||
-    COST_KEYS.some((k) => readNumber(form.costs[k]).invalid) ||
     BREAKDOWN_KEYS.some((k) => readNumber(form.breakdown[k], BREAKDOWN_RULE[k]).invalid) ||
-    form.variants.some((v) => evaluateVariant(costsInputs, v).invalid);
+    form.variants.some((v) => evaluateVariant(purchasePrice, v).invalid);
   if (numbersInvalid) return "invalid";
-  if (form.variants.some((v) => !evaluateVariant(costsInputs, v).complete)) return "variants";
+  if (form.variants.some((v) => !evaluateVariant(purchasePrice, v).complete)) return "variants";
   const iso = /^\d{4}-\d{2}-\d{2}$/;
   if (!iso.test(form.quoteDate) || !iso.test(form.validUntil)) return "dates";
   return null;
@@ -149,26 +149,14 @@ export function buildPayload(form: FormState): LeaseQuotePayload {
     internalNotes: text("internalNotes"),
     purchasePrice: num(form.purchasePrice),
     priceBreakdown: Object.values(breakdown).every((v) => v === null) ? null : breakdown,
-    ...(Object.fromEntries(COST_KEYS.map((k) => [k, num(form.costs[k])])) as Record<CostKey, number | null>),
     variants: form.variants.map((v, i) => ({
       termMonths: num(v.term, "positiveInt") as number,
       kmPerYear: num(v.km, "positiveInt") as number,
       residualValue: num(v.residual) as number,
       isChosen: i === form.chosenIndex,
+      // An empty cost field is saved as empty (null) and counts as 0.
+      ...(Object.fromEntries(COST_FIELDS.map((k) => [k, num(v[k])])) as Record<CostField, number | null>),
     })),
-  };
-}
-
-function costInputs(form: FormState): LeaseCostInputs {
-  const n = (s: string) => readNumber(s).value ?? 0;
-  return {
-    purchasePrice: n(form.purchasePrice),
-    interestRatePercent: n(form.costs.interestRatePercent),
-    robPerYear: n(form.costs.robPerYear),
-    otherCostsPerYear: n(form.costs.otherCostsPerYear),
-    insurancePerMonth: n(form.costs.insurancePerMonth),
-    roadTaxPerMonth: n(form.costs.roadTaxPerMonth),
-    marginPerMonth: n(form.costs.marginPerMonth),
   };
 }
 
@@ -268,8 +256,8 @@ function EditorBody({ quoteId, setDirty: reportDirty, requestClose, onOpenQuote 
     return [...customerList, { id: form.customerId, name, companyName: null, debtorNumber: null, email: null } as unknown as Customer];
   }, [customerList, form?.customerId, quote]);
 
-  const costs = useMemo(() => (form ? costInputs(form) : null), [form]);
-  const reason = form && costs ? blockReason(form, costs) : null;
+  const purchasePrice = form ? readNumber(form.purchasePrice).value ?? 0 : 0;
+  const reason = form ? blockReason(form) : null;
 
   const update = (fn: (f: FormState) => FormState) => {
     setForm((cur) => (cur ? fn(cur) : cur));
@@ -397,7 +385,7 @@ function EditorBody({ quoteId, setDirty: reportDirty, requestClose, onOpenQuote 
       </div>
     );
   }
-  if (isError || !quote || !form || !costs) {
+  if (isError || !quote || !form) {
     return (
       <div className="p-6">
         <DialogHeader><DialogTitle>{t("title")}</DialogTitle><DialogDescription className="sr-only">{t("editor.description")}</DialogDescription></DialogHeader>
@@ -408,18 +396,12 @@ function EditorBody({ quoteId, setDirty: reportDirty, requestClose, onOpenQuote 
 
   const dealerFiles = quote.files.filter((f) => f.kind === "dealer");
   const generatedFiles = quote.files.filter((f) => f.kind === "generated");
-  const chosenView = evaluateVariant(costs, form.variants[form.chosenIndex]);
+  const chosenView = evaluateVariant(purchasePrice, form.variants[form.chosenIndex]);
 
   const textField = (k: TextKey, className?: string) => (
     <div className={cn("space-y-1", className)}>
       <Label htmlFor={`lq-${k}`}>{t(`editor.fields.${k}`)}</Label>
       <Input id={`lq-${k}`} value={form.text[k]} onChange={(e) => setText(k, e.target.value)} data-testid={`input-${k}`} />
-    </div>
-  );
-  const costField = (k: CostKey) => (
-    <div key={k} className="space-y-1">
-      <Label htmlFor={`lq-${k}`}>{t(`editor.fields.${k}`)}</Label>
-      <NumberInput id={`lq-${k}`} value={form.costs[k]} onChange={(v) => update((f) => ({ ...f, costs: { ...f.costs, [k]: v } }))} testId={`input-${k}`} />
     </div>
   );
 
@@ -568,19 +550,16 @@ function EditorBody({ quoteId, setDirty: reportDirty, requestClose, onOpenQuote 
           </>
         ), "section-lease-purchase")}
 
-        {section(t("editor.sections.costs"), (
-          <div className="grid gap-3 sm:grid-cols-4">{COST_KEYS.map(costField)}</div>
-        ), "section-lease-costs")}
-
         {section(t("editor.sections.variants"), (
           <VariantsTable
             variants={form.variants}
             chosenIndex={form.chosenIndex}
-            costs={costs}
+            purchasePrice={purchasePrice}
             onChange={(i, field: VariantField, text) => update((f) => ({ ...f, variants: f.variants.map((v, j) => (j === i ? { ...v, [field]: text } : v)) }))}
             onAdd={() => update((f) => {
               const last = f.variants[f.variants.length - 1];
-              return { ...f, variants: [...f.variants, { key: newVariantKey(), term: last?.term ?? "48", km: last?.km ?? formatAmountInput(20000), residual: "" }] };
+              // A new variant starts like the last one (term, km and all costs); the residual value stays empty.
+              return { ...f, variants: [...f.variants, { ...(last ?? emptyCosts()), key: newVariantKey(), term: last?.term ?? "48", km: last?.km ?? formatAmountInput(20000), residual: "" }] };
             })}
             onDuplicate={(i) => update((f) => ({ ...f, variants: [...f.variants.slice(0, i + 1), { ...f.variants[i], key: newVariantKey() }, ...f.variants.slice(i + 1)], chosenIndex: f.chosenIndex > i ? f.chosenIndex + 1 : f.chosenIndex }))}
             onRemove={(i) => {

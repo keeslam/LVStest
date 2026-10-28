@@ -16,15 +16,20 @@ vi.mock("@/hooks/use-auth", () => ({
 
 import { QuoteEditor } from "@/pages/lease-quotes/quote-editor";
 
+/** What a new quote's first variant gets from the settings (insurance and road tax stay empty). */
+const settingsCosts = {
+  interestRatePercent: 9, robPerYear: 275, otherCostsPerYear: 350, insurancePerMonth: null, roadTaxPerMonth: null, marginPerMonth: 0,
+  excessKmPrice: 0.1, shortfallKmPrice: 0.05,
+};
+
 function baseQuote(overrides: Record<string, unknown> = {}) {
   return {
     id: 7, quoteNumber: "LO-2026-0007", status: "concept", quoteDate: "2026-10-28", validUntil: "2026-11-27",
     customerId: null, customerName: null, prospectName: "Jansen", prospectCompany: null, prospectEmail: null, prospectPhone: null,
     vehicleMake: null, vehicleModel: null, vehicleTrim: null, licensePlate: null, dealerName: null, deliveryTime: null, vehicleNotes: null,
     purchasePrice: null, priceBreakdown: null,
-    interestRatePercent: 9, robPerYear: 275, otherCostsPerYear: 350, insurancePerMonth: null, roadTaxPerMonth: null, marginPerMonth: 0,
-    excessKmPrice: 0.1, shortfallKmPrice: 0.05, internalNotes: null,
-    variants: [{ id: 1, position: 0, termMonths: 48, kmPerYear: 20000, residualValue: 0, isChosen: true, totalPerMonth: null }],
+    internalNotes: null,
+    variants: [{ id: 1, position: 0, termMonths: 48, kmPerYear: 20000, residualValue: 0, isChosen: true, totalPerMonth: null, ...settingsCosts }],
     files: [],
     ...overrides,
   };
@@ -78,8 +83,8 @@ describe("QuoteEditor live calculation", () => {
   it("shows the Excel total in the chosen column while typing, without saving", async () => {
     renderEditor();
     await retype("input-purchasePrice", "17318");
-    await retype("input-insurancePerMonth", "97,80");
-    await retype("input-roadTaxPerMonth", "34");
+    await retype("input-variant-insurancePerMonth-0", "97,80");
+    await retype("input-variant-roadTaxPerMonth-0", "34");
     await retype("input-variant-residual-0", "10000");
     expect(screen.getByTestId("variant-total-0").textContent).toMatch(/€\s466,23/);
     expect(screen.getByTestId("variant-costPerKm-0").textContent).toMatch(/0,28/);
@@ -105,6 +110,78 @@ describe("QuoteEditor live calculation", () => {
     await retype("input-variant-term-0", "");
     expect(screen.getByText("Vul een looptijd in")).toBeInTheDocument();
     expect(screen.getByTestId("variant-total-0").textContent).toBe("—");
+  });
+});
+
+describe("QuoteEditor costs per variant", () => {
+  it("has no separate costs section: the costs are rows of the variants table, prefilled from the quote", async () => {
+    renderEditor();
+    await screen.findByTestId("lease-variants-table");
+    expect(screen.queryByTestId("section-lease-costs")).toBeNull();
+    expect((screen.getByTestId("input-variant-interestRatePercent-0") as HTMLInputElement).value).toBe("9");
+    expect((screen.getByTestId("input-variant-robPerYear-0") as HTMLInputElement).value).toBe("275");
+    expect((screen.getByTestId("input-variant-otherCostsPerYear-0") as HTMLInputElement).value).toBe("350");
+    expect((screen.getByTestId("input-variant-insurancePerMonth-0") as HTMLInputElement).value).toBe("");
+    expect((screen.getByTestId("input-variant-excessKmPrice-0") as HTMLInputElement).value).toBe("0,1");
+    expect(screen.getByText("4. Varianten")).toBeInTheDocument();
+    expect(screen.getByText("5. Offerte")).toBeInTheDocument();
+  });
+
+  it("'Variant toevoegen' copies the costs (and term / km) of the last variant, but not the residual value", async () => {
+    renderEditor();
+    await retype("input-variant-interestRatePercent-0", "7,5");
+    await retype("input-variant-marginPerMonth-0", "25");
+    await retype("input-variant-shortfallKmPrice-0", "0,0425");
+    await retype("input-variant-residual-0", "10000");
+    await userEvent.click(screen.getByTestId("button-add-variant"));
+    expect((screen.getByTestId("input-variant-interestRatePercent-1") as HTMLInputElement).value).toBe("7,5");
+    expect((screen.getByTestId("input-variant-marginPerMonth-1") as HTMLInputElement).value).toBe("25");
+    expect((screen.getByTestId("input-variant-shortfallKmPrice-1") as HTMLInputElement).value).toBe("0,0425");
+    expect((screen.getByTestId("input-variant-robPerYear-1") as HTMLInputElement).value).toBe("275");
+    expect((screen.getByTestId("input-variant-term-1") as HTMLInputElement).value).toBe("48");
+    expect((screen.getByTestId("input-variant-residual-1") as HTMLInputElement).value).toBe("");
+    // Adding a third copies the second, not the first.
+    await retype("input-variant-interestRatePercent-1", "6");
+    await userEvent.click(screen.getByTestId("button-add-variant"));
+    expect((screen.getByTestId("input-variant-interestRatePercent-2") as HTMLInputElement).value).toBe("6");
+  });
+
+  it("two variants with different interest show different totals, and each recalculates from its own costs", async () => {
+    renderEditor();
+    await retype("input-purchasePrice", "17318");
+    await retype("input-variant-insurancePerMonth-0", "97,80");
+    await retype("input-variant-roadTaxPerMonth-0", "34");
+    await retype("input-variant-residual-0", "10000");
+    await userEvent.click(screen.getByTestId("button-add-variant"));
+    await retype("input-variant-residual-1", "10000");
+    expect(screen.getByTestId("variant-total-0").textContent).toMatch(/€\s466,23/);
+    expect(screen.getByTestId("variant-total-1").textContent).toMatch(/€\s466,23/);
+
+    await retype("input-variant-interestRatePercent-1", "5");
+    expect(screen.getByTestId("variant-interest-1").textContent).toMatch(/€\s72,16/);
+    expect(screen.getByTestId("variant-total-1").textContent).toMatch(/€\s408,50/);
+    // The first variant did not move.
+    expect(screen.getByTestId("variant-total-0").textContent).toMatch(/€\s466,23/);
+    expect(screen.getByTestId("variant-interest-0").textContent).toMatch(/€\s129,89/);
+
+    await retype("input-variant-marginPerMonth-0", "50");
+    expect(screen.getByTestId("variant-total-0").textContent).toMatch(/€\s516,23/);
+    expect(screen.getByTestId("variant-total-1").textContent).toMatch(/€\s408,50/);
+    expect(patches()).toHaveLength(0);
+  });
+
+  it("an unreadable cost marks the field red and blocks Opslaan; empty costs save as null", async () => {
+    renderEditor();
+    const input = await retype("input-variant-robPerYear-0", "abc");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByTestId("button-save-lease-quote")).toBeDisabled();
+    await retype("input-variant-robPerYear-0", "");
+    await retype("input-variant-residual-0", "10000");
+    await userEvent.click(screen.getByTestId("button-save-lease-quote"));
+    await waitFor(() => expect(patches()).toHaveLength(1));
+    const body = patches()[0].body as any;
+    expect(body.interestRatePercent).toBeUndefined();
+    expect(body.variants[0]).toMatchObject({ interestRatePercent: 9, robPerYear: null, otherCostsPerYear: 350, insurancePerMonth: null, excessKmPrice: 0.1, shortfallKmPrice: 0.05 });
   });
 });
 
@@ -166,7 +243,8 @@ describe("QuoteEditor saving a sent quote", () => {
     expect(await screen.findByText("Deze offerte is al geaccepteerd. Toch wijzigen?")).toBeInTheDocument();
     await userEvent.click(screen.getByTestId("button-confirm-edit-warning"));
     await waitFor(() => expect(patches()).toHaveLength(1));
-    expect(patches()[0].body).toMatchObject({ status: "accepted", vehicleMake: "Audi", prospectName: "Jansen", interestRatePercent: 9 });
+    expect(patches()[0].body).toMatchObject({ status: "accepted", vehicleMake: "Audi", prospectName: "Jansen" });
+    expect((patches()[0].body as any).variants[0]).toMatchObject({ interestRatePercent: 9, robPerYear: 275 });
   });
 
   it("does not ask for a concept quote", async () => {

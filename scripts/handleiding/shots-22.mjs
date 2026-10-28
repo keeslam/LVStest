@@ -89,15 +89,19 @@ const SCAN_ANSWER = {
   suggestion: { amount: 17318, onlyInclVat: false },
 };
 
+// The costs live on each variant: the quote body carries insurance / road tax once and they are copied to its variants.
+const VARIANT_COSTS = { interestRatePercent: 9, robPerYear: 275, otherCostsPerYear: 350, marginPerMonth: 0, excessKmPrice: 0.08, shortfallKmPrice: 0.04 };
+
 async function seedQuote(page, body) {
-  const created = await api(page, "POST", "/api/lease-quotes", body);
+  const { insurancePerMonth = null, roadTaxPerMonth = null, ...quote } = body;
+  const created = await api(page, "POST", "/api/lease-quotes", {
+    ...quote,
+    variants: quote.variants.map((v) => ({ ...VARIANT_COSTS, insurancePerMonth, roadTaxPerMonth, ...v })),
+  });
   return created;
 }
 
-const base = (extra) => ({
-  interestRatePercent: 9, robPerYear: 275, otherCostsPerYear: 350, marginPerMonth: 0, excessKmPrice: 0.08, shortfallKmPrice: 0.04,
-  ...extra,
-});
+const base = (extra) => ({ ...extra });
 
 async function openList(page) {
   // De tabel heeft negen kolommen; op 1280 px schuift hij zijdelings.
@@ -274,20 +278,21 @@ const walk = [
   {
     name: "22-kosten",
     async run(page) {
-      await typeInto(page, "input-insurancePerMonth", "97,80");
-      await typeInto(page, "input-roadTaxPerMonth", "34");
-      await reveal(page, tid(page, "section-lease-costs"));
+      // The costs are rows of the variants table (section 4), prefilled from the settings.
+      await typeInto(page, "input-variant-insurancePerMonth-0", "97,80");
+      await typeInto(page, "input-variant-roadTaxPerMonth-0", "34");
+      await reveal(page, tid(page, "section-lease-variants"));
       await shot(page, "22-kosten", {
-        clip: tid(page, "section-lease-costs"),
+        clip: tid(page, "section-lease-variants"),
         marks: [
-          tid(page, "input-interestRatePercent"),
-          tid(page, "input-robPerYear"),
-          tid(page, "input-otherCostsPerYear"),
-          tid(page, "input-insurancePerMonth"),
-          tid(page, "input-roadTaxPerMonth"),
-          tid(page, "input-marginPerMonth"),
-          tid(page, "input-excessKmPrice"),
-          tid(page, "input-shortfallKmPrice"),
+          tid(page, "input-variant-interestRatePercent-0"),
+          tid(page, "input-variant-robPerYear-0"),
+          tid(page, "input-variant-otherCostsPerYear-0"),
+          tid(page, "input-variant-insurancePerMonth-0"),
+          tid(page, "input-variant-roadTaxPerMonth-0"),
+          tid(page, "input-variant-marginPerMonth-0"),
+          tid(page, "input-variant-excessKmPrice-0"),
+          tid(page, "input-variant-shortfallKmPrice-0"),
         ],
       });
     },

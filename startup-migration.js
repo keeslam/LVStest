@@ -672,6 +672,70 @@ async function backfillExpenseSupplier() {
   }
 }
 
+// ==================== LEASE OFFERTES: COSTS PER VARIANT ====================
+// The eight cost fields moved from lease_quotes to each lease_quote_variants row (new nullable
+// columns, added by the manifest sync). Variants written before that carry no costs yet, so
+// they get the quote's own values once. Only variants whose eight cost columns are all still
+// NULL are touched, and the app_settings marker stops a second pass (a variant that is later
+// saved with every cost cleared must not be refilled from the old quote columns).
+// The quote-level columns stay in the table (additive rule) but the code no longer reads them.
+// Never aborts the boot: a failure is reported and skipped (no marker, so the next start retries).
+const LEASE_VARIANT_COSTS_MARKER = 'migration:lease_variant_costs_v1';
+
+async function backfillLeaseVariantCosts() {
+  try {
+    const tables = await db.execute(sql`
+      SELECT tablename FROM pg_tables
+       WHERE schemaname = 'public' AND tablename IN ('lease_quotes', 'lease_quote_variants', 'app_settings')
+    `);
+    if (tables.rows.length < 3) {
+      console.log('⚠️ lease_quotes, lease_quote_variants or app_settings does not exist yet, skipping the lease variant costs backfill');
+      return;
+    }
+    const already = await db.execute(sql`SELECT 1 FROM app_settings WHERE key = ${LEASE_VARIANT_COSTS_MARKER}`);
+    if (already.rows.length > 0) {
+      console.log('Lease variant costs already backfilled, skipping');
+      return;
+    }
+
+    let updated = 0;
+    await db.transaction(async (tx) => {
+      const result = await tx.execute(sql`
+        UPDATE lease_quote_variants v
+           SET interest_rate_percent = q.interest_rate_percent,
+               rob_per_year = q.rob_per_year,
+               other_costs_per_year = q.other_costs_per_year,
+               insurance_per_month = q.insurance_per_month,
+               road_tax_per_month = q.road_tax_per_month,
+               margin_per_month = q.margin_per_month,
+               excess_km_price = q.excess_km_price,
+               shortfall_km_price = q.shortfall_km_price
+          FROM lease_quotes q
+         WHERE q.id = v.quote_id
+           AND v.interest_rate_percent IS NULL AND v.rob_per_year IS NULL AND v.other_costs_per_year IS NULL
+           AND v.insurance_per_month IS NULL AND v.road_tax_per_month IS NULL AND v.margin_per_month IS NULL
+           AND v.excess_km_price IS NULL AND v.shortfall_km_price IS NULL
+      `);
+      updated = result.rowCount ?? 0;
+
+      await tx.execute(sql`
+        INSERT INTO app_settings (key, value, category, description)
+        VALUES (
+          ${LEASE_VARIANT_COSTS_MARKER},
+          ${JSON.stringify({ appliedAt: new Date().toISOString(), updated })}::jsonb,
+          'general',
+          'Lease offertes: variants got the cost fields of their quote once'
+        )
+        ON CONFLICT (key) DO NOTHING
+      `);
+    });
+
+    console.log('Lease variant costs backfilled: ' + updated + ' row(s) changed');
+  } catch (error) {
+    console.error('⚠️ Lease variant costs backfill skipped, will retry on the next start:', error && error.message ? error.message : error);
+  }
+}
+
 // ==================== P2 (audit A-12-2): NO EMPTY COMPANY NAME ====================
 // The customer form used to send "" for an empty company name, and "" is not
 // NULL: `coalesce(company_name, name)` kept the empty string, so the fines list
@@ -1858,7 +1922,15 @@ async function runMigrations() {
         km_per_year INTEGER NOT NULL,
         residual_value NUMERIC(12,2) NOT NULL,
         is_chosen BOOLEAN NOT NULL DEFAULT false,
-        total_per_month NUMERIC(12,2)
+        total_per_month NUMERIC(12,2),
+        interest_rate_percent NUMERIC(6,3),
+        rob_per_year NUMERIC(10,2),
+        other_costs_per_year NUMERIC(10,2),
+        insurance_per_month NUMERIC(10,2),
+        road_tax_per_month NUMERIC(10,2),
+        margin_per_month NUMERIC(10,2),
+        excess_km_price NUMERIC(8,4),
+        shortfall_km_price NUMERIC(8,4)
       )`
     );
 
@@ -2852,6 +2924,9 @@ async function runMigrations() {
 
     // Onderhoudsanalyse: expenses booked from the invoice inbox get their supplier, once.
     await backfillExpenseSupplier();
+
+    // Lease offertes: costs moved from the quote to each variant; old variants get the quote's values once.
+    await backfillLeaseVariantCosts();
 
     // Audit P2 (A-12-2): customers with an empty company name get NULL.
     await nullEmptyCompanyNames();

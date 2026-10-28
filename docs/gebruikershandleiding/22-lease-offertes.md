@@ -98,8 +98,8 @@ Klik op een regel (niet op de drie knoppen) om de offerte te openen.
 Sluit je het venster zonder iets in te vullen? Dan blijft er een lege conceptofferte in de lijst staan,
 zonder klant. Verwijder die dan met **Verwijderen** (22.9).
 
-Het venster heeft zes stukken, van boven naar beneden: **1. Klant**, **2. Auto**, **3. Aanschaf**,
-**4. Kosten**, **5. Varianten** en **6. Offerte**. Onderaan, op een vaste balk, staan de knoppen
+Het venster heeft vijf stukken, van boven naar beneden: **1. Klant**, **2. Auto**, **3. Aanschaf**,
+**4. Varianten** en **5. Offerte**. Onderaan, op een vaste balk, staan de knoppen
 **Opslaan**, **PDF maken**, **Kopiëren**, **Geschiedenis** en **Sluiten**. De balk blijft in beeld als
 je naar beneden schuift.
 
@@ -154,38 +154,27 @@ controle)** is alleen een geheugensteuntje: de catalogusprijs, opties, korting, 
 en de totalen zoals de dealer ze noemt. Daar rekent de app niets mee. Het blok is gevuld als je de
 dealerofferte hebt laten uitlezen.
 
-### 4. Kosten
+### De kosten
 
-5. Controleer bij **4. Kosten** de kosten. **Rente**, **ROB per jaar**, **Overige kosten per jaar**,
-   **Marge per maand** en de twee kilometerprijzen komen uit **Instellingen**. Vul zelf
-   **Verzekering per maand** en **Wegenbelasting per maand** in. In het voorbeeld zijn dat **97,80** en
-   **34**.
+5. De kosten (rente, ROB, verzekering en de rest) vul je niet apart in. Ze staan als rijen in de
+   tabel bij **4. Varianten** (zie 22.5), onder **Looptijd**, **Km per jaar** en **Restwaarde**. Elke
+   variant heeft zijn eigen kosten. Zo kun je bijvoorbeeld bij variant 2 een andere rente of marge
+   proberen.
 
-   ![Het stuk Kosten](afbeeldingen/22-kosten.png)
-   *Het stuk **4. Kosten**: 1 **Rente (% per jaar)**, 2 **ROB per jaar**, 3 **Overige kosten per
-   jaar**, 4 **Verzekering per maand**, 5 **Wegenbelasting per maand**, 6 **Marge per maand**,
-   7 **Meerkilometerprijs**, 8 **Minderkilometerprijs**.*
-
-   ![Het veld Verzekering per maand, van dichtbij](afbeeldingen/22-kosten-k4.png)
-   *Zo ziet het veld **Verzekering per maand** eruit. Typ **97,80**. De app maakt er **97,8** van.
-   Dat is hetzelfde bedrag.*
-
-   ![Het veld Wegenbelasting per maand, van dichtbij](afbeeldingen/22-kosten-k5.png)
-   *Zo ziet het veld **Wegenbelasting per maand** eruit.*
-
-   ![Het veld Marge per maand, van dichtbij](afbeeldingen/22-kosten-k6.png)
-   *Zo ziet het veld **Marge per maand** eruit. De marge is wat jij erbovenop wilt verdienen. In het
-   voorbeeld is dat **0**.*
+   Bij een nieuwe offerte staan **Rente**, **ROB per jaar**, **Overige kosten per jaar**, **Marge per
+   maand** en de twee kilometerprijzen al ingevuld, uit **Instellingen**. Vul zelf **Verzekering per
+   maand** en **Wegenbelasting per maand** in. In het voorbeeld zijn dat **97,80** en **34**.
 
 Typ bedragen met een komma voor de centen (**97,80**). Een punt voor de duizendtallen mag, het hoeft
 niet. Klopt een getal niet? Dan krijgt het veld een rode rand en kun je de offerte niet opslaan.
+Laat je een kostenveld leeg? Dan telt de app het als 0.
 
 **ROB** staat voor reparatie, onderhoud en banden. Je typt het bedrag per jaar. De app deelt het door
 twaalf.
 
 De **Meerkilometerprijs** en de **Minderkilometerprijs** staan op de offerte voor de klant. Dat is
 wat de klant betaalt voor elke kilometer boven, of krijgt voor elke kilometer onder, de afgesproken
-kilometers.
+kilometers. Op de PDF staan die van de variant die naar de klant gaat.
 
 ---
 
@@ -251,16 +240,17 @@ gegevens zelf in.* Het bestand blijft bij de offerte staan. Typ de gegevens zelf
 ## 22.5 Varianten vergelijken en de variant voor de klant kiezen
 
 Je kunt meerdere varianten naast elkaar zetten. Elke variant heeft een eigen **Looptijd (maanden)**,
-**Km per jaar** en **Restwaarde (€)**. Dat is handig om te zien wat de prijs doet als je de looptijd
+**Km per jaar**, **Restwaarde (€)** en eigen kosten (rente, ROB, verzekering, marge en de rest). Dat is handig om te zien wat de prijs doet als je de looptijd
 korter of langer maakt. **De restwaarde vul je altijd zelf in.** De app bedenkt geen restwaarde, ook
 niet uit de kilometers. De kilometers verwerk je zelf in de restwaarde die je invult.
 
-10. Ga naar **5. Varianten**. Er staat één kolom, **Variant 1**. Typ bij **Looptijd (maanden)** **48**,
-    bij **Km per jaar** **20000** en bij **Restwaarde (€)** **10000**. Daarna rekent de app alles
-    door.
+10. Ga naar **4. Varianten**. Er staat één kolom, **Variant 1**. Typ bij **Looptijd (maanden)** **48**,
+    bij **Km per jaar** **20000** en bij **Restwaarde (€)** **10000**. Daaronder staan de kosten, al
+    ingevuld uit **Instellingen**. Vul **Verzekering per maand** (**97,80**) en **Wegenbelasting per
+    maand** (**34**) in. Daarna rekent de app alles door.
 
     ![Het stuk Varianten met variant 1](afbeeldingen/22-varianten.png)
-    *Het stuk **5. Varianten**: 1 **Looptijd**, 2 **Km per jaar**, 3 **Restwaarde**, 4 **Totaal per
+    *Het stuk **4. Varianten**: 1 **Looptijd**, 2 **Km per jaar**, 3 **Restwaarde**, 4 **Totaal per
     maand**, 5 **Kosten per km**.*
 
     ![Het veld Looptijd, van dichtbij](afbeeldingen/22-varianten-k1.png)
@@ -278,7 +268,7 @@ niet uit de kilometers. De kilometers verwerk je zelf in de restwaarde die je in
     ![De kosten per km, van dichtbij](afbeeldingen/22-varianten-k5.png)
     *Zo zien de **Kosten per km** eruit: **€ 0,28**.*
 
-    Onder de drie invoervelden staat hoe de prijs is opgebouwd: **Afschrijving** (**€ 152,46**),
+    Onder de invoervelden staat hoe de prijs is opgebouwd: **Afschrijving** (**€ 152,46**),
     **Rente** (**€ 129,89**), **ROB** (**€ 22,92**, met eronder wat dat over de looptijd is),
     **Verzekering**, **Wegenbelasting**, **Overige kosten** en **Marge**. Samen is dat het **Totaal per
     maand**.
@@ -293,7 +283,10 @@ niet uit de kilometers. De kilometers verwerk je zelf in de restwaarde die je in
 
 11. Wil je een tweede variant? Klik op **Variant toevoegen**. Er komt een kolom bij. Typ andere
     cijfers, bijvoorbeeld 60 maanden en een restwaarde van 7500. Wil je een kopie van een kolom om
-    iets aan te passen? Klik onder die kolom op **Variant dupliceren**. Een kolom die je niet nodig
+    iets aan te passen? Klik onder die kolom op **Variant dupliceren**. Dan wordt ook de restwaarde
+    gekopieerd. De nieuwe kolom begint met de
+    looptijd, de kilometers en alle kosten van de laatste kolom. Alleen de restwaarde is leeg, die vul
+    je zelf in. Een kolom die je niet nodig
     hebt, haal je weg met **Variant verwijderen**. De laatste kolom kun je niet verwijderen.
 
     ![Drie varianten naast elkaar](afbeeldingen/22-variant-toevoegen.png)
@@ -333,13 +326,13 @@ ontbreekt. Staat de restwaarde hoger dan de aanschafwaarde? Dan waarschuwt de ap
 
 ### Offertegegevens en opslaan
 
-13. Kijk bij **6. Offerte**. Daar staan de **Status** (**Concept**, **Verstuurd**, **Geaccepteerd**,
+13. Kijk bij **5. Offerte**. Daar staan de **Status** (**Concept**, **Verstuurd**, **Geaccepteerd**,
     **Afgewezen**), de **Offertedatum**, **Geldig tot** en een **Interne notitie (niet voor de
     klant)**. **Geldig tot** is standaard de offertedatum plus 30 dagen. Je kunt dat aanpassen. De
     interne notitie komt nooit op de PDF.
 
     ![Het stuk Offerte](afbeeldingen/22-offerte-gegevens.png)
-    *Het stuk **6. Offerte**: 1 **Status**, 2 **Offertedatum**, 3 **Geldig tot**, 4 **Interne
+    *Het stuk **5. Offerte**: 1 **Status**, 2 **Offertedatum**, 3 **Geldig tot**, 4 **Interne
     notitie**.*
 
     ![De keuzelijst Status, van dichtbij](afbeeldingen/22-offerte-gegevens-k1.png)
@@ -348,7 +341,7 @@ ontbreekt. Staat de restwaarde hoger dan de aanschafwaarde? Dan waarschuwt de ap
     ![Het veld Geldig tot, van dichtbij](afbeeldingen/22-offerte-gegevens-k3.png)
     *Zo ziet het veld **Geldig tot** eruit.*
 
-    Onder het stuk **6. Offerte** staan de **Gemaakte PDF's voor de klant** (zie hieronder).
+    Onder het stuk **5. Offerte** staan de **Gemaakte PDF's voor de klant** (zie hieronder).
 
 14. Klik onderaan op **Opslaan**. Daarna zie je linksonder de melding **De offerte is opgeslagen.**
 
@@ -549,7 +542,7 @@ alleen met het vinkje **Prullenbak beheren**.
 ## 22.10 Instellingen
 
 Op het tabblad **Instellingen** zet je de voorinstellingen voor **nieuwe** offertes. Elke nieuwe
-offerte neemt deze waarden over. Je kunt ze daarna per offerte nog aanpassen.
+offerte neemt deze waarden over, in de eerste variant. Je kunt ze daarna per variant nog aanpassen.
 
 24. Klik op het tabblad **Instellingen**. Daarna zie je zeven velden en de knop **Opslaan**.
 
@@ -581,7 +574,7 @@ offerte neemt deze waarden over. Je kunt ze daarna per offerte nog aanpassen.
     *Zo ziet de knop **Opslaan** eruit.*
 
 **Oude offertes veranderen niet.** Bij het maken van een offerte worden de instellingen in de
-offerte gekopieerd. Pas je later de rente aan? Dan blijft elke bestaande offerte bij zijn eigen
+eerste variant gekopieerd. Pas je later de rente aan? Dan blijft elke bestaande offerte bij zijn eigen
 rente, en dus bij zijn eigen prijs.
 
 ---

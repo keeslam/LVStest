@@ -56,11 +56,29 @@ const priceBreakdownSchema = z.object({
   totalInclVat: optNum,
 });
 
+/** The costs every variant carries itself (a variant is a price proposal with its own interest, ROB, margin, km prices). */
+export const LEASE_VARIANT_COST_KEYS = [
+  "interestRatePercent", "robPerYear", "otherCostsPerYear", "insurancePerMonth", "roadTaxPerMonth",
+  "marginPerMonth", "excessKmPrice", "shortfallKmPrice",
+] as const;
+export type LeaseVariantCostKey = (typeof LEASE_VARIANT_COST_KEYS)[number];
+
+// Costs may be left out (undefined): a new quote then fills them from the settings. null = empty = counts as 0.
+const costNum = num.min(0).nullable().optional();
+
 export const leaseQuoteVariantPayloadSchema = z.object({
   termMonths: z.number().int().positive(),
   kmPerYear: z.number().int().positive(),
   residualValue: num.min(0),
   isChosen: z.boolean(),
+  interestRatePercent: costNum,
+  robPerYear: costNum,
+  otherCostsPerYear: costNum,
+  insurancePerMonth: costNum,
+  roadTaxPerMonth: costNum,
+  marginPerMonth: costNum,
+  excessKmPrice: costNum,
+  shortfallKmPrice: costNum,
 });
 
 /** Body of POST/PATCH /api/lease-quotes. Unknown keys are stripped. */
@@ -82,14 +100,6 @@ export const leaseQuotePayloadSchema = z.object({
   vehicleNotes: optText,
   purchasePrice: optNum,
   priceBreakdown: priceBreakdownSchema.nullable().optional(),
-  interestRatePercent: optNum,
-  robPerYear: optNum,
-  otherCostsPerYear: optNum,
-  insurancePerMonth: optNum,
-  roadTaxPerMonth: optNum,
-  marginPerMonth: optNum,
-  excessKmPrice: optNum,
-  shortfallKmPrice: optNum,
   internalNotes: optText,
   variants: z.array(leaseQuoteVariantPayloadSchema).min(1).refine(
     (list) => list.filter((v) => v.isChosen).length === 1,

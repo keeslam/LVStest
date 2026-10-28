@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Copy, Plus, Trash2 } from "lucide-react";
-import { calculateLeaseVariant, parseDutchAmount, roundCents, type LeaseCostInputs, type LeaseVariantResult } from "@shared/lease-quote-calc";
+import { calculateLeaseVariant, parseDutchAmount, roundCents, type LeaseVariantResult } from "@shared/lease-quote-calc";
+import { LEASE_VARIANT_COST_KEYS, type LeaseVariantCostKey } from "@shared/lease-quotes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/format-utils";
@@ -71,15 +72,19 @@ export function NumberInput({ value, onChange, rule = "amount", id, testId, aria
  * Variants
  * ------------------------------------------------------------------ */
 
-export interface VariantDraft {
+/** The eight cost fields every variant carries (typed text, like term / km / residual). */
+export const COST_FIELDS = LEASE_VARIANT_COST_KEYS;
+export type CostField = LeaseVariantCostKey;
+
+export type VariantDraft = {
   /** Stable React key; not sent to the server. */
   key: string;
   term: string;
   km: string;
   residual: string;
-}
+} & Record<CostField, string>;
 
-export type VariantField = "term" | "km" | "residual";
+export type VariantField = "term" | "km" | "residual" | CostField;
 type ClientWarning = LeaseVariantResult["warnings"][number] | "residual_missing";
 
 export interface VariantView {
@@ -92,12 +97,22 @@ export interface VariantView {
   invalid: boolean;
 }
 
-export function evaluateVariant(costs: LeaseCostInputs, v: VariantDraft): VariantView {
+/** Empty costs count as 0; unreadable costs are reported through `invalid`. */
+export function evaluateVariant(purchasePrice: number, v: VariantDraft): VariantView {
   const term = readNumber(v.term, "positiveInt");
   const km = readNumber(v.km, "positiveInt");
   const residual = readNumber(v.residual, "amount");
+  const cost = (k: CostField) => readNumber(v[k], "amount");
   const residualMissing = residual.value === null;
-  const result = calculateLeaseVariant(costs, {
+  const result = calculateLeaseVariant({
+    purchasePrice,
+    interestRatePercent: cost("interestRatePercent").value ?? 0,
+    robPerYear: cost("robPerYear").value ?? 0,
+    otherCostsPerYear: cost("otherCostsPerYear").value ?? 0,
+    insurancePerMonth: cost("insurancePerMonth").value ?? 0,
+    roadTaxPerMonth: cost("roadTaxPerMonth").value ?? 0,
+    marginPerMonth: cost("marginPerMonth").value ?? 0,
+  }, {
     termMonths: term.value ?? 0,
     kmPerYear: km.value ?? 0,
     residualValue: residual.value ?? 0,
@@ -109,7 +124,7 @@ export function evaluateVariant(costs: LeaseCostInputs, v: VariantDraft): Varian
     residualMissing,
     warnings,
     complete: term.value !== null && km.value !== null && residual.value !== null,
-    invalid: term.invalid || km.invalid || residual.invalid,
+    invalid: term.invalid || km.invalid || residual.invalid || COST_FIELDS.some((k) => cost(k).invalid),
   };
 }
 
@@ -118,7 +133,8 @@ const money = (n: number | null) => (n === null ? "—" : formatCurrency(roundCe
 interface VariantsTableProps {
   variants: VariantDraft[];
   chosenIndex: number;
-  costs: LeaseCostInputs;
+  /** Purchase price of the car: the one number all variants share. */
+  purchasePrice: number;
   onChange: (index: number, field: VariantField, text: string) => void;
   onAdd: () => void;
   onDuplicate: (index: number) => void;
@@ -127,12 +143,12 @@ interface VariantsTableProps {
 }
 
 /**
- * One column per variant: term, km and residual are typed in, everything below follows live.
+ * One column per variant: term, km, residual and the costs are typed in, everything below follows live.
  * Scrolls sideways on a narrow screen; the row labels stay in view.
  */
-export function VariantsTable({ variants, chosenIndex, costs, onChange, onAdd, onDuplicate, onRemove, onChoose }: VariantsTableProps) {
+export function VariantsTable({ variants, chosenIndex, purchasePrice, onChange, onAdd, onDuplicate, onRemove, onChoose }: VariantsTableProps) {
   const { t } = useTranslation("leaseQuotes");
-  const views = variants.map((v) => evaluateVariant(costs, v));
+  const views = variants.map((v) => evaluateVariant(purchasePrice, v));
 
   const resultRows: Array<{ key: string; label: string; cell: (view: VariantView) => React.ReactNode; strong?: boolean }> = [
     { key: "depreciation", label: t("editor.variants.depreciation"), cell: (x) => money(x.result.depreciation) },
@@ -159,6 +175,8 @@ export function VariantsTable({ variants, chosenIndex, costs, onChange, onAdd, o
     { field: "term", label: t("editor.variants.term"), rule: "positiveInt" },
     { field: "km", label: t("editor.variants.km"), rule: "positiveInt" },
     { field: "residual", label: t("editor.variants.residual"), rule: "amount" },
+    // The costs: prefilled from the settings for a new quote, then the variant's own.
+    ...COST_FIELDS.map((field) => ({ field, label: t(`editor.fields.${field}`), rule: "amount" as NumberRule })),
   ];
 
   const labelCell = "sticky left-0 z-10 bg-background pr-3 py-1.5 text-left font-normal text-muted-foreground whitespace-nowrap";
@@ -181,7 +199,7 @@ export function VariantsTable({ variants, chosenIndex, costs, onChange, onAdd, o
           </thead>
           <tbody>
             {inputRows.map((row) => (
-              <tr key={row.field}>
+              <tr key={row.field} className={cn(row.field === COST_FIELDS[0] && "border-t")}>
                 <th scope="row" className={labelCell}>{row.label}</th>
                 {variants.map((v, i) => (
                   <td key={v.key} className={colCell(i)}>
@@ -198,7 +216,7 @@ export function VariantsTable({ variants, chosenIndex, costs, onChange, onAdd, o
               </tr>
             ))}
             {resultRows.map((row) => (
-              <tr key={row.key} className={cn(row.strong && "border-t font-semibold")}>
+              <tr key={row.key} className={cn((row.strong || row.key === "depreciation") && "border-t", row.strong && "font-semibold")}>
                 <th scope="row" className={cn(labelCell, row.strong && "font-semibold text-foreground")}>{row.label}</th>
                 {views.map((view, i) => (
                   <td key={variants[i].key} className={cn(colCell(i), "whitespace-nowrap")} data-testid={`variant-${row.key}-${i}`}>

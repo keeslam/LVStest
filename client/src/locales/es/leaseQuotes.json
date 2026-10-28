@@ -87,9 +87,8 @@
       "customer": "1. Cliente",
       "vehicle": "2. Coche",
       "purchase": "3. Compra",
-      "costs": "4. Costes",
-      "variants": "5. Variantes",
-      "quote": "6. Oferta"
+      "variants": "4. Variantes",
+      "quote": "5. Oferta"
     },
     "customerMode": {
       "customer": "Cliente existente",

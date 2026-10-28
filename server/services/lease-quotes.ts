@@ -10,7 +10,7 @@ import {
 } from "../../shared/schema";
 import { calculateLeaseVariant, roundCents } from "../../shared/lease-quote-calc";
 import {
-  LEASE_QUOTE_STATUSES, displayStatus, formatQuoteNumber, type LeaseQuotePayload,
+  LEASE_QUOTE_STATUSES, LEASE_VARIANT_COST_KEYS, displayStatus, formatQuoteNumber, type LeaseQuotePayload, type LeaseVariantCostKey,
 } from "../../shared/lease-quotes";
 import { assertWithinUploads, getUploadsDir } from "../../shared/paths";
 import { customerDisplayName } from "./customer-display-name";
@@ -22,24 +22,30 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const toNum = (v: string | number | null | undefined): number | null => (v === null || v === undefined ? null : Number(v));
 const toStr = (v: number | null | undefined): string | null => (v === null || v === undefined ? null : String(v));
 
-const NUMERIC_QUOTE_KEYS = [
-  "purchasePrice", "interestRatePercent", "robPerYear", "otherCostsPerYear", "insurancePerMonth",
-  "roadTaxPerMonth", "marginPerMonth", "excessKmPrice", "shortfallKmPrice",
+const NUMERIC_QUOTE_KEYS = ["purchasePrice"] as const;
+
+/** Legacy quote-level cost columns: still in the table (additive rule) but no longer read, written or sent. */
+const LEGACY_QUOTE_COST_KEYS = [
+  "interestRatePercent", "robPerYear", "otherCostsPerYear", "insurancePerMonth", "roadTaxPerMonth",
+  "marginPerMonth", "excessKmPrice", "shortfallKmPrice",
 ] as const;
 
-export type SerializedVariant = Omit<LeaseQuoteVariant, "residualValue" | "totalPerMonth"> & {
+export type SerializedVariant = Omit<LeaseQuoteVariant, "residualValue" | "totalPerMonth" | LeaseVariantCostKey> & {
   residualValue: number; totalPerMonth: number | null;
-};
-export type SerializedQuote = Omit<LeaseQuote, (typeof NUMERIC_QUOTE_KEYS)[number]> & {
-  [K in (typeof NUMERIC_QUOTE_KEYS)[number]]: number | null;
+} & { [K in LeaseVariantCostKey]: number | null };
+export type SerializedQuote = Omit<LeaseQuote, "purchasePrice" | (typeof LEGACY_QUOTE_COST_KEYS)[number]> & {
+  purchasePrice: number | null;
 } & { customerName: string | null; variants: SerializedVariant[]; files: LeaseQuoteFile[] };
 
 function serializeVariant(v: LeaseQuoteVariant): SerializedVariant {
-  return { ...v, residualValue: Number(v.residualValue), totalPerMonth: toNum(v.totalPerMonth) };
+  const out: any = { ...v, residualValue: Number(v.residualValue), totalPerMonth: toNum(v.totalPerMonth) };
+  for (const key of LEASE_VARIANT_COST_KEYS) out[key] = toNum(v[key]);
+  return out;
 }
 
 function serializeQuote(q: LeaseQuote, variants: LeaseQuoteVariant[], files: LeaseQuoteFile[], customerName: string | null): SerializedQuote {
   const out: any = { ...q };
+  for (const key of LEGACY_QUOTE_COST_KEYS) delete out[key];
   for (const key of NUMERIC_QUOTE_KEYS) out[key] = toNum(q[key]);
   return { ...out, customerName, variants: variants.map(serializeVariant), files };
 }
@@ -130,37 +136,42 @@ async function allocateQuoteNumber(tx: Tx, quoteDate: string): Promise<string> {
   return formatQuoteNumber(year, seq + 1);
 }
 
-/** Server-side total for one variant, rounded to cents; null when the term is missing. */
+/** Server-side total for one variant from its own costs, rounded to cents; null when the term is missing. */
 export function variantTotal(
-  quote: Pick<LeaseQuote, (typeof NUMERIC_QUOTE_KEYS)[number]>,
-  variant: { termMonths: number; kmPerYear: number; residualValue: number },
+  quote: Pick<LeaseQuote, "purchasePrice">,
+  variant: { termMonths: number; kmPerYear: number; residualValue: number } & Partial<Record<LeaseVariantCostKey, number | null>>,
 ): number | null {
   const result = calculateLeaseVariant({
     purchasePrice: Number(quote.purchasePrice ?? 0),
-    interestRatePercent: Number(quote.interestRatePercent ?? 0),
-    robPerYear: Number(quote.robPerYear ?? 0),
-    otherCostsPerYear: Number(quote.otherCostsPerYear ?? 0),
-    insurancePerMonth: Number(quote.insurancePerMonth ?? 0),
-    roadTaxPerMonth: Number(quote.roadTaxPerMonth ?? 0),
-    marginPerMonth: Number(quote.marginPerMonth ?? 0),
+    interestRatePercent: Number(variant.interestRatePercent ?? 0),
+    robPerYear: Number(variant.robPerYear ?? 0),
+    otherCostsPerYear: Number(variant.otherCostsPerYear ?? 0),
+    insurancePerMonth: Number(variant.insurancePerMonth ?? 0),
+    roadTaxPerMonth: Number(variant.roadTaxPerMonth ?? 0),
+    marginPerMonth: Number(variant.marginPerMonth ?? 0),
   }, variant);
   return result.totalPerMonth === null ? null : roundCents(result.totalPerMonth);
 }
 
-type VariantInput = { termMonths: number; kmPerYear: number; residualValue: number; isChosen: boolean };
+type VariantInput = { termMonths: number; kmPerYear: number; residualValue: number; isChosen: boolean } & Partial<Record<LeaseVariantCostKey, number | null>>;
 
 async function writeVariants(tx: Tx, quote: LeaseQuote, variants: VariantInput[]): Promise<void> {
   await tx.delete(leaseQuoteVariants).where(eq(leaseQuoteVariants.quoteId, quote.id));
   if (variants.length === 0) return;
-  await tx.insert(leaseQuoteVariants).values(variants.map((v, position) => ({
-    quoteId: quote.id,
-    position,
-    termMonths: v.termMonths,
-    kmPerYear: v.kmPerYear,
-    residualValue: String(v.residualValue),
-    isChosen: v.isChosen,
-    totalPerMonth: toStr(variantTotal(quote, v)),
-  })));
+  await tx.insert(leaseQuoteVariants).values(variants.map((v, position) => {
+    const costs: Partial<Record<LeaseVariantCostKey, string | null>> = {};
+    for (const key of LEASE_VARIANT_COST_KEYS) costs[key] = toStr(v[key]);
+    return {
+      quoteId: quote.id,
+      position,
+      termMonths: v.termMonths,
+      kmPerYear: v.kmPerYear,
+      residualValue: String(v.residualValue),
+      isChosen: v.isChosen,
+      ...costs,
+      totalPerMonth: toStr(variantTotal(quote, v)),
+    };
+  }));
 }
 
 /** Scalar columns of the payload (everything but the variants), numbers stringified for the numeric columns. */
@@ -294,6 +305,22 @@ export async function listLeaseQuotes(opts: { search?: string; status?: string; 
 export const DEFAULT_VARIANT: VariantInput = { termMonths: 48, kmPerYear: 20000, residualValue: 0, isChosen: true };
 
 /**
+ * A new quote starts from the settings: a variant that leaves a cost out (undefined) gets the settings value;
+ * insurance and road tax have no setting and stay empty. An explicit null stays empty.
+ */
+function withSettingsCosts(v: VariantInput, settings: SerializedSettings): VariantInput {
+  return {
+    ...v,
+    interestRatePercent: v.interestRatePercent === undefined ? settings.interestRatePercent : v.interestRatePercent,
+    robPerYear: v.robPerYear === undefined ? settings.robPerYear : v.robPerYear,
+    otherCostsPerYear: v.otherCostsPerYear === undefined ? settings.otherCostsPerYear : v.otherCostsPerYear,
+    marginPerMonth: v.marginPerMonth === undefined ? settings.marginPerMonth : v.marginPerMonth,
+    excessKmPrice: v.excessKmPrice === undefined ? settings.excessKmPrice : v.excessKmPrice,
+    shortfallKmPrice: v.shortfallKmPrice === undefined ? settings.shortfallKmPrice : v.shortfallKmPrice,
+  };
+}
+
+/**
  * Creates a concept quote. Settings are copied in (later settings changes never alter it),
  * quoteDate defaults to the office date, validUntil to quoteDate + validityDays.
  */
@@ -301,16 +328,10 @@ export async function createLeaseQuote(payload: Partial<LeaseQuotePayload>, acto
   const settings = serializeSettings(await getSettingsRow());
   // The number is fixed here; moving quoteDate to another year later does not renumber the quote.
   const quoteDate = payload.quoteDate ?? isoToday();
-  const variants = payload.variants?.length ? payload.variants : [DEFAULT_VARIANT];
+  const variants = (payload.variants?.length ? payload.variants : [DEFAULT_VARIANT]).map((v) => withSettingsCosts(v, settings));
   const id = await db.transaction(async (tx) => {
     const quoteNumber = await allocateQuoteNumber(tx, quoteDate);
     const [row] = await tx.insert(leaseQuotes).values({
-      interestRatePercent: String(settings.interestRatePercent),
-      robPerYear: String(settings.robPerYear),
-      otherCostsPerYear: String(settings.otherCostsPerYear),
-      marginPerMonth: String(settings.marginPerMonth),
-      excessKmPrice: String(settings.excessKmPrice),
-      shortfallKmPrice: String(settings.shortfallKmPrice),
       ...payloadColumns(payload),
       quoteNumber,
       status: payload.status ?? "concept",
@@ -372,9 +393,11 @@ export async function copyLeaseQuote(id: number, withAttachments: boolean, actor
         createdBy: actor,
         updatedBy: actor,
       }).returning();
-      await writeVariants(tx, row, variants.map((v) => ({
-        termMonths: v.termMonths, kmPerYear: v.kmPerYear, residualValue: Number(v.residualValue), isChosen: !!v.isChosen,
-      })));
+      await writeVariants(tx, row, variants.map((v) => {
+        const costs: Partial<Record<LeaseVariantCostKey, number | null>> = {};
+        for (const key of LEASE_VARIANT_COST_KEYS) costs[key] = toNum(v[key]);
+        return { termMonths: v.termMonths, kmPerYear: v.kmPerYear, residualValue: Number(v.residualValue), isChosen: !!v.isChosen, ...costs };
+      }));
       if (withAttachments) {
         const dealerFiles = parts.files.filter((f) => f.kind === "dealer");
         for (const file of dealerFiles) {

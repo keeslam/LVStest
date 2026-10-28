@@ -4177,6 +4177,62 @@
         "notNull": false,
         "primary": false,
         "default": null
+      },
+      {
+        "name": "interest_rate_percent",
+        "type": "numeric(6, 3)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "rob_per_year",
+        "type": "numeric(10, 2)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "other_costs_per_year",
+        "type": "numeric(10, 2)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "insurance_per_month",
+        "type": "numeric(10, 2)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "road_tax_per_month",
+        "type": "numeric(10, 2)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "margin_per_month",
+        "type": "numeric(10, 2)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "excess_km_price",
+        "type": "numeric(8, 4)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "shortfall_km_price",
+        "type": "numeric(8, 4)",
+        "notNull": false,
+        "primary": false,
+        "default": null
       }
     ]
   },

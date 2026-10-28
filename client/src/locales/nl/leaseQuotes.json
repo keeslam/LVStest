@@ -87,9 +87,8 @@
       "customer": "1. Klant",
       "vehicle": "2. Auto",
       "purchase": "3. Aanschaf",
-      "costs": "4. Kosten",
-      "variants": "5. Varianten",
-      "quote": "6. Offerte"
+      "variants": "4. Varianten",
+      "quote": "5. Offerte"
     },
     "customerMode": {
       "customer": "Bestaande klant",

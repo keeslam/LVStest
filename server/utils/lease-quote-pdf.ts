@@ -150,9 +150,13 @@ export interface LeaseQuoteDataQuote {
   quoteNumber: string; quoteDate: string; validUntil: string;
   prospectName?: string | null; prospectCompany?: string | null; prospectEmail?: string | null;
   vehicleMake?: string | null; vehicleModel?: string | null; vehicleTrim?: string | null; licensePlate?: string | null;
-  deliveryTime?: string | null; excessKmPrice?: number | null; shortfallKmPrice?: number | null;
+  deliveryTime?: string | null;
 }
-export interface LeaseQuoteDataVariant { termMonths: number; kmPerYear: number; totalPerMonth: number | null }
+/** The chosen variant: its term, km, price and km prices are what the customer sees. */
+export interface LeaseQuoteDataVariant {
+  termMonths: number; kmPerYear: number; totalPerMonth: number | null;
+  excessKmPrice?: number | null; shortfallKmPrice?: number | null;
+}
 type LeaseQuoteDataCustomer = Pick<Customer, "name" | "companyName" | "contactPerson" | "email" | "streetName" | "address" | "city" | "postalCode">;
 
 /**
@@ -186,8 +190,8 @@ export function prepareLeaseQuoteData(
     termMonths: `${chosen.termMonths} maanden`,
     kmPerYear: `${dutchInteger(chosen.kmPerYear)} km`,
     monthlyPriceExclVat: chosen.totalPerMonth == null ? "" : euro(chosen.totalPerMonth),
-    excessKmPrice: kmPrice(quote.excessKmPrice),
-    shortfallKmPrice: kmPrice(quote.shortfallKmPrice),
+    excessKmPrice: kmPrice(chosen.excessKmPrice),
+    shortfallKmPrice: kmPrice(chosen.shortfallKmPrice),
     companyName: company.companyName,
   };
   return data;

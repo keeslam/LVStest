@@ -16,17 +16,17 @@ import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 const PREFIX = "FIXT-lq-";
 const THIS_YEAR = new Date().getFullYear();
 
+/** The costs of the Excel case, per variant. */
+const excelCosts = {
+  interestRatePercent: 9, robPerYear: 275, otherCostsPerYear: 350, insurancePerMonth: 97.8, roadTaxPerMonth: 34,
+  marginPerMonth: 0, excessKmPrice: 0.08, shortfallKmPrice: 0.04,
+};
+
 /** The Excel case: total 466.23 per month. */
 const excelPayload = (over: Record<string, unknown> = {}) => ({
   prospectName: `${PREFIX}excel`,
   purchasePrice: 17318,
-  interestRatePercent: 9,
-  robPerYear: 275,
-  otherCostsPerYear: 350,
-  insurancePerMonth: 97.8,
-  roadTaxPerMonth: 34,
-  marginPerMonth: 0,
-  variants: [{ termMonths: 48, kmPerYear: 20000, residualValue: 10000, isChosen: true }],
+  variants: [{ termMonths: 48, kmPerYear: 20000, residualValue: 10000, isChosen: true, ...excelCosts }],
   ...over,
 });
 
@@ -94,7 +94,8 @@ describe("lease quotes API", () => {
     const seqA = Number(re.exec(a.body.quoteNumber)![1]);
     const seqB = Number(re.exec(b.body.quoteNumber)![1]);
     expect(seqB).toBe(seqA + 1);
-    expect(Number(a.body.interestRatePercent)).toBe(7.5);
+    // The first variant is prefilled from the settings; insurance and road tax stay empty.
+    expect(a.body.variants[0]).toMatchObject({ interestRatePercent: 7.5, robPerYear: 275, otherCostsPerYear: 350, marginPerMonth: 0, insurancePerMonth: null, roadTaxPerMonth: null });
     expect(a.body.status).toBe("concept");
     expect(a.body.variants).toHaveLength(1);
     expect(a.body.variants[0]).toMatchObject({ termMonths: 48, kmPerYear: 20000, isChosen: true });
@@ -120,13 +121,13 @@ describe("lease quotes API", () => {
     await db.update(leaseQuotes).set({ prospectName: `${PREFIX}settings` }).where(eq(leaseQuotes.id, q.body.id));
     await admin.put("/api/lease-quotes/settings").send({ ...originalSettings, interestRatePercent: 12 });
     const again = await admin.get(`/api/lease-quotes/${q.body.id}`);
-    expect(Number(again.body.interestRatePercent)).toBe(6);
+    expect(again.body.variants[0].interestRatePercent).toBe(6);
   });
 
   it("server recalculates and ignores a forged total", async () => {
     const q = await admin.post("/api/lease-quotes").send({});
     const patched = await admin.patch(`/api/lease-quotes/${q.body.id}`).send(excelPayload({
-      variants: [{ termMonths: 48, kmPerYear: 20000, residualValue: 10000, isChosen: true, totalPerMonth: 1 }],
+      variants: [{ termMonths: 48, kmPerYear: 20000, residualValue: 10000, isChosen: true, ...excelCosts, totalPerMonth: 1 }],
     }));
     expect(patched.status).toBe(200);
     expect(Number(patched.body.variants[0].totalPerMonth)).toBe(466.23);
@@ -134,11 +135,43 @@ describe("lease quotes API", () => {
     expect(Number(stored[0].totalPerMonth)).toBe(466.23);
   });
 
+  it("two variants with different interest get different totals, each from its own costs", async () => {
+    const q = await admin.post("/api/lease-quotes").send({});
+    const patched = await admin.patch(`/api/lease-quotes/${q.body.id}`).send(excelPayload({
+      prospectName: `${PREFIX}twocosts`,
+      variants: [
+        { termMonths: 48, kmPerYear: 20000, residualValue: 10000, isChosen: true, ...excelCosts },
+        { termMonths: 48, kmPerYear: 20000, residualValue: 10000, isChosen: false, ...excelCosts, interestRatePercent: 5, excessKmPrice: 0.12 },
+      ],
+    }));
+    expect(patched.status).toBe(200);
+    const [a, b] = patched.body.variants;
+    expect(a.totalPerMonth).toBe(466.23);
+    // interest 17318 * 5% / 12 = 72.16 instead of 129.89
+    expect(b.totalPerMonth).toBe(408.5);
+    expect(b).toMatchObject({ interestRatePercent: 5, excessKmPrice: 0.12 });
+    expect(a).toMatchObject({ interestRatePercent: 9, excessKmPrice: 0.08, shortfallKmPrice: 0.04 });
+    // The costs are no longer a property of the quote.
+    expect(patched.body.interestRatePercent).toBeUndefined();
+  });
+
+  it("a variant without costs in the payload counts them as zero (null stays null)", async () => {
+    const q = await admin.post("/api/lease-quotes").send({});
+    const patched = await admin.patch(`/api/lease-quotes/${q.body.id}`).send(excelPayload({
+      prospectName: `${PREFIX}nocosts`,
+      variants: [{ termMonths: 48, kmPerYear: 20000, residualValue: 10000, isChosen: true }],
+    }));
+    expect(patched.status).toBe(200);
+    // depreciation only: (17318 - 10000) / 48
+    expect(patched.body.variants[0].totalPerMonth).toBe(152.46);
+    expect(patched.body.variants[0].interestRatePercent).toBeNull();
+  });
+
   it("chosen variant with term 0 is refused", async () => {
     const q = await admin.post("/api/lease-quotes").send({});
     await db.update(leaseQuotes).set({ prospectName: `${PREFIX}term0` }).where(eq(leaseQuotes.id, q.body.id));
     const res = await admin.patch(`/api/lease-quotes/${q.body.id}`).send(excelPayload({
-      variants: [{ termMonths: 0, kmPerYear: 20000, residualValue: 10000, isChosen: true }],
+      variants: [{ termMonths: 0, kmPerYear: 20000, residualValue: 10000, isChosen: true, ...excelCosts }],
     }));
     expect(res.status).toBe(400);
   });
@@ -163,6 +196,8 @@ describe("lease quotes API", () => {
     expect(without.body.files).toHaveLength(0);
     expect(without.body.variants).toHaveLength(1);
     expect(Number(without.body.variants[0].totalPerMonth)).toBe(466.23);
+    // The copy keeps the variant's own costs.
+    expect(without.body.variants[0]).toMatchObject({ ...excelCosts });
     dirsToRemove.push(path.join(getUploadsDir(), "lease-quotes", String(without.body.id)));
 
     const withFiles = await admin.post(`/api/lease-quotes/${q.body.id}/copy`).send({ withAttachments: true });
@@ -219,8 +254,8 @@ describe("lease quotes API", () => {
     const saved = await admin.patch(`/api/lease-quotes/${q.body.id}`).send(excelPayload({
       prospectName: `${PREFIX}bin`,
       variants: [
-        { termMonths: 48, kmPerYear: 20000, residualValue: 10000, isChosen: true },
-        { termMonths: 60, kmPerYear: 15000, residualValue: 8000, isChosen: false },
+        { termMonths: 48, kmPerYear: 20000, residualValue: 10000, isChosen: true, ...excelCosts },
+        { termMonths: 60, kmPerYear: 15000, residualValue: 8000, isChosen: false, ...excelCosts },
       ],
     }));
     const variantIds = saved.body.variants.map((v: any) => v.id).sort();

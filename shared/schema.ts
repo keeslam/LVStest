@@ -1712,6 +1712,8 @@ export const leaseQuotes = pgTable("lease_quotes", {
     catalogPrice?: number | null; options?: number | null; discount?: number | null; bpm?: number | null;
     deliveryCosts?: number | null; totalExclVat?: number | null; totalInclVat?: number | null;
   } | null>(),
+  // The seven cost columns below are legacy: the costs now live on each variant (lease_quote_variants).
+  // Kept (additive rule), no longer read or written by the code.
   interestRatePercent: numeric("interest_rate_percent", { precision: 6, scale: 3 }),
   robPerYear: numeric("rob_per_year", { precision: 10, scale: 2 }),
   otherCostsPerYear: numeric("other_costs_per_year", { precision: 10, scale: 2 }),
@@ -1739,6 +1741,15 @@ export const leaseQuoteVariants = pgTable("lease_quote_variants", {
   isChosen: boolean("is_chosen").notNull().default(false),
   // Server-calculated and rounded to cents; the client's own total is never trusted.
   totalPerMonth: numeric("total_per_month", { precision: 12, scale: 2 }),
+  // Costs per variant (NULL = empty = counts as 0). A new quote prefills the first variant from the settings.
+  interestRatePercent: numeric("interest_rate_percent", { precision: 6, scale: 3 }),
+  robPerYear: numeric("rob_per_year", { precision: 10, scale: 2 }),
+  otherCostsPerYear: numeric("other_costs_per_year", { precision: 10, scale: 2 }),
+  insurancePerMonth: numeric("insurance_per_month", { precision: 10, scale: 2 }),
+  roadTaxPerMonth: numeric("road_tax_per_month", { precision: 10, scale: 2 }),
+  marginPerMonth: numeric("margin_per_month", { precision: 10, scale: 2 }),
+  excessKmPrice: numeric("excess_km_price", { precision: 8, scale: 4 }),
+  shortfallKmPrice: numeric("shortfall_km_price", { precision: 8, scale: 4 }),
 });
 
 export type LeaseQuoteVariant = typeof leaseQuoteVariants.$inferSelect;

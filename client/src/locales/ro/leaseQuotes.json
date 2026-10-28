@@ -87,9 +87,8 @@
       "customer": "1. Client",
       "vehicle": "2. Mașină",
       "purchase": "3. Achiziție",
-      "costs": "4. Costuri",
-      "variants": "5. Variante",
-      "quote": "6. Ofertă"
+      "variants": "4. Variante",
+      "quote": "5. Ofertă"
     },
     "customerMode": {
       "customer": "Client existent",

@@ -26,10 +26,14 @@ const excelQuote: any = {
   quoteNumber: "LO-2026-0007", quoteDate: "2026-10-27", validUntil: "2026-11-26",
   prospectName: "Piet Prospect", prospectCompany: null, prospectEmail: "piet@example.nl",
   vehicleMake: "Volkswagen", vehicleModel: "Transporter", vehicleTrim: "2.0 TDI", licensePlate: "VB-123-X",
-  deliveryTime: "8 weken", purchasePrice: 17318, interestRatePercent: 9, robPerYear: 275, otherCostsPerYear: 350,
-  insurancePerMonth: 97.8, roadTaxPerMonth: 34, marginPerMonth: 0, excessKmPrice: 0.085, shortfallKmPrice: 0.04,
+  deliveryTime: "8 weken", purchasePrice: 17318,
 };
-const chosen: any = { termMonths: 48, kmPerYear: 20000, residualValue: 10000, isChosen: true, totalPerMonth: 466.23 };
+// The costs, and so the km prices, live on the variant.
+const chosen: any = {
+  termMonths: 48, kmPerYear: 20000, residualValue: 10000, isChosen: true, totalPerMonth: 466.23,
+  interestRatePercent: 9, robPerYear: 275, otherCostsPerYear: 350, insurancePerMonth: 97.8, roadTaxPerMonth: 34, marginPerMonth: 0,
+  excessKmPrice: 0.085, shortfallKmPrice: 0.04,
+};
 
 describe("prepareLeaseQuoteData", () => {
   it("formats the Excel case in Dutch and leaks no cost build-up", () => {
@@ -75,8 +79,18 @@ describe("prepareLeaseQuoteData", () => {
     expect(data.customerEmail).toBe("info@jansen.nl");
   });
 
+  it("the km prices and the monthly price come from the chosen variant, not from another one", () => {
+    const other = { ...chosen, isChosen: false, totalPerMonth: 408.5, excessKmPrice: 0.12, shortfallKmPrice: 0.06 };
+    const first = prepareLeaseQuoteData(excelQuote, chosen, null, { companyName: "X" });
+    const second = prepareLeaseQuoteData(excelQuote, other, null, { companyName: "X" });
+    expect(first.excessKmPrice).toBe(`${EURO} 0,085 per km`);
+    expect(second.excessKmPrice).toBe(`${EURO} 0,12 per km`);
+    expect(second.shortfallKmPrice).toBe(`${EURO} 0,06 per km`);
+    expect(second.monthlyPriceExclVat).toBe(`${EURO} 408,50`);
+  });
+
   it("an unset km price draws nothing", () => {
-    const data = prepareLeaseQuoteData({ ...excelQuote, excessKmPrice: 0, shortfallKmPrice: null }, chosen, null, { companyName: "X" });
+    const data = prepareLeaseQuoteData(excelQuote, { ...chosen, excessKmPrice: 0, shortfallKmPrice: null }, null, { companyName: "X" });
     expect(data.excessKmPrice).toBe("");
     expect(data.shortfallKmPrice).toBe("");
   });
@@ -103,7 +117,7 @@ describe("field captions", () => {
 
   it("draws caption and value on one line; a field without caption stays bare; an empty value draws nothing", async () => {
     const file = tmp();
-    const data = prepareLeaseQuoteData({ ...excelQuote, excessKmPrice: 0 }, chosen, null, { companyName: "Lam Groep" });
+    const data = prepareLeaseQuoteData(excelQuote, { ...chosen, excessKmPrice: 0 }, null, { companyName: "Lam Groep" });
     const captioned = [
       { id: "a", name: "Prijs", label: "Leaseprijs per maand excl. btw:", x: 50, y: 100, fontSize: 14, isBold: true, source: "monthlyPriceExclVat" },
       { id: "b", name: "Looptijd", label: "Looptijd:", x: 50, y: 200, fontSize: 12, isBold: false, source: "termMonths" },
