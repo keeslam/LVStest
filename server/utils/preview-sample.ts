@@ -66,3 +66,35 @@ export function contractPreviewReservation(now: Date = new Date()): Reservation 
     updatedBy: null,
   } as unknown as Reservation;
 }
+
+/**
+ * Lease offertes: the made-up quote a lease quote template preview is drawn with (the Excel
+ * case: EUR 466,23 per month, 48 months, 20.000 km). Keys are LEASE_QUOTE_TEMPLATE_SOURCES;
+ * every one is filled so no placed field stays empty. Never stored.
+ */
+export function leaseQuotePreviewData(now: Date = new Date()): Record<string, string> {
+  const until = new Date(now.getTime() + 30 * DAY);
+  const nl = (d: Date) => `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
+  return {
+    quoteNumber: "LO-2026-0001",
+    quoteDate: nl(now),
+    validUntil: nl(until),
+    customerName: "Voorbeeld Transport B.V.",
+    customerContact: "Jan de Vries",
+    customerAddress: "Voorbeeldstraat 12",
+    customerPostalCode: "3214 AB",
+    customerCity: "Zuidland",
+    customerEmail: "klant@voorbeeld.nl",
+    vehicleMake: "Volkswagen",
+    vehicleModel: "Transporter",
+    vehicleTrim: "2.0 TDI L2H1",
+    licensePlate: "VB-123-X",
+    deliveryTime: "8 weken",
+    termMonths: "48 maanden",
+    kmPerYear: "20.000 km",
+    monthlyPriceExclVat: "\u20AC 466,23",
+    excessKmPrice: "\u20AC 0,08 per km",
+    shortfallKmPrice: "\u20AC 0,04 per km",
+    companyName: "Lam Groep",
+  };
+}

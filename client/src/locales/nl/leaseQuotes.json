@@ -1,0 +1,252 @@
+{
+  "title": "Lease offertes",
+  "tabs": {
+    "quotes": "Offertes",
+    "settings": "Instellingen"
+  },
+  "newQuote": "Nieuwe offerte",
+  "search": "Zoek op klant, auto, kenteken of nummer",
+  "allStatuses": "Alle statussen",
+  "statusFilter": "Status",
+  "status": {
+    "concept": "Concept",
+    "sent": "Verstuurd",
+    "accepted": "Geaccepteerd",
+    "rejected": "Afgewezen",
+    "expired": "Verlopen"
+  },
+  "columns": {
+    "number": "Nummer",
+    "date": "Datum",
+    "customer": "Klant",
+    "vehicle": "Auto",
+    "licensePlate": "Kenteken",
+    "monthly": "Per maand",
+    "status": "Status",
+    "validUntil": "Geldig tot",
+    "actions": "Acties"
+  },
+  "noCustomer": "Geen klant",
+  "empty": "Nog geen offertes. Maak een nieuwe offerte aan.",
+  "noResults": "Geen offertes gevonden.",
+  "loadFailed": "De offertes konden niet worden geladen.",
+  "actions": {
+    "open": "Openen",
+    "copy": "Kopiëren",
+    "pdf": "PDF",
+    "delete": "Verwijderen"
+  },
+  "create": {
+    "failed": "De offerte kon niet worden aangemaakt."
+  },
+  "copy": {
+    "question": "Bijlagen (dealerofferte) ook kopiëren?",
+    "description": "De nieuwe offerte krijgt een nieuw nummer en start als concept.",
+    "yes": "Ja",
+    "no": "Nee",
+    "cancel": "Annuleren",
+    "done": "Offerte {{number}} is aangemaakt.",
+    "failed": "De offerte kon niet worden gekopieerd."
+  },
+  "delete": {
+    "title": "Offerte verwijderen?",
+    "description": "Offerte {{number}} gaat naar de prullenbak. Je kunt hem daar terugzetten.",
+    "confirm": "Verwijderen",
+    "cancel": "Annuleren",
+    "done": "Offerte {{number}} staat in de prullenbak.",
+    "failed": "De offerte kon niet worden verwijderd."
+  },
+  "pdf": {
+    "done": "De PDF van offerte {{number}} is gemaakt.",
+    "failed": "De PDF kon niet worden gemaakt.",
+    "open": "Bestand openen"
+  },
+  "settings": {
+    "intro": "Voorinstellingen voor de berekening van een nieuwe offerte.",
+    "note": "Geldt voor nieuwe offertes; bestaande offertes houden hun eigen waarden.",
+    "interestRatePercent": "Rente (% per jaar)",
+    "marginPerMonth": "Marge per maand (€)",
+    "robPerYear": "ROB per jaar (€)",
+    "otherCostsPerYear": "Overige kosten per jaar (€)",
+    "excessKmPrice": "Meerkilometerprijs (€ per km)",
+    "shortfallKmPrice": "Minderkilometerprijs (€ per km)",
+    "validityDays": "Geldigheid (dagen)",
+    "save": "Opslaan",
+    "saved": "De instellingen zijn opgeslagen.",
+    "saveFailed": "De instellingen konden niet worden opgeslagen.",
+    "loadFailed": "De instellingen konden niet worden geladen.",
+    "invalid": "Dit getal klopt niet: {{field}}.",
+    "invalidDays": "Geldigheid moet een heel aantal dagen zijn (minimaal 1)."
+  },
+  "editor": {
+    "title": "Offerte {{number}}",
+    "chosenTotal": "Naar de klant: {{amount}} per maand",
+    "description": "Alle bedragen excl. btw. De leaseprijs rekent mee terwijl je typt.",
+    "loadFailed": "De offerte kon niet worden geladen.",
+    "sections": {
+      "customer": "1. Klant",
+      "vehicle": "2. Auto",
+      "purchase": "3. Aanschaf",
+      "variants": "4. Varianten",
+      "quote": "5. Offerte"
+    },
+    "customerMode": {
+      "customer": "Bestaande klant",
+      "prospect": "Prospect"
+    },
+    "customer": {
+      "search": "Zoek een klant",
+      "none": "Geen klant gevonden",
+      "change": "Andere klant",
+      "more": "{{shown}} van {{total}} getoond, typ om te verfijnen.",
+      "noAccess": "Je mag de klantenlijst niet zien. Vul de gegevens in bij Prospect."
+    },
+    "fields": {
+      "prospectName": "Naam",
+      "prospectCompany": "Bedrijf",
+      "prospectEmail": "E-mail",
+      "prospectPhone": "Telefoon",
+      "vehicleMake": "Merk",
+      "vehicleModel": "Model",
+      "vehicleTrim": "Uitvoering",
+      "licensePlate": "Kenteken (als bekend)",
+      "dealerName": "Dealer",
+      "deliveryTime": "Levertijd",
+      "vehicleNotes": "Opmerkingen",
+      "purchasePrice": "Aanschafwaarde excl. btw (incl. BPM en afleverkosten)",
+      "interestRatePercent": "Rente (% per jaar)",
+      "robPerYear": "ROB per jaar (€)",
+      "otherCostsPerYear": "Overige kosten per jaar (€)",
+      "insurancePerMonth": "Verzekering per maand (€)",
+      "roadTaxPerMonth": "Wegenbelasting per maand (€)",
+      "marginPerMonth": "Marge per maand (€)",
+      "excessKmPrice": "Meerkilometerprijs (€ per km)",
+      "shortfallKmPrice": "Minderkilometerprijs (€ per km)",
+      "status": "Status",
+      "quoteDate": "Offertedatum",
+      "validUntil": "Geldig tot",
+      "internalNotes": "Interne notitie (niet voor de klant)"
+    },
+    "breakdown": {
+      "title": "Opbouw van de prijs (ter controle)",
+      "hint": "Zoals de dealer het noemt. De aanschafwaarde hierboven is het getal dat telt.",
+      "catalogPrice": "Catalogusprijs",
+      "options": "Opties",
+      "discount": "Korting",
+      "bpm": "BPM",
+      "deliveryCosts": "Afleverkosten",
+      "totalExclVat": "Totaal excl. btw",
+      "totalInclVat": "Totaal incl. btw"
+    },
+    "variants": {
+      "column": "Variant {{n}}",
+      "chosen": "Naar de klant",
+      "term": "Looptijd (maanden)",
+      "km": "Km per jaar",
+      "residual": "Restwaarde (€)",
+      "depreciation": "Afschrijving",
+      "interest": "Rente",
+      "rob": "ROB",
+      "robTotal": "{{amount}} over de looptijd",
+      "insurance": "Verzekering",
+      "roadTax": "Wegenbelasting",
+      "otherCosts": "Overige kosten",
+      "margin": "Marge",
+      "total": "Totaal per maand",
+      "costPerKm": "Kosten per km",
+      "add": "Variant toevoegen",
+      "duplicate": "Variant dupliceren",
+      "remove": "Variant verwijderen",
+      "choose": "Deze selecteren",
+      "selected": "Geselecteerd"
+    },
+    "warnings": {
+      "residual_above_purchase": "Restwaarde is hoger dan de aanschafwaarde",
+      "term_missing": "Vul een looptijd in",
+      "km_missing": "Vul km per jaar in voor de prijs per km",
+      "residual_missing": "Vul een restwaarde in"
+    },
+    "files": {
+      "dealerTitle": "Dealerofferte(s)",
+      "generatedTitle": "Gemaakte PDF's voor de klant",
+      "none": "Nog geen dealerofferte geüpload.",
+      "noneGenerated": "Nog geen PDF gemaakt.",
+      "upload": "Dealerofferte uploaden",
+      "uploading": "Bezig met uploaden…",
+      "by": "{{date}} door {{user}}",
+      "open": "Openen",
+      "download": "Downloaden",
+      "scan": "Opnieuw uitlezen",
+      "delete": "Verwijderen",
+      "deleteTitle": "Bestand verwijderen?",
+      "deleteDescription": "{{name}} wordt van deze offerte verwijderd.",
+      "deleted": "Het bestand is verwijderd.",
+      "deleteFailed": "Het bestand kon niet worden verwijderd.",
+      "tooLarge": "Het bestand is te groot (maximaal 10 MB).",
+      "wrongType": "Alleen een PDF, PNG of JPG kan worden geüpload.",
+      "uploadFailed": "Het bestand kon niet worden geüpload."
+    },
+    "actions": {
+      "save": "Opslaan",
+      "pdf": "PDF maken",
+      "copy": "Kopiëren",
+      "history": "Geschiedenis",
+      "close": "Sluiten"
+    },
+    "saved": "De offerte is opgeslagen.",
+    "variantSelected": "Variant {{n}} is geselecteerd en opgeslagen. Deze komt op de PDF.",
+    "saveFailed": "De offerte kon niet worden opgeslagen.",
+    "blocked": {
+      "invalid": "Een getal klopt niet (rood omrand). Verbeter het om op te slaan.",
+      "variants": "Vul bij elke variant een looptijd, km per jaar en restwaarde in om op te slaan.",
+      "dates": "Vul een offertedatum en een geldig-tot-datum in om op te slaan."
+    },
+    "editWarning": {
+      "sent": "Deze offerte is al verstuurd. Toch wijzigen?",
+      "accepted": "Deze offerte is al geaccepteerd. Toch wijzigen?",
+      "description": "De klant heeft deze offerte al. Je wijzigingen worden in deze offerte opgeslagen.",
+      "yes": "Ja, wijzigen",
+      "no": "Nee"
+    },
+    "pdfErrors": {
+      "LEASE_NO_TEMPLATE": "Er is nog geen PDF-sjabloon voor lease offertes. Maak er een bij Documenten.",
+      "LEASE_NO_VARIANT": "Kies eerst welke variant naar de klant gaat."
+    },
+    "chosenVariantRemoved": "Je hebt de variant verwijderd die naar de klant ging. Variant 1 gaat nu naar de klant."
+  },
+  "scan": {
+    "title": "Dealerofferte uitlezen",
+    "description": "{{name}}: controleer wat de app las. Alleen wat aangevinkt is komt in de offerte als je op Overnemen klikt.",
+    "reading": "De offerte wordt uitgelezen…",
+    "failed": "Uitlezen lukte niet. Het bestand is bewaard; vul de gegevens zelf in.",
+    "onlyInclVat": "De dealer noemt alleen een bedrag incl. btw. Vul de aanschafwaarde excl. btw zelf in.",
+    "field": "Gegeven",
+    "value": "Gelezen",
+    "take": "overnemen",
+    "notFound": "niet gevonden",
+    "apply": "Overnemen",
+    "cancel": "Annuleren",
+    "close": "Sluiten",
+    "applied": "De gegevens staan in de offerte. Vergeet niet op te slaan.",
+    "notesLine": "Dealerofferte: {{parts}}",
+    "notesDate": "datum {{date}}",
+    "notesValid": "geldig tot {{date}}",
+    "fields": {
+      "purchasePrice": "Aanschafwaarde excl. btw (voorstel)",
+      "dealerName": "Dealer",
+      "make": "Merk",
+      "model": "Model",
+      "trim": "Uitvoering",
+      "catalogPrice": "Catalogusprijs",
+      "options": "Opties",
+      "discount": "Korting",
+      "bpm": "BPM",
+      "deliveryCosts": "Afleverkosten",
+      "totalExclVat": "Totaal excl. btw",
+      "totalInclVat": "Totaal incl. btw",
+      "deliveryTime": "Levertijd",
+      "quoteDate": "Datum dealerofferte (naar Opmerkingen)",
+      "validUntil": "Dealerofferte geldig tot (naar Opmerkingen)"
+    }
+  }
+}

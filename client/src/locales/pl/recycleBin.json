@@ -30,7 +30,8 @@
     "RESERVATION_CONFLICT": "Tej rezerwacji nie można przywrócić: pojazd został w międzyczasie zarezerwowany na ten okres.",
     "DEBTOR_NUMBER_TAKEN": "Ten numer debitora jest już używany przez klienta {{name}}.",
     "DEBTOR_NUMBER_TAKEN_UNNAMED": "Inny klient już używa tego numeru debitora.",
-    "CUSTOMER_MISSING": "Klient tego kierowcy już nie istnieje. Najpierw przywróć klienta (Klienci, Usunięci klienci), a potem kierowcę."
+    "CUSTOMER_MISSING": "Klient tego kierowcy już nie istnieje. Najpierw przywróć klienta (Klienci, Usunięci klienci), a potem kierowcę.",
+    "QUOTE_NUMBER_TAKEN": "Numer oferty został w międzyczasie nadany innej ofercie, więc przywrócenie nie jest możliwe."
   },
   "kinds": {
     "vehicle": {
@@ -128,6 +129,18 @@
       "noun_many": "pozycji kosztowych",
       "noun_other": "pozycje kosztowe",
       "purgeNote": "Pozycja kosztowa zniknie na zawsze, razem z paragonem. Paragon, który jest również załącznikiem faktury w skrzynce odbiorczej, pozostanie."
+    },
+    "lease_quote": {
+      "openButton": "Usunięte oferty leasingu",
+      "title": "Usunięte oferty leasingu",
+      "description": "Usunięta oferta leasingu jest tu przechowywana wraz z wariantami i załącznikami i można ją przywrócić.",
+      "empty": "Brak usuniętych ofert leasingu.",
+      "badge": "Oferta leasingu",
+      "noun_one": "oferta leasingu",
+      "noun_few": "ofert leasingu",
+      "noun_many": "ofert leasingu",
+      "noun_other": "ofert leasingu",
+      "purgeNote": "Oferta leasingu znika na zawsze, razem z załącznikami."
     }
   },
   "purge": {

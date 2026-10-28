@@ -244,7 +244,8 @@
         "password": "Wachtwoord",
         "key-audit": "Sleutelkastcontrole",
         "notification-dismissal": "Weggeklikte melding",
-        "user-setting": "Eigen instelling"
+        "user-setting": "Eigen instelling",
+        "lease_quote": "Lease offerte"
       },
       "verbs": {
         "create": "aangemaakt",
@@ -349,6 +350,12 @@
           "invoice-inbox-import": "Facturen uit het postvak geïmporteerd",
           "backup": "Back-up gemaakt",
           "missing-invoice-mail": "Wekelijkse mail facturen ontbreken"
+        },
+        "lease_quote": {
+          "copy": "Offerte gekopieerd naar een nieuwe offerte",
+          "pdf": "PDF voor de klant gemaakt",
+          "files": "Dealerofferte geüpload, uitgelezen of verwijderd",
+          "file-view": "Bijlage van de offerte bekeken"
         }
       }
     }

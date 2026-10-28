@@ -176,9 +176,9 @@ describe("C-06 - a deleted maintenance block is its own kind in the bin", () => 
 });
 
 describe("C-06 - GET /api/deleted-records?type=<kind>", () => {
-  it("knows exactly the eight kinds the specs name (sub-project C six, sub-project D driver and expense)", () => {
+  it("knows exactly the nine kinds the specs name (sub-project C six, sub-project D driver and expense, lease quotes)", () => {
     expect([...DELETED_RECORD_KINDS]).toEqual([
-      "vehicle", "customer", "reservation", "maintenance_block", "transport", "fine", "driver", "expense",
+      "vehicle", "customer", "reservation", "maintenance_block", "transport", "fine", "driver", "expense", "lease_quote",
     ]);
   });
 

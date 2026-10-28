@@ -29,6 +29,9 @@ import {
   vehicleTransports, type VehicleTransport, type InsertVehicleTransport,
   vehicleWaitlist,
   deletedRecords, type DeletedRecord, fines,
+  leaseQuotes, leaseQuoteVariants, leaseQuoteFiles,
+  leaseQuoteTemplates, type LeaseQuoteTemplate, type InsertLeaseQuoteTemplate,
+  leaseQuoteTemplateBackgrounds, type LeaseQuoteTemplateBackground, type InsertLeaseQuoteTemplateBackground,
   vehicleMileageReadings,
   reservationDriverAssignments, type ReservationDriverAssignment,
   auditLogs, type AuditLog
@@ -902,6 +905,7 @@ export class DatabaseStorage implements IStorage {
     if (!record) return { restored: false, reason: 'not_found' };
     if (record.restoredAt) return { restored: false, reason: 'already_restored', record };
     if (record.entityType === 'fine') return this.restoreDeletedFine(record, actor);
+    if (record.entityType === 'lease_quote') return this.restoreDeletedLeaseQuote(record, actor);
     // besluiten B-08 — a customer goes to the recycle bin like a vehicle, and
     // comes back the same way.
     if (record.entityType === 'customer') return this.restoreDeletedCustomer(record, actor);
@@ -1293,6 +1297,61 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
 
+    return { restored: true, record };
+  }
+
+  /**
+   * Puts a deleted lease quote back with its original id, together with its variants and file
+   * rows (original ids too). The file rows point at files that stay on disk until the bin row is purged.
+   */
+  private async restoreDeletedLeaseQuote(
+    record: DeletedRecord,
+    actor?: { username?: string | null }
+  ): Promise<{ restored: boolean; reason?: string; record?: DeletedRecord }> {
+    const payload = record.payload as any;
+    const quote = payload?.quote;
+    if (!quote) return { restored: false, reason: 'empty_snapshot', record };
+
+    // JSON turned timestamps into strings; `date` columns stay ISO strings.
+    const revive = (table: any, row: any) => {
+      const out: any = { ...row };
+      for (const [key, column] of Object.entries(getTableColumns(table)) as Array<[string, any]>) {
+        if (column?.dataType === 'date' && (typeof out[key] === 'string' || typeof out[key] === 'number')) out[key] = new Date(out[key]);
+      }
+      return out;
+    };
+    const revivedQuote = revive(leaseQuotes, quote);
+    // A customer that vanished in the meantime: keep the quote, drop the link.
+    if (revivedQuote.customerId && !(await db.select({ id: customers.id }).from(customers).where(eq(customers.id, revivedQuote.customerId)))[0]) {
+      revivedQuote.customerId = null;
+    }
+
+    try {
+      await db.transaction(async (tx) => {
+        // Same lock as number allocation on create: a racing create gives a clean refusal, not a 500.
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('lease_quote_number'))`);
+        const [idTaken] = await tx.select({ id: leaseQuotes.id }).from(leaseQuotes).where(eq(leaseQuotes.id, quote.id));
+        if (idTaken) throw new RestoreAbort('id_taken');
+        const [numberTaken] = await tx.select({ id: leaseQuotes.id }).from(leaseQuotes).where(eq(leaseQuotes.quoteNumber, quote.quoteNumber));
+        if (numberTaken) throw new RestoreAbort('quote_number_taken');
+        const [claimed] = await tx.update(deletedRecords)
+          .set({ restoredAt: new Date(), restoredBy: actor?.username || null })
+          .where(and(eq(deletedRecords.id, record.id), isNull(deletedRecords.restoredAt)))
+          .returning();
+        if (!claimed) throw new RestoreAbort('already_restored');
+        await tx.insert(leaseQuotes).values(revivedQuote);
+        const variants = Array.isArray(payload.variants) ? payload.variants : [];
+        if (variants.length) await tx.insert(leaseQuoteVariants).values(variants.map((v: any) => revive(leaseQuoteVariants, v)));
+        const files = Array.isArray(payload.files) ? payload.files : [];
+        if (files.length) await tx.insert(leaseQuoteFiles).values(files.map((f: any) => revive(leaseQuoteFiles, f)));
+        for (const table of ['lease_quotes', 'lease_quote_variants', 'lease_quote_files']) {
+          await tx.execute(sql`SELECT setval(pg_get_serial_sequence(${sql.raw(`'${table}'`)}, 'id'), GREATEST((SELECT COALESCE(MAX(id), 1) FROM ${sql.identifier(table)}), 1))`);
+        }
+      });
+    } catch (error) {
+      if (error instanceof RestoreAbort) return { restored: false, reason: error.reason, record };
+      throw error;
+    }
     return { restored: true, record };
   }
 
@@ -4830,6 +4889,84 @@ export class DatabaseStorage implements IStorage {
     const background = await this.getTransportReportTemplateBackground(backgroundId);
     if (!background) return undefined;
     return await this.updateTransportReportTemplate(templateId, {
+      backgroundPath: background.backgroundPath,
+      backgroundPreviewPath: background.previewPath,
+    });
+  }
+
+  // Lease quote template methods: a mirror of the transport report ones above.
+  async getAllLeaseQuoteTemplates(): Promise<LeaseQuoteTemplate[]> {
+    return await db.select().from(leaseQuoteTemplates).orderBy(desc(leaseQuoteTemplates.createdAt));
+  }
+
+  async getLeaseQuoteTemplate(id: number): Promise<LeaseQuoteTemplate | undefined> {
+    const [template] = await db.select().from(leaseQuoteTemplates).where(eq(leaseQuoteTemplates.id, id));
+    return template || undefined;
+  }
+
+  async getDefaultLeaseQuoteTemplate(): Promise<LeaseQuoteTemplate | undefined> {
+    const [defaultTemplate] = await db.select().from(leaseQuoteTemplates).where(eq(leaseQuoteTemplates.isDefault, true)).limit(1);
+    if (defaultTemplate) return defaultTemplate;
+    const [first] = await db.select().from(leaseQuoteTemplates).orderBy(leaseQuoteTemplates.id).limit(1);
+    return first || undefined;
+  }
+
+  async createLeaseQuoteTemplate(templateData: InsertLeaseQuoteTemplate): Promise<LeaseQuoteTemplate> {
+    if (templateData.isDefault) {
+      await db.update(leaseQuoteTemplates).set({ isDefault: false });
+    }
+    const [template] = await db.insert(leaseQuoteTemplates).values(templateData).returning();
+    return template;
+  }
+
+  async updateLeaseQuoteTemplate(id: number, templateData: Partial<InsertLeaseQuoteTemplate>): Promise<LeaseQuoteTemplate | undefined> {
+    if (templateData.isDefault) {
+      await db.update(leaseQuoteTemplates).set({ isDefault: false });
+    }
+    const [template] = await db
+      .update(leaseQuoteTemplates)
+      .set({ ...templateData, updatedAt: new Date() })
+      .where(eq(leaseQuoteTemplates.id, id))
+      .returning();
+    return template || undefined;
+  }
+
+  async deleteLeaseQuoteTemplate(id: number): Promise<boolean> {
+    const [deleted] = await db.delete(leaseQuoteTemplates).where(eq(leaseQuoteTemplates.id, id)).returning();
+    return !!deleted;
+  }
+
+  async getAllLeaseQuoteTemplateBackgrounds(): Promise<LeaseQuoteTemplateBackground[]> {
+    return await db.select().from(leaseQuoteTemplateBackgrounds).orderBy(desc(leaseQuoteTemplateBackgrounds.createdAt));
+  }
+
+  async getLeaseQuoteTemplateBackgrounds(templateId: number): Promise<LeaseQuoteTemplateBackground[]> {
+    return await db
+      .select()
+      .from(leaseQuoteTemplateBackgrounds)
+      .where(eq(leaseQuoteTemplateBackgrounds.templateId, templateId))
+      .orderBy(desc(leaseQuoteTemplateBackgrounds.createdAt));
+  }
+
+  async getLeaseQuoteTemplateBackground(id: number): Promise<LeaseQuoteTemplateBackground | undefined> {
+    const [background] = await db.select().from(leaseQuoteTemplateBackgrounds).where(eq(leaseQuoteTemplateBackgrounds.id, id));
+    return background || undefined;
+  }
+
+  async createLeaseQuoteTemplateBackground(backgroundData: InsertLeaseQuoteTemplateBackground): Promise<LeaseQuoteTemplateBackground> {
+    const [background] = await db.insert(leaseQuoteTemplateBackgrounds).values(backgroundData).returning();
+    return background;
+  }
+
+  async deleteLeaseQuoteTemplateBackground(id: number): Promise<boolean> {
+    const [deleted] = await db.delete(leaseQuoteTemplateBackgrounds).where(eq(leaseQuoteTemplateBackgrounds.id, id)).returning();
+    return !!deleted;
+  }
+
+  async selectLeaseQuoteTemplateBackground(templateId: number, backgroundId: number): Promise<LeaseQuoteTemplate | undefined> {
+    const background = await this.getLeaseQuoteTemplateBackground(backgroundId);
+    if (!background) return undefined;
+    return await this.updateLeaseQuoteTemplate(templateId, {
       backgroundPath: background.backgroundPath,
       backgroundPreviewPath: background.previewPath,
     });

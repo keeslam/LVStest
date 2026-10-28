@@ -34,6 +34,7 @@ export const PERMISSION_LABELS: Record<string, string> = {
   [UserPermission.VIEW_DOCUMENTS]: "Documenten bekijken",
   [UserPermission.MANAGE_DOCUMENTS]: "Documenten bewerken en genereren",
   [UserPermission.MANAGE_PDF_TEMPLATES]: "PDF-sjablonen beheren",
+  [UserPermission.MANAGE_LEASE_QUOTES]: "Lease offertes",
 
   [UserPermission.MANAGE_DAMAGE_CHECKS]: "Schadecontroles beheren",
   [UserPermission.VIEW_DAMAGE_CHECKS]: "Schadecontroles bekijken",

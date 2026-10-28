@@ -1,0 +1,252 @@
+{
+  "title": "Lease quotes",
+  "tabs": {
+    "quotes": "Quotes",
+    "settings": "Settings"
+  },
+  "newQuote": "New quote",
+  "search": "Search by customer, car, license plate or number",
+  "allStatuses": "All statuses",
+  "statusFilter": "Status",
+  "status": {
+    "concept": "Draft",
+    "sent": "Sent",
+    "accepted": "Accepted",
+    "rejected": "Rejected",
+    "expired": "Expired"
+  },
+  "columns": {
+    "number": "Number",
+    "date": "Date",
+    "customer": "Customer",
+    "vehicle": "Car",
+    "licensePlate": "License plate",
+    "monthly": "Per month",
+    "status": "Status",
+    "validUntil": "Valid until",
+    "actions": "Actions"
+  },
+  "noCustomer": "No customer",
+  "empty": "No quotes yet. Create a new quote.",
+  "noResults": "No quotes found.",
+  "loadFailed": "The quotes could not be loaded.",
+  "actions": {
+    "open": "Open",
+    "copy": "Copy",
+    "pdf": "PDF",
+    "delete": "Delete"
+  },
+  "create": {
+    "failed": "The quote could not be created."
+  },
+  "copy": {
+    "question": "Copy the attachments (dealer quote) too?",
+    "description": "The new quote gets a new number and starts as a draft.",
+    "yes": "Yes",
+    "no": "No",
+    "cancel": "Cancel",
+    "done": "Quote {{number}} has been created.",
+    "failed": "The quote could not be copied."
+  },
+  "delete": {
+    "title": "Delete quote?",
+    "description": "Quote {{number}} goes to the recycle bin. You can restore it from there.",
+    "confirm": "Delete",
+    "cancel": "Cancel",
+    "done": "Quote {{number}} is in the recycle bin.",
+    "failed": "The quote could not be deleted."
+  },
+  "pdf": {
+    "done": "The PDF of quote {{number}} has been created.",
+    "failed": "The PDF could not be created.",
+    "open": "Open the file"
+  },
+  "settings": {
+    "intro": "Defaults for the calculation of a new quote.",
+    "note": "Applies to new quotes; existing quotes keep their own values.",
+    "interestRatePercent": "Interest (% per year)",
+    "marginPerMonth": "Margin per month (€)",
+    "robPerYear": "ROB per year (€)",
+    "otherCostsPerYear": "Other costs per year (€)",
+    "excessKmPrice": "Excess kilometre price (€ per km)",
+    "shortfallKmPrice": "Shortfall kilometre price (€ per km)",
+    "validityDays": "Validity (days)",
+    "save": "Save",
+    "saved": "The settings have been saved.",
+    "saveFailed": "The settings could not be saved.",
+    "loadFailed": "The settings could not be loaded.",
+    "invalid": "This number is not valid: {{field}}.",
+    "invalidDays": "Validity must be a whole number of days (at least 1)."
+  },
+  "editor": {
+    "title": "Quote {{number}}",
+    "chosenTotal": "To the customer: {{amount}} per month",
+    "description": "All amounts excl. VAT. The lease price updates while you type.",
+    "loadFailed": "The quote could not be loaded.",
+    "sections": {
+      "customer": "1. Customer",
+      "vehicle": "2. Car",
+      "purchase": "3. Purchase",
+      "variants": "4. Variants",
+      "quote": "5. Quote"
+    },
+    "customerMode": {
+      "customer": "Existing customer",
+      "prospect": "Prospect"
+    },
+    "customer": {
+      "search": "Search for a customer",
+      "none": "No customer found",
+      "change": "Other customer",
+      "more": "{{shown}} of {{total}} shown, type to narrow down.",
+      "noAccess": "You may not see the customer list. Fill in the details under Prospect."
+    },
+    "fields": {
+      "prospectName": "Name",
+      "prospectCompany": "Company",
+      "prospectEmail": "Email",
+      "prospectPhone": "Phone",
+      "vehicleMake": "Make",
+      "vehicleModel": "Model",
+      "vehicleTrim": "Trim",
+      "licensePlate": "Licence plate (if known)",
+      "dealerName": "Dealer",
+      "deliveryTime": "Delivery time",
+      "vehicleNotes": "Notes",
+      "purchasePrice": "Purchase price excl. VAT (incl. BPM and delivery costs)",
+      "interestRatePercent": "Interest (% per year)",
+      "robPerYear": "Maintenance (ROB) per year (€)",
+      "otherCostsPerYear": "Other costs per year (€)",
+      "insurancePerMonth": "Insurance per month (€)",
+      "roadTaxPerMonth": "Road tax per month (€)",
+      "marginPerMonth": "Margin per month (€)",
+      "excessKmPrice": "Excess km price (€ per km)",
+      "shortfallKmPrice": "Shortfall km price (€ per km)",
+      "status": "Status",
+      "quoteDate": "Quote date",
+      "validUntil": "Valid until",
+      "internalNotes": "Internal note (not for the customer)"
+    },
+    "breakdown": {
+      "title": "Price breakdown (for checking)",
+      "hint": "As the dealer states it. The purchase price above is the number that counts.",
+      "catalogPrice": "List price",
+      "options": "Options",
+      "discount": "Discount",
+      "bpm": "BPM",
+      "deliveryCosts": "Delivery costs",
+      "totalExclVat": "Total excl. VAT",
+      "totalInclVat": "Total incl. VAT"
+    },
+    "variants": {
+      "column": "Variant {{n}}",
+      "chosen": "To the customer",
+      "term": "Term (months)",
+      "km": "Km per year",
+      "residual": "Residual value (€)",
+      "depreciation": "Depreciation",
+      "interest": "Interest",
+      "rob": "Maintenance (ROB)",
+      "robTotal": "{{amount}} over the term",
+      "insurance": "Insurance",
+      "roadTax": "Road tax",
+      "otherCosts": "Other costs",
+      "margin": "Margin",
+      "total": "Total per month",
+      "costPerKm": "Cost per km",
+      "add": "Add variant",
+      "duplicate": "Duplicate variant",
+      "remove": "Remove variant",
+      "choose": "Select this one",
+      "selected": "Selected"
+    },
+    "warnings": {
+      "residual_above_purchase": "Residual value is higher than the purchase price",
+      "term_missing": "Fill in a term",
+      "km_missing": "Fill in km per year for the price per km",
+      "residual_missing": "Fill in a residual value"
+    },
+    "files": {
+      "dealerTitle": "Dealer quote(s)",
+      "generatedTitle": "PDFs made for the customer",
+      "none": "No dealer quote uploaded yet.",
+      "noneGenerated": "No PDF made yet.",
+      "upload": "Upload dealer quote",
+      "uploading": "Uploading…",
+      "by": "{{date}} by {{user}}",
+      "open": "Open",
+      "download": "Download",
+      "scan": "Read again",
+      "delete": "Delete",
+      "deleteTitle": "Delete file?",
+      "deleteDescription": "{{name}} will be removed from this quote.",
+      "deleted": "The file has been deleted.",
+      "deleteFailed": "The file could not be deleted.",
+      "tooLarge": "The file is too large (10 MB at most).",
+      "wrongType": "Only a PDF, PNG or JPG can be uploaded.",
+      "uploadFailed": "The file could not be uploaded."
+    },
+    "actions": {
+      "save": "Save",
+      "pdf": "Make PDF",
+      "copy": "Copy",
+      "history": "History",
+      "close": "Close"
+    },
+    "saved": "The quote has been saved.",
+    "variantSelected": "Variant {{n}} is selected and saved. It goes on the PDF.",
+    "saveFailed": "The quote could not be saved.",
+    "blocked": {
+      "invalid": "A number is not right (red border). Correct it to save.",
+      "variants": "Fill in a term, km per year and residual value for every variant to save.",
+      "dates": "Fill in a quote date and a valid-until date to save."
+    },
+    "editWarning": {
+      "sent": "This quote has already been sent. Change it anyway?",
+      "accepted": "This quote has already been accepted. Change it anyway?",
+      "description": "The customer already has this quote. Your changes are saved in this quote.",
+      "yes": "Yes, change",
+      "no": "No"
+    },
+    "pdfErrors": {
+      "LEASE_NO_TEMPLATE": "There is no PDF template for lease quotes yet. Make one under Documents.",
+      "LEASE_NO_VARIANT": "First choose which variant goes to the customer."
+    },
+    "chosenVariantRemoved": "You removed the variant that goes to the customer. Variant 1 now goes to the customer."
+  },
+  "scan": {
+    "title": "Read dealer quote",
+    "description": "{{name}}: check what the app read. Only what is ticked goes into the quote when you click Apply.",
+    "reading": "Reading the quote…",
+    "failed": "Reading failed. The file has been kept; fill in the details yourself.",
+    "onlyInclVat": "The dealer only states an amount incl. VAT. Fill in the purchase price excl. VAT yourself.",
+    "field": "Item",
+    "value": "Read",
+    "take": "apply",
+    "notFound": "not found",
+    "apply": "Apply",
+    "cancel": "Cancel",
+    "close": "Close",
+    "applied": "The details are in the quote. Don't forget to save.",
+    "notesLine": "Dealer quote: {{parts}}",
+    "notesDate": "dated {{date}}",
+    "notesValid": "valid until {{date}}",
+    "fields": {
+      "purchasePrice": "Purchase price excl. VAT (suggestion)",
+      "dealerName": "Dealer",
+      "make": "Make",
+      "model": "Model",
+      "trim": "Trim",
+      "catalogPrice": "List price",
+      "options": "Options",
+      "discount": "Discount",
+      "bpm": "BPM",
+      "deliveryCosts": "Delivery costs",
+      "totalExclVat": "Total excl. VAT",
+      "totalInclVat": "Total incl. VAT",
+      "deliveryTime": "Delivery time",
+      "quoteDate": "Dealer quote date (to Notes)",
+      "validUntil": "Dealer quote valid until (to Notes)"
+    }
+  }
+}

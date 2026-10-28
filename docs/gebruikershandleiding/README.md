@@ -5,8 +5,8 @@ Car Rental Manager
 Gebruikershandleiding
 Voor nieuwe medewerkers
 
-Versie: 1.3
-Datum: 18 oktober 2026
+Versie: 1.4
+Datum: 28 oktober 2026
 ```
 
 ---
@@ -47,10 +47,10 @@ op een treffer.
   tot eind, in de volgorde waarin je het echt doet: een verhuur, een auto naar de werkplaats, een nieuwe
   auto, een factuur, een bekeuring, een aanvraag van een klant. Bij elke stap staat een plaatje.
 - Ben je vandaag begonnen? Lees hoofdstuk 1 en 2, daarna hoofdstuk 16, en werk dan hoofdstuk 17 af.
-- Wil je alles over één scherm weten? Kijk in de hoofdstukken 3 tot en met 10 en 18 tot en met 21.
+- Wil je alles over één scherm weten? Kijk in de hoofdstukken 3 tot en met 10 en 18 tot en met 22.
 - Zoek je één handeling? Kijk in hoofdstuk 13, het snel naslagwerk, of zoek in de app.
 - Wil je weten wat er sinds de laatste uitrol anders werkt? Hoofdstuk 0.
-- Wil je alles zelf uitproberen en afvinken? Hoofdstuk 22, de acceptatiechecklist.
+- Wil je alles zelf uitproberen en afvinken? Hoofdstuk 23, de acceptatiechecklist.
 - Snap je een woord niet? Hoofdstuk 14, de woordenlijst.
 
 ---
@@ -81,11 +81,16 @@ op een treffer.
 | 19 | [Kosten en facturen](19-kosten-en-facturen.md) | Kosten registreren, facturen per e-mail controleren en boeken, factuur scannen |
 | 20 | [Klantenportaal en bekeuringen](20-klantenportaal-en-bekeuringen.md) | Aanvragen van klanten afhandelen, portaalaccounts, bekeuringen invoeren en koppelen, de fiscale check |
 | 21 | [Rapporten](21-rapporten.md) | Rapporten bekijken en afdrukken, een eigen rapport bouwen, onderhoudskosten analyseren |
-| 22 | [Acceptatiechecklist](22-acceptatiechecklist.md) | Een afvinkbare lijst van alles wat de app doet, hoofdstuk voor hoofdstuk, om zelf uit te proberen |
+| 22 | [Lease offertes](22-lease-offertes.md) | Een leaseprijs uitrekenen, varianten vergelijken, een dealerofferte laten uitlezen, de PDF voor de klant maken, kopiëren, instellingen en het sjabloon |
+| 23 | [Acceptatiechecklist](23-acceptatiechecklist.md) | Een afvinkbare lijst van alles wat de app doet, hoofdstuk voor hoofdstuk, om zelf uit te proberen |
 
-Alle eenentwintig hoofdstukken zijn af, met daarbij een overzicht van wat nieuw is (hoofdstuk 0) en een
-acceptatiechecklist (hoofdstuk 22). De schermafbeeldingen staan in de map `afbeeldingen/` en
+Alle tweeëntwintig hoofdstukken zijn af, met daarbij een overzicht van wat nieuw is (hoofdstuk 0) en een
+acceptatiechecklist (hoofdstuk 23). De schermafbeeldingen staan in de map `afbeeldingen/` en
 worden vanuit de hoofdstukken zelf getoond.
+
+**Versie 1.4, 28 oktober 2026.** Nieuw is hoofdstuk 22, Lease offertes: een leaseprijs uitrekenen, varianten
+vergelijken, een dealerofferte laten uitlezen en de PDF voor de klant maken. De acceptatiechecklist is
+hoofdstuk 23 geworden.
 
 **Versie 1.3, 18 oktober 2026.** Hoofdstuk 16 is nu het hoofdstuk met de werkstromen: het werk van
 begin tot eind in de volgorde waarin je het doet, bij elke stap een plaatje. Nieuw zijn hoofdstuk 19

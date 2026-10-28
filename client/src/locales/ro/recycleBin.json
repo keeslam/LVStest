@@ -30,7 +30,8 @@
     "RESERVATION_CONFLICT": "Această rezervare nu poate fi restaurată: între timp vehiculul a fost rezervat pentru acea perioadă.",
     "DEBTOR_NUMBER_TAKEN": "Acest număr de debitor este deja folosit de clientul {{name}}.",
     "DEBTOR_NUMBER_TAKEN_UNNAMED": "Un alt client folosește deja acest număr de debitor.",
-    "CUSTOMER_MISSING": "Clientul acestui șofer nu mai există. Restaurați mai întâi clientul (Clienți, Clienți șterși) și apoi șoferul."
+    "CUSTOMER_MISSING": "Clientul acestui șofer nu mai există. Restaurați mai întâi clientul (Clienți, Clienți șterși) și apoi șoferul.",
+    "QUOTE_NUMBER_TAKEN": "Numărul ofertei a fost între timp atribuit altei oferte, deci restaurarea nu este posibilă."
   },
   "kinds": {
     "vehicle": {
@@ -120,6 +121,17 @@
       "noun_few": "costuri",
       "noun_other": "costuri",
       "purgeNote": "Costul dispare definitiv, împreună cu bonul. Un bon care este și anexa unei facturi din căsuța poștală rămâne."
+    },
+    "lease_quote": {
+      "openButton": "Oferte de leasing șterse",
+      "title": "Oferte de leasing șterse",
+      "description": "O ofertă de leasing ștearsă este păstrată aici cu variantele și anexele ei și poate fi restaurată.",
+      "empty": "Nu există oferte de leasing șterse.",
+      "badge": "Ofertă de leasing",
+      "noun_one": "ofertă de leasing",
+      "noun_few": "oferte de leasing",
+      "noun_other": "oferte de leasing",
+      "purgeNote": "Oferta de leasing dispare definitiv, împreună cu anexele ei."
     }
   },
   "purge": {

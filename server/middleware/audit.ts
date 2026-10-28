@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { storage } from '../storage';
+import { getLeaseQuote } from '../services/lease-quotes';
 import { AuditLogger } from '../utils/security/auditLogger';
 
 /**
@@ -42,6 +43,7 @@ const TRACKED_READS: Array<{ pattern: RegExp; type: string; verb: string }> = [
   { pattern: /^\/api\/expenses\/inbox\/items\/(\d+)\/file$/, type: 'invoice-inbox-item', verb: 'view' },
   { pattern: /^\/api\/fines\/(\d+)\/letter$/, type: 'fine', verb: 'letter-view' },
   { pattern: /^\/api\/fines\/imports\/(\d+)\/file$/, type: 'fine-import', verb: 'view' },
+  { pattern: /^\/api\/lease-quotes\/(\d+)\/files\/\d+$/, type: 'lease_quote', verb: 'file-view' },
   { pattern: /^\/api\/fiscal\/assessments\/(\d+)\/pdf$/, type: 'fiscal-assessment', verb: 'pdf' },
   { pattern: /^\/api\/fiscal\/reports\/monthly\.csv$/, type: 'fiscal-report', verb: 'export' },
   { pattern: /^\/api\/portal-requests\/(\d+)\/attachments\/\d+$/, type: 'portal-request', verb: 'attachment-view' },
@@ -125,6 +127,12 @@ const TRACKED_RESOURCES: Record<string, {
     type: 'document',
     load: (id) => storage.getDocument(id),
     label: (row) => row?.fileName || row?.documentType || null,
+  },
+  // Lease offertes: history is read under resource type lease_quote (URL segment lease-quotes).
+  'lease-quotes': {
+    type: 'lease_quote',
+    load: (id) => getLeaseQuote(id),
+    label: (row) => row?.quoteNumber ? [row.quoteNumber, row.customerName || row.prospectCompany || row.prospectName].filter(Boolean).join(' · ') : null,
   },
   users: {
     type: 'user',

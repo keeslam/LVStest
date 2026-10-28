@@ -178,6 +178,7 @@ import { registerAuditEventRoutes } from "./routes/audit-events";
 import { registerPortalAdminRoutes } from "./routes/portal-admin";
 import { registerFiscalRoutes } from "./routes/fiscal";
 import { registerFineRoutes } from "./routes/fines";
+import { registerLeaseQuoteRoutes } from "./routes/lease-quotes";
 import { registerPortalRequestRoutes } from "./routes/portal-requests";
 import { registerAddressLookupRoutes } from "./routes/address-lookup";
 import { registerTodayRoutes } from "./routes/today";
@@ -199,6 +200,7 @@ import { registerReportRoutes } from "./routes/reports";
 import { registerDamageCheckTemplateRoutes } from "./routes/damage-check-templates";
 import { registerVehicleDiagramTemplateRoutes } from "./routes/vehicle-diagram-templates";
 import { registerReportAndLabelTemplateRoutes } from "./routes/report-and-label-templates";
+import { registerLeaseQuoteTemplateRoutes } from "./routes/lease-quote-templates";
 import { onMaintenanceBlockChanged, onReplacementAssigned, onRentalVehicleChanged, plannedNoticeWasSent } from "./services/portal-maintenance-events";
 // besluiten B-06 (BUG-134): the other three events of the decision.
 import { onReservationChangedByStaff } from "./services/portal-reservation-events";
@@ -546,6 +548,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Fiscal mobility check (docs/fiscaal): configuration, assessments, review cases.
   registerFiscalRoutes(app, routeDeps);
   registerFineRoutes(app, routeDeps);
+  registerLeaseQuoteRoutes(app, routeDeps);
   registerPortalRequestRoutes(app, routeDeps);
   // Postcode + house number -> street and city (customer form and others).
   registerAddressLookupRoutes(app, routeDeps);
@@ -2653,6 +2656,8 @@ export async function registerRoutes(app: Express): Promise<void> {
           debtor_number_taken: "Another customer already uses this debtor number.",
           // Sub-project D (B-41 D8): a driver cannot come back before its customer does.
           customer_missing: "The customer of this driver no longer exists. Restore the customer first.",
+          // Lease offertes: the quote number was given to another quote in the meantime.
+          quote_number_taken: "Het offertenummer is intussen aan een andere offerte gegeven, dus terugzetten kan niet.",
         };
         const reason = result?.reason || 'not_found';
         let message = reasons[reason] || "Could not restore this record.";
@@ -9798,6 +9803,7 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
   registerReportAndLabelTemplateRoutes(app, routeDeps);
+  registerLeaseQuoteTemplateRoutes(app, routeDeps);
 
   // Generate one PDF (one page per transport) and save it as a Document.
   // Single transport with a vehicle -> attached to that vehicle. Multiple

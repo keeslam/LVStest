@@ -30,7 +30,8 @@
     "RESERVATION_CONFLICT": "Deze reservering kan niet terug: het voertuig is in de tussentijd geboekt voor die periode.",
     "DEBTOR_NUMBER_TAKEN": "Dit debiteurnummer is al in gebruik bij klant {{name}}.",
     "DEBTOR_NUMBER_TAKEN_UNNAMED": "Een andere klant gebruikt dit debiteurnummer al.",
-    "CUSTOMER_MISSING": "De klant van deze chauffeur bestaat niet meer. Zet eerst de klant terug (Klanten, Verwijderde klanten) en daarna de chauffeur."
+    "CUSTOMER_MISSING": "De klant van deze chauffeur bestaat niet meer. Zet eerst de klant terug (Klanten, Verwijderde klanten) en daarna de chauffeur.",
+    "QUOTE_NUMBER_TAKEN": "Het offertenummer is intussen aan een andere offerte gegeven, dus terugzetten kan niet."
   },
   "kinds": {
     "vehicle": {
@@ -112,6 +113,16 @@
       "noun_one": "kostenpost",
       "noun_other": "kostenposten",
       "purgeNote": "De kostenpost verdwijnt voorgoed, samen met de bon. Een bon die ook de bijlage van een factuur in het postvak is, blijft staan."
+    },
+    "lease_quote": {
+      "openButton": "Verwijderde lease offertes",
+      "title": "Verwijderde lease offertes",
+      "description": "Een verwijderde lease offerte wordt hier bewaard met zijn varianten en bijlagen en kan worden teruggezet.",
+      "empty": "Geen verwijderde lease offertes.",
+      "badge": "Lease offerte",
+      "noun_one": "lease offerte",
+      "noun_other": "lease offertes",
+      "purgeNote": "De lease offerte verdwijnt voorgoed, samen met zijn bijlagen."
     }
   },
   "purge": {

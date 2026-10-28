@@ -29,6 +29,7 @@ export const LARGE_BODY_PATHS = [
   "/api/pdf-templates",
   "/api/barcode-label-templates",
   "/api/transport-report-templates",
+  "/api/lease-quote-templates",
 ] as const;
 
 export const LARGE_BODY_LIMIT = "25mb";

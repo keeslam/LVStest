@@ -203,6 +203,11 @@
     "sendEmailButton": "E-mail versturen",
     "contractTemplateEditorDialogDescription": "Maak en beheer contractsjablonen met sleep-en-neerzet veldplaatsing",
     "transportTemplateEditorDialogDescription": "Ontwerp het chauffeursrapport — sleep velden op de pagina, één grote pagina per transport",
+    "tabLeaseQuoteTemplates": "Lease offertes",
+    "leaseQuoteTemplateEditorTitle": "Sjabloon lease offerte bewerken",
+    "leaseQuoteTemplateEditorDescription": "Beheer de PDF die de klant krijgt bij een lease offerte",
+    "openLeaseQuoteTemplateEditorIntro": "Open de sjablooneditor om het sjabloon van de lease offerte te ontwerpen: sleep de velden op de pagina.",
+    "leaseQuoteTemplateEditorDialogDescription": "Ontwerp de lease offerte — sleep velden op de pagina, één A4-pagina",
     "damageCheck": {
       "cardTitle": "Schadecheck-sjablonen",
       "cardDescription": "Beheer de velden, indeling en checklistwoordenschat die worden gebruikt om schadecheckformulieren op te bouwen. Voltooide schadecheck-pdf’s staan in de documentbibliotheek, gefilterd op voertuig. Voertuigdiagrammen worden hieronder beheerd.",
@@ -578,6 +583,37 @@
     },
     "createFirstTemplateDescription": "Begin met het aanmaken van een transportrapportsjabloon",
     "backToDelivery": "Terug naar bezorging"
+  },
+  "leaseQuoteTemplateEditor": {
+    "templateNamePlaceholder": "bijv. Standaard lease offerte",
+    "dataSourceOptions": {
+      "quoteNumber": "Offertenummer",
+      "quoteDate": "Offertedatum",
+      "validUntil": "Geldig tot",
+      "customerName": "Klant (naam of bedrijf)",
+      "customerContact": "Contactpersoon",
+      "customerAddress": "Adres klant",
+      "customerPostalCode": "Postcode klant",
+      "customerCity": "Plaats klant",
+      "customerEmail": "E-mail klant",
+      "vehicleMake": "Merk",
+      "vehicleModel": "Model",
+      "vehicleTrim": "Uitvoering",
+      "licensePlate": "Kenteken",
+      "deliveryTime": "Levertijd",
+      "termMonths": "Looptijd (maanden)",
+      "kmPerYear": "Kilometers per jaar",
+      "monthlyPriceExclVat": "Leaseprijs per maand excl. btw",
+      "excessKmPrice": "Meerkilometerprijs",
+      "shortfallKmPrice": "Minderkilometerprijs",
+      "companyName": "Eigen bedrijfsnaam",
+      "signatureLandlord": "Handtekening verhuurder"
+    },
+    "createFirstTemplateDescription": "Begin met het aanmaken van een lease offertesjabloon",
+    "backToDocuments": "Terug naar documenten",
+    "captionLabel": "Tekst voor de waarde",
+    "captionPlaceholder": "bijv. Looptijd:",
+    "captionHelp": "Deze tekst komt vlak voor de waarde op de PDF. Laat leeg om alleen de waarde te printen."
   },
   "interactiveDamageCheck": {
     "toasts": {

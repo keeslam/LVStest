@@ -30,7 +30,8 @@
     "RESERVATION_CONFLICT": "This reservation cannot come back: the vehicle has been booked for that period in the meantime.",
     "DEBTOR_NUMBER_TAKEN": "This debtor number is already in use by customer {{name}}.",
     "DEBTOR_NUMBER_TAKEN_UNNAMED": "Another customer already uses this debtor number.",
-    "CUSTOMER_MISSING": "The customer of this driver no longer exists. Restore the customer first (Customers, Deleted customers) and then the driver."
+    "CUSTOMER_MISSING": "The customer of this driver no longer exists. Restore the customer first (Customers, Deleted customers) and then the driver.",
+    "QUOTE_NUMBER_TAKEN": "The quote number has since been given to another quote, so it cannot be restored."
   },
   "kinds": {
     "vehicle": {
@@ -112,6 +113,16 @@
       "noun_one": "expense",
       "noun_other": "expenses",
       "purgeNote": "The expense disappears for good, together with the receipt. A receipt that is also the attachment of a mailbox invoice stays."
+    },
+    "lease_quote": {
+      "openButton": "Deleted lease quotes",
+      "title": "Deleted lease quotes",
+      "description": "A deleted lease quote is kept here with its variants and attachments and can be restored.",
+      "empty": "No deleted lease quotes.",
+      "badge": "Lease quote",
+      "noun_one": "lease quote",
+      "noun_other": "lease quotes",
+      "purgeNote": "The lease quote disappears for good, together with its attachments."
     }
   },
   "purge": {

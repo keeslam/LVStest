@@ -701,6 +701,7 @@ function getPageTitle(location: string, t: TFunction): string {
   if (location.startsWith("/delivery")) return t("transports");
   if (location.startsWith("/communications")) return t("communications");
   if (location.startsWith("/reports")) return t("reports");
+  if (location.startsWith("/lease-quotes")) return t("leaseQuotes");
   if (location.startsWith("/search-results")) return t("searchResults");
   if (location.startsWith("/notifications")) return t("notifications");
   return "Auto Lease LAM";

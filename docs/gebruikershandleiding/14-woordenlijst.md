@@ -185,6 +185,12 @@ ziet, valt buiten deze handleiding. Kortweg: het portaal. *(Hoofdstuk 2, 16)*
 Alles wat je aan een auto uitgeeft. Bijvoorbeeld brandstof, reparaties, banden en verzekering. Je
 legt kosten vast via **Kosten → Kosten registreren**. Of je scant een factuur. *(Hoofdstuk 2, 13)*
 
+## Lease offerte
+
+Een prijsvoorstel voor een leaseauto. Je rekent de prijs per maand uit met de aanschafwaarde, de
+restwaarde en de looptijd. Je kunt meerdere varianten naast elkaar zetten. De klant krijgt een PDF met
+alleen de prijs van de gekozen variant. Je vindt ze onder **Lease offertes** in het menu. *(Hoofdstuk 22)*
+
 ## Meldingencentrum
 
 Het belletje rechtsboven. Hier staan de signalen over reserveringen, onderhoud, APK en garantie. Je
@@ -281,6 +287,17 @@ spraakgebruik: een boeking. *(Hoofdstuk 5)*
 De tweede sleutel van een auto. Hij heeft een eigen label en een eigen audit
 (**Reservesleutelkast-audit**). *(Hoofdstuk 4)*
 
+## Restwaarde
+
+Wat de auto na afloop van de lease nog waard is. Je vult de restwaarde bij elke variant van een lease
+offerte zelf in. De app bedenkt hem niet. *(Hoofdstuk 22)*
+
+## ROB
+
+De kosten die je per jaar rekent voor onderhoud en banden in een lease offerte. De app deelt het bedrag door
+twaalf voor de prijs per maand. De voorinstelling staat bij **Lease offertes** → **Instellingen**.
+*(Hoofdstuk 22)*
+
 ## Rol
 
 Het etiket bij een account. Dat kan zijn: Beheerder, Manager, Gebruiker, Schoonmaker, Kijker,
@@ -334,6 +351,12 @@ De auto die een klant tijdelijk krijgt. Zijn eigen auto staat dan in de werkplaa
 dat een **vervangend voertuig**. Is er nog geen auto aangewezen? Dan staat er **Nog te bepalen**.
 Je rondt een vervanging af met **Terug van onderhoud**. Die knop sluit de vervangende reservering
 meteen mee af. *(Hoofdstuk 7, 16)*
+
+## Variant
+
+Eén kolom in een lease offerte, met een eigen looptijd, kilometers per jaar en restwaarde. Alle
+varianten blijven bewaard. De klant ziet er één: de variant die je kiest met **Deze selecteren**.
+*(Hoofdstuk 22)*
 
 ## Voertuigopmerkingen
 

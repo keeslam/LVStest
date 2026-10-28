@@ -35,8 +35,9 @@ import {
 } from "@/components/documents/stale-document";
 import PDFTemplateEditor from "./template-editor";
 import TransportReportTemplateEditor from "./transport-report-template-editor";
+import LeaseQuoteTemplateEditor from "./lease-quote-template-editor";
 import BarcodeLabelTemplateEditor from "./barcode-label-template-editor";
-import { FileEdit, Star, Trash2, Printer, Eye, ChevronDown, ChevronRight, Image, Plus, X, Edit, Settings as SettingsIcon, Truck, Barcode, Search } from "lucide-react";
+import { FileEdit, Star, Trash2, Printer, Eye, ChevronDown, ChevronRight, Image, Plus, X, Edit, Settings as SettingsIcon, Truck, Barcode, Search, FileText } from "lucide-react";
 import { diagramMakes, filterDiagramTemplates } from "@/lib/diagram-template-filter";
 import DamageCheckTemplateStudio from "@/pages/settings/damage-check-template-studio";
 import { useAuth } from "@/hooks/use-auth";
@@ -69,6 +70,7 @@ export default function DocumentsIndex() {
   const [templateToDelete, setTemplateToDelete] = useState<any | null>(null);
   const [templateEditorDialogOpen, setTemplateEditorDialogOpen] = useState(false);
   const [transportTemplateEditorDialogOpen, setTransportTemplateEditorDialogOpen] = useState(false);
+  const [leaseQuoteTemplateEditorDialogOpen, setLeaseQuoteTemplateEditorDialogOpen] = useState(false);
   const [barcodeLabelEditorDialogOpen, setBarcodeLabelEditorDialogOpen] = useState(false);
   // A-10-3: the three template editors report unsaved changes; closing one (Escape, X, outside click,
   // back button) then asks first instead of silently throwing them away. One shared guard per editor,
@@ -81,6 +83,7 @@ export default function DocumentsIndex() {
   };
   const contractGuard = useUnsavedChangesGuard({ close: () => setTemplateEditorDialogOpen(false), open: () => setTemplateEditorDialogOpen(true), texts: unsavedTemplateTexts });
   const transportGuard = useUnsavedChangesGuard({ close: () => setTransportTemplateEditorDialogOpen(false), open: () => setTransportTemplateEditorDialogOpen(true), texts: unsavedTemplateTexts });
+  const leaseQuoteGuard = useUnsavedChangesGuard({ close: () => setLeaseQuoteTemplateEditorDialogOpen(false), open: () => setLeaseQuoteTemplateEditorDialogOpen(true), texts: unsavedTemplateTexts });
   const barcodeGuard = useUnsavedChangesGuard({ close: () => setBarcodeLabelEditorDialogOpen(false), open: () => setBarcodeLabelEditorDialogOpen(true), texts: unsavedTemplateTexts });
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [uploadVehicleId, setUploadVehicleId] = useState<string>("");
@@ -114,6 +117,12 @@ export default function DocumentsIndex() {
   // Fetch templates
   const { data: templates, isLoading: isLoadingTemplates } = useQuery({
     queryKey: ['/api/pdf-templates'],
+    enabled: canManagePdfTemplates,
+  });
+
+  // Fetch lease quote templates
+  const { data: leaseQuoteTemplates, isLoading: isLoadingLeaseQuoteTemplates } = useQuery<any[]>({
+    queryKey: ['/api/lease-quote-templates'],
     enabled: canManagePdfTemplates,
   });
 
@@ -596,7 +605,7 @@ export default function DocumentsIndex() {
       </Dialog>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
+        <TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6">
           <TabsTrigger value="library">{t('indexPage.tabLibrary')}</TabsTrigger>
           {/* A-18-1: both template lists are served to manage_pdf_templates only; without it the tab stays visible, greyed out, with the reason. */}
           <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
@@ -604,6 +613,9 @@ export default function DocumentsIndex() {
           </RequiresPermission>
           <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
             <TabsTrigger value="transport-templates" data-testid="tab-transport-templates">{t('indexPage.tabTransportTemplates')}</TabsTrigger>
+          </RequiresPermission>
+          <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
+            <TabsTrigger value="lease-quote-templates" data-testid="tab-lease-quote-templates">{t('indexPage.tabLeaseQuoteTemplates')}</TabsTrigger>
           </RequiresPermission>
           <TabsTrigger value="barcode-labels" data-testid="tab-barcode-labels">{t('indexPage.tabBarcodeLabels')}</TabsTrigger>
           <TabsTrigger value="damage-check" data-testid="tab-damage-check-templates">{t('indexPage.tabDamageCheckTemplates')}</TabsTrigger>
@@ -1193,6 +1205,84 @@ export default function DocumentsIndex() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="lease-quote-templates">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('indexPage.leaseQuoteTemplateEditorTitle')}</CardTitle>
+              <CardDescription>
+                {t('indexPage.leaseQuoteTemplateEditorDescription')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-6">
+                <p className="mb-4">{t('indexPage.openLeaseQuoteTemplateEditorIntro')}</p>
+                <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
+                  <Button onClick={() => setLeaseQuoteTemplateEditorDialogOpen(true)} data-testid="button-open-lease-quote-template-editor">
+                    <FileEdit className="mr-2 h-4 w-4" />
+                    {t('indexPage.openTemplateEditorButton')}
+                  </Button>
+                </RequiresPermission>
+              </div>
+
+              {isLoadingLeaseQuoteTemplates ? (
+                <div className="flex justify-center items-center h-32">
+                  <svg className="animate-spin h-8 w-8 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+              ) : leaseQuoteTemplates && leaseQuoteTemplates.length > 0 ? (
+                <div>
+                  <h3 className="text-lg font-medium mb-4 border-b pb-2">{t('indexPage.availableTemplatesTitle')}</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {leaseQuoteTemplates.map((template: any) => (
+                      <Card key={template.id} className="overflow-hidden">
+                        <div className="bg-gray-100 p-2 flex items-center justify-center aspect-[8.5/11] relative">
+                          {template.backgroundPreviewPath ? (
+                            <img
+                              src={`/${template.backgroundPreviewPath}`}
+                              alt={`Preview of ${template.name}`}
+                              className="w-full h-full object-contain"
+                            />
+                          ) : (
+                            <FileText className="h-10 w-10 text-gray-400" />
+                          )}
+                        </div>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-medium mb-1 truncate" title={template.name}>
+                              {template.name}
+                            </h4>
+                            {template.isDefault && (
+                              <Badge variant="secondary" className="ml-2">
+                                <Star className="h-3 w-3 mr-1" />
+                                {t('indexPage.defaultBadge')}
+                              </Badge>
+                            )}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-3 w-full"
+                            onClick={() => setLeaseQuoteTemplateEditorDialogOpen(true)}
+                          >
+                            <FileEdit className="h-3 w-3 mr-1" />
+                            {t('indexPage.editButton')}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  {t('indexPage.noTemplatesFound')}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="barcode-labels">
           <Card>
             <CardHeader>
@@ -1482,6 +1572,23 @@ export default function DocumentsIndex() {
       </Dialog>
 
       <ConfirmDialog {...transportGuard.confirmProps} />
+
+      {/* Lease Quote Template Editor Dialog */}
+      <Dialog open={leaseQuoteTemplateEditorDialogOpen} onOpenChange={leaseQuoteGuard.onOpenChange}>
+        <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] max-h-[95vh] p-0 overflow-hidden flex flex-col">
+          <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b">
+            <DialogTitle>{t('indexPage.leaseQuoteTemplateEditorTitle')}</DialogTitle>
+            <DialogDescription>
+              {t('indexPage.leaseQuoteTemplateEditorDialogDescription')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto overflow-x-hidden">
+            <LeaseQuoteTemplateEditor onClose={leaseQuoteGuard.requestClose} onDirtyChange={leaseQuoteGuard.setDirty} />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog {...leaseQuoteGuard.confirmProps} />
 
       {/* Barcode Label Template Editor Dialog */}
       <Dialog open={barcodeLabelEditorDialogOpen} onOpenChange={barcodeGuard.onOpenChange}>

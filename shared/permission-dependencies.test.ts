@@ -103,7 +103,7 @@ const SCREEN_SOURCES: Array<{ screen: string; files: string[]; rights?: string[]
 ];
 
 /** Screens in PAGE_ACCESS that show no missing-data line at all today. */
-const PAGES_WITHOUT_SITES = ["/vehicles", "/scan", "/portal-admin", "/fines", "/reservations", "/documents", "/reservations/edit/:id", "/expenses/add"];
+const PAGES_WITHOUT_SITES = ["/vehicles", "/scan", "/portal-admin", "/fines", "/reservations", "/documents", "/lease-quotes", "/reservations/edit/:id", "/expenses/add"];
 
 interface Site {
   file: string;

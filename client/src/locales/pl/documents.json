@@ -209,6 +209,11 @@
     "sendEmailButton": "Wyślij e-mail",
     "contractTemplateEditorDialogDescription": "Twórz szablony umów i zarządzaj nimi, umieszczając pola metodą przeciągnij i upuść",
     "transportTemplateEditorDialogDescription": "Zaprojektuj raport dla kierowcy — przeciągaj pola na stronie, jedna duża strona na transport",
+    "tabLeaseQuoteTemplates": "Oferty leasingowe",
+    "leaseQuoteTemplateEditorTitle": "Edycja szablonu oferty leasingowej",
+    "leaseQuoteTemplateEditorDescription": "Zarządzaj plikiem PDF, który klient otrzymuje z ofertą leasingową",
+    "openLeaseQuoteTemplateEditorIntro": "Otwórz edytor szablonów, aby zaprojektować szablon oferty leasingowej: przeciągnij pola na stronę.",
+    "leaseQuoteTemplateEditorDialogDescription": "Zaprojektuj ofertę leasingową — przeciągnij pola na stronę, jedna strona A4",
     "damageCheck": {
       "cardTitle": "Szablony kontroli szkód",
       "cardDescription": "Zarządzaj polami, układem i słownictwem list kontrolnych używanych do budowania formularzy kontroli szkód. Gotowe pliki PDF z kontroli szkód znajdują się w bibliotece dokumentów, filtrowane według pojazdu. Diagramy pojazdów są zarządzane poniżej.",
@@ -594,6 +599,37 @@
     },
     "createFirstTemplateDescription": "Zacznij od utworzenia szablonu raportu transportu",
     "backToDelivery": "Powrót do dostaw"
+  },
+  "leaseQuoteTemplateEditor": {
+    "templateNamePlaceholder": "np. Standardowa oferta leasingowa",
+    "dataSourceOptions": {
+      "quoteNumber": "Numer oferty",
+      "quoteDate": "Data oferty",
+      "validUntil": "Ważna do",
+      "customerName": "Klient (nazwa lub firma)",
+      "customerContact": "Osoba kontaktowa",
+      "customerAddress": "Adres klienta",
+      "customerPostalCode": "Kod pocztowy klienta",
+      "customerCity": "Miejscowość klienta",
+      "customerEmail": "E-mail klienta",
+      "vehicleMake": "Marka",
+      "vehicleModel": "Model",
+      "vehicleTrim": "Wersja",
+      "licensePlate": "Numer rejestracyjny",
+      "deliveryTime": "Czas dostawy",
+      "termMonths": "Okres (miesiące)",
+      "kmPerYear": "Kilometry rocznie",
+      "monthlyPriceExclVat": "Cena leasingu miesięcznie bez VAT",
+      "excessKmPrice": "Cena za dodatkowy kilometr",
+      "shortfallKmPrice": "Cena za niewykorzystany kilometr",
+      "companyName": "Nazwa własnej firmy",
+      "signatureLandlord": "Podpis wynajmującego"
+    },
+    "createFirstTemplateDescription": "Zacznij od utworzenia szablonu oferty leasingowej",
+    "backToDocuments": "Wróć do dokumentów",
+    "captionLabel": "Tekst przed wartością",
+    "captionPlaceholder": "np. Okres:",
+    "captionHelp": "Ten tekst jest drukowany tuż przed wartością w pliku PDF. Zostaw puste, aby wydrukować tylko wartość."
   },
   "interactiveDamageCheck": {
     "toasts": {

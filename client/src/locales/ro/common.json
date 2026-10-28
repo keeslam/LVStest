@@ -248,7 +248,8 @@
         "password": "Parolă",
         "key-audit": "Verificare dulap chei",
         "notification-dismissal": "Notificare ascunsă",
-        "user-setting": "Setare proprie"
+        "user-setting": "Setare proprie",
+        "lease_quote": "Ofertă de leasing"
       },
       "verbs": {
         "create": "creat",
@@ -353,6 +354,12 @@
           "invoice-inbox-import": "Facturi din căsuța poștală importate",
           "backup": "Copie de rezervă creată",
           "missing-invoice-mail": "E-mail săptămânal facturi lipsă"
+        },
+        "lease_quote": {
+          "copy": "Ofertă copiată într-o ofertă nouă",
+          "pdf": "PDF creat pentru client",
+          "files": "Oferta dealerului încărcată, citită sau ștearsă",
+          "file-view": "Atașamentul ofertei vizualizat"
         }
       }
     }

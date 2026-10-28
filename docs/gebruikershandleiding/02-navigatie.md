@@ -26,6 +26,7 @@ Het menu staat links. Het blijft altijd staan. Je ziet alleen de items waar je r
 | **Transporten** | Leveringen, wissels, sleepacties en terughalen | Reserveringen bekijken of beheren |
 | **Communicatie** | E-mails en meldingen naar klanten | E-mailsjablonen beheren of Meldingen beheren |
 | **Rapporten** | Cijfers en overzichten | Rapporten bekijken of beheren |
+| **Lease offertes** | Leaseprijzen uitrekenen en offertes maken | Lease offertes (standaard alleen beheerders). Zie hoofdstuk 22 |
 
 **Instellingen, gebruikers en back-up staan níét in dit menu.** Ze zitten rechtsboven achter je
 eigen naam. Alleen een beheerder ziet ze. Zie 2.10.

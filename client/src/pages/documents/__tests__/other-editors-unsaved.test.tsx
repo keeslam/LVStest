@@ -18,6 +18,7 @@ vi.mock("@/hooks/use-auth", () => ({
 }));
 
 import TransportReportTemplateEditor from "@/pages/documents/transport-report-template-editor";
+import LeaseQuoteTemplateEditor from "@/pages/documents/lease-quote-template-editor";
 import BarcodeLabelTemplateEditor from "@/pages/documents/barcode-label-template-editor";
 
 function json(body: unknown, status = 200) {
@@ -37,6 +38,7 @@ beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
     const url = (typeof input === "string" ? input : (input as Request).url).replace(/^https?:\/\/[^/]+/, "");
     if (url === "/api/transport-report-templates") return json(transportTemplates);
+    if (url === "/api/lease-quote-templates") return json(transportTemplates);
     if (url === "/api/barcode-label-templates") return json(barcodeTemplates);
     return json([]);
   }));
@@ -71,6 +73,7 @@ const addedFieldShown = () =>
 
 describe.each([
   ["transport report editor", () => TransportReportTemplateEditor, "button-add-field", "Tweede"],
+  ["lease quote editor", () => LeaseQuoteTemplateEditor, "button-add-field", "Tweede"],
   ["barcode label editor", () => BarcodeLabelTemplateEditor, "button-add-barcode-label-field", "Auto"],
 ] as const)("%s", (_name, component, addButton, otherName) => {
   it("is clean when nothing was edited", async () => {

@@ -1,0 +1,252 @@
+{
+  "title": "Ofertas de leasing",
+  "tabs": {
+    "quotes": "Ofertas",
+    "settings": "Ajustes"
+  },
+  "newQuote": "Nueva oferta",
+  "search": "Buscar por cliente, coche, matrícula o número",
+  "allStatuses": "Todos los estados",
+  "statusFilter": "Estado",
+  "status": {
+    "concept": "Borrador",
+    "sent": "Enviada",
+    "accepted": "Aceptada",
+    "rejected": "Rechazada",
+    "expired": "Caducada"
+  },
+  "columns": {
+    "number": "Número",
+    "date": "Fecha",
+    "customer": "Cliente",
+    "vehicle": "Coche",
+    "licensePlate": "Matrícula",
+    "monthly": "Al mes",
+    "status": "Estado",
+    "validUntil": "Válida hasta",
+    "actions": "Acciones"
+  },
+  "noCustomer": "Sin cliente",
+  "empty": "Todavía no hay ofertas. Crea una nueva oferta.",
+  "noResults": "No se han encontrado ofertas.",
+  "loadFailed": "No se pudieron cargar las ofertas.",
+  "actions": {
+    "open": "Abrir",
+    "copy": "Copiar",
+    "pdf": "PDF",
+    "delete": "Eliminar"
+  },
+  "create": {
+    "failed": "No se pudo crear la oferta."
+  },
+  "copy": {
+    "question": "¿Copiar también los adjuntos (oferta del concesionario)?",
+    "description": "La nueva oferta recibe un número nuevo y empieza como borrador.",
+    "yes": "Sí",
+    "no": "No",
+    "cancel": "Cancelar",
+    "done": "Se ha creado la oferta {{number}}.",
+    "failed": "No se pudo copiar la oferta."
+  },
+  "delete": {
+    "title": "¿Eliminar la oferta?",
+    "description": "La oferta {{number}} va a la papelera. Puedes restaurarla desde allí.",
+    "confirm": "Eliminar",
+    "cancel": "Cancelar",
+    "done": "La oferta {{number}} está en la papelera.",
+    "failed": "No se pudo eliminar la oferta."
+  },
+  "pdf": {
+    "done": "Se ha creado el PDF de la oferta {{number}}.",
+    "failed": "No se pudo crear el PDF.",
+    "open": "Abrir el archivo"
+  },
+  "settings": {
+    "intro": "Valores predeterminados para el cálculo de una oferta nueva.",
+    "note": "Vale para ofertas nuevas; las ofertas existentes conservan sus propios valores.",
+    "interestRatePercent": "Interés (% al año)",
+    "marginPerMonth": "Margen al mes (€)",
+    "robPerYear": "ROB al año (€)",
+    "otherCostsPerYear": "Otros costes al año (€)",
+    "excessKmPrice": "Precio por km de exceso (€ por km)",
+    "shortfallKmPrice": "Precio por km de defecto (€ por km)",
+    "validityDays": "Validez (días)",
+    "save": "Guardar",
+    "saved": "Los ajustes se han guardado.",
+    "saveFailed": "No se pudieron guardar los ajustes.",
+    "loadFailed": "No se pudieron cargar los ajustes.",
+    "invalid": "Este número no es válido: {{field}}.",
+    "invalidDays": "La validez debe ser un número entero de días (mínimo 1)."
+  },
+  "editor": {
+    "title": "Oferta {{number}}",
+    "chosenTotal": "Para el cliente: {{amount}} al mes",
+    "description": "Todos los importes sin IVA. El precio de leasing se recalcula mientras escribes.",
+    "loadFailed": "No se pudo cargar la oferta.",
+    "sections": {
+      "customer": "1. Cliente",
+      "vehicle": "2. Coche",
+      "purchase": "3. Compra",
+      "variants": "4. Variantes",
+      "quote": "5. Oferta"
+    },
+    "customerMode": {
+      "customer": "Cliente existente",
+      "prospect": "Cliente potencial"
+    },
+    "customer": {
+      "search": "Buscar un cliente",
+      "none": "No se encontró ningún cliente",
+      "change": "Otro cliente",
+      "more": "{{shown}} de {{total}} mostrados, escribe para afinar.",
+      "noAccess": "No puedes ver la lista de clientes. Rellena los datos en Cliente potencial."
+    },
+    "fields": {
+      "prospectName": "Nombre",
+      "prospectCompany": "Empresa",
+      "prospectEmail": "Correo electrónico",
+      "prospectPhone": "Teléfono",
+      "vehicleMake": "Marca",
+      "vehicleModel": "Modelo",
+      "vehicleTrim": "Versión",
+      "licensePlate": "Matrícula (si se conoce)",
+      "dealerName": "Concesionario",
+      "deliveryTime": "Plazo de entrega",
+      "vehicleNotes": "Observaciones",
+      "purchasePrice": "Precio de compra sin IVA (incl. BPM y gastos de entrega)",
+      "interestRatePercent": "Interés (% anual)",
+      "robPerYear": "Mantenimiento (ROB) al año (€)",
+      "otherCostsPerYear": "Otros costes al año (€)",
+      "insurancePerMonth": "Seguro al mes (€)",
+      "roadTaxPerMonth": "Impuesto de circulación al mes (€)",
+      "marginPerMonth": "Margen al mes (€)",
+      "excessKmPrice": "Precio por km de más (€ por km)",
+      "shortfallKmPrice": "Precio por km de menos (€ por km)",
+      "status": "Estado",
+      "quoteDate": "Fecha de la oferta",
+      "validUntil": "Válida hasta",
+      "internalNotes": "Nota interna (no para el cliente)"
+    },
+    "breakdown": {
+      "title": "Desglose del precio (para comprobar)",
+      "hint": "Tal como lo indica el concesionario. El precio de compra de arriba es la cifra que cuenta.",
+      "catalogPrice": "Precio de catálogo",
+      "options": "Opciones",
+      "discount": "Descuento",
+      "bpm": "BPM",
+      "deliveryCosts": "Gastos de entrega",
+      "totalExclVat": "Total sin IVA",
+      "totalInclVat": "Total con IVA"
+    },
+    "variants": {
+      "column": "Variante {{n}}",
+      "chosen": "Para el cliente",
+      "term": "Duración (meses)",
+      "km": "Km al año",
+      "residual": "Valor residual (€)",
+      "depreciation": "Amortización",
+      "interest": "Interés",
+      "rob": "Mantenimiento (ROB)",
+      "robTotal": "{{amount}} durante la duración",
+      "insurance": "Seguro",
+      "roadTax": "Impuesto de circulación",
+      "otherCosts": "Otros costes",
+      "margin": "Margen",
+      "total": "Total al mes",
+      "costPerKm": "Coste por km",
+      "add": "Añadir variante",
+      "duplicate": "Duplicar variante",
+      "remove": "Eliminar variante",
+      "choose": "Seleccionar esta",
+      "selected": "Seleccionada"
+    },
+    "warnings": {
+      "residual_above_purchase": "El valor residual es mayor que el precio de compra",
+      "term_missing": "Indica una duración",
+      "km_missing": "Indica los km al año para el precio por km",
+      "residual_missing": "Indica un valor residual"
+    },
+    "files": {
+      "dealerTitle": "Oferta(s) del concesionario",
+      "generatedTitle": "PDF creados para el cliente",
+      "none": "Aún no se ha subido ninguna oferta del concesionario.",
+      "noneGenerated": "Aún no se ha creado ningún PDF.",
+      "upload": "Subir oferta del concesionario",
+      "uploading": "Subiendo…",
+      "by": "{{date}} por {{user}}",
+      "open": "Abrir",
+      "download": "Descargar",
+      "scan": "Volver a leer",
+      "delete": "Eliminar",
+      "deleteTitle": "¿Eliminar el archivo?",
+      "deleteDescription": "{{name}} se eliminará de esta oferta.",
+      "deleted": "El archivo se ha eliminado.",
+      "deleteFailed": "No se pudo eliminar el archivo.",
+      "tooLarge": "El archivo es demasiado grande (máximo 10 MB).",
+      "wrongType": "Solo se puede subir un PDF, PNG o JPG.",
+      "uploadFailed": "No se pudo subir el archivo."
+    },
+    "actions": {
+      "save": "Guardar",
+      "pdf": "Crear PDF",
+      "copy": "Copiar",
+      "history": "Historial",
+      "close": "Cerrar"
+    },
+    "saved": "La oferta se ha guardado.",
+    "variantSelected": "La variante {{n}} está seleccionada y guardada. Es la que aparece en el PDF.",
+    "saveFailed": "No se pudo guardar la oferta.",
+    "blocked": {
+      "invalid": "Hay un número incorrecto (borde rojo). Corrígelo para guardar.",
+      "variants": "Indica en cada variante la duración, los km al año y el valor residual para guardar.",
+      "dates": "Indica una fecha de oferta y una fecha de validez para guardar."
+    },
+    "editWarning": {
+      "sent": "Esta oferta ya se ha enviado. ¿Cambiarla de todos modos?",
+      "accepted": "Esta oferta ya se ha aceptado. ¿Cambiarla de todos modos?",
+      "description": "El cliente ya tiene esta oferta. Tus cambios se guardan en esta oferta.",
+      "yes": "Sí, cambiar",
+      "no": "No"
+    },
+    "pdfErrors": {
+      "LEASE_NO_TEMPLATE": "Todavía no hay plantilla PDF para ofertas de leasing. Crea una en Documentos.",
+      "LEASE_NO_VARIANT": "Elige primero qué variante va al cliente."
+    },
+    "chosenVariantRemoved": "Ha eliminado la variante que va al cliente. Ahora la variante 1 va al cliente."
+  },
+  "scan": {
+    "title": "Leer oferta del concesionario",
+    "description": "{{name}}: comprueba lo que leyó la aplicación. Solo lo marcado pasa a la oferta al pulsar Aplicar.",
+    "reading": "Leyendo la oferta…",
+    "failed": "No se pudo leer. El archivo se ha guardado; rellena los datos tú mismo.",
+    "onlyInclVat": "El concesionario solo indica un importe con IVA. Rellena tú mismo el precio de compra sin IVA.",
+    "field": "Dato",
+    "value": "Leído",
+    "take": "aplicar",
+    "notFound": "no encontrado",
+    "apply": "Aplicar",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "applied": "Los datos están en la oferta. No olvides guardar.",
+    "notesLine": "Oferta del concesionario: {{parts}}",
+    "notesDate": "fecha {{date}}",
+    "notesValid": "válida hasta {{date}}",
+    "fields": {
+      "purchasePrice": "Precio de compra sin IVA (propuesta)",
+      "dealerName": "Concesionario",
+      "make": "Marca",
+      "model": "Modelo",
+      "trim": "Versión",
+      "catalogPrice": "Precio de catálogo",
+      "options": "Opciones",
+      "discount": "Descuento",
+      "bpm": "BPM",
+      "deliveryCosts": "Gastos de entrega",
+      "totalExclVat": "Total sin IVA",
+      "totalInclVat": "Total con IVA",
+      "deliveryTime": "Plazo de entrega",
+      "quoteDate": "Fecha de la oferta del concesionario (a Observaciones)",
+      "validUntil": "Oferta del concesionario válida hasta (a Observaciones)"
+    }
+  }
+}

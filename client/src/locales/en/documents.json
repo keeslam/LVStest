@@ -203,6 +203,11 @@
     "sendEmailButton": "Send Email",
     "contractTemplateEditorDialogDescription": "Create and manage contract templates with drag-and-drop field placement",
     "transportTemplateEditorDialogDescription": "Design the driver-facing report — drag fields onto the page, one big page per transport",
+    "tabLeaseQuoteTemplates": "Lease quotes",
+    "leaseQuoteTemplateEditorTitle": "Edit lease quote template",
+    "leaseQuoteTemplateEditorDescription": "Manage the PDF the customer receives with a lease quote",
+    "openLeaseQuoteTemplateEditorIntro": "Open the template editor to design the lease quote template: drag the fields onto the page.",
+    "leaseQuoteTemplateEditorDialogDescription": "Design the lease quote — drag fields onto the page, one A4 page",
     "damageCheck": {
       "cardTitle": "Damage Check Templates",
       "cardDescription": "Manage the fields, layout, and checklist vocabulary used to build damage check forms. Completed damage check PDFs are in the Document Library, filtered by vehicle. Vehicle diagrams are managed below.",
@@ -578,6 +583,37 @@
     },
     "createFirstTemplateDescription": "Get started by creating a transport report template",
     "backToDelivery": "Back to Delivery"
+  },
+  "leaseQuoteTemplateEditor": {
+    "templateNamePlaceholder": "e.g. Standard lease quote",
+    "dataSourceOptions": {
+      "quoteNumber": "Quote number",
+      "quoteDate": "Quote date",
+      "validUntil": "Valid until",
+      "customerName": "Customer (name or company)",
+      "customerContact": "Contact person",
+      "customerAddress": "Customer address",
+      "customerPostalCode": "Customer postal code",
+      "customerCity": "Customer city",
+      "customerEmail": "Customer email",
+      "vehicleMake": "Make",
+      "vehicleModel": "Model",
+      "vehicleTrim": "Trim",
+      "licensePlate": "Licence plate",
+      "deliveryTime": "Delivery time",
+      "termMonths": "Term (months)",
+      "kmPerYear": "Kilometres per year",
+      "monthlyPriceExclVat": "Lease price per month excl. VAT",
+      "excessKmPrice": "Excess kilometre price",
+      "shortfallKmPrice": "Shortfall kilometre price",
+      "companyName": "Own company name",
+      "signatureLandlord": "Landlord signature"
+    },
+    "createFirstTemplateDescription": "Start by creating a lease quote template",
+    "backToDocuments": "Back to documents",
+    "captionLabel": "Text before the value",
+    "captionPlaceholder": "e.g. Term:",
+    "captionHelp": "This text is printed right before the value on the PDF. Leave empty to print only the value."
   },
   "interactiveDamageCheck": {
     "toasts": {

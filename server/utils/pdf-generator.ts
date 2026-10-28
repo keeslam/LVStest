@@ -500,7 +500,7 @@ export async function generateRentalContractFromTemplate(
 }
 
 /** Kees 2026-10-21: the PNG a staff member set in Profiel > Handtekening, or null. */
-async function loadStaffSignaturePng(userId: number | null): Promise<Buffer | null> {
+export async function loadStaffSignaturePng(userId: number | null): Promise<Buffer | null> {
   if (!userId) return null;
   try {
     const { db } = await import("../db");

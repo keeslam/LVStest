@@ -111,6 +111,7 @@ async function drawMarks(page, marks) {
       label: isLocator ? undefined : mark.label,
       text: isLocator ? undefined : mark.text,
       pad: (isLocator ? undefined : mark.pad) ?? 4,
+      align: isLocator ? undefined : mark.align,
     };
   });
   for (const { target } of targets) await target.scrollIntoViewIfNeeded().catch(() => {});
@@ -118,7 +119,7 @@ async function drawMarks(page, marks) {
   const viewport = page.viewportSize();
   const boxes = [];
   let number = 0;
-  for (const [index, { target, label, text: fixedText, pad }] of targets.entries()) {
+  for (const [index, { target, label, text: fixedText, pad, align }] of targets.entries()) {
     const box = await target.boundingBox();
     if (!box) throw new Error(`Markering ${index + 1} (${label ?? ""}): element niet zichtbaar`);
     const inside = box.y >= 0 && box.y + box.height <= viewport.height && box.x >= 0 && box.x + box.width <= viewport.width;
@@ -157,7 +158,7 @@ async function drawMarks(page, marks) {
       })
       .catch(() => "");
     const short = text.length > 28 ? `${text.slice(0, 27)}…` : text;
-    boxes.push({ ...box, label: label ?? String(number), text: short, pad });
+    boxes.push({ ...box, label: label ?? String(number), text: short, pad, align });
   }
   await page.evaluate(
     ({ boxes, attr }) => {
@@ -192,7 +193,7 @@ async function drawMarks(page, marks) {
           const yBelow = box.y + box.height + box.pad + 5;
           const above = roomAbove && (!hits(yAbove) || hits(yBelow));
           // Valt het label links buiten beeld, dan links uitlijnen in plaats van rechts.
-          const fitsRight = right - w > 4;
+          const fitsRight = box.align === "left" ? false : right - w > 4;
           Object.assign(badge.style, {
             position: "absolute",
             ...(fitsRight ? { right: "-3px" } : { left: "-3px" }),

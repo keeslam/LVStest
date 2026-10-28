@@ -164,6 +164,8 @@ const RESTORE_ERROR_CODES = new Set([
   "DEBTOR_NUMBER_TAKEN",
   // Sub-project D (B-41 D8): the customer of a deleted driver is gone (or in the customer bin).
   "CUSTOMER_MISSING",
+  // Lease offertes: the number of a deleted quote is held by another quote now.
+  "QUOTE_NUMBER_TAKEN",
 ]);
 
 /** Warnings a successful restore carries (besluit B-41 D8); anything else is ignored. */

@@ -342,3 +342,23 @@ Enter of op de spatiebalk.
 | De RDW de voertuigtypes laten controleren | **App-instellingen** → **Voertuigen** → **RDW-voertuigtypes** → **Controleren**, daarna **Toepassen** |
 
 Zie hoofdstuk 10.
+
+---
+
+## 13.14 Lease offertes
+
+Uitleg met plaatjes: [hoofdstuk 22](22-lease-offertes.md).
+
+| Wat je wilt | Klikpad |
+|---|---|
+| Een nieuwe offerte maken | **Lease offertes** → **Nieuwe offerte** → klant, auto, aanschafwaarde, kosten, variant → **Opslaan** |
+| Een dealerofferte laten uitlezen | In de offerte bij **2. Auto** → **Dealerofferte uploaden** → vinkjes controleren → **Overnemen** → **Opslaan** |
+| Varianten vergelijken | In de offerte bij **5. Varianten** → **Variant toevoegen** of **Variant dupliceren** |
+| Kiezen wat de klant krijgt | Onder de variant → **Deze selecteren** |
+| De PDF voor de klant maken | In de offerte **PDF maken**, of in de lijst de knop **PDF** achter de offerte |
+| Een offerte kopiëren | **Kopiëren** (in de lijst of in de offerte) → **Ja** of **Nee** bij de bijlagen |
+| Een offerte vinden | **Lease offertes** → **Zoeken** en **Status** |
+| Zien wat er veranderd is | In de offerte **Geschiedenis** |
+| Een offerte verwijderen of terugzetten | **Verwijderen** achter de offerte; terug via **Verwijderde lease offertes** → **Terugzetten** |
+| De voorinstellingen veranderen | **Lease offertes** → tabblad **Instellingen** → **Opslaan** |
+| Het PDF-sjabloon aanpassen | **Documenten** → tabblad **Lease offertes** → **Sjablooneditor openen** |

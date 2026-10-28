@@ -206,6 +206,11 @@
     "sendEmailButton": "Enviar correo",
     "contractTemplateEditorDialogDescription": "Cree y gestione plantillas de contrato colocando los campos arrastrando y soltando",
     "transportTemplateEditorDialogDescription": "Diseñe el informe del conductor: arrastre los campos por la página, una página grande por transporte",
+    "tabLeaseQuoteTemplates": "Ofertas de leasing",
+    "leaseQuoteTemplateEditorTitle": "Editar plantilla de oferta de leasing",
+    "leaseQuoteTemplateEditorDescription": "Gestione el PDF que recibe el cliente con una oferta de leasing",
+    "openLeaseQuoteTemplateEditorIntro": "Abra el editor de plantillas para diseñar la plantilla de la oferta de leasing: arrastre los campos a la página.",
+    "leaseQuoteTemplateEditorDialogDescription": "Diseñe la oferta de leasing: arrastre los campos a la página, una página A4",
     "damageCheck": {
       "cardTitle": "Plantillas de inspección de daños",
       "cardDescription": "Gestione los campos, la disposición y el vocabulario de la lista de comprobación que se utilizan para crear los formularios de inspección de daños. Los PDF de inspecciones de daños completadas están en la biblioteca de documentos, filtrados por vehículo. Los diagramas de vehículos se gestionan más abajo.",
@@ -586,6 +591,37 @@
     },
     "createFirstTemplateDescription": "Empiece creando una plantilla de informe de transporte",
     "backToDelivery": "Volver a entregas"
+  },
+  "leaseQuoteTemplateEditor": {
+    "templateNamePlaceholder": "p. ej. Oferta de leasing estándar",
+    "dataSourceOptions": {
+      "quoteNumber": "Número de oferta",
+      "quoteDate": "Fecha de la oferta",
+      "validUntil": "Válida hasta",
+      "customerName": "Cliente (nombre o empresa)",
+      "customerContact": "Persona de contacto",
+      "customerAddress": "Dirección del cliente",
+      "customerPostalCode": "Código postal del cliente",
+      "customerCity": "Ciudad del cliente",
+      "customerEmail": "Correo del cliente",
+      "vehicleMake": "Marca",
+      "vehicleModel": "Modelo",
+      "vehicleTrim": "Versión",
+      "licensePlate": "Matrícula",
+      "deliveryTime": "Plazo de entrega",
+      "termMonths": "Duración (meses)",
+      "kmPerYear": "Kilómetros por año",
+      "monthlyPriceExclVat": "Precio de leasing al mes sin IVA",
+      "excessKmPrice": "Precio por kilómetro adicional",
+      "shortfallKmPrice": "Precio por kilómetro no recorrido",
+      "companyName": "Nombre de la empresa propia",
+      "signatureLandlord": "Firma del arrendador"
+    },
+    "createFirstTemplateDescription": "Empiece creando una plantilla de oferta de leasing",
+    "backToDocuments": "Volver a documentos",
+    "captionLabel": "Texto antes del valor",
+    "captionPlaceholder": "p. ej. Duración:",
+    "captionHelp": "Este texto se imprime justo antes del valor en el PDF. Déjelo vacío para imprimir solo el valor."
   },
   "interactiveDamageCheck": {
     "toasts": {

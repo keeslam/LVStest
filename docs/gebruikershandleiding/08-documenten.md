@@ -206,7 +206,7 @@ inleveren. Dit is erin verbeterd:
 ## 8.5 Sjablonen: wie ze beheert en wat er mis kan gaan
 
 Een sjabloon bepaalt hoe een document eruitziet. De sjablonen staan onder **Documenten**. Ze
-staan in vier tabbladen naast de bibliotheek:
+staan in vijf tabbladen naast de bibliotheek:
 
 | Tabblad | Waarvoor | Wie mag het wijzigen |
 |---|---|---|
@@ -214,6 +214,7 @@ staan in vier tabbladen naast de bibliotheek:
 | **Transportrapportsjablonen** | De transportbrief | Recht **PDF-sjablonen beheren** |
 | **Barcodelabels** | Sleutel- en voertuiglabels | Bekijken mag iedereen. Wijzigen vraagt **PDF-sjablonen beheren** |
 | **Schadecheck-sjablonen** | Het schadecheckformulier en de voertuigdiagrammen | Recht **Schadecontroles beheren** |
+| **Lease offertes** | De PDF van een lease offerte voor de klant (hoofdstuk 22.11) | Recht **PDF-sjablonen beheren** |
 
 Heb je het vinkje **PDF-sjablonen beheren** niet? Dan zijn de tabbladen **Contractsjablonen** en
 **Transportrapportsjablonen** grijs. Klik je erop? Dan zegt de app welk vinkje je mist. Er opent

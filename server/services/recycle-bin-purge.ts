@@ -29,7 +29,8 @@
  *                            them into the snapshot); the bin row goes, and the files
  *                            named in the snapshot. The fiscal rows in the snapshot go
  *                            with it: counted in the audit row, `purged` on the trail
- *   vehicle, fine, transport the rows are already gone; the bin row goes, and the
+ *   vehicle, fine, transport, lease_quote
+ *                            the rows are already gone; the bin row goes, and the
  *                            files named in the snapshot
  *
  * FILES. A file is removed only AFTER the commit (a rolled-back purge must not cost
@@ -54,9 +55,10 @@ import { eq, inArray, or, sql } from "drizzle-orm";
 import { db } from "../db";
 import {
   backupSettings, damageCheckTemplateBackgrounds, damageCheckTemplates, deletedRecords, deliveryTasks, documents, drivers,
-  expenses, fineImportFiles, fines, fiscalAssessments, fiscalReviewCases, interactiveDamageChecks, invoiceInboxItems,
+  expenses, fineImportFiles, fines, leaseQuoteFiles, fiscalAssessments, fiscalReviewCases, interactiveDamageChecks, invoiceInboxItems,
   pdfTemplates, portalDocumentAcks, portalRequestAttachments, reservationDriverAssignments, reservations, scanEvents,
   templateBackgrounds, transportReportTemplateBackgrounds, transportReportTemplates, vehicleDiagramTemplates,
+  leaseQuoteTemplateBackgrounds, leaseQuoteTemplates,
   vehicleUsagePeriods, vehicles,
   type DeletedRecord,
 } from "../../shared/schema";
@@ -171,6 +173,8 @@ const SNAPSHOT_FILE_COLUMNS: FileColumn[] = [
   { column: drivers.licenseFilePath, key: "licenseFilePath" },
   { column: portalRequestAttachments.filePath, key: "filePath" },
   { column: fines.letterFilePath, key: "letterFilePath" },
+  // A deleted lease quote's file rows are in its snapshot (payload.files[].filePath).
+  { column: leaseQuoteFiles.filePath, key: "filePath" },
   // Not written by any code today (the form sends ""), but a file column nonetheless.
   { column: vehicles.damageCheckAttachment, key: "damageCheckAttachment" },
 ];
@@ -185,11 +189,13 @@ const SNAPSHOT_FILE_COLUMNS: FileColumn[] = [
 const EXTRA_LIVE_COLUMNS: any[] = [
   invoiceInboxItems.attachmentPath, // a booked invoice's receipt is the inbox attachment
   fineImportFiles.rawPath,
-  // Template backgrounds and previews (rental contract / damage check / transport report).
+  // Template backgrounds and previews (rental contract / damage check / transport report / lease quote).
   pdfTemplates.backgroundPath, pdfTemplates.backgroundPreviewPath, pdfTemplates.templatePreviewPath,
   templateBackgrounds.backgroundPath, templateBackgrounds.previewPath,
   transportReportTemplates.backgroundPath, transportReportTemplates.backgroundPreviewPath, transportReportTemplates.templatePreviewPath,
   transportReportTemplateBackgrounds.backgroundPath, transportReportTemplateBackgrounds.previewPath,
+  leaseQuoteTemplates.backgroundPath, leaseQuoteTemplates.backgroundPreviewPath, leaseQuoteTemplates.templatePreviewPath,
+  leaseQuoteTemplateBackgrounds.backgroundPath, leaseQuoteTemplateBackgrounds.previewPath,
   damageCheckTemplates.backgroundPath, damageCheckTemplates.backgroundPreviewPath, damageCheckTemplates.templatePreviewPath,
   damageCheckTemplateBackgrounds.backgroundPath, damageCheckTemplateBackgrounds.previewPath,
   vehicleDiagramTemplates.diagramPath, // the legacy local path of a vehicle diagram

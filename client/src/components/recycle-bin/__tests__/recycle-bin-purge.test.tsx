@@ -288,7 +288,7 @@ describe("RecycleBinDialog - one confirmation before anything is deleted", () =>
     const nouns: Record<DeletedRecordKind, string> = {
       vehicle: "voertuigen", customer: "klanten", reservation: "reserveringen",
       maintenance_block: "onderhoudsplanningen", transport: "transporten", fine: "boetes",
-      driver: "chauffeurs", expense: "kostenposten",
+      driver: "chauffeurs", expense: "kostenposten", lease_quote: "lease offertes",
     };
     const user = userEvent.setup();
     for (const kind of ["vehicle", "reservation", "maintenance_block", "driver", "expense"] as DeletedRecordKind[]) {

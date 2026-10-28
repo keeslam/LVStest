@@ -9,6 +9,8 @@ import {
   templateBackgrounds, type TemplateBackground, type InsertTemplateBackground,
   type DamageCheckTemplateBackground, type InsertDamageCheckTemplateBackground,
   type TransportReportTemplate, type InsertTransportReportTemplate,
+  type LeaseQuoteTemplate, type InsertLeaseQuoteTemplate,
+  type LeaseQuoteTemplateBackground, type InsertLeaseQuoteTemplateBackground,
   type TransportReportTemplateBackground, type InsertTransportReportTemplateBackground,
   type BarcodeLabelTemplate, type InsertBarcodeLabelTemplate,
   type ScanEvent, type InsertScanEvent,
@@ -311,6 +313,20 @@ export interface IStorage {
   createTransportReportTemplateBackground(background: InsertTransportReportTemplateBackground): Promise<TransportReportTemplateBackground>;
   deleteTransportReportTemplateBackground(id: number): Promise<boolean>;
   selectTransportReportTemplateBackground(templateId: number, backgroundId: number): Promise<TransportReportTemplate | undefined>;
+
+  // Lease quote template methods (same shape as the transport report template ones)
+  getAllLeaseQuoteTemplates(): Promise<LeaseQuoteTemplate[]>;
+  getLeaseQuoteTemplate(id: number): Promise<LeaseQuoteTemplate | undefined>;
+  getDefaultLeaseQuoteTemplate(): Promise<LeaseQuoteTemplate | undefined>;
+  createLeaseQuoteTemplate(template: InsertLeaseQuoteTemplate): Promise<LeaseQuoteTemplate>;
+  updateLeaseQuoteTemplate(id: number, templateData: Partial<InsertLeaseQuoteTemplate>): Promise<LeaseQuoteTemplate | undefined>;
+  deleteLeaseQuoteTemplate(id: number): Promise<boolean>;
+  getAllLeaseQuoteTemplateBackgrounds(): Promise<LeaseQuoteTemplateBackground[]>;
+  getLeaseQuoteTemplateBackgrounds(templateId: number): Promise<LeaseQuoteTemplateBackground[]>;
+  getLeaseQuoteTemplateBackground(id: number): Promise<LeaseQuoteTemplateBackground | undefined>;
+  createLeaseQuoteTemplateBackground(background: InsertLeaseQuoteTemplateBackground): Promise<LeaseQuoteTemplateBackground>;
+  deleteLeaseQuoteTemplateBackground(id: number): Promise<boolean>;
+  selectLeaseQuoteTemplateBackground(templateId: number, backgroundId: number): Promise<LeaseQuoteTemplate | undefined>;
 
   // Barcode Label Template methods (key-label stickers, mm canvas, no backgrounds)
   getBarcodeLabelTemplates(): Promise<BarcodeLabelTemplate[]>;

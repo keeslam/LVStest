@@ -244,7 +244,8 @@
         "password": "Password",
         "key-audit": "Key-cabinet audit",
         "notification-dismissal": "Dismissed notification",
-        "user-setting": "Own setting"
+        "user-setting": "Own setting",
+        "lease_quote": "Lease quote"
       },
       "verbs": {
         "create": "created",
@@ -349,6 +350,12 @@
           "invoice-inbox-import": "Invoices imported from the mailbox",
           "backup": "Backup made",
           "missing-invoice-mail": "Weekly missing-invoice mail"
+        },
+        "lease_quote": {
+          "copy": "Quote copied to a new quote",
+          "pdf": "PDF made for the customer",
+          "files": "Dealer quote uploaded, read or deleted",
+          "file-view": "Quote attachment viewed"
         }
       }
     }

@@ -14,6 +14,7 @@ import ExpenseAdd from "@/pages/expenses/add";
 // A-19-4: the three heaviest screens load on first use; PageLoading shows meanwhile.
 const DocumentsIndex = lazy(() => import("@/pages/documents/index"));
 const ReportsPage = lazy(() => import("@/pages/reports/index"));
+const LeaseQuotesPage = lazy(() => import("@/pages/lease-quotes/index"));
 import DeliveryDashboard from "@/pages/delivery/dashboard";
 import ScanPage from "@/pages/scan/index";
 const CustomerCommunications = lazy(() => import("@/pages/CustomerCommunications"));
@@ -98,6 +99,7 @@ function AppRoutes() {
               <ProtectedRoute path="/expenses/add" component={ExpenseAdd} />
               <ProtectedRoute path="/documents" component={DocumentsIndex} />
               <ProtectedRoute path="/reports" component={ReportsPage} />
+              <ProtectedRoute path="/lease-quotes" component={LeaseQuotesPage} />
               <ProtectedRoute path="/delivery" component={DeliveryDashboard} />
               <ProtectedRoute path="/communications" component={CustomerCommunications} />
               <ProtectedRoute path="/portal-admin" component={PortalAdminPage} />

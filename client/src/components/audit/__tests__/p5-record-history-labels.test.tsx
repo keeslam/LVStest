@@ -61,6 +61,12 @@ const logs = [
   entry(26, "expense.with-receipt"),
   entry(27, "maintenance_block.purge"),
   entry(28, "maintenance_block.create"),
+  entry(29, "lease_quote.update"),
+  entry(30, "lease_quote.copy"),
+  entry(31, "lease_quote.pdf"),
+  entry(32, "lease_quote.files"),
+  entry(33, "lease_quote.create"),
+  entry(34, "lease_quote.file-view"),
 ];
 
 beforeEach(() => {
@@ -153,6 +159,18 @@ describe("A-6-4 - audit codes are worded in the record history", () => {
         child && typeof child === "object" ? keysOf(child, `${prefix}${key}.`) : [`${prefix}${key}`],
       );
     expect(keysOf((enCommon as any).recordHistory).sort()).toEqual(keysOf((nlCommon as any).recordHistory).sort());
+  });
+
+  // Lease offertes (2026-10-28): the editor's Geschiedenis reads lease_quote rows.
+  it("words the lease quote actions", async () => {
+    renderHistory();
+    const text = async (id: number) => (await screen.findByTestId(`record-history-entry-${id}`)).textContent ?? "";
+    expect(await text(29)).toContain("Lease offerte gewijzigd");
+    expect(await text(30)).toContain("Offerte gekopieerd naar een nieuwe offerte");
+    expect(await text(31)).toContain("PDF voor de klant gemaakt");
+    expect(await text(32)).toContain("Dealerofferte geüpload, uitgelezen of verwijderd");
+    expect(await text(33)).toContain("Lease offerte aangemaakt");
+    expect(await text(34)).toContain("Bijlage van de offerte bekeken");
   });
 
   it("reads a known resource with an unworded sub-action as \"Reservering: <sub>\", not as the bare code", async () => {

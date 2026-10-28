@@ -100,4 +100,5 @@ export const TEMPLATE_ROUTE_PREFIXES = [
   "/api/vehicle-diagram-templates",
   "/api/transport-report-templates",
   "/api/barcode-label-templates",
+  "/api/lease-quote-templates",
 ];
