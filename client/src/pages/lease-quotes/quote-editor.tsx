@@ -206,7 +206,9 @@ export function QuoteEditor({ quoteId, onClose, onOpenQuote }: QuoteEditorProps)
   return (
     <>
       <Dialog open={quoteId !== null} onOpenChange={guard.onOpenChange}>
-        <DialogContent className="max-w-6xl max-h-[92vh] overflow-y-auto" data-testid="dialog-lease-quote-editor">
+        {/* Fixed header and action bar, only the middle scrolls: a sticky bar
+            inside a padded scroll box let fields show underneath it. */}
+        <DialogContent className="flex max-h-[92vh] max-w-6xl flex-col gap-0 overflow-hidden p-0 sm:p-0" data-testid="dialog-lease-quote-editor">
           {quoteId !== null && (
             <EditorBody key={quoteId} quoteId={quoteId} setDirty={guard.setDirty} requestClose={guard.requestClose} onOpenQuote={onOpenQuote} />
           )}
@@ -389,18 +391,18 @@ function EditorBody({ quoteId, setDirty: reportDirty, requestClose, onOpenQuote 
 
   if (isLoading || (quote && !form)) {
     return (
-      <>
+      <div className="p-6">
         <DialogHeader><DialogTitle>{t("title")}</DialogTitle><DialogDescription className="sr-only">{t("editor.description")}</DialogDescription></DialogHeader>
         <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-      </>
+      </div>
     );
   }
   if (isError || !quote || !form || !costs) {
     return (
-      <>
+      <div className="p-6">
         <DialogHeader><DialogTitle>{t("title")}</DialogTitle><DialogDescription className="sr-only">{t("editor.description")}</DialogDescription></DialogHeader>
         <p className="py-8 text-center text-destructive">{t("editor.loadFailed")}</p>
-      </>
+      </div>
     );
   }
 
@@ -462,7 +464,7 @@ function EditorBody({ quoteId, setDirty: reportDirty, requestClose, onOpenQuote 
 
   return (
     <>
-      <DialogHeader>
+      <DialogHeader className="shrink-0 border-b px-6 pb-4 pt-6 pr-12">
         <DialogTitle className="flex flex-wrap items-center gap-3">
           {t("editor.title", { number: quote.quoteNumber })}
           <span className="text-base font-normal text-muted-foreground" data-testid="text-lease-chosen-total">
@@ -472,7 +474,7 @@ function EditorBody({ quoteId, setDirty: reportDirty, requestClose, onOpenQuote 
         <DialogDescription>{t("editor.description")}</DialogDescription>
       </DialogHeader>
 
-      <div className="space-y-6">
+      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-4" data-testid="lease-quote-editor-scroll">
         {section(t("editor.sections.customer"), (
           <>
             <div className="inline-flex rounded-md border p-0.5" role="radiogroup" aria-label={t("editor.sections.customer")}>
@@ -629,7 +631,7 @@ function EditorBody({ quoteId, setDirty: reportDirty, requestClose, onOpenQuote 
         ), "section-lease-quote")}
       </div>
 
-      <div className="sticky bottom-0 -mx-6 -mb-6 flex flex-wrap items-center gap-2 border-t bg-background px-6 py-3">
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-t bg-background px-6 py-3">
         {reason && <p className="w-full text-sm text-destructive" data-testid="text-lease-save-blocked">{t(`editor.blocked.${reason}`)}</p>}
         <Button type="button" disabled={busy || reason !== null} onClick={() => request("save")} data-testid="button-save-lease-quote">
           {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
