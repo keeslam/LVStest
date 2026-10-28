@@ -127,6 +127,7 @@ van de fiscale mobiliteitscheck staan onderaan in een eigen tabel.
 | **Kosten beheren** | Kosten registreren en inzien, facturen scannen | **Kosten** |
 | **Rapporten bekijken** | De rapportenmodule lezen | **Rapporten** |
 | **Rapporten beheren** | Alles hierboven, plus eigen rapporten opslaan en beheren | **Rapporten** |
+| **Lease offertes** | Leaseprijzen uitrekenen, offertes maken, kopiëren en verwijderen, dealerofferten uploaden en de PDF voor de klant maken (hoofdstuk 22). Standaard hebben alleen beheerders dit vinkje | **Lease offertes** |
 
 ### Documenten en schadechecks
 
@@ -157,7 +158,7 @@ van de fiscale mobiliteitscheck staan onderaan in een eigen tabel.
 | **Gebruikers beheren** | Accounts en rechten wijzigen en het activiteitenlog lezen, **maar alleen als de rol Beheerder is** | — |
 | **Instellingen beheren** | De app-instellingen opslaan. Ook hier: alleen als de rol Beheerder is | — |
 | **Back-ups beheren** | Back-ups maken en terugzetten. Ook hier: alleen als de rol Beheerder is | — |
-| **Prullenbak beheren** | De prullenbakken van Voertuigen, Klanten (met de chauffeurs van een klant), Reserveringen, Onderhoud, Transporten, Kosten en Boetes openen. Er iets uit terugzetten. Er iets definitief uit verwijderen (hoofdstuk 10, paragraaf 10.6). Dit vinkje is **niet** aan de rol Beheerder gebonden | — (een knop op elk van die schermen) |
+| **Prullenbak beheren** | De prullenbakken van Voertuigen, Klanten (met de chauffeurs van een klant), Reserveringen, Onderhoud, Transporten, Kosten, Boetes en Lease offertes openen. Er iets uit terugzetten. Er iets definitief uit verwijderen (hoofdstuk 10, paragraaf 10.6). Dit vinkje is **niet** aan de rol Beheerder gebonden | — (een knop op elk van die schermen) |
 
 ### Fiscale mobiliteitscheck
 

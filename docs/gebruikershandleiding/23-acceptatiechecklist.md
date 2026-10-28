@@ -1,7 +1,7 @@
-# 22. Acceptatiechecklist
+# 23. Acceptatiechecklist
 
 Met deze lijst loop je de hele app zelf na. Dat doe je voordat je de app vrijgeeft, of nadat hij is
-uitgerold. De lijst volgt de handleiding hoofdstuk voor hoofdstuk (1 tot en met 21). Alles wat de
+uitgerold. De lijst volgt de handleiding hoofdstuk voor hoofdstuk (1 tot en met 22). Alles wat de
 handleiding over de app zegt, probeer je hier één keer zelf uit. Daarna vink je het af.
 
 Elke regel is op dezelfde manier opgebouwd. Eerst staat **wat je test**. Dan het **klikpad en wat je
@@ -69,7 +69,7 @@ paragraaf 15.7.
 
 ### Het hoofdscherm
 
-- [ ] **Menu van de beheerder.** [beheerder] Verwacht links: **Dashboard · Voertuigen · Scannen · Klanten · Klantenportaal · Reserveringen · Onderhoud · Kosten · Documenten · Transporten · Communicatie · Rapporten**. (hfst 1.2)
+- [ ] **Menu van de beheerder.** [beheerder] Verwacht links: **Dashboard · Voertuigen · Scannen · Klanten · Klantenportaal · Reserveringen · Onderhoud · Kosten · Documenten · Transporten · Communicatie · Rapporten · Lease offertes**. (hfst 1.2)
 - [ ] **Menu van een beperkt account.** [kijker] Verwacht: je ziet alleen de items waar je rechten voor hebt. **Onderhoud**, **Kosten** en **Documenten** ontbreken. Er is geen foutmelding. (hfst 1.2, 15.8)
 - [ ] **Bolletje achter Klantenportaal.** Kijk of er een rood getal achter **Klantenportaal** staat. Verwacht: dat getal is het aantal ongelezen portaalmeldingen. (hfst 1.2)
 - [ ] **De balk bovenin.** Verwacht van links naar rechts: de naam van het scherm, het zoekveld **Zoeken...**, het belletje, en je initialen en naam. Staat er iets open in het portaal? Dan staat er ook een tegel zoals *2 nieuwe aanvragen · 7 meldingen · Klantenportaal*. (hfst 1.2)
@@ -1274,6 +1274,47 @@ Stuur geen echte mail naar een klant. Gebruik een oefenklant met je eigen e-mail
 - [ ] **Onderhoudsanalyse zonder km.** [account met Rapporten bekijken, geen beheerder] Verwacht: geen **Km-klasse**, geen **Per km**, geen km-tabel, geen **Km-stand** in de kostenregels en geen verwachting. (hfst 21.9, 21.11)
 - [ ] **Km-historie in het voertuigscherm.** [beheerder] Open een voertuig → **Km-historie**. Verwacht: **Van** en **Tot en met**, **Gereden km**, **Gemiddeld per maand**, **Vrije km**, **Waarschuwingen**, de grafiek **Km-stand in de tijd**, **Afdrukken** en **CSV**. **Afdrukken** opent hetzelfde voorbeeld als bij de rapporten. Een ander account ziet het tabblad niet. (hfst 21.10)
 - [ ] **Km alleen beheerder.** [account met Rapporten bekijken en Voertuigen bekijken] Verwacht: geen **Kilometerstanden vloot** en **Km-historie per voertuig** op **Voertuigen**, en de km-stand ontbreekt in het dossiervenster. (hfst 21.11)
+
+---
+
+## Hoofdstuk 22 — Lease offertes
+
+Gebruik verzonnen klanten en offertes. Het voorbeeld uit het hoofdstuk: aanschafwaarde 17.318, restwaarde 10.000, 48 maanden, 20.000 km per jaar. De prijs moet € 466,23 per maand zijn.
+
+### Het scherm en de offerte
+
+- [ ] **Menu en tabbladen.** [beheerder] Klik in het menu op **Lease offertes**. Verwacht: het scherm **Lease offertes** met de tabbladen **Offertes** en **Instellingen**, een zoekveld, **Alle statussen**, **Verwijderde lease offertes** en **Nieuwe offerte**. De kolommen zijn **Nummer**, **Datum**, **Klant**, **Auto**, **Kenteken**, **Per maand**, **Status** en **Geldig tot**. (hfst 22.1, 22.2)
+- [ ] **Geen vinkje, geen scherm.** [balie] Verwacht: **Lease offertes** staat niet in het menu. Typ het adres `/lease-quotes`. Verwacht: *U heeft geen toegang tot dit scherm*. (hfst 22.1)
+- [ ] **Nieuwe offerte.** Klik op **Nieuwe offerte**. Verwacht: een venster **Offerte LO-<jaar>-<nummer>** met **Naar de klant: … per maand** en de zes stukken **1. Klant** tot en met **6. Offerte**. Onderaan staan **Opslaan**, **PDF maken**, **Kopiëren**, **Geschiedenis** en **Sluiten**. (hfst 22.3)
+- [ ] **Klant of prospect.** Kies **Prospect** en vul **Naam**, **Bedrijf**, **E-mail** en **Telefoon** in. Kies **Bestaande klant**. Verwacht: een zoekveld **Zoek een klant**. (hfst 22.3)
+- [ ] **Aanschaf en kosten.** Typ bij **Aanschafwaarde** 17318. Verwacht: zodra je het veld verlaat staat er 17.318. Vul **Verzekering per maand** 97,80 en **Wegenbelasting per maand** 34 in. Controleer dat **Rente** 9, **ROB per jaar** 275, **Overige kosten per jaar** 350 en **Marge per maand** 0 uit de **Instellingen** komen. Typ letters in een bedrag. Verwacht: een rode rand. (hfst 22.3)
+
+### Dealerofferte en varianten
+
+- [ ] **Dealerofferte uitlezen.** Klik op **Dealerofferte uploaden** en kies een PDF. Verwacht: het venster **Dealerofferte uitlezen** met per regel een vinkje **overnemen**. Haal een vinkje weg. Klik op **Overnemen**. Verwacht: alleen de aangevinkte gegevens staan in de offerte. Er is nog niets opgeslagen. Het bestand staat onder **Dealerofferte(s)**. (hfst 22.4)
+- [ ] **Alleen incl. btw.** Een dealerofferte met alleen een bedrag incl. btw. Verwacht: een oranje regel *De dealer noemt alleen een bedrag incl. btw. Vul de aanschafwaarde excl. btw zelf in.* en geen voorstel voor de aanschafwaarde. (hfst 22.4)
+- [ ] **Uitlezen mislukt.** [account zonder AI-sleutel of een onleesbaar bestand] Verwacht: *Uitlezen lukte niet. Het bestand is bewaard; vul de gegevens zelf in.* Het bestand blijft staan. (hfst 22.4)
+- [ ] **De prijs van het voorbeeld.** Vul bij **5. Varianten** in: **Looptijd (maanden)** 48, **Km per jaar** 20000, **Restwaarde (€)** 10000. Verwacht: **Afschrijving** € 152,46, **Rente** € 129,89, **ROB** € 22,92, **Overige kosten** € 29,17, **Totaal per maand** € 466,23 en **Kosten per km** € 0,28. Bovenaan staat **Naar de klant: € 466,23 per maand**. (hfst 22.5, 22.12)
+- [ ] **Varianten.** Klik op **Variant toevoegen**, **Variant dupliceren** en **Variant verwijderen**. Verwacht: kolommen komen en gaan. De laatste kolom kun je niet verwijderen. Klik bij een andere kolom op **Deze naar de klant**. Verwacht: het label **Naar de klant** en de prijs bovenaan verhuizen mee. Maak de restwaarde leeg. Verwacht: *Vul een restwaarde in* en geen opslaan. (hfst 22.5)
+
+### Opslaan, PDF en kopiëren
+
+- [ ] **Opslaan.** Klik op **Opslaan**. Verwacht: **De offerte is opgeslagen.** Klik op **Sluiten** na een wijziging zonder opslaan. Verwacht: een vraag met **Verwerpen**. (hfst 22.6)
+- [ ] **PDF maken.** Klik op **PDF maken**. Verwacht: de PDF opent in een nieuw tabblad en staat onder **Gemaakte PDF's voor de klant** met datum en naam. **Openen** en **Downloaden** werken. (hfst 22.6)
+- [ ] **Wat op de PDF staat.** Open de PDF. Verwacht: het offertenummer, de datums, de klant, de auto, 48, 20.000, **€ 466,23** en de meer- en minderkilometerprijs. Er staat **niet** op: 152,46, 129,89, 22,92, 29,17, 97,80, 34, 17.318, 10.000 of een andere variant. (hfst 22.6)
+- [ ] **Kopiëren.** Klik op **Kopiëren**. Verwacht: **Bijlagen (dealerofferte) ook kopiëren?** met **Ja**, **Nee** en **Annuleren**. Kies **Nee**. Verwacht: een nieuwe offerte met een nieuw nummer, status **Concept**, alle varianten, en geen gemaakte PDF's. Kies bij een andere kopie **Ja**. Verwacht: de dealerbestanden staan er ook. (hfst 22.7)
+
+### Zoeken, status, geschiedenis en prullenbak
+
+- [ ] **Zoeken en filteren.** Typ een deel van een klantnaam, een merk of een nummer in **Zoeken**. Kies bij **Status** **Geaccepteerd**. Verwacht: alleen passende offertes. Een offerte met **Geldig tot** in het verleden en status **Concept** of **Verstuurd** staat als **Verlopen**. (hfst 22.8)
+- [ ] **Waarschuwing bij verstuurd.** Zet een offerte op **Verstuurd** en sla op. Wijzig iets en klik op **Opslaan**. Verwacht: *Deze offerte is al verstuurd. Toch wijzigen?* met **Ja, wijzigen** en **Nee**. Bij **Geaccepteerd**: *Deze offerte is al geaccepteerd. Toch wijzigen?* (hfst 22.8)
+- [ ] **Geschiedenis.** Klik op **Geschiedenis**. Verwacht: elke wijziging, het maken van een PDF en het kopiëren, met naam en tijd. (hfst 22.9)
+- [ ] **Verwijderen en terugzetten.** Klik achter een offerte op **Verwijderen**. Verwacht: **Offerte verwijderen?**. Bevestig. Verwacht: *Offerte … staat in de prullenbak.* Klik op **Verwijderde lease offertes**. Verwacht: de offerte met **Terugzetten**. Zet hem terug. Verwacht: hij staat weer in de lijst. (hfst 22.9)
+
+### Instellingen en sjabloon
+
+- [ ] **Instellingen.** Klik op het tabblad **Instellingen**. Verwacht: **Rente (% per jaar)**, **Marge per maand (€)**, **ROB per jaar (€)**, **Overige kosten per jaar (€)**, **Meerkilometerprijs (€ per km)**, **Minderkilometerprijs (€ per km)** en **Geldigheid (dagen)**. Verander de rente en klik op **Opslaan**. Verwacht: **De instellingen zijn opgeslagen.** Een nieuwe offerte heeft de nieuwe rente. Een oude offerte houdt zijn eigen rente en prijs. (hfst 22.10)
+- [ ] **Sjabloon.** [account met PDF-sjablonen beheren] Ga naar **Documenten** → tabblad **Lease offertes** → **Sjablooneditor openen**. Verwacht: **Sjabloon lease offerte bewerken** met één A4-pagina. In de lijst met velden staat niets over afschrijving, rente, marge, restwaarde of aanschafwaarde. (hfst 22.11)
 
 ---
 

@@ -23,4 +23,6 @@ node scripts/handleiding/seed-extra.mjs --onderhoud | tail -1
 node scripts/handleiding/run.mjs --account=e2e-admin-b 21-
 node scripts/handleiding/run.mjs --account=e2e-manager 21-ma-medewerker
 node scripts/handleiding/run.mjs --account=e2e-manager-b 16-
+# 22 (Lease offertes) met een beheerder; de stappen bouwen op elkaar voort, dus altijd het hele hoofdstuk.
+node scripts/handleiding/run.mjs --account=e2e-admin 22-
 echo "RUN KLAAR"; ls docs/gebruikershandleiding/afbeeldingen | wc -l
