@@ -157,7 +157,8 @@
       "add": "Dodaj wariant",
       "duplicate": "Powiel wariant",
       "remove": "Usuń wariant",
-      "choose": "Ten dla klienta"
+      "choose": "Wybierz ten",
+      "selected": "Wybrany"
     },
     "warnings": {
       "residual_above_purchase": "Wartość końcowa jest wyższa niż cena zakupu",
@@ -193,6 +194,7 @@
       "close": "Zamknij"
     },
     "saved": "Oferta została zapisana.",
+    "variantSelected": "Wariant {{n}} jest wybrany i zapisany. To on trafi do PDF.",
     "saveFailed": "Nie udało się zapisać oferty.",
     "blocked": {
       "invalid": "Jedna liczba jest nieprawidłowa (czerwona ramka). Popraw ją, aby zapisać.",

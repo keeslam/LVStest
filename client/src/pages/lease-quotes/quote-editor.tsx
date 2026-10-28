@@ -208,7 +208,7 @@ export function QuoteEditor({ quoteId, onClose, onOpenQuote }: QuoteEditorProps)
   );
 }
 
-type After = "save" | "pdf" | "copy";
+type After = "save" | "pdf" | "copy" | "select";
 
 function EditorBody({ quoteId, setDirty: reportDirty, requestClose, onOpenQuote }: {
   quoteId: number;
@@ -302,20 +302,21 @@ function EditorBody({ quoteId, setDirty: reportDirty, requestClose, onOpenQuote 
   }
 
   /** Runs inside the click (button or "Ja"), so the PDF tab is opened before anything is awaited. */
-  async function proceed(after: After, save: boolean) {
-    if (!form) return;
+  async function proceed(after: After, save: boolean, current: FormState | null = form) {
+    if (!current) return;
     const tab = after === "pdf" ? window.open("about:blank", "_blank") : null;
     setBusy(true);
     try {
       if (save) {
         try {
-          await saveNow(form);
+          await saveNow(current);
         } catch (error) {
           tab?.close();
           toast({ title: t("editor.saveFailed"), description: describeApiError(error), variant: "destructive" });
           return;
         }
         if (after === "save") toast({ title: t("editor.saved") });
+        if (after === "select") toast({ title: t("editor.variantSelected", { n: current.chosenIndex + 1 }) });
       }
       if (after === "pdf") await makePdf(tab);
       if (after === "copy") setCopyOpen(true);
@@ -331,6 +332,17 @@ function EditorBody({ quoteId, setDirty: reportDirty, requestClose, onOpenQuote 
     if (reason) { toast({ title: t(`editor.blocked.${reason}`), variant: "destructive" }); return; }
     if (isEditWarningStatus(loadedStatus)) { setPendingAfter(after); return; }
     void proceed(after, true);
+  }
+
+  /** Selecting a variant saves straight away, so the selection is what the PDF shows. */
+  function chooseVariant(index: number) {
+    if (!form || busy || index === form.chosenIndex) return;
+    const next = { ...form, chosenIndex: index };
+    update(() => next);
+    const blocked = blockReason(next);
+    if (blocked) { toast({ title: t(`editor.blocked.${blocked}`), variant: "destructive" }); return; }
+    if (isEditWarningStatus(loadedStatus)) { setPendingAfter("select"); return; }
+    void proceed("select", true, next);
   }
 
   /* ---------------- files ---------------- */
@@ -571,7 +583,7 @@ function EditorBody({ quoteId, setDirty: reportDirty, requestClose, onOpenQuote 
               return { ...f, variants: f.variants.filter((_, j) => j !== i), chosenIndex };
               });
             }}
-            onChoose={(i) => update((f) => ({ ...f, chosenIndex: i }))}
+            onChoose={chooseVariant}
           />
         ), "section-lease-variants")}
 

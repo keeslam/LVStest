@@ -157,7 +157,8 @@
       "add": "Adaugă variantă",
       "duplicate": "Duplică varianta",
       "remove": "Elimină varianta",
-      "choose": "Aceasta pentru client"
+      "choose": "Selectează aceasta",
+      "selected": "Selectată"
     },
     "warnings": {
       "residual_above_purchase": "Valoarea reziduală este mai mare decât prețul de achiziție",
@@ -193,6 +194,7 @@
       "close": "Închide"
     },
     "saved": "Oferta a fost salvată.",
+    "variantSelected": "Varianta {{n}} este selectată și salvată. Aceasta apare în PDF.",
     "saveFailed": "Oferta nu a putut fi salvată.",
     "blocked": {
       "invalid": "Un număr nu este corect (chenar roșu). Corectează-l pentru a salva.",

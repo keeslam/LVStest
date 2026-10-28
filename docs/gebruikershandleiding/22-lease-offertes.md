@@ -303,16 +303,21 @@ niet uit de kilometers. De kilometers verwerk je zelf in de restwaarde die je in
 
     Alle varianten worden **bewaard**. De klant ziet er straks maar één: de variant die jij kiest.
 
-12. Kies de variant voor de klant. Klik onder die kolom op **Deze naar de klant**. Precies één variant
-    is de gekozen variant. In die kolom staat het label **Naar de klant**. Bovenaan het venster
-    staat nu de prijs van die variant. De eerste variant is standaard gekozen.
+12. Kies de variant voor de klant. Klik onder die kolom op **Deze selecteren**. De offerte wordt dan
+    meteen opgeslagen. Je ziet de melding *Variant … is geselecteerd en opgeslagen*. Precies één variant
+    is geselecteerd. Onder die kolom staat nu **✓ Geselecteerd**, en bovenaan de kolom het label
+    **Naar de klant**. Bovenaan het venster staat de prijs van die variant. Deze variant komt op de PDF.
+    De eerste variant is standaard geselecteerd.
+
+    Mist er bij de variant nog iets, zoals de restwaarde? Dan wordt hij wel geselecteerd, maar nog niet
+    opgeslagen. Je ziet een melding wat er mist. Vul het in en klik op **Opslaan**.
 
     ![Variant 3 is gekozen](afbeeldingen/22-variant-gekozen.png)
-    *Na een klik: 1 **Deze naar de klant** bij variant 3, 2 het totaal van die variant. De prijs
+    *Na een klik: 1 **Geselecteerd** bij variant 3, 2 het totaal van die variant. De prijs
     bovenaan en op de PDF is nu die van variant 3.*
 
-    ![De knop Deze naar de klant, van dichtbij](afbeeldingen/22-variant-gekozen-k1.png)
-    *Zo ziet de knop **Deze naar de klant** eruit.*
+    ![De knop Geselecteerd, van dichtbij](afbeeldingen/22-variant-gekozen-k1.png)
+    *Zo ziet de geselecteerde variant eruit. Bij de andere varianten staat **Deze selecteren**.*
 
     Kies voor het voorbeeld weer **Variant 1**. Dan krijgt de klant **€ 466,23** per maand.
 
@@ -675,6 +680,6 @@ Twee dingen om te weten:
 | De knop **Opslaan** doet niets en er staat rood *Een getal klopt niet…* | Zoek het veld met de rode rand en verbeter het getal. |
 | *Vul bij elke variant een looptijd, km per jaar en restwaarde in om op te slaan.* | Vul de ontbrekende cijfers in, of verwijder de variant die je niet nodig hebt. |
 | *Er is nog geen PDF-sjabloon voor lease offertes. Maak er een bij Documenten.* | Maak of herstel het sjabloon onder **Documenten** → **Lease offertes** (22.11). |
-| *Kies eerst welke variant naar de klant gaat.* | Klik onder een variant op **Deze naar de klant**. |
+| *Kies eerst welke variant naar de klant gaat.* | Klik onder een variant op **Deze selecteren**. |
 | De PDF opent niet in een nieuw tabblad | Je browser hield het tabblad tegen. Klik in de melding op **Bestand openen**, of op **Openen** bij **Gemaakte PDF's voor de klant**. |
 | De offerte is weg uit de lijst | Kijk bij **Verwijderde lease offertes**. Of de lijst staat op een filter: zet **Status** op **Alle statussen** en maak **Zoeken** leeg. |

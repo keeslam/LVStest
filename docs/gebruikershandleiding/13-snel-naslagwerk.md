@@ -354,7 +354,7 @@ Uitleg met plaatjes: [hoofdstuk 22](22-lease-offertes.md).
 | Een nieuwe offerte maken | **Lease offertes** → **Nieuwe offerte** → klant, auto, aanschafwaarde, kosten, variant → **Opslaan** |
 | Een dealerofferte laten uitlezen | In de offerte bij **2. Auto** → **Dealerofferte uploaden** → vinkjes controleren → **Overnemen** → **Opslaan** |
 | Varianten vergelijken | In de offerte bij **5. Varianten** → **Variant toevoegen** of **Variant dupliceren** |
-| Kiezen wat de klant krijgt | Onder de variant → **Deze naar de klant** |
+| Kiezen wat de klant krijgt | Onder de variant → **Deze selecteren** |
 | De PDF voor de klant maken | In de offerte **PDF maken**, of in de lijst de knop **PDF** achter de offerte |
 | Een offerte kopiëren | **Kopiëren** (in de lijst of in de offerte) → **Ja** of **Nee** bij de bijlagen |
 | Een offerte vinden | **Lease offertes** → **Zoeken** en **Status** |

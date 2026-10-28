@@ -352,7 +352,7 @@ const walk = [
       await reveal(page, tid(page, "section-lease-variants"));
       await shot(page, "22-variant-gekozen", {
         clip: tid(page, "section-lease-variants"),
-        marks: [{ locator: tid(page, "button-choose-variant-2"), text: "Deze naar de klant", align: "left" }, { locator: tid(page, "variant-total-2"), text: "Totaal", align: "left" }],
+        marks: [{ locator: tid(page, "button-choose-variant-2"), text: "Geselecteerd", align: "left" }, { locator: tid(page, "variant-total-2"), text: "Totaal", align: "left" }],
       });
       // Terug naar variant 1: de klant krijgt het Excel-voorbeeld.
       await tid(page, "button-choose-variant-0").click();

@@ -157,7 +157,8 @@
       "add": "Variant toevoegen",
       "duplicate": "Variant dupliceren",
       "remove": "Variant verwijderen",
-      "choose": "Deze naar de klant"
+      "choose": "Deze selecteren",
+      "selected": "Geselecteerd"
     },
     "warnings": {
       "residual_above_purchase": "Restwaarde is hoger dan de aanschafwaarde",
@@ -193,6 +194,7 @@
       "close": "Sluiten"
     },
     "saved": "De offerte is opgeslagen.",
+    "variantSelected": "Variant {{n}} is geselecteerd en opgeslagen. Deze komt op de PDF.",
     "saveFailed": "De offerte kon niet worden opgeslagen.",
     "blocked": {
       "invalid": "Een getal klopt niet (rood omrand). Verbeter het om op te slaan.",

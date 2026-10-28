@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Copy, Plus, Trash2 } from "lucide-react";
+import { Check, Copy, Plus, Trash2 } from "lucide-react";
 import { calculateLeaseVariant, parseDutchAmount, roundCents, type LeaseVariantResult } from "@shared/lease-quote-calc";
 import { LEASE_VARIANT_COST_KEYS, type LeaseVariantCostKey } from "@shared/lease-quotes";
 import { Button } from "@/components/ui/button";
@@ -239,7 +239,9 @@ export function VariantsTable({ variants, chosenIndex, purchasePrice, onChange, 
                       onClick={() => onChoose(i)}
                       data-testid={`button-choose-variant-${i}`}
                     >
-                      {t("editor.variants.choose")}
+                      {i === chosenIndex
+                        ? <><Check className="h-4 w-4" />{t("editor.variants.selected")}</>
+                        : t("editor.variants.choose")}
                     </Button>
                     <div className="flex justify-end gap-1">
                       <Button type="button" size="icon" variant="ghost" className="h-8 w-8" title={t("editor.variants.duplicate")} aria-label={t("editor.variants.duplicate")} onClick={() => onDuplicate(i)} data-testid={`button-duplicate-variant-${i}`}>

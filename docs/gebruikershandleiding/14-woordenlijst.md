@@ -355,7 +355,7 @@ meteen mee af. *(Hoofdstuk 7, 16)*
 ## Variant
 
 Eén kolom in een lease offerte, met een eigen looptijd, kilometers per jaar en restwaarde. Alle
-varianten blijven bewaard. De klant ziet er één: de variant die je kiest met **Deze naar de klant**.
+varianten blijven bewaard. De klant ziet er één: de variant die je kiest met **Deze selecteren**.
 *(Hoofdstuk 22)*
 
 ## Voertuigopmerkingen

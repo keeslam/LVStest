@@ -186,7 +186,7 @@ describe("QuoteEditor costs per variant", () => {
 });
 
 describe("QuoteEditor variants", () => {
-  it("'Deze naar de klant' on column 2 leaves exactly one chosen and saves it that way", async () => {
+  it("'Deze selecteren' on column 2 leaves exactly one chosen and saves it that way", async () => {
     renderEditor();
     await userEvent.click(await screen.findByTestId("button-add-variant"));
     await userEvent.click(screen.getByTestId("button-choose-variant-1"));
@@ -199,6 +199,28 @@ describe("QuoteEditor variants", () => {
     expect(variants).toHaveLength(2);
     expect(variants.filter((v) => v.isChosen)).toHaveLength(1);
     expect(variants[1]).toMatchObject({ isChosen: true, residualValue: 5000 });
+  });
+
+  it("'Deze selecteren' saves straight away and marks the column Geselecteerd", async () => {
+    renderEditor();
+    await userEvent.click(await screen.findByTestId("button-add-variant"));
+    await retype("input-variant-residual-1", "5000");
+    expect(screen.getByTestId("button-choose-variant-1")).toHaveTextContent("Deze selecteren");
+    await userEvent.click(screen.getByTestId("button-choose-variant-1"));
+    await waitFor(() => expect(patches()).toHaveLength(1));
+    const variants = (patches()[0].body as any).variants as Array<{ isChosen: boolean }>;
+    expect(variants.map((v) => v.isChosen)).toEqual([false, true]);
+    expect(await screen.findByText("Variant 2 is geselecteerd en opgeslagen. Deze komt op de PDF.")).toBeInTheDocument();
+    expect(screen.getByTestId("button-choose-variant-1")).toHaveTextContent("Geselecteerd");
+    expect(screen.getByTestId("button-choose-variant-0")).toHaveTextContent("Deze selecteren");
+  });
+
+  it("'Deze selecteren' with an incomplete variant selects it but does not save", async () => {
+    renderEditor();
+    await userEvent.click(await screen.findByTestId("button-add-variant"));
+    await userEvent.click(screen.getByTestId("button-choose-variant-1"));
+    expect(screen.getByTestId("button-choose-variant-1")).toHaveAttribute("aria-checked", "true");
+    expect(patches()).toHaveLength(0);
   });
 
   it("removing a variant that does not go to the customer shows no such message", async () => {

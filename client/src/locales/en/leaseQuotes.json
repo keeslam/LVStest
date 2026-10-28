@@ -157,7 +157,8 @@
       "add": "Add variant",
       "duplicate": "Duplicate variant",
       "remove": "Remove variant",
-      "choose": "This one to the customer"
+      "choose": "Select this one",
+      "selected": "Selected"
     },
     "warnings": {
       "residual_above_purchase": "Residual value is higher than the purchase price",
@@ -193,6 +194,7 @@
       "close": "Close"
     },
     "saved": "The quote has been saved.",
+    "variantSelected": "Variant {{n}} is selected and saved. It goes on the PDF.",
     "saveFailed": "The quote could not be saved.",
     "blocked": {
       "invalid": "A number is not right (red border). Correct it to save.",

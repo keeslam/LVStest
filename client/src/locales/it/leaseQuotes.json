@@ -157,7 +157,8 @@
       "add": "Aggiungi variante",
       "duplicate": "Duplica variante",
       "remove": "Rimuovi variante",
-      "choose": "Questa al cliente"
+      "choose": "Seleziona questa",
+      "selected": "Selezionata"
     },
     "warnings": {
       "residual_above_purchase": "Il valore residuo è superiore al prezzo di acquisto",
@@ -193,6 +194,7 @@
       "close": "Chiudi"
     },
     "saved": "L'offerta è stata salvata.",
+    "variantSelected": "La variante {{n}} è selezionata e salvata. È quella che va nel PDF.",
     "saveFailed": "Impossibile salvare l'offerta.",
     "blocked": {
       "invalid": "Un numero non è corretto (bordo rosso). Correggilo per salvare.",
