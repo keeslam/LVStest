@@ -1884,7 +1884,7 @@
     "requestButton": "Trimiteți o sesizare",
     "selfText": "Alegeți singur o zi și o oră în agenda service-ului nostru, pentru mentenanță sau o reparație.",
     "tickOnly": "În agendă alegeți lucrările de care are nevoie autoturismul.",
-    "selfNote": "Dacă faceți singur o programare în agendă, nu vă organizăm automat alt autoturism. Aveți nevoie de un autoturism în timpul mentenanței? Atunci trimiteți o sesizare.",
+    "selfNote": "Aveți nevoie de altă mașină în timpul întreținerii? Alegeți atunci transport de înlocuire în agendă. Vom vedea acest lucru și vom organiza o mașină.",
     "plannerTitle": "Programare online la service"
   }
 }

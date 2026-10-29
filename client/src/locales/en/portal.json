@@ -1865,7 +1865,7 @@
     "requestButton": "Send a report",
     "selfText": "Choose a day and time yourself in our garage's agenda, for maintenance or a repair.",
     "tickOnly": "In the agenda, choose the work the car needs.",
-    "selfNote": "If you book an appointment in the agenda yourself, we do not automatically arrange another car. Do you need a car during the maintenance? Then send a report.",
+    "selfNote": "Do you need another car during the maintenance? Then choose replacement transport in the agenda. We will see it and arrange a car.",
     "plannerTitle": "Book a garage appointment online"
   }
 }

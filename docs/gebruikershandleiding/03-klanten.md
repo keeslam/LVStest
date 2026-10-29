@@ -666,12 +666,13 @@ opent eerst dezelfde soort keuze als bij de APK.
 
    **Melding doen** opent het gewone meldingsformulier. Jij plant het onderhoud in. Jij regelt ook
    een vervangende auto als dat nodig is. Zie hoofdstuk 16.4.
-2. **Agenda openen** toont de online agenda van de garage. Daarnaast staat een waarschuwing: een
-   afspraak die de klant zelf maakt, regelt niet vanzelf een vervangende auto. Heeft de klant een
-   auto nodig? Dan moet hij een melding doen.
+2. **Agenda openen** toont de online agenda van de garage. Daarnaast staat een korte uitleg: heeft de
+   klant tijdens het onderhoud een andere auto nodig? Dan kiest hij in de agenda voor vervangend
+   vervoer. De app ziet dat in de mail van de garage en zet een **TBD vervangend vervoer** klaar
+   (hoofdstuk 7.10). Dat werkt alleen als de afzender van de garageplanner is ingevuld (hoofdstuk 9.9).
 
-   ![De open agenda bij Onderhoud melden met de waarschuwing over vervangend vervoer (1)](afbeeldingen/03-portaal-onderhoud-agenda.png)
-   *1 is de waarschuwing: een eigen afspraak regelt geen vervangende auto.*
+   ![De open agenda bij Onderhoud melden met de uitleg over vervangend vervoer (1)](afbeeldingen/03-portaal-onderhoud-agenda.png)
+   *1 is de uitleg over vervangend vervoer.*
 
 Opent de klant **Onderhoud melden** vanaf het overzicht? Dan staat er nog geen auto in het venster.
 In het meldingsformulier kiest de klant zelf de reservering.

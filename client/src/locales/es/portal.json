@@ -1884,7 +1884,7 @@
     "requestButton": "Enviar aviso",
     "selfText": "Elija usted mismo un día y una hora en la agenda de nuestro taller, para mantenimiento o una reparación.",
     "tickOnly": "En la agenda, elija los trabajos que necesita el coche.",
-    "selfNote": "Si pide cita usted mismo en la agenda, no le organizamos otro coche automáticamente. ¿Necesita un coche durante el mantenimiento? Entonces envíe un aviso.",
+    "selfNote": "¿Necesita otro coche durante el mantenimiento? Elija entonces vehículo de sustitución en la agenda. Lo veremos y le organizaremos un coche.",
     "plannerTitle": "Pedir cita online en el taller"
   }
 }

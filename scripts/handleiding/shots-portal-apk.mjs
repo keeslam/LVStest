@@ -191,7 +191,7 @@ export const steps = [
       await choice.getByTestId("button-apk-planner").click();
       await choice.getByTestId("apk-planner-frame").waitFor();
       await page.waitForTimeout(4000);
-      await shot(page, "03-portaal-onderhoud-agenda", { clip: choice, marks: [{ locator: choice.getByTestId("plan-self-note"), text: "Geen vervangend vervoer" }] });
+      await shot(page, "03-portaal-onderhoud-agenda", { clip: choice, marks: [{ locator: choice.getByTestId("plan-self-note"), text: "Vervangend vervoer" }] });
     },
   },
   {

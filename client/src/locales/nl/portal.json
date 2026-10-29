@@ -1865,7 +1865,7 @@
     "requestButton": "Melding doen",
     "selfText": "Kies zelf een dag en tijd in de agenda van onze garage. Voor onderhoud of een reparatie.",
     "tickOnly": "Kies in de agenda wat er aan de auto moet gebeuren.",
-    "selfNote": "Maakt u zelf een afspraak in de agenda? Dan regelen wij niet vanzelf een andere auto. Heeft u tijdens het onderhoud een auto nodig? Doe dan een melding.",
+    "selfNote": "Heeft u tijdens het onderhoud een andere auto nodig? Kies dan in de agenda voor vervangend vervoer. Wij zien dat en regelen een auto.",
     "plannerTitle": "Online afspraak maken bij de garage"
   }
 }

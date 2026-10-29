@@ -1884,7 +1884,7 @@
     "requestButton": "Inviare una segnalazione",
     "selfText": "Scelga Lei un giorno e un orario nell’agenda della nostra officina, per manutenzione o una riparazione.",
     "tickOnly": "Nell’agenda scelga i lavori di cui l’auto ha bisogno.",
-    "selfNote": "Se prenota da sé nell’agenda, non organizziamo automaticamente un’altra auto. Le serve un’auto durante la manutenzione? Allora invii una segnalazione.",
+    "selfNote": "Le serve un'altra auto durante la manutenzione? Scelga allora l'auto sostitutiva nell'agenda. Lo vedremo e organizzeremo un'auto.",
     "plannerTitle": "Prenotare in officina online"
   }
 }

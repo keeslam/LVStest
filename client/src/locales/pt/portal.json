@@ -1884,7 +1884,7 @@
     "requestButton": "Enviar comunicação",
     "selfText": "Escolha você mesmo um dia e uma hora na agenda da nossa oficina, para manutenção ou uma reparação.",
     "tickOnly": "Na agenda, escolha os trabalhos de que o automóvel precisa.",
-    "selfNote": "Se marcar você mesmo na agenda, não tratamos automaticamente de outro automóvel. Precisa de um automóvel durante a manutenção? Então envie uma comunicação.",
+    "selfNote": "Precisa de outro carro durante a manutenção? Escolha então transporte de substituição na agenda. Nós vemos isso e tratamos de um carro.",
     "plannerTitle": "Marcar na oficina online"
   }
 }

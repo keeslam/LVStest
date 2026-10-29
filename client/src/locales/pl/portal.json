@@ -1903,7 +1903,7 @@
     "requestButton": "Wyślij zgłoszenie",
     "selfText": "Proszę samodzielnie wybrać dzień i godzinę w kalendarzu naszego warsztatu, na serwis lub naprawę.",
     "tickOnly": "W kalendarzu proszę wybrać prace, których wymaga samochód.",
-    "selfNote": "Wizyta umówiona samodzielnie w kalendarzu nie oznacza automatycznie samochodu zastępczego. Potrzebują Państwo samochodu podczas serwisu? Proszę wtedy wysłać zgłoszenie.",
+    "selfNote": "Potrzebujesz innego auta podczas serwisu? Wybierz wtedy w kalendarzu pojazd zastępczy. Zobaczymy to i zorganizujemy auto.",
     "plannerTitle": "Umów wizytę w warsztacie online"
   }
 }
