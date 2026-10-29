@@ -850,6 +850,7 @@ balk bovenin het scherm. En de aanvraag staat in het paneel **Aandacht nodig**.
    | **Verlenging** of **Eerder inleveren** | **Goedkeuren (past reservering aan)** | De app past de einddatum aan. Het contract wordt **Verouderd** (16.3). De klant krijgt een melding en een mail |
    | **Huuraanvraag** | **Goedkeuren: reservering aanmaken** | Je ziet **Reservering aanmaken uit deze aanvraag**. Kies de auto en klik op **Reservering aanmaken en goedkeuren** |
    | **Onderhoud/storing** | **Inplannen en bevestigen** | Zie 16.4, "Een onderhoudsaanvraag van een klant" |
+   | **APK inplannen** | **Beantwoorden en afhandelen** | Zet eerst de afspraak in de planner van de garage. Klik dan op **Ontvangen** en zet de datum in het antwoord (20.2) |
    | Alleen een antwoord nodig | **Beantwoorden en afhandelen** | Het antwoord gaat naar de klant en de aanvraag is klaar |
    | Je zegt nee | **Afwijzen** | Schrijf eerst een toelichting in **Antwoord aan klant**. Zonder antwoord gaat het niet |
 

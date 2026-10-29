@@ -533,5 +533,49 @@
     "confirmLink": "Link",
     "missingInvoice": "Invoice missing",
     "noInvoiceExpected": "No invoice needed (e.g. free warranty)"
+  },
+  "onlineAppointments": {
+    "button": "Online appointments",
+    "title": "Online appointments",
+    "description": "Appointments that customers made in the garage's online agenda. They are already in the maintenance calendar. Confirm them here as soon as you have confirmed them in the garage planner.",
+    "empty": "There are no online appointments to confirm or check.",
+    "toConfirm_one": "{{count}} appointment to confirm",
+    "toConfirm_other": "{{count}} appointments to confirm",
+    "toCheck_one": "{{count}} appointment to check",
+    "toCheck_other": "{{count}} appointments to check",
+    "confirm": "Confirmed in the planner",
+    "cancel": "Cancel",
+    "keep": "Keep",
+    "replacement": "TBD replacement vehicle",
+    "cancelTitle": "Cancel appointment?",
+    "cancelText": "The maintenance entry and the TBD replacement vehicle are cancelled. The customer gets no message about this. Cancel the appointment in the garage planner too.",
+    "rentalNumber": "Reservation number",
+    "link": "Link to rental",
+    "dismiss": "Ignore",
+    "failed": "That did not work",
+    "pendingBadge": "To confirm",
+    "pendingMark": "Online appointment, still to confirm",
+    "done": {
+      "confirm": "Appointment confirmed",
+      "cancel": "Appointment cancelled",
+      "link": "Appointment linked and planned",
+      "dismiss": "Appointment ignored"
+    },
+    "reasons": {
+      "unreadable": "The mail could not be read.",
+      "plate_unknown": "The licence plate is not in the fleet.",
+      "no_rental": "There is no current or planned customer rental for this car on that day.",
+      "weekend": "The appointment falls in the weekend.",
+      "in_past": "The appointment is in the past."
+    },
+    "errors": {
+      "ALREADY_HANDLED": "Someone else has already handled this appointment.",
+      "RENTAL_NOT_ACTIVE": "Choose a current or planned rental of a customer.",
+      "RENTAL_NOT_ON_DATE": "This rental does not run on the day of the appointment.",
+      "WEEKEND": "The appointment falls in the weekend. The workshop is closed then.",
+      "IN_PAST": "The appointment is in the past.",
+      "NO_DATE": "This mail has no date. You cannot plan it.",
+      "NOT_FOUND": "This appointment no longer exists."
+    }
   }
 }

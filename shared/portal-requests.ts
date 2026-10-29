@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const PortalRequestType = {
-  BOOKING: 'booking', EXTENSION: 'extension', EARLY_RETURN: 'early_return', DAMAGE: 'damage', MAINTENANCE: 'maintenance', MAINTENANCE_CHANGE: 'maintenance_change', MILEAGE: 'mileage', COMPANY_NAME_CHANGE: 'company_name_change', FINE_QUESTION: 'fine_question', CANCELLATION: 'cancellation', OTHER: 'other',
+  BOOKING: 'booking', EXTENSION: 'extension', EARLY_RETURN: 'early_return', DAMAGE: 'damage', MAINTENANCE: 'maintenance', MAINTENANCE_CHANGE: 'maintenance_change', MILEAGE: 'mileage', COMPANY_NAME_CHANGE: 'company_name_change', FINE_QUESTION: 'fine_question', CANCELLATION: 'cancellation', APK: 'apk', OTHER: 'other',
 } as const;
 export type PortalRequestTypeValue = typeof PortalRequestType[keyof typeof PortalRequestType];
 
@@ -61,12 +61,14 @@ export const requestPayloadSchemas = {
   fine_question: z.object({}),
   /** Cancel a booked reservation; until 48 hours before the start, staff approve (Kees, 2026-10-18). */
   cancellation: z.object({}),
+  /** Have the APK inspection planned for a rental that is on the road: an optional preferred day; staff put it in the garage's planner. */
+  apk: z.object({ preferredDate: z.preprocess(blankToUndefined, isoDate.optional()) }),
   other: z.object({ subject: z.string().trim().min(1).max(200) }),
 } as const;
 
 /** Which link a type requires. */
 export const REQUEST_NEEDS: Record<PortalRequestTypeValue, 'reservation' | 'fine' | null> = {
-  booking: null, extension: 'reservation', early_return: 'reservation', damage: 'reservation', maintenance: 'reservation', maintenance_change: 'reservation', mileage: 'reservation', company_name_change: null, fine_question: 'fine', cancellation: 'reservation', other: null,
+  booking: null, extension: 'reservation', early_return: 'reservation', damage: 'reservation', maintenance: 'reservation', maintenance_change: 'reservation', mileage: 'reservation', company_name_change: null, fine_question: 'fine', cancellation: 'reservation', apk: 'reservation', other: null,
 };
 
 export interface PortalRequestAttachmentDto { id: number; fileName: string; contentType: string; fileSize: number }

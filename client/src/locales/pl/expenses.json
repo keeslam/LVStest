@@ -400,7 +400,9 @@
       "runDone": "Pobrano wiadomości: {{mails}}; zaksięgowano {{booked}}, do sprawdzenia {{review}}",
       "geminiMissing": "Uwaga: GEMINI_API_KEY nie jest ustawiony na serwerze. Faktury nie mogą wtedy zostać odczytane i wszystkie trafiają do sprawdzenia.",
       "loadFailed": "Nie udało się załadować ustawień faktur przez e-mail",
-      "retry": "Spróbuj ponownie"
+      "retry": "Spróbuj ponownie",
+      "appointmentSenders": "Nadawcy planera warsztatu (wizyty online)",
+      "appointmentSendersHint": "Jeden w wierszu, na przykład noreply@garage.software. Wiadomość Afspraak Aanvraag z tego adresu trafia do kalendarza serwisowego i jest przenoszona do folderu online afspraken. Zostaw puste, aby wyłączyć."
     },
     "log": {
       "title": "Dziennik",
@@ -408,7 +410,8 @@
       "tabs": {
         "invoices": "Faktury",
         "other": "Pozostała poczta",
-        "runs": "Cykle pobierania"
+        "runs": "Cykle pobierania",
+        "appointments": "Wizyty online"
       },
       "searchLabel": "Szukaj w dzienniku",
       "searchPlaceholder": "Szukaj według nadawcy, tematu, pliku, dostawcy, numeru faktury lub numeru rejestracyjnego",
@@ -439,7 +442,26 @@
       "empty": {
         "invoices": "Nie znaleziono faktur.",
         "other": "Nie znaleziono pozostałej poczty.",
-        "runs": "Nie zapisano jeszcze cykli pobierania."
+        "runs": "Nie zapisano jeszcze cykli pobierania.",
+        "appointments": "Nie znaleziono wizyt online."
+      },
+      "appointments": {
+        "searchPlaceholder": "Szukaj po numerze rejestracyjnym, kliencie lub pracy",
+        "columns": {
+          "appointment": "Wizyta",
+          "vehicle": "Auto",
+          "work": "Praca",
+          "customer": "Klient",
+          "status": "Status"
+        },
+        "statuses": {
+          "pending": "Do potwierdzenia",
+          "confirmed": "Potwierdzona",
+          "cancelled": "Anulowana",
+          "review": "Do sprawdzenia",
+          "dismissed": "Pominięta"
+        },
+        "toCalendar": "Do kalendarza serwisowego"
       }
     }
   },

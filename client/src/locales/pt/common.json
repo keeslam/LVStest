@@ -249,7 +249,8 @@
         "key-audit": "Controlo do armário de chaves",
         "notification-dismissal": "Notificação dispensada",
         "user-setting": "Definição própria",
-        "lease_quote": "Proposta de leasing"
+        "lease_quote": "Proposta de leasing",
+        "online-appointment": "Marcação online"
       },
       "verbs": {
         "create": "criação",
@@ -353,13 +354,20 @@
           "cjib-import": "Multas do CJIB importadas",
           "invoice-inbox-import": "Faturas da caixa de correio importadas",
           "backup": "Cópia de segurança criada",
-          "missing-invoice-mail": "E-mail semanal de faturas em falta"
+          "missing-invoice-mail": "E-mail semanal de faturas em falta",
+          "online-appointment-import": "Marcação online da caixa de correio processada"
         },
         "lease_quote": {
           "copy": "Proposta copiada para uma nova proposta",
           "pdf": "PDF criado para o cliente",
           "files": "Proposta do concessionário carregada, lida ou eliminada",
           "file-view": "Anexo da proposta visto"
+        },
+        "online-appointment": {
+          "confirm": "Marcação online confirmada",
+          "cancel": "Marcação online cancelada",
+          "link": "Marcação online ligada a um aluguer",
+          "dismiss": "Marcação online ignorada"
         }
       }
     }

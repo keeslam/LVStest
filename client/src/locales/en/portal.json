@@ -123,7 +123,7 @@
     "fines_other": "Fines on this reservation ({{count}})",
     "pickupInfo": "Pickup",
     "pickupAt": "pickup at {{time}}",
-    "apkDue": "This car's MOT expires on {{date}} (in {{days}} days). Lam Groep schedules the inspection.",
+    "apkDue": "This car's APK (MOT) expires on {{date}} (in {{days}} days).",
     "apkExpired": "This car's MOT expired on {{date}}. Please contact Lam Groep."
   },
   "documents": {
@@ -403,7 +403,8 @@
     "PORTAL_CANCEL_TOO_LATE": "You can cancel until 48 hours before the start. Please contact us.",
     "PORTAL_CANCEL_NOT_ALLOWED": "This reservation cannot be cancelled through the portal.",
     "PORTAL_FILE_TOO_LARGE": "The file is larger than 10 MB.",
-    "PORTAL_DRIVER_HAS_ACCOUNT": "This driver already has an account."
+    "PORTAL_DRIVER_HAS_ACCOUNT": "This driver already has an account.",
+    "PORTAL_APK_NOT_POSSIBLE": "The APK can only be scheduled while you have the car in use."
   },
   "admin": {
     "navLabel": "Customer portal",
@@ -812,7 +813,9 @@
       "onlineBookingEnabledHint": "Off: customers no longer see the vehicles offered online and cannot send a rental request for them. Other requests (extension, damage, questions) keep working. It can also be switched off per customer in the customer settings.",
       "onlineBookingOnDone": "Renting vehicles online is on.",
       "onlineBookingOffDone": "Renting vehicles online is off.",
-      "onlineBookingNotSaved": "Not saved: the server does not know this switch yet. Restart the server and try again."
+      "onlineBookingNotSaved": "Not saved: the server does not know this switch yet. Restart the server and try again.",
+      "apkPlannerUrl": "Garage's online agenda",
+      "apkPlannerUrlHint": "The address of the garage's online appointments. Only an address on planner.garage.software works. Customers see the agenda with Schedule APK and with Report maintenance. Leave empty to hide the agenda; customers can then only send a request."
     },
     "fines": {
       "title": "Fines",
@@ -1084,7 +1087,8 @@
         "maintenance_change": "Change maintenance",
         "mileage": "Mileage",
         "company_name_change": "Company name change",
-        "cancellation": "Cancellation"
+        "cancellation": "Cancellation",
+        "apk": "Schedule APK"
       },
       "status": {
         "new": "New",
@@ -1135,7 +1139,9 @@
         "mileageApply": "Take over: {{km}} km",
         "mileageApplied": "The car's mileage is now {{km}} km",
         "mileageNotHigher": "Cannot be taken over: the car is already on {{current}} km and the customer reported {{reported}} km. A lower or equal reading is not taken over. The reported reading is kept on the car as \"Mileage reported by customer\".",
-        "mileageAlreadyApplied": "This reading has already been taken over."
+        "mileageAlreadyApplied": "This reading has already been taken over.",
+        "apkPreferredDate": "Preferred day",
+        "noPreference": "No preference"
       },
       "standard": {
         "received": {
@@ -1143,7 +1149,8 @@
           "fine_question": "Thank you for your question about the fine. We have received it and will get back to you.",
           "other": "Thank you for your message. We have received it and will get back to you.",
           "mileage": "Thank you for passing on the mileage.",
-          "default": "Thank you for your message. We have received it."
+          "default": "Thank you for your message. We have received it.",
+          "apk": "Thank you for your request. We will schedule the APK and let you know the date."
         },
         "approved": {
           "extension": "Your extension has been approved.",
@@ -1373,7 +1380,8 @@
       "maintenance_change": "Change maintenance",
       "mileage": "Report mileage",
       "company_name_change": "Company name change",
-      "cancellation": "Cancel reservation"
+      "cancellation": "Cancel reservation",
+      "apk": "Schedule APK"
     },
     "status": {
       "new": "Submitted",
@@ -1430,7 +1438,12 @@
       "reason": "Reason",
       "stillNeedsReplacement": "I still need a replacement vehicle",
       "changeHint": "Lam Groep checks whether the new date fits and confirms it.",
-      "weekdaysOnly": "Weekdays only (Mon–Fri)."
+      "weekdaysOnly": "Weekdays only (Mon–Fri).",
+      "apkMessage": "Please have the APK inspection done.",
+      "apkRemarks": "Remarks",
+      "apkPreferredDate": "Preferred day (optional)",
+      "apkInfo": "{{plate}} · APK expires on {{date}}",
+      "noPreference": "No preference"
     },
     "date": "Submitted on",
     "subtitle": "Extend, return early, report damage or ask a question.",
@@ -1641,6 +1654,10 @@
       "contract_signed": {
         "title": "{{document}} signed: {{plate}}",
         "description": "{{signer}} signed on {{at}}: {{document}}. The signed copy is with your documents."
+      },
+      "online_appointment": {
+        "title": "Appointment requested",
+        "description": "You requested an appointment for {{date}} {{time}}: {{work}}. The garage will confirm the appointment."
       }
     },
     "words": {
@@ -1818,5 +1835,37 @@
     "added": "Extra driver added",
     "removed": "Extra driver removed",
     "hint": "Several people drive this car. The contract names the main driver only. A fine then gets no driver; you say who drove."
+  },
+  "apk": {
+    "title": "Schedule APK",
+    "description": "Choose how you want the APK to be scheduled.",
+    "button": "Schedule APK",
+    "expires": "APK expires on {{date}}",
+    "requestTitle": "Send a request",
+    "requestText": "We book the inspection with the garage and let you know the date. The car is already filled in; you only give a preferred day.",
+    "requestButton": "Send a request",
+    "selfTitle": "Book it yourself",
+    "selfText": "Choose a day and time yourself in our garage's agenda.",
+    "showPlanner": "Open agenda",
+    "hidePlanner": "Close agenda",
+    "tickOnly": "In the agenda, tick APK only.",
+    "carDetails": "The agenda will ask for these details:",
+    "plate": "Licence plate",
+    "brandModel": "Make and model",
+    "openExternal": "Open in a new tab",
+    "plannerTitle": "Book an APK appointment online",
+    "copy": "Copy {{what}}",
+    "copied": "{{what}} copied"
+  },
+  "maintenancePlan": {
+    "title": "Report maintenance",
+    "description": "Choose how you want the maintenance to be scheduled.",
+    "requestTitle": "Send a report",
+    "requestText": "Tell us what is wrong with the car. We schedule the maintenance. Do you need another car? We will arrange it.",
+    "requestButton": "Send a report",
+    "selfText": "Choose a day and time yourself in our garage's agenda, for maintenance or a repair.",
+    "tickOnly": "In the agenda, choose the work the car needs.",
+    "selfNote": "If you book an appointment in the agenda yourself, we do not automatically arrange another car. Do you need a car during the maintenance? Then send a report.",
+    "plannerTitle": "Book a garage appointment online"
   }
 }

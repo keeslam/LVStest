@@ -60,7 +60,7 @@ export function PortalRequestDialog() {
   const day = (v?: string) => (v ? formatDateNl(v, "short") : "");
   // Standard answers: what a request of this type usually gets. They only fill the box; staff can edit before sending.
   const standardKinds = (type: string): Array<"received" | "approved" | "rejected"> => [
-    ...(["damage", "fine_question", "other", "mileage"].includes(type) ? ["received" as const] : []),
+    ...(["damage", "fine_question", "other", "mileage", "apk"].includes(type) ? ["received" as const] : []),
     ...(["extension", "early_return", "company_name_change", "cancellation"].includes(type) ? ["approved" as const] : []),
     "rejected" as const,
   ];
@@ -93,6 +93,7 @@ export function PortalRequestDialog() {
             )}
             {r.type === "extension" && <div><Label>{t("admin.requests.dialog.newEndDate")}</Label><div>{day(p.newEndDate)}</div></div>}
             {r.type === "company_name_change" && <div><Label>{t("admin.requests.dialog.newCompanyName")}</Label><div data-testid="requested-company-name">{p.newName}</div></div>}
+            {r.type === "apk" && <div><Label>{t("admin.requests.dialog.apkPreferredDate")}</Label><div data-testid="requested-apk-date">{p.preferredDate ? day(p.preferredDate) : t("admin.requests.dialog.noPreference")}</div></div>}
             {r.type === "early_return" && <div><Label>{t("admin.requests.dialog.returnDate")}</Label><div>{day(p.returnDate)}</div></div>}
             {r.type === "damage" && (
               <div className="grid grid-cols-2 gap-2">

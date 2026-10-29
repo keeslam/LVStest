@@ -33,6 +33,7 @@ export const PORTAL_ERROR = {
   DRIVER_HAS_ACCOUNT: 'PORTAL_DRIVER_HAS_ACCOUNT',
   EMAIL_IN_USE: 'PORTAL_EMAIL_IN_USE',
   REQUEST_INVALID_PERIOD: 'PORTAL_REQUEST_INVALID_PERIOD',
+  APK_NOT_POSSIBLE: 'PORTAL_APK_NOT_POSSIBLE',
   ATTACHMENT_LIMIT: 'PORTAL_ATTACHMENT_LIMIT',
   CSRF: 'PORTAL_CSRF',
   ALREADY_SIGNED: 'PORTAL_ALREADY_SIGNED',
@@ -93,7 +94,7 @@ export interface PortalMe {
   companyMail?: CompanyMailPreferences;
   settings: PortalSettingsFlags;
   /** Pickup details and privacy link from the portal configuration. */
-  info: { pickupAddress: string; openingHours: string; pickupInstructions: string; returnInstructions: string; deliveryNote: string; privacyUrl: string; phone: string };
+  info: { pickupAddress: string; openingHours: string; pickupInstructions: string; returnInstructions: string; deliveryNote: string; apkPlannerUrl: string; privacyUrl: string; phone: string };
   /** D11: the office time zone (app setting); the portal reads "today" on that calendar. Absent on an older server. */
   officeTimeZone?: string;
 }
@@ -381,6 +382,8 @@ export interface PortalConfig {
   returnInstructions: string;
   /** Shown to customers who collect and return at the shop: bringing and collecting can also be arranged, and what it costs. */
   deliveryNote: string;
+  /** The garage's online planner (Garagesoftware), shown in an iframe when a customer plans the APK or maintenance themselves. Empty: no planner. */
+  apkPlannerUrl: string;
   /** Link to the privacy statement, shown in the portal footer and on the login page. */
   privacyUrl: string;
   /** Phone number customers should call for changes that the portal no longer allows (e.g. maintenance within 48 hours). */
@@ -393,6 +396,9 @@ export interface PortalConfig {
   onlineBookingEnabled: boolean;
 }
 
+/** The only host the garage planner may live on: the portal shows it in an iframe, and the CSP frame-src allows just this host. */
+export const APK_PLANNER_HOST = 'planner.garage.software';
+
 export const DEFAULT_PORTAL_CONFIG: PortalConfig = {
   allowedFrameOrigins: ['https://lamgroep.nl', 'https://www.lamgroep.nl'],
   notificationEmail: '',
@@ -403,6 +409,7 @@ export const DEFAULT_PORTAL_CONFIG: PortalConfig = {
   pickupInstructions: 'Neem een geldig rijbewijs mee van de bestuurder die de auto ophaalt.',
   returnInstructions: 'Lever de auto schoon en compleet in. Is de auto niet schoon of niet compleet, dan brengen wij de kosten daarvan in rekening.',
   deliveryNote: 'Liever dat wij de auto brengen of ophalen? Dat kan in overleg, vanaf € 125. Neem contact met ons op.',
+  apkPlannerUrl: 'https://planner.garage.software/#/afspraken/4353313633393035',
   privacyUrl: 'https://lamgroep.nl/privacy',
   phone: '0181 - 45 10 40',
   onlineBookingEnabled: true,

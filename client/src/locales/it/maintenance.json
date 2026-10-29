@@ -538,5 +538,51 @@
     "confirmLink": "Collega",
     "missingInvoice": "Fattura mancante",
     "noInvoiceExpected": "Nessuna fattura necessaria (es. garanzia gratuita)"
+  },
+  "onlineAppointments": {
+    "button": "Appuntamenti online",
+    "title": "Appuntamenti online",
+    "description": "Appuntamenti che i clienti hanno preso nell'agenda online dell'officina. Sono già nel calendario di manutenzione. Confermali qui appena li hai confermati nel planner dell'officina.",
+    "empty": "Non ci sono appuntamenti online da confermare o controllare.",
+    "toConfirm_one": "{{count}} appuntamento da confermare",
+    "toConfirm_many": "{{count}} appuntamenti da confermare",
+    "toConfirm_other": "{{count}} appuntamenti da confermare",
+    "toCheck_one": "{{count}} appuntamento da controllare",
+    "toCheck_many": "{{count}} appuntamenti da controllare",
+    "toCheck_other": "{{count}} appuntamenti da controllare",
+    "confirm": "Confermato nel planner",
+    "cancel": "Annulla",
+    "keep": "Mantieni",
+    "replacement": "Veicolo sostitutivo da definire",
+    "cancelTitle": "Annullare l'appuntamento?",
+    "cancelText": "La riga di manutenzione e il veicolo sostitutivo da definire vengono annullati. Il cliente non riceve alcun messaggio. Annulla l'appuntamento anche nel planner dell'officina.",
+    "rentalNumber": "Numero di prenotazione",
+    "link": "Collega al noleggio",
+    "dismiss": "Ignora",
+    "failed": "Non è riuscito",
+    "pendingBadge": "Da confermare",
+    "pendingMark": "Appuntamento online, ancora da confermare",
+    "done": {
+      "confirm": "Appuntamento confermato",
+      "cancel": "Appuntamento annullato",
+      "link": "Appuntamento collegato e pianificato",
+      "dismiss": "Appuntamento ignorato"
+    },
+    "reasons": {
+      "unreadable": "Non è stato possibile leggere l'e-mail.",
+      "plate_unknown": "La targa non è nella flotta.",
+      "no_rental": "Non c'è nessun noleggio in corso o previsto di un cliente per quest'auto in quel giorno.",
+      "weekend": "L'appuntamento cade nel fine settimana.",
+      "in_past": "L'appuntamento è nel passato."
+    },
+    "errors": {
+      "ALREADY_HANDLED": "Qualcun altro ha già gestito questo appuntamento.",
+      "RENTAL_NOT_ACTIVE": "Scegli un noleggio in corso o previsto di un cliente.",
+      "RENTAL_NOT_ON_DATE": "Questo noleggio non è attivo nel giorno dell'appuntamento.",
+      "WEEKEND": "L'appuntamento cade nel fine settimana. L'officina è chiusa.",
+      "IN_PAST": "L'appuntamento è nel passato.",
+      "NO_DATE": "Questa e-mail non ha una data. Non puoi pianificarla.",
+      "NOT_FOUND": "Questo appuntamento non esiste più."
+    }
   }
 }

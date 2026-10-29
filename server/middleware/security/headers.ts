@@ -50,6 +50,7 @@ export function buildCspDirectives(isProduction: boolean): Record<string, string
     frameSrc: [
       "'self'", // In-app document/report preview (Documents page, Delivery dashboard)
       'https://www.google.com', // Route preview embed on the Delivery dashboard
+      'https://planner.garage.software', // The garage's online planner in the customer portal (APK inplannen, Onderhoud melden)
     ],
     objectSrc: ["'none'"],
     upgradeInsecureRequests: isProduction ? [] : null,

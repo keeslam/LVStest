@@ -1,5 +1,5 @@
 import { storage } from "../storage";
-import { DEFAULT_PORTAL_CONFIG, PORTAL_CONFIG_KEY, type PortalConfig } from "../../shared/portal-types";
+import { DEFAULT_PORTAL_CONFIG, PORTAL_CONFIG_KEY, APK_PLANNER_HOST, type PortalConfig } from "../../shared/portal-types";
 import { z } from "zod";
 import { isValidFrameOrigin, normalizeFrameOrigin, FRAME_ORIGIN_MESSAGE } from "../../shared/frame-origins";
 
@@ -19,6 +19,13 @@ export const portalConfigSchema = z.object({
   pickupInstructions: z.string().max(1000).default(DEFAULT_PORTAL_CONFIG.pickupInstructions),
   returnInstructions: z.string().max(1000).default(DEFAULT_PORTAL_CONFIG.returnInstructions),
   deliveryNote: z.string().max(500).default(DEFAULT_PORTAL_CONFIG.deliveryNote),
+  // Shown in an iframe in the portal, which the CSP only allows for the garage planner's host; so only https on that host.
+  apkPlannerUrl: z.union([
+    z.string().url().refine((u) => {
+      try { const url = new URL(u); return url.protocol === "https:" && url.hostname === APK_PLANNER_HOST; } catch { return false; }
+    }, `Alleen een adres op ${APK_PLANNER_HOST}`),
+    z.literal(""),
+  ]).default(DEFAULT_PORTAL_CONFIG.apkPlannerUrl),
   privacyUrl: z.union([z.string().url(), z.literal("")]).default(DEFAULT_PORTAL_CONFIG.privacyUrl),
   phone: z.string().max(50).default(DEFAULT_PORTAL_CONFIG.phone),
   onlineBookingEnabled: z.boolean().default(true),

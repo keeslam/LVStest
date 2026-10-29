@@ -225,6 +225,32 @@ Dan komt er geen placeholder. Regel de vervangende auto dan zelf (zie [paragraaf
 
 Een onderhoudsmelding sluit je alleen af met inplannen of **Afwijzen**.
 
+### APK inplannen
+
+Een klant kan in het portaal vragen om de APK van zijn huurauto in te plannen. Hoe de klant dat
+doet, staat in [paragraaf 3.7](03-klanten.md). De app plant de APK niet zelf. Dat doe jij in de
+planner van de garage.
+
+1. Open de aanvraag **APK inplannen**. Bovenaan staat de **Reservering**. Daaronder staat de
+   **Voorkeursdag** van de klant. Heeft de klant geen dag gekozen? Dan staat er *Geen voorkeur*.
+
+   ![Het venster Aanvraag van het type APK inplannen met de Voorkeursdag (1), Ontvangen (2) en Antwoord aan klant (3)](afbeeldingen/16-aanvraag-apk.png)
+   *De aanvraag **APK inplannen**. 1 is de **Voorkeursdag**. 2 is **Ontvangen**. 3 is **Antwoord aan
+   klant**.*
+2. Zet de afspraak in de planner van de garage. Kies zo mogelijk de voorkeursdag.
+3. Klik op **Ontvangen** achter **Standaardantwoord invullen**. Zet de datum van de afspraak in de
+   tekst.
+
+   ![De knop Ontvangen, van dichtbij](afbeeldingen/16-aanvraag-apk-k2.png)
+   *Zo ziet de knop **Ontvangen** eruit.*
+4. Klik op **Beantwoorden en afhandelen**. De klant krijgt je antwoord met de datum.
+
+   ![De knop Beantwoorden en afhandelen, van dichtbij](afbeeldingen/20-aanvraag-verlenging-k6.png)
+   *Zo ziet de knop **Beantwoorden en afhandelen** eruit.*
+
+Een klant kan ook zelf een afspraak maken in de online agenda van de garage. Dat komt niet als
+aanvraag bij jou binnen. Je ziet het alleen in de planner van de garage.
+
 ### Wijziging bedrijfsnaam
 
 Een klant kan zijn bedrijfsnaam niet zelf wijzigen. Hij vraagt dat aan. Je ziet dan bovenaan de

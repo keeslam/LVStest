@@ -393,7 +393,9 @@
       "runDone": "{{mails}} correo(s) recuperado(s): {{booked}} contabilizadas, {{review}} pendientes de revisión",
       "geminiMissing": "Atención: GEMINI_API_KEY no está configurada en el servidor. Las facturas no se podrán leer y todas quedarán pendientes de revisión.",
       "loadFailed": "No se pudieron cargar los ajustes de las facturas por correo electrónico",
-      "retry": "Reintentar"
+      "retry": "Reintentar",
+      "appointmentSenders": "Remitentes del planificador del taller (citas en línea)",
+      "appointmentSendersHint": "Uno por línea, por ejemplo noreply@garage.software. Un correo Afspraak Aanvraag de esta dirección entra en el calendario de mantenimiento y se mueve a la carpeta online afspraken. Déjelo vacío para desactivarlo."
     },
     "log": {
       "title": "Registro",
@@ -401,7 +403,8 @@
       "tabs": {
         "invoices": "Facturas",
         "other": "Otros correos",
-        "runs": "Rondas de recuperación"
+        "runs": "Rondas de recuperación",
+        "appointments": "Citas en línea"
       },
       "searchLabel": "Buscar en el registro",
       "searchPlaceholder": "Buscar por remitente, asunto, archivo, proveedor, número de factura o matrícula",
@@ -432,7 +435,26 @@
       "empty": {
         "invoices": "No se han encontrado facturas.",
         "other": "No se han encontrado otros correos.",
-        "runs": "Aún no hay rondas de recuperación guardadas."
+        "runs": "Aún no hay rondas de recuperación guardadas.",
+        "appointments": "No se han encontrado citas en línea."
+      },
+      "appointments": {
+        "searchPlaceholder": "Buscar por matrícula, cliente o trabajo",
+        "columns": {
+          "appointment": "Cita",
+          "vehicle": "Coche",
+          "work": "Trabajo",
+          "customer": "Cliente",
+          "status": "Estado"
+        },
+        "statuses": {
+          "pending": "Por confirmar",
+          "confirmed": "Confirmada",
+          "cancelled": "Cancelada",
+          "review": "Por revisar",
+          "dismissed": "Ignorada"
+        },
+        "toCalendar": "Al calendario de mantenimiento"
       }
     }
   },

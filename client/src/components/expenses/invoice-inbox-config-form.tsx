@@ -50,18 +50,22 @@ export function InvoiceInboxConfigForm() {
   });
   const [form, setForm] = useState<InvoiceInboxConfig | null>(null);
   const [sendersText, setSendersText] = useState("");
+  const [appointmentSendersText, setAppointmentSendersText] = useState("");
   const [testResult, setTestResult] = useState<{ ok: boolean; unseen?: number; folders?: InboxFolderInfo[]; diagnostics?: InboxDiagnostics; message?: string } | null>(null);
 
   useEffect(() => {
     if (!data) return;
     setForm(data);
     setSendersText(data.allowedSenders.join("\n"));
+    setAppointmentSendersText((data.appointmentSenders ?? []).join("\n"));
   }, [data]);
 
-  /** The form as the API expects it: the textarea split into one entry per non-empty line. */
+  const lines = (text: string) => text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  /** The form as the API expects it: each textarea split into one entry per non-empty line. */
   const payload = (): InvoiceInboxConfig => ({
     ...form!,
-    allowedSenders: sendersText.split(/\r?\n/).map((line) => line.trim()).filter(Boolean),
+    allowedSenders: lines(sendersText),
+    appointmentSenders: lines(appointmentSendersText),
   });
 
   const save = useMutation({
@@ -194,6 +198,12 @@ export function InvoiceInboxConfigForm() {
           <Label htmlFor="invoice-inbox-senders">{t("invoiceInbox.config.allowedSenders")}</Label>
           <Textarea id="invoice-inbox-senders" rows={4} value={sendersText} onChange={(e) => setSendersText(e.target.value)} placeholder={"@garage.nl\n@lamgroep.nl"} data-testid="textarea-invoice-inbox-senders" />
           <p className="mt-1 text-xs text-muted-foreground">{t("invoiceInbox.config.allowedSendersHint")}</p>
+        </div>
+        {/* Online afspraken (Kees 2026-10-29): the garage planner's addresses. Empty = off. */}
+        <div>
+          <Label htmlFor="invoice-inbox-appointment-senders">{t("invoiceInbox.config.appointmentSenders")}</Label>
+          <Textarea id="invoice-inbox-appointment-senders" rows={2} value={appointmentSendersText} onChange={(e) => setAppointmentSendersText(e.target.value)} placeholder="noreply@garage.software" data-testid="textarea-invoice-inbox-appointment-senders" />
+          <p className="mt-1 text-xs text-muted-foreground">{t("invoiceInbox.config.appointmentSendersHint")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button onClick={() => save.mutate()} disabled={save.isPending} data-testid="button-save-invoice-inbox">{t("invoiceInbox.config.save")}</Button>

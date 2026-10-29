@@ -21,7 +21,7 @@ const OVERVIEW_ROWS = 5;
 export default function PortalOverviewPage() {
   const { t } = useTranslation("portal");
   const { me } = usePortalAuth();
-  const { openNewRequest, openList } = usePortalDialogs();
+  const { openNewRequest, openList, openMaintenance } = usePortalDialogs();
   const { data: reservations = [], isLoading, isError, refetch } = useQuery<PortalReservationDto[]>({ queryKey: ["portal", "/api/portal/reservations"], queryFn: portalQueryFn });
   const { data: fines = [] } = useQuery<PortalFineDto[]>({ queryKey: ["portal", "/api/portal/fines"], queryFn: portalQueryFn, enabled: Boolean(me?.settings.canViewFines) });
   const { data: requests = [] } = useQuery<PortalRequestDto[]>({ queryKey: ["portal", "/api/portal/requests"], queryFn: portalQueryFn, enabled: Boolean(me?.settings.canSubmitRequests) });
@@ -50,7 +50,7 @@ export default function PortalOverviewPage() {
         {me?.settings.canBook && me.settings.canSubmitRequests && <Button asChild className={`${btnSecondary} h-auto min-h-9 whitespace-normal py-2 text-left`} variant="outline" data-testid="quick-vehicles"><Link href="/aanvragen"><Car className="mr-1.5 h-4 w-4" />{t("vehicles.quick")}</Link></Button>}
         {me?.settings.canSubmitRequests && current.length + upcoming.length > 0 && (<>
           <Button variant="outline" className={`${btnSecondary} h-auto min-h-9 whitespace-normal py-2 text-left`} onClick={() => openNewRequest({ type: "damage" })} data-testid="quick-damage"><TriangleAlert className="mr-1.5 h-4 w-4" />{t("requests.type.damage")}</Button>
-          <Button variant="outline" className={`${btnSecondary} h-auto min-h-9 whitespace-normal py-2 text-left`} onClick={() => openNewRequest({ type: "maintenance" })} data-testid="quick-maintenance"><Wrench className="mr-1.5 h-4 w-4" />{t("requests.form.reportMaintenance")}</Button>
+          <Button variant="outline" className={`${btnSecondary} h-auto min-h-9 whitespace-normal py-2 text-left`} onClick={() => openMaintenance()} data-testid="quick-maintenance"><Wrench className="mr-1.5 h-4 w-4" />{t("requests.form.reportMaintenance")}</Button>
         </>)}
         {canManageDrivers && <DriverFormDialog><Button variant="outline" className={`${btnSecondary} h-auto min-h-9 whitespace-normal py-2 text-left`}><UserPlus className="mr-1.5 h-4 w-4" />{t("actions.addDriver")}</Button></DriverFormDialog>}
         {me?.settings.canViewContracts && <Button variant="outline" className={`${btnSecondary} h-auto min-h-9 whitespace-normal py-2 text-left`} onClick={() => openList("documents")}><FileText className="mr-1.5 h-4 w-4" />{t("tabs.documents")}</Button>}

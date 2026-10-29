@@ -58,6 +58,8 @@ import { ScheduleMaintenanceDialog } from "@/components/maintenance/schedule-mai
 import { MaintenanceEditDialog } from "@/components/maintenance/maintenance-edit-dialog";
 import { CompleteMaintenanceDialog } from "@/components/maintenance/complete-maintenance-dialog";
 import { MaintenanceListDialog } from "@/components/maintenance/maintenance-list-dialog";
+import { OnlineAppointmentsDialog, ONLINE_APPOINTMENTS_KEY, ONLINE_APPOINTMENTS_COUNT_KEY } from "@/components/maintenance/online-appointments-dialog";
+import type { OnlineAppointmentDto } from "@shared/online-appointments";
 import { RecycleBinDialog } from "@/components/recycle-bin/recycle-bin-dialog";
 import { VehicleViewDialog } from "@/components/vehicles/vehicle-view-dialog";
 import { MaintenanceViewDialog } from "@/components/maintenance/maintenance-view-dialog";
@@ -69,7 +71,7 @@ import { CalendarLegend } from "@/components/calendar/calendar-legend";
 import { getCustomMaintenanceStyle, getCustomMaintenanceStyleObject } from "@/lib/calendar-styling";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { NoDataAccess } from "@/components/ui/no-data-access";
-import { ChevronLeft, ChevronRight, Calendar, Car, Wrench, AlertTriangle, Clock, Plus, Eye, Edit, Trash2, Palette, Archive } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Car, Wrench, AlertTriangle, Clock, Plus, Eye, Edit, Trash2, Palette, Archive, CalendarClock } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTranslation } from "react-i18next";
 
@@ -340,6 +342,14 @@ export default function MaintenanceCalendar() {
   // Round 2 punt 11 part B: visits whose invoice is missing get a mark on the calendar.
   const { data: missingInvoices } = useQuery<{ rows: MissingInvoiceRow[] }>({ queryKey: ["/api/maintenance-blocks/missing-invoices"] });
   const missingInvoiceVisitIds = new Set((missingInvoices?.rows ?? []).map((r) => `scheduled_maintenance_${r.visitId}`));
+
+  // Online afspraken from the garage planner: the button shows how many wait, the bell's link opens the list,
+  // and a block that is still "te bevestigen" gets a dashed border and a clock on the calendar.
+  const canSeeOnlineAppointments = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS, UserPermission.MANAGE_MAINTENANCE);
+  const [onlineAppointmentsOpen, setOnlineAppointmentsOpen] = useState(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("onlineAppointments") === "1");
+  const { data: onlineAppointmentCount } = useQuery<{ count: number }>({ queryKey: ONLINE_APPOINTMENTS_COUNT_KEY, enabled: canSeeOnlineAppointments, refetchInterval: 60_000 });
+  const { data: openOnlineAppointments } = useQuery<OnlineAppointmentDto[]>({ queryKey: ONLINE_APPOINTMENTS_KEY, enabled: canSeeOnlineAppointments });
+  const pendingOnlineBlockIds = new Set((openOnlineAppointments ?? []).filter((a) => a.status === "pending" && a.blockId).map((a) => `scheduled_maintenance_${a.blockId}`));
 
   const { data: vehicles, isLoading: isLoadingVehicles } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],
@@ -1081,6 +1091,7 @@ export default function MaintenanceCalendar() {
 
   return (
     <div className="space-y-6">
+      {canSeeOnlineAppointments && <OnlineAppointmentsDialog open={onlineAppointmentsOpen} onOpenChange={setOnlineAppointmentsOpen} />}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-bold">{t('calendarPage.pageTitle')}</h1>
         <div className="flex flex-wrap gap-2">
@@ -1099,6 +1110,16 @@ export default function MaintenanceCalendar() {
             </svg>
             {t('calendarPage.listViewButton')}
           </Button>
+          {canSeeOnlineAppointments && (
+            <Button
+              variant={onlineAppointmentCount?.count ? "default" : "outline"}
+              onClick={() => setOnlineAppointmentsOpen(true)}
+              data-testid="button-online-appointments"
+            >
+              <CalendarClock className="mr-2 h-4 w-4" />
+              {t('onlineAppointments.button')}{onlineAppointmentCount?.count ? ` (${onlineAppointmentCount.count})` : ""}
+            </Button>
+          )}
           <Button
             variant="outline"
             onClick={() => setCompletedMaintenanceDialogOpen(true)}
@@ -1337,7 +1358,7 @@ export default function MaintenanceCalendar() {
                               <HoverCard key={`${event.id}-${event.type}`}>
                                 <HoverCardTrigger asChild>
                                   <div
-                                    className={`text-xs p-1 rounded cursor-pointer hover:opacity-80 border ${getEventTypeStyle(event.type)} group`}
+                                    className={`text-xs p-1 rounded cursor-pointer hover:opacity-80 border ${getEventTypeStyle(event.type)} group ${pendingOnlineBlockIds.has(String(event.id)) ? 'border-dashed border-2 border-amber-500' : ''}`}
                                     style={getMaintenanceStyleObject(event.type)}
                                     data-testid={`event-${event.id}-${event.type}`}
                                   >
@@ -1345,6 +1366,15 @@ export default function MaintenanceCalendar() {
                                       <div className="flex items-center gap-1 min-w-0">
                                         {getEventIcon(event.type)}
                                         <span className="truncate">{displayLicensePlate(event.vehicle.licensePlate)}</span>
+                                        {pendingOnlineBlockIds.has(String(event.id)) && (
+                                          <CalendarClock
+                                            className="h-3 w-3 shrink-0 text-amber-600"
+                                            aria-label={t('onlineAppointments.pendingMark')}
+                                            data-testid={`online-appointment-mark-${event.id}`}
+                                          >
+                                            <title>{t('onlineAppointments.pendingMark')}</title>
+                                          </CalendarClock>
+                                        )}
                                         {missingInvoiceVisitIds.has(String(event.id)) && (
                                           <FileWarning
                                             className="h-3 w-3 shrink-0 text-red-600"
@@ -1574,6 +1604,11 @@ export default function MaintenanceCalendar() {
                             >
                               {t(`calendarPage.eventTypeLabels.${event.type}`)}
                             </Badge>
+                            {pendingOnlineBlockIds.has(String(event.id)) && (
+                              <Badge variant="outline" className="border-dashed border-amber-500 text-amber-700" data-testid={`online-appointment-badge-${event.id}`}>
+                                <CalendarClock className="mr-1 h-3 w-3" />{t('onlineAppointments.pendingBadge')}
+                              </Badge>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {event.vehicle.brand} {event.vehicle.model} - {displayLicensePlate(event.vehicle.licensePlate)}

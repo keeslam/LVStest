@@ -41,12 +41,19 @@ export interface InvoiceInboxConfig {
   authservId: string;
   /** Allowed difference in euro between the sum of the lines and the invoice total. */
   totalTolerance: number;
+  /**
+   * Senders of the garage planner's "Afspraak Aanvraag" mails ("naam@domein.nl" or "@domein.nl", lower-case). Such a
+   * mail is read into the maintenance planner and moved to the folder "online afspraken" instead of being treated as
+   * an invoice. Empty = the feature is off (Kees 2026-10-29). Design: 2026-10-13-online-afspraken-design.md
+   */
+  appointmentSenders: string[];
 }
 
 export const DEFAULT_INVOICE_INBOX_CONFIG: InvoiceInboxConfig = {
   enabled: false, host: '', port: 993, secure: true, username: '', password: '',
   inboxFolder: 'INBOX', processedFolder: 'Verwerkt', pollMinutes: 15,
   allowedSenders: [], authservId: '', totalTolerance: 1,
+  appointmentSenders: [],
 };
 
 export const INBOX_STATUSES = ['booked', 'review', 'dismissed'] as const;
@@ -148,6 +155,8 @@ export interface InvoiceInboxRunSummary {
   skipped: number;
   failed: number;
   errors: string[];
+  /** Planner appointment mails handled in this run (counted in `mails` too; not stored in the run log). */
+  appointments?: number;
 }
 
 /** One stored fetch run, as the log shows it. */

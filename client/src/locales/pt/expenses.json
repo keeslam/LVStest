@@ -393,7 +393,9 @@
       "runDone": "{{mails}} mensagem(ns) obtida(s): {{booked}} contabilizadas, {{review}} para verificar",
       "geminiMissing": "Atenção: GEMINI_API_KEY não está definida no servidor. Assim, as faturas não podem ser lidas e ficam todas para verificação.",
       "loadFailed": "Não foi possível carregar as definições das faturas por e-mail",
-      "retry": "Tentar novamente"
+      "retry": "Tentar novamente",
+      "appointmentSenders": "Remetentes do planeador da oficina (marcações online)",
+      "appointmentSendersHint": "Um por linha, por exemplo noreply@garage.software. Um e-mail Afspraak Aanvraag deste endereço entra no calendário de manutenção e é movido para a pasta online afspraken. Deixe vazio para desligar."
     },
     "log": {
       "title": "Registo",
@@ -401,7 +403,8 @@
       "tabs": {
         "invoices": "Faturas",
         "other": "Outro correio",
-        "runs": "Ciclos de obtenção"
+        "runs": "Ciclos de obtenção",
+        "appointments": "Marcações online"
       },
       "searchLabel": "Pesquisar no registo",
       "searchPlaceholder": "Pesquisar por remetente, assunto, ficheiro, fornecedor, número da fatura ou matrícula",
@@ -432,7 +435,26 @@
       "empty": {
         "invoices": "Nenhuma fatura encontrada.",
         "other": "Nenhum outro correio encontrado.",
-        "runs": "Ainda não há ciclos de obtenção guardados."
+        "runs": "Ainda não há ciclos de obtenção guardados.",
+        "appointments": "Não foram encontradas marcações online."
+      },
+      "appointments": {
+        "searchPlaceholder": "Pesquisar por matrícula, cliente ou trabalho",
+        "columns": {
+          "appointment": "Marcação",
+          "vehicle": "Carro",
+          "work": "Trabalho",
+          "customer": "Cliente",
+          "status": "Estado"
+        },
+        "statuses": {
+          "pending": "Por confirmar",
+          "confirmed": "Confirmada",
+          "cancelled": "Cancelada",
+          "review": "Por verificar",
+          "dismissed": "Ignorada"
+        },
+        "toCalendar": "Para o calendário de manutenção"
       }
     }
   },

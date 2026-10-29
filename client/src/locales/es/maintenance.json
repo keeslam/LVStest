@@ -538,5 +538,51 @@
     "confirmLink": "Vincular",
     "missingInvoice": "Falta la factura",
     "noInvoiceExpected": "No hace falta factura (p. ej. garantía gratuita)"
+  },
+  "onlineAppointments": {
+    "button": "Citas en línea",
+    "title": "Citas en línea",
+    "description": "Citas que los clientes han hecho en la agenda en línea del taller. Ya están en el calendario de mantenimiento. Confírmelas aquí en cuanto las haya confirmado en el planificador del taller.",
+    "empty": "No hay citas en línea para confirmar o revisar.",
+    "toConfirm_one": "{{count}} cita por confirmar",
+    "toConfirm_many": "{{count}} citas por confirmar",
+    "toConfirm_other": "{{count}} citas por confirmar",
+    "toCheck_one": "{{count}} cita por revisar",
+    "toCheck_many": "{{count}} citas por revisar",
+    "toCheck_other": "{{count}} citas por revisar",
+    "confirm": "Confirmada en el planificador",
+    "cancel": "Cancelar",
+    "keep": "Mantener",
+    "replacement": "Vehículo de sustitución por determinar",
+    "cancelTitle": "¿Cancelar la cita?",
+    "cancelText": "Se cancelan la línea de mantenimiento y el vehículo de sustitución por determinar. El cliente no recibe ningún mensaje. Cancele la cita también en el planificador del taller.",
+    "rentalNumber": "Número de reserva",
+    "link": "Vincular al alquiler",
+    "dismiss": "Ignorar",
+    "failed": "No ha funcionado",
+    "pendingBadge": "Por confirmar",
+    "pendingMark": "Cita en línea, aún por confirmar",
+    "done": {
+      "confirm": "Cita confirmada",
+      "cancel": "Cita cancelada",
+      "link": "Cita vinculada y planificada",
+      "dismiss": "Cita ignorada"
+    },
+    "reasons": {
+      "unreadable": "No se pudo leer el correo.",
+      "plate_unknown": "La matrícula no está en la flota.",
+      "no_rental": "No hay ningún alquiler en curso o previsto de un cliente para este coche ese día.",
+      "weekend": "La cita cae en fin de semana.",
+      "in_past": "La cita está en el pasado."
+    },
+    "errors": {
+      "ALREADY_HANDLED": "Otra persona ya ha gestionado esta cita.",
+      "RENTAL_NOT_ACTIVE": "Elija un alquiler en curso o previsto de un cliente.",
+      "RENTAL_NOT_ON_DATE": "Este alquiler no está activo el día de la cita.",
+      "WEEKEND": "La cita cae en fin de semana. El taller está cerrado.",
+      "IN_PAST": "La cita está en el pasado.",
+      "NO_DATE": "Este correo no tiene fecha. No se puede planificar.",
+      "NOT_FOUND": "Esta cita ya no existe."
+    }
   }
 }

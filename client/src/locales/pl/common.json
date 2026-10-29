@@ -253,7 +253,8 @@
         "key-audit": "Kontrola szafki na klucze",
         "notification-dismissal": "Ukryte powiadomienie",
         "user-setting": "Własne ustawienie",
-        "lease_quote": "Oferta leasingowa"
+        "lease_quote": "Oferta leasingowa",
+        "online-appointment": "Wizyta online"
       },
       "verbs": {
         "create": "utworzono",
@@ -357,13 +358,20 @@
           "cjib-import": "Zaimportowano mandaty z CJIB",
           "invoice-inbox-import": "Zaimportowano faktury ze skrzynki pocztowej",
           "backup": "Utworzono kopię zapasową",
-          "missing-invoice-mail": "Cotygodniowy e-mail o brakujących fakturach"
+          "missing-invoice-mail": "Cotygodniowy e-mail o brakujących fakturach",
+          "online-appointment-import": "Wizyta online ze skrzynki pocztowej przetworzona"
         },
         "lease_quote": {
           "copy": "Oferta skopiowana do nowej oferty",
           "pdf": "Utworzono PDF dla klienta",
           "files": "Oferta dealera przesłana, odczytana lub usunięta",
           "file-view": "Załącznik oferty wyświetlony"
+        },
+        "online-appointment": {
+          "confirm": "Wizyta online potwierdzona",
+          "cancel": "Wizyta online anulowana",
+          "link": "Wizyta online powiązana z wynajmem",
+          "dismiss": "Wizyta online pominięta"
         }
       }
     }

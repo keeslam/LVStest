@@ -386,7 +386,9 @@
       "runDone": "{{mails}} mail(s) opgehaald: {{booked}} geboekt, {{review}} ter controle",
       "geminiMissing": "Let op: GEMINI_API_KEY is niet ingesteld op de server. Facturen kunnen dan niet worden uitgelezen en komen allemaal ter controle.",
       "loadFailed": "De instellingen voor facturen per e-mail konden niet worden geladen",
-      "retry": "Opnieuw proberen"
+      "retry": "Opnieuw proberen",
+      "appointmentSenders": "Afzenders van de garageplanner (online afspraken)",
+      "appointmentSendersHint": "Eén per regel, bijvoorbeeld noreply@garage.software. Een mail Afspraak Aanvraag van dit adres komt in de onderhoudskalender en gaat naar de map online afspraken. Leeg laten zet dit uit."
     },
     "log": {
       "title": "Logboek",
@@ -394,7 +396,8 @@
       "tabs": {
         "invoices": "Facturen",
         "other": "Overige mail",
-        "runs": "Ophaalrondes"
+        "runs": "Ophaalrondes",
+        "appointments": "Online afspraken"
       },
       "searchLabel": "Zoeken in het logboek",
       "searchPlaceholder": "Zoek op afzender, onderwerp, bestand, leverancier, factuurnummer of kenteken",
@@ -425,7 +428,26 @@
       "empty": {
         "invoices": "Geen facturen gevonden.",
         "other": "Geen overige mail gevonden.",
-        "runs": "Nog geen ophaalrondes bewaard."
+        "runs": "Nog geen ophaalrondes bewaard.",
+        "appointments": "Geen online afspraken gevonden."
+      },
+      "appointments": {
+        "searchPlaceholder": "Zoek op kenteken, klant of werk",
+        "columns": {
+          "appointment": "Afspraak",
+          "vehicle": "Auto",
+          "work": "Werk",
+          "customer": "Klant",
+          "status": "Status"
+        },
+        "statuses": {
+          "pending": "Te bevestigen",
+          "confirmed": "Bevestigd",
+          "cancelled": "Geannuleerd",
+          "review": "Te controleren",
+          "dismissed": "Genegeerd"
+        },
+        "toCalendar": "Naar de onderhoudskalender"
       }
     }
   },

@@ -128,7 +128,7 @@
     "fines_other": "Multas de esta reserva ({{count}})",
     "pickupInfo": "Recogida",
     "pickupAt": "recogida a las {{time}}",
-    "apkDue": "La APK de este coche caduca el {{date}} (dentro de {{days}} días). Lam Groep programará la inspección.",
+    "apkDue": "La APK de este coche caduca el {{date}} (dentro de {{days}} días).",
     "apkExpired": "La APK de este coche caducó el {{date}}. Póngase en contacto con Lam Groep."
   },
   "documents": {
@@ -410,7 +410,8 @@
     "PORTAL_CANCEL_TOO_LATE": "Puede cancelar hasta 48 horas antes del inicio. Póngase en contacto con nosotros.",
     "PORTAL_CANCEL_NOT_ALLOWED": "Esta reserva no se puede cancelar a través del portal.",
     "PORTAL_FILE_TOO_LARGE": "El archivo supera los 10 MB.",
-    "PORTAL_DRIVER_HAS_ACCOUNT": "Este conductor ya tiene una cuenta."
+    "PORTAL_DRIVER_HAS_ACCOUNT": "Este conductor ya tiene una cuenta.",
+    "PORTAL_APK_NOT_POSSIBLE": "La APK solo se puede programar mientras usted tenga el coche en uso."
   },
   "admin": {
     "navLabel": "Portal de clientes",
@@ -819,7 +820,9 @@
       "onlineBookingEnabledHint": "Desactivado: los clientes ya no ven los vehículos ofrecidos en línea y no pueden enviar una solicitud de alquiler para ellos. Las demás solicitudes (prórroga, daños, preguntas) siguen funcionando. También se puede desactivar por cliente en los ajustes del cliente.",
       "onlineBookingOnDone": "El alquiler de vehículos en línea está activado.",
       "onlineBookingOffDone": "El alquiler de vehículos en línea está desactivado.",
-      "onlineBookingNotSaved": "No guardado: el servidor aún no conoce este interruptor. Reinicie el servidor e inténtelo de nuevo."
+      "onlineBookingNotSaved": "No guardado: el servidor aún no conoce este interruptor. Reinicie el servidor e inténtelo de nuevo.",
+      "apkPlannerUrl": "Agenda online del taller",
+      "apkPlannerUrlHint": "La dirección de las citas online del taller. Solo funciona una dirección en planner.garage.software. Los clientes ven la agenda en Programar APK y en Notificar mantenimiento. Déjelo vacío para ocultar la agenda; los clientes solo podrán enviar una solicitud."
     },
     "fines": {
       "title": "Multas",
@@ -1097,7 +1100,8 @@
         "maintenance_change": "Modificar mantenimiento",
         "mileage": "Kilometraje",
         "company_name_change": "Cambio del nombre de la empresa",
-        "cancellation": "Cancelación"
+        "cancellation": "Cancelación",
+        "apk": "Programar APK"
       },
       "status": {
         "new": "Nueva",
@@ -1148,7 +1152,9 @@
         "mileageApply": "Adoptar: {{km}} km",
         "mileageApplied": "El kilometraje del coche es ahora {{km}} km",
         "mileageNotHigher": "No se puede adoptar: el coche ya marca {{current}} km y el cliente indicó {{reported}} km. Una lectura menor o igual no se adopta. La lectura indicada se guarda en el coche como \"Kilometraje indicado por el cliente\".",
-        "mileageAlreadyApplied": "Esta lectura ya se ha adoptado."
+        "mileageAlreadyApplied": "Esta lectura ya se ha adoptado.",
+        "apkPreferredDate": "Día preferido",
+        "noPreference": "Sin preferencia"
       },
       "standard": {
         "received": {
@@ -1156,7 +1162,8 @@
           "fine_question": "Gracias por su consulta sobre la multa. La hemos recibido y le responderemos.",
           "other": "Gracias por su mensaje. Lo hemos recibido y le responderemos.",
           "mileage": "Gracias por comunicarnos el kilometraje.",
-          "default": "Gracias por su mensaje. Lo hemos recibido."
+          "default": "Gracias por su mensaje. Lo hemos recibido.",
+          "apk": "Gracias por su solicitud. Programaremos la APK y le comunicaremos la fecha."
         },
         "approved": {
           "extension": "Su ampliación ha sido aprobada.",
@@ -1389,7 +1396,8 @@
       "maintenance_change": "Modificar mantenimiento",
       "mileage": "Comunicar el kilometraje",
       "company_name_change": "Cambio del nombre de la empresa",
-      "cancellation": "Cancelar reserva"
+      "cancellation": "Cancelar reserva",
+      "apk": "Programar APK"
     },
     "status": {
       "new": "Enviada",
@@ -1446,7 +1454,12 @@
       "reason": "Motivo",
       "stillNeedsReplacement": "Sigo necesitando transporte de sustitución",
       "changeHint": "Lam Groep comprobará si la nueva fecha es posible y se lo confirmará.",
-      "weekdaysOnly": "Solo días laborables (lun-vie)."
+      "weekdaysOnly": "Solo días laborables (lun-vie).",
+      "apkMessage": "Por favor, programen la inspección APK.",
+      "apkRemarks": "Observaciones",
+      "apkPreferredDate": "Día preferido (opcional)",
+      "apkInfo": "{{plate}} · La APK caduca el {{date}}",
+      "noPreference": "Sin preferencia"
     },
     "date": "Enviada el",
     "subtitle": "Ampliar, devolver antes de tiempo, notificar daños o hacer una consulta.",
@@ -1657,6 +1670,10 @@
       "contract_signed": {
         "title": "{{document}} firmado: {{plate}}",
         "description": "{{signer}} firmó el {{at}}: {{document}}. La copia firmada está en sus documentos."
+      },
+      "online_appointment": {
+        "title": "Cita solicitada",
+        "description": "Ha solicitado una cita para el {{date}} {{time}}: {{work}}. El taller confirmará la cita."
       }
     },
     "words": {
@@ -1837,5 +1854,37 @@
     "added": "Conductor adicional añadido",
     "removed": "Conductor adicional quitado",
     "hint": "Varias personas conducen este vehículo. El contrato solo nombra al conductor principal. Una multa no tendrá conductor; usted indica quién conducía."
+  },
+  "apk": {
+    "title": "Programar APK",
+    "description": "Elija cómo quiere programar la APK.",
+    "button": "Programar APK",
+    "expires": "La APK caduca el {{date}}",
+    "requestTitle": "Enviar solicitud",
+    "requestText": "Nosotros pedimos la cita en el taller y le comunicamos la fecha. Los datos del coche ya están rellenados; solo indica un día preferido.",
+    "requestButton": "Enviar solicitud",
+    "selfTitle": "Pedir cita usted mismo",
+    "selfText": "Elija usted mismo un día y una hora en la agenda de nuestro taller.",
+    "showPlanner": "Abrir agenda",
+    "hidePlanner": "Cerrar agenda",
+    "tickOnly": "En la agenda, marque solo APK.",
+    "carDetails": "La agenda le pedirá estos datos:",
+    "plate": "Matrícula",
+    "brandModel": "Marca y modelo",
+    "openExternal": "Abrir en una pestaña nueva",
+    "plannerTitle": "Pedir cita online para la APK",
+    "copy": "Copiar {{what}}",
+    "copied": "{{what}} copiado"
+  },
+  "maintenancePlan": {
+    "title": "Notificar mantenimiento",
+    "description": "Elija cómo quiere programar el mantenimiento.",
+    "requestTitle": "Enviar aviso",
+    "requestText": "Indíquenos qué le pasa al coche. Nosotros programamos el mantenimiento. ¿Necesita otro coche? Nos encargamos de ello.",
+    "requestButton": "Enviar aviso",
+    "selfText": "Elija usted mismo un día y una hora en la agenda de nuestro taller, para mantenimiento o una reparación.",
+    "tickOnly": "En la agenda, elija los trabajos que necesita el coche.",
+    "selfNote": "Si pide cita usted mismo en la agenda, no le organizamos otro coche automáticamente. ¿Necesita un coche durante el mantenimiento? Entonces envíe un aviso.",
+    "plannerTitle": "Pedir cita online en el taller"
   }
 }

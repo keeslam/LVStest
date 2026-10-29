@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Loader2 } from "lucide-react";
 import { DetailRow } from "./reservation-dialog";
 import { StatusBadge } from "./ui";
-import { formatPortalDateTime } from "@/lib/portal-format";
+import { formatPortalDate, formatPortalDateTime } from "@/lib/portal-format";
 
 /** Three steps: submitted, in progress, handled (or rejected). */
 function RequestProgress({ status }: { status: string }) {
@@ -77,6 +77,7 @@ export function RequestDialog({ id, onClose }: { id: number | null; onClose: () 
                 {p.driverLabel && <DetailRow label={t("requests.form.driver")} value={p.driverLabel} />}
               </>}
               {r.type === "extension" && <DetailRow label={t("requests.form.newEndDate")} value={p.newEndDate} />}
+              {r.type === "apk" && <DetailRow label={t("requests.form.apkPreferredDate")} value={p.preferredDate ? formatPortalDate(p.preferredDate) : t("requests.form.noPreference")} />}
               {r.type === "early_return" && <DetailRow label={t("requests.form.returnDate")} value={p.returnDate} />}
               {r.type === "damage" && <><DetailRow label={t("requests.form.location")} value={p.location} /><DetailRow label={t("requests.form.occurredAt")} value={p.occurredAt} /></>}
               {r.type === "other" && <DetailRow label={t("requests.form.subject")} value={p.subject} />}

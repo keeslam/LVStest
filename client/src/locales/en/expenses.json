@@ -386,7 +386,9 @@
       "runDone": "{{mails}} mail(s) fetched: {{booked}} booked, {{review}} for review",
       "geminiMissing": "Note: GEMINI_API_KEY is not set on the server. Invoices cannot be read then and will all wait for review.",
       "loadFailed": "The settings for invoices by e-mail could not be loaded",
-      "retry": "Try again"
+      "retry": "Try again",
+      "appointmentSenders": "Garage planner senders (online appointments)",
+      "appointmentSendersHint": "One per line, for example noreply@garage.software. An Afspraak Aanvraag mail from this address goes into the maintenance calendar and is moved to the folder online afspraken. Leave empty to switch this off."
     },
     "log": {
       "title": "Log",
@@ -394,7 +396,8 @@
       "tabs": {
         "invoices": "Invoices",
         "other": "Other mail",
-        "runs": "Fetch runs"
+        "runs": "Fetch runs",
+        "appointments": "Online appointments"
       },
       "searchLabel": "Search the log",
       "searchPlaceholder": "Search by sender, subject, file, supplier, invoice number or licence plate",
@@ -425,7 +428,26 @@
       "empty": {
         "invoices": "No invoices found.",
         "other": "No other mail found.",
-        "runs": "No fetch runs stored yet."
+        "runs": "No fetch runs stored yet.",
+        "appointments": "No online appointments found."
+      },
+      "appointments": {
+        "searchPlaceholder": "Search by licence plate, customer or work",
+        "columns": {
+          "appointment": "Appointment",
+          "vehicle": "Car",
+          "work": "Work",
+          "customer": "Customer",
+          "status": "Status"
+        },
+        "statuses": {
+          "pending": "To confirm",
+          "confirmed": "Confirmed",
+          "cancelled": "Cancelled",
+          "review": "To check",
+          "dismissed": "Ignored"
+        },
+        "toCalendar": "To the maintenance calendar"
       }
     }
   },

@@ -237,7 +237,7 @@ export interface IStorage {
   getPlaceholderReservationsNeedingAssignment(daysAhead?: number): Promise<Reservation[]>;
   getSpareOverviewReservations(): Promise<Reservation[]>;
   assignVehicleToPlaceholder(reservationId: number, vehicleId: number, endDate?: string): Promise<Reservation | undefined>;
-  createPlaceholderReservation(originalReservationId: number, customerId: number, startDate: string, endDate?: string): Promise<Reservation>;
+  createPlaceholderReservation(originalReservationId: number, customerId: number, startDate: string, endDate?: string, options?: { maintenanceBlockId?: number | null }): Promise<Reservation>;
   
   // Expense methods
   getAllExpenses(filters?: ExpenseFilters, options?: ExpenseListOptions): Promise<Expense[]>;

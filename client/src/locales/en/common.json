@@ -245,7 +245,8 @@
         "key-audit": "Key-cabinet audit",
         "notification-dismissal": "Dismissed notification",
         "user-setting": "Own setting",
-        "lease_quote": "Lease quote"
+        "lease_quote": "Lease quote",
+        "online-appointment": "Online appointment"
       },
       "verbs": {
         "create": "created",
@@ -349,13 +350,20 @@
           "cjib-import": "CJIB fines imported",
           "invoice-inbox-import": "Invoices imported from the mailbox",
           "backup": "Backup made",
-          "missing-invoice-mail": "Weekly missing-invoice mail"
+          "missing-invoice-mail": "Weekly missing-invoice mail",
+          "online-appointment-import": "Online appointment from the mailbox processed"
         },
         "lease_quote": {
           "copy": "Quote copied to a new quote",
           "pdf": "PDF made for the customer",
           "files": "Dealer quote uploaded, read or deleted",
           "file-view": "Quote attachment viewed"
+        },
+        "online-appointment": {
+          "confirm": "Online appointment confirmed",
+          "cancel": "Online appointment cancelled",
+          "link": "Online appointment linked to a rental",
+          "dismiss": "Online appointment ignored"
         }
       }
     }

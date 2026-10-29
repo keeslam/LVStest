@@ -577,7 +577,7 @@ export interface PortalMailPhrases {
 
 export const PORTAL_MAIL_PHRASES: Record<SupportedLanguage, PortalMailPhrases> = {
   nl: {
-    requestType: { extension: "verlenging", early_return: "eerder inleveren", damage: "schademelding", fine_question: "vraag over bekeuring", company_name_change: "wijziging bedrijfsnaam", cancellation: "annulering", other: "overig" },
+    requestType: { extension: "verlenging", early_return: "eerder inleveren", damage: "schademelding", fine_question: "vraag over bekeuring", company_name_change: "wijziging bedrijfsnaam", cancellation: "annulering", apk: "APK inplannen", other: "overig" },
     requestStatus: { new: "nieuw", in_progress: "in behandeling", done: "afgehandeld", rejected: "afgewezen" },
     maintenanceEvent: {
       maintenance_planned: "Onderhoud gepland", maintenance_moved: "Onderhoud verplaatst",
@@ -593,7 +593,7 @@ export const PORTAL_MAIL_PHRASES: Record<SupportedLanguage, PortalMailPhrases> =
     document: { contract: "Huurcontract", damageCheck: "Schadecheck" },
   },
   en: {
-    requestType: { extension: "extension", early_return: "early return", damage: "damage report", fine_question: "question about a fine", company_name_change: "company name change", cancellation: "cancellation", other: "other" },
+    requestType: { extension: "extension", early_return: "early return", damage: "damage report", fine_question: "question about a fine", company_name_change: "company name change", cancellation: "cancellation", apk: "APK inspection booking", other: "other" },
     requestStatus: { new: "new", in_progress: "in progress", done: "completed", rejected: "rejected" },
     maintenanceEvent: {
       maintenance_planned: "Maintenance scheduled", maintenance_moved: "Maintenance rescheduled",
@@ -609,7 +609,7 @@ export const PORTAL_MAIL_PHRASES: Record<SupportedLanguage, PortalMailPhrases> =
     document: { contract: "Rental contract", damageCheck: "Damage check" },
   },
   es: {
-    requestType: { extension: "prórroga", early_return: "devolución anticipada", damage: "parte de daños", fine_question: "pregunta sobre una multa", company_name_change: "cambio de nombre de la empresa", cancellation: "cancelación", other: "otros" },
+    requestType: { extension: "prórroga", early_return: "devolución anticipada", damage: "parte de daños", fine_question: "pregunta sobre una multa", company_name_change: "cambio de nombre de la empresa", cancellation: "cancelación", apk: "cita para la inspección técnica (APK)", other: "otros" },
     requestStatus: { new: "nueva", in_progress: "en tramitación", done: "resuelta", rejected: "rechazada" },
     maintenanceEvent: {
       maintenance_planned: "Mantenimiento programado", maintenance_moved: "Mantenimiento reprogramado",
@@ -625,7 +625,7 @@ export const PORTAL_MAIL_PHRASES: Record<SupportedLanguage, PortalMailPhrases> =
     document: { contract: "Contrato de alquiler", damageCheck: "Inspección de daños" },
   },
   pt: {
-    requestType: { extension: "prolongamento", early_return: "devolução antecipada", damage: "participação de danos", fine_question: "pergunta sobre uma coima", company_name_change: "alteração do nome da empresa", cancellation: "cancelamento", other: "outro" },
+    requestType: { extension: "prolongamento", early_return: "devolução antecipada", damage: "participação de danos", fine_question: "pergunta sobre uma coima", company_name_change: "alteração do nome da empresa", cancellation: "cancelamento", apk: "marcação da inspeção periódica (APK)", other: "outro" },
     requestStatus: { new: "novo", in_progress: "em tratamento", done: "concluído", rejected: "recusado" },
     maintenanceEvent: {
       maintenance_planned: "Manutenção agendada", maintenance_moved: "Manutenção reagendada",
@@ -641,7 +641,7 @@ export const PORTAL_MAIL_PHRASES: Record<SupportedLanguage, PortalMailPhrases> =
     document: { contract: "Contrato de aluguer", damageCheck: "Inspeção de danos" },
   },
   it: {
-    requestType: { extension: "proroga", early_return: "riconsegna anticipata", damage: "denuncia di danno", fine_question: "domanda su una multa", company_name_change: "modifica della ragione sociale", cancellation: "cancellazione", other: "altro" },
+    requestType: { extension: "proroga", early_return: "riconsegna anticipata", damage: "denuncia di danno", fine_question: "domanda su una multa", company_name_change: "modifica della ragione sociale", cancellation: "cancellazione", apk: "prenotazione della revisione (APK)", other: "altro" },
     requestStatus: { new: "nuova", in_progress: "in lavorazione", done: "evasa", rejected: "respinta" },
     maintenanceEvent: {
       maintenance_planned: "Manutenzione programmata", maintenance_moved: "Manutenzione spostata",
@@ -657,7 +657,7 @@ export const PORTAL_MAIL_PHRASES: Record<SupportedLanguage, PortalMailPhrases> =
     document: { contract: "Contratto di noleggio", damageCheck: "Controllo danni" },
   },
   ro: {
-    requestType: { extension: "prelungire", early_return: "returnare anticipată", damage: "raportare daună", fine_question: "întrebare despre o amendă", company_name_change: "schimbarea denumirii firmei", cancellation: "anulare", other: "altele" },
+    requestType: { extension: "prelungire", early_return: "returnare anticipată", damage: "raportare daună", fine_question: "întrebare despre o amendă", company_name_change: "schimbarea denumirii firmei", cancellation: "anulare", apk: "programare inspecție tehnică (APK)", other: "altele" },
     requestStatus: { new: "nouă", in_progress: "în lucru", done: "rezolvată", rejected: "respinsă" },
     maintenanceEvent: {
       maintenance_planned: "Mentenanță programată", maintenance_moved: "Mentenanță reprogramată",
@@ -673,7 +673,7 @@ export const PORTAL_MAIL_PHRASES: Record<SupportedLanguage, PortalMailPhrases> =
     document: { contract: "Contract de închiriere", damageCheck: "Verificare daune" },
   },
   pl: {
-    requestType: { extension: "przedłużenie", early_return: "wcześniejszy zwrot", damage: "zgłoszenie szkody", fine_question: "pytanie o mandat", company_name_change: "zmiana nazwy firmy", cancellation: "anulowanie", other: "inne" },
+    requestType: { extension: "przedłużenie", early_return: "wcześniejszy zwrot", damage: "zgłoszenie szkody", fine_question: "pytanie o mandat", company_name_change: "zmiana nazwy firmy", cancellation: "anulowanie", apk: "umówienie przeglądu technicznego (APK)", other: "inne" },
     requestStatus: { new: "nowe", in_progress: "w realizacji", done: "zakończone", rejected: "odrzucone" },
     maintenanceEvent: {
       maintenance_planned: "Zaplanowano serwis", maintenance_moved: "Przesunięto termin serwisu",

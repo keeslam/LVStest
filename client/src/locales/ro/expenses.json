@@ -393,7 +393,9 @@
       "runDone": "{{mails}} e-mail(uri) preluate: {{booked}} înregistrate, {{review}} de verificat",
       "geminiMissing": "Atenție: GEMINI_API_KEY nu este setat pe server. Facturile nu pot fi citite și vor ajunge toate la verificare.",
       "loadFailed": "Setările pentru facturi prin e-mail nu au putut fi încărcate",
-      "retry": "Încercați din nou"
+      "retry": "Încercați din nou",
+      "appointmentSenders": "Expeditori ai planificatorului service-ului (programări online)",
+      "appointmentSendersHint": "Unul pe rând, de exemplu noreply@garage.software. Un e-mail Afspraak Aanvraag de la această adresă intră în calendarul de întreținere și este mutat în dosarul online afspraken. Lasă gol pentru a dezactiva."
     },
     "log": {
       "title": "Jurnal",
@@ -401,7 +403,8 @@
       "tabs": {
         "invoices": "Facturi",
         "other": "Alte e-mailuri",
-        "runs": "Runde de preluare"
+        "runs": "Runde de preluare",
+        "appointments": "Programări online"
       },
       "searchLabel": "Căutați în jurnal",
       "searchPlaceholder": "Căutați după expeditor, subiect, fișier, furnizor, număr de factură sau număr de înmatriculare",
@@ -432,7 +435,26 @@
       "empty": {
         "invoices": "Nu s-au găsit facturi.",
         "other": "Nu s-au găsit alte e-mailuri.",
-        "runs": "Încă nu au fost păstrate runde de preluare."
+        "runs": "Încă nu au fost păstrate runde de preluare.",
+        "appointments": "Nu s-au găsit programări online."
+      },
+      "appointments": {
+        "searchPlaceholder": "Caută după număr de înmatriculare, client sau lucrare",
+        "columns": {
+          "appointment": "Programare",
+          "vehicle": "Mașină",
+          "work": "Lucrare",
+          "customer": "Client",
+          "status": "Stare"
+        },
+        "statuses": {
+          "pending": "De confirmat",
+          "confirmed": "Confirmată",
+          "cancelled": "Anulată",
+          "review": "De verificat",
+          "dismissed": "Ignorată"
+        },
+        "toCalendar": "La calendarul de întreținere"
       }
     }
   },

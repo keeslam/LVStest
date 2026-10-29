@@ -249,7 +249,8 @@
         "key-audit": "Controllo armadietto chiavi",
         "notification-dismissal": "Notifica nascosta",
         "user-setting": "Impostazione personale",
-        "lease_quote": "Offerta di leasing"
+        "lease_quote": "Offerta di leasing",
+        "online-appointment": "Appuntamento online"
       },
       "verbs": {
         "create": "creazione",
@@ -353,13 +354,20 @@
           "cjib-import": "Multe del CJIB importate",
           "invoice-inbox-import": "Fatture dalla casella di posta importate",
           "backup": "Backup creato",
-          "missing-invoice-mail": "E-mail settimanale fatture mancanti"
+          "missing-invoice-mail": "E-mail settimanale fatture mancanti",
+          "online-appointment-import": "Appuntamento online dalla casella di posta elaborato"
         },
         "lease_quote": {
           "copy": "Offerta copiata in una nuova offerta",
           "pdf": "PDF creato per il cliente",
           "files": "Offerta del concessionario caricata, letta o eliminata",
           "file-view": "Allegato dell'offerta visualizzato"
+        },
+        "online-appointment": {
+          "confirm": "Appuntamento online confermato",
+          "cancel": "Appuntamento online annullato",
+          "link": "Appuntamento online collegato a un noleggio",
+          "dismiss": "Appuntamento online ignorato"
         }
       }
     }

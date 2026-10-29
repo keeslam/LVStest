@@ -284,11 +284,16 @@ De app kijkt vanzelf in het postvak, standaard elke 15 minuten. Wil je niet wach
 
    ![De knop Logboek, van dichtbij](afbeeldingen/19-ontvangen-facturen-k2.png)
    *Zo ziet de knop **Logboek** eruit. Klik erop. Daarna zie je het venster **Logboek**.*
-5. Het logboek heeft drie tabbladen:
+5. Het logboek heeft vier tabbladen:
    - **Facturen**: elke factuur die binnenkwam, met het **Resultaat**. Met het documentknopje
      (**PDF openen**) zie je de factuur. Met het pijltje (**Naar controleren**) ga je naar de lijst
      **Te controleren**.
    - **Overige mail**: mail zonder factuur. Bijvoorbeeld een offerte of een herinnering.
+   - **Online afspraken**: de afspraken uit de garageplanner. Je ziet per afspraak de datum, de
+     auto, het werk, de klant en de status. Met **Naar de onderhoudskalender** handel je ze af. Hoe
+     dat gaat, lees je in [hoofdstuk 7](07-onderhoud.md), paragraaf 7.10.
+
+     ![Het tabblad Online afspraken (1) en Naar de onderhoudskalender (2)](afbeeldingen/19-logboek-online-afspraken.png)
    - **Ophaalrondes**: elke keer dat de app in het postvak keek. De schakelaar **Alleen rondes met
      mail of fouten** staat aan. Zo zie je de lege rondes niet.
 
@@ -297,6 +302,13 @@ De app kijkt vanzelf in het postvak, standaard elke 15 minuten. Wil je niet wach
 
    ![De tabbladen van het logboek (1)](afbeeldingen/19-factuurpostvak-logboek.png)
    *Het venster **Logboek**: 1 de tabbladen **Facturen**, **Overige mail** en **Ophaalrondes**.*
+
+### Afspraken uit de garageplanner
+
+In hetzelfde postvak komen ook de mails **Afspraak Aanvraag** van de garageplanner. Dat zijn geen
+facturen. De app zet ze in de onderhoudskalender en verplaatst ze naar de map **online afspraken**.
+Ze komen dus niet bij **Te controleren** en niet bij **Overige mail**. Dit werkt alleen als de
+afzender van de planner is ingevuld bij de instellingen (hoofdstuk 9, paragraaf 9.9).
 
 ### Als de functie uit staat
 

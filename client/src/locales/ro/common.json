@@ -249,7 +249,8 @@
         "key-audit": "Verificare dulap chei",
         "notification-dismissal": "Notificare ascunsă",
         "user-setting": "Setare proprie",
-        "lease_quote": "Ofertă de leasing"
+        "lease_quote": "Ofertă de leasing",
+        "online-appointment": "Programare online"
       },
       "verbs": {
         "create": "creat",
@@ -353,13 +354,20 @@
           "cjib-import": "Amenzi CJIB importate",
           "invoice-inbox-import": "Facturi din căsuța poștală importate",
           "backup": "Copie de rezervă creată",
-          "missing-invoice-mail": "E-mail săptămânal facturi lipsă"
+          "missing-invoice-mail": "E-mail săptămânal facturi lipsă",
+          "online-appointment-import": "Programare online din căsuța poștală procesată"
         },
         "lease_quote": {
           "copy": "Ofertă copiată într-o ofertă nouă",
           "pdf": "PDF creat pentru client",
           "files": "Oferta dealerului încărcată, citită sau ștearsă",
           "file-view": "Atașamentul ofertei vizualizat"
+        },
+        "online-appointment": {
+          "confirm": "Programare online confirmată",
+          "cancel": "Programare online anulată",
+          "link": "Programare online legată de o închiriere",
+          "dismiss": "Programare online ignorată"
         }
       }
     }

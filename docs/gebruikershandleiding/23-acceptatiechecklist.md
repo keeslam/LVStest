@@ -664,6 +664,12 @@ paragraaf 15.7.
 - [ ] **Verplaatsen.** Klik op **Onderhoud verplaatsen** → **Verplaatsen en bevestigen**. Verwacht: **Onderhoud #… is verplaatst**. (hfst 7.9)
 - [ ] **Antwoord sturen en afwijzen.** Klik op **Antwoord mailen (blijft open)**. Klik op **Afwijzen** zonder tekst. Verwacht: *Vul een antwoord in.* (hfst 7.9)
 - [ ] **Geen Beantwoorden en afhandelen bij onderhoud.** Verwacht: de tip *Een onderhoudsmelding kan alleen worden afgehandeld via Inplannen (zet het in de kalender) of Afwijzen.* (hfst 7.9)
+- [ ] **Afzender garageplanner instellen.** Ga naar **Instellingen** → **E-mail** → kaart van het factuurpostvak. Vul bij **Afzenders van de garageplanner (online afspraken)** het adres van de planner in. Klik op **Opslaan**. Verwacht: het adres blijft staan na opnieuw openen. Leeg laten zet het uit. (hfst 9.9)
+- [ ] **Online afspraak komt binnen.** Maak in de garageplanner een testafspraak op een werkdag, voor een auto die bij een klant op de weg is. Klik op **Nu ophalen**. Verwacht: op **Onderhoud** de knop **Online afspraken (1)**, een regel met gestippelde rand en klokje op die dag, en de melding **Online afspraak binnengekomen**. De mail staat in de map **online afspraken**. Heeft de klant een portaalaccount? Dan staat er een melding in het portaal. (hfst 7.10)
+- [ ] **Online afspraak bevestigen.** Klik op **Online afspraken** → **Bevestigd in de planner**. Verwacht: *Afspraak bevestigd*. De gestippelde rand is weg. In de notitie staat *Online agenda: bevestigd*. (hfst 7.10)
+- [ ] **Online afspraak annuleren.** Maak nog een testafspraak. Klik op **Annuleren**. Verwacht: de vraag *Afspraak annuleren?*. Klik op **Annuleren**. Verwacht: de onderhoudsregel en het TBD vervangend vervoer zijn weg. (hfst 7.10)
+- [ ] **Online afspraak om te controleren.** Maak een testafspraak met een kenteken dat niet in de vloot staat. Verwacht: hij staat onder *om te controleren* met *Het kenteken staat niet in de vloot.* Er staat niets in de kalender. Vul een **Reserveringsnummer** in en klik op **Koppelen aan huur**, of klik op **Negeren**. (hfst 7.10)
+- [ ] **Logboek online afspraken.** Open **Logboek** → tabblad **Online afspraken**. Verwacht: alle afspraakmails met hun status. Een gewone factuurmail staat daar niet. (hfst 19.3)
 
 ---
 

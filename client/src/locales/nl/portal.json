@@ -123,7 +123,7 @@
     "fines_other": "Bekeuringen bij deze reservering ({{count}})",
     "pickupInfo": "Ophalen",
     "pickupAt": "ophalen om {{time}}",
-    "apkDue": "De APK van deze auto verloopt op {{date}} (over {{days}} dagen). Lam Groep plant de keuring in.",
+    "apkDue": "De APK van deze auto verloopt op {{date}} (over {{days}} dagen).",
     "apkExpired": "De APK van deze auto is verlopen op {{date}}. Neem contact op met Lam Groep."
   },
   "documents": {
@@ -403,7 +403,8 @@
     "PORTAL_CANCEL_TOO_LATE": "Annuleren kan tot 48 uur voor de start. Neem contact met ons op.",
     "PORTAL_CANCEL_NOT_ALLOWED": "Deze reservering kan niet via het portaal worden geannuleerd.",
     "PORTAL_FILE_TOO_LARGE": "Het bestand is groter dan 10 MB.",
-    "PORTAL_DRIVER_HAS_ACCOUNT": "Deze bestuurder heeft al een account."
+    "PORTAL_DRIVER_HAS_ACCOUNT": "Deze bestuurder heeft al een account.",
+    "PORTAL_APK_NOT_POSSIBLE": "De APK kan alleen worden ingepland als u de auto in gebruik heeft."
   },
   "admin": {
     "navLabel": "Klantenportaal",
@@ -812,7 +813,9 @@
       "onlineBookingEnabledHint": "Uit: klanten zien de online aangeboden voertuigen niet meer en kunnen er geen huuraanvraag voor doen. Andere aanvragen (verlenging, schade, vragen) blijven gewoon mogelijk. Per klant kan het ook nog uit bij de klantinstellingen.",
       "onlineBookingOnDone": "Huren van online voertuigen staat aan.",
       "onlineBookingOffDone": "Huren van online voertuigen staat uit.",
-      "onlineBookingNotSaved": "Niet opgeslagen: de server kent deze schakelaar nog niet. Start de server opnieuw en probeer het nog eens."
+      "onlineBookingNotSaved": "Niet opgeslagen: de server kent deze schakelaar nog niet. Start de server opnieuw en probeer het nog eens.",
+      "apkPlannerUrl": "Online agenda van de garage",
+      "apkPlannerUrlHint": "Het adres van de online afspraken van de garage. Alleen een adres op planner.garage.software werkt. Klanten zien de agenda bij APK inplannen en bij Onderhoud melden. Laat leeg om de agenda te verbergen. Klanten kunnen dan alleen een aanvraag doen."
     },
     "fines": {
       "title": "Bekeuringen",
@@ -1084,7 +1087,8 @@
         "maintenance_change": "Onderhoud wijzigen",
         "mileage": "Kilometerstand",
         "company_name_change": "Wijziging bedrijfsnaam",
-        "cancellation": "Annulering"
+        "cancellation": "Annulering",
+        "apk": "APK inplannen"
       },
       "status": {
         "new": "Nieuw",
@@ -1135,7 +1139,9 @@
         "mileageApply": "Overnemen: {{km}} km",
         "mileageApplied": "Km-stand van de auto staat nu op {{km}} km",
         "mileageNotHigher": "Niet over te nemen: de auto staat al op {{current}} km en de klant meldde {{reported}} km. Een lagere of gelijke stand wordt niet overgenomen. De gemelde stand staat wel bij de auto als \"Door klant ingevulde km-stand\".",
-        "mileageAlreadyApplied": "Deze km-stand is al overgenomen."
+        "mileageAlreadyApplied": "Deze km-stand is al overgenomen.",
+        "apkPreferredDate": "Voorkeursdag",
+        "noPreference": "Geen voorkeur"
       },
       "standard": {
         "received": {
@@ -1143,7 +1149,8 @@
           "fine_question": "Bedankt voor uw vraag over de bekeuring. We hebben die ontvangen en komen er bij u op terug.",
           "other": "Bedankt voor uw bericht. We hebben het ontvangen en komen er bij u op terug.",
           "mileage": "Bedankt voor het doorgeven van de kilometerstand.",
-          "default": "Bedankt voor uw bericht. We hebben het ontvangen."
+          "default": "Bedankt voor uw bericht. We hebben het ontvangen.",
+          "apk": "Bedankt voor uw aanvraag. We plannen de APK in en laten u de datum weten."
         },
         "approved": {
           "extension": "Uw verlenging is goedgekeurd.",
@@ -1373,7 +1380,8 @@
       "maintenance_change": "Onderhoud wijzigen",
       "mileage": "Kilometerstand doorgeven",
       "company_name_change": "Wijziging bedrijfsnaam",
-      "cancellation": "Reservering annuleren"
+      "cancellation": "Reservering annuleren",
+      "apk": "APK inplannen"
     },
     "status": {
       "new": "Ingediend",
@@ -1430,7 +1438,12 @@
       "reason": "Reden",
       "stillNeedsReplacement": "Ik heb nog steeds vervangend vervoer nodig",
       "changeHint": "Lam Groep bekijkt of de nieuwe datum past en bevestigt dit.",
-      "weekdaysOnly": "Alleen werkdagen (ma t/m vr)."
+      "weekdaysOnly": "Alleen werkdagen (ma t/m vr).",
+      "apkMessage": "Graag de APK laten keuren.",
+      "apkRemarks": "Opmerking",
+      "apkPreferredDate": "Voorkeursdag (mag leeg blijven)",
+      "apkInfo": "{{plate}} · APK verloopt op {{date}}",
+      "noPreference": "Geen voorkeur"
     },
     "date": "Ingediend op",
     "subtitle": "Verlengen, eerder inleveren, schade melden of een vraag stellen.",
@@ -1641,6 +1654,10 @@
       "contract_signed": {
         "title": "{{document}} getekend: {{plate}}",
         "description": "{{signer}} heeft op {{at}} getekend: {{document}}. Het getekende exemplaar staat bij uw documenten."
+      },
+      "online_appointment": {
+        "title": "Afspraak aangevraagd",
+        "description": "U heeft een afspraak aangevraagd voor {{date}} {{time}}: {{work}}. De garage bevestigt de afspraak."
       }
     },
     "words": {
@@ -1818,5 +1835,37 @@
     "added": "Extra bestuurder toegevoegd",
     "removed": "Extra bestuurder verwijderd",
     "hint": "Meerdere mensen rijden in deze auto. Op het contract staat alleen de hoofdbestuurder. Een bekeuring krijgt dan geen bestuurder; u geeft zelf aan wie reed."
+  },
+  "apk": {
+    "title": "APK inplannen",
+    "description": "Kies hoe u de APK wilt laten inplannen.",
+    "button": "APK inplannen",
+    "expires": "APK verloopt op {{date}}",
+    "requestTitle": "Aanvraag doen",
+    "requestText": "Wij plannen de keuring in bij de garage. U krijgt de datum van ons. De auto staat al ingevuld. U geeft alleen een voorkeursdag door.",
+    "requestButton": "Aanvraag doen",
+    "selfTitle": "Zelf een afspraak maken",
+    "selfText": "Kies zelf een dag en tijd in de agenda van onze garage.",
+    "showPlanner": "Agenda openen",
+    "hidePlanner": "Agenda sluiten",
+    "tickOnly": "Vink in de agenda alleen APK aan.",
+    "carDetails": "Deze gegevens vraagt de agenda:",
+    "plate": "Kenteken",
+    "brandModel": "Merk en model",
+    "openExternal": "Openen in een nieuw tabblad",
+    "plannerTitle": "Online afspraak maken voor de APK",
+    "copy": "Kopieer {{what}}",
+    "copied": "{{what}} gekopieerd"
+  },
+  "maintenancePlan": {
+    "title": "Onderhoud melden",
+    "description": "Kies hoe u het onderhoud wilt laten inplannen.",
+    "requestTitle": "Melding doen",
+    "requestText": "U meldt wat er met de auto is. Wij plannen het onderhoud in. Heeft u een andere auto nodig? Dan regelen wij die.",
+    "requestButton": "Melding doen",
+    "selfText": "Kies zelf een dag en tijd in de agenda van onze garage. Voor onderhoud of een reparatie.",
+    "tickOnly": "Kies in de agenda wat er aan de auto moet gebeuren.",
+    "selfNote": "Maakt u zelf een afspraak in de agenda? Dan regelen wij niet vanzelf een andere auto. Heeft u tijdens het onderhoud een auto nodig? Doe dan een melding.",
+    "plannerTitle": "Online afspraak maken bij de garage"
   }
 }

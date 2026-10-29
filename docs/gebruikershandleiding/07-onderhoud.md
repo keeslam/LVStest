@@ -713,7 +713,88 @@ bericht als er een vervangend voertuig wordt toegewezen.
 
 ---
 
-## 7.10 Snel naslaan
+## 7.10 Online afspraken uit de garageplanner
+
+Klanten kunnen zelf een afspraak maken in de online agenda van de garage. Die agenda heet de
+garageplanner. Per afspraak stuurt de planner een mail **Afspraak Aanvraag**. De app leest die mail.
+Je hoeft de afspraak dus niet over te typen.
+
+**Wat de app doet**
+
+- De mail komt binnen in het postvak voor facturen. De app herkent hem aan de afzender. Welke
+  afzenders dat zijn, stel je in bij de instellingen van het postvak (hoofdstuk 9, paragraaf 9.9).
+  Staat daar niets? Dan doet de app niets met deze mails.
+- De app zoekt de auto op het kenteken. Daarna zoekt hij de huur van een klant die op die dag loopt.
+- Lukt dat? Dan zet de app meteen een onderhoudsregel in de kalender. Die staat op de dag van de
+  afspraak. In de notitie staat *Online agenda: te bevestigen*.
+- Gaat het om een APK? Dan is het **regulier onderhoud**. Al het andere is een **reparatie**.
+- Vraagt de klant om vervangend vervoer? Dan komt er ook **TBD vervangend vervoer** bij. Staat er
+  *Geen* of *Nee*? Dan niet.
+- De klant krijgt een melding in het portaal. Dat gebeurt alleen als de klant een portaalaccount
+  heeft. De klant krijgt geen mail van ons. Jij bevestigt de afspraak zelf.
+- Jij krijgt een melding in de bel: **Online afspraak binnengekomen**.
+- De mail gaat daarna naar de map **online afspraken** in het postvak.
+
+Komt dezelfde afspraak twee keer binnen? Zelfde auto, zelfde dag, zelfde tijd, binnen een dag? Dan
+telt de app hem maar één keer.
+
+**Zo bevestig je een afspraak**
+
+1. Ga naar **Onderhoud**. Bovenaan staat de knop **Online afspraken**. Het getal erachter is het
+   aantal afspraken dat op je wacht.
+
+   ![De knop Online afspraken (1)](afbeeldingen/07-online-afspraken-knop.png)
+
+2. In de kalender zie je de afspraak al staan. Hij heeft een gestippelde rand en een klokje. Dat
+   betekent: nog te bevestigen. In het dagvenster staat er **Te bevestigen** bij.
+
+   ![Een afspraak die nog bevestigd moet worden (1)](afbeeldingen/07-online-afspraken-kalender.png)
+
+3. Klik op **Online afspraken**. Je ziet het venster **Online afspraken**. Bovenaan staan de
+   afspraken *om te bevestigen*. Daaronder de afspraken *om te controleren*.
+
+   ![Het venster Online afspraken: bevestigen (1), annuleren (2), reserveringsnummer (3), koppelen (4) en negeren (5)](afbeeldingen/07-online-afspraken-venster.png)
+
+4. Bevestig de afspraak eerst in de garageplanner. Klik daarna hier op **Bevestigd in de planner**
+   (1). In de notitie van de onderhoudsregel staat nu *Online agenda: bevestigd*. De gestippelde
+   rand is weg.
+5. Gaat de afspraak niet door? Klik op **Annuleren** (2). De app vraagt het nog een keer. Klik dan
+   op **Annuleren**. De onderhoudsregel en het TBD vervangend vervoer verdwijnen. De klant krijgt
+   hier geen bericht van. Annuleer de afspraak dus ook in de garageplanner. Klik je op
+   **Behouden**? Dan verandert er niets.
+
+   ![De vraag bij annuleren: behouden (1) of annuleren (2)](afbeeldingen/07-online-afspraken-annuleren.png)
+
+**Afspraken om te controleren**
+
+Soms weet de app niet zeker waar de afspraak bij hoort. Dan zet hij niets in de kalender. De
+afspraak staat dan onder *om te controleren*, met de reden erbij:
+
+- het kenteken staat niet in de vloot;
+- er is geen huur van een klant op die dag;
+- de afspraak valt in het weekend;
+- de afspraak ligt in het verleden;
+- de mail kon niet worden gelezen.
+
+Wat doe je dan?
+
+1. Zoek de huur op die erbij hoort. Typ het nummer bij **Reserveringsnummer** (3).
+2. Klik op **Koppelen aan huur** (4). De afspraak komt nu in de kalender, als *te bevestigen*.
+   Bevestig hem daarna zoals hierboven. De huur moet op de dag van de afspraak lopen. Anders meldt
+   de app *Deze huur loopt niet op de dag van de afspraak.*
+3. Hoort de afspraak niet bij ons? Bijvoorbeeld een test of een auto van iemand anders? Klik dan op
+   **Negeren** (5). Hij verdwijnt uit de lijst.
+
+Je hebt het recht *reserveringen beheren* of *onderhoud beheren* nodig om te klikken. Met alleen
+*reserveringen bekijken* zie je de lijst wel, maar zonder knoppen. Alles wat je hier doet, staat in
+de **Geschiedenis** (het activiteitenlogboek).
+
+> **Let op:** verandert of annuleert de klant de afspraak zelf in de garageplanner? Dan stuurt de
+> planner geen mail. De app weet dat dus niet. Pas het dan zelf aan in dit venster.
+
+---
+
+## 7.11 Snel naslaan
 
 | Wat je wilt | Waar |
 |---|---|
@@ -728,3 +809,4 @@ bericht als er een vervangend voertuig wordt toegewezen.
 | Een afgerond onderhoud terugdraaien | **Voltooide bekijken (…)** → **Terugdraaien** |
 | Een verwijderd onderhoud terugzetten | **Verwijderd onderhoud** → **Terugzetten** (vraagt het vinkje **Prullenbak beheren**) |
 | Een portaalaanvraag afhandelen | **Klantenportaal** → tegel **Aanvragen** → klik op de aanvraag |
+| Een online afspraak uit de garageplanner bevestigen | **Onderhoud** → **Online afspraken** → **Bevestigd in de planner** (7.10) |

@@ -20,13 +20,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { OnlineAppointmentsLogPanel } from "./online-appointments-log-panel";
 
 const PAGE_SIZE = 50;
 /** "Alles" in the status select: no filter rather than a status of its own. */
 const ANY_STATUS = "all";
 
 type LogKind = "invoices" | "other";
-type LogTab = LogKind | "runs";
+type LogTab = LogKind | "runs" | "appointments";
 
 interface LogPage { items: InboxLogRow[]; total: number }
 interface RunPage { runs: InboxRunRow[]; total: number }
@@ -93,7 +94,7 @@ export function InvoiceInboxLogButton() {
       const loaded = pages.reduce((n, page) => n + page.items.length, 0);
       return loaded < last.total ? loaded : undefined;
     },
-    enabled: open && tab !== "runs",
+    enabled: open && (tab === "invoices" || tab === "other"),
   });
 
   const runsQuery = useInfiniteQuery({
@@ -293,6 +294,7 @@ export function InvoiceInboxLogButton() {
           <TabsList className="flex-shrink-0">
             <TabsTrigger value="invoices" data-testid="tab-invoice-inbox-log-invoices">{t("invoiceInbox.log.tabs.invoices")}</TabsTrigger>
             <TabsTrigger value="other" data-testid="tab-invoice-inbox-log-other">{t("invoiceInbox.log.tabs.other")}</TabsTrigger>
+            <TabsTrigger value="appointments" data-testid="tab-invoice-inbox-log-appointments">{t("invoiceInbox.log.tabs.appointments")}</TabsTrigger>
             <TabsTrigger value="runs" data-testid="tab-invoice-inbox-log-runs">{t("invoiceInbox.log.tabs.runs")}</TabsTrigger>
           </TabsList>
 
@@ -314,6 +316,9 @@ export function InvoiceInboxLogButton() {
           */}
           <TabsContent value="invoices" className="mt-4 min-h-0 flex-1 flex-col data-[state=active]:flex">{logPanel("invoices")}</TabsContent>
           <TabsContent value="other" className="mt-4 min-h-0 flex-1 flex-col data-[state=active]:flex">{logPanel("other")}</TabsContent>
+          <TabsContent value="appointments" className="mt-4 min-h-0 flex-1 flex-col data-[state=active]:flex">
+            <OnlineAppointmentsLogPanel enabled={open && tab === "appointments"} />
+          </TabsContent>
 
           <TabsContent value="runs" className="mt-4 min-h-0 flex-1 flex-col data-[state=active]:flex">
             <div className="flex min-h-0 flex-1 flex-col gap-3">

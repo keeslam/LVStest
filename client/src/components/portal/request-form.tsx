@@ -32,7 +32,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
     ...(initialVehicle ? { vehicleId: String(initialVehicle) } : {}),
     ...(initialType === "booking" ? { startDate: initialStart ?? officeToday(), endDate: initialEnd ?? "" } : {}),
   });
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(initialType === "apk" ? t("requests.form.apkMessage") : "");
   const [files, setFiles] = useState<File[]>([]);
   const needs = REQUEST_NEEDS[type];
   const { data: reservations = [] } = useQuery<PortalReservationDto[]>({ queryKey: ["portal", "/api/portal/reservations"], queryFn: portalQueryFn, enabled: needs === "reservation" });
@@ -42,8 +42,8 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
   const { data: vehicles = [], isFetching: loadingVehicles } = useQuery<PortalVehicleDto[]>({ queryKey: ["portal", vehiclesUrl], queryFn: portalQueryFn, enabled: type === "booking" && periodOk && Boolean(me?.settings.canBook) });
   const canPickDriver = me?.role === "admin" && Boolean(me.settings.canManageDrivers);
   const { data: drivers = [] } = useQuery<PortalDriverDto[]>({ queryKey: ["portal", "/api/portal/drivers"], queryFn: portalQueryFn, enabled: type === "booking" && canPickDriver });
-  // A cancellation is only for a booked reservation that has not started.
-  const openReservations = reservations.filter((r) => (type === "cancellation" ? r.status === "booked" : r.status === "booked" || r.status === "picked_up"));
+  // A cancellation is only for a booked reservation that has not started; the APK only for a car that is on the road.
+  const openReservations = reservations.filter((r) => (type === "cancellation" ? r.status === "booked" : type === "apk" ? r.status === "picked_up" : r.status === "booked" || r.status === "picked_up"));
   const chosen = reservations.find((r) => String(r.id) === reservationId);
   /** Extension: days × the vehicle's day price, only when prices are shown and the new date is later. */
   const extensionEstimate = (() => {
@@ -87,7 +87,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
       <div>
         <Label htmlFor="rq-type">{t("requests.chooseType")}</Label>
         <select id="rq-type" className="w-full rounded-md border px-3 py-2 text-sm" value={type} onChange={(e) => { setType(e.target.value as PortalRequestTypeValue); setPayload({}); }}>
-          {Object.values(PortalRequestType).filter((v) => (v !== "early_return" || me?.settings.canReturn) && (v !== "booking" || canBook) && (v !== "maintenance_change" || type === "maintenance_change") && (v !== "cancellation" || type === "cancellation") && v !== "company_name_change").map((v) => <option key={v} value={v}>{t(`requests.type.${v}`)}</option>)}
+          {Object.values(PortalRequestType).filter((v) => (v !== "early_return" || me?.settings.canReturn) && (v !== "booking" || canBook) && (v !== "maintenance_change" || type === "maintenance_change") && (v !== "cancellation" || type === "cancellation") && (v !== "apk" || type === "apk") && v !== "company_name_change").map((v) => <option key={v} value={v}>{t(`requests.type.${v}`)}</option>)}
         </select>
       </div>
       {type === "maintenance_change" && (
@@ -184,6 +184,16 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
         </div>
       )}
       {type === "cancellation" && <p className="rounded-md border border-[#f3c1c1] bg-[#fcebeb] px-3 py-2 text-sm text-[#791f1f] sm:col-span-2" data-testid="cancel-hint">{t("requests.cancel.formHint")}</p>}
+      {type === "apk" && (
+        <div className="space-y-2" data-testid="apk-fields">
+          {chosen?.vehicle && <p className="rounded-md bg-[#f8fafc] p-2 text-xs" data-testid="apk-info">{t("requests.form.apkInfo", { plate: formatLicensePlate(chosen.vehicle.licensePlate), date: chosen.vehicle.apkDate ? formatPortalDate(chosen.vehicle.apkDate) : "—" })}</p>}
+          <div>
+            <Label htmlFor="rq-apk-date">{t("requests.form.apkPreferredDate")}</Label>
+            <PeriodPicker id="rq-apk-date" start={payload.preferredDate ?? ""} end="" single disableWeekends minDate={officeTomorrow()} onChange={(s) => setPayload({ ...payload, preferredDate: s })} testId="request-apk-date" />
+            <p className="mt-1 text-xs text-[#64748b]">{t("requests.form.weekdaysOnly")}</p>
+          </div>
+        </div>
+      )}
       {type === "early_return" && <div><Label htmlFor="rq-ret">{t("requests.form.returnDate")}</Label><Input id="rq-ret" type="date" value={payload.returnDate ?? ""} onChange={setP("returnDate")} required /></div>}
       {type === "damage" && (
         <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">
@@ -192,7 +202,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
         </div>
       )}
       {type === "other" && <div><Label htmlFor="rq-subj">{t("requests.form.subject")}</Label><Input id="rq-subj" value={payload.subject ?? ""} onChange={setP("subject")} required /></div>}
-      <div className="sm:col-span-2"><Label htmlFor="rq-msg">{t("requests.form.message")}</Label><Textarea id="rq-msg" rows={3} value={message} onChange={(e) => setMessage(e.target.value)} required /></div>
+      <div className="sm:col-span-2"><Label htmlFor="rq-msg">{type === "apk" ? t("requests.form.apkRemarks") : t("requests.form.message")}</Label><Textarea id="rq-msg" rows={3} value={message} onChange={(e) => setMessage(e.target.value)} required /></div>
       <div><Label htmlFor="rq-files">{t("requests.form.photos")}</Label><Input id="rq-files" type="file" multiple accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setFiles(Array.from(e.target.files ?? []))} /></div>
       <Button type="submit" className={`${btnPrimary} sm:self-end`} disabled={submit.isPending} data-testid="button-submit-request">{t("requests.form.send")}</Button>
     </form>

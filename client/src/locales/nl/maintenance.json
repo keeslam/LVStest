@@ -533,5 +533,49 @@
     "confirmLink": "Koppelen",
     "missingInvoice": "Factuur ontbreekt",
     "noInvoiceExpected": "Geen factuur nodig (bijvoorbeeld gratis garantie)"
+  },
+  "onlineAppointments": {
+    "button": "Online afspraken",
+    "title": "Online afspraken",
+    "description": "Afspraken die klanten in de online agenda van de garage hebben gemaakt. Ze staan al in de onderhoudskalender. Bevestig ze hier zodra je ze in de garageplanner hebt bevestigd.",
+    "empty": "Er zijn geen online afspraken om te bevestigen of te controleren.",
+    "toConfirm_one": "{{count}} afspraak om te bevestigen",
+    "toConfirm_other": "{{count}} afspraken om te bevestigen",
+    "toCheck_one": "{{count}} afspraak om te controleren",
+    "toCheck_other": "{{count}} afspraken om te controleren",
+    "confirm": "Bevestigd in de planner",
+    "cancel": "Annuleren",
+    "keep": "Behouden",
+    "replacement": "TBD vervangend vervoer",
+    "cancelTitle": "Afspraak annuleren?",
+    "cancelText": "De onderhoudsregel en het TBD vervangend vervoer worden geannuleerd. De klant krijgt hier geen bericht van. Annuleer de afspraak ook in de garageplanner.",
+    "rentalNumber": "Reserveringsnummer",
+    "link": "Koppelen aan huur",
+    "dismiss": "Negeren",
+    "failed": "Dat lukte niet",
+    "pendingBadge": "Te bevestigen",
+    "pendingMark": "Online afspraak, nog te bevestigen",
+    "done": {
+      "confirm": "Afspraak bevestigd",
+      "cancel": "Afspraak geannuleerd",
+      "link": "Afspraak gekoppeld en ingepland",
+      "dismiss": "Afspraak genegeerd"
+    },
+    "reasons": {
+      "unreadable": "De mail kon niet worden gelezen.",
+      "plate_unknown": "Het kenteken staat niet in de vloot.",
+      "no_rental": "Er is geen lopende of geplande huur van een klant voor deze auto op die dag.",
+      "weekend": "De afspraak valt in het weekend.",
+      "in_past": "De afspraak ligt in het verleden."
+    },
+    "errors": {
+      "ALREADY_HANDLED": "Iemand anders heeft deze afspraak al afgehandeld.",
+      "RENTAL_NOT_ACTIVE": "Kies een lopende of geplande huur van een klant.",
+      "RENTAL_NOT_ON_DATE": "Deze huur loopt niet op de dag van de afspraak.",
+      "WEEKEND": "De afspraak valt in het weekend. De werkplaats is dan dicht.",
+      "IN_PAST": "De afspraak ligt in het verleden.",
+      "NO_DATE": "Deze mail heeft geen datum. Je kunt hem niet inplannen.",
+      "NOT_FOUND": "Deze afspraak bestaat niet meer."
+    }
   }
 }

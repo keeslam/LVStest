@@ -565,7 +565,16 @@ recht *instellingen beheren* nodig.
    **Opslaan**. Verander je de server of de gebruikersnaam en laat je de sterretjes staan? Dan zie
    je *Typ het wachtwoord opnieuw. Dat moet als je de server of de gebruikersnaam verandert.* Typ het
    wachtwoord dan opnieuw en klik weer op **Opslaan**.
-6. Zet **Postvak automatisch uitlezen** aan. Klik op **Opslaan**. De app kijkt daarna elke
+6. **Afzenders van de garageplanner (online afspraken)**: één adres per regel, bijvoorbeeld
+   `noreply@garage.software`. Een mail **Afspraak Aanvraag** van zo'n adres is geen factuur. De app
+   zet de afspraak in de onderhoudskalender en verplaatst de mail naar de map **online afspraken**.
+   Ook hier controleert de app of de mail echt van dat adres komt, net als bij facturen. Laat je het
+   veld leeg? Dan staat dit uit. Hoe je zo'n afspraak bevestigt, lees je in hoofdstuk 7, paragraaf
+   7.10.
+
+   ![Het veld voor de afzenders van de garageplanner (1)](afbeeldingen/09-postvak-online-afspraken-afzenders.png)
+
+7. Zet **Postvak automatisch uitlezen** aan. Klik op **Opslaan**. De app kijkt daarna elke
    15 minuten in het postvak. Die tijd kun je instellen. Met **Nu ophalen** hoef je daar niet op te
    wachten.
 
@@ -576,7 +585,7 @@ status. Voor het boeken en afwijzen van facturen heb je het recht *kosten behere
 
 Op dezelfde kaart staat naast **Nu ophalen** de knop **Logboek**. Die knop staat ook in het venster
 **Ontvangen facturen**, naast **Nu ophalen**. Daar zie je hem als je **Kosten beheren** of
-**Instellingen beheren** hebt. De knop opent een venster met drie tabbladen. Daar zie je wat de app
+**Instellingen beheren** hebt. De knop opent een venster met vier tabbladen. Daar zie je wat de app
 uit het postvak heeft gehaald. Je verandert er niets mee. Het is alleen om terug te kijken.
 
 - **Facturen**. Elke bijlage die de app als factuur heeft behandeld. Het resultaat staat erbij:
@@ -586,6 +595,10 @@ uit het postvak heeft gehaald. Je verandert er niets mee. Het is alleen om terug
 - **Overige mail**. Mail waar geen factuur in zat. Bijvoorbeeld mail zonder bijlage, of met een
   offerte of herinnering. Die mail blijft gewoon staan waar hij stond. Er verandert niets aan hoe
   je hem afhandelt.
+- **Online afspraken**. Elke mail **Afspraak Aanvraag** uit de garageplanner. Je ziet de datum, de
+  auto, het werk, de klant en wat ermee gebeurd is: te bevestigen, bevestigd, geannuleerd, te
+  controleren of genegeerd. Met **Naar de onderhoudskalender** ga je naar het venster waar je ze
+  afhandelt.
 - **Ophaalrondes**. Elke keer dat de app het postvak heeft uitgelezen. Je ziet hoe lang het
   duurde. Je ziet of het automatisch ging, of dat iemand op **Nu ophalen** klikte. En je ziet wat
   het opleverde. De schakelaar **Alleen rondes met mail of fouten** staat aan. Zo zitten de

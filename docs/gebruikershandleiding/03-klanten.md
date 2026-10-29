@@ -608,6 +608,95 @@ De teksten **Inleverinstructies** en **Brengen en ophalen** pas je aan onder het
 de instellingen van het portaal. Daar staan ook het adres, de openingstijden en de
 ophaalinstructies.
 
+### De APK laten inplannen in het portaal
+
+De klant kan zelf de APK van een gehuurde auto laten inplannen. Dat kan alleen als:
+
+- de auto is opgehaald (de huur loopt);
+- de APK verlopen is, of binnen 45 dagen verloopt;
+- die datum vóór het einde van de huur ligt. Een huur zonder einddatum telt ook.
+
+Verloopt de APK pas na de huur? Dan ziet de klant wel de melding, maar niet de knop.
+
+1. De klant opent de reservering. Bovenaan staat een oranje melding over de APK. Daarin staat de
+   knop **APK inplannen**.
+
+   ![De reservering in het portaal met de APK-melding en de knop APK inplannen (1)](afbeeldingen/03-portaal-apk-melding.png)
+   *De reservering in het portaal. 1 is de knop **APK inplannen** in de APK-melding.*
+
+   ![De knop APK inplannen, van dichtbij](afbeeldingen/03-portaal-apk-melding-k1.png)
+   *Zo ziet de knop **APK inplannen** eruit.*
+2. Er opent een venster met twee keuzes: **Aanvraag doen** of **Zelf een afspraak maken**.
+
+   ![Het venster APK inplannen met Aanvraag doen (1) en Agenda openen (2)](afbeeldingen/03-portaal-apk-keuze.png)
+   *Het venster **APK inplannen**. 1 is **Aanvraag doen**. 2 is **Agenda openen**.*
+3. Kiest de klant **Aanvraag doen**? Dan opent het aanvraagformulier. De auto staat al ingevuld. De
+   klant kiest een **Voorkeursdag**. Dat mag ook leeg blijven. Daarna klikt hij op **Versturen**.
+
+   ![Het formulier APK inplannen met de auto en APK-datum (1), de Voorkeursdag (2) en Versturen (3)](afbeeldingen/03-portaal-apk-aanvraag.png)
+   *Het formulier. 1 is de auto met de APK-datum. 2 is **Voorkeursdag**. 3 is **Versturen**.*
+
+   De aanvraag komt bij jou binnen als **APK inplannen**. Jij zet de afspraak in de planner van de
+   garage. Daarna antwoord je de klant met de datum. Zie hoofdstuk 20.2.
+4. Kiest de klant **Agenda openen**? Dan opent de online agenda van de garage in het venster. Links
+   staat wat de klant moet doen: in de agenda alleen **APK** aanvinken. Daaronder staan het kenteken
+   en merk en model. Met het knopje ernaast kopieert de klant het kenteken.
+
+   ![De open agenda met Alleen APK (1), Kenteken kopiëren (2) en de agenda van de garage (3)](afbeeldingen/03-portaal-apk-agenda.png)
+   *De agenda is open. 1 zegt: vink alleen APK aan. 2 kopieert het kenteken. 3 is de agenda van de
+   garage.*
+
+   De agenda is een pagina van Garagesoftware. Het portaal kan daar niets invullen of verbergen. De
+   klant vult zelf zijn gegevens in. Lukt het niet in het venster? Dan opent de link **Openen in een
+   nieuw tabblad** de agenda los.
+
+Een klant kan per reservering één open aanvraag **APK inplannen** hebben. Een tweede lukt pas als
+jij de eerste hebt afgehandeld.
+
+### Onderhoud melden in het portaal
+
+De knop **Onderhoud melden** staat op het overzicht, in een reservering en bij een voertuig. Hij
+opent eerst dezelfde soort keuze als bij de APK.
+
+1. De klant klikt op **Onderhoud melden**. Er opent een venster met twee keuzes: **Melding doen** of
+   **Zelf een afspraak maken**.
+
+   ![Het venster Onderhoud melden met Melding doen (1) en Agenda openen (2)](afbeeldingen/03-portaal-onderhoud-keuze.png)
+   *Het venster **Onderhoud melden**. 1 is **Melding doen**. 2 is **Agenda openen**.*
+
+   **Melding doen** opent het gewone meldingsformulier. Jij plant het onderhoud in. Jij regelt ook
+   een vervangende auto als dat nodig is. Zie hoofdstuk 16.4.
+2. **Agenda openen** toont de online agenda van de garage. Daarnaast staat een waarschuwing: een
+   afspraak die de klant zelf maakt, regelt niet vanzelf een vervangende auto. Heeft de klant een
+   auto nodig? Dan moet hij een melding doen.
+
+   ![De open agenda bij Onderhoud melden met de waarschuwing over vervangend vervoer (1)](afbeeldingen/03-portaal-onderhoud-agenda.png)
+   *1 is de waarschuwing: een eigen afspraak regelt geen vervangende auto.*
+
+Opent de klant **Onderhoud melden** vanaf het overzicht? Dan staat er nog geen auto in het venster.
+In het meldingsformulier kiest de klant zelf de reservering.
+
+### De online agenda instellen
+
+Het adres van de agenda zet je in de instellingen van het portaal.
+
+1. Klik rechtsboven op je naam. Klik daarna op **App-instellingen** (zie hoofdstuk 10.3).
+
+   ![De knop App-instellingen, van dichtbij](afbeeldingen/10-gebruikersmenu-beheer-k3.png)
+   *Zo ziet de knop **App-instellingen** eruit.*
+2. Klik op het tabblad **Klantenportaal**.
+
+   ![Het tabblad Klantenportaal, van dichtbij](afbeeldingen/10-instellingen-klantenportaal-k1.png)
+   *Zo ziet het tabblad **Klantenportaal** eruit.*
+3. Zoek het veld **Online agenda van de garage**. Vul het adres van de online afspraken van de
+   garage in. Klik daarna onderaan het blok op **Opslaan**.
+
+   ![Het veld Online agenda van de garage (1)](afbeeldingen/03-portaal-instellingen-agenda.png)
+   *1 is het veld **Online agenda van de garage**.*
+
+Alleen een adres op **planner.garage.software** werkt. Een ander adres slaat de app niet op. Laat
+je het veld leeg? Dan zien klanten geen agenda. Ze kunnen dan alleen een aanvraag of melding doen.
+
 ### Welke e-mails de klant krijgt
 
 De klant kiest zelf welke e-mails hij van het portaal wil ontvangen. Dat doet hij in het portaal

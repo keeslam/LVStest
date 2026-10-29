@@ -128,7 +128,7 @@
     "fines_other": "Amenzi la această rezervare ({{count}})",
     "pickupInfo": "Ridicare",
     "pickupAt": "ridicare la ora {{time}}",
-    "apkDue": "APK-ul acestui autoturism expiră la {{date}} (peste {{days}} zile). Lam Groep programează inspecția.",
+    "apkDue": "APK-ul acestui autoturism expiră la {{date}} (peste {{days}} zile).",
     "apkExpired": "APK-ul acestui autoturism a expirat la {{date}}. Contactați Lam Groep."
   },
   "documents": {
@@ -410,7 +410,8 @@
     "PORTAL_CANCEL_TOO_LATE": "Puteți anula până cu 48 de ore înainte de început. Vă rugăm să ne contactați.",
     "PORTAL_CANCEL_NOT_ALLOWED": "Această rezervare nu poate fi anulată prin portal.",
     "PORTAL_FILE_TOO_LARGE": "Fișierul depășește 10 MB.",
-    "PORTAL_DRIVER_HAS_ACCOUNT": "Acest șofer are deja un cont."
+    "PORTAL_DRIVER_HAS_ACCOUNT": "Acest șofer are deja un cont.",
+    "PORTAL_APK_NOT_POSSIBLE": "APK-ul poate fi programat doar cât timp aveți autoturismul în folosință."
   },
   "admin": {
     "navLabel": "Portal pentru clienți",
@@ -819,7 +820,9 @@
       "onlineBookingEnabledHint": "Dezactivat: clienții nu mai văd vehiculele oferite online și nu pot trimite o cerere de închiriere pentru ele. Celelalte cereri (prelungire, daune, întrebări) rămân posibile. Se poate dezactiva și pentru fiecare client în setările clientului.",
       "onlineBookingOnDone": "Închirierea vehiculelor online este activată.",
       "onlineBookingOffDone": "Închirierea vehiculelor online este dezactivată.",
-      "onlineBookingNotSaved": "Nesalvat: serverul nu cunoaște încă acest comutator. Reporniți serverul și încercați din nou."
+      "onlineBookingNotSaved": "Nesalvat: serverul nu cunoaște încă acest comutator. Reporniți serverul și încercați din nou.",
+      "apkPlannerUrl": "Agenda online a service-ului",
+      "apkPlannerUrlHint": "Adresa programărilor online ale service-ului. Funcționează doar o adresă pe planner.garage.software. Clienții văd agenda la Programează APK și la Raportează mentenanța. Lăsați gol pentru a ascunde agenda; clienții pot trimite atunci doar o cerere."
     },
     "fines": {
       "title": "Amenzi",
@@ -1097,7 +1100,8 @@
         "maintenance_change": "Modificare mentenanță",
         "mileage": "Kilometraj",
         "company_name_change": "Modificarea numelui firmei",
-        "cancellation": "Anulare"
+        "cancellation": "Anulare",
+        "apk": "Programează APK"
       },
       "status": {
         "new": "Nouă",
@@ -1148,7 +1152,9 @@
         "mileageApply": "Preia: {{km}} km",
         "mileageApplied": "Kilometrajul mașinii este acum {{km}} km",
         "mileageNotHigher": "Nu se poate prelua: mașina are deja {{current}} km, iar clientul a raportat {{reported}} km. O valoare mai mică sau egală nu se preia. Valoarea raportată rămâne la mașină ca \"Kilometraj raportat de client\".",
-        "mileageAlreadyApplied": "Această valoare a fost deja preluată."
+        "mileageAlreadyApplied": "Această valoare a fost deja preluată.",
+        "apkPreferredDate": "Zi preferată",
+        "noPreference": "Fără preferință"
       },
       "standard": {
         "received": {
@@ -1156,7 +1162,8 @@
           "fine_question": "Vă mulțumim pentru întrebarea despre amendă. Am primit-o și vă vom răspunde.",
           "other": "Vă mulțumim pentru mesaj. L-am primit și vă vom răspunde.",
           "mileage": "Vă mulțumim pentru transmiterea kilometrajului.",
-          "default": "Vă mulțumim pentru mesaj. L-am primit."
+          "default": "Vă mulțumim pentru mesaj. L-am primit.",
+          "apk": "Vă mulțumim pentru cerere. Programăm APK-ul și vă comunicăm data."
         },
         "approved": {
           "extension": "Prelungirea dumneavoastră a fost aprobată.",
@@ -1389,7 +1396,8 @@
       "maintenance_change": "Modificarea mentenanței",
       "mileage": "Transmiterea kilometrajului",
       "company_name_change": "Modificarea numelui firmei",
-      "cancellation": "Anulează rezervarea"
+      "cancellation": "Anulează rezervarea",
+      "apk": "Programează APK"
     },
     "status": {
       "new": "Trimisă",
@@ -1446,7 +1454,12 @@
       "reason": "Motiv",
       "stillNeedsReplacement": "Am în continuare nevoie de transport de înlocuire",
       "changeHint": "Lam Groep verifică dacă noua dată este potrivită și vă confirmă.",
-      "weekdaysOnly": "Doar zile lucrătoare (luni–vineri)."
+      "weekdaysOnly": "Doar zile lucrătoare (luni–vineri).",
+      "apkMessage": "Vă rog să programați inspecția APK.",
+      "apkRemarks": "Observații",
+      "apkPreferredDate": "Zi preferată (opțional)",
+      "apkInfo": "{{plate}} · APK-ul expiră la {{date}}",
+      "noPreference": "Fără preferință"
     },
     "date": "Trimisă la",
     "subtitle": "Prelungiți, returnați anticipat, raportați o daună sau puneți o întrebare.",
@@ -1657,6 +1670,10 @@
       "contract_signed": {
         "title": "{{document}} semnat: {{plate}}",
         "description": "{{signer}} a semnat la {{at}}: {{document}}. Exemplarul semnat se află la documentele dumneavoastră."
+      },
+      "online_appointment": {
+        "title": "Programare solicitată",
+        "description": "Ați solicitat o programare pentru {{date}} {{time}}: {{work}}. Service-ul va confirma programarea."
       }
     },
     "words": {
@@ -1837,5 +1854,37 @@
     "added": "Șofer suplimentar adăugat",
     "removed": "Șofer suplimentar eliminat",
     "hint": "Mai multe persoane conduc acest vehicul. Contractul îl menționează doar pe șoferul principal. O amendă rămâne fără șofer; indicați dumneavoastră cine conducea."
+  },
+  "apk": {
+    "title": "Programează APK",
+    "description": "Alegeți cum doriți să fie programat APK-ul.",
+    "button": "Programează APK",
+    "expires": "APK-ul expiră la {{date}}",
+    "requestTitle": "Trimiteți o cerere",
+    "requestText": "Noi facem programarea la service și vă comunicăm data. Datele autoturismului sunt deja completate; indicați doar o zi preferată.",
+    "requestButton": "Trimiteți o cerere",
+    "selfTitle": "Faceți singur programarea",
+    "selfText": "Alegeți singur o zi și o oră în agenda service-ului nostru.",
+    "showPlanner": "Deschide agenda",
+    "hidePlanner": "Închide agenda",
+    "tickOnly": "În agendă bifați doar APK.",
+    "carDetails": "Agenda vă va cere aceste date:",
+    "plate": "Număr de înmatriculare",
+    "brandModel": "Marcă și model",
+    "openExternal": "Deschide într-o filă nouă",
+    "plannerTitle": "Programare online pentru APK",
+    "copy": "Copiază {{what}}",
+    "copied": "{{what}} copiat"
+  },
+  "maintenancePlan": {
+    "title": "Raportează mentenanța",
+    "description": "Alegeți cum doriți să fie programată mentenanța.",
+    "requestTitle": "Trimiteți o sesizare",
+    "requestText": "Spuneți-ne ce are autoturismul. Noi programăm mentenanța. Aveți nevoie de alt autoturism? Ne ocupăm noi.",
+    "requestButton": "Trimiteți o sesizare",
+    "selfText": "Alegeți singur o zi și o oră în agenda service-ului nostru, pentru mentenanță sau o reparație.",
+    "tickOnly": "În agendă alegeți lucrările de care are nevoie autoturismul.",
+    "selfNote": "Dacă faceți singur o programare în agendă, nu vă organizăm automat alt autoturism. Aveți nevoie de un autoturism în timpul mentenanței? Atunci trimiteți o sesizare.",
+    "plannerTitle": "Programare online la service"
   }
 }

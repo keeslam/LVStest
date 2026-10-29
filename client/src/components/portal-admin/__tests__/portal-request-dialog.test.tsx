@@ -33,6 +33,8 @@ const requests: Record<number, Record<string, unknown>> = {
   5: { ...common, id: 5, type: "damage", payload: {} },
   6: { ...common, id: 6, type: "company_name_change", payload: { newName: "Nieuwe Naam BV", currentName: "Oude Naam BV" } },
   7: { ...common, id: 7, type: "cancellation", reservationId: 12, payload: {} },
+  8: { ...common, id: 8, type: "apk", reservationId: 40, reservationLabel: "AB-123-C", payload: { preferredDate: "2026-11-03" }, message: "Graag de APK laten keuren." },
+  9: { ...common, id: 9, type: "apk", reservationId: 40, reservationLabel: "AB-123-C", payload: {}, message: "Graag de APK laten keuren." },
 };
 const calls: Array<{ method: string; url: string; body?: string }> = [];
 
@@ -70,6 +72,20 @@ describe("aanvraag behandelen", () => {
     expect(screen.getByTestId("standard-answer-approved")).toBeInTheDocument();
     await userEvent.click(screen.getByTestId("button-approve-request"));
     await waitFor(() => expect(calls.some((c) => c.method === "POST" && c.url.endsWith("/api/portal-requests/7/approve"))).toBe(true));
+  });
+
+  it("an APK request shows the preferred day (or that there is none) and offers the received answer", async () => {
+    requestId = 8;
+    const first = renderDialog();
+    expect(await screen.findByTestId("requested-apk-date")).toHaveTextContent("03-11-2026");
+    expect(screen.getByText("APK inplannen")).toBeInTheDocument();
+    await userEvent.click(screen.getByTestId("standard-answer-received"));
+    expect((screen.getByTestId("textarea-request-reply") as HTMLTextAreaElement).value).toMatch(/plannen de APK in en laten u de datum weten/);
+    expect(screen.queryByTestId("standard-answer-approved")).not.toBeInTheDocument();
+    first.unmount();
+    requestId = 9;
+    renderDialog();
+    expect(await screen.findByTestId("requested-apk-date")).toHaveTextContent("Geen voorkeur");
   });
 
   it("writes the requested dates as dd-MM-yyyy, like the list", async () => {

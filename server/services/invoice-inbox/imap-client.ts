@@ -14,6 +14,8 @@ export interface InvoiceImapSession {
   fetchRaw(uid: number): Promise<Buffer>;
   /** Move to the processed folder, or mark read when none is configured or the move fails. */
   markProcessed(uid: number): Promise<void>;
+  /** Move to another folder (created when missing); marks read when the move fails. Optional: fakes without it get markProcessed. */
+  moveTo?(uid: number, folder: string): Promise<void>;
 }
 
 export interface InvoiceImapClient {
@@ -90,6 +92,18 @@ function openSession(client: ImapFlow, config: InvoiceInboxConfig): InvoiceImapS
       const message = await client.fetchOne(String(uid), { source: true }, { uid: true });
       if (!message || !message.source) throw new Error(`Bericht ${uid} kon niet worden opgehaald`);
       return message.source;
+    },
+    async moveTo(uid, folder) {
+      if (folder) {
+        try { await client.mailboxCreate(folder); } catch { /* exists already */ }
+        try {
+          const moved = await client.messageMove(String(uid), folder, { uid: true });
+          if (moved) return;
+        } catch (error) {
+          console.warn(`Mail ${uid} kon niet naar "${folder}" worden verplaatst:`, (error as Error).message);
+        }
+      }
+      await client.messageFlagsAdd(String(uid), ["\\Seen"], { uid: true });
     },
     async markProcessed(uid) {
       if (config.processedFolder) {

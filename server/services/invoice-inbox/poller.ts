@@ -4,6 +4,8 @@ import { imapClient, type InboxMessageRef, type InvoiceImapClient } from "./imap
 import { importInvoiceMail, recordFailedMail, recordOversizeMail, MAX_MAIL_BYTES } from "./importer";
 import { notifyInvoiceInbox } from "./notify";
 import { inboxRunLog } from "./run-log";
+import { APPOINTMENTS_FOLDER, isPlannerMailSubject } from "../../../shared/online-appointments";
+import { tryImportAppointmentMail } from "../online-appointments";
 import { createOfficeCronTask, type OfficeCronTask } from "../office-time";
 import { AuditLogger } from "../../utils/security/auditLogger";
 
@@ -94,6 +96,17 @@ export function runInvoiceInboxImport(
               continue;
             }
             const raw = await session.fetchRaw(ref.uid);
+            // Online afspraken: a mail from the garage planner is an appointment, not an invoice. It goes to the
+            // maintenance planner and then to its own folder. One that fails the sender check falls through below.
+            if (config.appointmentSenders?.length && isAllowedSender(ref.from ?? "", config.appointmentSenders) && isPlannerMailSubject(ref.subject)) {
+              const outcome = await tryImportAppointmentMail({ raw, messageId: ref.messageId, subject: ref.subject, from: ref.from ?? "", config, by: createdBy });
+              if (outcome !== "untrusted") {
+                summary.appointments = (summary.appointments ?? 0) + 1;
+                failedAttempts.delete(mailKey(ref));
+                await (session.moveTo ? session.moveTo(ref.uid, APPOINTMENTS_FOLDER) : session.markProcessed(ref.uid));
+                continue;
+              }
+            }
             const result = await importInvoiceMail({ raw, config, createdBy });
             summary.attachments += result.attachments;
             summary.booked += result.booked;

@@ -245,7 +245,8 @@
         "key-audit": "Sleutelkastcontrole",
         "notification-dismissal": "Weggeklikte melding",
         "user-setting": "Eigen instelling",
-        "lease_quote": "Lease offerte"
+        "lease_quote": "Lease offerte",
+        "online-appointment": "Online afspraak"
       },
       "verbs": {
         "create": "aangemaakt",
@@ -349,13 +350,20 @@
           "cjib-import": "CJIB-boetes geïmporteerd",
           "invoice-inbox-import": "Facturen uit het postvak geïmporteerd",
           "backup": "Back-up gemaakt",
-          "missing-invoice-mail": "Wekelijkse mail facturen ontbreken"
+          "missing-invoice-mail": "Wekelijkse mail facturen ontbreken",
+          "online-appointment-import": "Online afspraak uit het postvak verwerkt"
         },
         "lease_quote": {
           "copy": "Offerte gekopieerd naar een nieuwe offerte",
           "pdf": "PDF voor de klant gemaakt",
           "files": "Dealerofferte geüpload, uitgelezen of verwijderd",
           "file-view": "Bijlage van de offerte bekeken"
+        },
+        "online-appointment": {
+          "confirm": "Online afspraak bevestigd",
+          "cancel": "Online afspraak geannuleerd",
+          "link": "Online afspraak aan een huur gekoppeld",
+          "dismiss": "Online afspraak genegeerd"
         }
       }
     }

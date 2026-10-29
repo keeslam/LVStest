@@ -6,6 +6,7 @@ import { ReservationDialog } from "@/components/portal/reservation-dialog";
 import { FineDialog } from "@/components/portal/fine-dialog";
 import { RequestDialog } from "@/components/portal/request-dialog";
 import { NewRequestDialog } from "@/components/portal/new-request-dialog";
+import { ApkDialog, type PlanMode } from "@/components/portal/apk-dialog";
 import { DocumentDialog } from "@/components/portal/document-dialog";
 import { PortalAccountDialog } from "@/components/portal/account-dialog";
 import { PortalListDialog, type PortalListKind } from "@/components/portal/list-dialog";
@@ -18,6 +19,7 @@ type Open =
   | { kind: "fine"; id: number }
   | { kind: "request"; id: number }
   | { kind: "newRequest"; prefill: NewRequestPrefill }
+  | { kind: "plan"; reservationId: number | null; mode: PlanMode }
   | { kind: "document"; document: PortalDocumentDto }
   | { kind: "account" }
   | { kind: "list"; list: PortalListKind; query?: string }
@@ -29,6 +31,10 @@ interface PortalDialogsApi {
   openFine: (id: number) => void;
   openRequest: (id: number) => void;
   openNewRequest: (prefill?: NewRequestPrefill) => void;
+  /** "APK inplannen" for a rental: send a request, or book it yourself in the garage's online agenda. */
+  openApk: (reservationId: number) => void;
+  /** "Onderhoud melden": send a report, or book the garage's agenda yourself. With or without the rental it is about. */
+  openMaintenance: (reservationId?: number) => void;
   openDocument: (document: PortalDocumentDto) => void;
   openAccount: () => void;
   openList: (list: PortalListKind, opts?: { query?: string }) => void;
@@ -64,6 +70,9 @@ export function PortalDialogsProvider({ children }: { children: ReactNode }) {
   const setOpen = (next: Open) => {
     setOpenState((current) => {
       if (next && next.kind !== "list" && current?.kind === "list") setUnder(current);
+      // The choice opened from a reservation goes back to that reservation; the form picked from the choice keeps it underneath.
+      else if (next?.kind === "plan" && current?.kind === "reservation") setUnder(current);
+      else if (next?.kind === "newRequest" && current?.kind === "plan") { /* keep what lies underneath */ }
       else if (next === null || next.kind === "list") setUnder(null);
       return next;
     });
@@ -97,6 +106,8 @@ export function PortalDialogsProvider({ children }: { children: ReactNode }) {
     openFine: (id) => { fromRoute.current = false; setOpen({ kind: "fine", id }); },
     openRequest: (id) => { fromRoute.current = false; setOpen({ kind: "request", id }); },
     openNewRequest: (prefill = {}) => { fromRoute.current = false; setOpen({ kind: "newRequest", prefill }); },
+    openApk: (reservationId) => { fromRoute.current = false; setOpen({ kind: "plan", reservationId, mode: "apk" }); },
+    openMaintenance: (reservationId) => { fromRoute.current = false; setOpen({ kind: "plan", reservationId: reservationId ?? null, mode: "maintenance" }); },
     openDocument: (document) => { fromRoute.current = false; setOpen({ kind: "document", document }); },
     openAccount: () => { fromRoute.current = false; setOpen({ kind: "account" }); },
     openList: (list, opts) => { fromRoute.current = false; setOpen({ kind: "list", list, query: opts?.query }); },
@@ -109,6 +120,7 @@ export function PortalDialogsProvider({ children }: { children: ReactNode }) {
       <ReservationDialog id={open?.kind === "reservation" ? open.id : null} onClose={close} />
       <FineDialog id={open?.kind === "fine" ? open.id : null} onClose={close} />
       <RequestDialog id={open?.kind === "request" ? open.id : null} onClose={close} />
+      <ApkDialog open={open?.kind === "plan"} reservationId={open?.kind === "plan" ? open.reservationId : null} mode={open?.kind === "plan" ? open.mode : "apk"} onClose={close} />
       <NewRequestDialog prefill={open?.kind === "newRequest" ? open.prefill : null} onClose={close} />
       <DocumentDialog document={open?.kind === "document" ? open.document : null} onClose={close} />
       <PortalAccountDialog open={open?.kind === "account"} onClose={close} />

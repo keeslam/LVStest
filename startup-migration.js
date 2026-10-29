@@ -2547,6 +2547,37 @@ async function runMigrations() {
     // The log is always read newest first.
     await db.execute(sql`CREATE INDEX IF NOT EXISTS invoice_inbox_runs_started_at_idx ON invoice_inbox_runs (started_at DESC)`);
 
+    // Online afspraken (Kees 2026-10-29): "Afspraak Aanvraag" mails from the
+    // garage planner, read by the invoice inbox poller into the maintenance
+    // planner. A new table, created here with its foreign keys; additive only.
+    await createTableIfNotExists('online_appointments', `
+      CREATE TABLE online_appointments (
+        id SERIAL PRIMARY KEY,
+        message_id TEXT NOT NULL UNIQUE,
+        received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        status TEXT NOT NULL DEFAULT 'pending',
+        review_reason TEXT,
+        appointment_date TEXT,
+        appointment_time TEXT,
+        plate TEXT,
+        brand TEXT,
+        model TEXT,
+        mileage INTEGER,
+        work_items JSONB NOT NULL DEFAULT '[]'::jsonb,
+        replacement TEXT,
+        customer_name TEXT,
+        subject TEXT,
+        from_address TEXT,
+        vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE SET NULL,
+        customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+        rental_id INTEGER REFERENCES reservations(id) ON DELETE SET NULL,
+        block_id INTEGER REFERENCES reservations(id) ON DELETE SET NULL,
+        handled_by TEXT,
+        handled_at TIMESTAMPTZ
+      )`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS online_appointments_status_idx ON online_appointments (status)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS online_appointments_plate_date_idx ON online_appointments (plate, appointment_date)`);
+
     await addColumnIfNotExists('reservations', 'portal_request_id', 'INTEGER');
 
     await createTableIfNotExists('portal_requests', `

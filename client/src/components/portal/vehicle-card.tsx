@@ -43,7 +43,7 @@ export function MaintenanceLine({ maintenance: m, serviceDue, canRequest }: { ma
 export function VehicleCard({ item }: { item: PortalMyVehicleDto }) {
   const { t } = useTranslation("portal");
   const { me } = usePortalAuth();
-  const { openReservation, openNewRequest, openRequest } = usePortalDialogs();
+  const { openReservation, openNewRequest, openRequest, openMaintenance } = usePortalDialogs();
   const canRequest = Boolean(me?.settings.canSubmitRequests);
   const apkIn = daysUntil(item.vehicle.apkDate);
   const apkTone = apkIn === null ? "text-[#64748b]" : apkIn < 0 ? "text-[#a32d2d]" : apkIn <= 30 ? "text-[#8a5a0b]" : "text-[#085041]";
@@ -72,7 +72,7 @@ export function VehicleCard({ item }: { item: PortalMyVehicleDto }) {
         <div className="mt-3 flex flex-wrap gap-2">
           {item.openMaintenanceRequestId
             ? <Button size="sm" variant="outline" onClick={() => openRequest(item.openMaintenanceRequestId!)} data-testid="button-view-maintenance-request"><Wrench className="mr-1 h-4 w-4" />{t("vehicles.requestPending", { id: item.openMaintenanceRequestId })}</Button>
-            : <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "maintenance", reservationId: item.reservationId })} data-testid="button-report-maintenance"><Wrench className="mr-1 h-4 w-4" />{t("requests.form.reportMaintenance")}</Button>}
+            : <Button size="sm" variant="outline" onClick={() => openMaintenance(item.reservationId)} data-testid="button-report-maintenance"><Wrench className="mr-1 h-4 w-4" />{t("requests.form.reportMaintenance")}</Button>}
           <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "damage", reservationId: item.reservationId })} data-testid="button-report-damage"><TriangleAlert className="mr-1 h-4 w-4" />{t("requests.type.damage")}</Button>
           <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "mileage", reservationId: item.reservationId })} data-testid="button-report-mileage"><Gauge className="mr-1 h-4 w-4" />{t("requests.form.reportMileage")}</Button>
         </div>

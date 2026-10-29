@@ -1525,6 +1525,41 @@ export const invoiceInboxRuns = pgTable("invoice_inbox_runs", {
 }));
 export type InvoiceInboxRun = typeof invoiceInboxRuns.$inferSelect;
 
+/**
+ * An appointment made in the garage's online planner, read from its "Afspraak Aanvraag" mail. One row per mail; a row
+ * with a block is in the maintenance planner as "te bevestigen" until staff confirm it. See shared/online-appointments.ts.
+ * Created in production by startup-migration.js (createTableIfNotExists), never altered.
+ */
+export const onlineAppointments = pgTable("online_appointments", {
+  id: serial("id").primaryKey(),
+  messageId: text("message_id").notNull().unique(),
+  receivedAt: timestamp("received_at", { withTimezone: true }).defaultNow().notNull(),
+  status: text("status").notNull().default("pending"), // 'pending' | 'confirmed' | 'cancelled' | 'review' | 'dismissed'
+  reviewReason: text("review_reason"),
+  appointmentDate: text("appointment_date"),
+  appointmentTime: text("appointment_time"),
+  plate: text("plate"),
+  brand: text("brand"),
+  model: text("model"),
+  mileage: integer("mileage"),
+  workItems: jsonb("work_items").$type<string[]>().notNull().default([]),
+  replacement: text("replacement"),
+  customerName: text("customer_name"),
+  subject: text("subject"),
+  fromAddress: text("from_address"),
+  vehicleId: integer("vehicle_id").references(() => vehicles.id, { onDelete: "set null" }),
+  customerId: integer("customer_id").references(() => customers.id, { onDelete: "set null" }),
+  rentalId: integer("rental_id").references(() => reservations.id, { onDelete: "set null" }),
+  blockId: integer("block_id").references(() => reservations.id, { onDelete: "set null" }),
+  handledBy: text("handled_by"),
+  handledAt: timestamp("handled_at", { withTimezone: true }),
+}, (table) => ({
+  statusIdx: index("online_appointments_status_idx").on(table.status),
+  plateDateIdx: index("online_appointments_plate_date_idx").on(table.plate, table.appointmentDate),
+}));
+export type OnlineAppointment = typeof onlineAppointments.$inferSelect;
+export type InsertOnlineAppointment = typeof onlineAppointments.$inferInsert;
+
 // Documents table
 export const documents = pgTable("documents", {
   id: serial("id").primaryKey(),

@@ -48,7 +48,9 @@ const SUB_ACTIONS: Record<string, readonly string[]> = {
   dialog: ["open"],
   "apk-date-change": ["confirm", "dismiss"],
   // Background runs (server/utils/security/auditLogger.ts AuditLogger.system): one row per run.
-  system: ["apk-scan", "service-due-scan", "fiscal-nightly", "cjib-import", "invoice-inbox-import", "backup", "missing-invoice-mail"],
+  system: ["apk-scan", "service-due-scan", "fiscal-nightly", "cjib-import", "invoice-inbox-import", "backup", "missing-invoice-mail", "online-appointment-import"],
+  // Online afspraken from the garage planner, handled in the maintenance calendar.
+  "online-appointment": ["confirm", "cancel", "link", "dismiss"],
 };
 
 const RESOURCES = [
@@ -60,6 +62,8 @@ const RESOURCES = [
   // Routers that were mounted outside the audit middleware until 2026-10 and now show up in the log.
   "email-template", "email-log", "notification", "apk-date-change",
   "system",
+  // Online afspraken (/api/online-appointments/:id/<action>).
+  "online-appointment",
   // Reads of files (TRACKED_READS in server/middleware/audit.ts) and what the client prints or exports itself.
   "backup", "interactive-damage-check", "damage-check-template", "fine-import", "fiscal-assessment", "fiscal-report",
   "invoice-inbox-item", "portal-request", "label", "barcode-book", "report", "key-audit",

@@ -538,5 +538,51 @@
     "confirmLink": "Associar",
     "missingInvoice": "Fatura em falta",
     "noInvoiceExpected": "Sem fatura necessária (ex.: garantia gratuita)"
+  },
+  "onlineAppointments": {
+    "button": "Marcações online",
+    "title": "Marcações online",
+    "description": "Marcações que os clientes fizeram na agenda online da oficina. Já estão no calendário de manutenção. Confirme-as aqui assim que as tiver confirmado no planeador da oficina.",
+    "empty": "Não há marcações online para confirmar ou verificar.",
+    "toConfirm_one": "{{count}} marcação por confirmar",
+    "toConfirm_many": "{{count}} marcações por confirmar",
+    "toConfirm_other": "{{count}} marcações por confirmar",
+    "toCheck_one": "{{count}} marcação por verificar",
+    "toCheck_many": "{{count}} marcações por verificar",
+    "toCheck_other": "{{count}} marcações por verificar",
+    "confirm": "Confirmada no planeador",
+    "cancel": "Cancelar",
+    "keep": "Manter",
+    "replacement": "Veículo de substituição a definir",
+    "cancelTitle": "Cancelar a marcação?",
+    "cancelText": "A linha de manutenção e o veículo de substituição a definir são cancelados. O cliente não recebe nenhuma mensagem. Cancele a marcação também no planeador da oficina.",
+    "rentalNumber": "Número da reserva",
+    "link": "Ligar ao aluguer",
+    "dismiss": "Ignorar",
+    "failed": "Não funcionou",
+    "pendingBadge": "Por confirmar",
+    "pendingMark": "Marcação online, ainda por confirmar",
+    "done": {
+      "confirm": "Marcação confirmada",
+      "cancel": "Marcação cancelada",
+      "link": "Marcação ligada e planeada",
+      "dismiss": "Marcação ignorada"
+    },
+    "reasons": {
+      "unreadable": "Não foi possível ler o e-mail.",
+      "plate_unknown": "A matrícula não está na frota.",
+      "no_rental": "Não há nenhum aluguer em curso ou previsto de um cliente para este carro nesse dia.",
+      "weekend": "A marcação calha num fim de semana.",
+      "in_past": "A marcação está no passado."
+    },
+    "errors": {
+      "ALREADY_HANDLED": "Outra pessoa já tratou desta marcação.",
+      "RENTAL_NOT_ACTIVE": "Escolha um aluguer em curso ou previsto de um cliente.",
+      "RENTAL_NOT_ON_DATE": "Este aluguer não decorre no dia da marcação.",
+      "WEEKEND": "A marcação calha num fim de semana. A oficina está fechada.",
+      "IN_PAST": "A marcação está no passado.",
+      "NO_DATE": "Este e-mail não tem data. Não é possível planeá-lo.",
+      "NOT_FOUND": "Esta marcação já não existe."
+    }
   }
 }

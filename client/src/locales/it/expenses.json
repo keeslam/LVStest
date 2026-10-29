@@ -393,7 +393,9 @@
       "runDone": "{{mails}} e-mail recuperate: {{booked}} registrate, {{review}} da controllare",
       "geminiMissing": "Attenzione: GEMINI_API_KEY non è impostata sul server. Le fatture non possono quindi essere lette e finiscono tutte in controllo.",
       "loadFailed": "Non è stato possibile caricare le impostazioni per le fatture via e-mail",
-      "retry": "Riprovare"
+      "retry": "Riprovare",
+      "appointmentSenders": "Mittenti del planner dell'officina (appuntamenti online)",
+      "appointmentSendersHint": "Uno per riga, per esempio noreply@garage.software. Un'e-mail Afspraak Aanvraag da questo indirizzo entra nel calendario di manutenzione e viene spostata nella cartella online afspraken. Lascia vuoto per disattivare."
     },
     "log": {
       "title": "Registro",
@@ -401,7 +403,8 @@
       "tabs": {
         "invoices": "Fatture",
         "other": "Altre e-mail",
-        "runs": "Cicli di recupero"
+        "runs": "Cicli di recupero",
+        "appointments": "Appuntamenti online"
       },
       "searchLabel": "Cercare nel registro",
       "searchPlaceholder": "Cerca per mittente, oggetto, file, fornitore, numero di fattura o targa",
@@ -432,7 +435,26 @@
       "empty": {
         "invoices": "Nessuna fattura trovata.",
         "other": "Nessuna altra e-mail trovata.",
-        "runs": "Nessun ciclo di recupero ancora salvato."
+        "runs": "Nessun ciclo di recupero ancora salvato.",
+        "appointments": "Nessun appuntamento online trovato."
+      },
+      "appointments": {
+        "searchPlaceholder": "Cerca per targa, cliente o lavoro",
+        "columns": {
+          "appointment": "Appuntamento",
+          "vehicle": "Auto",
+          "work": "Lavoro",
+          "customer": "Cliente",
+          "status": "Stato"
+        },
+        "statuses": {
+          "pending": "Da confermare",
+          "confirmed": "Confermato",
+          "cancelled": "Annullato",
+          "review": "Da controllare",
+          "dismissed": "Ignorato"
+        },
+        "toCalendar": "Al calendario di manutenzione"
       }
     }
   },

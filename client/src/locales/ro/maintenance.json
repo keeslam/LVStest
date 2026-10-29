@@ -538,5 +538,51 @@
     "confirmLink": "Leagă",
     "missingInvoice": "Factură lipsă",
     "noInvoiceExpected": "Nu e nevoie de factură (ex. garanție gratuită)"
+  },
+  "onlineAppointments": {
+    "button": "Programări online",
+    "title": "Programări online",
+    "description": "Programări pe care clienții le-au făcut în agenda online a service-ului. Sunt deja în calendarul de întreținere. Confirmă-le aici după ce le-ai confirmat în planificatorul service-ului.",
+    "empty": "Nu există programări online de confirmat sau de verificat.",
+    "toConfirm_one": "{{count}} programare de confirmat",
+    "toConfirm_few": "{{count}} programări de confirmat",
+    "toConfirm_other": "{{count}} de programări de confirmat",
+    "toCheck_one": "{{count}} programare de verificat",
+    "toCheck_few": "{{count}} programări de verificat",
+    "toCheck_other": "{{count}} de programări de verificat",
+    "confirm": "Confirmată în planificator",
+    "cancel": "Anulează",
+    "keep": "Păstrează",
+    "replacement": "Vehicul de înlocuire de stabilit",
+    "cancelTitle": "Anulezi programarea?",
+    "cancelText": "Rândul de întreținere și vehiculul de înlocuire de stabilit sunt anulate. Clientul nu primește niciun mesaj. Anulează programarea și în planificatorul service-ului.",
+    "rentalNumber": "Numărul rezervării",
+    "link": "Leagă de închiriere",
+    "dismiss": "Ignoră",
+    "failed": "Nu a reușit",
+    "pendingBadge": "De confirmat",
+    "pendingMark": "Programare online, încă de confirmat",
+    "done": {
+      "confirm": "Programare confirmată",
+      "cancel": "Programare anulată",
+      "link": "Programare legată și planificată",
+      "dismiss": "Programare ignorată"
+    },
+    "reasons": {
+      "unreadable": "E-mailul nu a putut fi citit.",
+      "plate_unknown": "Numărul de înmatriculare nu este în flotă.",
+      "no_rental": "Nu există nicio închiriere în curs sau planificată a unui client pentru această mașină în ziua respectivă.",
+      "weekend": "Programarea cade în weekend.",
+      "in_past": "Programarea este în trecut."
+    },
+    "errors": {
+      "ALREADY_HANDLED": "Altcineva a rezolvat deja această programare.",
+      "RENTAL_NOT_ACTIVE": "Alege o închiriere în curs sau planificată a unui client.",
+      "RENTAL_NOT_ON_DATE": "Această închiriere nu este activă în ziua programării.",
+      "WEEKEND": "Programarea cade în weekend. Atelierul este închis atunci.",
+      "IN_PAST": "Programarea este în trecut.",
+      "NO_DATE": "Acest e-mail nu are dată. Nu îl poți planifica.",
+      "NOT_FOUND": "Această programare nu mai există."
+    }
   }
 }

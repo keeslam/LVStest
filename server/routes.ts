@@ -190,6 +190,7 @@ import { registerMissingInvoiceRoutes } from "./routes/missing-invoices";
 import { registerNotificationDismissalRoutes } from "./routes/notification-dismissals";
 import { registerUserSettingRoutes } from "./routes/user-settings";
 import { registerExpenseInboxRoutes } from "./routes/expense-inbox";
+import { registerOnlineAppointmentRoutes } from "./routes/online-appointments";
 import { registerPdfTemplateRoutes } from "./routes/pdf-templates";
 import { storedPathGuard, TEMPLATE_ROUTE_PREFIXES } from "./middleware/stored-path-guard";
 import { registerCustomNotificationRoutes } from "./routes/custom-notifications";
@@ -6991,6 +6992,8 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
   registerExpenseInboxRoutes(app);
+  // Online afspraken from the garage planner (read by the invoice inbox poller).
+  registerOnlineAppointmentRoutes(app);
   registerExpenseRoutes(app, routeDeps);
   // Round 2 punt 11 part B: "factuur ontbreekt".
   registerMissingInvoiceRoutes(app);

@@ -14,7 +14,11 @@ const SENDER_PATTERN = /^(@[a-z0-9-]+(\.[a-z0-9-]+)+|[^\s@<>]+@[a-z0-9-]+(\.[a-z
 
 /** Returns a deep copy of the default config to prevent mutations from corrupting the shared constant. */
 function defaultConfig(): InvoiceInboxConfig {
-  return { ...DEFAULT_INVOICE_INBOX_CONFIG, allowedSenders: [...DEFAULT_INVOICE_INBOX_CONFIG.allowedSenders] };
+  return {
+    ...DEFAULT_INVOICE_INBOX_CONFIG,
+    allowedSenders: [...DEFAULT_INVOICE_INBOX_CONFIG.allowedSenders],
+    appointmentSenders: [...DEFAULT_INVOICE_INBOX_CONFIG.appointmentSenders],
+  };
 }
 
 export const invoiceInboxConfigSchema = z.object({
@@ -36,6 +40,11 @@ export const invoiceInboxConfigSchema = z.object({
       .regex(SENDER_PATTERN, "Ongeldige afzender: gebruik naam@domein.nl of @domein.nl"),
   ).max(200).default([]).transform((list) => Array.from(new Set(list))),
   totalTolerance: z.coerce.number().min(0).max(100).default(1),
+  // Online afspraken: the garage planner's sender addresses. Empty = off.
+  appointmentSenders: z.array(
+    z.string().trim().toLowerCase().max(320)
+      .regex(SENDER_PATTERN, "Ongeldige afzender: gebruik naam@domein.nl of @domein.nl"),
+  ).max(20).default([]).transform((list) => Array.from(new Set(list))),
   // I3: the port decides the connection type, so a form (or an old stored row)
   // can never leave 143 paired with "implicit TLS" — which would have meant a
   // plaintext login on a server that does not advertise STARTTLS.

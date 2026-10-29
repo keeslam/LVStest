@@ -128,7 +128,7 @@
     "fines_other": "Multas associadas a esta reserva ({{count}})",
     "pickupInfo": "Levantamento",
     "pickupAt": "levantamento às {{time}}",
-    "apkDue": "A APK deste automóvel expira em {{date}} (dentro de {{days}} dias). A Lam Groep agenda a inspeção.",
+    "apkDue": "A APK deste automóvel expira em {{date}} (dentro de {{days}} dias).",
     "apkExpired": "A APK deste automóvel expirou em {{date}}. Contacte a Lam Groep."
   },
   "documents": {
@@ -410,7 +410,8 @@
     "PORTAL_CANCEL_TOO_LATE": "Pode cancelar até 48 horas antes do início. Contacte-nos.",
     "PORTAL_CANCEL_NOT_ALLOWED": "Esta reserva não pode ser cancelada através do portal.",
     "PORTAL_FILE_TOO_LARGE": "O ficheiro tem mais de 10 MB.",
-    "PORTAL_DRIVER_HAS_ACCOUNT": "Este condutor já tem uma conta."
+    "PORTAL_DRIVER_HAS_ACCOUNT": "Este condutor já tem uma conta.",
+    "PORTAL_APK_NOT_POSSIBLE": "A APK só pode ser agendada enquanto tiver o automóvel em utilização."
   },
   "admin": {
     "navLabel": "Portal do cliente",
@@ -819,7 +820,9 @@
       "onlineBookingEnabledHint": "Desligado: os clientes deixam de ver os veículos oferecidos online e não podem enviar um pedido de aluguer para eles. Os outros pedidos (prolongamento, danos, perguntas) continuam a funcionar. Também pode ser desligado por cliente nas definições do cliente.",
       "onlineBookingOnDone": "O aluguer de veículos online está ligado.",
       "onlineBookingOffDone": "O aluguer de veículos online está desligado.",
-      "onlineBookingNotSaved": "Não guardado: o servidor ainda não conhece este interruptor. Reinicie o servidor e tente novamente."
+      "onlineBookingNotSaved": "Não guardado: o servidor ainda não conhece este interruptor. Reinicie o servidor e tente novamente.",
+      "apkPlannerUrl": "Agenda online da oficina",
+      "apkPlannerUrlHint": "O endereço das marcações online da oficina. Só funciona um endereço em planner.garage.software. Os clientes veem a agenda em Agendar APK e em Comunicar manutenção. Deixe vazio para ocultar a agenda; os clientes só poderão enviar um pedido."
     },
     "fines": {
       "title": "Multas",
@@ -1097,7 +1100,8 @@
         "maintenance_change": "Alterar manutenção",
         "mileage": "Quilometragem",
         "company_name_change": "Alteração do nome da empresa",
-        "cancellation": "Cancelamento"
+        "cancellation": "Cancelamento",
+        "apk": "Agendar APK"
       },
       "status": {
         "new": "Novo",
@@ -1148,7 +1152,9 @@
         "mileageApply": "Adotar: {{km}} km",
         "mileageApplied": "A quilometragem do carro é agora {{km}} km",
         "mileageNotHigher": "Não pode ser adotado: o carro já marca {{current}} km e o cliente indicou {{reported}} km. Uma leitura inferior ou igual não é adotada. A leitura indicada fica no carro como \"Quilometragem indicada pelo cliente\".",
-        "mileageAlreadyApplied": "Esta leitura já foi adotada."
+        "mileageAlreadyApplied": "Esta leitura já foi adotada.",
+        "apkPreferredDate": "Dia preferido",
+        "noPreference": "Sem preferência"
       },
       "standard": {
         "received": {
@@ -1156,7 +1162,8 @@
           "fine_question": "Obrigado pela sua questão sobre a multa. Recebemo-la e voltaremos a contactá-lo.",
           "other": "Obrigado pela sua mensagem. Recebemo-la e voltaremos a contactá-lo.",
           "mileage": "Obrigado por nos ter comunicado a quilometragem.",
-          "default": "Obrigado pela sua mensagem. Recebemo-la."
+          "default": "Obrigado pela sua mensagem. Recebemo-la.",
+          "apk": "Obrigado pelo seu pedido. Vamos agendar a APK e informamos a data."
         },
         "approved": {
           "extension": "O seu prolongamento foi aprovado.",
@@ -1389,7 +1396,8 @@
       "maintenance_change": "Alterar manutenção",
       "mileage": "Comunicar quilometragem",
       "company_name_change": "Alteração do nome da empresa",
-      "cancellation": "Cancelar reserva"
+      "cancellation": "Cancelar reserva",
+      "apk": "Agendar APK"
     },
     "status": {
       "new": "Submetido",
@@ -1446,7 +1454,12 @@
       "reason": "Motivo",
       "stillNeedsReplacement": "Continuo a precisar de transporte de substituição",
       "changeHint": "A Lam Groep verifica se a nova data é possível e confirma.",
-      "weekdaysOnly": "Apenas dias úteis (seg a sex)."
+      "weekdaysOnly": "Apenas dias úteis (seg a sex).",
+      "apkMessage": "Por favor, agendem a inspeção APK.",
+      "apkRemarks": "Observações",
+      "apkPreferredDate": "Dia preferido (opcional)",
+      "apkInfo": "{{plate}} · A APK expira em {{date}}",
+      "noPreference": "Sem preferência"
     },
     "date": "Submetido em",
     "subtitle": "Prolongar, devolver antecipadamente, comunicar danos ou colocar uma questão.",
@@ -1657,6 +1670,10 @@
       "contract_signed": {
         "title": "{{document}} assinado: {{plate}}",
         "description": "{{signer}} assinou em {{at}}: {{document}}. A cópia assinada está nos seus documentos."
+      },
+      "online_appointment": {
+        "title": "Marcação pedida",
+        "description": "Pediu uma marcação para {{date}} {{time}}: {{work}}. A oficina confirmará a marcação."
       }
     },
     "words": {
@@ -1837,5 +1854,37 @@
     "added": "Condutor adicional adicionado",
     "removed": "Condutor adicional removido",
     "hint": "Várias pessoas conduzem este veículo. O contrato indica apenas o condutor principal. Uma coima fica sem condutor; indica quem conduzia."
+  },
+  "apk": {
+    "title": "Agendar APK",
+    "description": "Escolha como pretende agendar a APK.",
+    "button": "Agendar APK",
+    "expires": "A APK expira em {{date}}",
+    "requestTitle": "Enviar pedido",
+    "requestText": "Nós marcamos a inspeção na oficina e informamos a data. Os dados do automóvel já estão preenchidos; só indica um dia preferido.",
+    "requestButton": "Enviar pedido",
+    "selfTitle": "Marcar você mesmo",
+    "selfText": "Escolha você mesmo um dia e uma hora na agenda da nossa oficina.",
+    "showPlanner": "Abrir agenda",
+    "hidePlanner": "Fechar agenda",
+    "tickOnly": "Na agenda, assinale apenas APK.",
+    "carDetails": "A agenda vai pedir estes dados:",
+    "plate": "Matrícula",
+    "brandModel": "Marca e modelo",
+    "openExternal": "Abrir num novo separador",
+    "plannerTitle": "Marcar a APK online",
+    "copy": "Copiar {{what}}",
+    "copied": "{{what}} copiado"
+  },
+  "maintenancePlan": {
+    "title": "Comunicar manutenção",
+    "description": "Escolha como pretende agendar a manutenção.",
+    "requestTitle": "Enviar comunicação",
+    "requestText": "Diga-nos o que se passa com o automóvel. Nós agendamos a manutenção. Precisa de outro automóvel? Nós tratamos disso.",
+    "requestButton": "Enviar comunicação",
+    "selfText": "Escolha você mesmo um dia e uma hora na agenda da nossa oficina, para manutenção ou uma reparação.",
+    "tickOnly": "Na agenda, escolha os trabalhos de que o automóvel precisa.",
+    "selfNote": "Se marcar você mesmo na agenda, não tratamos automaticamente de outro automóvel. Precisa de um automóvel durante a manutenção? Então envie uma comunicação.",
+    "plannerTitle": "Marcar na oficina online"
   }
 }

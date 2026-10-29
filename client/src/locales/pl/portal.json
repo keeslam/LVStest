@@ -133,7 +133,7 @@
     "fines_other": "Mandaty dotyczące tej rezerwacji ({{count}})",
     "pickupInfo": "Odbiór",
     "pickupAt": "odbiór o {{time}}",
-    "apkDue": "APK tego samochodu wygasa {{date}} (za {{days}} dni). Lam Groep zaplanuje przegląd.",
+    "apkDue": "APK tego samochodu wygasa {{date}} (za {{days}} dni).",
     "apkExpired": "APK tego samochodu wygasło {{date}}. Prosimy o kontakt z Lam Groep."
   },
   "documents": {
@@ -417,7 +417,8 @@
     "PORTAL_CANCEL_TOO_LATE": "Anulować można do 48 godzin przed rozpoczęciem. Prosimy o kontakt.",
     "PORTAL_CANCEL_NOT_ALLOWED": "Tej rezerwacji nie można anulować przez portal.",
     "PORTAL_FILE_TOO_LARGE": "Plik jest większy niż 10 MB.",
-    "PORTAL_DRIVER_HAS_ACCOUNT": "Ten kierowca ma już konto."
+    "PORTAL_DRIVER_HAS_ACCOUNT": "Ten kierowca ma już konto.",
+    "PORTAL_APK_NOT_POSSIBLE": "APK można umówić tylko wtedy, gdy samochód jest u Państwa w użyciu."
   },
   "admin": {
     "navLabel": "Portal klienta",
@@ -826,7 +827,9 @@
       "onlineBookingEnabledHint": "Wyłączone: klienci nie widzą już pojazdów oferowanych online i nie mogą wysłać dla nich wniosku o najem. Pozostałe wnioski (przedłużenie, szkoda, pytania) nadal działają. Można to też wyłączyć dla pojedynczego klienta w jego ustawieniach.",
       "onlineBookingOnDone": "Najem pojazdów online jest włączony.",
       "onlineBookingOffDone": "Najem pojazdów online jest wyłączony.",
-      "onlineBookingNotSaved": "Nie zapisano: serwer nie zna jeszcze tego przełącznika. Prosimy uruchomić serwer ponownie i spróbować jeszcze raz."
+      "onlineBookingNotSaved": "Nie zapisano: serwer nie zna jeszcze tego przełącznika. Prosimy uruchomić serwer ponownie i spróbować jeszcze raz.",
+      "apkPlannerUrl": "Kalendarz online warsztatu",
+      "apkPlannerUrlHint": "Adres wizyt online warsztatu. Działa tylko adres na planner.garage.software. Klienci widzą kalendarz przy Umów APK i przy Zgłoś serwis. Zostaw puste, aby ukryć kalendarz; klienci mogą wtedy tylko wysłać wniosek."
     },
     "fines": {
       "title": "Mandaty",
@@ -1110,7 +1113,8 @@
         "maintenance_change": "Zmiana serwisu",
         "mileage": "Przebieg",
         "company_name_change": "Zmiana nazwy firmy",
-        "cancellation": "Anulowanie"
+        "cancellation": "Anulowanie",
+        "apk": "Umów APK"
       },
       "status": {
         "new": "Nowy",
@@ -1161,7 +1165,9 @@
         "mileageApply": "Przejmij: {{km}} km",
         "mileageApplied": "Przebieg auta to teraz {{km}} km",
         "mileageNotHigher": "Nie można przejąć: auto ma już {{current}} km, a klient podał {{reported}} km. Niższy lub równy stan nie jest przejmowany. Podany stan zostaje przy aucie jako \"Przebieg podany przez klienta\".",
-        "mileageAlreadyApplied": "Ten stan został już przejęty."
+        "mileageAlreadyApplied": "Ten stan został już przejęty.",
+        "apkPreferredDate": "Preferowany dzień",
+        "noPreference": "Bez preferencji"
       },
       "standard": {
         "received": {
@@ -1169,7 +1175,8 @@
           "fine_question": "Dziękujemy za pytanie dotyczące mandatu. Otrzymaliśmy je i wrócimy do Państwa z odpowiedzią.",
           "other": "Dziękujemy za wiadomość. Otrzymaliśmy ją i wrócimy do Państwa z odpowiedzią.",
           "mileage": "Dziękujemy za przekazanie stanu licznika.",
-          "default": "Dziękujemy za wiadomość. Otrzymaliśmy ją."
+          "default": "Dziękujemy za wiadomość. Otrzymaliśmy ją.",
+          "apk": "Dziękujemy za wniosek. Umówimy APK i podamy Państwu termin."
         },
         "approved": {
           "extension": "Państwa przedłużenie zostało zatwierdzone.",
@@ -1405,7 +1412,8 @@
       "maintenance_change": "Zmiana serwisu",
       "mileage": "Podanie przebiegu",
       "company_name_change": "Zmiana nazwy firmy",
-      "cancellation": "Anuluj rezerwację"
+      "cancellation": "Anuluj rezerwację",
+      "apk": "Umów APK"
     },
     "status": {
       "new": "Złożony",
@@ -1462,7 +1470,12 @@
       "reason": "Powód",
       "stillNeedsReplacement": "Nadal potrzebuję transportu zastępczego",
       "changeHint": "Lam Groep sprawdzi, czy nowa data pasuje, i potwierdzi ją.",
-      "weekdaysOnly": "Tylko dni robocze (pn–pt)."
+      "weekdaysOnly": "Tylko dni robocze (pn–pt).",
+      "apkMessage": "Proszę o umówienie przeglądu APK.",
+      "apkRemarks": "Uwagi",
+      "apkPreferredDate": "Preferowany dzień (opcjonalnie)",
+      "apkInfo": "{{plate}} · APK wygasa {{date}}",
+      "noPreference": "Bez preferencji"
     },
     "date": "Złożono",
     "subtitle": "Przedłużenie, wcześniejszy zwrot, zgłoszenie szkody lub pytanie.",
@@ -1673,6 +1686,10 @@
       "contract_signed": {
         "title": "Podpisano: {{document}} ({{plate}})",
         "description": "{{signer}} podpisał(a) w dniu {{at}}: {{document}}. Podpisany egzemplarz jest w Państwa dokumentach."
+      },
+      "online_appointment": {
+        "title": "Wizyta zgłoszona",
+        "description": "Zgłosiłeś wizytę na {{date}} {{time}}: {{work}}. Warsztat potwierdzi wizytę."
       }
     },
     "words": {
@@ -1856,5 +1873,37 @@
     "added": "Dodano kierowcę",
     "removed": "Usunięto kierowcę",
     "hint": "Tym pojazdem jeździ kilka osób. Umowa wymienia tylko głównego kierowcę. Mandat nie ma wtedy kierowcy; to Ty wskazujesz, kto prowadził."
+  },
+  "apk": {
+    "title": "Umów APK",
+    "description": "Proszę wybrać, jak umówić APK.",
+    "button": "Umów APK",
+    "expires": "APK wygasa {{date}}",
+    "requestTitle": "Wyślij wniosek",
+    "requestText": "Umówimy przegląd w warsztacie i podamy Państwu termin. Dane samochodu są już wpisane; wystarczy podać preferowany dzień.",
+    "requestButton": "Wyślij wniosek",
+    "selfTitle": "Umów samodzielnie",
+    "selfText": "Proszę samodzielnie wybrać dzień i godzinę w kalendarzu naszego warsztatu.",
+    "showPlanner": "Otwórz kalendarz",
+    "hidePlanner": "Zamknij kalendarz",
+    "tickOnly": "W kalendarzu proszę zaznaczyć tylko APK.",
+    "carDetails": "Kalendarz poprosi o te dane:",
+    "plate": "Numer rejestracyjny",
+    "brandModel": "Marka i model",
+    "openExternal": "Otwórz w nowej karcie",
+    "plannerTitle": "Umów APK online",
+    "copy": "Kopiuj {{what}}",
+    "copied": "Skopiowano: {{what}}"
+  },
+  "maintenancePlan": {
+    "title": "Zgłoś serwis",
+    "description": "Proszę wybrać, jak umówić serwis.",
+    "requestTitle": "Wyślij zgłoszenie",
+    "requestText": "Proszę opisać, co dzieje się z samochodem. My umówimy serwis. Potrzebują Państwo innego samochodu? Zajmiemy się tym.",
+    "requestButton": "Wyślij zgłoszenie",
+    "selfText": "Proszę samodzielnie wybrać dzień i godzinę w kalendarzu naszego warsztatu, na serwis lub naprawę.",
+    "tickOnly": "W kalendarzu proszę wybrać prace, których wymaga samochód.",
+    "selfNote": "Wizyta umówiona samodzielnie w kalendarzu nie oznacza automatycznie samochodu zastępczego. Potrzebują Państwo samochodu podczas serwisu? Proszę wtedy wysłać zgłoszenie.",
+    "plannerTitle": "Umów wizytę w warsztacie online"
   }
 }

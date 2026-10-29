@@ -249,7 +249,8 @@
         "key-audit": "Control del armario de llaves",
         "notification-dismissal": "Notificación descartada",
         "user-setting": "Ajuste propio",
-        "lease_quote": "Oferta de leasing"
+        "lease_quote": "Oferta de leasing",
+        "online-appointment": "Cita en línea"
       },
       "verbs": {
         "create": "creado",
@@ -353,13 +354,20 @@
           "cjib-import": "Multas del CJIB importadas",
           "invoice-inbox-import": "Facturas del buzón importadas",
           "backup": "Copia de seguridad creada",
-          "missing-invoice-mail": "Correo semanal de facturas pendientes"
+          "missing-invoice-mail": "Correo semanal de facturas pendientes",
+          "online-appointment-import": "Cita en línea del buzón procesada"
         },
         "lease_quote": {
           "copy": "Oferta copiada a una nueva oferta",
           "pdf": "PDF creado para el cliente",
           "files": "Oferta del concesionario subida, leída o eliminada",
           "file-view": "Adjunto de la oferta visto"
+        },
+        "online-appointment": {
+          "confirm": "Cita en línea confirmada",
+          "cancel": "Cita en línea cancelada",
+          "link": "Cita en línea vinculada a un alquiler",
+          "dismiss": "Cita en línea ignorada"
         }
       }
     }

@@ -46,6 +46,7 @@ import { recordCustomerReportedMileage } from "../services/portal-mileage";
 import { cancellationState } from "../services/portal-cancellation";
 import { installAsyncErrorHandling } from "../middleware/asyncHandler.js";
 import { vehicleName } from "../../shared/vehicle-name";
+import { normalizeReservationStatus } from "../../shared/reservation-status";
 import { SUPPORTED_LANGUAGES } from "../../shared/languages";
 
 export function toFineDto(f: FineListRow): PortalFineDto {
@@ -57,7 +58,7 @@ export function toFineDto(f: FineListRow): PortalFineDto {
   };
 }
 
-const REQUEST_LABEL: Record<string, string> = { booking: "huuraanvraag", extension: "verlenging", early_return: "eerder inleveren", damage: "schademelding", maintenance: "onderhoudsmelding", maintenance_change: "wijziging onderhoud", mileage: "kilometerstand", fine_question: "vraag over bekeuring", company_name_change: "wijziging bedrijfsnaam", cancellation: "annulering", other: "overig" };
+const REQUEST_LABEL: Record<string, string> = { booking: "huuraanvraag", extension: "verlenging", early_return: "eerder inleveren", damage: "schademelding", maintenance: "onderhoudsmelding", maintenance_change: "wijziging onderhoud", mileage: "kilometerstand", fine_question: "vraag over bekeuring", company_name_change: "wijziging bedrijfsnaam", cancellation: "annulering", apk: "APK inplannen", other: "overig" };
 
 export interface PortalRouteDeps {
   requirePortalUser: RequestHandler;
@@ -689,7 +690,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     const files = (req.files as Express.Multer.File[] | undefined) ?? [];
     const discard = () => files.forEach((f) => fs.rmSync(f.path, { force: true }));
     const base = z.object({
-      type: z.enum([PortalRequestType.BOOKING, PortalRequestType.EXTENSION, PortalRequestType.EARLY_RETURN, PortalRequestType.DAMAGE, PortalRequestType.MAINTENANCE, PortalRequestType.MAINTENANCE_CHANGE, PortalRequestType.MILEAGE, PortalRequestType.FINE_QUESTION, PortalRequestType.CANCELLATION, PortalRequestType.OTHER]),
+      type: z.enum([PortalRequestType.BOOKING, PortalRequestType.EXTENSION, PortalRequestType.EARLY_RETURN, PortalRequestType.DAMAGE, PortalRequestType.MAINTENANCE, PortalRequestType.MAINTENANCE_CHANGE, PortalRequestType.MILEAGE, PortalRequestType.FINE_QUESTION, PortalRequestType.CANCELLATION, PortalRequestType.APK, PortalRequestType.OTHER]),
       message: z.string().trim().min(1).max(4000),
       reservationId: z.coerce.number().int().positive().optional(),
       fineId: z.coerce.number().int().positive().optional(),
@@ -782,7 +783,14 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
       if (state.reason === "too_late") { discard(); return portalError(res, 400, PORTAL_ERROR.CANCEL_TOO_LATE, "Cancelling is possible until 48 hours before the start"); }
       if (!state.allowed) { discard(); return portalError(res, 400, PORTAL_ERROR.CANCEL_NOT_ALLOWED, "Only a booked reservation that has not started can be cancelled"); }
     }
-    if (type === "maintenance" || type === "maintenance_change" || type === "cancellation") {
+    if (type === "apk" && reservation) {
+      // Only for a rental that is on the road; the preferred day may not lie in the past.
+      if (reservation.type !== "standard" || normalizeReservationStatus(reservation.status) !== "picked_up") {
+        discard(); return portalError(res, 409, PORTAL_ERROR.APK_NOT_POSSIBLE, "The APK can only be planned for a rental that is in use");
+      }
+      if (p.preferredDate && p.preferredDate < today) { discard(); return portalError(res, 400, PORTAL_ERROR.REQUEST_INVALID_PERIOD, "Preferred date must be today or later"); }
+    }
+    if (type === "maintenance" || type === "maintenance_change" || type === "cancellation" || type === "apk") {
       const openSame = (await requestsStorage.listRequestsForCustomer(ctx.customerId, {})).find((r) => r.type === type && r.reservationId === reservationId && (r.status === "new" || r.status === "in_progress"));
       if (openSame) { discard(); return portalError(res, 409, PORTAL_ERROR.DUPLICATE_REQUEST, `Er staat al een aanvraag (#${openSame.id}) open hiervoor`); }
     }

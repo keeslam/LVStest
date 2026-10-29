@@ -543,5 +543,53 @@
     "confirmLink": "Powiąż",
     "missingInvoice": "Brak faktury",
     "noInvoiceExpected": "Faktura niepotrzebna (np. bezpłatna gwarancja)"
+  },
+  "onlineAppointments": {
+    "button": "Wizyty online",
+    "title": "Wizyty online",
+    "description": "Wizyty, które klienci umówili w kalendarzu online warsztatu. Są już w kalendarzu serwisowym. Potwierdź je tutaj, gdy tylko potwierdzisz je w planerze warsztatu.",
+    "empty": "Brak wizyt online do potwierdzenia lub sprawdzenia.",
+    "toConfirm_one": "{{count}} wizyta do potwierdzenia",
+    "toConfirm_few": "{{count}} wizyty do potwierdzenia",
+    "toConfirm_many": "{{count}} wizyt do potwierdzenia",
+    "toConfirm_other": "{{count}} wizyty do potwierdzenia",
+    "toCheck_one": "{{count}} wizyta do sprawdzenia",
+    "toCheck_few": "{{count}} wizyty do sprawdzenia",
+    "toCheck_many": "{{count}} wizyt do sprawdzenia",
+    "toCheck_other": "{{count}} wizyty do sprawdzenia",
+    "confirm": "Potwierdzona w planerze",
+    "cancel": "Anuluj",
+    "keep": "Zachowaj",
+    "replacement": "Pojazd zastępczy do ustalenia",
+    "cancelTitle": "Anulować wizytę?",
+    "cancelText": "Pozycja serwisowa i pojazd zastępczy do ustalenia zostaną anulowane. Klient nie dostanie o tym wiadomości. Anuluj wizytę także w planerze warsztatu.",
+    "rentalNumber": "Numer rezerwacji",
+    "link": "Powiąż z wynajmem",
+    "dismiss": "Pomiń",
+    "failed": "To się nie udało",
+    "pendingBadge": "Do potwierdzenia",
+    "pendingMark": "Wizyta online, jeszcze do potwierdzenia",
+    "done": {
+      "confirm": "Wizyta potwierdzona",
+      "cancel": "Wizyta anulowana",
+      "link": "Wizyta powiązana i zaplanowana",
+      "dismiss": "Wizyta pominięta"
+    },
+    "reasons": {
+      "unreadable": "Nie udało się odczytać wiadomości.",
+      "plate_unknown": "Tego numeru rejestracyjnego nie ma we flocie.",
+      "no_rental": "Brak trwającego lub zaplanowanego wynajmu klienta dla tego auta w tym dniu.",
+      "weekend": "Wizyta wypada w weekend.",
+      "in_past": "Wizyta jest w przeszłości."
+    },
+    "errors": {
+      "ALREADY_HANDLED": "Ktoś inny już obsłużył tę wizytę.",
+      "RENTAL_NOT_ACTIVE": "Wybierz trwający lub zaplanowany wynajem klienta.",
+      "RENTAL_NOT_ON_DATE": "Ten wynajem nie trwa w dniu wizyty.",
+      "WEEKEND": "Wizyta wypada w weekend. Warsztat jest wtedy zamknięty.",
+      "IN_PAST": "Wizyta jest w przeszłości.",
+      "NO_DATE": "Ta wiadomość nie ma daty. Nie można jej zaplanować.",
+      "NOT_FOUND": "Ta wizyta już nie istnieje."
+    }
   }
 }

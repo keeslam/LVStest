@@ -12,7 +12,7 @@ import { HandoverBlock } from "@/components/portal/handover-block";
 const info = {
   pickupAddress: "Kerkweg 47a, 3214 VC Zuidland", openingHours: "Maandag t/m vrijdag 08:00 - 17:00",
   pickupInstructions: "Neem een geldig rijbewijs mee.", returnInstructions: "Lever de auto schoon en compleet in, anders rekenen wij kosten.",
-  deliveryNote: "Brengen en halen kan, vanaf € 125.", privacyUrl: "", phone: "0181 - 45 10 40",
+  deliveryNote: "Brengen en halen kan, vanaf € 125.", apkPlannerUrl: "", privacyUrl: "", phone: "0181 - 45 10 40",
 };
 const shop = { pickup: { method: "shop", location: null }, return: { method: "shop", location: null } } as const;
 const away = (pickup: string | null, ret: string | null) => ({

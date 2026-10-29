@@ -19,6 +19,7 @@ import { vehicleName } from "@shared/vehicle-name";
 import { HandoverBlock } from "./handover-block";
 import { ReservationUploads } from "./reservation-uploads";
 import { ExtraDrivers } from "./extra-drivers";
+import { APK_PLAN_WINDOW_DAYS, apkPlanning } from "@shared/apk-planning";
 
 type Detail = PortalReservationDto & {
   driverHistory: Array<{ id: number; driverId: number | null; driverName: string | null; assignedFrom: string; assignedUntil: string | null; note: string | null }>;
@@ -34,7 +35,7 @@ export function DetailRow({ label, value, stacked }: { label: string; value: str
 export function ReservationDialog({ id, onClose }: { id: number | null; onClose: () => void }) {
   const { t } = useTranslation("portal");
   const { me } = usePortalAuth();
-  const { openNewRequest } = usePortalDialogs();
+  const { openNewRequest, openApk, openMaintenance } = usePortalDialogs();
   const url = `/api/portal/reservations/${id}`;
   const { data: r, isLoading, isError } = useQuery<Detail>({ queryKey: ["portal", url], queryFn: portalQueryFn, enabled: id !== null });
   const canChangeDriver = Boolean(r && me?.role === "admin" && me.settings.canManageDrivers && ["booked", "picked_up"].includes(r.status));
@@ -42,7 +43,9 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
   const linkedFines = fines.filter((f) => f.reservationId === id);
   const canRequest = Boolean(r && me?.settings.canSubmitRequests && ["booked", "picked_up"].includes(r.status));
   const apkIn = r?.vehicle?.apkDate ? daysUntil(r.vehicle.apkDate) : null;
-  const apkWarning = r?.status === "picked_up" && apkIn !== null && apkIn <= 30;
+  const apkWarning = r?.status === "picked_up" && apkIn !== null && apkIn <= APK_PLAN_WINDOW_DAYS;
+  // The APK runs out (or has) while the rental is still going: offer to plan it.
+  const apkPlan = apkPlanning({ status: r?.status ?? "", endDate: r?.endDate ?? null, apkDate: r?.vehicle?.apkDate ?? null, daysLeft: apkIn });
   const { data: mine = [] } = useQuery<PortalMyVehicleDto[]>({ queryKey: ["portal", "/api/portal/vehicles/mine"], queryFn: portalQueryFn, enabled: r?.status === "picked_up" });
   const myVehicle = mine.find((v) => v.reservationId === id);
 
@@ -77,14 +80,17 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
            <div className="space-y-4">
             {(apkWarning || r.serviceDue || myVehicle?.maintenance) && (
               <div className="space-y-1" data-testid="vehicle-alerts">
-                {apkWarning && <div className={`flex items-start gap-2 rounded-xl border p-3 text-sm ${apkIn! < 0 ? "border-[#f3c1c1] bg-[#fcebeb] text-[#791f1f]" : "border-[#f4d7a8] bg-[#faeeda] text-[#633806]"}`}><ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" /><span>{apkIn! < 0 ? t("reservations.apkExpired", { date: formatPortalDate(r.vehicle!.apkDate) }) : t("reservations.apkDue", { date: formatPortalDate(r.vehicle!.apkDate), days: apkIn })}</span></div>}
+                {apkWarning && <div className={`space-y-2 rounded-xl border p-3 text-sm ${apkIn! < 0 ? "border-[#f3c1c1] bg-[#fcebeb] text-[#791f1f]" : "border-[#f4d7a8] bg-[#faeeda] text-[#633806]"}`} data-testid="apk-alert">
+                  <div className="flex items-start gap-2"><ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" /><span>{apkIn! < 0 ? t("reservations.apkExpired", { date: formatPortalDate(r.vehicle!.apkDate) }) : t("reservations.apkDue", { date: formatPortalDate(r.vehicle!.apkDate), days: apkIn })}</span></div>
+                  {apkPlan.offer && canRequest && <Button size="sm" variant="outline" className="ml-6 bg-white text-foreground" onClick={() => openApk(r.id)} data-testid="button-apk-plan">{t("apk.button")}</Button>}
+                </div>}
                 <MaintenanceLine maintenance={myVehicle?.maintenance ?? null} serviceDue={r.serviceDue ?? null} canRequest={canRequest} />
               </div>
             )}
             <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
               {canChangeDriver && <ChangeDriverDialog reservation={r} />}
               {canRequest && r.status === "picked_up" && (<>
-                <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "maintenance", reservationId: r.id })} data-testid="button-request-maintenance"><Wrench className="mr-1 h-4 w-4" />{t("requests.form.reportMaintenance")}</Button>
+                <Button size="sm" variant="outline" onClick={() => openMaintenance(r.id)} data-testid="button-request-maintenance"><Wrench className="mr-1 h-4 w-4" />{t("requests.form.reportMaintenance")}</Button>
                 <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "mileage", reservationId: r.id })} data-testid="button-request-mileage"><Gauge className="mr-1 h-4 w-4" />{t("requests.form.reportMileage")}</Button>
                 <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "damage", reservationId: r.id })} data-testid="button-request-damage">{t("requests.type.damage")}</Button>
               </>)}
