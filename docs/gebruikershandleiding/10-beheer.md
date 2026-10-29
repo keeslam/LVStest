@@ -333,6 +333,11 @@ Mislukt de test? Dan staat er *Verbinding mislukt* met een Nederlandse zin als *
 CJIB is mislukt. Controleer de instellingen en probeer het opnieuw.* De technische tekst van de
 FTPS-server zelf zie je niet meer in het scherm. Een beheerder vindt hem in het serverlog.
 
+Het opgeslagen wachtwoord zie je als sterretjes. Laat ze staan om het wachtwoord te houden. Verander
+je de **Server (host)** of de gebruikersnaam? Typ dan ook het wachtwoord opnieuw. Anders slaat de app
+niets op en zie je *Typ het wachtwoord opnieuw. Dat moet als je de server of de gebruikersnaam
+verandert.* Dat geldt ook voor **Verbinding testen**.
+
 Zonder het recht **Instellingen beheren** kun je de instellingen wel openen, maar niet opslaan.
 De app antwoordt dan:
 

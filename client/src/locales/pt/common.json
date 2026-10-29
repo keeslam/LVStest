@@ -500,7 +500,8 @@
       "REPORT_TAB_INVALID": "Este separador não pode mostrar um relatório próprio. Escolha outro separador.",
       "REPORT_PERIOD_FIELD_INVALID": "O campo de período tem de ser um campo de data da fonte.",
       "REPORT_SOURCE_REQUIRED": "Escolha primeiro uma fonte de dados para o relatório.",
-      "REPORT_SCOPE_INVALID": "O período ou o veículo deste relatório não é válido."
+      "REPORT_SCOPE_INVALID": "O período ou o veículo deste relatório não é válido.",
+      "RETYPE_PASSWORD": "Escreva novamente a palavra-passe. É necessário quando altera o servidor ou o nome de utilizador."
     }
   },
   "validation": {

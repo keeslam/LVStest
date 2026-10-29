@@ -500,7 +500,8 @@
       "REPORT_TAB_INVALID": "Această filă nu poate afișa un raport propriu. Alege altă filă.",
       "REPORT_PERIOD_FIELD_INVALID": "Câmpul de perioadă trebuie să fie un câmp de dată al sursei.",
       "REPORT_SOURCE_REQUIRED": "Alege mai întâi o sursă de date pentru raport.",
-      "REPORT_SCOPE_INVALID": "Perioada sau vehiculul acestui raport nu este valid."
+      "REPORT_SCOPE_INVALID": "Perioada sau vehiculul acestui raport nu este valid.",
+      "RETYPE_PASSWORD": "Introduceți din nou parola. Este necesar când schimbați serverul sau numele de utilizator."
     }
   },
   "validation": {

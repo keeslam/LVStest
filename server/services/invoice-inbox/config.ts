@@ -5,6 +5,7 @@ import {
   type InvoiceInboxConfig,
 } from "../../../shared/invoice-inbox";
 import { assertPublicHost, OutboundBlockedError } from "../../utils/security/outboundGuard";
+import { keptPasswordWouldTravel, RetypePasswordError } from "../../utils/security/redactAppSetting";
 
 /** 993 = implicit TLS, 143 = STARTTLS. Nothing else, or "test connection" becomes a port scanner (cf. BUG-071). */
 export const IMAP_ALLOWED_PORTS = [993, 143];
@@ -56,11 +57,19 @@ export function maskInvoiceInboxConfig(c: InvoiceInboxConfig): InvoiceInboxConfi
   return { ...c, password: c.password ? INVOICE_INBOX_PASSWORD_MASK : "" };
 }
 
-/** The masked password coming back from the form means "keep what is stored". */
+/**
+ * The masked password coming back from the form means "keep what is stored" — for the
+ * same host and user name only (C2, Kees 2026-10-29); otherwise RetypePasswordError.
+ */
 export async function saveInvoiceInboxConfig(input: unknown, updatedBy: string): Promise<InvoiceInboxConfig> {
   const current = await getInvoiceInboxConfig();
   const value = invoiceInboxConfigSchema.parse(input);
-  if (value.password === INVOICE_INBOX_PASSWORD_MASK) value.password = current.password;
+  if (value.password === INVOICE_INBOX_PASSWORD_MASK) {
+    if (keptPasswordWouldTravel({ host: current.host, user: current.username, password: current.password }, { host: value.host, user: value.username }, true)) {
+      throw new RetypePasswordError();
+    }
+    value.password = current.password;
+  }
   const existing = await storage.getAppSettingByKey(INVOICE_INBOX_CONFIG_KEY);
   if (existing) await storage.updateAppSetting(existing.id, { value, updatedBy });
   else {

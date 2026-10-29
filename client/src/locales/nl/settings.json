@@ -612,7 +612,8 @@
       "officeEmailNoSender": "Zolang dit veld leeg is, valt de app terug op het afzenderadres — en er is nog geen afzenderadres ingesteld.",
       "officeEmailSaveButton": "Kantooradres opslaan",
       "officeEmailSavedDescription": "Het kantooradres voor meldingen is opgeslagen",
-      "officeEmailInvalid": "Dat is geen e-mailadres"
+      "officeEmailInvalid": "Dat is geen e-mailadres",
+      "passwordKeptHint": "Laat de sterretjes staan om het opgeslagen wachtwoord te houden. Verander je de server of de gebruikersnaam? Typ dan ook het wachtwoord opnieuw."
     },
     "gps": {
       "activationSettingsTitle": "GPS-activatie-instellingen",

@@ -615,7 +615,8 @@
       "officeEmailNoSender": "Cât timp acest câmp este gol, aplicația folosește adresa expeditorului — iar încă nu este setată nicio adresă de expeditor.",
       "officeEmailSaveButton": "Salvează adresa biroului",
       "officeEmailSavedDescription": "Adresa biroului pentru notificări a fost salvată",
-      "officeEmailInvalid": "Aceasta nu este o adresă de e-mail"
+      "officeEmailInvalid": "Aceasta nu este o adresă de e-mail",
+      "passwordKeptHint": "Lăsați asteriscurile pentru a păstra parola salvată. Schimbați serverul sau numele de utilizator? Atunci introduceți și parola din nou."
     },
     "gps": {
       "activationSettingsTitle": "Setări pentru activarea GPS",

@@ -612,7 +612,8 @@
       "officeEmailNoSender": "While this field is empty the app falls back to the sender address — and no sender address has been configured yet.",
       "officeEmailSaveButton": "Save office address",
       "officeEmailSavedDescription": "The office address for notifications has been saved",
-      "officeEmailInvalid": "That is not an e-mail address"
+      "officeEmailInvalid": "That is not an e-mail address",
+      "passwordKeptHint": "Leave the asterisks to keep the stored password. Changing the server or the user name? Then type the password again too."
     },
     "gps": {
       "activationSettingsTitle": "GPS Activation Settings",

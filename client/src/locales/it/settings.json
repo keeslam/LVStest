@@ -615,7 +615,8 @@
       "officeEmailNoSender": "Finché questo campo è vuoto, l’app utilizza l’indirizzo del mittente, ma non è ancora stato impostato alcun indirizzo del mittente.",
       "officeEmailSaveButton": "Salvare l’indirizzo dell’ufficio",
       "officeEmailSavedDescription": "L’indirizzo dell’ufficio per le notifiche è stato salvato",
-      "officeEmailInvalid": "Questo non è un indirizzo e-mail"
+      "officeEmailInvalid": "Questo non è un indirizzo e-mail",
+      "passwordKeptHint": "Lasci gli asterischi per mantenere la password salvata. Cambia il server o il nome utente? Allora digiti di nuovo anche la password."
     },
     "gps": {
       "activationSettingsTitle": "Impostazioni di attivazione GPS",

@@ -17,7 +17,10 @@ import { clearEmailConfigCache, testSmtpConnection, isSafeHeaderValue } from "..
 import { assertPublicHost, OutboundBlockedError, OUTBOUND_BLOCKED_MESSAGE } from "../utils/security/outboundGuard";
 import { mergeHolidaysWithOverrides } from "../../shared/holidays";
 import { createSecureMulterFilter, sanitizeFilename } from "../utils/security/fileUploadSecurity";
-import { isManagedSettingKey, MANAGED_SETTING_MESSAGE, redactAppSetting, redactAppSettings } from "../utils/security/redactAppSetting";
+import {
+  isManagedSettingKey, isKeptSmtpPassword, keptPasswordWouldTravel, MANAGED_SETTING_MESSAGE, prepareEmailSettingValue,
+  redactAppSetting, redactAppSettings, RETYPE_PASSWORD_CODE, RETYPE_PASSWORD_MESSAGE, SMTP_PASSWORD_MASK,
+} from "../utils/security/redactAppSetting";
 import { getRelativePath, resolveDocumentFilePath, resolveStoredPathForWrite } from "../services/document-paths";
 import type { Express } from "express";
 import type { RouteDeps } from "./deps";
@@ -62,24 +65,9 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
     return true;
   }
 
-  /**
-   * C1, counterpart of the redaction: `GET /api/app-settings/:category` now
-   * blanks `smtpPassword` like every other read, so the Settings dialog
-   * pre-fills an empty password field. Saving that back unchanged would wipe a
-   * working SMTP configuration, so an empty incoming password means "keep the
-   * stored one" — the same rule the two mailbox screens apply to their mask.
-   * A non-empty password still replaces it.
-   */
-  function keepStoredSmtpPassword(category: unknown, value: any, existing: { value?: any } | undefined): any {
-    if (category !== "email") return value;
-    if (!value || typeof value !== "object" || Array.isArray(value)) return value;
-    const stored = existing?.value;
-    if (!stored || typeof stored !== "object" || Array.isArray(stored)) return value;
-    if (stored.smtpPassword && !value.smtpPassword && "smtpPassword" in value) {
-      return { ...value, smtpPassword: stored.smtpPassword };
-    }
-    return value;
-  }
+  // C1/C2: the SMTP password is read as a mask; the mask (or an empty field) on
+  // save keeps the stored one — for the same SMTP host and user name only. See
+  // prepareEmailSettingValue in server/utils/security/redactAppSetting.ts.
 
   /**
    * D11: keys with a rule of their own. The time zone must be a zone the runtime can format
@@ -455,9 +443,23 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
   // admin can verify a change before persisting it.
   app.post("/api/app-settings/email/test", hasPermission(UserPermission.MANAGE_SETTINGS), async (req: Request, res: Response) => {
     try {
-      const { smtpHost, smtpPort, smtpUser, smtpPassword, smtpSecure } = req.body;
+      const { id, smtpHost, smtpPort, smtpUser, smtpSecure } = req.body;
+      let { smtpPassword } = req.body;
 
-      if (!smtpHost || !smtpUser || !smtpPassword) {
+      // C2: the password field of a saved configuration holds the mask. With the
+      // row's id the stored password is used — for the host and user name it was
+      // stored for only, or this button would present it to any host typed in.
+      if (isKeptSmtpPassword(smtpPassword) && id !== undefined && id !== null) {
+        const stored = (await storage.getAppSetting(Number(id)))?.value as any;
+        if (stored && typeof stored === "object" && typeof stored.smtpPassword === "string" && stored.smtpPassword) {
+          if (keptPasswordWouldTravel({ host: stored.smtpHost, user: stored.smtpUser, password: stored.smtpPassword }, { host: smtpHost, user: smtpUser }, true)) {
+            return res.status(400).json({ success: false, userMessage: RETYPE_PASSWORD_MESSAGE, code: RETYPE_PASSWORD_CODE });
+          }
+          smtpPassword = stored.smtpPassword;
+        }
+      }
+
+      if (!smtpHost || !smtpUser || !smtpPassword || smtpPassword === SMTP_PASSWORD_MASK) {
         return res.status(400).json({ success: false, userMessage: 'SMTP host, username and password are required to test the connection.' });
       }
 
@@ -511,11 +513,13 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
 
       // Check if setting with this key already exists
       const existing = await storage.getAppSettingByKey(key);
+      const prepared = prepareEmailSettingValue(category, value, existing);
+      if (prepared.refusal) return res.status(400).json(prepared.refusal);
 
       if (existing) {
         // Update existing setting
         const updated = await storage.updateAppSetting(existing.id, {
-          value: keepStoredSmtpPassword(category, value, existing),
+          value: prepared.value,
           category,
           description,
           updatedBy: user ? user.username : null,
@@ -531,7 +535,7 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
         // Create new setting
         const created = await storage.createAppSetting({
           key,
-          value,
+          value: prepared.value,
           category,
           description,
           createdBy: user ? user.username : null,
@@ -563,13 +567,17 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
       if (emailProblem) return res.status(400).json(emailProblem);
 
       // The key may be left out of the body; the stored row then says which rule applies.
-      const effectiveKey = key ?? (await storage.getAppSetting(id))?.key;
+      const existing = await storage.getAppSetting(id);
+      const effectiveKey = key ?? existing?.key;
       const valueProblem = value === undefined ? null : invalidSettingValue(effectiveKey, value);
       if (valueProblem) return res.status(400).json(valueProblem);
 
+      const prepared = prepareEmailSettingValue(category ?? existing?.category, value, existing);
+      if (prepared.refusal) return res.status(400).json(prepared.refusal);
+
       const updated = await storage.updateAppSetting(id, {
         key,
-        value: keepStoredSmtpPassword(category, value, await storage.getAppSetting(id)),
+        value: prepared.value,
         category,
         description,
         updatedBy: user ? user.username : null,

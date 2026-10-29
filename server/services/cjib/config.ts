@@ -2,6 +2,7 @@ import { z } from "zod";
 import { storage } from "../../storage";
 import { CJIB_CONFIG_KEY, CJIB_PASSWORD_MASK, DEFAULT_CJIB_CONFIG, type CjibConfig } from "../../../shared/fines";
 import { assertPublicHost, OutboundBlockedError } from "../../utils/security/outboundGuard";
+import { keptPasswordWouldTravel, RetypePasswordError } from "../../utils/security/redactAppSetting";
 
 /**
  * FIX-U (BUG-071). The FTPS host came straight from the request body, so
@@ -65,11 +66,19 @@ export function maskCjibConfig(c: CjibConfig): CjibConfig {
   return { ...c, password: c.password ? CJIB_PASSWORD_MASK : "" };
 }
 
-/** The masked password coming back from the form means "keep what is stored". */
+/**
+ * The masked password coming back from the form means "keep what is stored" — for the
+ * same host and user name only (C2, Kees 2026-10-29); otherwise RetypePasswordError.
+ */
 export async function saveCjibConfig(input: unknown, updatedBy: string): Promise<CjibConfig> {
   const current = await getCjibConfig();
   const value = cjibConfigSchema.parse(input);
-  if (value.password === CJIB_PASSWORD_MASK) value.password = current.password;
+  if (value.password === CJIB_PASSWORD_MASK) {
+    if (keptPasswordWouldTravel({ host: current.host, user: current.username, password: current.password }, { host: value.host, user: value.username }, true)) {
+      throw new RetypePasswordError();
+    }
+    value.password = current.password;
+  }
   const existing = await storage.getAppSettingByKey(CJIB_CONFIG_KEY);
   if (existing) await storage.updateAppSetting(existing.id, { value, updatedBy });
   else await storage.createAppSetting({ key: CJIB_CONFIG_KEY, value, category: "portal", description: "CJIB fine import over FTPS", createdBy: updatedBy, updatedBy });

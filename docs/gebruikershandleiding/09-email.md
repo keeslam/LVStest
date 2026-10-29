@@ -325,8 +325,21 @@ paragraaf 10.3). Het is één naam voor alle mails. Zolang je niets opslaat, is 
 Vul je hierboven bij een mailinstelling een **Afzendernaam** in? Dan gaat die voor op de
 bedrijfsnaam.
 
-Het opgeslagen wachtwoord wordt nooit meer getoond. Het veld is leeg als je de instelling later
-weer opent. Dat is met opzet.
+**Het opgeslagen wachtwoord.** De app laat het wachtwoord nooit zien. Open je de instelling later
+weer? Dan staan er **acht sterretjes** in het veld **SMTP-wachtwoord**. Dat betekent: er is een
+wachtwoord opgeslagen. Onder het veld staat een korte uitleg.
+
+- **Laat je de sterretjes staan?** Dan blijft het opgeslagen wachtwoord bewaard. **Verbinding
+  testen** gebruikt dan ook het opgeslagen wachtwoord.
+- **Typ je een nieuw wachtwoord?** Dan komt dat in de plaats van het oude.
+- **Verander je de SMTP-host of de SMTP-gebruikersnaam?** Typ dan ook het wachtwoord opnieuw. Doe je
+  dat niet? Dan slaat de app niets op. Je ziet dan in het rood: *Typ het wachtwoord opnieuw. Dat moet
+  als je de server of de gebruikersnaam verandert.* Zo gaat het oude wachtwoord nooit naar een andere
+  server.
+
+![Het venster E-mailconfiguratie bewerken met de sterretjes in het veld SMTP-wachtwoord (1) en de uitleg eronder (2)](afbeeldingen/09-smtp-wachtwoord-sterretjes.png)
+*Het venster **E-mailconfiguratie bewerken**. Bij 1 staan de sterretjes: er is een wachtwoord
+opgeslagen. Bij 2 staat de uitleg. Laat de sterretjes staan als je het wachtwoord wilt houden.*
 
 ---
 
@@ -548,7 +561,10 @@ recht *instellingen beheren* nodig.
    "Onbekende afzender". Je boekt ze daar met één klik.
 5. Klik op **Verbinding testen**. Je ziet "Verbonden, 3 ongelezen" of de foutmelding van de
    mailserver. Test je een andere server dan de opgeslagen server? Vul dan het wachtwoord opnieuw
-   in. Het opgeslagen wachtwoord wordt alleen voor de opgeslagen server gebruikt.
+   in. Het opgeslagen wachtwoord wordt alleen voor de opgeslagen server gebruikt. Dat geldt ook bij
+   **Opslaan**. Verander je de server of de gebruikersnaam en laat je de sterretjes staan? Dan zie
+   je *Typ het wachtwoord opnieuw. Dat moet als je de server of de gebruikersnaam verandert.* Typ het
+   wachtwoord dan opnieuw en klik weer op **Opslaan**.
 6. Zet **Postvak automatisch uitlezen** aan. Klik op **Opslaan**. De app kijkt daarna elke
    15 minuten in het postvak. Die tijd kun je instellen. Met **Nu ophalen** hoef je daar niet op te
    wachten.

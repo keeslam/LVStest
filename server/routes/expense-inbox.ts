@@ -9,6 +9,7 @@ import {
 } from "../../shared/invoice-inbox";
 import { storage } from "../storage";
 import { AuditLogger } from "../utils/security/auditLogger";
+import { RetypePasswordError } from "../utils/security/redactAppSetting";
 import { OutboundBlockedError, OUTBOUND_BLOCKED_MESSAGE } from "../utils/security/outboundGuard";
 import { getInvoiceInboxConfig, invoiceInboxConfigSchema, maskInvoiceInboxConfig, saveInvoiceInboxConfig } from "../services/invoice-inbox/config";
 import { inboxStorage } from "../services/invoice-inbox/inbox-storage";
@@ -79,6 +80,7 @@ export function registerExpenseInboxRoutes(app: Express): void {
       res.json(maskInvoiceInboxConfig(saved));
     } catch (e) {
       if (e instanceof z.ZodError) return res.status(400).json({ message: e.errors[0]?.message ?? "Invalid input" });
+      if (e instanceof RetypePasswordError) return res.status(400).json({ message: e.message, code: e.code });
       // The outbound guard's sentence is fixed and written for the user.
       if (e instanceof OutboundBlockedError) return res.status(400).json({ message: e.message });
       console.error("Invoice mailbox settings could not be saved:", e);

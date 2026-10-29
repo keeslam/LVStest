@@ -29,6 +29,7 @@ import { importStorage } from "../services/cjib/import-storage";
 import { getCjibRunState, runCjibImport, startCjibScheduler } from "../services/cjib/poller";
 import { ftpsClient } from "../services/cjib/ftps-client";
 import { CJIB_PASSWORD_MASK } from "../../shared/fines";
+import { keptPasswordWouldTravel, RetypePasswordError, RETYPE_PASSWORD_CODE, RETYPE_PASSWORD_MESSAGE } from "../utils/security/redactAppSetting";
 import type { RouteDeps } from "./deps";
 
 const canView = hasPermission(UserPermission.VIEW_FINES, UserPermission.MANAGE_FINES);
@@ -140,6 +141,7 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
       res.json(maskCjibConfig(saved));
     } catch (e) {
       if (e instanceof z.ZodError) return res.status(400).json({ message: e.errors[0]?.message ?? "Invalid input" });
+      if (e instanceof RetypePasswordError) return res.status(400).json({ message: e.message, code: e.code });
       // The outbound guard's sentence is fixed and written for the user.
       if (e instanceof OutboundBlockedError) return res.status(400).json({ message: e.message });
       console.error("CJIB settings could not be saved:", e);
@@ -152,7 +154,13 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
     const parsed = cjibConfigSchema.safeParse(req.body ?? {});
     if (!parsed.success) return res.status(400).json({ message: parsed.error.errors[0]?.message ?? "Invalid input" });
     const stored = await getCjibConfig();
-    const config = { ...parsed.data, password: parsed.data.password === CJIB_PASSWORD_MASK || !parsed.data.password ? stored.password : parsed.data.password };
+    // C2 (Kees 2026-10-29): like the invoice mailbox (M3), the stored password is
+    // only tried against the host and user name it was stored for.
+    const reuseStored = parsed.data.password === CJIB_PASSWORD_MASK || !parsed.data.password;
+    if (keptPasswordWouldTravel({ host: stored.host, user: stored.username, password: stored.password }, { host: parsed.data.host, user: parsed.data.username }, reuseStored)) {
+      return res.status(400).json({ ok: false, message: RETYPE_PASSWORD_MESSAGE, code: RETYPE_PASSWORD_CODE });
+    }
+    const config = { ...parsed.data, password: reuseStored ? stored.password : parsed.data.password };
     try {
       const pattern = new RegExp(config.filePattern || ".", "i");
       const files = await ftpsClient.listInbox(config);

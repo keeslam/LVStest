@@ -380,7 +380,9 @@ export function ReservationForm({
   
   // Fetch business rules settings to get default fuel policy
   const { data: businessRulesSettings } = useQuery<{ key: string; value: any } | null>({
-    queryKey: ["/api/app-settings", "business_rules"],
+    // C2: the key route; the old two-part key asked for the category "business_rules"
+    // (which does not exist), so the default fuel policy never reached the form.
+    queryKey: ["/api/app-settings/key/business_rules"],
   });
   
   // Fetch documents for the reservation (in edit mode or after creation)

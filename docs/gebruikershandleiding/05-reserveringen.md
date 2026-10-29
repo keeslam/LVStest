@@ -258,6 +258,11 @@ Je krijgt geen melding. De auto is er simpelweg niet.
     einde bij de klant ophalen.*
 12. Zet bijzonderheden in **Notities**.
 
+    Het brandstofniveau vul je hier niet in. De app neemt het over uit het brandstofbeleid in
+    **App-instellingen** → **Bedrijfsregels**. Bij **Vol naar vol** is dat **Vol** bij ophalen en bij
+    inleveren. Bij **Vooruitbetaald** is het **Vol** bij ophalen. Bij **Gelijk naar gelijk** blijft
+    het leeg. Bij het ophalen vul je het echte brandstofniveau in (paragraaf 5.7). Dat gaat voor.
+
     ![Stap 3 met Totaalprijs (1), Bezorgservice vereist (2), Ophaalservice bij inleveren (3) en de knop Reservering aanmaken (4)](afbeeldingen/05-nieuwe-reservering-details.png)
     *Stap 3: 1 **Totaalprijs (€)** (hier automatisch ingevuld: € 85 per dag maal 4 dagen), 2
     **Bezorgservice vereist**, 3 **Ophaalservice bij inleveren**, 4 **Reservering aanmaken**.*

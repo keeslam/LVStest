@@ -72,6 +72,20 @@ leest. Bovenaan staat wat er sinds 17 oktober is bijgekomen. Daaronder staat de 
     voor die ene huur aanpassen. Meer in [hoofdstuk 3, paragraaf 3.2](03-klanten.md),
     [hoofdstuk 4](04-voertuigen.md), [hoofdstuk 5](05-reserveringen.md) en [hoofdstuk 10](10-beheer.md).
 
+12. **Wachtwoorden van de mailservers zijn beter beschermd (beheerder).** Het wachtwoord van de
+    e-mail, van het factuurpostvak en van de CJIB-koppeling zie je als sterretjes. Laat de
+    sterretjes staan om het wachtwoord te houden. Verander je de server of de gebruikersnaam? Typ
+    dan ook het wachtwoord opnieuw. Zo gaat het oude wachtwoord nooit naar een andere server.
+    Collega's zonder het vinkje **Instellingen beheren** zien de servers en gebruikersnamen niet
+    meer. Meer in [hoofdstuk 9](09-email.md) en [hoofdstuk 10](10-beheer.md).
+
+13. **Een nieuwe reservering neemt het brandstofbeleid over.** In **App-instellingen** →
+    **Bedrijfsregels** kies je het brandstofbeleid. Dat werkte niet. Nu wel. Een nieuwe reservering
+    krijgt het brandstofniveau uit dat beleid. Bij **Vol naar vol** is dat **Vol** bij ophalen en bij
+    inleveren. Bij **Vooruitbetaald** is het **Vol** bij ophalen. Bij **Gelijk naar gelijk** blijft
+    het leeg. Bij het ophalen vul je zoals altijd het echte brandstofniveau in. Dat gaat voor. Meer in
+    [hoofdstuk 5](05-reserveringen.md).
+
 ---
 
 ## De uitrol van 12 oktober 2026

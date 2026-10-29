@@ -618,7 +618,8 @@
       "officeEmailNoSender": "Dopóki to pole jest puste, aplikacja używa adresu nadawcy — a adres nadawcy nie jest jeszcze ustawiony.",
       "officeEmailSaveButton": "Zapisz adres biura",
       "officeEmailSavedDescription": "Adres biura dla powiadomień został zapisany",
-      "officeEmailInvalid": "To nie jest adres e-mail"
+      "officeEmailInvalid": "To nie jest adres e-mail",
+      "passwordKeptHint": "Zostaw gwiazdki, aby zachować zapisane hasło. Zmieniasz serwer lub nazwę użytkownika? Wtedy wpisz także ponownie hasło."
     },
     "gps": {
       "activationSettingsTitle": "Ustawienia aktywacji GPS",

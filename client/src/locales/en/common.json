@@ -496,7 +496,8 @@
       "REPORT_TAB_INVALID": "This tab cannot show its own report. Choose another tab.",
       "REPORT_PERIOD_FIELD_INVALID": "The period field must be a date field of the source.",
       "REPORT_SOURCE_REQUIRED": "First choose a data source for the report.",
-      "REPORT_SCOPE_INVALID": "The period or vehicle for this report is not valid."
+      "REPORT_SCOPE_INVALID": "The period or vehicle for this report is not valid.",
+      "RETYPE_PASSWORD": "Type the password again. This is needed when you change the server or the user name."
     }
   },
   "validation": {

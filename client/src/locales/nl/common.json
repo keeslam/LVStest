@@ -496,7 +496,8 @@
       "REPORT_TAB_INVALID": "Dit tabblad kan geen eigen rapport tonen. Kies een ander tabblad.",
       "REPORT_PERIOD_FIELD_INVALID": "Het periodeveld moet een datumveld van de bron zijn.",
       "REPORT_SOURCE_REQUIRED": "Kies eerst een gegevensbron voor het rapport.",
-      "REPORT_SCOPE_INVALID": "De periode of het voertuig voor dit rapport klopt niet."
+      "REPORT_SCOPE_INVALID": "De periode of het voertuig voor dit rapport klopt niet.",
+      "RETYPE_PASSWORD": "Typ het wachtwoord opnieuw. Dat moet als je de server of de gebruikersnaam verandert."
     }
   },
   "validation": {

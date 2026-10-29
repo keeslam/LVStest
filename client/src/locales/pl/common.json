@@ -504,7 +504,8 @@
       "REPORT_TAB_INVALID": "Ta zakładka nie może pokazać własnego raportu. Wybierz inną zakładkę.",
       "REPORT_PERIOD_FIELD_INVALID": "Pole okresu musi być polem daty ze źródła.",
       "REPORT_SOURCE_REQUIRED": "Najpierw wybierz źródło danych dla raportu.",
-      "REPORT_SCOPE_INVALID": "Okres lub pojazd tego raportu jest nieprawidłowy."
+      "REPORT_SCOPE_INVALID": "Okres lub pojazd tego raportu jest nieprawidłowy.",
+      "RETYPE_PASSWORD": "Wpisz ponownie hasło. Jest to konieczne, gdy zmieniasz serwer lub nazwę użytkownika."
     }
   },
   "validation": {

@@ -500,7 +500,8 @@
       "REPORT_TAB_INVALID": "Questa scheda non può mostrare un rapporto proprio. Scegli un'altra scheda.",
       "REPORT_PERIOD_FIELD_INVALID": "Il campo del periodo deve essere un campo data della fonte.",
       "REPORT_SOURCE_REQUIRED": "Scegli prima una fonte di dati per il rapporto.",
-      "REPORT_SCOPE_INVALID": "Il periodo o il veicolo di questo rapporto non è valido."
+      "REPORT_SCOPE_INVALID": "Il periodo o il veicolo di questo rapporto non è valido.",
+      "RETYPE_PASSWORD": "Digiti di nuovo la password. È necessario quando cambia il server o il nome utente."
     }
   },
   "validation": {

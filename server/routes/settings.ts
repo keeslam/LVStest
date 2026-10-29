@@ -3,7 +3,7 @@ import { storage } from "../storage";
 import { UserPermission } from "../../shared/schema";
 import { hasPermission } from "../middleware/permissions.js";
 import { clearEmailConfigCache } from "../utils/email-service";
-import { isManagedSettingKey, MANAGED_SETTING_MESSAGE, redactAppSetting, redactAppSettings } from "../utils/security/redactAppSetting";
+import { isManagedSettingKey, MANAGED_SETTING_MESSAGE, prepareEmailSettingValue, redactAppSetting, redactAppSettings } from "../utils/security/redactAppSetting";
 import type { Express } from "express";
 import type { RouteDeps } from "./deps";
 
@@ -186,9 +186,13 @@ export function registerSettingsRoutes(app: Express, deps: RouteDeps): void {
   app.post("/api/settings", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
     try {
       if (await refuseManagedSetting(req, res)) return;
+      // C2: a new row has nothing stored to keep; this makes sure the mask is never stored.
+      const prepared = prepareEmailSettingValue(req.body?.category, req.body?.value, undefined);
+      if (prepared.refusal) return res.status(400).json(prepared.refusal);
       const username = req.user?.username || 'Unknown';
       const settingData = {
         ...req.body,
+        value: prepared.value,
         createdBy: username,
         updatedBy: username
       };
@@ -216,7 +220,16 @@ export function registerSettingsRoutes(app: Express, deps: RouteDeps): void {
         ...req.body,
         updatedBy: username
       };
-      
+
+      // C2: the SMTP password is read here as a mask; written back it keeps the
+      // stored one (same host and user name only). Only when a value is sent.
+      if (req.body && "value" in req.body) {
+        const existing = Number.isInteger(id) ? await storage.getAppSetting(id) : undefined;
+        const prepared = prepareEmailSettingValue(req.body.category ?? existing?.category, req.body.value, existing);
+        if (prepared.refusal) return res.status(400).json(prepared.refusal);
+        updateData.value = prepared.value;
+      }
+
       const updatedSetting = await storage.updateAppSetting(id, updateData);
       
       if (!updatedSetting) {

@@ -615,7 +615,8 @@
       "officeEmailNoSender": "Enquanto este campo estiver vazio, a aplicação recorre ao endereço do remetente — e ainda não há nenhum endereço de remetente definido.",
       "officeEmailSaveButton": "Guardar endereço do escritório",
       "officeEmailSavedDescription": "O endereço do escritório para notificações foi guardado",
-      "officeEmailInvalid": "Isso não é um endereço de e-mail"
+      "officeEmailInvalid": "Isso não é um endereço de e-mail",
+      "passwordKeptHint": "Deixe os asteriscos para manter a palavra-passe guardada. Vai alterar o servidor ou o nome de utilizador? Então escreva também a palavra-passe novamente."
     },
     "gps": {
       "activationSettingsTitle": "Definições de ativação do GPS",

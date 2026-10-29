@@ -711,11 +711,20 @@ export function SettingsPanel() {
       setIsEmailDialogOpen(false);
       resetEmailForm();
     },
+    // C2: a refused save (a line break in a header, or the stored password that
+    // may not follow the configuration to another server) used to fail without a
+    // word. The dialog stays open so the field can be corrected.
+    onError: (error: unknown) => {
+      toast({ title: t("common:status.error"), description: describeApiError(error), variant: "destructive" });
+    },
   });
 
   const testSmtpConnectionMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest('POST', '/api/app-settings/email/test', {
+        // C2: a saved configuration shows the password as a mask. With the id the
+        // server tests with the stored one — for the same host and user name only.
+        id: editingEmail?.id,
         smtpHost,
         smtpPort,
         smtpUser,
@@ -1986,6 +1995,11 @@ export function SettingsPanel() {
                             placeholder={t('settingsPage.email.passwordPlaceholder')}
                             data-testid="input-smtp-password"
                           />
+                          {editingEmail?.value.smtpPassword && (
+                            <p className="text-xs text-muted-foreground mt-1" data-testid="text-smtp-password-kept">
+                              {t('settingsPage.email.passwordKeptHint')}
+                            </p>
+                          )}
                         </div>
                       </div>
 

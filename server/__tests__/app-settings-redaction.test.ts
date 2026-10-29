@@ -19,7 +19,7 @@ import { saveInvoiceInboxConfig } from "../services/invoice-inbox/config";
 import { saveCjibConfig } from "../services/cjib/config";
 import { INVOICE_INBOX_CONFIG_KEY, INVOICE_INBOX_PASSWORD_MASK, DEFAULT_INVOICE_INBOX_CONFIG } from "../../shared/invoice-inbox";
 import { CJIB_CONFIG_KEY, CJIB_PASSWORD_MASK } from "../../shared/fines";
-import { MANAGED_SETTING_MESSAGE } from "../utils/security/redactAppSetting";
+import { MANAGED_SETTING_MESSAGE, SMTP_PASSWORD_MASK } from "../utils/security/redactAppSetting";
 import { UserPermission } from "../../shared/schema";
 import { buildStaffTestApp, TEST_PREFIX } from "./portal-helpers";
 
@@ -71,8 +71,9 @@ describe("app settings redaction", () => {
   it("masks both managed passwords on every GET that hands out app settings", async () => {
     const gets: Array<[string, any]> = [
       ["/api/app-settings", nobody],
-      [`/api/app-settings/key/${INVOICE_INBOX_CONFIG_KEY}`, nobody],
-      [`/api/app-settings/key/${CJIB_CONFIG_KEY}`, nobody],
+      ["/api/app-settings", admin],
+      [`/api/app-settings/key/${INVOICE_INBOX_CONFIG_KEY}`, admin],
+      [`/api/app-settings/key/${CJIB_CONFIG_KEY}`, admin],
       ["/api/app-settings/expenses", admin],
       ["/api/app-settings/portal", admin],
       ["/api/settings", admin],
@@ -90,17 +91,21 @@ describe("app settings redaction", () => {
       expect(JSON.stringify(res.body), url).not.toContain(CJIB_SECRET);
     }
 
-    const list = await request(nobody).get("/api/app-settings");
+    const list = await request(admin).get("/api/app-settings");
     expect(rowFor(list.body, INVOICE_INBOX_CONFIG_KEY).value.password).toBe(INVOICE_INBOX_PASSWORD_MASK);
     expect(rowFor(list.body, CJIB_CONFIG_KEY).value.password).toBe(CJIB_PASSWORD_MASK);
-    const byKey = await request(nobody).get(`/api/app-settings/key/${INVOICE_INBOX_CONFIG_KEY}`);
+    // C2: an account without manage_settings does not get the rows at all.
+    const plain = await request(nobody).get("/api/app-settings");
+    expect(rowFor(plain.body, INVOICE_INBOX_CONFIG_KEY)).toBeUndefined();
+    expect(rowFor(plain.body, CJIB_CONFIG_KEY)).toBeUndefined();
+    const byKey = await request(admin).get(`/api/app-settings/key/${INVOICE_INBOX_CONFIG_KEY}`);
     expect(byKey.body.value.password).toBe(INVOICE_INBOX_PASSWORD_MASK);
     expect(byKey.body.value.host).toBe("imap.example.test");
   });
 
   it("leaves an empty password empty instead of inventing a mask", async () => {
     await saveInvoiceInboxConfig({ host: "imap.example.test", username: "u", password: "" }, "test");
-    const res = await request(nobody).get(`/api/app-settings/key/${INVOICE_INBOX_CONFIG_KEY}`);
+    const res = await request(admin).get(`/api/app-settings/key/${INVOICE_INBOX_CONFIG_KEY}`);
     expect(res.body.value.password).toBe("");
     await saveInvoiceInboxConfig({ host: "imap.example.test", username: "fakturenapp@lamgroep.nl", password: SECRET }, "test");
   });
@@ -132,7 +137,7 @@ describe("app settings redaction", () => {
     expect((cjib!.value as any).password).toBe(CJIB_SECRET);
   });
 
-  it("blanks the SMTP password on read and keeps the stored one when it is saved back empty", async () => {
+  it("masks the SMTP password on read and keeps the stored one when it is saved back masked or empty", async () => {
     const key = `${TEST_PREFIX}email_probe`;
     const created = await storage.createAppSetting({
       key, value: { fromEmail: "a@b.nl", smtpHost: "smtp.b.nl", smtpPassword: "smtp-geheim" },
@@ -141,14 +146,18 @@ describe("app settings redaction", () => {
     try {
       const read = await request(admin).get("/api/app-settings/email");
       const row = rowFor(read.body, key);
-      expect(row.value.smtpPassword).toBe("");
+      expect(row.value.smtpPassword).toBe(SMTP_PASSWORD_MASK);
 
       // Saving the blanked value back must not wipe the working configuration.
       const written = await request(admin).put(`/api/app-settings/${created.id}`).send({ key, category: "email", value: row.value });
       expect(((await storage.getAppSetting(created.id))!.value as any).smtpPassword).toBe("smtp-geheim");
       // …and the answer must not hand the merged password straight back.
       expect(JSON.stringify(written.body)).not.toContain("smtp-geheim");
-      expect(written.body.value.smtpPassword).toBe("");
+      expect(written.body.value.smtpPassword).toBe(SMTP_PASSWORD_MASK);
+
+      // The empty field of the form before C2 still means "unchanged".
+      await request(admin).put(`/api/app-settings/${created.id}`).send({ key, category: "email", value: { ...row.value, smtpPassword: "" } });
+      expect(((await storage.getAppSetting(created.id))!.value as any).smtpPassword).toBe("smtp-geheim");
 
       const upserted = await request(admin).post("/api/app-settings").send({ key, category: "email", value: row.value });
       expect(JSON.stringify(upserted.body)).not.toContain("smtp-geheim");
@@ -166,7 +175,7 @@ describe("app settings redaction", () => {
       key: UNRELATED_KEY, value: { greeting: "goedendag" }, category: "expenses",
     });
     expect(res.status).toBe(200);
-    const read = await request(nobody).get(`/api/app-settings/key/${UNRELATED_KEY}`);
+    const read = await request(admin).get(`/api/app-settings/key/${UNRELATED_KEY}`);
     expect(read.body.value).toEqual({ greeting: "goedendag" });
   });
 });

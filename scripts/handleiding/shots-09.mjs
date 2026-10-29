@@ -1,5 +1,5 @@
 /** Hoofdstuk 9 (E-mail): documenten mailen, Communicatie, sjabloonbouwer, logboek, mailinstellingen, facturen. */
-import { closeDialogs, dialog, goto, settle, shot } from "./lib.mjs";
+import { api, closeDialogs, dialog, goto, settle, shot } from "./lib.mjs";
 
 async function openSettingsTab(page, tab) {
   await goto(page, "/");
@@ -64,6 +64,28 @@ export const steps = [
       await closeDialogs(page);
       const docs = await openSettingsTab(page, "Doc-e-mails");
       await shot(page, "09-doc-emails", { clip: docs, marks: [docs.getByRole("tab", { name: "Doc-e-mails" })] });
+    },
+  },
+  {
+    // C2: een opgeslagen SMTP-wachtwoord staat als sterretjes in het venster, met uitleg eronder.
+    name: "09-smtp-wachtwoord",
+    async run(page) {
+      const list = await api(page, "GET", "/api/app-settings/email");
+      if (!list.some((s) => s.value?.smtpPassword)) {
+        await api(page, "POST", "/api/app-settings", {
+          key: "email_default", category: "email",
+          value: { fromEmail: "verhuur@voorbeeld.nl", fromName: "Autolease Lam", purpose: "default", smtpHost: "smtp.voorbeeld.nl", smtpPort: "587", smtpUser: "verhuur@voorbeeld.nl", smtpPassword: "alleen-voor-de-handleiding" },
+        });
+      }
+      const settings = await openSettingsTab(page, "E-mail & GPS");
+      await settings.locator("[data-testid^=\"button-edit-email-\"]").first().click();
+      const dlg = dialog(page, "E-mailconfiguratie bewerken");
+      await dlg.waitFor();
+      await settle(page);
+      await shot(page, "09-smtp-wachtwoord-sterretjes", {
+        clip: dlg,
+        marks: [dlg.getByTestId("input-smtp-password"), dlg.getByTestId("text-smtp-password-kept")],
+      });
     },
   },
   {
