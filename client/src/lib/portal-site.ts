@@ -6,7 +6,7 @@
 export const PORTAL_SITE = {
   organization: "Lam Groep",
   leaseBrand: "AutoLease",
-  siteUrl: "https://lamgroep.nl",
+  siteUrl: "https://keeslam.nl",
   contactUrl: "https://lamgroep.nl/nl/contact/",
   privacyUrl: "https://lamgroep.nl/nl/privacy/",
   street: "Kerkweg 47a",

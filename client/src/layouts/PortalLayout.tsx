@@ -72,7 +72,7 @@ function SiteFooter() {
         </div>
         <div className="space-y-2 text-sm">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-white">{t("site.links")}</p>
-          <p><a href={PORTAL_SITE.siteUrl} className="hover:text-white">lamgroep.nl</a></p>
+          <p><a href={PORTAL_SITE.siteUrl} className="hover:text-white">keeslam.nl</a></p>
           <p><a href={PORTAL_SITE.contactUrl} className="hover:text-white">{t("site.contact")}</a></p>
           <p><a href={privacyUrl} className="hover:text-white" data-testid="link-privacy">{t("site.privacy")}</a></p>
         </div>
