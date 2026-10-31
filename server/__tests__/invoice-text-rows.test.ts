@@ -30,6 +30,13 @@ describe("invoice text rows", () => {
     ]);
   });
 
+  it("leaves out a free line of 0,00, which cannot be booked", () => {
+    const withFree = [...rows.slice(0, 9), " | Ruitenwisservloeistof |   | 1 |   | 0,00 |   | 0,00 |   | 1", ...rows.slice(9)];
+    const lines = linesFromTextRows(withFree, { totalAmount: 662.7, subtotalAmount: 547.69, vatAmount: 115.01 });
+    expect(lines).toHaveLength(7);
+    expect(lines!.every((l) => l.amount > 0)).toBe(true);
+  });
+
   it("trusts the table only when it adds up to the invoice", () => {
     expect(linesFromTextRows(rows, { totalAmount: 700, subtotalAmount: 600, vatAmount: 100 })).toBeNull();
     expect(linesFromTextRows(["geen tabel"], { totalAmount: 1 })).toBeNull();

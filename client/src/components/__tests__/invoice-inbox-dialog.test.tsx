@@ -131,6 +131,38 @@ describe("InvoiceInboxButton", () => {
     });
   });
 
+  it("says why Boeken is grey", async () => {
+    mount();
+    await openInboxDialog();
+    await userEvent.click(await screen.findByRole("button", { name: "Controleren" }));
+    const dialog = (await screen.findByText("Factuur controleren")).closest('[role="dialog"]') as HTMLElement;
+    expect(within(dialog).getByTestId("text-inbox-book-blocked")).toHaveTextContent("Kies eerst een voertuig");
+  });
+
+  /** Reading again used to close the dialog, and with it the vehicle picked for a plate outside the fleet. */
+  it("stays open after reading again, with the new lines and the vehicle still chosen", async () => {
+    reviewItems = [item({ vehicleId: 7 })];
+    const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
+    const base = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).endsWith("/rescan")) {
+        calls.push({ url: String(input), method: "POST", body: undefined });
+        return json({ item: item({ vehicleId: null, parsed: { ...item().parsed, lineItems: [{ description: "Koppelingsset", amount: 206.93, category: "maintenance" }] } }) });
+      }
+      return base(input, init);
+    });
+    mount();
+    await openInboxDialog();
+    await userEvent.click(await screen.findByRole("button", { name: "Controleren" }));
+    const dialog = (await screen.findByText("Factuur controleren")).closest('[role="dialog"]') as HTMLElement;
+    await userEvent.click(within(dialog).getByRole("button", { name: "Opnieuw uitlezen" }));
+    await waitFor(() => expect(within(dialog).getByTestId("input-description-0")).toHaveValue("Koppelingsset"));
+    expect(screen.getByText("Factuur controleren")).toBeInTheDocument();
+    expect(within(dialog).getByTestId("select-inbox-vehicle")).toHaveAccessibleName(/V-123-XB/);
+    expect(within(dialog).queryByTestId("text-inbox-book-blocked")).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Boeken" })).toBeEnabled();
+  });
+
   it("opens by itself when the page was reached through a notification", async () => {
     window.history.pushState({}, "", "/expenses?inbox=1");
     mount();

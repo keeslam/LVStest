@@ -350,6 +350,13 @@
       "rescan": "Volver a leer",
       "rescanToast": "Factura leída de nuevo",
       "rescanFailed": "Error al volver a leer",
+      "bookBlocked": {
+        "noVehicle": "Elija primero un vehículo para poder registrar.",
+        "noDate": "Introduzca una fecha de factura válida.",
+        "noLines": "Marque al menos una línea.",
+        "lineDescription": "Una línea marcada no tiene descripción.",
+        "lineAmount": "Una línea marcada no tiene un importe superior a 0 €."
+      },
       "trustSender": "Confiar en el remitente",
       "trustSenderToast": "A partir de ahora, {{sender}} se procesará automáticamente",
       "trustSenderFailed": "Error al confiar en el remitente",

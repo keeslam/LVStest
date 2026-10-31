@@ -350,6 +350,13 @@
       "rescan": "Rileggere",
       "rescanToast": "Fattura riletta",
       "rescanFailed": "Nuova lettura non riuscita",
+      "bookBlocked": {
+        "noVehicle": "Scegli prima un veicolo per poter registrare.",
+        "noDate": "Inserisci una data fattura valida.",
+        "noLines": "Seleziona almeno una riga.",
+        "lineDescription": "Una riga selezionata non ha descrizione.",
+        "lineAmount": "Una riga selezionata non ha un importo superiore a 0 €."
+      },
       "trustSender": "Considerare attendibile il mittente",
       "trustSenderToast": "{{sender}} verrà d'ora in poi elaborato automaticamente",
       "trustSenderFailed": "Impossibile considerare attendibile il mittente",

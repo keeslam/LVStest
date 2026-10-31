@@ -343,6 +343,13 @@
       "rescan": "Read again",
       "rescanToast": "Invoice read again",
       "rescanFailed": "Reading again failed",
+      "bookBlocked": {
+        "noVehicle": "Choose a vehicle first to book.",
+        "noDate": "Enter a valid invoice date.",
+        "noLines": "Tick at least one line.",
+        "lineDescription": "A ticked line has no description.",
+        "lineAmount": "A ticked line has no amount above € 0."
+      },
       "trustSender": "Trust sender",
       "trustSenderToast": "{{sender}} will be processed automatically from now on",
       "trustSenderFailed": "Could not trust sender",

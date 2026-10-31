@@ -357,6 +357,13 @@
       "rescan": "Odczytaj ponownie",
       "rescanToast": "Faktura odczytana ponownie",
       "rescanFailed": "Ponowny odczyt nie powiódł się",
+      "bookBlocked": {
+        "noVehicle": "Najpierw wybierz pojazd, aby zaksięgować.",
+        "noDate": "Wpisz prawidłową datę faktury.",
+        "noLines": "Zaznacz co najmniej jedną pozycję.",
+        "lineDescription": "Zaznaczona pozycja nie ma opisu.",
+        "lineAmount": "Zaznaczona pozycja nie ma kwoty powyżej 0 €."
+      },
       "trustSender": "Zaufaj nadawcy",
       "trustSenderToast": "Faktury od {{sender}} będą odtąd przetwarzane automatycznie",
       "trustSenderFailed": "Nie udało się zaufać nadawcy",

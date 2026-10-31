@@ -343,6 +343,13 @@
       "rescan": "Opnieuw uitlezen",
       "rescanToast": "Factuur opnieuw uitgelezen",
       "rescanFailed": "Opnieuw uitlezen mislukt",
+      "bookBlocked": {
+        "noVehicle": "Kies eerst een voertuig om te kunnen boeken.",
+        "noDate": "Vul een geldige factuurdatum in.",
+        "noLines": "Vink minstens één regel aan.",
+        "lineDescription": "Een aangevinkte regel heeft geen omschrijving.",
+        "lineAmount": "Een aangevinkte regel heeft geen bedrag boven € 0."
+      },
       "trustSender": "Afzender vertrouwen",
       "trustSenderToast": "{{sender}} wordt voortaan automatisch verwerkt",
       "trustSenderFailed": "Afzender vertrouwen mislukt",

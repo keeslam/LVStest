@@ -66,7 +66,11 @@ export function parseTableRows(rows: string[]): TextRowLine[] {
     const numeric = cells.filter((c) => NUMBER.test(c) || MONEY.test(c));
     const money = cells.filter((c) => MONEY.test(c));
     if (!description || money.length === 0 || numeric.length < 2) continue;
-    lines.push({ description: description.replace(/\s+/g, " "), amount: Math.abs(toNumber(money[money.length - 1])) });
+    const amount = Math.abs(toNumber(money[money.length - 1]));
+    // A free line (0,00) adds nothing to the sum, and a line of 0 cannot be
+    // booked: it used to fail the scan with "Amount must be a valid positive number".
+    if (!(amount > 0)) continue;
+    lines.push({ description: description.replace(/\s+/g, " "), amount });
   }
   return lines;
 }

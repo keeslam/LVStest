@@ -30,7 +30,7 @@ interface Props {
 
 
 /** Attachment on the left; what the app read, editable, on the right. Read-only for handled items. */
-export function InvoiceReviewDialog({ item, vehicles, onClose }: Props) {
+export function InvoiceReviewDialog({ item: listItem, vehicles, onClose }: Props) {
   const { t } = useTranslation("expenses");
   const { toast } = useToast();
   const [vendor, setVendor] = useState("");
@@ -41,19 +41,29 @@ export function InvoiceReviewDialog({ item, vehicles, onClose }: Props) {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [groupByCategory, setGroupByCategory] = useState(true);
   const [note, setNote] = useState("");
+  // What "Opnieuw uitlezen" sent back; it replaces the list's copy of this item.
+  const [rescanned, setRescanned] = useState<InboxListItem | null>(null);
+  const item = listItem && rescanned?.id === listItem.id ? rescanned : listItem;
+
+  /** Fill the form from what the app read. keepVehicle: a vehicle picked by hand survives a new reading. */
+  const fillForm = (source: InboxListItem, keepVehicle: string) => {
+    const parsedLines = source.parsed?.lineItems ?? [];
+    setVendor(source.parsed?.vendor ?? "");
+    setInvoiceNumber(source.parsed?.invoiceNumber ?? "");
+    setInvoiceDate(/^\d{4}-\d{2}-\d{2}$/.test(source.parsed?.invoiceDate ?? "") ? source.parsed!.invoiceDate : officeToday());
+    setVehicleId(source.vehicleId ? String(source.vehicleId) : keepVehicle);
+    setLines(parsedLines);
+    // A line of 0 (a free part on the invoice) cannot be booked; ticked, it greyed out Boeken.
+    setSelected(new Set(parsedLines.flatMap((l, i) => (l.amount > 0 ? [i] : []))));
+  };
 
   useEffect(() => {
-    if (!item) return;
-    const parsedLines = item.parsed?.lineItems ?? [];
-    setVendor(item.parsed?.vendor ?? "");
-    setInvoiceNumber(item.parsed?.invoiceNumber ?? "");
-    setInvoiceDate(/^\d{4}-\d{2}-\d{2}$/.test(item.parsed?.invoiceDate ?? "") ? item.parsed!.invoiceDate : officeToday());
-    setVehicleId(item.vehicleId ? String(item.vehicleId) : "");
-    setLines(parsedLines);
-    setSelected(new Set(parsedLines.map((_, i) => i)));
+    setRescanned(null);
+    if (!listItem) return;
+    fillForm(listItem, "");
     setGroupByCategory(true);
     setNote("");
-  }, [item?.id]);
+  }, [listItem?.id]);
 
   const done = (title: string) => {
     toast({ title });
@@ -84,7 +94,15 @@ export function InvoiceReviewDialog({ item, vehicles, onClose }: Props) {
   });
   const rescan = useMutation({
     mutationFn: async () => (await apiRequest("POST", `/api/expenses/inbox/items/${item!.id}/rescan`, {})).json(),
-    onSuccess: () => done(t("invoiceInbox.dialog.rescanToast")),
+    // Stay open on the new reading. Closing used to drop the vehicle picked by
+    // hand (a plate outside the fleet), which left Boeken grey after reopening.
+    onSuccess: (r: { item: InboxListItem }) => {
+      const fresh = { ...item!, ...r.item, vehiclePlate: item!.vehiclePlate };
+      setRescanned(fresh);
+      fillForm(fresh, vehicleId);
+      invalidateByPrefix("/api/expenses");
+      toast({ title: t("invoiceInbox.dialog.rescanToast") });
+    },
     onError: (e: Error) => toast({ title: t("invoiceInbox.dialog.rescanFailed"), description: e.message, variant: "destructive" }),
   });
   const canTrustSender = useHasPermission(UserPermission.MANAGE_SETTINGS);
@@ -93,8 +111,14 @@ export function InvoiceReviewDialog({ item, vehicles, onClose }: Props) {
 
   const readOnly = item.status !== "review";
   const chosen = lines.filter((_, i) => selected.has(i));
-  const canBook = !readOnly && vehicleId !== "" && /^\d{4}-\d{2}-\d{2}$/.test(invoiceDate)
-    && chosen.length > 0 && chosen.every((l) => l.description.trim() !== "" && l.amount > 0);
+  // Why Boeken is grey, said under the button rather than left to guess.
+  const blockedBy = vehicleId === "" ? "noVehicle"
+    : !/^\d{4}-\d{2}-\d{2}$/.test(invoiceDate) ? "noDate"
+    : chosen.length === 0 ? "noLines"
+    : chosen.some((l) => l.description.trim() === "") ? "lineDescription"
+    : chosen.some((l) => !(l.amount > 0)) ? "lineAmount"
+    : null;
+  const canBook = !readOnly && blockedBy === null;
   const fileUrl = `/api/expenses/inbox/items/${item.id}/file`;
   const isImage = (item.attachmentContentType ?? "").startsWith("image/");
 
@@ -202,6 +226,9 @@ export function InvoiceReviewDialog({ item, vehicles, onClose }: Props) {
                     {book.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}{t("invoiceInbox.dialog.book")}
                   </Button>
                 </div>
+                {blockedBy && (
+                  <p className="text-right text-sm text-amber-700" data-testid="text-inbox-book-blocked">{t(`invoiceInbox.dialog.bookBlocked.${blockedBy}`)}</p>
+                )}
               </>
             )}
           </div>

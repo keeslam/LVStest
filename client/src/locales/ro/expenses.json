@@ -350,6 +350,13 @@
       "rescan": "Citiți din nou",
       "rescanToast": "Factura a fost citită din nou",
       "rescanFailed": "Citirea repetată a eșuat",
+      "bookBlocked": {
+        "noVehicle": "Alegeți mai întâi un vehicul pentru a înregistra.",
+        "noDate": "Introduceți o dată validă a facturii.",
+        "noLines": "Bifați cel puțin un rând.",
+        "lineDescription": "Un rând bifat nu are descriere.",
+        "lineAmount": "Un rând bifat nu are o sumă peste 0 €."
+      },
       "trustSender": "Acordați încredere expeditorului",
       "trustSenderToast": "{{sender}} va fi procesat automat de acum înainte",
       "trustSenderFailed": "Acordarea încrederii expeditorului a eșuat",
