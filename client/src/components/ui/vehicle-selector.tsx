@@ -1,3 +1,4 @@
+import { focusUnlessTouch } from "@/lib/touch-focus";
 import { inFleetOrSelected } from "@shared/out-of-fleet";
 import * as React from "react";
 import { useState, useMemo, useRef, useEffect, useId } from "react";
@@ -86,7 +87,7 @@ export function VehicleSelector({
 
   useEffect(() => {
     if (open) {
-      setTimeout(() => searchInputRef.current?.focus(), 0);
+      setTimeout(() => focusUnlessTouch(searchInputRef.current), 0);
     }
   }, [open]);
 

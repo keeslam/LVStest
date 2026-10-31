@@ -22,6 +22,7 @@ import { KEY_AUDIT_NOTE_MAX } from "@shared/key-audit";
 import { CameraScannerDialog } from "./camera-scanner-dialog";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { Vehicle } from "@shared/schema";
+import { focusUnlessTouch } from "@/lib/touch-focus";
 
 export type KeyAuditMode = "main" | "spare";
 
@@ -87,7 +88,7 @@ export function KeyAuditDialog({ open, onOpenChange, mode = "main" }: KeyAuditDi
       setView("scanning");
       setNote("");
       setSavedAudit(null);
-      requestAnimationFrame(() => inputRef.current?.focus());
+      requestAnimationFrame(() => focusUnlessTouch(inputRef.current));
     }
   }, [open]);
 
@@ -145,7 +146,7 @@ export function KeyAuditDialog({ open, onOpenChange, mode = "main" }: KeyAuditDi
     } finally {
       setIsLoading(false);
       setCode("");
-      requestAnimationFrame(() => inputRef.current?.focus());
+      requestAnimationFrame(() => focusUnlessTouch(inputRef.current));
     }
   };
 
@@ -220,7 +221,7 @@ export function KeyAuditDialog({ open, onOpenChange, mode = "main" }: KeyAuditDi
     setCode("");
     setError(null);
     setAlreadyScanned(false);
-    requestAnimationFrame(() => inputRef.current?.focus());
+    requestAnimationFrame(() => focusUnlessTouch(inputRef.current));
   };
 
   return (

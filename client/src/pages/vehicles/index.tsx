@@ -37,6 +37,7 @@ import { Search, SlidersHorizontal, Edit, Trash2, Archive, BookOpen, KeyRound, H
 import { UserPermission } from "@shared/schema";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { takeIdFromAddress } from "@/lib/address-param";
+import { isTouchOnly } from "@/lib/touch-focus";
 
 // Feature-based filter options. Each maps a user-facing label to the boolean
 // column on the vehicle record. A vehicle "has" the feature when isTrueValue()
@@ -719,7 +720,7 @@ export default function VehiclesIndex() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8 w-full"
-                autoFocus
+                autoFocus={!isTouchOnly()}
               />
               {searchQuery && (
                 <Button 

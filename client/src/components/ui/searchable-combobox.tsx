@@ -1,3 +1,4 @@
+import { focusUnlessTouch } from "@/lib/touch-focus";
 import * as React from "react";
 import { Check, ChevronsUpDown, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -74,7 +75,7 @@ export function SearchableCombobox({
 
   React.useEffect(() => {
     if (open) {
-      setTimeout(() => searchInputRef.current?.focus(), 0);
+      setTimeout(() => focusUnlessTouch(searchInputRef.current), 0);
     }
   }, [open]);
 

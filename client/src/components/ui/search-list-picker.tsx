@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Check, Search } from "lucide-react";
+import { isTouchOnly } from "@/lib/touch-focus";
 
 export interface PickerItem {
   id: number;
@@ -61,7 +62,7 @@ export function SearchListPicker({ items, value, onChange, searchPlaceholder, em
       {items.length > searchFrom && (
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={searchPlaceholder} className="pl-9" autoFocus={autoFocus} data-testid={`${testId}-search`} />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={searchPlaceholder} className="pl-9" autoFocus={autoFocus && !isTouchOnly()} data-testid={`${testId}-search`} />
         </div>
       )}
       {!listHidden && <ul className="max-h-56 divide-y overflow-y-auto rounded-md border" role="listbox">

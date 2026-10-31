@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertTriangle, Lock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { isTouchOnly } from "@/lib/touch-focus";
 
 interface MileageOverridePasswordDialogProps {
   open: boolean;
@@ -117,7 +118,7 @@ export function MileageOverridePasswordDialog({
                   setError(null);
                 }}
                 disabled={isVerifying}
-                autoFocus
+                autoFocus={!isTouchOnly()}
                 data-testid="input-override-password"
               />
               {error && (

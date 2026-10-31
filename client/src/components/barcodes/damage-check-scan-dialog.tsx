@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Camera, ScanLine, ArrowRight } from "lucide-react";
 import { CameraScannerDialog } from "./camera-scanner-dialog";
 import { Vehicle } from "@shared/schema";
+import { focusUnlessTouch } from "@/lib/touch-focus";
 
 // Projection served by GET /api/barcodes/:code (see server/routes.ts).
 type ScanReservation = {
@@ -54,7 +55,7 @@ export function DamageCheckScanDialog({ open, onOpenChange, onResolved, onSkip }
       setCode("");
       setError(null);
       // Focus after the dialog portal mounts so USB scanners land here.
-      requestAnimationFrame(() => inputRef.current?.focus());
+      requestAnimationFrame(() => focusUnlessTouch(inputRef.current));
     }
   }, [open]);
 

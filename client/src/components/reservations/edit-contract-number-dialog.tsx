@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { isTouchOnly } from "@/lib/touch-focus";
 
 interface EditContractNumberDialogProps {
   open: boolean;
@@ -152,7 +153,7 @@ export function EditContractNumberDialog({
               value={value}
               onChange={(e) => setValue(e.target.value)}
               placeholder={t('editContractNumberDialog.placeholder')}
-              autoFocus
+              autoFocus={!isTouchOnly()}
               data-testid="input-edit-contract-number"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && canSave) {

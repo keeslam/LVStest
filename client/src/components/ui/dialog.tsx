@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 
 import { cn } from "@/lib/utils"
 import { dialogNameFrom, trackUi } from "@/lib/audit-events"
+import { touchSafeOpenAutoFocus } from "@/lib/touch-focus"
 
 const Dialog = DialogPrimitive.Root
 
@@ -55,10 +56,12 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => {
+>(({ className, children, onOpenAutoFocus, ...props }, ref) => {
   const { t } = useTranslation("common");
   const [contentRef, setContentRef] = useMergedRef<HTMLDivElement>(ref);
   useTrackDialogOpen(contentRef);
+  // iPad: no on-screen keyboard just because a dialog with a field opened.
+  const handleOpenAutoFocus = touchSafeOpenAutoFocus(onOpenAutoFocus, () => contentRef.current);
   return (
   <DialogPortal>
     <DialogOverlay />
@@ -75,6 +78,7 @@ const DialogContent = React.forwardRef<
         "fixed inset-0 z-50 grid grid-cols-[minmax(0,1fr)] w-full max-w-lg max-h-[100dvh] content-start gap-4 overflow-y-auto border bg-background p-4 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:inset-auto sm:left-[50%] sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:p-6 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
         className
       )}
+      onOpenAutoFocus={handleOpenAutoFocus}
       {...props}
     >
       {children}

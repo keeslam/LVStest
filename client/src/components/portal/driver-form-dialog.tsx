@@ -16,6 +16,7 @@ import { capitalizeName, formatLicensePlate } from "@/lib/format-utils";
 import { btnPrimary } from "./ui";
 import { vehicleName } from "@shared/vehicle-name";
 import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES } from "@shared/languages";
+import { isTouchOnly } from "@/lib/touch-focus";
 
 const FIELDS = ["displayName", "email", "phone", "firstName", "lastName", "driverLicenseNumber", "licenseExpiry", "licenseOrigin", "preferredLanguage", "notes"] as const;
 type Field = typeof FIELDS[number];
@@ -119,7 +120,7 @@ export function DriverFormDialog({ driver, children, open: controlledOpen, onOpe
             <div className="space-y-3">
             {section(<User className="h-4 w-4" />, t("drivers.sectionContact"), (
               <div className="space-y-3">
-                {text("displayName", "text", { autoFocus: !isEdit, placeholder: t("drivers.namePlaceholder") })}
+                {text("displayName", "text", { autoFocus: !isEdit && !isTouchOnly(), placeholder: t("drivers.namePlaceholder") })}
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {text("firstName")}
                   {text("lastName")}

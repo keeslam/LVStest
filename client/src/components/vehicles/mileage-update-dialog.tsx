@@ -17,6 +17,7 @@ import { Gauge } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { MileageOverridePasswordDialog } from "@/components/mileage-override-password-dialog";
+import { isTouchOnly } from "@/lib/touch-focus";
 
 interface MileageUpdateDialogProps {
   vehicleId: number;
@@ -130,7 +131,7 @@ export function MileageUpdateDialog({
                 step={1}
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
-                autoFocus
+                autoFocus={!isTouchOnly()}
                 data-testid="input-mileage-update"
               />
               {isDecrease && (

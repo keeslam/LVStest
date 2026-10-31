@@ -8,6 +8,7 @@ import { formatPortalDate as formatDate } from "./reservation-card";
 import { DriverChip, Plate } from "./ui";
 import { vehicleName } from "@shared/vehicle-name";
 import { formatPortalDateMedium } from "@/lib/portal-format";
+import { isTouchOnly } from "@/lib/touch-focus";
 
 /** Rows shown before the customer has to type. */
 const MAX_SHOWN = 6;
@@ -54,7 +55,7 @@ export function ReservationPicker({ reservations, value, onChange, testId = "res
       {reservations.length > 1 && (
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" />
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("requests.form.searchReservation")} className="bg-white pl-9" autoFocus data-testid={`${testId}-search`} />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("requests.form.searchReservation")} className="bg-white pl-9" autoFocus={!isTouchOnly()} data-testid={`${testId}-search`} />
         </div>
       )}
       <ul className="max-h-64 divide-y overflow-y-auto rounded-md border bg-white" role="listbox" data-testid={`${testId}-list`}>

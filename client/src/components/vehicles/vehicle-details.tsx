@@ -109,6 +109,7 @@ import { useMemo } from "react";
 
 import { VehicleFiscalTab } from "@/components/fiscal/vehicle-fiscal-tab";
 import { MileageHistoryPanel } from "@/components/vehicles/mileage-history-panel";
+import { isTouchOnly } from "@/lib/touch-focus";
 
 interface VehicleDetailsProps {
   vehicleId: number;
@@ -3643,7 +3644,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
               value={quickEditValue}
               onChange={(e) => setQuickEditValue(e.target.value)}
               disabled={quickEditMutation.isPending}
-              autoFocus
+              autoFocus={!isTouchOnly()}
               data-testid="input-quick-edit-value"
             />
             {quickEditField === 'mileage'

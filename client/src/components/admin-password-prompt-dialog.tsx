@@ -1,3 +1,4 @@
+import { focusUnlessTouch } from "@/lib/touch-focus";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -49,7 +50,7 @@ export function AdminPasswordPromptDialog() {
           setSubmitting(false);
           setOpen(true);
           // Focus the input shortly after open
-          setTimeout(() => inputRef.current?.focus(), 80);
+          setTimeout(() => focusUnlessTouch(inputRef.current), 80);
         }),
     );
     return () => {

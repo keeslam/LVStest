@@ -28,6 +28,7 @@ import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Vehicle, Reservation, ScanEvent, UserPermission } from "@shared/schema";
 import { RequiresPermission } from "@/components/ui/requires-permission";
+import { focusUnlessTouch, isTouchOnly } from "@/lib/touch-focus";
 
 // The lookup endpoint projects reservations down to only what this panel
 // renders (see server/routes.ts GET /api/barcodes/:code) to avoid leaking
@@ -355,7 +356,7 @@ export function ScanPanel({ active = true, intent = null, onHandoverActiveChange
           // what it is rather than relying on it happening to be an <input>.
           data-scan-input=""
           autoComplete="off"
-          autoFocus
+          autoFocus={!isTouchOnly()}
           className="text-lg"
           data-testid="input-barcode-scan"
         />
