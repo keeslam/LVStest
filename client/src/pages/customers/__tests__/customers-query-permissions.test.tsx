@@ -25,6 +25,10 @@ let permissions: string[] = [UserPermission.VIEW_CUSTOMERS];
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: 1, username: "tester", role, permissions }, isLoading: false }),
 }));
+// The page opens a customer through the global dialog; this test only looks at its queries.
+vi.mock("@/contexts/GlobalDialogContext", () => ({
+  useGlobalDialog: () => ({ openCustomerDialog: () => {} }),
+}));
 
 import CustomersIndex from "@/pages/customers/index";
 

@@ -12,9 +12,20 @@
  *
  * Runs in the jsdom project (plan §8.8).
  */
-import { describe, it, expect } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { render as rtlRender, screen, fireEvent } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// The dialog's Geschiedenis section asks who is signed in and loads the record history.
+vi.mock("@/hooks/use-auth", () => ({
+  useAuth: () => ({ user: { id: 1, username: "tester", role: "user", permissions: [] }, isLoading: false }),
+}));
+
 import { DriverViewDialog } from "@/components/customers/driver-view-dialog";
+
+const render = (node: React.ReactElement) => rtlRender(
+  <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false, enabled: false } } })}>{node}</QueryClientProvider>,
+);
 import { escapeHtml } from "@/lib/html-escape";
 
 const HOSTILE = `<img src=x onerror="document.title='pwned'">`;

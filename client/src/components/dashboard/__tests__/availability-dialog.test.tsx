@@ -35,6 +35,10 @@ const baseBoard = () => ({
 
 let requested: string[];
 beforeEach(() => {
+  // The board below is for 21-24 October 2026; on a later day the APK badge
+  // says "APK verlopen" instead of the date. Only Date is faked, so waitFor still runs.
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-21T10:00:00Z"));
   requested = [];
   board = baseBoard();
   vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
@@ -44,7 +48,10 @@ beforeEach(() => {
     return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
   }));
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.useRealTimers();
+});
 
 function renderDialog() {
   const client = new QueryClient({
