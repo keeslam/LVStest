@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { installIdParamValidation } from '../middleware/parseIntParam';
-import { maintenanceDatesForVehicles } from '../services/vehicle-notification-recipients.js';
+import { maintenanceDatesForVehicles, vehicleNotificationTargets } from '../services/vehicle-notification-recipients.js';
+import { isoToday } from '../services/lifecycle.js';
+import { storage } from '../storage.js';
 import { db } from '../db.js';
 import { vehicles, customers, reservations, expenses } from '../../shared/schema.js';
 import { eq, isNotNull, and, gte, lte, sql, desc, like, or } from 'drizzle-orm';
@@ -22,7 +24,8 @@ function getDateDifferenceInDays(date1: string, date2: string): number {
 router.get('/', async (req, res) => {
   try {
     const { filterType } = req.query;
-    const today = new Date().toISOString().split('T')[0];
+    // The office's calendar date, as the calendar and the send use it (not the UTC date).
+    const today = isoToday();
     
     // Base query for vehicles with active reservations
     const baseVehiclesQuery = db
@@ -56,15 +59,29 @@ router.get('/', async (req, res) => {
     let filteredVehicles = uniqueVehicles;
 
     if (filterType === 'apk') {
-      // Filter for APK reminders (overdue, 2 months, 1 month, 14 days)
-      filteredVehicles = uniqueVehicles.filter(item => {
-        if (!item.vehicle.apkDate) return false;
-        
-        const daysUntilAPK = getDateDifferenceInDays(item.vehicle.apkDate, today);
-        
-        // Include overdue APKs and APK expires within 2 months (60 days)
-        return (daysUntilAPK <= 60);
-      });
+      // Filter for APK reminders (overdue, 2 months, 1 month, 14 days).
+      // Kees (2026-10-31): the list missed cars the maintenance calendar does
+      // show. It started from "a reservation running today with customers.email
+      // set", so an open-ended rental (end_date NULL), a car whose next renter
+      // starts later, a renter who only has an APK address, and an empty car
+      // all dropped out. The list now starts from the fleet the way the
+      // calendar does (every vehicle with an APK date, minus the statuses in
+      // maintenanceExcludedStatuses) and names the renter the send uses
+      // (B-24: running or next reservation); an empty car has no customer and
+      // the send reports it to the office.
+      const appSettings = await storage.getSettings();
+      const excludedStatuses = appSettings?.maintenanceExcludedStatuses || ['not_for_rental'];
+      const fleet = await db.select().from(vehicles).where(isNotNull(vehicles.apkDate));
+      const dueIds = fleet
+        .filter((v) => !excludedStatuses.includes(v.availabilityStatus || 'available'))
+        .filter((v) => v.apkDate && getDateDifferenceInDays(v.apkDate, today) <= 60)
+        .map((v) => v.id);
+      const targets = await vehicleNotificationTargets(dueIds, today);
+      filteredVehicles = targets.map((target) => ({
+        vehicle: target.vehicle,
+        customer: target.customer,
+        reservation: target.reservation,
+      })) as unknown as typeof uniqueVehicles;
 
       // Sort by expiry date (most urgent first - overdue first, then by days)
       filteredVehicles.sort((a, b) => {

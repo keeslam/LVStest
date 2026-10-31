@@ -231,6 +231,7 @@
         "filterActiveDescription": "São mostrados os veículos com APK a expirar dentro de 2 meses (60 dias). Os veículos estão ordenados por urgência: os mais urgentes primeiro.",
         "vehicleTypeFallback": "Veículo",
         "customerLabel": "Cliente: {{name}}",
+        "noRenterLabel": "Não alugado: o aviso vai para o escritório",
         "apkOverdue": "APK EXPIRADO",
         "apkUrgent": "APK URGENTE",
         "apkWarning": "APK AVISO",

@@ -948,7 +948,9 @@ export default function CustomerCommunications() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
                 {!canViewVehiclesForCommunications ? (
                   <NoDataAccess permission={UserPermission.VIEW_VEHICLES} className="md:col-span-2 lg:col-span-3" />
-                ) : filteredVehicles.slice(0, 50).map((item: any) => {
+                ) : filteredVehicles.map((item: any) => {
+                  // Every APK-due car is listed, as in the maintenance calendar; the grid
+                  // scrolls, and a cap of 50 let long-overdue cars hide the ones due next.
                   const vehicle = item.vehicle;
                   const customer = item.customer;
                   const filterInfo = item.filterInfo;
@@ -988,9 +990,16 @@ export default function CustomerCommunications() {
                       <div className="text-xs text-muted-foreground mb-2">
                         {vehicle.brand} {vehicle.model}
                       </div>
-                      <div className="text-xs text-blue-600 mb-2">
-                        {t('customerCommunications.send.apk.customerLabel', { name: customer.name })}
-                      </div>
+                      {customer ? (
+                        <div className="text-xs text-blue-600 mb-2">
+                          {t('customerCommunications.send.apk.customerLabel', { name: customer.name })}
+                        </div>
+                      ) : (
+                        // Not rented out: the send reports this car to the office (B-24).
+                        <div className="text-xs text-muted-foreground mb-2" data-testid={`vehicle-no-renter-${vehicle.id}`}>
+                          {t('customerCommunications.send.apk.noRenterLabel')}
+                        </div>
+                      )}
 
                       {/* Filter-specific information */}
                       {filterInfo && (

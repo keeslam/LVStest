@@ -231,6 +231,7 @@
         "filterActiveDescription": "Se muestran los vehículos cuya APK caduca en 2 meses (60 días). Los vehículos están ordenados por urgencia: primero los más urgentes.",
         "vehicleTypeFallback": "Vehículo",
         "customerLabel": "Cliente: {{name}}",
+        "noRenterLabel": "No alquilado: el aviso va a la oficina",
         "apkOverdue": "APK CADUCADA",
         "apkUrgent": "APK URGENTE",
         "apkWarning": "APK ADVERTENCIA",

@@ -228,6 +228,7 @@
         "filterActiveDescription": "Voertuigen met APK die binnen 2 maanden (60 dagen) verloopt worden getoond. Voertuigen zijn gesorteerd op urgentie: meest urgent eerst.",
         "vehicleTypeFallback": "Voertuig",
         "customerLabel": "Klant: {{name}}",
+        "noRenterLabel": "Niet verhuurd: melding gaat naar kantoor",
         "apkOverdue": "APK VERLOPEN",
         "apkUrgent": "APK URGENT",
         "apkWarning": "APK WAARSCHUWING",

@@ -234,6 +234,7 @@
         "filterActiveDescription": "Wyświetlane są pojazdy z APK wygasającym w ciągu 2 miesięcy (60 dni). Pojazdy są posortowane według pilności: najpilniejsze najpierw.",
         "vehicleTypeFallback": "Pojazd",
         "customerLabel": "Klient: {{name}}",
+        "noRenterLabel": "Nie wynajęty: powiadomienie trafia do biura",
         "apkOverdue": "APK WYGASŁO",
         "apkUrgent": "APK PILNE",
         "apkWarning": "APK OSTRZEŻENIE",

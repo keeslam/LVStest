@@ -231,6 +231,7 @@
         "filterActiveDescription": "Sunt afișate vehiculele cu APK care expiră în 2 luni (60 de zile). Vehiculele sunt sortate după urgență: cele mai urgente primele.",
         "vehicleTypeFallback": "Vehicul",
         "customerLabel": "Client: {{name}}",
+        "noRenterLabel": "Neînchiriat: notificarea merge la birou",
         "apkOverdue": "APK EXPIRAT",
         "apkUrgent": "APK URGENT",
         "apkWarning": "APK AVERTISMENT",
