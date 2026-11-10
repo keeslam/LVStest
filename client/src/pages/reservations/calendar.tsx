@@ -3825,11 +3825,18 @@ export default function ReservationCalendarPage() {
                   vehicle: rental.vehicle || vehicles?.find(v => v.id === rental.vehicleId)
                 }));
                 
+                // "Inleveren" is the day the vehicle really came back, never the planned end:
+                // the return writes actualReturnDate and leaves endDate alone (BUG-019), and a
+                // spare that is taken in gets its return day as endDate.
+                const realReturnDate = (r: Reservation): string | null =>
+                  r.actualReturnDate || r.completionDate || (r.spareVehicleStatus === 'returned' ? r.endDate : null) || null;
+
                 // Apply date filter
                 const now = new Date();
                 const filteredHistory = historyRentals.filter(rental => {
                   if (adminHistoryDateFilter === 'all') return true;
-                  const endDate = rental.endDate ? parseISO(rental.endDate) : null;
+                  const returned = realReturnDate(rental);
+                  const endDate = returned ? parseISO(returned) : null;
                   if (!endDate) return false;
                   
                   switch (adminHistoryDateFilter) {
@@ -3886,7 +3893,7 @@ export default function ReservationCalendarPage() {
                     case 'pickup':
                       return dir * (new Date(a.startDate || 0).getTime() - new Date(b.startDate || 0).getTime());
                     case 'return':
-                      return dir * (new Date(a.endDate || 0).getTime() - new Date(b.endDate || 0).getTime());
+                      return dir * (new Date(realReturnDate(a) || 0).getTime() - new Date(realReturnDate(b) || 0).getTime());
                     case 'damage':
                       const checkA = getDamageCheckInfo(a.id);
                       const checkB = getDamageCheckInfo(b.id);
@@ -4067,7 +4074,7 @@ export default function ReservationCalendarPage() {
                                       {safeFormatDate(rental.startDate, 'd MMM yyyy', '-')}
                                     </TableCell>
                                     <TableCell className="px-2 py-1 border-r text-sm whitespace-nowrap">
-                                      {safeFormatDate(rental.endDate, 'd MMM yyyy', '-')}
+                                      {safeFormatDate(realReturnDate(rental), 'd MMM yyyy', '-')}
                                     </TableCell>
                                     <TableCell className="px-2 py-1 border-r whitespace-nowrap">
                                       {damageCheck ? (
