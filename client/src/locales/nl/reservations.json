@@ -421,6 +421,8 @@
     "openEndedBadge": "Open einde",
     "dayCount_one": "{{count}} dag",
     "dayCount_other": "{{count}} dagen",
+    "monthCount_one": "{{count}} maand",
+    "monthCount_other": "{{count}} maanden",
     "dayUnit_one": "dag",
     "dayUnit_other": "dagen",
     "rentalPeriodSelectedAboveLabel": "Huurperiode (hierboven geselecteerd):",

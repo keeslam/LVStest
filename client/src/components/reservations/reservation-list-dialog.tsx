@@ -40,7 +40,7 @@ import { Reservation, Vehicle, UserPermission } from "@shared/schema";
 import { formatLicensePlate, formatCurrency } from "@/lib/format-utils";
 import { reservationMatchesSearch } from "@/lib/reservation-search";
 import { Price } from "@/components/ui/price";
-import { parseISO, differenceInDays } from "date-fns";
+import { parseISO, differenceInDays, differenceInMonths, addDays, addMonths } from "date-fns";
 // BUG-223: Dutch dates on a Dutch screen — formatNl is date-fns' format
 // with the nl locale applied, so every call below writes "11 sep 2026".
 import { formatNl as format } from "@/lib/format-date-nl";
@@ -272,7 +272,15 @@ export function ReservationListDialog({ open, onOpenChange, initialTab, onTabCha
     const days = differenceInDays(parseISO(endDate), parseISO(startDate)) + 1; // Inclusive of both days
     // A vehicle that came back before the planned start has no sensible number of days.
     if (days < 1) return null;
-    return t('form.dayCount', { count: days });
+    // From three full calendar months on (Kees, 2026-11-10): months plus the days left over
+    // ("3 maanden 5 dagen"). Shorter than that stays in days.
+    const start = parseISO(startDate);
+    const dayAfterEnd = addDays(parseISO(endDate), 1);
+    const months = differenceInMonths(dayAfterEnd, start);
+    if (months < 3) return t('form.dayCount', { count: days });
+    const restDays = differenceInDays(dayAfterEnd, addMonths(start, months));
+    const monthText = t('form.monthCount', { count: months });
+    return restDays > 0 ? `${monthText} ${t('form.dayCount', { count: restDays })}` : monthText;
   };
 
   // Reservation Card Component - Compact

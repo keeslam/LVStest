@@ -421,6 +421,8 @@
     "openEndedBadge": "Open-ended",
     "dayCount_one": "{{count}} day",
     "dayCount_other": "{{count}} days",
+    "monthCount_one": "{{count}} month",
+    "monthCount_other": "{{count}} months",
     "dayUnit_one": "day",
     "dayUnit_other": "days",
     "rentalPeriodSelectedAboveLabel": "Rental Period (selected above):",
