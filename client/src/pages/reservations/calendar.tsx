@@ -5,7 +5,7 @@ import { bucketByVehicleAndDay, cellKey, type BucketableReservation } from "@/li
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient, useMutation, keepPreviousData } from "@tanstack/react-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import type { ReservationListPage, ReservationListRow } from "@shared/reservation-list";
+import { realReturnDate, type ReservationListPage, type ReservationListRow } from "@shared/reservation-list";
 import { safeFormatDate } from "@/lib/safe-date";
 import { addDays, subDays, isSameDay, parseISO, startOfMonth, endOfMonth, getDate, getDay, getMonth, getYear, isSameMonth, addMonths, startOfDay, endOfDay, isBefore, isAfter, differenceInDays, startOfWeek, endOfWeek } from "date-fns";
 // BUG-223: Dutch dates on a Dutch screen — formatNl is date-fns' format
@@ -3825,12 +3825,6 @@ export default function ReservationCalendarPage() {
                   vehicle: rental.vehicle || vehicles?.find(v => v.id === rental.vehicleId)
                 }));
                 
-                // "Inleveren" is the day the vehicle really came back, never the planned end:
-                // the return writes actualReturnDate and leaves endDate alone (BUG-019), and a
-                // spare that is taken in gets its return day as endDate.
-                const realReturnDate = (r: Reservation): string | null =>
-                  r.actualReturnDate || r.completionDate || (r.spareVehicleStatus === 'returned' ? r.endDate : null) || null;
-
                 // Apply date filter
                 const now = new Date();
                 const filteredHistory = historyRentals.filter(rental => {

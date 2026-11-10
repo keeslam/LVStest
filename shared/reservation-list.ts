@@ -18,6 +18,17 @@ export type ReservationListRow = Omit<Reservation, "vehicle" | "customer" | "dri
   customer: { id: number; name: string; companyName: string | null } | null;
 };
 
+/**
+ * The day the vehicle really came back, or null when it never did. A return writes actualReturnDate
+ * (and completionDate) and leaves endDate, the planned end, alone (BUG-019); a spare that was taken in
+ * has its return day as endDate. The list sorts on the same rule (returnSortDay in the server).
+ */
+export function realReturnDate(
+  r: Pick<Reservation, "actualReturnDate" | "completionDate" | "spareVehicleStatus" | "endDate">,
+): string | null {
+  return r.actualReturnDate || r.completionDate || (r.spareVehicleStatus === "returned" ? r.endDate : null) || null;
+}
+
 export interface ReservationListPage {
   rows: ReservationListRow[];
   /** Rows matching view and search, over all pages. */

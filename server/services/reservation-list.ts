@@ -35,11 +35,23 @@ function searchCondition(search: string): SQL | undefined {
   )`;
 }
 
+/**
+ * The day "Inleveren" sorts on - the same rule as realReturnDate in shared/reservation-list.ts. A
+ * finished rental sorts on the day the vehicle really came back (a return leaves endDate, the planned
+ * end, alone - BUG-019) and goes last when that day is unknown; a spare that was taken in has its
+ * return day as endDate. Anything else (running, booked, cancelled) sorts on the planned end.
+ */
+const returnSortDay = sql`case
+  when ${reservations.status} in ('completed', 'returned') then coalesce(
+    nullif(${reservations.actualReturnDate}, ''), nullif(${reservations.completionDate}, ''),
+    case when ${reservations.spareVehicleStatus} = 'returned' then nullif(${reservations.endDate}, '') end)
+  else ${reservations.endDate} end`;
+
 function orderBy(sort: ReservationListSort, dir: "asc" | "desc") {
   const by = dir === "asc" ? asc : desc;
   const nullsLast = (col: SQL) => sql`${col} ${sql.raw(dir === "asc" ? "asc" : "desc")} nulls last`;
   switch (sort) {
-    case "return": return [nullsLast(sql`${reservations.endDate}`), by(reservations.id)];
+    case "return": return [nullsLast(returnSortDay), by(reservations.id)];
     case "customer": return [nullsLast(sql`lower(coalesce(${customers.companyName}, ${customers.name}))`), by(reservations.id)];
     case "plate": return [nullsLast(sql`${vehicles.licensePlate}`), by(reservations.id)];
     default: return [nullsLast(sql`${reservations.startDate}`), by(reservations.id)];

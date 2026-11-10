@@ -62,6 +62,18 @@ describe("reserveringslijst per pagina", () => {
     expect(JSON.stringify(row).length).toBeLessThan(JSON.stringify(full).length / 2);
   });
 
+  it("sorts the history on the day the vehicle really came back, not on the planned end", async () => {
+    // ids[5] has the earlier planned end but came back last; ids[6] came back first.
+    await db.update(reservations).set({ actualReturnDate: "2031-03-01" }).where(eq(reservations.id, ids[5]));
+    await db.update(reservations).set({ actualReturnDate: "2031-01-20" }).where(eq(reservations.id, ids[6]));
+    const newestFirst = await getReservationListPage({ view: "history", search: "Paginator", sort: "return", dir: "desc", page: 1, pageSize: 50 });
+    expect(newestFirst.rows.map((r) => r.id)).toEqual([ids[5], ids[6]]);
+    // A finished rental without a real return day goes last, whatever its planned end.
+    await db.update(reservations).set({ actualReturnDate: null, endDate: "2031-12-31" }).where(eq(reservations.id, ids[5]));
+    const withUnknown = await getReservationListPage({ view: "history", search: "Paginator", sort: "return", dir: "desc", page: 1, pageSize: 50 });
+    expect(withUnknown.rows.map((r) => r.id)).toEqual([ids[6], ids[5]]);
+  });
+
   it("finds rows by id for lookups", async () => {
     const rows = await getReservationListRowsByIds([ids[1], ids[6], 999999999]);
     expect(rows.map((r) => r.id).sort()).toEqual([ids[1], ids[6]].sort());

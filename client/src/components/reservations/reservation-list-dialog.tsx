@@ -3,7 +3,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, keepPreviousData } from "@tanstack/react-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import type { ReservationListPage } from "@shared/reservation-list";
+import { realReturnDate, type ReservationListPage } from "@shared/reservation-list";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -270,13 +270,19 @@ export function ReservationListDialog({ open, onOpenChange, initialTab, onTabCha
   const getDuration = (startDate: string | null, endDate: string | null) => {
     if (!startDate || !endDate) return null;
     const days = differenceInDays(parseISO(endDate), parseISO(startDate)) + 1; // Inclusive of both days
+    // A vehicle that came back before the planned start has no sensible number of days.
+    if (days < 1) return null;
     return t('form.dayCount', { count: days });
   };
 
   // Reservation Card Component - Compact
   const ReservationCard = ({ reservation }: { reservation: Reservation }) => {
-    const duration = getDuration(reservation.startDate, reservation.endDate);
-    
+    // A finished rental shows the day the vehicle really came back, or a dash when that was never
+    // recorded - not the planned end. Running, booked and cancelled ones keep the planned end.
+    const finished = reservation.status === 'completed' || reservation.status === 'returned';
+    const inDate = finished ? realReturnDate(reservation) : reservation.endDate;
+    const duration = getDuration(reservation.startDate, inDate);
+
     return (
       <div className="bg-white border rounded-md hover:bg-gray-50 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" role="button" tabIndex={0}
         onClick={(e) => handleView(e, reservation)}
@@ -321,7 +327,7 @@ export function ReservationListDialog({ open, onOpenChange, initialTab, onTabCha
             </div>
             <div className="flex items-center gap-1">
               <span className="text-gray-500">{t('listDialog.inLabel')}</span>
-              <span className="font-medium">{reservation.endDate ? format(parseISO(reservation.endDate), 'd MMM yyyy') : '-'}</span>
+              <span className="font-medium">{inDate ? format(parseISO(inDate), 'd MMM yyyy') : '-'}</span>
               {duration && <span className="text-gray-400">({duration})</span>}
             </div>
           </div>
